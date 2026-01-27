@@ -1053,7 +1053,9 @@ const CampaignModal = ({
                         <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
                           Product / Service Name
                         </Typography>
-                        <Typography variant="body2">{campaign?.productName}</Typography>
+                        <Typography variant="body2">
+                          {campaign?.productName || 'Not specified'}
+                        </Typography>
                       </Box>
                       <Box>
                         <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
@@ -1094,7 +1096,7 @@ const CampaignModal = ({
                         </Typography>
                       </Stack>
                     </Box>
-                    <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
                         {[
                           {
@@ -1267,54 +1269,56 @@ const CampaignModal = ({
                   </Box>
 
                   {/* Campaign Logistics */}
-                  <Box sx={{ mb: 2 }}>
-                    <Box
-                      sx={{
-                        ...SectionBoxStyles,
-                        border: '1px solid #CFB5F6',
-                        borderBottom: '3px solid #CFB5F6',
-                      }}
-                    >
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Iconify
-                          icon="material-symbols:inventory-2-outline-sharp"
-                          sx={{
-                            color: '#CFB5F6',
-                            width: 20,
-                            height: 20,
-                          }}
-                        />
-                        <Typography
-                          sx={{
-                            ...SectionTitleStyles,
-                            color: '#CFB5F6',
-                          }}
-                        >
-                          LOGISTICS
-                        </Typography>
-                      </Stack>
+                  {campaign?.logisticsType && (
+                    <Box sx={{ mb: 2 }}>
+                      <Box
+                        sx={{
+                          ...SectionBoxStyles,
+                          border: '1px solid #CFB5F6',
+                          borderBottom: '3px solid #CFB5F6',
+                        }}
+                      >
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Iconify
+                            icon="material-symbols:inventory-2-outline-sharp"
+                            sx={{
+                              color: '#CFB5F6',
+                              width: 20,
+                              height: 20,
+                            }}
+                          />
+                          <Typography
+                            sx={{
+                              ...SectionTitleStyles,
+                              color: '#CFB5F6',
+                            }}
+                          >
+                            LOGISTICS
+                          </Typography>
+                        </Stack>
+                      </Box>
+                      <Chip
+                        label={getlogisticsTypeLabel(campaign?.logisticsType)}
+                        size="small"
+                        sx={{
+                          bgcolor: '#F5F5F5',
+                          borderRadius: 1,
+                          color: '#231F20',
+                          height: '32px',
+                          '& .MuiChip-label': {
+                            fontWeight: 700,
+                            px: 1.5,
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginTop: '-3px',
+                          },
+                          '&:hover': { bgcolor: '#F5F5F5' },
+                        }}
+                      />
                     </Box>
-                    <Chip
-                      label={getlogisticsTypeLabel(campaign?.logisticsType) || 'Not specified'}
-                      size="small"
-                      sx={{
-                        bgcolor: '#F5F5F5',
-                        borderRadius: 1,
-                        color: '#231F20',
-                        height: '32px',
-                        '& .MuiChip-label': {
-                          fontWeight: 700,
-                          px: 1.5,
-                          height: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginTop: '-3px',
-                        },
-                        '&:hover': { bgcolor: '#F5F5F5' },
-                      }}
-                    />
-                  </Box>
+                  )}
 
                   {/* Client Info */}
                   <Box sx={{ mb: 2 }}>
@@ -1434,7 +1438,7 @@ const CampaignModal = ({
                           </Typography>
                         </Stack>
                       </Box>
-                      <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
                           {[
                             {
