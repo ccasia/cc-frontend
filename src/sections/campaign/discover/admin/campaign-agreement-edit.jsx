@@ -165,6 +165,7 @@ const CampaignAgreementEdit = ({
   const isDefault = watch('default');
   const selectedCurrency = watch('currency');
   const ugcCreditsValue = watch('ugcCredits');
+  const paymentAmountValue = watch('paymentAmount');
 
   useEffect(() => {
     const currentCredits =
@@ -195,6 +196,7 @@ const CampaignAgreementEdit = ({
   }, [campaign]);
 
   // Calculate used credits by OTHER creators (excluding current creator)
+  // For credit tier campaigns, multiply ugcVideos by creditPerVideo
   const usedCreditsByOthers = React.useMemo(() => {
     if (!campaign?.campaignCredits) return null;
     if (!agreements || !campaign?.shortlisted) return 0;
@@ -212,7 +214,10 @@ const CampaignAgreementEdit = ({
         creator.user?.creator?.isGuest !== true &&
         creator.ugcVideos
       ) {
-        return acc + (creator.ugcVideos || 0);
+        // For credit tier campaigns, use creditPerVideo multiplier
+        const videos = creator.ugcVideos || 0;
+        const creditsPerVideo = campaign?.isCreditTier ? (creator.creditPerVideo || 1) : 1;
+        return acc + (videos * creditsPerVideo);
       }
       return acc;
     }, 0);
@@ -225,6 +230,38 @@ const CampaignAgreementEdit = ({
 
     return Math.max(0, Number(campaign.campaignCredits) - usedCreditsByOthers);
   }, [campaign, usedCreditsByOthers]);
+
+  // Calculate total credits this creator will cost
+  const creatorCost = useMemo(() => {
+    if (!requiresUGCCredits) return 0;
+    const videos = Number(ugcCreditsValue) || 0;
+    return campaign?.isCreditTier
+      ? (tierData?.creditsPerVideo || 1) * videos
+      : videos;
+  }, [campaign?.isCreditTier, ugcCreditsValue, tierData, requiresUGCCredits]);
+
+  // Calculate remaining credits in real-time as user types
+  const realTimeCreditsLeft = useMemo(() => {
+    if (!campaign?.campaignCredits) return null; // Unlimited campaign
+    if (maxCreditsAllowed === null) return null;
+    return maxCreditsAllowed - creatorCost;
+  }, [campaign?.campaignCredits, maxCreditsAllowed, creatorCost]);
+
+  // Determine if form is invalid for button state
+  const isFormInvalid = useMemo(() => {
+    // Payment must be filled
+    if (!paymentAmountValue || paymentAmountValue === '') return true;
+
+    // For non-guest creators, credits must be filled
+    if (requiresUGCCredits && (!ugcCreditsValue || ugcCreditsValue === '')) return true;
+
+    // For campaigns with credit limits, check if exceeded
+    if (campaign?.campaignCredits && requiresUGCCredits) {
+      if (realTimeCreditsLeft !== null && realTimeCreditsLeft < 0) return true;
+    }
+
+    return false;
+  }, [paymentAmountValue, requiresUGCCredits, ugcCreditsValue, campaign?.campaignCredits, realTimeCreditsLeft]);
 
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
@@ -404,16 +441,9 @@ const CampaignAgreementEdit = ({
             )}
 
             <Stack spacing={1}>
-              <Stack direction="row" justifyContent="space-between">
-                <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600 }}>
-                  Recipient
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600 }}>
-                  {campaign?.isCreditTier
-                    ? `Creator Cost: ${(tierData?.creditsPerVideo || 1) * (Number(ugcCreditsValue) || 0)} credits`
-                    : `Credits Assigned: ${Number(ugcCreditsValue) || agreement?.user?.shortlisted?.[0]?.ugcVideos || 0}`}
-                </Typography>
-              </Stack>
+              <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600 }}>
+                Recipient
+              </Typography>
 
               <Stack direction="row" alignItems="center" spacing={2}>
                 {agreement?.user?.photoURL ? (
@@ -544,7 +574,11 @@ const CampaignAgreementEdit = ({
                   }}
                 />
 
-                {requiresUGCCredits && (
+              </Box>
+
+              {/* UGC Credits / Video Amount Section */}
+              {requiresUGCCredits && (
+                <Stack spacing={1} sx={{ mt: 1 }}>
                   <RHFTextField
                     name="ugcCredits"
                     type="number"
@@ -556,13 +590,11 @@ const CampaignAgreementEdit = ({
                     }}
                     disabled={maxCreditsAllowed === 0}
                     onChange={(e) => {
-                      const { value } = e.target;
-                      // Allow empty value (user is deleting)
+                      const {value} = e.target;
                       if (value === '') {
                         setValue('ugcCredits', '');
                         return;
                       }
-                      // Enforce max credits limit
                       if (maxCreditsAllowed !== null && Number(value) > maxCreditsAllowed) {
                         setValue('ugcCredits', String(maxCreditsAllowed));
                       } else {
@@ -570,21 +602,102 @@ const CampaignAgreementEdit = ({
                       }
                     }}
                     value={ugcCreditsValue}
-                    helperText={
-                      maxCreditsAllowed !== null ? (
-                        <Typography noWrap whiteSpace="none" variant="caption">
-                          {campaign?.creditsPending} credit(s) remaining
-                        </Typography>
-                      ) : undefined
-                    }
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 1,
                       },
                     }}
                   />
-                )}
-              </Box>
+
+                  {/* Credit Summary */}
+                  {campaign?.campaignCredits && (() => {
+                    const isExceeded = realTimeCreditsLeft !== null && realTimeCreditsLeft < 0;
+                    const isUsingAll = realTimeCreditsLeft === 0 && creatorCost > 0;
+
+                    const getBgColor = () => {
+                      if (isExceeded) return '#FFF1F0';
+                      if (isUsingAll) return '#FFF8E5';
+                      return '#F8F9FA';
+                    };
+
+                    const getBorderColor = () => {
+                      if (isExceeded) return '#FFCCC7';
+                      if (isUsingAll) return '#FFE58F';
+                      return '#E8EAED';
+                    };
+
+                    const getRemainingColor = () => {
+                      if (isExceeded) return '#CF1322';
+                      if (isUsingAll) return '#D46B08';
+                      return '#5F6368';
+                    };
+
+                    return (
+                      <Box
+                        sx={{
+                          px: 1.5,
+                          py: 1.25,
+                          borderRadius: 1.5,
+                          bgcolor: getBgColor(),
+                          border: '1px solid',
+                          borderColor: getBorderColor(),
+                        }}
+                      >
+                        <Stack spacing={0.75}>
+                          <Stack direction="row" justifyContent="space-between" alignItems="center">
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: isExceeded ? '#CF1322' : '#5F6368',
+                                fontWeight: 500,
+                              }}
+                            >
+                              Cost: {creatorCost} credit{creatorCost !== 1 ? 's' : ''}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontWeight: 600,
+                                color: getRemainingColor(),
+                              }}
+                            >
+                              {Math.max(0, realTimeCreditsLeft ?? 0)} credits remaining
+                            </Typography>
+                          </Stack>
+
+                          {/* Error message when credits exceeded */}
+                          {isExceeded && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: '#CF1322',
+                                lineHeight: 1.5,
+                                fontSize: '0.7rem',
+                              }}
+                            >
+                              Creator cost exceeds the remaining credits. Please reduce the {campaign?.isCreditTier ? 'video amount' : 'credits'} or increase the campaign budget.
+                            </Typography>
+                          )}
+
+                          {/* Warning message when using all remaining */}
+                          {isUsingAll && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: '#D46B08',
+                                lineHeight: 1.5,
+                                fontSize: '0.7rem',
+                              }}
+                            >
+                              This will use all remaining campaign credits
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Box>
+                    );
+                  })()}
+                </Stack>
+              )}
               <RHFCheckbox
                 name="default"
                 label="Default"
@@ -627,7 +740,7 @@ const CampaignAgreementEdit = ({
           <LoadingButton
             type="submit"
             loading={loading.value}
-            disabled={campaign?.campaignCredits && maxCreditsAllowed === 0}
+            disabled={loading.value || isFormInvalid}
             loadingIndicator={
               <SyncLoader color="white" size={5} />
             }
