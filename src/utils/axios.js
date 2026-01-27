@@ -220,6 +220,7 @@ export const endpoints = {
         setAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
         submitAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/submit-agreement`,
         withdraw: (pitchId) => `/api/pitch/v3/${pitchId}/withdraw`,
+        outreachStatus: (pitchId) => `/api/pitch/v3/${pitchId}/outreach-status`,
       },
     },
     draft: {
