@@ -44,6 +44,7 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import CompanyCreationForm from './company-creation-form';
 import ClientCampaignCreateForm from './campaign-create/campaign-create-form';
 import ClientProfileCompletionModal from '../auth/client-profile-completion-modal';
+import { RouterLink } from 'src/routes/components';
 
 const ClientDashboard = () => {
   const { user } = useAuthContext();
@@ -1647,7 +1648,8 @@ const ClientDashboard = () => {
               <Box sx={{ flex: '0 0 20%', textAlign: 'right' }}>
                 <Button
                   variant="text"
-                  onClick={() => handleViewCampaign(campaign.id)}
+                  href={paths.dashboard.campaign.details(campaign.id)}
+                  component={RouterLink}
                   sx={{
                     width: 130,
                     height: 32,
@@ -1773,9 +1775,11 @@ const ClientDashboard = () => {
           {currentCampaigns.map((campaign) => (
             <Card
               key={campaign.id}
-              onClick={() => handleViewCampaign(campaign.id)}
+              href={paths.dashboard.campaign.details(campaign.id)}
+              component={RouterLink}
               sx={{
                 overflow: 'hidden',
+                textDecoration: 'none',
                 cursor: 'pointer',
                 transition: 'all 0.3s',
                 bgcolor: 'background.default',

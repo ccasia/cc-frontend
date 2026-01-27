@@ -36,10 +36,19 @@ import { useSnackbar } from 'src/components/snackbar';
 import { CampaignLog } from '../../manage/list/CampaignLog';
 import ActivateCampaignDialog from './activate-campaign-dialog';
 import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
+import { RouterLink } from 'src/routes/components';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus, showAdmins = false }) {
+export default function CampaignItem({
+  campaign,
+  onView,
+  onEdit,
+  onDelete,
+  status,
+  pitchStatus,
+  showAdmins = false,
+}) {
   console.log('CampaignItem rendered:', {
     campaignId: campaign?.id,
     campaignStatus: campaign?.status,
@@ -63,6 +72,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
 
   // Handle menu open
   const handleClick = (event) => {
+    event.preventDefault();
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
   };
@@ -610,7 +620,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
           }}
         >
           <MenuItem
-            onClick={handleOpenInNewTab}
+            component={RouterLink}
+            href={paths.dashboard.campaign.adminCampaignDetail(campaign.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => handleClose()}
             sx={{
               borderRadius: 1,
               backgroundColor: 'white',
@@ -781,11 +795,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
 
   return (
     <Card
-      onClick={() => {
-        router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
-      }}
+      component={RouterLink}
+      href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
       sx={{
         overflow: 'hidden',
+        textDecoration: 'none',
         cursor: 'pointer',
         transition: 'all 0.3s',
         bgcolor: 'background.default',
@@ -850,7 +864,12 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       )}
       {renderImages}
       {renderTexts}
-      <Box onClick={(e) => e.stopPropagation()}>
+      <Box
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault;
+        }}
+      >
         <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
         <ActivateCampaignDialog
           open={activateDialogOpen}
