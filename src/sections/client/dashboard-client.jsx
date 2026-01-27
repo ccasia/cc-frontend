@@ -24,6 +24,7 @@ import {
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
@@ -44,7 +45,6 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import CompanyCreationForm from './company-creation-form';
 import ClientCampaignCreateForm from './campaign-create/campaign-create-form';
 import ClientProfileCompletionModal from '../auth/client-profile-completion-modal';
-import { RouterLink } from 'src/routes/components';
 
 const ClientDashboard = () => {
   const { user } = useAuthContext();
@@ -161,7 +161,8 @@ const ClientDashboard = () => {
     if (!Array.isArray(allPitches) || clientCampaignIds.size === 0) return 0;
     const normalize = (p) => {
       const status = p?.displayStatus || p?.status;
-      if (status === 'undecided' || status === 'PENDING_REVIEW' || status === 'pending') return 'PENDING_REVIEW';
+      if (status === 'undecided' || status === 'PENDING_REVIEW' || status === 'pending')
+        return 'PENDING_REVIEW';
       if (status === 'approved') return 'APPROVED';
       if (status === 'rejected') return 'REJECTED';
       return status;
@@ -341,10 +342,7 @@ const ClientDashboard = () => {
             },
           }}
         >
-          <Iconify
-            icon={viewMode === 'table' ? 'mdi:grid' : 'eva:list-outline'}
-            width={23}
-          />
+          <Iconify icon={viewMode === 'table' ? 'mdi:grid' : 'eva:list-outline'} width={23} />
         </Box>
 
         <Box
@@ -383,10 +381,10 @@ const ClientDashboard = () => {
       <Grid container spacing={2}>
         {/* Tasks To Do Column */}
         <Grid item xs={6}>
-          <Typography 
-            variant="h6" 
-            gutterBottom 
-            sx={{ 
+          <Typography
+            variant="h6"
+            gutterBottom
+            sx={{
               fontFamily: 'Aileron, sans-serif',
               fontSize: '1rem',
               fontWeight: 600,
@@ -485,10 +483,10 @@ const ClientDashboard = () => {
         {/* Credit Tracking Column */}
         {!user?.isChildAccount && (
           <Grid item xs={6}>
-            <Typography 
-              variant="h6" 
-              gutterBottom 
-              sx={{ 
+            <Typography
+              variant="h6"
+              gutterBottom
+              sx={{
                 fontFamily: 'Aileron, sans-serif',
                 fontSize: '1rem',
                 fontWeight: 600,
@@ -880,7 +878,9 @@ const ClientDashboard = () => {
                       fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
                     }}
                   >
-                    {creditsLoading ? '...' : `${remainingDays} Day${remainingDays !== 1 ? 's' : ''}`}
+                    {creditsLoading
+                      ? '...'
+                      : `${remainingDays} Day${remainingDays !== 1 ? 's' : ''}`}
                   </Typography>
                 </Box>
               </Grid>
@@ -952,7 +952,13 @@ const ClientDashboard = () => {
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
                   <Avatar
-                    src={campaign?.campaignBrief?.images?.[0] || campaign.brand?.logo || campaign.company?.logo || clientCompanyLogo || ''}
+                    src={
+                      campaign?.campaignBrief?.images?.[0] ||
+                      campaign.brand?.logo ||
+                      campaign.company?.logo ||
+                      clientCompanyLogo ||
+                      ''
+                    }
                     sx={{
                       width: 38,
                       height: 38,
@@ -988,7 +994,11 @@ const ClientDashboard = () => {
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      <Iconify icon="mdi:calendar-blank-outline" width={12} sx={{ mr: 0.5, mb: -0.2 }} />
+                      <Iconify
+                        icon="mdi:calendar-blank-outline"
+                        width={12}
+                        sx={{ mr: 0.5, mb: -0.2 }}
+                      />
                       {campaign.campaignBrief?.startDate && campaign.campaignBrief?.endDate
                         ? `${fDate(campaign.campaignBrief.startDate)} - ${fDate(campaign.campaignBrief.endDate)}`
                         : 'Dates TBD'}
@@ -1183,7 +1193,7 @@ const ClientDashboard = () => {
                   border: '1.2px solid',
                   borderColor: 'divider',
                   maxHeight: 280,
-                  pb:  1,
+                  pb: 1,
                   '&:hover': {
                     borderColor: '#1340ff',
                     transform: 'translateY(-2px)',
@@ -1213,7 +1223,8 @@ const ClientDashboard = () => {
                       }
                       sx={{
                         backgroundColor: 'white',
-                        color: campaign.status === 'PENDING_ADMIN_ACTIVATION' ? '#1340FF' : '#48484a',
+                        color:
+                          campaign.status === 'PENDING_ADMIN_ACTIVATION' ? '#1340FF' : '#48484a',
                         fontWeight: 600,
                         fontSize: '0.7rem',
                         borderRadius: '5px',
@@ -1240,7 +1251,11 @@ const ClientDashboard = () => {
                 {/* Campaign Content */}
                 <Box sx={{ position: 'relative', pt: 2, px: 2 }}>
                   <Avatar
-                    src={campaign?.campaignBrief?.images?.[0] || campaign?.brand?.logo || campaign?.company?.logo}
+                    src={
+                      campaign?.campaignBrief?.images?.[0] ||
+                      campaign?.brand?.logo ||
+                      campaign?.company?.logo
+                    }
                     alt={campaign?.brand?.name || campaign?.company?.name}
                     sx={{
                       width: 40,
@@ -1449,7 +1464,7 @@ const ClientDashboard = () => {
             End Date
           </Typography>
         </Box>
-        <Box sx={{ flex: '0 0 18%', }}>
+        <Box sx={{ flex: '0 0 18%' }}>
           <Typography
             sx={{
               fontWeight: 600,
@@ -1508,7 +1523,13 @@ const ClientDashboard = () => {
                 }}
               >
                 <Avatar
-                  src={campaign?.campaignBrief?.images?.[0] || campaign.brand?.logo || campaign.company?.logo || clientCompanyLogo || ''}
+                  src={
+                    campaign?.campaignBrief?.images?.[0] ||
+                    campaign.brand?.logo ||
+                    campaign.company?.logo ||
+                    clientCompanyLogo ||
+                    ''
+                  }
                   sx={{
                     width: 36,
                     height: 36,
@@ -1556,9 +1577,7 @@ const ClientDashboard = () => {
                     color: '#333',
                   }}
                 >
-                  {campaign.campaignBrief?.endDate
-                    ? fDate(campaign.campaignBrief.endDate)
-                    : 'N/A'}
+                  {campaign.campaignBrief?.endDate ? fDate(campaign.campaignBrief.endDate) : 'N/A'}
                 </Typography>
               </Box>
               <Box sx={{ flex: '0 0 18%' }}>
@@ -1570,13 +1589,13 @@ const ClientDashboard = () => {
                       label={
                         <Box display="flex" alignItems="center" pb={0.2} gap={0.5}>
                           PENDING
-                          <Iconify 
-                            icon="mdi:information-outline" 
+                          <Iconify
+                            icon="mdi:information-outline"
                             sx={{
                               color: '#FFC702',
                               width: 16,
                               height: 16,
-                            }} 
+                            }}
                           />
                         </Box>
                       }
@@ -1845,7 +1864,11 @@ const ClientDashboard = () => {
               {/* Campaign Content */}
               <Box sx={{ position: 'relative', pt: 1, px: 2, pb: 1.5 }}>
                 <Avatar
-                  src={campaign?.campaignBrief?.images?.[0] || campaign?.brand?.logo || campaign?.company?.logo}
+                  src={
+                    campaign?.campaignBrief?.images?.[0] ||
+                    campaign?.brand?.logo ||
+                    campaign?.company?.logo
+                  }
                   alt={campaign?.brand?.name || campaign?.company?.name}
                   sx={{
                     width: 40,
