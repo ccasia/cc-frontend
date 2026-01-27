@@ -35,6 +35,7 @@ import Iconify from 'src/components/iconify';
 import { CampaignLog } from '../../manage/list/CampaignLog';
 import ActivateCampaignDialog from './activate-campaign-dialog';
 import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
+import { RouterLink } from 'src/routes/components';
 
 // ----------------------------------------------------------------------
 
@@ -71,6 +72,7 @@ export default function CampaignItem({
 
   // Handle menu open
   const handleClick = (event) => {
+    event.preventDefault();
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
   };
@@ -607,7 +609,11 @@ export default function CampaignItem({
           }}
         >
           <MenuItem
-            onClick={handleOpenInNewTab}
+            component={RouterLink}
+            href={paths.dashboard.campaign.adminCampaignDetail(campaign.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => handleClose()}
             sx={{
               borderRadius: 1,
               backgroundColor: 'white',
@@ -778,19 +784,11 @@ export default function CampaignItem({
 
   return (
     <Card
-      component={Box}
-      id={`campaign-${campaign?.id}`}
-      ref={ref}
-      onClick={() => {
-        const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');
-        if (lastCampaignOpenId || lastCampaignOpenId !== campaign.id) {
-          localStorage.setItem('lastCampaignOpenId', campaign?.id);
-        }
-        localStorage.removeItem('scrollTop');
-        router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
-      }}
+      component={RouterLink}
+      href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
       sx={{
         overflow: 'hidden',
+        textDecoration: 'none',
         cursor: 'pointer',
         transition: 'all 0.3s',
         bgcolor: 'background.default',
@@ -837,7 +835,12 @@ export default function CampaignItem({
       )}
       {renderImages}
       {renderTexts}
-      <Box onClick={(e) => e.stopPropagation()}>
+      <Box
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault;
+        }}
+      >
         <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
         <ActivateCampaignDialog
           open={activateDialogOpen}
