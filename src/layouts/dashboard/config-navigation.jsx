@@ -190,6 +190,12 @@ export function useNavData() {
             path: paths.dashboard.packages.root,
             icon: <Iconify icon="carbon:package" width={25} />,
           },
+          {
+            roles: ['superadmin', 'god'],
+            title: 'Credit Tier',
+            path: paths.dashboard.creditTier.root,
+            icon: <Iconify icon="mdi:account-star" width={25} />,
+          },
         ],
       },
 
@@ -397,6 +403,15 @@ export function useNavData() {
 
     baseData.push({
       items: [
+        {
+          title: (
+            <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+              FAQ
+            </span>
+          ),
+          path: paths.dashboard.faq,
+          icon: <Iconify icon="material-symbols:help-outline" width={25} />,
+        },
         {
           title: (
             <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>

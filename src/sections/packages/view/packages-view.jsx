@@ -1,16 +1,19 @@
-import { isEqual } from 'lodash';
-import React, { useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
-  Card,
   Table,
+  Stack,
   Button,
-  Tooltip,
+  TableRow,
   Container,
   TableBody,
-  IconButton,
+  TableCell,
+  TableHead,
+  TextField,
   TableContainer,
+  InputAdornment,
   CircularProgress,
 } from '@mui/material';
 
@@ -21,127 +24,155 @@ import useGetPackages from 'src/hooks/use-get-packges';
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
-import {
-  useTable,
-  emptyRows,
-  TableNoData,
-  getComparator,
-  TableEmptyRows,
-  TableHeadCustom,
-  TableSelectedAction,
-  TablePaginationCustom,
-} from 'src/components/table';
+import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PackageEdit from '../package-edit';
 import PackageCreate from '../package-create';
 import PackageTableRow from '../package-table-row';
-import PackageTableToolbar from '../package-table-toolbar';
-import PackageTableFiltersResult from '../package-table-filters-result';
 
-const pakcagesArray = [
-  {
-    type: 'Trail',
-    valueMYR: 2800,
-    valueSGD: 3100,
-    totalCredits: 5,
-    validityPeriod: 1,
-  },
-  {
-    type: 'Basic',
-    valueMYR: 8000,
-    valueSGD: 8900,
-    totalCredits: 15,
-    validityPeriod: 2,
-  },
-  {
-    type: 'Essential',
-    valueMYR: 15000,
-    valueSGD: 17500,
-    totalCredits: 30,
-    validityPeriod: 3,
-  },
-  {
-    type: 'Pro',
-    valueMYR: 23000,
-    valueSGD: 29000,
-    totalCredits: 50,
-    validityPeriod: 5,
-  },
-  {
-    type: 'Custom',
-    valueMYR: 1,
-    valueSGD: 1,
-    totalCredits: 1,
-    validityPeriod: 1,
-  },
-];
+// ----------------------------------------------------------------------
 
-const defaultFilters = {
-  name: '',
-  role: [],
-  status: 'all',
+const SortableHeader = ({ column, label, align, isFirst, isLast, sortColumn, sortDirection, onSort }) => {
+  const getBorderRadius = () => {
+    if (isFirst) return '10px 0 0 10px';
+    if (isLast) return '0 10px 10px 0';
+    return 0;
+  };
+
+  return (
+    <TableCell
+      onClick={() => onSort(column)}
+      sx={{
+        py: 1,
+        px: 2,
+        color: '#221f20',
+        fontWeight: 600,
+        bgcolor: '#f5f5f5',
+        whiteSpace: 'nowrap',
+        fontSize: '0.875rem',
+        cursor: 'pointer',
+        borderRadius: getBorderRadius(),
+        '&:hover': {
+          bgcolor: '#ebebeb',
+        },
+      }}
+      align={align}
+    >
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={0.5}
+        justifyContent={align === 'center' ? 'center' : 'flex-start'}
+      >
+        {label}
+        {sortColumn === column && (
+          <Iconify
+            icon={sortDirection === 'asc' ? 'eva:arrow-upward-fill' : 'eva:arrow-downward-fill'}
+            width={16}
+            sx={{ color: '#1340FF' }}
+          />
+        )}
+      </Stack>
+    </TableCell>
+  );
 };
 
-const TABLE_HEAD = [
-  { id: 'name', label: 'Name', width: 200 },
-  { id: 'priceMYR', label: 'Price in MYR', width: 200 },
-  { id: 'priceSGD', label: 'Price in SGD', width: 200 },
-  { id: 'credits', label: 'UGC Credits', width: 200 },
-  { id: 'validityPeriod', label: 'Validity Period', width: 200 },
-  { id: 'createdAt', label: 'Created At', width: 200 },
-  { id: '', width: 88 },
-];
+SortableHeader.propTypes = {
+  column: PropTypes.string.isRequired,
+  label: PropTypes.string.isRequired,
+  align: PropTypes.string,
+  isFirst: PropTypes.bool,
+  isLast: PropTypes.bool,
+  sortColumn: PropTypes.string.isRequired,
+  sortDirection: PropTypes.string.isRequired,
+  onSort: PropTypes.func.isRequired,
+};
+
+SortableHeader.defaultProps = {
+  align: 'left',
+  isFirst: false,
+  isLast: false,
+};
+
+// ----------------------------------------------------------------------
 
 const Packages = () => {
-  const { data, isLoading } = useGetPackages();
-  const [open, setOpen] = useState(false);
-  const [edit, setEdit] = useState(false);
-
-  console.log(data);
+  const { data, isLoading, mutate } = useGetPackages();
+  const [openCreate, setOpenCreate] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [editItem, setEditItem] = useState(null);
 
   const [tableData, setTableData] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortColumn, setSortColumn] = useState('createdAt');
+  const [sortDirection, setSortDirection] = useState('desc');
 
-  const table = useTable();
-
-  const [filters, setFilters] = useState(defaultFilters);
-
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
-  });
-
-  const dataInPage = dataFiltered?.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
-
-  const denseHeight = table.dense ? 56 : 56 + 20;
-
-  const canReset = !isEqual(defaultFilters, filters);
-
-  const notFound = (!dataFiltered?.length && canReset) || !dataFiltered?.length;
-
-  const handleFilters = useCallback(
-    (name, value) => {
-      table.onResetPage();
-      setFilters((prevState) => ({
-        ...prevState,
-        [name]: value,
-      }));
-    },
-    [table]
-  );
-
-  const handleResetFilters = useCallback(() => {
-    setFilters(defaultFilters);
+  const handleEditRow = useCallback((row) => {
+    setEditItem(row);
+    setOpenEdit(true);
   }, []);
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && data) {
       setTableData(data);
     }
   }, [data, isLoading]);
+
+  const getPriceAmount = useCallback((row, currency) => {
+    const prices = row?.prices ?? [];
+    const match = prices.find((p) => p?.currency === currency);
+    const amount = match?.amount;
+    return typeof amount === 'number' ? amount : Number(amount ?? 0);
+  }, []);
+
+  const handleColumnSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const filteredData = useMemo(() => {
+    let filtered = [...(tableData || [])];
+
+    if (searchQuery?.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((pkg) => pkg?.name?.toLowerCase().includes(query));
+    }
+
+    filtered.sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortColumn) {
+        case 'name':
+          comparison = (a?.name || '').localeCompare(b?.name || '');
+          break;
+        case 'priceMYR':
+          comparison = getPriceAmount(a, 'MYR') - getPriceAmount(b, 'MYR');
+          break;
+        case 'priceSGD':
+          comparison = getPriceAmount(a, 'SGD') - getPriceAmount(b, 'SGD');
+          break;
+        case 'credits':
+          comparison = (a?.credits || 0) - (b?.credits || 0);
+          break;
+        case 'validityPeriod':
+          comparison = (a?.validityPeriod || 0) - (b?.validityPeriod || 0);
+          break;
+        case 'createdAt':
+          comparison = new Date(a?.createdAt || 0).getTime() - new Date(b?.createdAt || 0).getTime();
+          break;
+        default:
+          comparison = 0;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [getPriceAmount, searchQuery, sortColumn, sortDirection, tableData]);
 
   if (isLoading) {
     return (
@@ -175,13 +206,27 @@ const Packages = () => {
         ]}
         action={
           <Button
-            size="small"
-            variant="contained"
-            onClick={() => setOpen(true)}
-            startIcon={<Iconify icon="mingcute:add-fill" />}
+            onClick={() => setOpenCreate(true)}
             sx={{
-              borderRadius: 0.5,
+              bgcolor: '#FFFFFF',
+              border: '1.5px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1.15,
+              color: '#1340FF',
+              height: 44,
+              px: 2.5,
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              textTransform: 'none',
+              whiteSpace: 'nowrap',
+              '&:hover': {
+                bgcolor: 'rgba(19, 64, 255, 0.08)',
+                border: '1.5px solid #1340FF',
+                borderBottom: '3px solid #1340FF',
+                color: '#1340FF',
+              },
             }}
+            startIcon={<Iconify icon="mingcute:add-fill" width={16} />}
           >
             Create new Package
           </Button>
@@ -191,133 +236,130 @@ const Packages = () => {
         }}
       />
 
-      <Card>
-        <PackageTableToolbar filters={filters} onFilters={handleFilters} />
-
-        {canReset && (
-          <PackageTableFiltersResult
-            filters={filters}
-            onFilters={handleFilters}
-            //
-            onResetFilters={handleResetFilters}
-            //
-            results={dataFiltered.length}
-            sx={{ p: 2.5, pt: 0 }}
-          />
-        )}
-
-        <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
-          <TableSelectedAction
-            dense={table.dense}
-            numSelected={table.selected.length}
-            rowCount={dataFiltered.length}
-            onSelectAllRows={(checked) =>
-              table.onSelectAllRows(
-                checked,
-                dataFiltered.map((row) => row.id)
-              )
-            }
-            action={
-              <Tooltip title="Delete">
-                <IconButton color="primary">
-                  <Iconify icon="solar:trash-bin-trash-bold" />
-                </IconButton>
-              </Tooltip>
-            }
-          />
-
-          <Scrollbar>
-            <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
-              <TableHeadCustom
-                order={table.order}
-                orderBy={table.orderBy}
-                headLabel={TABLE_HEAD}
-                rowCount={dataFiltered.length}
-                numSelected={table.selected.length}
-                onSort={table.onSort}
-                onSelectAllRows={(checked) =>
-                  table.onSelectAllRows(
-                    checked,
-                    dataFiltered.map((row) => row.id)
-                  )
-                }
-              />
-
-              <TableBody>
-                {dataFiltered
-                  ?.slice(
-                    table.page * table.rowsPerPage,
-                    table.page * table.rowsPerPage + table.rowsPerPage
-                  )
-                  .map((row) => (
-                    <PackageTableRow
-                      key={row.id}
-                      row={row}
-                      selected={table.selected.includes(row.id)}
-                      onSelectRow={() => table.onSelectRow(row.id)}
-                      // onDeleteRow={() => handleDeleteRow(row.id)}
-                      // onEditRow={() => handleEditRow(row.id)}
-                    />
-                  ))}
-
-                <TableEmptyRows
-                  height={denseHeight}
-                  emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
-                />
-
-                <TableNoData notFound={notFound} />
-              </TableBody>
-            </Table>
-          </Scrollbar>
-        </TableContainer>
-
-        <TablePaginationCustom
-          count={dataFiltered.length}
-          page={table.page}
-          rowsPerPage={table.rowsPerPage}
-          onPageChange={table.onChangePage}
-          onRowsPerPageChange={table.onChangeRowsPerPage}
-          //
-          dense={table.dense}
-          onChangeDense={table.onChangeDense}
+      {/* Search Bar (match Credit Tier Management design) */}
+      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+        <TextField
+          placeholder="Search by package name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{
+            width: 340,
+            '& .MuiOutlinedInput-root': {
+              bgcolor: '#FFFFFF',
+              border: '1.5px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1.15,
+              height: 44,
+              fontSize: '0.85rem',
+              '& fieldset': {
+                border: 'none',
+              },
+              '&.Mui-focused': {
+                border: '1.5px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+              },
+            },
+            '& .MuiOutlinedInput-input': {
+              py: 1.25,
+              px: 0,
+              color: '#637381',
+              fontWeight: 600,
+              '&::placeholder': {
+                color: '#637381',
+                opacity: 1,
+                fontWeight: 400,
+              },
+            },
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
+              </InputAdornment>
+            ),
+          }}
         />
-      </Card>
+      </Stack>
 
-      {/* <PackageLists packages={data} /> */}
-      <PackageCreate open={open} onClose={() => setOpen(false)} />
-      <PackageEdit open={edit} onClose={() => setEdit(false)} />
+      <TableContainer
+        sx={{
+          width: '100%',
+          maxWidth: '100%',
+          overflowX: 'auto',
+          position: 'relative',
+          bgcolor: 'transparent',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          '&::-webkit-scrollbar': {
+            height: 8,
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: '#f5f5f5',
+            borderRadius: 4,
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: '#d0d0d0',
+            borderRadius: 4,
+            '&:hover': {
+              backgroundColor: '#b0b0b0',
+            },
+          },
+        }}
+      >
+        <Scrollbar>
+          <Table size="medium" sx={{ minWidth: 960, width: '100%' }}>
+            <TableHead>
+              <TableRow>
+                <SortableHeader column="name" label="Name" isFirst sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
+                <SortableHeader column="priceMYR" label="Price in MYR" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
+                <SortableHeader column="priceSGD" label="Price in SGD" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
+                <SortableHeader column="credits" label="UGC Credits" align="center" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
+                <SortableHeader column="validityPeriod" label="Validity Period" align="center" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
+                <SortableHeader column="createdAt" label="Created At" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
+                <TableCell
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    color: '#221f20',
+                    fontWeight: 600,
+                    width: 110,
+                    borderRadius: '0 10px 10px 0',
+                    bgcolor: '#f5f5f5',
+                    whiteSpace: 'nowrap',
+                  }}
+                />
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {filteredData?.map((row) => (
+                <PackageTableRow key={row.id} row={row} onEditRow={() => handleEditRow(row)} />
+              ))}
+            </TableBody>
+          </Table>
+        </Scrollbar>
+      </TableContainer>
+
+      {(!filteredData || filteredData.length === 0) && (
+        <EmptyContent
+          title="No packages found"
+          description={searchQuery ? 'Try adjusting your search query.' : 'Create your first package to get started.'}
+          sx={{ py: 10 }}
+        />
+      )}
+
+      <PackageCreate open={openCreate} onClose={() => setOpenCreate(false)} />
+      <PackageEdit
+        open={openEdit}
+        onClose={() => {
+          setOpenEdit(false);
+          setEditItem(null);
+        }}
+        item={editItem}
+        mutate={mutate}
+      />
     </Container>
   );
 };
 
 export default Packages;
-
-function applyFilter({ inputData, comparator, filters }) {
-  const { name, status, role } = filters;
-
-  const stabilizedThis = inputData?.map((el, index) => [el, index]);
-
-  stabilizedThis?.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
-
-  inputData = stabilizedThis?.map((el) => el[0]);
-
-  if (name) {
-    inputData = inputData.filter(
-      (user) => user?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1
-    );
-  }
-
-  if (status !== 'all') {
-    inputData = inputData.filter((user) => user.status === status);
-  }
-
-  if (role.length) {
-    inputData = inputData.filter((user) => role.includes(user?.admin?.role?.name));
-  }
-
-  return inputData;
-}

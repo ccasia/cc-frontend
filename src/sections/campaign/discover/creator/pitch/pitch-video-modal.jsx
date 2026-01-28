@@ -1,11 +1,11 @@
 /* eslint-disable no-plusplus */
 import axios from 'axios';
 import * as Yup from 'yup';
-import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import 'react-quill/dist/quill.snow.css';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { mutate as globalMutate } from 'swr';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 
@@ -17,7 +17,6 @@ import {
   Dialog,
   Typography,
   DialogTitle,
-  ListItemText,
   DialogActions,
   DialogContent,
 } from '@mui/material';
@@ -30,12 +29,12 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
-import Iconify from 'src/components/iconify';
+// import Iconify from 'src/components/iconify';
 import UploadPitch from 'src/components/pitch/upload-pitch';
 // import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
-import FormProvider from 'src/components/hook-form/form-provider';
+import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
-const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
+const CampaignPitchVideoModal = ({ open, handleClose, campaign, mutate }) => {
   const sources = useRef(null);
   const smUp = useResponsive('sm', 'down');
   const [source, setSource] = useState([]);
@@ -50,18 +49,20 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
   const schema = Yup.object().shape({
     pitchVideo: Yup.string().required('Pitch video is required'),
+    followerCount: Yup.string().optional(),
   });
 
   const methods = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       pitchVideo: '',
+      followerCount: user?.creator?.manualFollowerCount?.toString() || '',
     },
   });
 
   const { handleSubmit, setValue, watch } = methods;
 
-  const a = watch('pitchVideo');
+  const pitchVideo = watch('pitchVideo');
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -71,10 +72,14 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
         content: source.find((item) => item.campaignId === campaign?.id)?.url,
         type: 'video',
         status: 'undecided',
+        followerCount: data.followerCount,
       });
 
-      mutate(endpoints.auth.me);
-      mutate(endpoints.campaign.getMatchedCampaign);
+      globalMutate(endpoints.auth.me);
+      // Use the passed mutate function to refresh the campaign list (for useSWRInfinite)
+      if (mutate) {
+        await mutate();
+      }
       enqueueSnackbar(res?.data?.message);
       confirm.onFalse();
       handleClose();
@@ -285,9 +290,9 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
         fullScreen={smUp}
       >
         <FormProvider methods={methods} onSubmit={onSubmit}>
-          <DialogTitle>
+          <DialogTitle sx={{ pb: 2 }}>
             <Stack direction="column" spacing={2}>
-              <Button
+              {/* <Button
                 startIcon={<Iconify icon="eva:arrow-ios-back-fill" />}
                 onClick={handleClose}
                 sx={{
@@ -304,69 +309,83 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
                 }}
               >
                 Back
-              </Button>
-              <Stack direction="row" alignItems="center" gap={2}>
-                <ListItemText
-                  primary={<Typography fontSize={36} fontFamily="Instrument Serif">Video Pitch</Typography>}
-                  secondary={
-                    <Typography variant="body1" color="#636366" sx={{ fontSize: 16 }}>
-                      Upload your pitching video!
-                    </Typography>
-                  }
-                />
+              </Button> */}
+              <Stack direction="column" spacing={1}>
+                <Typography
+                  fontSize={36}
+                  fontFamily="Instrument Serif"
+                  sx={{ fontWeight: 400, lineHeight: 1.2 }}
+                >
+                  Video Pitch
+                </Typography>
+                <Typography variant="body1" color="#636366" sx={{ fontSize: 16, fontWeight: 500 }}>
+                  Upload your pitching video!
+                </Typography>
               </Stack>
             </Stack>
           </DialogTitle>
 
-          <Box px={2}>
-            <UploadPitch
-              name="pitchVideo"
-              type="video"
-              onDrop={handleDropSingleFile}
-              handleProgress={handleProgress}
-              source={source?.find((item) => item.campaignId === campaign.id)?.url}
-              sourceName={sourceName}
-              remove={handleRemove}
-              size={size}
-              removeVideo={removeVideo}
-            />
-          </Box>
+          <DialogContent sx={{ p: 3, pt: 2 }}>
+            <Stack spacing={2}>
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#636366',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    mb: 1,
+                    display: 'block',
+                  }}
+                >
+                  Instagram or TikTok Followers (use the highest between the two){' '}
+                  <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                </Typography>
+                <RHFTextField
+                  name="followerCount"
+                  fullWidth
+                  placeholder="Instagram or TikTok Followers"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#FFFFFF',
+                      borderRadius: 1.2,
+                      '& fieldset': {
+                        borderColor: '#e7e7e7',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#d0d0d0',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1340FF',
+                      },
+                    },
+                    '& .MuiOutlinedInput-input': {
+                      color: '#221f20',
+                      '&::placeholder': {
+                        color: '#B0B0B0',
+                        opacity: 1,
+                      },
+                    },
+                  }}
+                />
+              </Box>
+              <UploadPitch
+                name="pitchVideo"
+                type="video"
+                onDrop={handleDropSingleFile}
+                handleProgress={handleProgress}
+                source={source?.find((item) => item.campaignId === campaign.id)?.url}
+                sourceName={sourceName}
+                remove={handleRemove}
+                size={size}
+                removeVideo={removeVideo}
+              />
+            </Stack>
+          </DialogContent>
 
-          <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Stack spacing={2} width="100%">
-              <LoadingButton
-                fullWidth
-                variant="contained"
-                type="submit"
-                loading={loading}
-                disabled={progress.some((elem) => elem.campaignId === campaign.id) || !a}
-                sx={{
-                  mb: -1,
-                  backgroundColor: '#3a3a3c',
-                  color: 'white', 
-                  borderBottom: '3px solid',
-                  borderBottomColor: (progress.some((elem) => elem.campaignId === campaign.id) || !a) 
-                    ? 'rgba(0, 0, 0, 0.12)' 
-                    : '#202021',
-                  '&:hover': {
-                    backgroundColor: '#202021',
-                  },
-                  '&.Mui-disabled': {
-                    backgroundColor: '#b0b0b1',
-                    color: '#FFFFFF',
-                    borderBottom: '4px solid',
-                    borderBottomColor: '#9e9e9f',
-                  },
-                  fontSize: '1rem',
-                  padding: '12px 24px',
-                  height: '48px',
-                }}
-              >
-                Send Pitch
-              </LoadingButton>
-
+          <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
+            <Stack direction="row" spacing={1.5} width="100%" justifyContent="flex-end">
               <Button
-                fullWidth
                 variant="outlined"
                 onClick={() => {
                   handleClose();
@@ -376,16 +395,57 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
                 }}
                 sx={{
                   fontSize: '1rem',
+                  fontWeight: 600,
                   padding: '12px 24px',
                   height: '48px',
                   border: '1px solid #e7e7e7',
-                  borderBottom: '4px solid',
+                  borderBottom: '3px solid',
                   borderBottomColor: '#e7e7e7',
                   backgroundColor: '#FFFFFF',
+                  color: '#221f20',
+                  textTransform: 'none',
+                  borderRadius: 1,
+                  minWidth: 120,
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  },
                 }}
               >
                 Cancel
               </Button>
+              <LoadingButton
+                variant="contained"
+                type="submit"
+                loading={loading}
+                disabled={progress.some((elem) => elem.campaignId === campaign.id) || !pitchVideo}
+                sx={{
+                  backgroundColor: '#3a3a3c',
+                  color: 'white',
+                  borderBottom: '3px solid',
+                  borderBottomColor:
+                    progress.some((elem) => elem.campaignId === campaign.id) || !pitchVideo
+                      ? 'rgba(0, 0, 0, 0.12)'
+                      : '#202021',
+                  '&:hover': {
+                    backgroundColor: '#202021',
+                  },
+                  '&.Mui-disabled': {
+                    backgroundColor: '#b0b0b1',
+                    color: '#FFFFFF',
+                    borderBottom: '3px solid',
+                    borderBottomColor: '#9e9e9f',
+                  },
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  padding: '12px 24px',
+                  height: '48px',
+                  textTransform: 'none',
+                  borderRadius: 1,
+                  minWidth: 120,
+                }}
+              >
+                Send Pitch
+              </LoadingButton>
             </Stack>
           </DialogActions>
         </FormProvider>
@@ -401,4 +461,5 @@ CampaignPitchVideoModal.propTypes = {
   open: PropTypes.bool,
   handleClose: PropTypes.func,
   campaign: PropTypes.object,
+  mutate: PropTypes.func,
 };

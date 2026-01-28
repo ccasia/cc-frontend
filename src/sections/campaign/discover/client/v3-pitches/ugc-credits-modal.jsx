@@ -24,23 +24,30 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments, 
   
   // Credits are only utilized when agreement is sent
   // ugcLeft = total credits - credits from sent agreements (platform creators only)
+  // For credit tier campaigns: credits = ugcVideos * creditPerVideo (stored on shortlisted creator)
+  // For regular campaigns: credits = ugcVideos * 1
   const ugcLeft = (() => {
     if (!campaign?.campaignCredits) return 0;
-    
+
+    const isCreditTier = campaign?.isCreditTier === true;
+
     const sentAgreementUserIds = new Set(
       (agreements || campaign?.creatorAgreement || [])
         .filter(a => a.isSent)
         .map(a => a.userId)
     );
-    
+
     const utilizedCredits = (campaign?.shortlisted || []).reduce((total, creator) => {
-      if (sentAgreementUserIds.has(creator.userId) && 
+      if (sentAgreementUserIds.has(creator.userId) &&
           creator.user?.creator?.isGuest !== true) {
-        return total + (creator.ugcVideos || 0);
+        const videos = creator.ugcVideos || 0;
+        // For credit tier campaigns, use creditPerVideo; for regular campaigns, use 1
+        const creditsPerVideo = isCreditTier ? (creator.creditPerVideo || 1) : 1;
+        return total + (videos * creditsPerVideo);
       }
       return total;
     }, 0);
-    
+
     return Math.max(0, campaign.campaignCredits - utilizedCredits);
   })();
 

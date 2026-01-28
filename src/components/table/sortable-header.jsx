@@ -6,25 +6,39 @@ import TableCell from '@mui/material/TableCell';
 
 import Iconify from 'src/components/iconify';
 
-const SortableHeader = ({ column, label, width, minWidth, sortColumn, sortDirection, onSort, sx, align }) => {
+const SortableHeader = ({ column, label, width, minWidth, sortColumn, sortDirection, onSort, sx = {}, align }) => {
   const isActive = sortColumn === column;
+  
+  // If width/minWidth are provided as props (non-object), use them; otherwise let sx handle it
+  const baseStyles = {
+    py: { xs: 0.5, sm: 1 },
+    px: { xs: 1, sm: 2 },
+    color: '#221f20',
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+    bgcolor: '#f5f5f5',
+    cursor: 'pointer',
+    userSelect: 'none',
+    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+    '&:hover': {
+      bgcolor: '#ebebeb',
+    },
+  };
+  
+  // Add width/minWidth if they're simple values (not responsive objects)
+  if (width && typeof width !== 'object') {
+    baseStyles.width = width;
+  }
+  if (minWidth && typeof minWidth !== 'object') {
+    baseStyles.minWidth = minWidth;
+  }
+  
   return (
     <TableCell
       onClick={() => onSort(column)}
       sx={{
-        py: 1,
-        px: 1,
-        color: '#221f20',
-        fontWeight: 600,
-        width,
-        minWidth,
-        whiteSpace: 'nowrap',
-        bgcolor: '#f5f5f5',
-        cursor: 'pointer',
-        userSelect: 'none',
-        '&:hover': {
-          bgcolor: '#ebebeb',
-        },
+        ...baseStyles,
+        ...sx,
       }}
     >
       <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -45,8 +59,16 @@ const SortableHeader = ({ column, label, width, minWidth, sortColumn, sortDirect
 SortableHeader.propTypes = {
   column: PropTypes.string.isRequired,
   label: PropTypes.string.isRequired,
-  width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  minWidth: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  width: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number,
+    PropTypes.object, // For responsive values like { xs: 100, sm: '15%' }
+  ]),
+  minWidth: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number,
+    PropTypes.object, // For responsive values
+  ]),
   sortColumn: PropTypes.string,
   sortDirection: PropTypes.oneOf(['asc', 'desc']),
   onSort: PropTypes.func,

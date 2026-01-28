@@ -114,7 +114,7 @@ const MobileModalView = () => {
   const { isFormCompleted } = user.creator;
   const dialog = useBoolean();
 
-  const { data: campaignData } = useSWR(
+  const { data: campaignData, mutate } = useSWR(
     endpoints.campaign.creator.getCampaign(id),
     fetcher,
     {
@@ -132,23 +132,23 @@ const MobileModalView = () => {
   // });
 
   const existingPitch = useMemo(
-    () => user?.pitch && user?.pitch.find((item) => item.campaignId === campaignData?.id),
+    () => campaignData?.pitch?.find((item) => item.userId === user?.id && item.status !== 'draft'),
     [campaignData, user]
   );
 
   const draftPitch = useMemo(
-    () => user?.draftPitch && user?.draftPitch.find((item) => item.campaignId === campaignData?.id),
+    () => campaignData?.pitch?.find((item) => item.userId === user?.id && item.status === 'draft'),
     [campaignData, user]
   );
 
   const hasPitched = useMemo(
-    () => !!existingPitch && existingPitch.status !== 'draft',
+    () => !!existingPitch,
     [existingPitch]
   );
 
   const hasDraft = useMemo(
-    () => !!draftPitch || (existingPitch && existingPitch.status === 'draft'),
-    [draftPitch, existingPitch]
+    () => !!draftPitch,
+    [draftPitch]
   );
 
   const isShortlisted = useMemo(
@@ -631,6 +631,7 @@ const MobileModalView = () => {
 
       {campaignData ? <CampaignModalMobile campaign={campaignData} /> : <LoadingScreen />}
       <CampaignPitchOptionsModal
+        key={`pitch-options-${campaignData?.id}-${campaignData?.pitch?.length || 0}`}
         open={pitchOptionsOpen}
         handleClose={handlePitchOptionsClose}
         campaign={campaignData}
@@ -644,6 +645,7 @@ const MobileModalView = () => {
           value: videoPitchOpen,
           onFalse: handleCloseVideoPitch,
         }}
+        mutate={mutate}
       />
     </Container>
   );

@@ -18,8 +18,12 @@ import Button from '@mui/material/Button';
 import {
   Stack,
   Avatar,
+  Dialog,
   IconButton,
   Typography,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   LinearProgress,
 } from '@mui/material';
 
@@ -120,11 +124,15 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
   const { data: defaultTimelines } = useGetDefaultTimeLine();
 
   const [status, setStatus] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [brandState, setBrandState] = useState('');
   const [hasCreditError, setHasCreditError] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
+
+  const handleOpenConfirm = () => setConfirmOpen(true);
+  const handleCloseConfirm = () => setConfirmOpen(false);
 
   // Derive steps based on showAdditionalDetails state
   const steps = getSteps(showAdditionalDetails);
@@ -146,8 +154,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     campaignIndustries: Yup.array()
       .min(1, 'At least one industry is required')
       .required('Campaign industry is required.'),
-    campaignImages: Yup.array()
-      .min(1, 'Must have at least 1 image'),
+    campaignImages: Yup.array().min(1, 'Must have at least 1 image'),
     websiteLink: Yup.string(),
   });
 
@@ -167,13 +174,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       .required('Audience Gender is required.'),
     audienceAge: Yup.array().min(1, 'At least 1 option').required('Audience age is required.'),
     country: Yup.string().required('Country is required.'),
-    audienceLocation: Yup.array().when('country', {
-      is: 'Malaysia',
-      then: (schema) =>
-        schema.min(1, 'At least 1 option').required('Audience location is required.'),
-      otherwise: (schema) => schema.notRequired(),
-    }),
-    othersAudienceLocation: Yup.string(),
     audienceLanguage: Yup.array()
       .min(1, 'At least 1 option')
       .required('Audience language is required.'),
@@ -336,7 +336,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     countries: [],
     audienceGender: [],
     audienceAge: [],
-    audienceLocation: [],
     audienceLanguage: [],
     audienceCreatorPersona: [],
     audienceUserPersona: '',
@@ -346,12 +345,10 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     // Target audience secondary
     secondaryAudienceGender: [],
     secondaryAudienceAge: [],
-    secondaryAudienceLocation: [],
     secondaryAudienceLanguage: [],
     secondaryAudienceCreatorPersona: [],
     secondaryAudienceUserPersona: '',
     secondaryCountry: '',
-    secondaryOthersAudienceLocation: '',
 
     // Logistics
     logisticsType: '',
@@ -402,6 +399,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     submissionVersion: 'v2',
 
     isV4Submission: false,
+    isCreditTier: false,
   };
 
   const methods = useForm({
@@ -410,14 +408,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     mode: 'onChange',
   });
 
-  const {
-    handleSubmit,
-    getValues,
-    reset,
-    setValue,
-    watch,
-    trigger,
-  } = methods;
+  const { handleSubmit, getValues, reset, setValue, watch, trigger } = methods;
 
   // Watch all form values to trigger re-render when values change
   const formValues = watch();
@@ -442,7 +433,13 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           'campaignImages',
         ];
       case 1: // Objective
-        return ['campaignObjectives', 'secondaryObjectives', 'boostContent', 'primaryKPI', 'performanceBaseline'];
+        return [
+          'campaignObjectives',
+          'secondaryObjectives',
+          'boostContent',
+          'primaryKPI',
+          'performanceBaseline',
+        ];
       case 2: // Audience
         return [
           'country',
@@ -450,7 +447,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           'audienceGender',
           'audienceLanguage',
           'audienceCreatorPersona',
-          'geographicFocus'
+          'geographicFocus',
         ];
       case 3: // Logistics
         return ['logisticsType'];
@@ -681,7 +678,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     // Build campaign data object
     const campaignData = {
       ...data,
-      audienceLocation: data.audienceLocation.filter((item) => item !== 'Others'),
       rawFootage: data.deliverables.includes('RAW_FOOTAGES'),
       photos: data.deliverables.includes('PHOTOS'),
       ads: data.deliverables.includes('ADS'),
@@ -701,9 +697,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       },
       campaignStage: stage,
       // Additional details
-      secondaryObjectives: Array.isArray(data.secondaryObjectives)
-        ? data.secondaryObjectives
-        : [],
+      secondaryObjectives: Array.isArray(data.secondaryObjectives) ? data.secondaryObjectives : [],
       boostContent: data.boostContent || '',
       primaryKPI: data.primaryKPI || '',
       performanceBaseline: data.performanceBaseline || '',
@@ -713,9 +707,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
         : [],
       secondaryAudienceAge: Array.isArray(data.secondaryAudienceAge)
         ? data.secondaryAudienceAge
-        : [],
-      secondaryAudienceLocation: Array.isArray(data.secondaryAudienceLocation)
-        ? data.secondaryAudienceLocation.filter((item) => item !== 'Others')
         : [],
       secondaryAudienceLanguage: Array.isArray(data.secondaryAudienceLanguage)
         ? data.secondaryAudienceLanguage
@@ -900,7 +891,16 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           return null;
       }
     },
-    [openCompany, openBrand, openPackage, isLoading, getValues, onSubmit, handleContinueAdditionalDetails, handlePackageLinkSuccess]
+    [
+      openCompany,
+      openBrand,
+      openPackage,
+      isLoading,
+      getValues,
+      onSubmit,
+      handleContinueAdditionalDetails,
+      handlePackageLinkSuccess,
+    ]
   );
 
   // Check if current step has required fields filled
@@ -911,11 +911,17 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
         const desc = formValues.campaignDescription;
         const startDate = formValues.campaignStartDate;
         const endDate = formValues.campaignEndDate;
-        const {productName} = formValues;
+        const { productName } = formValues;
         const industries = formValues.campaignIndustries;
         const images = formValues.campaignImages;
         return (
-          title && desc && productName && industries?.length > 0 && images?.length > 0 && startDate && endDate 
+          title &&
+          desc &&
+          productName &&
+          industries?.length > 0 &&
+          images?.length > 0 &&
+          startDate &&
+          endDate
         );
       }
       case 1: {
@@ -924,29 +930,37 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
         const boost = formValues.boostContent;
         const kpi = formValues.primaryKPI;
         const baseline = formValues.performanceBaseline;
-        return objectives && secObjectives && boost && kpi && baseline
+        return objectives && secObjectives && boost && kpi && baseline;
       }
       case 2: {
-        const {country} = formValues;
+        const { country } = formValues;
         const age = formValues.audienceAge;
         const gender = formValues.audienceGender;
         const language = formValues.audienceLanguage;
         const interests = formValues.audienceCreatorPersona;
         const persona = formValues.audienceUserPersona;
-        const {geographicFocus} = formValues;
-        return country && age?.length > 0 && gender?.length > 0 && language?.length > 0 && interests?.length > 0 && persona && geographicFocus;
+        const { geographicFocus } = formValues;
+        return (
+          country &&
+          age?.length > 0 &&
+          gender?.length > 0 &&
+          language?.length > 0 &&
+          interests?.length > 0 &&
+          persona &&
+          geographicFocus
+        );
       }
       case 3: {
         const type = formValues.logisticsType;
         if (!type) return true; // Optional step
 
         if (type === 'PRODUCT_DELIVERY') {
-          const {products} = formValues;
+          const { products } = formValues;
           return products?.some((p) => p.name?.trim().length > 0);
         }
 
         if (type === 'RESERVATION') {
-          const {locations} = formValues;
+          const { locations } = formValues;
           return locations?.some((l) => l.name?.trim().length > 0);
         }
 
@@ -960,15 +974,23 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
         return true; // Optional
       case 6: {
         // Finalise step - includes client/brand/credits validation
-        const {client} = formValues;
+        const { client } = formValues;
         const credits = formValues.campaignCredits;
         const brand = formValues.campaignBrand;
         const manager = formValues.campaignManager;
         const type = formValues.campaignType;
-        const {deliverables} = formValues;
+        const { deliverables } = formValues;
         // If client is agency type, brand is required
         if (client?.type === 'agency' && !brand) return false;
-        return client && credits && credits > 0 && !hasCreditError && manager?.length > 0 && type && deliverables?.length > 0;
+        return (
+          client &&
+          credits &&
+          credits > 0 &&
+          !hasCreditError &&
+          manager?.length > 0 &&
+          type &&
+          deliverables?.length > 0
+        );
       }
       case 7: // Next Steps - navigation only
       case 8:
@@ -1255,14 +1277,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
                 </Button>
                 <LoadingButton
                   variant="contained"
-                  onClick={() => {
-                    const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
-                      ? 'ACTIVE'
-                      : 'SCHEDULED';
-                    setStatus(campaignStatus);
-                    // Directly trigger form submission with the campaign status
-                    onSubmit(campaignStatus);
-                  }}
+                  onClick={handleOpenConfirm}
                   disabled={isLoading || !isStepValid()}
                   sx={{
                     bgcolor: '#1340FF',
@@ -1282,14 +1297,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
             {activeStep === 9 && (
               <LoadingButton
                 variant="contained"
-                onClick={() => {
-                  const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
-                    ? 'ACTIVE'
-                    : 'SCHEDULED';
-                  setStatus(campaignStatus);
-                  // Directly trigger form submission with the campaign status
-                  onSubmit(campaignStatus);
-                }}
+                onClick={handleOpenConfirm}
                 disabled={isLoading || !isStepValid()}
                 sx={{
                   bgcolor: '#1340FF',
@@ -1304,6 +1312,91 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
               </LoadingButton>
             )}
           </Stack>
+
+          {/* Confirmation Dialog */}
+          <Dialog
+            open={confirmOpen}
+            onClose={handleCloseConfirm}
+            maxWidth="xs"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: 3,
+              },
+            }}
+          >
+            <DialogTitle sx={{ textAlign: 'center', pb: 0 }}>
+              <Iconify icon="mdi:rocket-launch" width={32} sx={{ color: '#1340FF' }} />
+              <Typography variant="h6" mt={1}>
+                Confirm Campaign
+              </Typography>
+            </DialogTitle>
+            <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Are you sure you want to publish this campaign?
+              </Typography>
+            </DialogContent>
+            <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
+              <Button variant="contained" onClick={handleCloseConfirm} sx={{ px: 2, py: 1.2 }}>
+                Cancel
+              </Button>
+              {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
+                      ? 'ACTIVE'
+                      : 'SCHEDULED';
+                    setStatus(campaignStatus);
+                    // Directly trigger form submission with the campaign status
+                    onSubmit(campaignStatus);
+                  }}
+                  startIcon={<Iconify icon="material-symbols:publish" />}
+                  disabled={isLoading}
+                  sx={{
+                    bgcolor: '#1340FF',
+                    px: 4,
+                    py: 1.2,
+                    fontWeight: 600,
+                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                    '&:hover': {
+                      bgcolor: '#0030e0',
+                    },
+                  }}
+                >
+                  {isLoading ? 'Publishing...' : 'Publish Now'}
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
+                      ? 'ACTIVE'
+                      : 'SCHEDULED';
+                    setStatus(campaignStatus);
+                    // Directly trigger form submission with the campaign status
+                    onSubmit(campaignStatus);
+                  }}
+                  disabled={isLoading}
+                  startIcon={<Iconify icon="mdi:calendar-clock" />}
+                  sx={{
+                    bgcolor: '#1340FF',
+                    px: 4,
+                    py: 1.2,
+                    fontWeight: 600,
+                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                    '&:hover': {
+                      bgcolor: '#0030e0',
+                    },
+                  }}
+                >
+                  {isLoading
+                    ? 'Scheduling...'
+                    : `Schedule on ${dayjs(campaignStartDate).format('ddd LL')}`}
+                </Button>
+              )}
+            </DialogActions>
+          </Dialog>
         </Stack>
 
         <Box

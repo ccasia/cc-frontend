@@ -104,6 +104,9 @@ const InvoiceDetail = lazy(() => import('src/pages/dashboard/creator/invoice-det
 // import the packages pages
 const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 
+// Credit Tier
+const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tier'));
+
 // Mobile View
 const MobileModalView = lazy(
   () => import('src/sections/campaign/discover/creator/mobile-modal-view')
@@ -111,6 +114,9 @@ const MobileModalView = lazy(
 
 // Creator Profile
 const CreatorProfile = lazy(() => import('src/pages/dashboard/creator/profile'));
+
+// FAQ
+const FaqPage = lazy(() => import('src/pages/faq'));
 
 // ----------------------------------------------------------------------
 
@@ -602,12 +608,24 @@ export const dashboardRoutes = [
         element: <Packages />,
       },
       {
+        path: 'credit-tier',
+        element: (
+          <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+            <CreditTier />
+          </RoleBasedGuard>
+        ),
+      },
+      {
         path: 'template',
         element: <Template />,
       },
       {
         path: 'overview',
         element: <Overview />,
+      },
+      {
+        path: 'faq',
+        element: <FaqPage />,
       },
     ],
   },

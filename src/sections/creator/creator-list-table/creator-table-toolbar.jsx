@@ -5,12 +5,8 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Popover from '@mui/material/Popover';
 import MenuItem from '@mui/material/MenuItem';
-import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Select, InputLabel } from '@mui/material';
-import FormControl from '@mui/material/FormControl';
-import ListItemText from '@mui/material/ListItemText';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import Iconify from 'src/components/iconify';
@@ -23,7 +19,6 @@ export default function CreatorTableToolbar({
   onFilters,
   ageRange,
   onAgeRangeChange,
-  pronounceOptions,
 }) {
   const popover = usePopover();
 
@@ -115,24 +110,6 @@ export default function CreatorTableToolbar({
             max={100}
           />
           <Divider sx={{ my: 2 }} /> */}
-          <Typography gutterBottom>Gender</Typography>
-          <FormControl fullWidth>
-            <InputLabel id="gender">Gender</InputLabel>
-            <Select
-              labelId="gender"
-              multiple
-              value={filters.pronounce}
-              onChange={(event) => onFilters('pronounce', event.target.value)}
-              renderValue={(selected) => selected.join(', ')}
-            >
-              {pronounceOptions.map((option) => (
-                <MenuItem key={option} value={option}>
-                  <Checkbox checked={filters.pronounce.indexOf(option) > -1} />
-                  <ListItemText primary={option} />
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
         </Popover>
       </Stack>
 
@@ -178,5 +155,4 @@ CreatorTableToolbar.propTypes = {
   onFilters: PropTypes.func,
   ageRange: PropTypes.array,
   onAgeRangeChange: PropTypes.func,
-  pronounceOptions: PropTypes.array,
 };

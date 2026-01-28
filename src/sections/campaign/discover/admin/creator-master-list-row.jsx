@@ -6,13 +6,15 @@ import { Box, Link, Stack, Avatar, Button, Tooltip, TableRow, TableCell, Typogra
 
 import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
+import { getOutreachStatusConfig } from 'src/contants/outreach';
+
 import Iconify from 'src/components/iconify';
 
 /**
  * CreatorMasterListRow component renders a single creator row in the master list table
  * Displays creator insights sourced directly from pitch payloads
  */
-const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
+const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isCreditTier }) => {
   const theme = useTheme();
   // Profile link is stored on Creator model
   const instagramStats = pitch?.user?.creator?.instagramUser || null;
@@ -75,18 +77,33 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
       return {
         username: usernameFromStats || profileUsername || '-',
         engagementRate: pickValue(bestAccount.engagement, pitch?.engagementRate),
-        followerCount: pickValue(bestAccount.followers, pitch?.followerCount),
+        followerCount: pickValue(bestAccount.followers, pitch?.followerCount, pitch?.user?.creator?.manualFollowerCount),
       };
     }
 
     return {
       username: profileUsername || '-',
       engagementRate: pitch?.engagementRate ?? null,
-      followerCount: pitch?.followerCount ?? null,
+      followerCount: pitch?.followerCount ?? pitch?.user?.creator?.manualFollowerCount ?? null,
     };
   };
 
   const displayData = getDisplayData();
+
+  // Get tier data for credit tier campaigns
+  const getTierData = () => {
+    // First check creator's current tier
+    const creatorTier = pitch?.user?.creator?.creditTier;
+    if (creatorTier) {
+      return {
+        name: creatorTier.name,
+        creditsPerVideo: creatorTier.creditsPerVideo,
+      };
+    }
+    return null;
+  };
+
+  const tierData = isCreditTier ? getTierData() : null;
 
   const statusInfo = getStatusInfo(pitch);
 
@@ -118,6 +135,59 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
           </Avatar>
           <Typography variant="body2">{pitch.user?.name}</Typography>
         </Stack>
+      </TableCell>
+      <TableCell>
+        {(() => {
+          const outreachConfig = getOutreachStatusConfig(pitch.outreachStatus);
+
+          if (!outreachConfig) {
+            // Not Set - dashed style
+            return (
+              <Box
+                sx={{
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  py: 0.5,
+                  px: 1,
+                  fontSize: 12,
+                  color: '#8E8E93',
+                  border: '1px dashed #D0D0D0',
+                  borderRadius: 0.8,
+                  bgcolor: 'white',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Not Set
+              </Box>
+            );
+          }
+
+          // Status is set - colored chip
+          return (
+            <Box
+              sx={{
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                py: 0.5,
+                px: 1,
+                fontSize: 12,
+                border: '1px solid',
+                borderBottom: '3px solid',
+                borderRadius: 0.8,
+                bgcolor: 'white',
+                whiteSpace: 'nowrap',
+                color: outreachConfig.color,
+                borderColor: outreachConfig.color,
+              }}
+            >
+              {outreachConfig.label}
+            </Box>
+          );
+        })()}
       </TableCell>
       <TableCell>
         {hasPlatformLinks ? (
@@ -202,6 +272,18 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
           {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
         </Typography>
       </TableCell>
+      {isCreditTier && (
+        <TableCell>
+          <Typography variant="body2">{tierData?.name || '-'}</Typography>
+        </TableCell>
+      )}
+      {isCreditTier && (
+        <TableCell>
+          <Typography variant="body2">
+            {tierData?.creditsPerVideo ? `${tierData.creditsPerVideo}` : '-'}
+          </Typography>
+        </TableCell>
+      )}
       <TableCell>
         <Box
           sx={{
@@ -235,29 +317,28 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
       </TableCell>
       <TableCell>
         <Button
-          variant="outlined"
-          size="small"
           onClick={() => onViewPitch(pitch)}
           sx={{
-            cursor: 'pointer',
-            px: 1.5,
-            py: 2,
-            border: '1px solid #e7e7e7',
+            bgcolor: '#FFFFFF',
+            border: '1.5px solid #e7e7e7',
             borderBottom: '3px solid #e7e7e7',
             borderRadius: 1,
-            color: '#203ff5',
-            fontSize: '0.85rem',
+            color: '#1340FF',
+            height: 36,
+            px: 2,
+            py: 1.5,
             fontWeight: 600,
-            height: '28px',
+            fontSize: '0.85rem',
+            textTransform: 'none',
+            whiteSpace: 'nowrap',
+            minWidth: '90px',
             display: 'flex',
             alignItems: 'center',
-            textTransform: 'none',
-            bgcolor: 'transparent',
-            whiteSpace: 'nowrap',
             '&:hover': {
-              bgcolor: 'rgba(32, 63, 245, 0.04)',
-              border: '1px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
+              bgcolor: 'rgba(19, 64, 255, 0.08)',
+              border: '1.5px solid #1340FF',
+              borderBottom: '3px solid #1340FF',
+              color: '#1340FF',
             },
           }}
         >
@@ -272,6 +353,8 @@ CreatorMasterListRow.propTypes = {
   pitch: PropTypes.object.isRequired,
   getStatusInfo: PropTypes.func.isRequired,
   onViewPitch: PropTypes.func.isRequired,
+  campaign: PropTypes.object,
+  isCreditTier: PropTypes.bool,
 };
 
 export default CreatorMasterListRow;

@@ -1,14 +1,11 @@
 import PropTypes from 'prop-types';
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useMemo, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import {
-  Select,
   MenuItem,
   TextField,
   IconButton,
-  InputLabel,
-  FormControl,
   InputAdornment,
 } from '@mui/material';
 

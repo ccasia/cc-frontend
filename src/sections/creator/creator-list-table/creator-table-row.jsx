@@ -1,13 +1,13 @@
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
-import { Avatar } from '@mui/material';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import { Avatar, Typography } from '@mui/material';
 import ListItemText from '@mui/material/ListItemText';
 
 import { paths } from 'src/routes/paths';
@@ -47,6 +47,20 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
 
   const router = useRouter();
 
+  // Get tier data for the creator
+  const getTierData = () => {
+    const creditTier = creator?.creditTier;
+    if (creditTier) {
+      return {
+        name: creditTier.name,
+        creditsPerVideo: creditTier.creditsPerVideo,
+      };
+    }
+    return null;
+  };
+
+  const tierData = getTierData();
+
   return (
     <>
       <TableRow hover selected={selected} key={row?.id}>
@@ -66,7 +80,11 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
             }}
           />
         </TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{creator?.pronounce || 'null'}</TableCell>
+        <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
+          <Typography fontSize={13.5} whiteSpace="nowrap">
+            {tierData?.name || '-'}
+          </Typography>
+        </TableCell>
 
         {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{creator?.tiktok || 'null'}</TableCell> */}
 

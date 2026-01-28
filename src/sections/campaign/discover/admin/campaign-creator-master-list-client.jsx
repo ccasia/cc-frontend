@@ -31,6 +31,9 @@ import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
 import { extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
+import { useAuthContext } from 'src/auth/hooks';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import EmptyContent from 'src/components/empty-content/empty-content';
@@ -39,6 +42,7 @@ import PitchModal from './pitch-modal';
 import MediaKitModal from './media-kit-modal';
 import PitchModalMobile from './pitch-modal-mobile';
 import CreatorMasterListRow from './creator-master-list-row';
+import usePitchSocket from '../client/v3-pitches/use-pitch-socket';
 
 // Status display helper function
 const getStatusInfo = (pitch) => {
@@ -95,6 +99,8 @@ const getStatusInfo = (pitch) => {
 };
 
 const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
+  const { user } = useAuthContext();
+  const { socket } = useSocketContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
@@ -118,6 +124,14 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     isLoading: v3PitchesLoading,
     mutate: v3PitchesMutate,
   } = useGetV3Pitches(fetchV3Pitches ? campaign?.id : null);
+
+  // Listen for real-time outreach status updates
+  usePitchSocket({
+    socket,
+    campaignId: campaign?.id,
+    onOutreachUpdate: () => v3PitchesMutate?.(),
+    userId: user?.id,
+  });
 
   // Create a list of creators from the shortlisted array and pitches
   const creators = useMemo(() => {
@@ -152,8 +166,10 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               followerCount: pitch.followerCount,
               engagementRate: pitch.engagementRate,
               isShortlisted: false,
+              outreachStatus: pitch.outreachStatus,
             }))
           .filter((creator) => !!creator.user && !!creator.user.id)
+          .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT')
       );
     }
 
@@ -188,8 +204,10 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
       ? campaign.pitches
           .filter(
             (pitch) =>
-              // Only include pitches that aren't already in shortlisted
-              !shortlistedCreators.some((sc) => sc.id === pitch.userId)
+              // Only include pitches that aren't already in shortlisted and exclude drafts
+              !shortlistedCreators.some((sc) => sc.id === pitch.userId) &&
+              pitch.status !== 'draft' &&
+              pitch.status !== 'DRAFT'
           )
           .map((pitch) => ({
             pitchId: pitch.id,
@@ -212,6 +230,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
             isShortlisted: false,
             // pitchId: pitch.id,
             isV3: false,
+            outreachStatus: pitch.outreachStatus,
           }))
           .filter((creator) => creator.user && creator.user.creator)
       : [];
@@ -827,6 +846,18 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                       py: 1,
                       color: '#221f20',
                       fontWeight: 600,
+                      width: 140,
+                      bgcolor: '#f5f5f5',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Outreach Status
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      py: 1,
+                      color: '#221f20',
+                      fontWeight: 600,
                       width: 350,
                       bgcolor: '#f5f5f5',
                       whiteSpace: 'nowrap',
@@ -858,6 +889,34 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                   >
                     Follower Count
                   </TableCell>
+                  {campaign?.isCreditTier && (
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
+                        fontWeight: 600,
+                        width: 100,
+                        bgcolor: '#f5f5f5',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Tier
+                    </TableCell>
+                  )}
+                  {campaign?.isCreditTier && (
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
+                        fontWeight: 600,
+                        width: 80,
+                        bgcolor: '#f5f5f5',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Credits
+                    </TableCell>
+                  )}
                   <TableCell
                     sx={{
                       py: 1,
@@ -889,7 +948,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               <TableBody>
                 {filteredCreators.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={7} align="center">
                       <EmptyContent sx={{ py: 10 }} title="No creators found" filled />
                     </TableCell>
                   </TableRow>
@@ -900,6 +959,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                       pitch={pitch}
                       getStatusInfo={getStatusInfo}
                       onViewPitch={handleViewPitch}
+                      campaign={campaign}
+                      isCreditTier={campaign?.isCreditTier}
                     />
                   ))
                 )}

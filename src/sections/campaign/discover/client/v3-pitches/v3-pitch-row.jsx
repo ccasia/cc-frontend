@@ -1,13 +1,17 @@
-import React from 'react';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
+import { useSnackbar } from 'notistack';
+import React, { useState } from 'react';
 
-import { Box, Link, Stack, Avatar, Tooltip, TableRow, TableCell, Typography, IconButton } from '@mui/material';
+import { Box, Link, Stack, Avatar, Tooltip, Popover, MenuItem, TableRow, TableCell, Typography, IconButton, CircularProgress } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { fDate } from 'src/utils/format-time';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+
+import { OUTREACH_STATUS_OPTIONS, getOutreachStatusConfig } from 'src/contants/outreach';
 
 import Iconify from 'src/components/iconify';
 
@@ -69,8 +73,46 @@ const getStatusText = (status, pitch, campaign) => {
   return statusTextMap[status] || status;
 };
 
-const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch, onRemoved, isDisabled = false }) => {
+const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, isCreditTier, onViewPitch, onRemoved, onOutreachUpdate, isDisabled = false }) => {
   const smUp = useResponsive('up', 'sm');
+  const { enqueueSnackbar } = useSnackbar();
+
+  // Outreach status dropdown state
+  const [outreachAnchorEl, setOutreachAnchorEl] = useState(null);
+  const [outreachLoading, setOutreachLoading] = useState(false);
+  const outreachPopoverOpen = Boolean(outreachAnchorEl);
+
+  const handleOutreachClick = (event) => {
+    if (isDisabled || pitch._isShortlistedOnly) return;
+    event.stopPropagation();
+    setOutreachAnchorEl(event.currentTarget);
+  };
+
+  const handleOutreachClose = () => {
+    setOutreachAnchorEl(null);
+  };
+
+  const handleOutreachSelect = async (statusValue) => {
+    handleOutreachClose();
+
+    // Don't update if same status
+    if (statusValue === pitch.outreachStatus) return;
+
+    try {
+      setOutreachLoading(true);
+      await axiosInstance.patch(endpoints.campaign.pitch.v3.outreachStatus(pitch.id), {
+        outreachStatus: statusValue,
+      });
+
+      enqueueSnackbar('Outreach status updated', { variant: 'success' });
+      onOutreachUpdate?.();
+    } catch (error) {
+      console.error('Error updating outreach status:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to update outreach status', { variant: 'error' });
+    } finally {
+      setOutreachLoading(false);
+    }
+  };
 
   // Helper to extract username from stats or profile link
   const getUsername = (stats, profileLink) => stats?.username || (profileLink ? extractUsernameFromProfileLink(profileLink) : undefined);
@@ -84,7 +126,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
   const instagramUsername = getUsername(instagramStats, instagramProfileLink);
   const tiktokUsername = getUsername(tiktokStats, tiktokProfileLink);
   const profileUsername = profileLink ? extractUsernameFromProfileLink(profileLink) : undefined;
-  
+
   // Check if we have any social usernames to display
   const hasSocialUsernames = instagramUsername || tiktokUsername;
 
@@ -100,9 +142,30 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
       followerCount: resolveMetric(
         instagramStats?.followers_count,
         tiktokStats?.follower_count,
-        pitch.followerCount
+        pitch.followerCount,
+        pitch.user?.creator?.manualFollowerCount // Fallback for manually entered count
       ),
     };
+  };
+
+  // Get tier data from synthetic shortlisted row or creator's current tier
+  const getTierData = () => {
+    // For synthetic shortlisted rows (manually added creators), use the tier snapshot
+    if (pitch._isShortlistedOnly && pitch._creditTier) {
+      return {
+        name: pitch._creditTier.name,
+        creditsPerVideo: pitch._creditPerVideo || pitch._creditTier.creditsPerVideo,
+      };
+    }
+    // For regular pitches, use creator's current tier
+    const creatorTier = pitch.user?.creator?.creditTier;
+    if (creatorTier) {
+      return {
+        name: creatorTier.name,
+        creditsPerVideo: creatorTier.creditsPerVideo,
+      };
+    }
+    return null;
   };
 
   const displayData = getDisplayData();
@@ -111,7 +174,12 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
     <TableRow
     // hover
     >
-      <TableCell>
+      <TableCell
+        sx={{
+          py: { xs: 0.5, sm: 1 },
+          px: { xs: 1, sm: 2 },
+        }}
+      >
         <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1 }}>
           <Avatar
             src={pitch.user?.photoURL}
@@ -184,12 +252,214 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           </Stack>
         </Stack>
       </TableCell>
-      <TableCell sx={{ px: 1 }}>
-        <Typography variant="body2" fontSize={13.5}>
-          {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
-        </Typography>
+      {/* Outreach Status Cell */}
+      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
+        {(() => {
+          const outreachConfig = getOutreachStatusConfig(pitch.outreachStatus);
+          const isSynthetic = pitch._isShortlistedOnly;
+
+          // For synthetic shortlisted rows (no real pitch record), show "Not Set" non-clickable
+          if (isSynthetic) {
+            return (
+              <Typography fontSize={13.5} sx={{ color: '#8E8E93' }}>
+                —
+              </Typography>
+            );
+          }
+
+          // No status set - show placeholder
+          if (!outreachConfig) {
+            return (
+              <Box
+                onClick={handleOutreachClick}
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  py: 0.5,
+                  px: 1,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: '#8E8E93',
+                  border: '1px dashed #D0D0D0',
+                  borderRadius: 0.8,
+                  bgcolor: 'white',
+                  whiteSpace: 'nowrap',
+                  cursor: isDisabled ? 'default' : 'pointer',
+                  opacity: isDisabled ? 0.6 : 1,
+                  '&:hover': !isDisabled && {
+                    borderColor: '#8E8E93',
+                    bgcolor: '#FAFAFA',
+                  },
+                }}
+              >
+                {outreachLoading ? (
+                  <CircularProgress size={12} sx={{ color: '#8E8E93' }} />
+                ) : (
+                  <>
+                    Not Set
+                    {!isDisabled && <Iconify icon="eva:chevron-down-fill" width={14} />}
+                  </>
+                )}
+              </Box>
+            );
+          }
+
+          // Status is set - show colored chip
+          return (
+            <Box
+              onClick={handleOutreachClick}
+              sx={{
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.5,
+                py: 0.5,
+                px: 1,
+                fontSize: 12,
+                border: '1px solid',
+                borderBottom: '3px solid',
+                borderRadius: 0.8,
+                bgcolor: 'white',
+                whiteSpace: 'nowrap',
+                color: outreachConfig.color,
+                borderColor: outreachConfig.color,
+                cursor: isDisabled ? 'default' : 'pointer',
+                opacity: isDisabled ? 0.6 : 1,
+                '&:hover': !isDisabled && {
+                  opacity: 0.85,
+                },
+              }}
+            >
+              {outreachLoading ? (
+                <CircularProgress size={12} sx={{ color: outreachConfig.color }} />
+              ) : (
+                <>
+                  {outreachConfig.label}
+                  {!isDisabled && <Iconify icon="eva:chevron-down-fill" width={14} />}
+                </>
+              )}
+            </Box>
+          );
+        })()}
+
+        {/* Outreach Status Popover */}
+        <Popover
+          open={outreachPopoverOpen}
+          anchorEl={outreachAnchorEl}
+          onClose={handleOutreachClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+          slotProps={{
+            paper: {
+              sx: {
+                mt: 0.5,
+                p: 1.25,
+                bgcolor: 'white',
+                boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
+                borderRadius: 1.5,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+              },
+            },
+          }}
+        >
+          {OUTREACH_STATUS_OPTIONS.map((option) => (
+            <Box
+              key={option.value}
+              onClick={() => handleOutreachSelect(option.value)}
+              sx={{
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                py: 0.75,
+                px: 1.5,
+                fontSize: 13,
+                border: '1px solid',
+                borderBottom: '3px solid',
+                borderRadius: 0.8,
+                bgcolor: 'white',
+                whiteSpace: 'nowrap',
+                color: option.color,
+                borderColor: option.color,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
+                ...(pitch.outreachStatus === option.value && {
+                  boxShadow: `0px 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 2px ${option.color}20`,
+                }),
+                '&:hover': {
+                  bgcolor: '#F5F5F5',
+                },
+              }}
+            >
+              <Box component="span" sx={{ flex: 1, textAlign: 'left' }}>{option.label}</Box>
+              {pitch.outreachStatus === option.value && (
+                <Iconify icon="eva:checkmark-fill" width={16} sx={{ ml: 1, flexShrink: 0 }} />
+              )}
+            </Box>
+          ))}
+        </Popover>
       </TableCell>
-      <TableCell sx={{ px: 1 }}>
+      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
+        {displayData.followerCount ? (
+          <Tooltip 
+            title={displayData.followerCount.toLocaleString()} 
+            arrow
+            placement="top"
+            componentsProps={{
+              tooltip: {
+                sx: {
+                  bgcolor: '#221f20',
+                  fontSize: '0.75rem',
+                  '& .MuiTooltip-arrow': {
+                    color: '#221f20',
+                  },
+                },
+              },
+            }}
+          >
+            <Typography variant="body2" fontSize={13.5} sx={{ cursor: 'help', display: 'inline-block' }}>
+              {formatNumber(displayData.followerCount)}
+            </Typography>
+          </Tooltip>
+        ) : (
+          <Typography variant="body2" fontSize={13.5}>-</Typography>
+        )}
+      </TableCell>
+      {isCreditTier && (
+        <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
+          {(() => {
+            const tierData = getTierData();
+            if (!tierData) {
+              return <Typography fontSize={13.5}>-</Typography>;
+            }
+            return (
+              <Stack alignItems="start">
+                <Typography fontSize={13.5} whiteSpace="nowrap">
+                  {tierData.name}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  fontSize={13.5}
+                  sx={{
+                    color: '#8e8e93',
+                    display: 'block',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {tierData.creditsPerVideo} credit{tierData.creditsPerVideo !== 1 ? 's' : ''}
+                </Typography>
+              </Stack>
+            );
+          })()}
+        </TableCell>
+      )}
+      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
         <Stack alignItems="start">
           <Typography fontSize={13.5} whiteSpace="nowrap">
             {fDate(pitch.createdAt)}
@@ -206,10 +476,10 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           </Typography>
         </Stack>
       </TableCell>
-      <TableCell sx={{ px: 1 }}>
+      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
         <PitchTypeCell type={pitch.type} isGuestCreator={isGuestCreator} />
       </TableCell>
-      <TableCell sx={{ px: 1 }}>
+      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
         <Box
           sx={{
             textTransform: 'uppercase',
@@ -242,7 +512,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           )}
         </Box>
       </TableCell>
-      <TableCell sx={{ padding: 0, paddingRight: 1 }}>
+      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
         {smUp ? (
           <V3PitchActions pitch={pitch} onViewPitch={onViewPitch} campaignId={campaign?.id} onRemoved={onRemoved} isDisabled={isDisabled} />
         ) : (
@@ -261,8 +531,10 @@ PitchRow.propTypes = {
   statusInfo: PropTypes.object.isRequired,
   isGuestCreator: PropTypes.bool,
   campaign: PropTypes.object,
+  isCreditTier: PropTypes.bool,
   onViewPitch: PropTypes.func.isRequired,
   onRemoved: PropTypes.func,
+  onOutreachUpdate: PropTypes.func,
   isDisabled: PropTypes.bool,
 };
 

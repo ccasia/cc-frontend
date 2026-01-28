@@ -226,6 +226,7 @@ export const endpoints = {
         setAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
         submitAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/submit-agreement`,
         withdraw: (pitchId) => `/api/pitch/v3/${pitchId}/withdraw`,
+        outreachStatus: (pitchId) => `/api/pitch/v3/${pitchId}/outreach-status`,
       },
     },
     draft: {
@@ -332,9 +333,15 @@ export const endpoints = {
     create: '/api/package/',
     root: '/api/package/',
     seed: '/api/packages/seedPackages',
-    get: (id) => `/api/packages/${id}`,
-    update: (id) => `/api/packages/${id}`,
+    get: (id) => `/api/package/${id}`,
+    update: (id) => `/api/package/${id}`,
     history: `/api/packages/history/`,
+  },
+  creditTier: {
+    root: '/api/credit-tier',
+    create: '/api/credit-tier',
+    update: (id) => `/api/credit-tier/${id}`,
+    delete: (id) => `/api/credit-tier/${id}`,
   },
   invoice: {
     getAll: '/api/invoice/',

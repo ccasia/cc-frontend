@@ -409,6 +409,27 @@ const FinaliseCampaign = ({
         </Typography>
       </Stack>
 
+      {/* Credit Tier Toggle */}
+      <Stack>
+        <Stack direction="row" alignItems="center" mb={-0.5}>
+          <Typography
+            sx={{
+              fontWeight: 700,
+              color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+              fontSize: '0.875rem',
+              mr: 2,
+            }}
+          >
+            Enable Credit Tier pricing?
+          </Typography>
+          <RHFSwitch name="isCreditTier" color="primary" />
+        </Stack>
+        <Typography variant="subtitle2" fontWeight={400} color="text.secondary">
+          When enabled, creator costs are based on their follower count tier instead of flat 1 credit
+          per video.
+        </Typography>
+      </Stack>
+
       {/* Campaign Managers (left) and Campaign Type (right) */}
       <Stack direction="row" spacing={2}>
         <Stack flex={1}>

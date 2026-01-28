@@ -84,7 +84,6 @@ const CampaignFirstDraft = ({
   submission,
   getDependency,
   fullSubmission,
-  openLogisticTab,
   setCurrentTab,
   deliverablesData,
 }) => {
@@ -2786,7 +2785,6 @@ CampaignFirstDraft.propTypes = {
   submission: PropTypes.object,
   getDependency: PropTypes.func,
   fullSubmission: PropTypes.array,
-  openLogisticTab: PropTypes.func,
   setCurrentTab: PropTypes.func,
   deliverablesData: PropTypes.object,
 };

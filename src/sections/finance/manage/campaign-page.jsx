@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // import { Stack, Container, Button } from '@mui/material';
-import { Box, Container, CircularProgress } from '@mui/material';
+import { Container } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
@@ -11,6 +11,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 

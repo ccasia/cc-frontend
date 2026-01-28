@@ -256,6 +256,10 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
           shortlistedCreator: {
             amount: null,
             currency: 'MYR',
+            ugcVideos: creator.ugcVideos,
+            creditPerVideo: creator.creditPerVideo,
+            creditTierId: creator.creditTierId,
+            creditTier: creator.creditTier,
           },
           isNew: true,
         };
@@ -281,6 +285,10 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         shortlistedCreator: {
           amount: null,
           currency: 'MYR',
+          ugcVideos: creator.ugcVideos,
+          creditPerVideo: creator.creditPerVideo,
+          creditTierId: creator.creditTierId,
+          creditTier: creator.creditTier,
         },
         isNew: true,
       };

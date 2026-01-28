@@ -90,6 +90,43 @@ const CampaignAgreementEdit = ({
   const isGuestCreator = agreement?.user?.creator?.isGuest === true;
   const requiresUGCCredits = !isGuestCreator;
 
+  // Get credit tier data for display (only for credit tier campaigns)
+  const getTierData = () => {
+    // Try multiple sources for tier data
+    const shortlisted = agreement?.user?.shortlisted?.[0] || agreement?.shortlistedCreator;
+
+    // First try: creditTier from shortlisted record
+    if (shortlisted?.creditTier) {
+      return {
+        name: shortlisted.creditTier?.name || 'Unknown Tier',
+        creditsPerVideo: shortlisted.creditPerVideo ?? shortlisted.creditTier?.creditsPerVideo ?? 1,
+      };
+    }
+
+    // Second try: creditTier from creator record (current tier)
+    const creatorTier = agreement?.user?.creator?.creditTier;
+    if (creatorTier) {
+      return {
+        name: creatorTier.name || 'Unknown Tier',
+        creditsPerVideo: creatorTier.creditsPerVideo ?? 1,
+      };
+    }
+
+    // Third try: look in campaign.shortlisted for this user
+    const campaignShortlisted = campaign?.shortlisted?.find(
+      (s) => s.userId === agreement?.user?.id
+    );
+    if (campaignShortlisted?.creditTier) {
+      return {
+        name: campaignShortlisted.creditTier?.name || 'Unknown Tier',
+        creditsPerVideo: campaignShortlisted.creditPerVideo ?? campaignShortlisted.creditTier?.creditsPerVideo ?? 1,
+      };
+    }
+
+    return null;
+  };
+  const tierData = campaign?.isCreditTier ? getTierData() : null;
+
   const schema = useMemo(
     () =>
       yup.object().shape({
@@ -128,6 +165,7 @@ const CampaignAgreementEdit = ({
   const isDefault = watch('default');
   const selectedCurrency = watch('currency');
   const ugcCreditsValue = watch('ugcCredits');
+  const paymentAmountValue = watch('paymentAmount');
 
   useEffect(() => {
     const currentCredits =
@@ -158,6 +196,7 @@ const CampaignAgreementEdit = ({
   }, [campaign]);
 
   // Calculate used credits by OTHER creators (excluding current creator)
+  // For credit tier campaigns, multiply ugcVideos by creditPerVideo
   const usedCreditsByOthers = React.useMemo(() => {
     if (!campaign?.campaignCredits) return null;
     if (!agreements || !campaign?.shortlisted) return 0;
@@ -175,7 +214,10 @@ const CampaignAgreementEdit = ({
         creator.user?.creator?.isGuest !== true &&
         creator.ugcVideos
       ) {
-        return acc + (creator.ugcVideos || 0);
+        // For credit tier campaigns, use creditPerVideo multiplier
+        const videos = creator.ugcVideos || 0;
+        const creditsPerVideo = campaign?.isCreditTier ? (creator.creditPerVideo || 1) : 1;
+        return acc + (videos * creditsPerVideo);
       }
       return acc;
     }, 0);
@@ -188,6 +230,38 @@ const CampaignAgreementEdit = ({
 
     return Math.max(0, Number(campaign.campaignCredits) - usedCreditsByOthers);
   }, [campaign, usedCreditsByOthers]);
+
+  // Calculate total credits this creator will cost
+  const creatorCost = useMemo(() => {
+    if (!requiresUGCCredits) return 0;
+    const videos = Number(ugcCreditsValue) || 0;
+    return campaign?.isCreditTier
+      ? (tierData?.creditsPerVideo || 1) * videos
+      : videos;
+  }, [campaign?.isCreditTier, ugcCreditsValue, tierData, requiresUGCCredits]);
+
+  // Calculate remaining credits in real-time as user types
+  const realTimeCreditsLeft = useMemo(() => {
+    if (!campaign?.campaignCredits) return null; // Unlimited campaign
+    if (maxCreditsAllowed === null) return null;
+    return maxCreditsAllowed - creatorCost;
+  }, [campaign?.campaignCredits, maxCreditsAllowed, creatorCost]);
+
+  // Determine if form is invalid for button state
+  const isFormInvalid = useMemo(() => {
+    // Payment must be filled
+    if (!paymentAmountValue || paymentAmountValue === '') return true;
+
+    // For non-guest creators, credits must be filled
+    if (requiresUGCCredits && (!ugcCreditsValue || ugcCreditsValue === '')) return true;
+
+    // For campaigns with credit limits, check if exceeded
+    if (campaign?.campaignCredits && requiresUGCCredits) {
+      if (realTimeCreditsLeft !== null && realTimeCreditsLeft < 0) return true;
+    }
+
+    return false;
+  }, [paymentAmountValue, requiresUGCCredits, ugcCreditsValue, campaign?.campaignCredits, realTimeCreditsLeft]);
 
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
@@ -342,7 +416,7 @@ const CampaignAgreementEdit = ({
                   color: '#835cf5',
                 }}
               />
-              <Typography variant="h6">Assign Credits and Set Agreement</Typography>
+              <Typography variant="h6">{campaign?.isCreditTier ? 'Assign Video Amount and Set Agreement' : 'Assign Credits and Set Agreement'}</Typography>
             </Stack>
 
             <Box sx={{ borderBottom: '1px solid #e7e7e7' }} />
@@ -366,14 +440,9 @@ const CampaignAgreementEdit = ({
             )}
 
             <Stack spacing={1}>
-              <Stack direction="row" justifyContent="space-between">
-                <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600 }}>
-                  Recipient
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600 }}>
-                  Credits Assigned: {agreement?.user?.shortlisted[0].ugcVideos || 0}
-                </Typography>
-              </Stack>
+              <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600 }}>
+                Recipient
+              </Typography>
 
               <Stack direction="row" alignItems="center" spacing={2}>
                 {agreement?.user?.photoURL ? (
@@ -403,11 +472,43 @@ const CampaignAgreementEdit = ({
                     {agreement?.user?.name?.charAt(0).toUpperCase()}
                   </Box>
                 )}
-                <Stack>
-                  <Typography variant="subtitle1">{agreement?.user?.name}</Typography>
-                  <Typography variant="body2" sx={{ color: '#637381' }}>
-                    {agreement?.user?.email}
-                  </Typography>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" flex={1}>
+                  <Stack>
+                    <Typography variant="subtitle1">{agreement?.user?.name}</Typography>
+                    <Typography variant="body2" sx={{ color: '#637381' }}>
+                      {agreement?.user?.email}
+                    </Typography>
+                  </Stack>
+                  {campaign?.isCreditTier && tierData && (
+                    <Stack direction="row" spacing={1}>
+                      <Box
+                        sx={{
+                          px: 1,
+                          py: 0.5,
+                          border: '1px solid #EBEBEB',
+                          borderRadius: 0.8,
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {tierData.name}
+                      </Box>
+                      <Box
+                        sx={{
+                          px: 1,
+                          py: 0.5,
+                          border: '1px solid #EBEBEB',
+                          borderRadius: 0.8,
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {tierData.creditsPerVideo} credits/video
+                      </Box>
+                    </Stack>
+                  )}
                 </Stack>
               </Stack>
             </Stack>
@@ -472,11 +573,15 @@ const CampaignAgreementEdit = ({
                   }}
                 />
 
-                {requiresUGCCredits && (
+              </Box>
+
+              {/* UGC Credits / Video Amount Section */}
+              {requiresUGCCredits && (
+                <Stack spacing={1} sx={{ mt: 1 }}>
                   <RHFTextField
                     name="ugcCredits"
                     type="number"
-                    label="UGC Credits"
+                    label={campaign?.isCreditTier ? "Video Amount" : "UGC Credits"}
                     InputLabelProps={{ shrink: true }}
                     inputProps={{
                       min: 1,
@@ -485,12 +590,10 @@ const CampaignAgreementEdit = ({
                     disabled={maxCreditsAllowed === 0}
                     onChange={(e) => {
                       const {value} = e.target;
-                      // Allow empty value (user is deleting)
                       if (value === '') {
                         setValue('ugcCredits', '');
                         return;
                       }
-                      // Enforce max credits limit
                       if (maxCreditsAllowed !== null && Number(value) > maxCreditsAllowed) {
                         setValue('ugcCredits', String(maxCreditsAllowed));
                       } else {
@@ -498,21 +601,102 @@ const CampaignAgreementEdit = ({
                       }
                     }}
                     value={ugcCreditsValue}
-                    helperText={
-                      maxCreditsAllowed !== null ? (
-                        <Typography noWrap whiteSpace="none" variant="caption">
-                          {campaign?.creditsPending} credit(s) remaining
-                        </Typography>
-                      ) : undefined
-                    }
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 1,
                       },
                     }}
                   />
-                )}
-              </Box>
+
+                  {/* Credit Summary */}
+                  {campaign?.campaignCredits && (() => {
+                    const isExceeded = realTimeCreditsLeft !== null && realTimeCreditsLeft < 0;
+                    const isUsingAll = realTimeCreditsLeft === 0 && creatorCost > 0;
+
+                    const getBgColor = () => {
+                      if (isExceeded) return '#FFF1F0';
+                      if (isUsingAll) return '#FFF8E5';
+                      return '#F8F9FA';
+                    };
+
+                    const getBorderColor = () => {
+                      if (isExceeded) return '#FFCCC7';
+                      if (isUsingAll) return '#FFE58F';
+                      return '#E8EAED';
+                    };
+
+                    const getRemainingColor = () => {
+                      if (isExceeded) return '#CF1322';
+                      if (isUsingAll) return '#D46B08';
+                      return '#5F6368';
+                    };
+
+                    return (
+                      <Box
+                        sx={{
+                          px: 1.5,
+                          py: 1.25,
+                          borderRadius: 1.5,
+                          bgcolor: getBgColor(),
+                          border: '1px solid',
+                          borderColor: getBorderColor(),
+                        }}
+                      >
+                        <Stack spacing={0.75}>
+                          <Stack direction="row" justifyContent="space-between" alignItems="center">
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: isExceeded ? '#CF1322' : '#5F6368',
+                                fontWeight: 500,
+                              }}
+                            >
+                              Cost: {creatorCost} credit{creatorCost !== 1 ? 's' : ''}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontWeight: 600,
+                                color: getRemainingColor(),
+                              }}
+                            >
+                              {Math.max(0, realTimeCreditsLeft ?? 0)} credits remaining
+                            </Typography>
+                          </Stack>
+
+                          {/* Error message when credits exceeded */}
+                          {isExceeded && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: '#CF1322',
+                                lineHeight: 1.5,
+                                fontSize: '0.7rem',
+                              }}
+                            >
+                              Creator cost exceeds the remaining credits. Please reduce the {campaign?.isCreditTier ? 'video amount' : 'credits'} or increase the campaign budget.
+                            </Typography>
+                          )}
+
+                          {/* Warning message when using all remaining */}
+                          {isUsingAll && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: '#D46B08',
+                                lineHeight: 1.5,
+                                fontSize: '0.7rem',
+                              }}
+                            >
+                              This will use all remaining campaign credits
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Box>
+                    );
+                  })()}
+                </Stack>
+              )}
               <RHFCheckbox
                 name="default"
                 label="Default"
@@ -528,20 +712,24 @@ const CampaignAgreementEdit = ({
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button
             onClick={dialog.onFalse}
-            variant="outlined"
             disabled={loading.value}
             sx={{
-              minHeight: 48,
-              minWidth: 100,
-              border: '1px solid #e7e7e7',
+              bgcolor: '#FFFFFF',
+              border: '1.5px solid #e7e7e7',
               borderBottom: '3px solid #e7e7e7',
               borderRadius: 1.15,
-              color: '#3a3a3c',
+              color: '#1340FF',
+              height: 44,
+              minWidth: 100,
+              px: 2.5,
               fontWeight: 600,
+              fontSize: '1rem',
+              textTransform: 'none',
               '&:hover': {
-                bgcolor: '#f5f5f7',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
+                bgcolor: 'rgba(19, 64, 255, 0.08)',
+                border: '1.5px solid #1340FF',
+                borderBottom: '3px solid #1340FF',
+                color: '#1340FF',
               },
             }}
           >
@@ -550,27 +738,32 @@ const CampaignAgreementEdit = ({
 
           <LoadingButton
             type="submit"
-            variant="contained"
             loading={loading.value}
-            disabled={campaign?.campaignCredits && maxCreditsAllowed === 0}
+            disabled={loading.value || isFormInvalid}
             loadingIndicator={
-              <SyncLoader color={settings.themeMode === 'light' ? 'black' : 'white'} size={5} />
+              <SyncLoader color="white" size={5} />
             }
             sx={{
-              minHeight: 48,
-              minWidth: 100,
-              bgcolor: '#3a3a3c',
-              borderBottom: '3px solid #202021',
+              bgcolor: '#1340FF',
+              border: '1.5px solid #1340FF',
+              borderBottom: '3px solid #0D2BA8',
               borderRadius: 1.15,
+              color: '#FFFFFF',
+              height: 44,
+              minWidth: 100,
+              px: 2.5,
               fontWeight: 600,
+              fontSize: '1rem',
+              textTransform: 'none',
               '&:hover': {
-                bgcolor: '#3a3a3c',
-                opacity: 0.9,
+                bgcolor: '#0D2BA8',
+                color: '#FFFFFF',
               },
               '&.Mui-disabled': {
-                bgcolor: '#e0e0e0',
-                color: '#9e9e9e',
-                borderBottom: '3px solid #bdbdbd',
+                bgcolor: '#B0B0B1',
+                border: '1.5px solid #B0B0B1',
+                borderBottom: '3px solid #9E9E9F',
+                color: '#FFFFFF',
               },
             }}
           >

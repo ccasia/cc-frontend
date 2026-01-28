@@ -2,7 +2,7 @@
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router';
 import { enqueueSnackbar } from 'notistack';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 import { alpha, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -16,8 +16,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import useSocketContext from 'src/socket/hooks/useSocketContext';
-
 import Image from 'src/components/image';
 
 import CreatorForm from './creator-form';
@@ -26,15 +24,11 @@ import CampaignModal from './campaign-modal';
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate }) {
-  const [upload, setUpload] = useState([]);
-  const [, setLoading] = useState(false);
   const dialog = useBoolean();
   const campaignID = localStorage.getItem('campaign');
   const campaignInfo = useBoolean(campaignID === campaign.id);
 
   const navigation = useNavigate();
-
-  const { socket } = useSocketContext();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -45,45 +39,8 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
 
   const router = useRouter();
 
-  useEffect(() => {
-    const handlePitchLoading = (data) => {
-      setLoading(true);
-
-      if (upload.find((item) => item.campaignId === data.campaignId)) {
-        setUpload((prev) =>
-          prev.map((item) =>
-            item.campaignId === data.campaignId
-              ? {
-                  campaignId: data.campaignId,
-                  loading: true,
-                  progress: Math.floor(data.progress),
-                }
-              : item
-          )
-        );
-      } else {
-        setUpload((item) => [
-          ...item,
-          { loading: true, campaignId: data.campaignId, progress: Math.floor(data.progress) },
-        ]);
-      }
-    };
-
-    const handlePitchSuccess = (data) => {
-      mutate();
-      enqueueSnackbar(data.name);
-      setUpload((prevItems) => prevItems.filter((item) => item.campaignId !== data.campaignId));
-      setLoading(false);
-    };
-
-    socket?.on('pitch-loading', handlePitchLoading);
-    socket?.on('pitch-uploaded', handlePitchSuccess);
-
-    return () => {
-      socket?.off('pitch-loading', handlePitchLoading);
-      socket?.off('pitch-uploaded', handlePitchSuccess);
-    };
-  }, [socket, upload, mutate]);
+  // Note: Socket listeners for pitch-loading/pitch-uploaded are handled in the parent component
+  // to avoid duplicate listeners per campaign item
 
   const saveCampaign = async (campaignId) => {
     try {
@@ -347,8 +304,9 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
 
       <CreatorForm dialog={dialog} user={user} />
 
-      {!isMobile && (
+      {!isMobile && campaignInfo.value && (
         <CampaignModal
+          key={`modal-${campaign.id}-${campaign.pitch?.length || 0}`}
           dialog={dialog}
           open={campaignInfo.value}
           // handleClose={() => {
@@ -377,6 +335,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
           onSaveCampaign={saveCampaign}
           onUnsaveCampaign={unSaveCampaign}
           onOpenCreatorForm={onOpenCreatorForm}
+          mutate={mutate}
         />
       )}
     </>

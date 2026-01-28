@@ -2,7 +2,6 @@ import { Helmet } from 'react-helmet-async';
 
 import { useParams } from 'src/routes/hooks';
 
-import CampaignDetailManageView from 'src/sections/campaign/manage/details/view/campaign-details-manage-view';
 import CampaignDetailsManageViewV2 from 'src/sections/campaign/manage/details/view/campaign-details-manage-view-v2';
 
 // ----------------------------------------------------------------------

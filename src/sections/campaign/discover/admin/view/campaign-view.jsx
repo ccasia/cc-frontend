@@ -7,18 +7,18 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
+  Menu,
   Stack,
   Button,
   Dialog,
+  Avatar,
+  MenuItem,
   Container,
   InputBase,
-  Typography,
-  CircularProgress,
-  Autocomplete,
   TextField,
-  Avatar,
-  Menu,
-  MenuItem,
+  Typography,
+  Autocomplete,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -642,6 +642,7 @@ const CampaignView = () => {
                     borderRadius: '8px',
                     px: 2.5,
                     py: 1,
+                    bottom: 5,
                     fontSize: '0.9rem',
                     cursor: isDisabled ? 'not-allowed' : 'pointer',
                     '&:hover': {
