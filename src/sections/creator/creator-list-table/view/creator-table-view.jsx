@@ -147,7 +147,7 @@ function CreatorTableView() {
 
   const confirm = useBoolean();
 
-  const [tableData, setTableData] = useState(creators);
+  const [tableData, setTableData] = useState([]);
 
   const [filters, setFilters] = useState(defaultFilters);
 
@@ -463,34 +463,39 @@ export default withPermission(['list:creator'], CreatorTableView);
 // export default CreatorTableView;
 
 function applyFilter({ inputData, comparator, filters, ageRange }) {
+  // Return empty array if inputData is undefined or null
+  if (!inputData || !Array.isArray(inputData)) {
+    return [];
+  }
+
   const { name, status } = filters;
 
-  const stabilizedThis = inputData?.map((el, index) => [el, index]);
+  const stabilizedThis = inputData.map((el, index) => [el, index]);
 
-  stabilizedThis?.sort((a, b) => {
+  stabilizedThis.sort((a, b) => {
     const order = comparator(a[0], b[0]);
     if (order !== 0) return order;
     return a[1] - b[1];
   });
 
-  inputData = stabilizedThis?.map((el) => el[0]);
+  inputData = stabilizedThis.map((el) => el[0]);
 
   if (name) {
-    inputData = inputData?.filter(
+    inputData = inputData.filter(
       (user) => user?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1
     );
   }
 
   if (status !== 'all') {
-    inputData = inputData?.filter((user) => user.status.toLowerCase() === status.toLowerCase());
+    inputData = inputData.filter((user) => user?.status?.toLowerCase() === status.toLowerCase());
   }
 
   if (filters.pronounce.length) {
-    inputData = inputData?.filter((user) => filters.pronounce.includes(user.creator.pronounce));
+    inputData = inputData.filter((user) => user?.creator?.pronounce && filters.pronounce.includes(user.creator.pronounce));
   }
 
   // Filter by age range
-  // inputData = inputData?.filter((user) => {
+  // inputData = inputData.filter((user) => {
   //   const age = calculateAge(user.creator.birthDate);
   //   return age >= ageRange[0] && age <= ageRange[1];
   // });
