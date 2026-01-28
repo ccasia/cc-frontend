@@ -883,7 +883,7 @@ const CampaignDetailView = ({ id }) => {
               variant="h5"
               sx={{
                 fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.5rem', sm: '2rem', md: '2.4rem' },
+                fontSize: { xs: '1.5rem', sm: '2rem' },
                 fontWeight: 550,
               }}
             >
