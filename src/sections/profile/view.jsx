@@ -496,7 +496,7 @@ const Profile = () => {
           </Button>
         )}
 
-        <Button
+        {/* <Button
           component={Link}
           to={paths.dashboard.user.profileTabs.agreement}
           disableRipple
@@ -543,7 +543,7 @@ const Profile = () => {
           startIcon={<Iconify icon="solar:settings-bold" width={20} />}
         >
           Agreement
-        </Button>
+        </Button> */}
       </Stack>
 
       {/* Indicator for more tabs */}
@@ -1161,7 +1161,7 @@ const Profile = () => {
       {(user?.admin?.role?.name === 'Finance' || user?.role === 'superadmin') &&
         currentTab === 'api' && <API />}
 
-      {currentTab === 'agreements' && (
+      {/* {currentTab === 'agreements' && (
         <PDFViewer style={{ width: '100%', height: 600 }}>
           <AgreementTemplate
             DATE="asdas"
@@ -1179,7 +1179,7 @@ const Profile = () => {
             SIGNATURE="ADSAD"
           />
         </PDFViewer>
-      )}
+      )} */}
     </>
   );
 
