@@ -3152,8 +3152,7 @@ const CampaignAnalytics = ({ campaign, isDisabled = false }) => {
             if (reportState === 'generate') {
               // Start loading
               setReportState('loading');
-              
-              // Simulate report generation (replace with actual API call)
+        
               setTimeout(() => {
                 setReportState('view');
               }, 3000); // 3 second loading simulation
