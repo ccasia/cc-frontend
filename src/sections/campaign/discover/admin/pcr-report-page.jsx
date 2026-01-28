@@ -13,6 +13,7 @@ import SendIcon from '@mui/icons-material/Send';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { Box, Grid, Link, Button, Avatar, Popover, Snackbar, TextField, Typography, IconButton, InputAdornment, CircularProgress } from '@mui/material';
+import { PieChart } from '@mui/x-charts';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -734,7 +735,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       console.log('Platform Chart - Submissions:', filteredSubmissions?.length);
       
       if (!filteredInsightsData || filteredInsightsData.length === 0) {
-        console.log('Platform Chart - No data, returning zeros');
+        console.log('Platform Chart - No data, returning zero values');
         return { instagram: 0, tiktok: 0, total: 0 };
       }
 
@@ -782,29 +783,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filteredInsightsData, filteredSubmissions]);
 
-    // Calculate percentages for the donut chart
-    const instagramPercentage = platformData.total > 0 ? (platformData.instagram / platformData.total) * 100 : 0;
+    // Prepare data for PieChart - order matters for positioning
+    // Calculate angles for positioning
     const tiktokPercentage = platformData.total > 0 ? (platformData.tiktok / platformData.total) * 100 : 0;
+    const instagramPercentage = platformData.total > 0 ? (platformData.instagram / platformData.total) * 100 : 0;
     
-    // Add gap between segments (2 degrees gap = ~2.8 units at radius 80)
-    const gapDegrees = 2;
-    const gapLength = (gapDegrees / 360) * (80 * 2 * Math.PI);
+    // TikTok leader line is at -135° (top-left), Instagram leader line is at 45° (bottom-right)
+    // Put TikTok first so it starts at -135° where its leader line is
+    const startAngle = -135; // Start at TikTok leader line position
     
-    // Calculate angles for segments
-    // TikTok starts at -45 degrees (top-left), goes clockwise
-    const tiktokStartAngle = -45;
-    const tiktokSweepAngle = (tiktokPercentage / 100) * 360 - gapDegrees;
-    const tiktokEndAngle = tiktokStartAngle + tiktokSweepAngle;
-    
-    // Instagram starts at 135 degrees (bottom-right), goes counter-clockwise
-    const instagramStartAngle = 135;
-    const instagramSweepAngle = (instagramPercentage / 100) * 360 - gapDegrees;
-    const instagramEndAngle = instagramStartAngle - instagramSweepAngle;
-    
-    // Calculate path lengths for stroke-dasharray
-    const circumference = 80 * 2 * Math.PI;
-    const tiktokPathLength = (tiktokPercentage / 100) * circumference - gapLength;
-    const instagramPathLength = (instagramPercentage / 100) * circumference - gapLength;
+    // Order: TikTok first, then Instagram
+    const chartData = [
+      { id: 0, value: platformData.tiktok, label: 'TikTok', color: '#000000' },
+      { id: 1, value: platformData.instagram, label: 'Instagram', color: '#C13584' },
+    ].filter((item) => item.value > 0);
 
     return (
       <Box
@@ -845,72 +837,42 @@ const PCRReportPage = ({ campaign, onBack }) => {
           Platform Interactions
         </Typography>
 
-        {/* Donut Chart with External Labels */}
-        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '280px', overflow: 'visible' }}>
-          <svg width="280" height="240" viewBox="0 0 280 240" style={{ overflow: 'visible' }}>
-            {/* Background circle */}
-            <circle
-              cx="140"
-              cy="120"
-              r="80"
-              fill="transparent"
-              stroke="#E5E7EB"
-              strokeWidth="18"
-            />
-            
-            {/* TikTok segment (black) - connects to top-left arrow */}
-            {platformData.tiktok > 0 && (
-              <circle
-                cx="140"
-                cy="120"
-                r="80"
-                fill="transparent"
-                stroke="#000000"
-                strokeWidth="18"
-                strokeDasharray={`${tiktokPathLength} ${circumference}`}
-                strokeLinecap="round"
-                // Start at -45 degrees (top-left where arrow connects)
-                transform="rotate(-45 140 120)"
-              />
-            )}
-            
-            {/* Instagram segment (magenta/pink) - connects to bottom-right arrow */}
-            {platformData.instagram > 0 && (
-              <circle
-                cx="140"
-                cy="120"
-                r="80"
-                fill="transparent"
-                stroke="#C13584"
-                strokeWidth="18"
-                strokeDasharray={`${instagramPathLength} ${circumference}`}
-                strokeLinecap="round"
-                // Start at 135 degrees (bottom-right where arrow connects)
-                transform="rotate(135 140 120)"
-              />
-            )}
-            
-            {/* TikTok leader line - top left */}
-            {platformData.tiktok > 0 && (
-              <>
-                <line x1="83" y1="63" x2="80" y2="30" stroke="#000000" strokeWidth="1.5" />
-                <line x1="80" y1="30" x2="15" y2="30" stroke="#000000" strokeWidth="1.5" />
-              </>
-            )}
-            
-            {/* Instagram leader line - bottom right */}
-            {platformData.instagram > 0 && (
-              <>
-                <line x1="197" y1="177" x2="200" y2="210" stroke="#C13584" strokeWidth="1.5" />
-                <line x1="200" y1="210" x2="265" y2="210" stroke="#C13584" strokeWidth="1.5" />
-              </>
-            )}
-          </svg>
+        {/* Donut Chart with MUI Charts and Custom Leader Lines */}
+        <Box sx={{ position: 'relative', width: '100%', height: '320px', overflow: 'visible', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          {/* MUI Charts PieChart - Donut style */}
+          <PieChart
+            width={360}
+            height={320}
+            series={[
+              {
+                data: chartData,
+                innerRadius: 90,
+                outerRadius: 110,
+                paddingAngle: 2,
+                cornerRadius: 12,
+                cx: 180,
+                cy: 160,
+                startAngle: startAngle,
+              },
+            ]}
+            slotProps={{
+              legend: { hidden: true },
+            }}
+            sx={{
+              '& .MuiChartsArc-root': {
+                stroke: 'none',
+              },
+            }}
+          />
+          
           
           {/* Center text */}
           <Box
             sx={{
               position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -948,96 +910,102 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </Typography>
           </Box>
 
-          {/* TikTok external label - positioned on the leader line at top-left */}
+          {/* TikTok indicator - black */}
           {platformData.tiktok > 0 && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '28px', 
-              left: '5px', 
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              justifyContent: 'center',
-            }}
-          >
-            <Typography
+            <Box
               sx={{
-                fontFamily: 'Aileron',
-                fontWeight: 400,
-                fontStyle: 'italic',
-                fontSize: '12px',
-                lineHeight: '14px',
-                letterSpacing: '0%',
-                color: '#000000B2',
-                mb: 0,
-                pb: '6px', 
+                position: 'absolute',
+                top: '20px',
+                left: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
               }}
             >
-              TikTok
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: 'Aileron',
-                fontWeight: 400,
-                fontStyle: 'normal',
-                fontSize: '12px',
-                lineHeight: '14px',
-                letterSpacing: '0%',
-                color: '#000000B2',
-                mt: 0,
-                pt: '6px', // Increased gap above the number (below the line)
-              }}
-            >
-              {formatNumber(platformData.tiktok)}
-            </Typography>
-          </Box>
+              <Box
+                sx={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  bgcolor: '#000000',
+                  flexShrink: 0,
+                }}
+              />
+              <Box>
+                <Typography
+                  sx={{
+                    fontFamily: 'Aileron',
+                    fontWeight: 400,
+                    fontStyle: 'italic',
+                    fontSize: '12px',
+                    lineHeight: '14px',
+                    color: '#000000B2',
+                  }}
+                >
+                  TikTok
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: 'Aileron',
+                    fontWeight: 400,
+                    fontSize: '12px',
+                    lineHeight: '14px',
+                    color: '#000000B2',
+                  }}
+                >
+                  {formatNumber(platformData.tiktok)}
+                </Typography>
+              </Box>
+            </Box>
           )}
 
-          {/* Instagram external label - positioned on the leader line at bottom-right */}
+          {/* Instagram indicator - magenta */}
           {platformData.instagram > 0 && (
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: '32px', 
-              right: '5px', 
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end',
-              justifyContent: 'center',
-            }}
-          >
-            <Typography
+            <Box
               sx={{
-                fontFamily: 'Aileron',
-                fontWeight: 400,
-                fontStyle: 'italic',
-                fontSize: '12px',
-                lineHeight: '14px',
-                letterSpacing: '0%',
-                color: '#000000B2',
-                mb: 0,
-                pb: '6px',
+                position: 'absolute',
+                bottom: '20px',
+                right: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
               }}
             >
-              Instagram
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: 'Aileron',
-                fontWeight: 400,
-                fontStyle: 'normal',
-                fontSize: '12px',
-                lineHeight: '14px',
-                letterSpacing: '0%',
-                color: '#000000B2',
-                mt: 0,
-                pt: '2px',
-              }}
-            >
-              {formatNumber(platformData.instagram)}
-            </Typography>
-          </Box>
+              <Box
+                sx={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  bgcolor: '#C13584',
+                  flexShrink: 0,
+                }}
+              />
+              <Box>
+                <Typography
+                  sx={{
+                    fontFamily: 'Aileron',
+                    fontWeight: 400,
+                    fontStyle: 'italic',
+                    fontSize: '12px',
+                    lineHeight: '14px',
+                    color: '#000000B2',
+                  }}
+                >
+                  Instagram
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: 'Aileron',
+                    fontWeight: 400,
+                    fontSize: '12px',
+                    lineHeight: '14px',
+                    color: '#000000B2',
+                  }}
+                >
+                  {formatNumber(platformData.instagram)}
+                </Typography>
+              </Box>
+            </Box>
           )}
         </Box>
       </Box>
@@ -1947,7 +1915,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       <Typography 
         variant="body1" 
         sx={{ 
-          fontFamily: 'Inter Display, sans-serif',
+          fontFamily: 'Aileron',
           fontWeight: 400,
           fontStyle: 'normal',
           fontSize: '20px',
@@ -2216,7 +2184,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       <Typography 
         variant="body1" 
         sx={{ 
-          fontFamily: 'Inter Display, sans-serif',
+          fontFamily: 'Aileron',
           fontWeight: 400,
           fontStyle: 'normal',
           fontSize: '20px',
@@ -2310,12 +2278,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Box>
       ) : (
         <Typography 
-          variant="h6" 
+          variant="body1" 
           sx={{ 
-            fontFamily: 'Inter Display, sans-serif',
+            fontFamily: 'Aileron',
             fontWeight: 400,
+            fontStyle: 'normal',
             fontSize: '20px',
             lineHeight: '24px',
+            letterSpacing: '0%',
             color: '#231F20',
             mb: 3,
             wordWrap: 'break-word',
@@ -2880,7 +2850,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           sx={{ 
             fontFamily: 'Aileron',
             fontWeight: 400,
-            fontSize: '16px',
+            fontSize: '20px',
             lineHeight: '24px',
             color: '#374151',
             mb: 3,
@@ -4353,7 +4323,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <Typography
                       sx={{
                         fontFamily: 'Inter Display, sans-serif',
-                        fontWeight: 500,
+                        fontWeight: 700,
                         fontStyle: 'normal',
                         fontSize: '14px',
                         lineHeight: '18px',
@@ -4383,7 +4353,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <Typography
                       sx={{
                         fontFamily: 'Inter Display, sans-serif',
-                        fontWeight: 500,
+                        fontWeight: 700,
                         fontStyle: 'normal',
                         fontSize: '14px',
                         lineHeight: '18px',
@@ -4497,7 +4467,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Typography
                     sx={{
                       fontFamily: 'Inter Display, sans-serif',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       fontSize: '16px',
                       lineHeight: '20px',
                       color: '#000000',
@@ -4525,7 +4495,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Typography
                     sx={{
                       fontFamily: 'Inter Display, sans-serif',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       fontSize: '16px',
                       lineHeight: '20px',
                       color: '#000000',
