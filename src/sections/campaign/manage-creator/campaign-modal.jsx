@@ -2,7 +2,7 @@
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import 'react-quill/dist/quill.snow.css';
-import React, { useRef, useMemo, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 import Dialog from '@mui/material/Dialog';
 import { useTheme } from '@mui/material/styles';
@@ -41,13 +41,13 @@ const ChipStyle = {
   bgcolor: '#FFF',
   border: 1,
   borderColor: '#EBEBEB',
-  borderRadius: 1,
+  borderRadius: 0.8,
   color: '#636366',
-  height: '32px', 
-  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+  height: '32px',
+  boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
   '& .MuiChip-label': {
     fontWeight: 700,
-    px: 1.5,
+    px: 1,
     height: '100%',
     display: 'flex',
     alignItems: 'center',
@@ -57,10 +57,40 @@ const ChipStyle = {
   '&:hover': { bgcolor: '#FFF' },
 };
 
+// Reusable box styles for campaign info sections
+const SectionBoxStyles = {
+  borderRadius: 1,
+  px: 1,
+  py: 0.8,
+  mb: 1.5,
+};
+
+// Reusable text styles for section titles
+const SectionTitleStyles = {
+  fontSize: 14,
+  fontWeight: 600,
+};
+
+const SubSectionTitleStyles = { color: '#8e8e93', mb: 0.5, fontWeight: 600 };
+
 const capitalizeFirstLetter = (string) => {
   if (!string) return '';
-  if (string.toLowerCase() === 'f&b') return 'F&B';
   return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+};
+
+const getProperCase = (value) => {
+  if (!value) return '';
+  const lower = value.toLowerCase();
+  if (lower === 'f&b') return 'F&B';
+  if (lower === 'fmcg') return 'FMCG';
+  return value
+    .split(' ')
+    .map((word) =>
+      word.length > 2 && word.toLowerCase() !== 'and'
+        ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        : word.charAt(0).toUpperCase() + word.slice(1)
+    )
+    .join(' ');
 };
 
 const CampaignModal = ({
@@ -84,15 +114,15 @@ const CampaignModal = ({
   // const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const isShortlisted = useMemo(
-    () =>
-      user &&
-      user?.shortlisted &&
-      user?.shortlisted.some(
-        (item) => item.userId === user?.id && item.campaignId === campaign?.id
-      ),
-    [campaign, user]
-  );
+  // const isShortlisted = useMemo(
+  //   () =>
+  //     user &&
+  //     user?.shortlisted &&
+  //     user?.shortlisted.some(
+  //       (item) => item.userId === user?.id && item.campaignId === campaign?.id
+  //     ),
+  //   [campaign, user]
+  // );
 
   const handleImageClick = (event) => {
     // Prevent expansion if clicking on navigation buttons
@@ -154,9 +184,20 @@ const CampaignModal = ({
   //   setVideoPitchOpen(false);
   // };
 
-  const renderCampaignPeriod = () => {
-    const startDate = campaign?.campaignBrief?.startDate;
-    const endDate = campaign?.campaignBrief?.endDate;
+  const handleManageClick = (campaignId) => {
+    const targetTab = campaign?.submissionVersion === 'v4' ? 'tasks-v4' : 'tasks';
+    router.push(paths.dashboard.campaign.creator.detail(campaignId), {
+      state: { tab: targetTab },
+    });
+  };
+
+  // const handleDraftClick = () => {
+  //   setTextPitchOpen(true);
+  // };
+
+  const renderCampaignPostingPeriod = () => {
+    const startDate = campaign?.campaignBrief?.postingStartDate;
+    const endDate = campaign?.campaignBrief?.postingEndDate;
 
     if (!startDate || !endDate) {
       return 'Date not available';
@@ -169,23 +210,29 @@ const CampaignModal = ({
     }
   };
 
-  const handleManageClick = (campaignId) => {
-    const targetTab = campaign?.submissionVersion === 'v4' ? 'tasks-v4' : 'tasks';
-    router.push(paths.dashboard.campaign.creator.detail(campaignId), {
-      state: { tab: targetTab }
-    });
+  const requirement = campaign?.campaignRequirement;
+
+  const hasSecondaryAudience =
+    requirement?.secondary_gender?.length > 0 ||
+    requirement?.secondary_age?.length > 0 ||
+    requirement?.secondary_country ||
+    requirement?.secondary_language?.length > 0 ||
+    requirement?.secondary_creator_persona?.length > 0 ||
+    requirement?.secondary_user_persona;
+
+  // Helper to render Geographic Focus without nested ternary
+  const getGeographicFocus = () => {
+    if (!requirement?.geographic_focus) return 'Not specified';
+    if (requirement.geographic_focus === 'SEAregion') return 'SEA Region';
+    if (requirement.geographic_focus === 'others') return requirement.geographicFocusOthers;
+    return capitalizeFirstLetter(requirement.geographic_focus);
   };
 
-  // const handleDraftClick = () => {
-  //   setTextPitchOpen(true);
-  // };
-
-  const handleBookmarkClick = () => {
-    if (campaign?.bookMarkCampaign?.userId === user?.id) {
-      onUnsaveCampaign(campaign?.bookMarkCampaign.id);
-    } else {
-      onSaveCampaign(campaign?.id);
-    }
+  const getlogisticsTypeLabel = (type) => {
+    if (!type) return '';
+    if (type === 'PRODUCT_DELIVERY') return 'Product Delivery';
+    if (type === 'RESERVATION') return 'Reservation';
+    return capitalizeFirstLetter(type);
   };
 
   return (
@@ -201,7 +248,7 @@ const CampaignModal = ({
           flexDirection: 'column',
           maxHeight: isSmallScreen ? '85vh' : '98vh',
           position: 'relative',
-          width: isSmallScreen ? '95vw' : '80vh',
+          width: isSmallScreen ? '95vw' : '100vh',
         },
       }}
     >
@@ -432,52 +479,58 @@ const CampaignModal = ({
               justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
               sx={{ mt: { xs: 1.5, sm: 0 } }}
             >
-              {campaign?.shortlisted && (() => {
-                // Check if user is in the target list for media kit requirement
-                const targetUserIds = [
-                  'cmeuvjc6b003on401rn4pw62b',
-                  'cmf813vtd0000pd3psk46u4lt', 
-                  'cmipdmkvd0005k43fnfgxrb4t',
-                  'cmf8289xu000cpdmcj4a4fosl', 
-                  'user456'
-                ];
-                const isTargetUser = targetUserIds.includes(user?.id);
-                
-                // Check if media kit is connected
-                const hasMediaKit = user?.creator && 
-                  (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
-                
-                // For target users, disable manage button if no media kit
-                const isDisabled = isTargetUser && !hasMediaKit;
-                
-                return (
-                  <Button
-                    variant="contained"
-                    onClick={() => handleManageClick(campaign.id)}
-                    disabled={isDisabled}
-                    sx={{
-                      backgroundColor: isDisabled ? '#f5f5f5' : '#203ff5',
-                      color: isDisabled ? '#a1a1a1' : 'white',
-                      borderBottom: isDisabled ? '4px solid #d1d1d1 !important' : '4px solid #102387 !important',
-                      border: 'none',
-                      '&:hover': {
-                        backgroundColor: isDisabled ? '#f5f5f5' : '#1935dd',
-                        borderBottom: isDisabled ? '4px solid #d1d1d1 !important' : '4px solid #102387 !important',
-                      },
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      padding: { xs: '4px 12px', sm: '6px 18px' },
-                      minWidth: '100px',
-                      height: '42px',
-                      boxShadow: 'none',
-                      textTransform: 'none',
-                      fontWeight: 650,
-                      opacity: isDisabled ? 0.7 : 1,
-                    }}
-                  >
-                    Manage
-                  </Button>
-                );
-              })()}
+              {campaign?.shortlisted &&
+                (() => {
+                  // Check if user is in the target list for media kit requirement
+                  const targetUserIds = [
+                    'cmeuvjc6b003on401rn4pw62b',
+                    'cmf813vtd0000pd3psk46u4lt',
+                    'cmipdmkvd0005k43fnfgxrb4t',
+                    'cmf8289xu000cpdmcj4a4fosl',
+                    'user456',
+                  ];
+                  const isTargetUser = targetUserIds.includes(user?.id);
+
+                  // Check if media kit is connected
+                  const hasMediaKit =
+                    user?.creator &&
+                    (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+
+                  // For target users, disable manage button if no media kit
+                  const isDisabled = isTargetUser && !hasMediaKit;
+
+                  return (
+                    <Button
+                      variant="contained"
+                      onClick={() => handleManageClick(campaign.id)}
+                      disabled={isDisabled}
+                      sx={{
+                        backgroundColor: isDisabled ? '#f5f5f5' : '#203ff5',
+                        color: isDisabled ? '#a1a1a1' : 'white',
+                        borderBottom: isDisabled
+                          ? '4px solid #d1d1d1 !important'
+                          : '4px solid #102387 !important',
+                        border: 'none',
+                        '&:hover': {
+                          backgroundColor: isDisabled ? '#f5f5f5' : '#1935dd',
+                          borderBottom: isDisabled
+                            ? '4px solid #d1d1d1 !important'
+                            : '4px solid #102387 !important',
+                        },
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        padding: { xs: '4px 12px', sm: '6px 18px' },
+                        minWidth: '100px',
+                        height: '42px',
+                        boxShadow: 'none',
+                        textTransform: 'none',
+                        fontWeight: 650,
+                        opacity: isDisabled ? 0.7 : 1,
+                      }}
+                    >
+                      Manage
+                    </Button>
+                  );
+                })()}
               {campaign?.pitch && !campaign?.shortlisted && (
                 <Chip
                   icon={<Iconify icon="mdi:clock" />}
@@ -630,54 +683,59 @@ const CampaignModal = ({
           </Stack>
 
           {/* Warning message for incomplete media kit */}
-          {campaign?.shortlisted && (() => {
-            // Check if user is in the target list for media kit requirement
-            const targetUserIds = [
-              'cmeuvjc6b003on401rn4pw62b',
-              'cmf813vtd0000pd3psk46u4lt', 
-              'cmipdmkvd0005k43fnfgxrb4t',
-              'cmf8289xu000cpdmcj4a4fosl', 
-              'user456'
-            ];
-            const isTargetUser = targetUserIds.includes(user?.id);
-            
-            // Check if media kit is connected
-            const hasMediaKit = user?.creator && 
-              (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
-            
-            if (isTargetUser && !hasMediaKit) {
-              return (
-                <Typography
-                  sx={{
-                    flex: 1,
-                    textAlign: 'center',
-                    p: 1,
-                    mt: 2,
-                    borderRadius: 1,
-                    color: '#FF3500',
-                    backgroundColor: '#FFF2F0',
-                    fontWeight: 600,
-                    fontSize: 12,
-                    alignSelf: 'center',
-                  }}
-                >
-                  <span role="img" aria-label="warning">😮</span> Oops! You need to {' '}
-                  <Link
-                    to={paths.dashboard.user.profileTabs.socials}
-                    style={{
+          {campaign?.shortlisted &&
+            (() => {
+              // Check if user is in the target list for media kit requirement
+              const targetUserIds = [
+                'cmeuvjc6b003on401rn4pw62b',
+                'cmf813vtd0000pd3psk46u4lt',
+                'cmipdmkvd0005k43fnfgxrb4t',
+                'cmf8289xu000cpdmcj4a4fosl',
+                'user456',
+              ];
+              const isTargetUser = targetUserIds.includes(user?.id);
+
+              // Check if media kit is connected
+              const hasMediaKit =
+                user?.creator &&
+                (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+
+              if (isTargetUser && !hasMediaKit) {
+                return (
+                  <Typography
+                    sx={{
+                      flex: 1,
+                      textAlign: 'center',
+                      p: 1,
+                      mt: 2,
+                      borderRadius: 1,
                       color: '#FF3500',
-                      fontWeight: 'inherit',
+                      backgroundColor: '#FFF2F0',
+                      fontWeight: 600,
+                      fontSize: 12,
+                      alignSelf: 'center',
                     }}
                   >
-                    link your media kit
-                  </Link>{' '}
-                  before you can manage your campaign.
-                </Typography>
-              );
-            }
-            
-            return null;
-          })()}
+                    <span role="img" aria-label="warning">
+                      😮
+                    </span>{' '}
+                    Oops! You need to{' '}
+                    <Link
+                      to={paths.dashboard.user.profileTabs.socials}
+                      style={{
+                        color: '#FF3500',
+                        fontWeight: 'inherit',
+                      }}
+                    >
+                      link your media kit
+                    </Link>{' '}
+                    before you can manage your campaign.
+                  </Typography>
+                );
+              }
+
+              return null;
+            })()}
 
           {isSmallScreen ? (
             <CampaignModalMobile campaign={campaign} />
@@ -692,17 +750,17 @@ const CampaignModal = ({
                   <Paper
                     elevation={0}
                     sx={{
-                      pr: { md: 4 },
-                      height: {
-                        xs: 'auto', // Full height on mobile
-                        md: 'calc(98vh - 400px)', // Fixed height with scroll on desktop
+                      pr: { sm: 2.5 },
+                      maxHeight: {
+                        xs: 'auto',
+                        md: 'calc(100vh - 470px - min(80px, max(0px, var(--campaign-name-height, 0px))))',
                       },
                       overflow: {
-                        xs: 'visible', // No scroll on mobile
-                        md: 'auto', // Enable scroll on desktop
+                        xs: 'visible',
+                        md: 'auto',
                       },
                       '&::-webkit-scrollbar': {
-                        width: '8px',
+                        width: '5px',
                       },
                       '&::-webkit-scrollbar-track': {
                         background: '#f1f1f1',
@@ -715,287 +773,149 @@ const CampaignModal = ({
                       '&::-webkit-scrollbar-thumb:hover': {
                         background: '#555',
                       },
+                      scrollbarWidth: 'thin',
                     }}
                   >
                     <Stack spacing={2}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                          >
-                            Campaign Period
-                          </Typography>
-                          <Typography variant="body2">{renderCampaignPeriod()}</Typography>
-                        </Box>
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                          >
-                            Industry
-                          </Typography>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                            <Chip
-                              label={campaign?.campaignBrief?.industries || 'Not specified'}
-                              size="small"
-                              sx={ChipStyle}
+                      {/* Posting Period */}
+                      <Box>
+                        <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                          Posting Period
+                        </Typography>
+                        <Typography variant="body2">{renderCampaignPostingPeriod()}</Typography>
+                      </Box>
+
+                      {/* Campaign General Info */}
+                      <Box sx={{ mb: 2 }}>
+                        <Box
+                          sx={{
+                            ...SectionBoxStyles,
+                            border: '1px solid #0067D5',
+                            borderBottom: '3px solid #0067D5',
+                          }}
+                        >
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Iconify
+                              icon="material-symbols:info-outline"
+                              width={20}
+                              color="#0067D5"
                             />
-                          </Box>
-                        </Box>
-                        <Box>
-                          {/* Campaign Details */}
-                          <Box sx={{ mb: 3 }}>
-                            <Box
-                              sx={{
-                                border: '1.5px solid #203ff5',
-                                borderBottom: '4px solid #203ff5',
-                                borderRadius: 1,
-                                p: 1,
-                                mb: 1,
-                                width: 'fit-content',
-                              }}
-                            >
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <Iconify
-                                  icon="mdi:emoticon-happy"
-                                  sx={{
-                                    color: '#203ff5',
-                                    width: 20,
-                                    height: 20,
-                                  }}
-                                />
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    color: '#203ff5',
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  CAMPAIGN DETAILS
-                                </Typography>
-                              </Stack>
-                            </Box>
                             <Typography
-                              variant="body2"
                               sx={{
-                                pl: 0.5,
-                                textAlign: 'justify',
+                                ...SectionTitleStyles,
+                                color: '#0067D5',
                               }}
                             >
-                              {campaign?.description}
+                              GENERAL INFORMATION
+                            </Typography>
+                          </Stack>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <Box>
+                            <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                              Product / Service Name
+                            </Typography>
+                            <Typography variant="body2">
+                              {campaign?.productName || 'Not specified'}
                             </Typography>
                           </Box>
-
-                          {/* Campaign Objectives */}
-                          <Box sx={{ mb: 3 }}>
-                            <Box
-                              sx={{
-                                border: '1.5px solid #835cf5',
-                                borderBottom: '4px solid #835cf5',
-                                borderRadius: 1,
-                                p: 1,
-                                mb: 1,
-                                width: 'fit-content',
-                              }}
-                            >
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <Iconify
-                                  icon="mdi:target-arrow"
-                                  sx={{
-                                    color: '#835cf5',
-                                    width: 20,
-                                    height: 20,
-                                  }}
-                                />
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    color: '#835cf5',
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  CAMPAIGN OBJECTIVES
-                                </Typography>
-                              </Stack>
-                            </Box>
-                            <Stack direction="row" spacing={1} alignItems="center" sx={{ pl: 0.5 }}>
-                              <Iconify
-                                icon="octicon:dot-fill-16"
-                                sx={{
-                                  color: '#000000',
-                                  width: 12,
-                                  height: 12,
-                                  flexShrink: 0,
-                                }}
-                              />
-                              <Typography variant="body2">
-                                {campaign?.campaignBrief?.objectives}
-                              </Typography>
-                            </Stack>
-                          </Box>
-
-                          {/* Campaign Deliverables */}
-                          <Box sx={{ mb: 3 }}>
-                            <Box
-                              sx={{
-                                border: '1.5px solid #203ff5',
-                                borderBottom: '4px solid #203ff5',
-                                borderRadius: 1,
-                                p: 1,
-                                mb: 1,
-                                width: 'fit-content',
-                              }}
-                            >
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <Iconify
-                                  icon="mdi:cube-outline"
-                                  sx={{
-                                    color: '#203ff5',
-                                    width: 20,
-                                    height: 20,
-                                  }}
-                                />
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    color: '#203ff5',
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  CAMPAIGN DELIVERABLES
-                                </Typography>
-                              </Stack>
-                            </Box>
-                            <Stack spacing={1} sx={{ pl: 0.5 }}>
-                              {[
-                                { label: 'UGC Videos', value: true },
-                                { label: 'Raw Footage', value: campaign?.rawFootage },
-                                { label: 'Photos', value: campaign?.photos },
-                                { label: 'Ads', value: campaign?.ads },
-                              ].map(
-                                (deliverable) =>
-                                  deliverable.value && (
-                                    <Stack
-                                      key={deliverable.label}
-                                      direction="row"
-                                      spacing={1}
-                                      alignItems="center"
-                                    >
-                                      <Iconify
-                                        icon="octicon:dot-fill-16"
-                                        sx={{
-                                          color: '#000000',
-                                          width: 12,
-                                          height: 12,
-                                          flexShrink: 0,
-                                        }}
-                                      />
-                                      <Typography variant="body2">{deliverable.label}</Typography>
-                                    </Stack>
-                                  )
-                              )}
-                            </Stack>
-                          </Box>
-
-                          {/* Campaign Do's */}
-                          <Box sx={{ mb: 3 }}>
-                            <Box
-                              sx={{
-                                border: '1.5px solid #2e6c56',
-                                borderBottom: '4px solid #2e6c56',
-                                borderRadius: 1,
-                                p: 1,
-                                mb: 1,
-                                width: 'fit-content',
-                              }}
-                            >
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <Iconify
-                                  icon="material-symbols:check-box-outline"
-                                  sx={{
-                                    color: '#2e6c56',
-                                    width: 20,
-                                    height: 20,
-                                  }}
-                                />
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    color: '#2e6c56',
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  CAMPAIGN DO&apos;S
-                                </Typography>
-                              </Stack>
-                            </Box>
-                            <Stack spacing={1} sx={{ pl: 0.5 }}>
-                              {campaign?.campaignBrief?.campaigns_do?.map((item, index) => (
-                                <Stack key={index} direction="row" spacing={1} alignItems="center">
-                                  <Iconify
-                                    icon="octicon:dot-fill-16"
-                                    sx={{
-                                      color: '#000000',
-                                      width: 12,
-                                      height: 12,
-                                      flexShrink: 0,
-                                    }}
-                                  />
-                                  <Typography variant="body2">{item.value}</Typography>
-                                </Stack>
-                              ))}
-                            </Stack>
-                          </Box>
-
-                          {/* Campaign Don'ts */}
                           <Box>
-                            <Box
+                            <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                              Campaign Info
+                            </Typography>
+                            <Typography variant="body2">{campaign?.description}</Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+
+                      {/* Campaign Target Audience */}
+                      <Box sx={{ mb: 2 }}>
+                        <Box
+                          sx={{
+                            ...SectionBoxStyles,
+                            border: '1px solid #FF3500',
+                            borderBottom: '3px solid #FF3500',
+                          }}
+                        >
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Iconify
+                              icon="material-symbols-light:groups-outline"
                               sx={{
-                                border: '1.5px solid #eb4a26',
-                                borderBottom: '4px solid #eb4a26',
-                                borderRadius: 1,
-                                p: 1,
-                                mb: 1,
-                                width: 'fit-content',
+                                color: '#FF3500',
+                                width: 25,
+                                height: 25,
+                                mt: -0.5,
+                                ml: 0.5,
+                              }}
+                            />
+                            <Typography
+                              sx={{
+                                ...SectionTitleStyles,
+                                color: '#FF3500',
                               }}
                             >
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <Iconify
-                                  icon="material-symbols:disabled-by-default-outline"
-                                  sx={{
-                                    color: '#eb4a26',
-                                    width: 20,
-                                    height: 20,
-                                  }}
-                                />
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    color: '#eb4a26',
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  CAMPAIGN DON&apos;TS
+                              {hasSecondaryAudience ? 'PRIMARY AUDIENCE' : 'TARGET AUDIENCE'}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
+                            {[
+                              {
+                                label: 'Gender',
+                                data: campaign?.campaignRequirement?.gender?.map(
+                                  capitalizeFirstLetter
+                                ),
+                              },
+                              { label: 'Age', data: campaign?.campaignRequirement?.age },
+                              {
+                                label: 'Country',
+                                data: campaign?.campaignRequirement?.country
+                                  ? [campaign.campaignRequirement.country]
+                                  : [],
+                              },
+                              { label: 'Language', data: campaign?.campaignRequirement?.language },
+                            ].map((item, index) => (
+                              <Box key={index}>
+                                <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                                  {item.label}
                                 </Typography>
-                              </Stack>
-                            </Box>
-                            <Stack spacing={1} sx={{ pl: 0.5 }}>
-                              {campaign?.campaignBrief?.campaigns_dont?.map((item, index) => (
-                                <Stack key={index} direction="row" spacing={1} alignItems="center">
-                                  <Iconify
-                                    icon="octicon:dot-fill-16"
-                                    sx={{
-                                      color: '#000000',
-                                      width: 12,
-                                      height: 12,
-                                      flexShrink: 0,
-                                    }}
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                                  {item.data?.map((value, idx) => (
+                                    <Chip key={idx} label={value} size="small" sx={ChipStyle} />
+                                  ))}
+                                </Box>
+                              </Box>
+                            ))}
+                          </Box>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
+                            <Box>
+                              <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                                Creator&apos;s Interest
+                              </Typography>
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                                {requirement?.creator_persona.map((value, idx) => (
+                                  <Chip
+                                    key={idx}
+                                    label={getProperCase(value)}
+                                    size="small"
+                                    sx={ChipStyle}
                                   />
-                                  <Typography variant="body2">{item.value}</Typography>
-                                </Stack>
-                              ))}
-                            </Stack>
+                                ))}
+                              </Box>
+                            </Box>
+                            <Box>
+                              <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                                User Persona
+                              </Typography>
+                              <Typography variant="body2">{requirement?.user_persona}</Typography>
+                            </Box>
+                            <Box>
+                              <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                                Geographic Focus
+                              </Typography>
+                              <Typography variant="body2">{getGeographicFocus()}</Typography>
+                            </Box>
                           </Box>
                         </Box>
                       </Box>
@@ -1011,7 +931,9 @@ const CampaignModal = ({
                     display: { xs: 'none', md: 'block' },
                     mr: '-1px',
                     mt: '-8px',
-                    height: { md: 'calc(98vh - 400px)' },
+                    height: {
+                      md: 'calc(98vh - 470px - min(80px, max(0px, var(--campaign-name-height, 0px))))',
+                    },
                   }}
                 />
 
@@ -1020,17 +942,18 @@ const CampaignModal = ({
                   <Paper
                     elevation={0}
                     sx={{
-                      pl: { md: 2 },
-                      height: {
-                        xs: 'auto', // Full height on mobile
-                        md: 'calc(98vh - 400px)', // Fixed height with scroll on desktop
+                      pl: { md: 1 },
+                      pr: { sm: 2 },
+                      maxHeight: {
+                        xs: 'auto',
+                        md: 'calc(98vh - 470px - min(80px, max(0px, var(--campaign-name-height, 0px))))',
                       },
                       overflow: {
-                        xs: 'visible', // No scroll on mobile
-                        md: 'auto', // Enable scroll on desktop
+                        xs: 'visible',
+                        md: 'auto',
                       },
                       '&::-webkit-scrollbar': {
-                        width: '8px',
+                        width: '5px',
                       },
                       '&::-webkit-scrollbar-track': {
                         background: '#f1f1f1',
@@ -1043,54 +966,313 @@ const CampaignModal = ({
                       '&::-webkit-scrollbar-thumb:hover': {
                         background: '#555',
                       },
+                      scrollbarWidth: 'thin',
                     }}
                   >
-                    <Stack spacing={2}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        {[
-                          {
-                            label: 'Gender',
-                            data: campaign?.campaignRequirement?.gender?.map(capitalizeFirstLetter),
-                          },
-                          { label: 'Age', data: campaign?.campaignRequirement?.age },
-                          {
-                            label: 'Geo Location',
-                            data: campaign?.campaignRequirement?.geoLocation,
-                          },
-                          { label: 'Language', data: campaign?.campaignRequirement?.language },
-                          {
-                            label: 'Creator Persona',
-                            data: campaign?.campaignRequirement?.creator_persona?.map((value) =>
-                              value.toLowerCase() === 'f&b' ? 'F&B' : capitalizeFirstLetter(value)
-                            ),
-                          },
-                        ].map((item, index) => (
-                          <Box key={index}>
+                    <Stack spacing={1}>
+                      {/* Campaign Deliverables */}
+                      <Box sx={{ mb: 2 }}>
+                        <Box
+                          sx={{
+                            ...SectionBoxStyles,
+                            border: '1px solid #1340FF',
+                            borderBottom: '3px solid #1340FF',
+                          }}
+                        >
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Iconify
+                              icon="material-symbols:unarchive-outline"
+                              sx={{
+                                color: '#203ff5',
+                                width: 20,
+                                height: 20,
+                              }}
+                            />
                             <Typography
-                              variant="body2"
-                              sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
+                              sx={{
+                                ...SectionTitleStyles,
+                                color: '#1340FF',
+                              }}
                             >
-                              {item.label}
+                              DELIVERABLES
                             </Typography>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                              {item.data?.map((value, idx) => (
-                                <Chip key={idx} label={value} size="small" sx={ChipStyle} />
-                              ))}
-                            </Box>
-                          </Box>
-                        ))}
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
+                          </Stack>
+                        </Box>
+                        {[
+                          { label: 'UGC Videos', value: true },
+                          { label: 'Raw Footage', value: campaign?.rawFootage },
+                          { label: 'Photos', value: campaign?.photos },
+                          { label: 'Ads', value: campaign?.ads },
+                          { label: 'Cross Posting', value: campaign?.crossPosting },
+                        ].map(
+                          (deliverable) =>
+                            deliverable.value && (
+                              <Chip
+                                key={deliverable.label}
+                                label={deliverable.label}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#F5F5F5',
+                                  borderRadius: 1,
+                                  color: '#231F20',
+                                  height: '32px',
+                                  '& .MuiChip-label': {
+                                    fontWeight: 700,
+                                    px: 1.5,
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginTop: '-3px',
+                                  },
+                                  '&:hover': { bgcolor: '#F5F5F5' },
+                                }}
+                              />
+                            )
+                        )}
+                      </Box>
+
+                      {/* Campaign Logistics */}
+                      {campaign?.logisticsType && (
+                        <Box sx={{ mb: 2 }}>
+                          <Box
+                            sx={{
+                              ...SectionBoxStyles,
+                              border: '1px solid #CFB5F6',
+                              borderBottom: '3px solid #CFB5F6',
+                            }}
                           >
-                            User Persona
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {campaign?.campaignRequirement?.user_persona}
-                          </Typography>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Iconify
+                                icon="material-symbols:inventory-2-outline-sharp"
+                                sx={{
+                                  color: '#CFB5F6',
+                                  width: 20,
+                                  height: 20,
+                                }}
+                              />
+                              <Typography
+                                sx={{
+                                  ...SectionTitleStyles,
+                                  color: '#CFB5F6',
+                                }}
+                              >
+                                LOGISTICS
+                              </Typography>
+                            </Stack>
+                          </Box>
+                          <Chip
+                            label={
+                              getlogisticsTypeLabel(campaign?.logisticsType) || 'Not specified'
+                            }
+                            size="small"
+                            sx={{
+                              bgcolor: '#F5F5F5',
+                              borderRadius: 1,
+                              color: '#231F20',
+                              height: '32px',
+                              '& .MuiChip-label': {
+                                fontWeight: 700,
+                                px: 1.5,
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginTop: '-3px',
+                              },
+                              '&:hover': { bgcolor: '#F5F5F5' },
+                            }}
+                          />
+                        </Box>
+                      )}
+
+                      {/* Client Info */}
+                      <Box sx={{ mb: 2 }}>
+                        <Box
+                          sx={{
+                            ...SectionBoxStyles,
+                            border: '1px solid #FF9FBD',
+                            borderBottom: '3px solid #FF9FBD',
+                          }}
+                        >
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Iconify
+                              icon="material-symbols:loyalty-outline"
+                              sx={{
+                                color: '#FF9FBD',
+                                width: 18,
+                                height: 18,
+                              }}
+                            />
+                            <Typography
+                              sx={{
+                                ...SectionTitleStyles,
+                                color: '#FF9FBD',
+                              }}
+                            >
+                              CLIENT INFO
+                            </Typography>
+                          </Stack>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <Box>
+                            <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                              Client
+                            </Typography>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Avatar
+                                src={campaign?.company?.logo ?? campaign?.brand?.logo}
+                                alt={campaign?.company?.name ?? campaign?.brand?.name}
+                                sx={{
+                                  width: 36,
+                                  height: 36,
+                                  border: '2px solid',
+                                  borderColor: 'background.paper',
+                                }}
+                              />
+                              <Typography variant="body2">
+                                {(campaign?.company?.name ?? campaign?.brand?.name) ||
+                                  'Company Name'}
+                              </Typography>
+                            </Stack>
+                          </Box>
+                          {[
+                            {
+                              label: 'About',
+                              value:
+                                campaign?.brandAbout ||
+                                campaign?.brand?.company?.about ||
+                                campaign?.company?.about ||
+                                'None',
+                            },
+                            {
+                              label: 'Industry',
+                              value: (() => {
+                                // company.brand can be an array of brands, each with industries (array)
+                                const brands = campaign?.company?.brand || campaign?.brand;
+                                if (Array.isArray(brands)) {
+                                  // Flatten all industries from all brands, remove duplicates, and join
+                                  const allIndustries = brands
+                                    .flatMap((b) =>
+                                      Array.isArray(b.industries) ? b.industries : []
+                                    )
+                                    .filter(Boolean);
+                                  const uniqueIndustries = [...new Set(allIndustries)];
+                                  return uniqueIndustries.length > 0
+                                    ? uniqueIndustries.join(', ')
+                                    : 'Not specified';
+                                }
+                                return campaign?.campaignBrief.industries;
+                              })(),
+                            },
+                          ].map((item) => (
+                            <Box key={item.label}>
+                              <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                                {item.label}
+                              </Typography>
+                              <Typography variant="body2">
+                                {item.value || 'Not specified'}
+                              </Typography>
+                            </Box>
+                          ))}
                         </Box>
                       </Box>
+
+                      {/* Campaign Secondary Audience */}
+                      {hasSecondaryAudience && (
+                        <Box sx={{ mb: 2 }}>
+                          <Box
+                            sx={{
+                              ...SectionBoxStyles,
+                              border: '1px solid #FF3500',
+                              borderBottom: '3px solid #FF3500',
+                            }}
+                          >
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Iconify
+                                icon="material-symbols-light:groups-outline"
+                                sx={{
+                                  color: '#FF3500',
+                                  width: 25,
+                                  height: 25,
+                                  mt: -0.5,
+                                  ml: 0.5,
+                                }}
+                              />
+                              <Typography
+                                sx={{
+                                  ...SectionTitleStyles,
+                                  color: '#FF3500',
+                                }}
+                              >
+                                SECONDARY AUDIENCE
+                              </Typography>
+                            </Stack>
+                          </Box>
+                          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
+                              {[
+                                {
+                                  label: 'Gender',
+                                  data: campaign?.campaignRequirement?.secondary_gender?.map(
+                                    capitalizeFirstLetter
+                                  ),
+                                },
+                                {
+                                  label: 'Age',
+                                  data: campaign?.campaignRequirement?.secondary_age,
+                                },
+                                {
+                                  label: 'Country',
+                                  data: campaign?.campaignRequirement?.secondary_country
+                                    ? [campaign.campaignRequirement.secondary_country]
+                                    : [],
+                                },
+                                {
+                                  label: 'Language',
+                                  data: campaign?.campaignRequirement?.secondary_language,
+                                },
+                              ].map((item, index) => (
+                                <Box key={index}>
+                                  <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                                    {item.label}
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                                    {item.data?.map((value, idx) => (
+                                      <Chip key={idx} label={value} size="small" sx={ChipStyle} />
+                                    ))}
+                                  </Box>
+                                </Box>
+                              ))}
+                            </Box>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
+                              <Box>
+                                <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                                  Creator&apos;s Interest
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                                  {requirement?.secondary_creator_persona.map((value, idx) => (
+                                    <Chip
+                                      key={idx}
+                                      label={getProperCase(value)}
+                                      size="small"
+                                      sx={ChipStyle}
+                                    />
+                                  ))}
+                                </Box>
+                              </Box>
+                              <Box>
+                                <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                                  User Persona
+                                </Typography>
+                                <Typography variant="body2">
+                                  {requirement?.secondary_user_persona}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Box>
+                        </Box>
+                      )}
                     </Stack>
                   </Paper>
                 </Grid>

@@ -165,7 +165,7 @@ const UpdateAudience = ({ campaign, campaignMutate }) => {
   const showMalaysiaOptions = country === 'Malaysia';
   const filteredGeographicFocusOptions = showMalaysiaOptions
     ? GEOGRAPHIC_FOCUS_OPTIONS
-    : GEOGRAPHIC_FOCUS_OPTIONS.slice(0, 2);
+    : [GEOGRAPHIC_FOCUS_OPTIONS[0], GEOGRAPHIC_FOCUS_OPTIONS[1], GEOGRAPHIC_FOCUS_OPTIONS[4]];
 
   const onSubmit = useCallback(
     async (data) => {
@@ -176,7 +176,6 @@ const UpdateAudience = ({ campaign, campaignMutate }) => {
           // Primary Audience
           audienceGender: data.audienceGender,
           audienceAge: data.audienceAge,
-          audienceLocation: [], // geoLocation - keeping empty, using country instead
           audienceLanguage: data.audienceLanguage,
           audienceCreatorPersona: data.audienceCreatorPersona,
           audienceUserPersona: data.audienceUserPersona,
@@ -184,7 +183,6 @@ const UpdateAudience = ({ campaign, campaignMutate }) => {
           // Secondary Audience
           secondaryAudienceGender: data.secondaryAudienceGender,
           secondaryAudienceAge: data.secondaryAudienceAge,
-          secondaryAudienceLocation: [],
           secondaryAudienceLanguage: data.secondaryAudienceLanguage,
           secondaryAudienceCreatorPersona: data.secondaryAudienceCreatorPersona,
           secondaryAudienceUserPersona: data.secondaryAudienceUserPersona,
