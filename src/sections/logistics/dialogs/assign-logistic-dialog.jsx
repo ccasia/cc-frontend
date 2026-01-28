@@ -1,13 +1,15 @@
+import useSWR from 'swr';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-import useSWR from 'swr';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Grid,
+  Chip,
   Stack,
   Button,
   Dialog,
@@ -17,12 +19,11 @@ import {
   TextField,
   Typography,
   IconButton,
-  Chip,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
+
+import axiosInstance, { fetcher } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import axiosInstance, { fetcher } from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
 
 export default function AssignLogisticDialog({ open, onClose, logistic, campaignId, onUpdate }) {
