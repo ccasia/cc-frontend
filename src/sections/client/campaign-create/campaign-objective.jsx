@@ -84,7 +84,7 @@ const CampaignObjective = () => {
       <Collapse in={Boolean(primaryObjective)}>
         {/* Secondary Campaign Objective */}
         <Box sx={{ mt: 2 }}>
-          <FormField label="Secondary Campaign Objective - Choose up to 2">
+          <FormField label="Secondary Campaign Objective - Choose up to 2" required>
             <RHFMultiSelect
               name="secondaryObjectives"
               placeholder="Select Secondary Campaign Objectives"
@@ -94,6 +94,23 @@ const CampaignObjective = () => {
               }))}
               chip
               disabled={secondaryOptions.length === 0}
+              sx={{
+                '& .MuiSelect-select': {
+                  whiteSpace: 'normal',
+                  minHeight: 'auto',
+                },
+                '& .MuiChip-root': {
+                  maxWidth: { xs: '100%', sm: 'none' },
+                  height: 'auto',
+                  '& .MuiChip-label': {
+                    whiteSpace: 'normal',
+                    overflow: 'visible',
+                    textOverflow: 'clip',
+                    fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                    py: 0.5,
+                  },
+                },
+              }}
             />
           </FormField>
         </Box>
