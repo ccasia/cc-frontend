@@ -112,9 +112,18 @@ const FinaliseCampaign = ({
   onPackageLinkSuccess,
 }) => {
   const { data: admins } = useGetAdmins('active');
-  const { data: companyData, isLoading: companyLoading, mutate: mutateCompanyList } = useGetCompany();
+  const {
+    data: companyData,
+    isLoading: companyLoading,
+    mutate: mutateCompanyList,
+  } = useGetCompany();
   const { user } = useAuthContext();
-  const { watch, setValue, getValues, formState: { errors } } = useFormContext();
+  const {
+    watch,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useFormContext();
   const lgUp = useResponsive('up', 'lg');
 
   const isV4Submission = watch('isV4Submission');
@@ -161,10 +170,7 @@ const FinaliseCampaign = ({
 
   // Auto-select first template if none selected and templates exist
   useEffect(() => {
-    if (
-      agreementTemplates?.template?.length > 0 &&
-      (!currentAgreement || !currentAgreement.id)
-    ) {
+    if (agreementTemplates?.template?.length > 0 && (!currentAgreement || !currentAgreement.id)) {
       setValue('agreementFrom', agreementTemplates.template[0], { shouldValidate: true });
     }
   }, [agreementTemplates, currentAgreement, setValue]);
@@ -198,13 +204,12 @@ const FinaliseCampaign = ({
 
   const filteredCampaignManagers = useMemo(
     () =>
-      admins
-        ?.filter((item) => item.role === 'CSM')
-        .sort((a, b) => a.name.localeCompare(b.name)) || [],
+      admins?.filter((item) => item.role === 'CSM').sort((a, b) => a.name.localeCompare(b.name)) ||
+      [],
     [admins]
   );
 
-  console.log(filteredCampaignManagers)
+  console.log(filteredCampaignManagers);
 
   return (
     <Stack spacing={3} sx={{ maxWidth: '800px', mx: 'auto', mt: 4, mb: 8 }}>
@@ -322,7 +327,11 @@ const FinaliseCampaign = ({
         ) : (
           <>
             {dayjs(creditSummary.nextExpiryDate).isBefore(dayjs(), 'date') ? (
-              <Stack alignItems="center" spacing={1} sx={{ p: 3, bgcolor: '#FFF8E5', borderRadius: 1 }}>
+              <Stack
+                alignItems="center"
+                spacing={1}
+                sx={{ p: 3, bgcolor: '#FFF8E5', borderRadius: 1 }}
+              >
                 <Avatar
                   sx={{ bgcolor: (theme) => theme.palette.warning.light, width: 60, height: 60 }}
                 >
@@ -334,10 +343,7 @@ const FinaliseCampaign = ({
                 </Button>
               </Stack>
             ) : (
-              <Stack
-                direction={{ sm: 'column', md: 'row' }}
-                spacing={1}
-              >
+              <Stack direction={{ sm: 'column', md: 'row' }} spacing={1}>
                 <Box flex={1}>
                   <FormField
                     label="Total Available Credits"
@@ -363,7 +369,7 @@ const FinaliseCampaign = ({
                     />
                   </FormField>
                 </Box>
-                <Box flex={1}>
+                <Box flex={1} mt={{ xs: 1.5, sm: 0 }}>
                   <FormField label="Validity" labelColor="text.disabled" required={false}>
                     <TextField
                       value={`${getRemainingTime(creditSummary.nextExpiryDate)} days left`}
@@ -373,7 +379,7 @@ const FinaliseCampaign = ({
                     />
                   </FormField>
                 </Box>
-                <Box flex={1}>
+                <Box flex={1} mt={{ xs: 1.5, sm: 0 }}>
                   <FormField label="Campaign Credits">
                     <RHFTextField
                       name="campaignCredits"
@@ -425,8 +431,8 @@ const FinaliseCampaign = ({
           <RHFSwitch name="isCreditTier" color="primary" />
         </Stack>
         <Typography variant="subtitle2" fontWeight={400} color="text.secondary">
-          When enabled, creator costs are based on their follower count tier instead of flat 1 credit
-          per video.
+          When enabled, creator costs are based on their follower count tier instead of flat 1
+          credit per video.
         </Typography>
       </Stack>
 
@@ -493,7 +499,10 @@ const FinaliseCampaign = ({
       <FormField label="Agreement Template">
         {agreementTemplates?.template?.length < 1 ? (
           <Stack spacing={2} alignItems="center">
-            <Alert severity="warning" variant="outlined" sx={{ width: '100%' }}
+            <Alert
+              severity="warning"
+              variant="outlined"
+              sx={{ width: '100%' }}
               action={
                 <Button color="inherit" size="small" onClick={() => mutateTemplates()}>
                   Refresh
@@ -524,7 +533,9 @@ const FinaliseCampaign = ({
                 />
                 <Stack flex={1}>
                   <Typography variant="subtitle2">
-                    {currentAgreement?.adminName || agreementTemplates?.template?.[0]?.adminName || 'Agreement Template'}
+                    {currentAgreement?.adminName ||
+                      agreementTemplates?.template?.[0]?.adminName ||
+                      'Agreement Template'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Template selected
@@ -614,11 +625,28 @@ const FinaliseCampaign = ({
                     />
 
                     <Box
-                      sx={{ width: '100%', height: '100%', overflow: 'auto', scrollbarWidth: 'none' }}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        overflow: 'auto',
+                        scrollbarWidth: 'none',
+                      }}
                     >
                       <Document
                         file={t?.url}
-                        loading={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}><CircularProgress size={24} /><Typography sx={{ ml: 2 }}>Loading document...</Typography></Box>}
+                        loading={
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              height: 200,
+                            }}
+                          >
+                            <CircularProgress size={24} />
+                            <Typography sx={{ ml: 2 }}>Loading document...</Typography>
+                          </Box>
+                        }
                         onLoadSuccess={({ numPages }) => {
                           setPages(numPages);
                         }}
@@ -674,7 +702,7 @@ const FinaliseCampaign = ({
         setBrand={async (newBrand) => {
           // Refresh company list to get updated brand data
           const updatedCompanyList = await mutateCompanyList();
-          
+
           // Find the updated client with the new brand
           if (updatedCompanyList && client?.id) {
             const updatedClient = updatedCompanyList.find((c) => c.id === client.id);
@@ -683,7 +711,7 @@ const FinaliseCampaign = ({
               setValue('client', updatedClient, { shouldValidate: true });
             }
           }
-          
+
           // Set the newly created brand as selected
           setValue('campaignBrand', newBrand, { shouldValidate: true });
           if (setBrandState) setBrandState(newBrand);
