@@ -69,23 +69,22 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
   const { user } = useAuthContext();
   const { data: admins } = useGetAdmins('active');
 
-  // Filter for CSM campaign managers
-  const filteredCampaignManagers = useMemo(
-    () =>
-      admins?.filter((item) => item.role === 'CSM').sort((a, b) => a.name.localeCompare(b.name)) ||
-      [],
-    [admins]
-  );
+  const existedAdmins = campaign?.campaignAdmin?.map(({ admin }) => ({
+    id: admin?.user?.id,
+    name: admin?.user?.name,
+    role: admin?.role?.name,
+  }));
 
-  // Get existing campaign managers from campaignAdmin
+  // Get existing campaign managers from campaignAdmin (includes both CSM and Client users)
   const existingManagers = useMemo(() => {
     if (!campaign?.campaignAdmin) return [];
     return campaign.campaignAdmin
-      .filter((ca) => ca.admin?.role?.name === 'CSM')
+      .filter((ca) => ca.admin?.role?.name === 'CSM' || ca.admin?.role?.name === 'Client' || ca.admin?.user?.role === 'client')
       .map((ca) => ({
         id: ca.admin?.userId,
         name: ca.admin?.user?.name || ca.admin?.name,
         photoURL: ca.admin?.user?.photoURL,
+        role: ca.admin?.role?.name,
       }));
   }, [campaign]);
 
@@ -165,28 +164,34 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
                 name="campaignManager"
                 multiple
                 placeholder="Campaign Manager"
-                options={filteredCampaignManagers}
+                options={admins}
                 freeSolo
                 isOptionEqualToValue={(option, value) => option.id === value.id}
                 getOptionLabel={(option) => option.name || ''}
                 renderTags={(selected, getTagProps) =>
-                  selected.map((option, index) => (
-                    <Chip
-                      {...getTagProps({ index })}
-                      avatar={<Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>}
-                      key={option?.id}
-                      label={option?.id === user?.id ? 'Me' : option?.name}
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        border: 1,
-                        borderColor: '#EBEBEB',
-                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                        py: 2,
-                        px: 1,
-                      }}
-                    />
-                  ))
+                  selected.map((option, index) => {
+                    const isClient = option?.role === 'Client' || option?.role === 'client';
+                    return (
+                      <Chip
+                        {...getTagProps({ index })}
+                        avatar={<Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>}
+                        key={option?.id}
+                        label={option?.id === user?.id ? 'Me' : `${option?.name}${isClient ? ' (Client)' : ''}`}
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          border: 1,
+                          borderColor: isClient ? '#1340FF' : '#EBEBEB',
+                          boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                          py: 2,
+                          px: 1,
+                          ...(isClient && {
+                            bgcolor: 'rgba(19, 64, 255, 0.08)',
+                          }),
+                        }}
+                      />
+                    );
+                  })
                 }
               />
             </FormField>
