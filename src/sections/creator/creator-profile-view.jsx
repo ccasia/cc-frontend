@@ -83,22 +83,6 @@ const CreatorProfileView = ({ id }) => {
     );
   }
 
-  // const approvedCampaigns =
-  //   campaigns.filter(
-  //     (campaign) => campaign.status !== 'COMPLETED' && campaign.pitch.status === 'APPROVED'
-  //   ) || [];
-  // const pendingCampaigns =
-  //   campaigns.filter(
-  //     (campaign) =>
-  //       campaign.pitch.status === 'PENDING_REVIEW' || campaign.pitch.status === 'SENT_TO_CLIENT'
-  //   ) || [];
-  // const rejectedCampaigns =
-  //   campaigns.filter((campaign) => campaign.pitch.status === 'REJECTED') || [];
-  // const pastCampaigns =
-  //   campaigns.filter(
-  //     (campaign) => campaign.status === 'COMPLETED' && campaign.pitch.status === 'APPROVED'
-  //   ) || [];
-
   const groupsSetup = {
     approved: [],
     pending: [],
@@ -108,10 +92,16 @@ const CreatorProfileView = ({ id }) => {
 
   const groupedCampaigns = campaigns.reduce((groups, campaign) => {
     const pitchStatus = campaign.pitch?.status;
+    const isUserShortlisted = campaign.shortlisted?.userId === id;
     const campaignStatus = campaign.status;
 
-    if (!pitchStatus) {
-      return groups
+    // include retrospective campaigns that have not pitch when shortlisted
+    if (!pitchStatus && isUserShortlisted) {
+      if (campaignStatus === 'COMPLETED') {
+        groups.past.push(campaign);
+      } else {
+        groups.approved.push(campaign);
+      }
     }
 
     if (pitchStatus === 'PENDING_REVIEW' || pitchStatus === 'SENT_TO_CLIENT') {

@@ -996,14 +996,23 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
           );
 
           const currentFiles = watch('campaignImages') || [];
-          setValue('campaignImages', [...currentFiles, ...newFiles]);
+          setValue('campaignImages', [...currentFiles, ...newFiles], {
+            shouldValidate: true,
+            shouldDirty: true,
+          });
         }}
         onRemove={(file) => {
           const filteredFiles = (watch('campaignImages') || []).filter((f) => f !== file);
-          setValue('campaignImages', filteredFiles);
+          setValue('campaignImages', filteredFiles, {
+            shouldValidate: true,
+            shouldDirty: true,
+          });
         }}
         onRemoveAll={() => {
-          setValue('campaignImages', []);
+          setValue('campaignImages', [], {
+            shouldValidate: true,
+            shouldDirty: true,
+          });
         }}
         helperText="Upload up to 5 images. Acceptable files: JPG, PNG"
       />

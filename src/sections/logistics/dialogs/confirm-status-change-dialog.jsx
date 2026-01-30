@@ -1,17 +1,42 @@
 import PropTypes from 'prop-types';
+
 import { Box, Stack, Dialog, Button, Typography } from '@mui/material';
 
 // Reuse config to get colors/labels
-const STATUS_CONFIG = {
-  PENDING_ASSIGNMENT: { label: 'UNASSIGNED', color: '#B0B0B0' },
-  SCHEDULED: { label: 'YET TO SHIP', color: '#FF9A02' },
-  SHIPPED: { label: 'SHIPPED OUT', color: '#8A5AFE' },
-  DELIVERED: { label: 'DELIVERED', color: '#1ABF66' },
-  ISSUE_REPORTED: { label: 'FAILED', color: '#D4321C' },
+const getStatusConfig = (status, isReservation) => {
+  switch (status) {
+    case 'NOT_STARTED':
+      return {
+        label: 'UNCONFIRMED',
+        color: '#B0B0B0',
+      };
+    case 'PENDING_ASSIGNMENT':
+      return {
+        label: isReservation ? 'UNCONFIRMED' : 'UNASSIGNED',
+        color: '#B0B0B0',
+      };
+    case 'SCHEDULED':
+      return {
+        label: isReservation ? 'SCHEDULED' : 'YET TO SHIP',
+        color: isReservation ? '#1340FF' : '#FF9A02', // Blue for Reservation, Orange for Delivery
+      };
+    case 'SHIPPED':
+      return { label: 'SHIPPED OUT', color: '#8A5AFE' };
+    case 'DELIVERED':
+    case 'COMPLETED':
+      return {
+        label: isReservation ? 'COMPLETED' : 'DELIVERED',
+        color: '#1ABF66',
+      };
+    case 'ISSUE_REPORTED':
+      return { label: isReservation ? 'ISSUE' : 'FAILED', color: '#D4321C' };
+    default:
+      return { label: status, color: '#B0B0B0' };
+  }
 };
 
-function StatusPill({ value }) {
-  const config = STATUS_CONFIG[value] || { label: value, color: '#B0B0B0' };
+function StatusPill({ value, isReservation }) {
+  const config = getStatusConfig(value, isReservation);
 
   return (
     <Box
@@ -41,6 +66,7 @@ function StatusPill({ value }) {
 
 StatusPill.propTypes = {
   value: PropTypes.string,
+  isReservation: PropTypes.bool,
 };
 
 export default function ConfirmStatusChangeDialog({
@@ -50,6 +76,7 @@ export default function ConfirmStatusChangeDialog({
   oldStatus,
   newStatus,
   loading,
+  isReservation,
 }) {
   return (
     <Dialog
@@ -115,9 +142,9 @@ export default function ConfirmStatusChangeDialog({
           }}
         >
           Changing from
-          <StatusPill value={oldStatus} />
+          <StatusPill value={oldStatus} isReservation={isReservation} />
           to
-          <StatusPill value={newStatus} />
+          <StatusPill value={newStatus} isReservation={isReservation} />
           affects the statuses and actions on the Creators and Clients side as well
         </Typography>
 
@@ -202,4 +229,5 @@ ConfirmStatusChangeDialog.propTypes = {
   oldStatus: PropTypes.string,
   newStatus: PropTypes.string,
   loading: PropTypes.bool,
+  isReservation: PropTypes.bool,
 };

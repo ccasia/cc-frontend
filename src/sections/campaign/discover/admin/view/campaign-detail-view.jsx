@@ -47,10 +47,9 @@ import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 
-// HIDE: logistics - NEW LOGISTICS COMMENTED OUT
-// import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
-
-import CampaignLogistics from '../campaign-logistics';
+// import CampaignLogistics from '../campaign-logistics';
+// HIDE: logistics
+import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalytics from '../campaign-analytics';
@@ -60,7 +59,7 @@ import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
-import CampaignLogisticsClient from '../campaign-logistics-client';
+// import CampaignLogisticsClient from '../campaign-logistics-client';
 // import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
@@ -390,14 +389,13 @@ const CampaignDetailView = ({ id }) => {
                   ? [{ label: 'Creator Submissions', value: 'submissions-v4' }]
                   : [{ label: 'Creator Deliverables', value: 'deliverables' }]),
                 { label: 'Campaign Analytics', value: 'analytics' },
-                // OLD LOGISTICS RESTORED
+                // HIDE: logistics
                 campaign?.logisticsType && campaign.logisticsType !== ''
                   ? {
                       label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
                       value: 'logistics',
                     }
                   : null,
-                // NEW LOGISTICS COMMENTED OUT
                 // {
                 //   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
                 //   value: 'logistics',
@@ -443,18 +441,21 @@ const CampaignDetailView = ({ id }) => {
                   label: `Invoices (${campaignInvoices?.length || 0})`,
                   value: 'invoices',
                 },
-                // OLD LOGISTICS RESTORED - Show unconditionally for admin
-                {
-                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                  value: 'logistics',
-                },
-                // CONDITIONAL LOGISTICS (commented out)
-                // campaign?.logisticsType && campaign.logisticsType !== ''
-                //   ? {
-                //       label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                //       value: 'logistics',
-                //     }
-                //   : null,
+                // HIDE: logistics
+                campaign?.logisticsType && campaign.logisticsType !== ''
+                  ? {
+                      label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                      value: 'logistics',
+                    }
+                  : null,
+                // {
+                //   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                //   value: 'logistics',
+                // },
+                // {
+                //   label: `Logistics (${campaign?.logistic?.length || 0})`,
+                //   value: 'logistics',
+                // },
                 { label: 'FAQ', value: 'faq' },
               ]
           )
@@ -584,28 +585,29 @@ const CampaignDetailView = ({ id }) => {
       <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
     ),
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
-    // NEW LOGISTICS COMMENTED OUT
-    // logistics: isClient ? (
-    //   <CampaignLogisticsView
-    //     campaign={campaign}
-    //     openBulkAssign={openBulkAssign}
-    //     setOpenBulkAssign={setOpenBulkAssign}
-    //     isAdmin={!isClient} // not client > admin
-    //   />
-    // ) : (
-    //   <CampaignLogisticsView
-    //     campaign={campaign}
-    //     openBulkAssign={openBulkAssign}
-    //     setOpenBulkAssign={setOpenBulkAssign}
-    //     isAdmin={!isClient}
-    //   />
-    // ),
-    // OLD LOGISTICS RESTORED
+    // HIDE: logistics
     logistics: isClient ? (
-      <CampaignLogisticsClient campaign={campaign} />
+      <CampaignLogisticsView
+        campaign={campaign}
+        openBulkAssign={openBulkAssign}
+        setOpenBulkAssign={setOpenBulkAssign}
+        isAdmin={!isClient}
+        isSuperAdmin={isSuperAdmin}
+      />
     ) : (
-      <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
+      <CampaignLogisticsView
+        campaign={campaign}
+        openBulkAssign={openBulkAssign}
+        setOpenBulkAssign={setOpenBulkAssign}
+        isAdmin={!isClient}
+        isSuperAdmin={isSuperAdmin}
+      />
     ),
+    // logistics: isClient ? (
+    //   <CampaignLogisticsClient campaign={campaign} />
+    // ) : (
+    //   <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
+    // ),
     invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
@@ -723,143 +725,107 @@ const CampaignDetailView = ({ id }) => {
   );
 
   const renderActionButtons = () => {
-    if (isClient) {
-      // HIDE: logistics - button moved to logistics view
-      // if (currentTab === 'logistics') {
-      //   return (
-      //     <Button
-      //       variant="contained"
-      //       size="small"
-      //       startIcon={<Iconify icon="eva:edit-2-fill" width={20} />}
-      //       onClick={() => setOpenBulkAssign(true)}
-      //       disabled={isDisabled}
-      //       sx={{
-      //         height: 42,
-      //         borderRadius: 1,
-      //         color: 'white',
-      //         bgcolor: '#1340ff',
-      //         border: '1px solid #1340ff',
-      //         borderBottom: '4px solid #0e2fd6',
-      //         fontWeight: 600,
-      //         fontSize: '0.95rem',
-      //         px: 2,
-      //         whiteSpace: 'nowrap',
-      //         '&:hover': { bgcolor: '#0e2fd6' },
-      //       }}
-      //     >
-      //       Edit & Bulk Assign
-      //     </Button>
-      //   );
-      // }
-      return null;
-    }
+    if (!isClient) {
+      // Admin buttons logic...
+      if (isPendingCampaign) {
+        return (
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
+            onClick={() => {
+              // For superadmin on pending campaigns: use initial activation (admin assignment only)
+              if (
+                canInitialActivate &&
+                (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')
+              ) {
+                console.log('Opening InitialActivateDialog (admin assignment only)');
+                setInitialActivateDialogOpen(true);
+              } else {
+                // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
+                console.log('Opening ActivateDialog (full setup)');
+                setActivateDialogOpen(true);
+              }
+            }}
+            disabled={isDisabled}
+            sx={{
+              height: 42,
+              borderRadius: 1,
+              color: 'white',
+              backgroundColor: '#1340ff',
+              border: '1px solid #1340ff',
+              borderBottom: '4px solid #0e2fd6',
+              fontWeight: 600,
+              fontSize: '0.95rem',
+              px: 2,
+              whiteSpace: 'nowrap',
+              '&:hover': {
+                backgroundColor: '#0e2fd6',
+              },
+              '&.Mui-disabled': {
+                cursor: 'not-allowed',
+                pointerEvents: 'auto',
+              },
+            }}
+          >
+            Activate Campaign
+          </Button>
+        );
+      }
 
-    // Admin buttons logic...
-    if (isPendingCampaign) {
       return (
         <Button
-          variant="contained"
+          variant="outlined"
           size="small"
-          startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
-          onClick={() => {
-            // For superadmin on pending campaigns: use initial activation (admin assignment only)
-            if (
-              canInitialActivate &&
-              (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')
-            ) {
-              console.log('Opening InitialActivateDialog (admin assignment only)');
-              setInitialActivateDialogOpen(true);
-            } else {
-              // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
-              console.log('Opening ActivateDialog (full setup)');
-              setActivateDialogOpen(true);
-            }
-          }}
+          startIcon={
+            <img
+              src="/assets/icons/overview/editButton.svg"
+              alt="edit"
+              style={{
+                width: 18,
+                height: 18,
+                opacity: isDisabled ? 0.3 : 1,
+              }}
+            />
+          }
+          onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
           disabled={isDisabled}
           sx={{
             height: 42,
             borderRadius: 1,
-            color: 'white',
-            backgroundColor: '#1340ff',
-            border: '1px solid #1340ff',
-            borderBottom: '4px solid #0e2fd6',
+            color: isDisabled ? '#9e9e9e' : '#221f20',
+            border: '1px solid #e7e7e7',
+            borderBottom: '4px solid #e7e7e7',
             fontWeight: 600,
             fontSize: '0.95rem',
             px: 2,
             whiteSpace: 'nowrap',
+            opacity: isDisabled ? 0.6 : 1,
             '&:hover': {
-              backgroundColor: '#0e2fd6',
+              backgroundColor: 'rgba(34, 31, 32, 0.04)',
+              border: '1px solid #231F20',
+              borderBottom: '4px solid #231F20',
+            },
+            '&.Mui-disabled': {
+              cursor: 'not-allowed',
+              pointerEvents: 'auto',
+              color: '#9e9e9e',
+              border: '1px solid #e7e7e7',
+              borderBottom: '4px solid #e7e7e7',
+              backgroundColor: 'transparent',
+              '&:hover': {
+                backgroundColor: 'transparent',
+                border: '1px solid #e7e7e7',
+                borderBottom: '4px solid #e7e7e7',
+              },
             },
           }}
         >
-          Activate Campaign
+          Edit Details
         </Button>
       );
     }
-
-    // HIDE: logistics - button moved to logistics view
-    // if (currentTab === 'logistics') {
-    //   return (
-    //     <Button
-    //       variant="contained"
-    //       size="small"
-    //       startIcon={<Iconify icon="eva:edit-2-fill" width={20} />}
-    //       onClick={() => setOpenBulkAssign(true)}
-    //       disabled={isDisabled}
-    //       sx={{
-    //         height: 42,
-    //         borderRadius: 1,
-    //         color: 'white',
-    //         bgcolor: '#1340ff',
-    //         border: '1px solid #1340ff',
-    //         borderBottom: '4px solid #0e2fd6',
-    //         fontWeight: 600,
-    //         fontSize: '0.95rem',
-    //         px: 2,
-    //         whiteSpace: 'nowrap',
-    //         '&:hover': { bgcolor: '#0e2fd6' },
-    //       }}
-    //     >
-    //       Edit & Bulk Assign
-    //     </Button>
-    //   );
-    // }
-
-    return (
-      <Button
-        variant="outlined"
-        size="small"
-        startIcon={
-          <img
-            src="/assets/icons/overview/editButton.svg"
-            alt="edit"
-            style={{
-              width: 20,
-              height: 20,
-              opacity: isDisabled ? 0.3 : 1,
-            }}
-          />
-        }
-        onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
-        disabled={isDisabled}
-        sx={{
-          height: 42,
-          borderRadius: 1,
-          color: '#221f20',
-          border: '1px solid #e7e7e7',
-          borderBottom: '4px solid #e7e7e7',
-          fontWeight: 600,
-          fontSize: '0.95rem',
-          px: 2,
-          whiteSpace: 'nowrap',
-          '&:hover': {
-            backgroundColor: 'rgba(34, 31, 32, 0.04)',
-          },
-        }}
-      >
-        Edit Details
-      </Button>
-    );
+    return null;
   };
 
   return (
@@ -901,7 +867,7 @@ const CampaignDetailView = ({ id }) => {
           width="100%"
           sx={{ mt: -1 }}
         >
-          <Stack direction="row" alignItems="center" spacing={2}>
+          <Stack direction="row" alignItems="center" spacing={2} width="100%">
             {campaign?.campaignBrief?.images?.[0] && (
               <img
                 src={campaign?.campaignBrief.images[0]}

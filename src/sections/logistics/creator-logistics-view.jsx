@@ -1,57 +1,176 @@
-import PropTypes from 'prop-types';
-import { useState } from 'react';
 import useSWR from 'swr';
+import PropTypes from 'prop-types';
+import { useMemo, useState, useEffect } from 'react';
 
-import { Box, Stack, Button, Divider, Typography, Link, Badge } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import { Box, Link, Stack, Badge, Button, Divider, Typography } from '@mui/material';
 
-import axiosInstance, { fetcher } from 'src/utils/axios';
-import Iconify from 'src/components/iconify';
 import { fDate } from 'src/utils/format-time';
+import axiosInstance, { fetcher } from 'src/utils/axios';
+import { formatReservationSlot } from 'src/utils/reservation-time';
+
+import { useAuthContext } from 'src/auth/hooks';
+
+import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 
 import { CreatorLogisticsStepper } from './logistics-stepper';
-import ConfirmDetailsDialog from './dialogs/confirm-details-dialog';
 import ReportIssueDialog from './dialogs/report-issue-dialog';
+import ConfirmDeliveryDetailsDialog from './dialogs/confirm-details-dialog';
+import CreatorReservationDialog from './dialogs/creator-reservation-dialog';
+
+const NewInfoBadge = () => (
+  <Box
+    component="span"
+    sx={{
+      width: 8,
+      height: 8,
+      borderRadius: '50%',
+      bgcolor: '#FF3500',
+      display: 'inline-block',
+      ml: 1,
+    }}
+  />
+);
+
+const InfoItem = ({ label, value, fieldKey, logisticId, isAuto }) => {
+  const [showBadge, setShowBadge] = useState(false);
+
+  useEffect(() => {
+    if (!isAuto || !value) return;
+
+    const seen = localStorage.getItem(`seen-${logisticId}-${fieldKey}`);
+    if (!seen) {
+      setShowBadge(true);
+    }
+  }, [value, logisticId, fieldKey, isAuto]);
+
+  const handleMouseEnter = () => {
+    if (showBadge) {
+      setShowBadge(false);
+      localStorage.setItem(`seen-${logisticId}-${fieldKey}`, 'true');
+    }
+  };
+
+  if (!value) return null;
+
+  return (
+    <Box onMouseEnter={handleMouseEnter}>
+      <Typography
+        variant="caption"
+        sx={{
+          color: 'text.secondary',
+          display: 'flex',
+          alignItems: 'center',
+          fontWeight: 500,
+        }}
+      >
+        {label} {showBadge && <NewInfoBadge />}
+      </Typography>
+      <Typography variant="body1" sx={{ fontWeight: 500, color: '#231F20' }}>
+        {value}
+      </Typography>
+    </Box>
+  );
+};
+
+InfoItem.propTypes = {
+  label: PropTypes.string,
+  value: PropTypes.string,
+  fieldKey: PropTypes.string,
+  logisticId: PropTypes.string,
+  isAuto: PropTypes.bool,
+};
 
 export default function CreatorLogisticsView({ campaign }) {
+  const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
 
   // Dialog States
   const [openConfirm, setOpenConfirm] = useState(false);
   const [openIssue, setOpenIssue] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Data Fetching
   const {
     data: logistic,
     mutate,
     isLoading,
-  } = useSWR(campaign?.id ? `/api/logistics/creator/campaign/${campaign.id}` : null, fetcher);
+  } = useSWR(campaign?.id ? `/api/logistics/creator/campaign/${campaign.id}` : null, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
 
-  const status = logistic?.status;
+  const { data: config } = useSWR(
+    campaign?.id && campaign?.logisticsType === 'RESERVATION'
+      ? `/api/logistics/campaign/${campaign.id}/reservation-config`
+      : null,
+    fetcher
+  );
+
+  const isReservation = campaign?.logisticsType === 'RESERVATION';
+  const isAutoSchedule = config?.mode === 'AUTO_SCHEDULE';
+
+  const status = logistic?.status || 'NOT_STARTED';
   const deliveryDetails = logistic?.deliveryDetails;
-  const creator = logistic?.creator;
-  const isConfirmed = logistic?.deliveryDetails?.isConfirmed;
+  const reservationDetails = logistic?.reservationDetails;
+  const creator = logistic?.creator || user;
+  const isConfirmed = isReservation
+    ? logistic?.reservationDetails?.isConfirmed
+    : logistic?.deliveryDetails?.isConfirmed;
 
-  const handleMarkReceived = async () => {
+  const { confirmedSlot, proposedSlots } = useMemo(() => {
+    const slots = logistic?.reservationDetails?.slots || [];
+    return {
+      confirmedSlot: slots.find((slot) => slot.status === 'SELECTED'),
+      proposedSlots: slots.filter((slot) => slot.status === 'PROPOSED'),
+    };
+  }, [logistic]);
+
+  const handleComplete = async () => {
+    setIsProcessing(true);
     try {
-      // setIsLoading(true);
-      await axiosInstance.patch(`/api/logistics/creator/${logistic.id}/received`);
+      if (isReservation) {
+        await axiosInstance.patch(`/api/logistics/creator/${logistic.id}/complete`);
+        enqueueSnackbar('Visit marked as completed!', { variant: 'success' });
+      } else {
+        await axiosInstance.patch(`/api/logistics/creator/${logistic.id}/received`);
+        enqueueSnackbar('Products marked as received!', { variant: 'success' });
+      }
       mutate();
-      enqueueSnackbar('Products marked as received!', { variant: 'success' });
     } catch (err) {
       console.error(err);
       enqueueSnackbar('Failed to update status', { variant: 'error' });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
+  // TODO - reschedule dialog
+  const handleReschedule = async () => {
+    // if (!confirm('Are you sure you want to reschedule? This will cancel your current booking.'))
+    // return;
+    setIsProcessing(true);
+    try {
+      await axiosInstance.post(`/api/logistics/campaign/${campaign.id}/${logistic.id}/reschedule`);
+      mutate();
+      enqueueSnackbar('Booking reset. Please select a new time.');
+    } catch (err) {
+      console.error(err);
+      enqueueSnackbar('Failed to reschedule', { variant: 'error' });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleMarkReceived = async () => {
+    handleComplete();
+  };
+
   if (isLoading) return <Typography>Loading...</Typography>;
-  if (!logistic) return <Typography>No logistics found.</Typography>;
 
-  // --- Renders ---
-
-  const renderYourDetails = (
+  const renderProductLeft = (
     <Stack spacing={1} sx={{ height: '100%' }}>
-      {/* Header */}
       <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 3 }}>
         <Iconify icon="eva:person-outline" sx={{ color: '#1340FF' }} />
         <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
@@ -59,7 +178,6 @@ export default function CreatorLogisticsView({ campaign }) {
         </Typography>
       </Stack>
       <Divider />
-      {/* Details List */}
       <Stack spacing={2} sx={{ flexGrow: 1, px: 4 }}>
         <Box>
           <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1.5 }}>
@@ -89,7 +207,6 @@ export default function CreatorLogisticsView({ campaign }) {
         </Box>
       </Stack>
 
-      {/* Action Button: Confirm Details */}
       {(status === 'PENDING_ASSIGNMENT' || status === 'SCHEDULED') && !isConfirmed && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <Badge color="error" variant="dot" invisible={status !== 'PENDING_ASSIGNMENT'}>
@@ -126,7 +243,169 @@ export default function CreatorLogisticsView({ campaign }) {
     </Stack>
   );
 
-  const renderDeliveryDetails = (
+  const renderReservationLeft = () => {
+    let availabilityDisplay = null;
+
+    if (confirmedSlot) {
+      availabilityDisplay = (
+        <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '14px' }}>
+          {formatReservationSlot(confirmedSlot.startTime, confirmedSlot.endTime, true)}
+        </Typography>
+      );
+    } else {
+      availabilityDisplay = (
+        <Stack spacing={0.5}>
+          {proposedSlots.map((slot, idx) => (
+            <Typography key={idx} variant="body2" sx={{ fontWeight: 500, fontSize: '14px' }}>
+              {formatReservationSlot(slot.startTime, slot.endTime, true)}
+            </Typography>
+          ))}
+        </Stack>
+      );
+    }
+
+    return (
+      <Stack spacing={1} sx={{ height: '100%' }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 3 }}>
+          <Iconify icon="eva:person-outline" sx={{ color: '#1340FF' }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
+            Your Details
+          </Typography>
+        </Stack>
+        <Divider />
+        <Stack spacing={2} sx={{ flexGrow: 1, px: 4 }}>
+          <Box>
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                display: 'block',
+                mt: 1.5,
+                textTransform: 'capitalize',
+              }}
+            >
+              Preferred Outlet
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 500, fontSize: '14px', textTransform: 'capitalize' }}
+            >
+              {reservationDetails?.outlet || '-'}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              Availability
+            </Typography>
+            {availabilityDisplay}
+          </Box>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              Contact Number
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '14px' }}>
+              {creator?.phoneNumber || '-'}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              My Remarks
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '14px' }}>
+              {reservationDetails?.creatorRemarks || '-'}
+            </Typography>
+          </Box>
+        </Stack>
+
+        {status === 'NOT_STARTED' && (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              px: 4,
+              mt: 4,
+              pb: 2,
+            }}
+          >
+            <Badge color="error" variant="dot">
+              <Button
+                variant="contained"
+                onClick={() => setOpenConfirm(true)}
+                sx={{
+                  padding: { xs: '4px 8px', sm: '6px 10px' },
+                  height: 44,
+                  bgcolor: '#1340FF',
+                  px: 4,
+                  py: 1,
+                  borderRadius: '8px',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                  '&:hover': {
+                    backgroundColor: '#133effd3',
+                    boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                  },
+                  '&:active': {
+                    boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+                    transform: 'translateY(1px)',
+                  },
+                }}
+              >
+                Confirm Details
+              </Button>
+            </Badge>
+          </Box>
+        )}
+
+        {status === 'SCHEDULED' && isAutoSchedule && (
+          <Box
+            sx={{
+              display: 'flex',
+              // justifyContent: 'center',
+              alignItems: 'center',
+              px: 4,
+              mt: 4,
+              // pb: 2,
+            }}
+          >
+            <Button
+              variant="outlined"
+              onClick={handleReschedule}
+              disabled={isProcessing}
+              // fullWidth
+              sx={{
+                padding: { xs: '4px 8px', sm: '6px 10px' },
+                height: 44,
+                bgcolor: '#FFFFFF',
+                color: '#1340FF',
+                px: 4,
+                py: 1,
+                borderRadius: '8px',
+                fontSize: '15px',
+                fontWeight: 600,
+                textTransform: 'none',
+                boxShadow: '0px -4px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.84)',
+                  boxShadow: '0px -4px 0px 0px #E7E7E7 inset',
+                },
+                '&:active': {
+                  boxShadow: '0px 0px 0px 0px #E7E7E7 inset',
+                  transform: 'translateY(1px)',
+                },
+              }}
+            >
+              Reschedule
+            </Button>
+          </Box>
+        )}
+      </Stack>
+    );
+  };
+
+  const renderProductRight = (
     <Stack spacing={1} sx={{ height: '100%' }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 3 }}>
@@ -136,9 +415,7 @@ export default function CreatorLogisticsView({ campaign }) {
         </Typography>
       </Stack>
       <Divider />
-      {/* Content Area */}
       {status === 'PENDING_ASSIGNMENT' ? (
-        // Empty State (Waiting for client)
         <Box
           sx={{
             flexGrow: 1,
@@ -205,7 +482,7 @@ export default function CreatorLogisticsView({ campaign }) {
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
               Expected Delivery Date
             </Typography>
-            <Typography vvariant="body1" fontFamily="inter" sx={{ fontWeight: 700 }}>
+            <Typography variant="body1" fontFamily="inter" sx={{ fontWeight: 700 }}>
               {deliveryDetails?.expectedDeliveryDate
                 ? fDate(deliveryDetails.expectedDeliveryDate)
                 : '-'}
@@ -279,22 +556,263 @@ export default function CreatorLogisticsView({ campaign }) {
     </Stack>
   );
 
+  const renderReservationRight = () => {
+    if (status === 'NOT_STARTED' || status === 'PENDING_ASSIGNMENT') {
+      return (
+        <Stack spacing={1} sx={{ height: '100%' }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 3 }}>
+            <Iconify icon="eva:calendar-outline" sx={{ color: '#1340FF' }} />
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
+              Reservation Details
+            </Typography>
+          </Stack>
+          <Divider />
+          <Box
+            sx={{
+              flexGrow: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 250,
+            }}
+          >
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
+                bgcolor: '#F4F6F8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2,
+              }}
+            >
+              <Typography variant="h3">{status === 'NOT_STARTED' ? '📝' : '😶‍🌫️'}</Typography>
+            </Box>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {status === 'NOT_STARTED'
+                ? 'Please confirm your details to start.'
+                : 'Waiting for Client to update...'}{' '}
+            </Typography>
+          </Box>
+        </Stack>
+      );
+    }
+
+    return (
+      <Stack spacing={1} sx={{ height: '100%' }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 3 }}>
+          <Iconify icon="eva:calendar-outline" sx={{ color: '#1340FF' }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
+            Reservation Details
+          </Typography>
+        </Stack>
+        <Divider />
+        <Stack spacing={2} sx={{ px: 4, flexGrow: 1 }}>
+          <Box>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 1.5 }}
+            >
+              Booked Slot
+            </Typography>
+            {confirmedSlot ? (
+              <Typography
+                variant="body"
+                sx={{ fontWeight: 700, fontSize: '18px', fontFamily: 'Inter' }}
+              >
+                {formatReservationSlot(confirmedSlot.startTime, confirmedSlot.endTime, true)}
+              </Typography>
+            ) : (
+              <Typography variant="body2">-</Typography>
+            )}
+          </Box>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              Location
+            </Typography>
+            <Typography
+              variant="body"
+              sx={{
+                fontWeight: 700,
+                fontSize: '18px',
+                fontFamily: 'Inter',
+                textTransform: 'capitalize',
+              }}
+            >
+              {reservationDetails?.outlet}
+            </Typography>
+          </Box>
+          {/* Display Client-Entered info (Budget, PIC, Promo) */}
+          {/* {reservationDetails?.promoCode && (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Promo
+              </Typography>
+              <Typography variant="body2">{reservationDetails.promoCode}</Typography>
+            </Box>
+          )}
+          {reservationDetails?.picName && (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Person In Charge
+              </Typography>
+              <Typography variant="body2">
+                {reservationDetails.picName}{' '}
+                {reservationDetails?.picContact && <span>({reservationDetails.picContact})</span>}
+              </Typography>
+            </Box>
+          )}
+          {reservationDetails?.budget && (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Budget
+              </Typography>
+              <Typography variant="body2">{reservationDetails.budget}</Typography>
+            </Box>
+          )}
+
+          {reservationDetails?.clientRemarks && (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Client Remarks
+              </Typography>
+              <Typography variant="body2">{reservationDetails.clientRemarks}</Typography>
+            </Box>
+          )} */}
+          <InfoItem
+            label="Person In Charge"
+            value={
+              reservationDetails?.picName
+                ? `${reservationDetails.picName} ${reservationDetails?.picContact ? `(${reservationDetails.picContact})` : ''}`
+                : null
+            }
+            fieldKey="pic"
+            logisticId={logistic.id}
+            isAuto={isAutoSchedule} // Red dot logic only triggers if this is true
+          />
+
+          <InfoItem
+            label="Budget"
+            value={reservationDetails?.budget}
+            fieldKey="budget"
+            logisticId={logistic.id}
+            isAuto={isAutoSchedule}
+          />
+
+          <InfoItem
+            label="Promo/Menu"
+            value={reservationDetails?.promoCode}
+            fieldKey="promo"
+            logisticId={logistic.id}
+            isAuto={isAutoSchedule}
+          />
+
+          <InfoItem
+            label="Client Remarks"
+            value={reservationDetails?.clientRemarks}
+            fieldKey="remarks"
+            logisticId={logistic.id}
+            isAuto={isAutoSchedule}
+          />
+        </Stack>
+
+        {/* Buttons for Scheduled State */}
+        {status !== 'COMPLETED' && (
+          <Stack direction="row" spacing={2} sx={{ px: 4, mt: 4 }}>
+            <LoadingButton
+              variant="contained"
+              fullWidth
+              onClick={handleComplete}
+              loading={isProcessing}
+              sx={{
+                width: 'fit-content',
+                height: 44,
+                padding: { xs: '4px 14px', sm: '6px 18px' },
+                borderRadius: '8px',
+                boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                backgroundColor: '#1340FF',
+                color: '#FFFFFF',
+                fontSize: { xs: 12, sm: 14, md: 16 },
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#133effd3',
+                  boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                },
+                '&:active': {
+                  boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+                  transform: 'translateY(1px)',
+                },
+              }}
+            >
+              Complete Visit
+            </LoadingButton>
+            <Button
+              variant="outlined"
+              fullWidth
+              onClick={() => setOpenIssue(true)}
+              sx={{
+                width: 'fit-content',
+                height: 44,
+                padding: { xs: '4px 8px', sm: '6px 10px' },
+                borderRadius: '8px',
+                boxShadow: '0px -4px 0px 0px #000 inset',
+                backgroundColor: '#3A3A3C',
+                color: '#fff',
+                fontSize: { xs: 12, sm: 14, md: 16 },
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#3a3a3cde',
+                  boxShadow: '0px -4px 0px 0px #000 inset',
+                },
+                '&:active': {
+                  boxShadow: '0px 0px 0px 0px #000 inset',
+                  transform: 'translateY(1px)',
+                },
+              }}
+            >
+              Report Issue
+            </Button>
+          </Stack>
+        )}
+
+        {status === 'ISSUE_REPORTED' && (
+          <Box sx={{ p: 2, mx: 4, bgcolor: '#FFEFD6', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ color: '#231F20' }}>
+              Issue Reported
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#FF3500' }}>
+              We are reviewing your issue.
+            </Typography>
+          </Box>
+        )}
+      </Stack>
+    );
+  };
+
   return (
     <>
-      {/* Main Wrapper Box (Replaces Card) */}
       <Box
         sx={{
           bgcolor: '#FFFFFF',
-          borderRadius: 2, // ~16px
+          borderRadius: 2,
           border: '1px solid',
-          borderColor: '#EDEFF2', // Light grey border
+          borderColor: '#EDEFF2',
           overflow: 'hidden',
           width: '100%',
         }}
       >
         {/* Top Section: Stepper */}
         <Box sx={{ py: 6, px: { xs: 3, md: 14 }, borderBottom: '1px solid #EDEFF2' }}>
-          <CreatorLogisticsStepper status={status} updatedDates={logistic} />
+          <CreatorLogisticsStepper
+            status={status}
+            logistic={logistic}
+            isReservation={isReservation}
+          />
         </Box>
 
         {/* Bottom Section: Split Columns */}
@@ -310,23 +828,36 @@ export default function CreatorLogisticsView({ campaign }) {
           }
         >
           {/* Left Column: Your Details */}
-          <Box sx={{ width: { xs: '100%', md: '50%' }, py: 1, pb: 4 }}>{renderYourDetails}</Box>
+          <Box sx={{ width: { xs: '100%', md: '50%' }, py: 1, pb: 4 }}>
+            {isReservation ? renderReservationLeft() : renderProductLeft}
+          </Box>
 
           {/* Horizontal Divider for Mobile Only */}
           <Divider sx={{ display: { xs: 'block', md: 'none' } }} />
 
           {/* Right Column: Delivery Details */}
-          <Box sx={{ width: { xs: '100%', md: '50%' }, py: 1, pb: 4 }}>{renderDeliveryDetails}</Box>
+          <Box sx={{ width: { xs: '100%', md: '50%' }, py: 1, pb: 4 }}>
+            {isReservation ? renderReservationRight() : renderProductRight}
+          </Box>
         </Stack>
       </Box>
 
       {/* Dialogs */}
-      <ConfirmDetailsDialog
-        open={openConfirm}
-        onClose={() => setOpenConfirm(false)}
-        logistic={logistic}
-        onUpdate={mutate}
-      />
+      {isReservation ? (
+        <CreatorReservationDialog
+          open={openConfirm}
+          onClose={() => setOpenConfirm(false)}
+          campaign={campaign}
+          onUpdate={mutate}
+        />
+      ) : (
+        <ConfirmDeliveryDetailsDialog
+          open={openConfirm}
+          onClose={() => setOpenConfirm(false)}
+          logistic={logistic}
+          onUpdate={mutate}
+        />
+      )}
 
       <ReportIssueDialog
         open={openIssue}
@@ -341,5 +872,6 @@ export default function CreatorLogisticsView({ campaign }) {
 CreatorLogisticsView.propTypes = {
   campaign: PropTypes.shape({
     id: PropTypes.string,
+    logisticsType: PropTypes.string,
   }),
 };

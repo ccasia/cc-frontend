@@ -1,10 +1,11 @@
+import { useMemo } from 'react';
+import { format } from 'date-fns';
 import PropTypes from 'prop-types';
-import { isSameDay } from 'date-fns';
 
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
-import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { PickersDay } from '@mui/x-date-pickers/PickersDay';
+import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -24,11 +25,41 @@ const getStatusColor = (status) => {
 };
 
 function ServerDay(props) {
-  const { logistics = [], day, outsideCurrentMonth, ...other } = props;
+  const {
+    logistics = [],
+    day,
+    outsideCurrentMonth,
+    isReservation,
+    reservationConfig,
+    ...other
+  } = props;
+
+  const dateString = format(day, 'yyyy-MM-dd');
+
+  const hasConfig = useMemo(() => {
+    const availabilityRules = reservationConfig?.availabilityRules;
+
+    if (!isReservation || !availabilityRules) return true;
+
+    return availabilityRules.some((rule) =>
+      rule.dates?.some((d) => {
+        const ruleDateString =
+          typeof d === 'string' ? d.split('T')[0] : format(new Date(d), 'yyyy-MM-dd');
+        return ruleDateString === dateString;
+      })
+    );
+  }, [isReservation, reservationConfig, dateString]);
 
   const dayLogistics = logistics.filter((logistic) => {
+    if (isReservation) {
+      const selectedSlot = logistic.reservationDetails?.slots?.find((s) => s.status === 'SELECTED');
+
+      if (!selectedSlot) return false;
+      return selectedSlot?.startTime.startsWith(dateString);
+    }
+
     if (!logistic.deliveryDetails?.expectedDeliveryDate) return false;
-    return isSameDay(new Date(logistic.deliveryDetails.expectedDeliveryDate), day);
+    return logistic.deliveryDetails?.expectedDeliveryDate?.startsWith(dateString);
   });
 
   const count = dayLogistics.length;
@@ -102,14 +133,20 @@ function ServerDay(props) {
         sx={{
           width: 30,
           height: 30,
+          color: hasConfig ? '#231F20' : '#C0C0C0',
           fontSize: '0.75rem',
-          fontWeight: 400,
+          fontWeight: hasConfig ? 600 : 400,
+          opacity: hasConfig && !outsideCurrentMonth ? 1 : 0.5,
           '&.Mui-selected': {
             backgroundColor: '#1340FF !important',
             color: '#ffffff',
+            opacity: 1,
             '&:hover': {
               backgroundColor: '#0b2dad !important',
             },
+          },
+          '&.MuiPickersDay-today': {
+            borderColor: hasConfig ? '#1340FF' : '#E0E0E0',
           },
         }}
       />
@@ -123,9 +160,17 @@ ServerDay.propTypes = {
   highlightedDays: PropTypes.array,
   outsideCurrentMonth: PropTypes.bool,
   logistics: PropTypes.array,
+  isReservation: PropTypes.bool,
+  reservationConfig: PropTypes.object,
 };
 
-export default function LogisticsCalendar({ date, onChange, logistics }) {
+export default function LogisticsCalendar({
+  date,
+  onChange,
+  logistics,
+  isReservation,
+  reservationConfig,
+}) {
   const safeLogistics = logistics || [];
 
   return (
@@ -134,14 +179,18 @@ export default function LogisticsCalendar({ date, onChange, logistics }) {
         <DateCalendar
           value={date}
           onChange={onChange}
-          minDate={new Date()}
+          minDate={new Date('2026-01-01')}
           showDaysOutsideCurrentMonth
           fixedWeekNumber={6}
           slots={{
             day: ServerDay,
           }}
           slotProps={{
-            day: { logistics: safeLogistics },
+            day: {
+              logistics: safeLogistics,
+              isReservation,
+              reservationConfig,
+            },
           }}
           sx={{
             width: '100%',
@@ -162,10 +211,10 @@ export default function LogisticsCalendar({ date, onChange, logistics }) {
               paddingBottom: '4px',
             },
             '& .MuiPickersYear-yearButton.Mui-selected': {
-              backgroundColor: '#1340FF !important', // Your Blue Color
+              backgroundColor: '#1340FF !important',
               color: '#ffffff',
               '&:hover': {
-                backgroundColor: '#0b2dad !important', // Darker Blue on hover
+                backgroundColor: '#0b2dad !important',
               },
             },
           }}
@@ -179,4 +228,6 @@ LogisticsCalendar.propTypes = {
   date: PropTypes.object,
   onChange: PropTypes.func,
   logistics: PropTypes.array,
+  isReservation: PropTypes.bool,
+  reservationConfig: PropTypes.object,
 };
