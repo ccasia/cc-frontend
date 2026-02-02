@@ -574,6 +574,27 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     return combinedData.filter((agreement) => approvedCreatorSet.has(agreement.userId));
   }, [combinedData, campaign?.pitch, campaign?.shortlisted]);
 
+  const pendingCount = useMemo(
+    () => pitchApprovedAgreements?.filter((item) => !item.isSent).length || 0,
+    [pitchApprovedAgreements]
+  );
+
+  const filterCounts = useMemo(() => {
+    if (!pitchApprovedAgreements) return { pendingApproval: 0, sentToCreator: 0, rejected: 0, approved: 0 };
+    return {
+      pendingApproval: pitchApprovedAgreements.filter((item) => item?.submission?.status === 'PENDING_REVIEW').length,
+      sentToCreator: pitchApprovedAgreements.filter(
+        (item) =>
+          item?.isSent &&
+          item?.submission?.status !== 'PENDING_REVIEW' &&
+          item?.submission?.status !== 'APPROVED' &&
+          item?.submission?.status !== 'REJECTED'
+      ).length,
+      rejected: pitchApprovedAgreements.filter((item) => item?.submission?.status === 'REJECTED').length,
+      approved: pitchApprovedAgreements.filter((item) => item?.submission?.status === 'APPROVED').length,
+    };
+  }, [pitchApprovedAgreements]);
+
   const filteredData = useMemo(() => {
     if (!pitchApprovedAgreements) return [];
 
@@ -851,7 +872,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
               }}
             >
               All
-            </Button>
+            </Button> */}
 
             <Button
               fullWidth={!mdUp}

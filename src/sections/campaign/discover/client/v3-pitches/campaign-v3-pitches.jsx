@@ -30,7 +30,6 @@ import {
   TableContainer,
   InputAdornment,
   CircularProgress,
-  InputAdornment,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
