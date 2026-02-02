@@ -174,46 +174,55 @@ const CampaignInfo = ({ campaign }) => {
                       >
                         {item.label}
                       </Typography>
-                      {item.isCountries ? (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {item.data?.map((countryName, idx) => (
+                      {(() => {
+                        if (item.isCountries) {
+                          return (
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                              {item.data?.map((countryName, idx) => (
+                                <Box
+                                  key={idx}
+                                  display="inline-flex"
+                                  gap={1}
+                                  sx={{ ...ChipStyle, p: 1, px: 1.5 }}
+                                  alignItems="center"
+                                >
+                                  <Iconify
+                                    icon={`emojione:flag-for-${countryName.toLowerCase()}`}
+                                    width={20}
+                                  />
+                                  <Typography variant="subtitle2">{countryName}</Typography>
+                                </Box>
+                              ))}
+                            </Box>
+                          );
+                        }
+                        if (Array.isArray(item.data)) {
+                          return (
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                              {item.data?.map((value, idx) => (
+                                <Chip key={idx} label={value} size="small" sx={ChipStyle} />
+                              ))}
+                            </Box>
+                          );
+                        }
+                        if (item.isCountry) {
+                          return (
                             <Box
-                              key={idx}
                               display="inline-flex"
                               gap={1}
                               sx={{ ...ChipStyle, p: 1, px: 1.5 }}
                               alignItems="center"
                             >
                               <Iconify
-                                icon={`emojione:flag-for-${countryName.toLowerCase()}`}
+                                icon={`emojione:flag-for-${item.data.toLowerCase()}`}
                                 width={20}
                               />
-                              <Typography variant="subtitle2">{countryName}</Typography>
+                              <Typography variant="subtitle2">{item.data}</Typography>
                             </Box>
-                          ))}
-                        </Box>
-                      ) : Array.isArray(item.data) ? (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {item.data?.map((value, idx) => (
-                            <Chip key={idx} label={value} size="small" sx={ChipStyle} />
-                          ))}
-                        </Box>
-                      ) : (
-                        item.isCountry && (
-                          <Box
-                            display="inline-flex"
-                            gap={1}
-                            sx={{ ...ChipStyle, p: 1, px: 1.5 }}
-                            alignItems="center"
-                          >
-                            <Iconify
-                              icon={`emojione:flag-for-${item.data.toLowerCase()}`}
-                              width={20}
-                            />
-                            <Typography variant="subtitle2">{item.data}</Typography>
-                          </Box>
-                        )
-                      )}
+                          );
+                        }
+                        return null;
+                      })()}
                     </Box>
                   ))}
               </Stack>

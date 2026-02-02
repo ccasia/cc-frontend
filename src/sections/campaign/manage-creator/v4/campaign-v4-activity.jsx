@@ -1,14 +1,14 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable no-nested-ternary */
 import useSWR from 'swr';
+import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { PDFDocument } from 'pdf-lib';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { Page, pdfjs, Document } from 'react-pdf';
-import React, { useMemo, useState, useEffect } from 'react';
-import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -16,6 +16,7 @@ import {
   Card,
   Chip,
   Stack,
+  Paper,
   Button,
   Dialog,
   Divider,
@@ -27,24 +28,21 @@ import {
   DialogContent,
   DialogActions,
   useMediaQuery,
-  Avatar,
-  Paper,
   CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { fetcher, endpoints } from 'src/utils/axios';
-import useSocketContext from 'src/socket/hooks/useSocketContext';
+
 import { useAuthContext } from 'src/auth/hooks';
+import { regions } from 'src/assets/data/regions';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
-import { RHFUpload, RHFTextField, RHFSelect } from 'src/components/hook-form';
 import PDFEditorV2 from 'src/components/pdf/pdf-editor-v2';
 import FormProvider from 'src/components/hook-form/form-provider';
-
-import { regions } from 'src/assets/data/regions';
-import { useGetCreatorLogistic } from 'src/hooks/use-get-creator-logistic';
+import { RHFUpload, RHFSelect, RHFTextField } from 'src/components/hook-form';
 
 import V4VideoSubmission from './submissions/v4-video-submission';
 import V4PhotoSubmission from './submissions/v4-photo-submission';

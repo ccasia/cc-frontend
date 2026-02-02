@@ -28,7 +28,7 @@ import { VideoModal } from '../../../creator-stuff/submissions/firstDraft/media-
 
 // ----------------------------------------------------------------------
 
-export default function MobileVideoSubmission({ submission, campaign, onUpdate }) {
+export default function MobileVideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
 
@@ -335,6 +335,7 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate }
                 submission={submission}
                 onUpdate={onUpdate}
                 onViewLogs={() => setShowFeedbackLogs(true)}
+                isDisabled={isDisabled}
               />
             ) : (
               <FeedbackSection
@@ -363,6 +364,7 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate }
             handleRequestChanges={handleRequestChanges}
             hasPostingLink={hasPostingLink}
             onViewLogs={() => setShowFeedbackLogs(true)}
+            isDisabled={isDisabled}
           />
         </>
       )}
@@ -389,4 +391,5 @@ MobileVideoSubmission.propTypes = {
   submission: PropTypes.object.isRequired,
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };

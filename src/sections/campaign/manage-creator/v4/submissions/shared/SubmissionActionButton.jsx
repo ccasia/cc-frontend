@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Box, Typography, LinearProgress, Stack } from '@mui/material';
+
+import { Box, Stack, Typography, LinearProgress } from '@mui/material';
 
 /**
  * Shared submit/reupload button component for all submission types

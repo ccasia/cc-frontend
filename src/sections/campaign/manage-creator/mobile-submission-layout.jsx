@@ -8,10 +8,10 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import CampaignPosting from './submissions/campaign-posting';
+import LogisticsForm from './submissions/campaign-logistics';
 import CampaignAgreement from './submissions/campaign-agreement';
 import CampaignFirstDraft from './submissions/campaign-first-draft';
 import CampaignFinalDraft from './submissions/campaign-final-draft';
-import LogisticsForm from './submissions/campaign-logistics';
 
 export const defaultSubmission = [
   {

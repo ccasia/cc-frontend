@@ -11,7 +11,7 @@ import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
 import CampaignV3Pitches from './campaign-v3-pitches';
 
-const CampaignV3PitchesWrapper = ({ campaign, campaignMutate }) => {
+const CampaignV3PitchesWrapper = ({ campaign, campaignMutate, isDisabled = false }) => {
   const { pitches, isLoading, isError, mutate } = useGetV3Pitches(campaign?.id);
 
   const handlePitchUpdate = (updatedPitch) => {
@@ -62,6 +62,7 @@ const CampaignV3PitchesWrapper = ({ campaign, campaignMutate }) => {
         pitches={pitches}
         campaign={campaign}
         onUpdate={handlePitchUpdate}
+        isDisabled={isDisabled}
       />
     </Box>
   );
@@ -72,4 +73,5 @@ export default CampaignV3PitchesWrapper;
 CampaignV3PitchesWrapper.propTypes = {
   campaign: PropTypes.object.isRequired,
   campaignMutate: PropTypes.func,
+  isDisabled: PropTypes.bool,
 }; 

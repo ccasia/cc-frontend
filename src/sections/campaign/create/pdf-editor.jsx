@@ -16,11 +16,11 @@ import {
   Dialog,
   Button,
   Stepper,
+  Checkbox,
   StepLabel,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Checkbox,
   FormControlLabel,
 } from '@mui/material';
 

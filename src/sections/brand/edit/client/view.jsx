@@ -18,11 +18,10 @@ import {
   Container,
   TextField,
   Typography,
-  DialogTitle,
   DialogContent,
   DialogActions,
-  CircularProgress,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';

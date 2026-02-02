@@ -15,7 +15,6 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
-import { useTheme } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
@@ -40,7 +39,6 @@ import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import { useSnackbar } from 'src/components/snackbar';
 import { ConfirmDialog } from 'src/components/custom-dialog';
-import { useSettingsContext } from 'src/components/settings';
 import {
   useTable,
   emptyRows,
@@ -77,7 +75,7 @@ const defaultFilters = {
 
 // ----------------------------------------------------------------------
 
-export default function InvoiceListView({ campId, invoices }) {
+export default function InvoiceListView({ campId, invoices, isDisabled: propIsDisabled = false }) {
   const { enqueueSnackbar } = useSnackbar();
 
   const { user } = useAuthContext();
@@ -305,7 +303,7 @@ export default function InvoiceListView({ campId, invoices }) {
       );
 
       // Get the creator details from the data passed from the modal
-      const creatorDetails = formData.creatorDetails;
+      const {creatorDetails} = formData;
       console.log('Creator Details:', creatorDetails);
 
       // Get the payment form from the creator details or other locations
@@ -443,10 +441,12 @@ export default function InvoiceListView({ campId, invoices }) {
 
   const smUp = useResponsive('up', 'sm');
 
-  const isDisabled = useMemo(
+  // Merge prop-based isDisabled with existing Finance role check
+  const financeDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+  const isDisabled = propIsDisabled || financeDisabled;
 
   console.log('creatorAgreement Data: ', data);
 
@@ -619,6 +619,7 @@ export default function InvoiceListView({ campId, invoices }) {
               variant="contained"
               startIcon={<Iconify icon="eva:plus-fill" />}
               onClick={handleOpenNewInvoiceModal}
+              disabled={isDisabled}
               sx={{
                 width: { xs: 'auto', sm: '130px' },
                 height: 38,
@@ -630,6 +631,10 @@ export default function InvoiceListView({ campId, invoices }) {
                 boxShadow: '0px -3px 0px 0px #00000073 inset',
                 '&:hover': {
                   bgcolor: '#0035DF',
+                },
+                '&.Mui-disabled': {
+                  cursor: 'not-allowed',
+                  pointerEvents: 'auto',
                 },
                 textTransform: 'none',
                 fontWeight: 600,
@@ -731,7 +736,12 @@ export default function InvoiceListView({ campId, invoices }) {
                       </Tooltip>
 
                       <Tooltip title="Delete">
-                        <IconButton color="primary" onClick={confirm.onTrue} disabled={isDisabled}>
+                        <IconButton
+                          color="primary"
+                          onClick={confirm.onTrue}
+                          disabled={isDisabled}
+                          sx={{ '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' } }}
+                        >
                           <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
                       </Tooltip>
@@ -994,6 +1004,7 @@ export default function InvoiceListView({ campId, invoices }) {
                               {/* Edit Button */}
                               <Button
                                 startIcon={<Iconify icon="solar:pen-bold" width={16} />}
+                                disabled={isDisabled}
                                 sx={{
                                   textTransform: 'none',
                                   fontWeight: 700,
@@ -1007,6 +1018,10 @@ export default function InvoiceListView({ campId, invoices }) {
                                   color: '#221f20',
                                   minWidth: '65px',
                                   height: '32px',
+                                  '&.Mui-disabled': {
+                                    cursor: 'not-allowed',
+                                    pointerEvents: 'auto',
+                                  },
                                 }}
                                 onClick={() => handleEditRow(row.id)}
                               >
@@ -1015,6 +1030,7 @@ export default function InvoiceListView({ campId, invoices }) {
 
                               {/* Delete Button */}
                               <Button
+                                disabled={isDisabled}
                                 sx={{
                                   textTransform: 'none',
                                   fontWeight: 700,
@@ -1028,6 +1044,10 @@ export default function InvoiceListView({ campId, invoices }) {
                                   color: '#ff4842',
                                   minWidth: '65px',
                                   height: '32px',
+                                  '&.Mui-disabled': {
+                                    cursor: 'not-allowed',
+                                    pointerEvents: 'auto',
+                                  },
                                 }}
                                 onClick={() => {
                                   confirm.onTrue();
@@ -1100,6 +1120,12 @@ export default function InvoiceListView({ campId, invoices }) {
               handleDeleteRows();
               confirm.onFalse();
             }}
+            sx={{
+              '&.Mui-disabled': {
+                cursor: 'not-allowed',
+                pointerEvents: 'auto',
+              },
+            }}
           >
             Delete
           </Button>
@@ -1112,6 +1138,7 @@ export default function InvoiceListView({ campId, invoices }) {
 InvoiceListView.propTypes = {
   campId: PropTypes.string,
   invoices: PropTypes.object,
+  isDisabled: PropTypes.bool,
 };
 
 // ----------------------------------------------------------------------

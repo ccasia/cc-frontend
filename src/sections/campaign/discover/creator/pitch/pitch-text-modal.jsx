@@ -12,7 +12,6 @@ import {
   Stack,
   Button,
   Dialog,
-  Divider,
   Typography,
   DialogTitle,
   ListItemText,

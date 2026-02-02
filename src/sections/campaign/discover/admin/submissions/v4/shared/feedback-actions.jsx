@@ -38,6 +38,7 @@ export default function FeedbackActions({
   campaign,
   hasPostingLink = false,
   onViewLogs,
+  isDisabled = false,
 }) {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   if (
@@ -84,7 +85,7 @@ export default function FeedbackActions({
               color="warning"
               size="small"
               onClick={() => setAction('request_revision')}
-              disabled={loading}
+              disabled={loading || isDisabled}
               sx={{
                 ...BUTTON_STYLES.base,
                 ...BUTTON_STYLES.warning,
@@ -111,7 +112,7 @@ export default function FeedbackActions({
                   setAction('approve');
                   setReasons([]);
                 }}
-                disabled={loading}
+                disabled={loading || isDisabled}
                 sx={{
                   ...BUTTON_STYLES.base,
                   ...BUTTON_STYLES.secondary,
@@ -124,7 +125,7 @@ export default function FeedbackActions({
                 color="warning"
                 size="small"
                 onClick={handleRequestChanges}
-                disabled={loading}
+                disabled={loading || isDisabled}
                 sx={{
                   ...BUTTON_STYLES.base,
                   ...BUTTON_STYLES.warning,
@@ -142,7 +143,7 @@ export default function FeedbackActions({
               color="success"
               size="small"
               onClick={() => setConfirmDialogOpen(true)}
-              disabled={loading}
+              disabled={loading || isDisabled}
               sx={{
                 ...BUTTON_STYLES.base,
                 ...BUTTON_STYLES.success,
@@ -276,7 +277,7 @@ export default function FeedbackActions({
                 color="secondary"
                 size="small"
                 onClick={handleRequestChanges}
-                disabled={loading}
+                disabled={loading || isDisabled}
                 sx={{
                   ...BUTTON_STYLES.base,
                   ...BUTTON_STYLES.warning,
@@ -492,4 +493,5 @@ FeedbackActions.propTypes = {
   handleRequestChanges: PropTypes.func.isRequired,
   hasPostingLink: PropTypes.bool,
   onViewLogs: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };

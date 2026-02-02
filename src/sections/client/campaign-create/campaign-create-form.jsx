@@ -38,15 +38,14 @@ import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import OtherAttachments from 'src/sections/campaign/create/steps/other-attachments';
+import LogisticRemarks from 'src/sections/campaign/create/stepsV2/logistic-remarks';
 // Import steps from campaign creation
 import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-modal';
-
-import CampaignUploadPhotos from './campaign-upload-photos';
-import LogisticRemarks from 'src/sections/campaign/create/stepsV2/logistic-remarks';
 // Import steps from admin campaign creation
 import CampaignLogistics from 'src/sections/campaign/create/stepsV2/campaign-logistics';
 import ReservationSlotsV2 from 'src/sections/campaign/create/stepsV2/reservation-slots';
 
+import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
 import CampaignTargetAudience from './campaign-target-audience';

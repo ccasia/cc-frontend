@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Stack, Container, Typography, IconButton, Collapse } from '@mui/material';
+import { Box, Stack, Collapse, Container, Typography, IconButton } from '@mui/material';
 
-import { useSettingsContext } from 'src/components/settings';
 import Iconify from 'src/components/iconify';
+import { useSettingsContext } from 'src/components/settings';
 
 // ----------------------------------------------------------------------
 

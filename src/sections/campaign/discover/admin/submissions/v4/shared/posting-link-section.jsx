@@ -25,7 +25,7 @@ import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 import { BUTTON_STYLES } from './submission-styles';
 import { posting_link_options_changes } from '../constants';
 
-export default function PostingLinkSection({ submission, onUpdate, onViewLogs }) {
+export default function PostingLinkSection({ submission, onUpdate, onViewLogs, isDisabled = false }) {
   const { user } = useAuthContext();
   const [postingLink, setPostingLink] = useState(submission.content || '');
   const [loading, setLoading] = useState(false);
@@ -207,7 +207,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                   color="warning"
                   size="small"
                   onClick={() => setAction('request_revision')}
-                  disabled={loading}
+                  disabled={loading || isDisabled}
                   sx={{
                     ...BUTTON_STYLES.base,
                     ...BUTTON_STYLES.warning,
@@ -232,7 +232,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                       setAction('approve');
                       setReasons([]);
                     }}
-                    disabled={loading}
+                    disabled={loading || isDisabled}
                     sx={{
                       ...BUTTON_STYLES.base,
                       ...BUTTON_STYLES.secondary,
@@ -245,7 +245,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                     color="warning"
                     size="small"
                     onClick={handleRejectPosting}
-                    disabled={loading}
+                    disabled={loading || isDisabled}
                     sx={{
                       ...BUTTON_STYLES.base,
                       ...BUTTON_STYLES.warning,
@@ -261,7 +261,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                   color="success"
                   size="small"
                   onClick={() => setConfirmDialogOpen(true)}
-                  disabled={loading}
+                  disabled={loading || isDisabled}
                   sx={{
                     ...BUTTON_STYLES.base,
                     ...BUTTON_STYLES.success,
@@ -317,7 +317,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                   color="warning"
                   size="small"
                   onClick={() => setAction('request_revision')}
-                  disabled={loading}
+                  disabled={loading || isDisabled}
                   sx={{
                     ...BUTTON_STYLES.base,
                     ...BUTTON_STYLES.warning,
@@ -342,7 +342,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                       setAction('approve');
                       setReasons([]);
                     }}
-                    disabled={loading}
+                    disabled={loading || isDisabled}
                     sx={{
                       ...BUTTON_STYLES.base,
                       ...BUTTON_STYLES.secondary,
@@ -355,7 +355,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                     color="warning"
                     size="small"
                     onClick={handleRejectPosting}
-                    disabled={loading}
+                    disabled={loading || isDisabled}
                     sx={{
                       ...BUTTON_STYLES.base,
                       ...BUTTON_STYLES.warning,
@@ -371,7 +371,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                   color="success"
                   size="small"
                   onClick={() => setConfirmDialogOpen(true)}
-                  disabled={loading}
+                  disabled={loading || isDisabled}
                   sx={{
                     ...BUTTON_STYLES.base,
                     ...BUTTON_STYLES.success,
@@ -455,7 +455,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
               placeholder="Enter posting link URL..."
               value={postingLink}
               onChange={(e) => setPostingLink(e.target.value)}
-              disabled={loading}
+              disabled={loading || isDisabled}
               sx={{
                 mt: 1,
                 mb: 2,
@@ -470,7 +470,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                 color="success"
                 size="small"
                 onClick={handleSubmitPostingLink}
-                disabled={loading}
+                disabled={loading || isDisabled}
                 sx={{
                   display: 'flex',
                   ...BUTTON_STYLES.base,
@@ -519,4 +519,5 @@ PostingLinkSection.propTypes = {
   submission: PropTypes.object.isRequired,
   onUpdate: PropTypes.func,
   onViewLogs: PropTypes.any,
+  isDisabled: PropTypes.bool,
 };

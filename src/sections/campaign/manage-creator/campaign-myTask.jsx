@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
-import PropTypes from 'prop-types';
 import { mutate } from 'swr';
+import PropTypes from 'prop-types';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 
 import { Box, Card, Stack, Typography, useMediaQuery, CircularProgress } from '@mui/material';
@@ -17,11 +17,11 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import CampaignPosting from './submissions/campaign-posting';
+import LogisticsForm from './submissions/campaign-logistics';
 import MobileSubmissionLayout from './mobile-submission-layout';
 import CampaignAgreement from './submissions/campaign-agreement';
 import CampaignFirstDraft from './submissions/campaign-first-draft';
 import CampaignFinalDraft from './submissions/campaign-final-draft';
-import LogisticsForm from './submissions/campaign-logistics';
 
 /**
  * Campaign My Tasks Component
@@ -893,4 +893,5 @@ CampaignMyTasks.propTypes = {
   logistic: PropTypes.func,
   mutateLogistic: PropTypes.func,
   setCurrentTab: PropTypes.func,
+  onConfirm: PropTypes.func,
 };

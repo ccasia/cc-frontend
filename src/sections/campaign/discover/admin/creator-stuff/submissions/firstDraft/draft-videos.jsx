@@ -32,12 +32,12 @@ import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook
 import { options_changes } from './constants';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
 
-const VideoCard = ({ 
-  videoItem, 
-  index, 
-  submission, 
-  onVideoClick, 
-  handleApprove, 
+const VideoCard = ({
+  videoItem,
+  index,
+  submission,
+  onVideoClick,
+  handleApprove,
   handleRequestChange,
   selectedVideosForChange,
   handleVideoSelection,
@@ -55,6 +55,7 @@ const VideoCard = ({
   // V3 admin feedback handlers
   handleAdminEditFeedback,
   handleAdminSendToCreator,
+  isDisabled = false,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -377,7 +378,7 @@ const VideoCard = ({
                     }}
                     size="small"
                     variant="contained"
-                    disabled={isProcessing}
+                    disabled={isProcessing || isDisabled}
                     sx={{
                       bgcolor: '#FFFFFF',
                       border: 1.5,
@@ -389,6 +390,10 @@ const VideoCard = ({
                       '&:hover': {
                         bgcolor: '#f5f5f5',
                         borderColor: '#D4321C',
+                      },
+                      '&.Mui-disabled': {
+                        cursor: 'not-allowed',
+                        pointerEvents: 'auto',
                       },
                       textTransform: 'none',
                       py: 1.2,
@@ -409,6 +414,7 @@ const VideoCard = ({
                     variant="contained"
                     size="small"
                     loading={isSubmitting || isProcessing}
+                    disabled={isDisabled}
                     sx={{
                       bgcolor: '#FFFFFF',
                       color: '#1ABF66',
@@ -422,6 +428,10 @@ const VideoCard = ({
                       '&:hover': {
                         bgcolor: '#f5f5f5',
                         borderColor: '#1ABF66',
+                      },
+                      '&.Mui-disabled': {
+                        cursor: 'not-allowed',
+                        pointerEvents: 'auto',
                       },
                       fontSize: '0.9rem',
                       height: '40px',
@@ -437,6 +447,7 @@ const VideoCard = ({
                     variant="contained"
                     size="small"
                     loading={isSubmitting || isProcessing}
+                    disabled={isDisabled}
                     sx={{
                       bgcolor: '#FFFFFF',
                       color: '#1ABF66',
@@ -450,6 +461,10 @@ const VideoCard = ({
                       '&:hover': {
                         bgcolor: '#f5f5f5',
                         borderColor: '#1ABF66',
+                      },
+                      '&.Mui-disabled': {
+                        cursor: 'not-allowed',
+                        pointerEvents: 'auto',
                       },
                       fontSize: '0.9rem',
                       height: '40px',
@@ -497,7 +512,7 @@ const VideoCard = ({
                   }}
                   size="small"
                   variant="contained"
-                  disabled={isProcessing}
+                  disabled={isProcessing || isDisabled}
                   sx={{
                     bgcolor: '#FFFFFF',
                     border: 1.5,
@@ -509,6 +524,10 @@ const VideoCard = ({
                     '&:hover': {
                       bgcolor: '#f5f5f5',
                       borderColor: '#231F20',
+                    },
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
                     },
                     textTransform: 'none',
                     py: 1.2,
@@ -526,6 +545,7 @@ const VideoCard = ({
                   variant="contained"
                   size="small"
                   loading={isSubmitting || isProcessing}
+                  disabled={isDisabled}
                   sx={{
                     bgcolor: '#FFFFFF',
                     color: '#1ABF66',
@@ -539,6 +559,10 @@ const VideoCard = ({
                     '&:hover': {
                       bgcolor: '#f5f5f5',
                       borderColor: '#1ABF66',
+                    },
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
                     },
                     fontSize: '0.9rem',
                     height: '40px',
@@ -909,6 +933,7 @@ VideoCard.propTypes = {
   // V3 admin feedback handlers
   handleAdminEditFeedback: PropTypes.func,
   handleAdminSendToCreator: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };
 
 // Add SWR hook for submission
@@ -1373,8 +1398,8 @@ const DraftVideos = ({
                 flexShrink: 0,
               }}
             >
-              <VideoCard 
-                videoItem={video} 
+              <VideoCard
+                videoItem={video}
                 index={index}
                 submission={currentSubmission}
                 onVideoClick={onVideoClick}
@@ -1396,6 +1421,7 @@ const DraftVideos = ({
                 // V3 admin feedback handlers
                 handleAdminEditFeedback={handleAdminEditFeedback}
                 handleAdminSendToCreator={handleAdminSendToCreator}
+                isDisabled={isDisabled}
               />
             </Box>
           ))}
@@ -1405,14 +1431,14 @@ const DraftVideos = ({
       {shouldUseGrid && (
         <Grid container spacing={2}>
           {deliverables.videos.map((video, index) => (
-            <Grid 
-              item 
-              xs={12} 
-              md={7} 
+            <Grid
+              item
+              xs={12}
+              md={7}
               key={video.id || index}
             >
-              <VideoCard 
-                videoItem={video} 
+              <VideoCard
+                videoItem={video}
                 index={index}
                 submission={currentSubmission}
                 onVideoClick={onVideoClick}
@@ -1434,6 +1460,7 @@ const DraftVideos = ({
                 // V3 admin feedback handlers
                 handleAdminEditFeedback={handleAdminEditFeedback}
                 handleAdminSendToCreator={handleAdminSendToCreator}
+                isDisabled={isDisabled}
               />
             </Grid>
           ))}

@@ -30,7 +30,8 @@ const CampaignListView = () => {
 
   const scrollContainerRef = useRef(null);
 
-  const [filter, setFilter] = useState('active');
+  const [filter, setFilter] = useState('ACTIVE');
+  const [showAllCampaigns, setShowAllCampaigns] = useState(false);
   // const { data, isLoading } = useSWR(endpoints.campaign.getCampaignsByAdminId, fetcher, {
   //   revalidateIfStale: true,
   //   revalidateOnFocus: true,
@@ -42,15 +43,19 @@ const CampaignListView = () => {
   const lgUp = useResponsive('up', 'lg');
 
   const getKey = (pageIndex, previousPageData) => {
+    // When showAllCampaigns is true, we're viewing other admins' campaigns
+    const statusParam = showAllCampaigns ? '' : filter.toUpperCase();
+    const excludeParam = showAllCampaigns ? '&excludeOwn=true' : '';
+
     // If there's no previous page data, start from the first page
     if (pageIndex === 0)
-      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${10}`;
+      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${statusParam}&limit=${10}${excludeParam}`;
 
     // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
     if (!previousPageData?.metaData?.lastCursor) return null;
 
     // Otherwise, use the nextCursor to get the next page
-    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
+    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${statusParam}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}${excludeParam}`;
   };
 
   const { data, error, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher);
@@ -147,6 +152,15 @@ const CampaignListView = () => {
     [user]
   );
 
+  // Check if user is a CSM admin (not advanced mode - god/superadmin have different role names)
+  // Note: Role name can be either 'CSM' or 'Customer Success Manager' depending on DB entry
+  const isCSM = useMemo(
+    () =>
+      (user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager') &&
+      user?.admin?.mode !== 'advanced',
+    [user]
+  );
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
@@ -171,8 +185,11 @@ const CampaignListView = () => {
       <Box display="flex" gap={1} mt={2} flexWrap="wrap">
         <Button
           size="medium"
-          variant={filter ? 'outlined' : 'contained'}
-          onClick={() => setFilter('')}
+          variant={!filter && !showAllCampaigns ? 'contained' : 'outlined'}
+          onClick={() => {
+            setFilter('');
+            setShowAllCampaigns(false);
+          }}
           endIcon={
             <Label>
               <Typography variant="caption">{filtered?.all}</Typography>
@@ -183,8 +200,11 @@ const CampaignListView = () => {
         </Button>
         <Button
           size="medium"
-          variant={filter === 'ACTIVE' ? 'contained' : 'outlined'}
-          onClick={() => setFilter('ACTIVE')}
+          variant={filter === 'ACTIVE' && !showAllCampaigns ? 'contained' : 'outlined'}
+          onClick={() => {
+            setFilter('ACTIVE');
+            setShowAllCampaigns(false);
+          }}
           endIcon={
             <Label>
               <Typography variant="caption">{filtered?.active}</Typography>
@@ -195,8 +215,11 @@ const CampaignListView = () => {
         </Button>
         <Button
           size="medium"
-          variant={filter === 'DRAFT' ? 'contained' : 'outlined'}
-          onClick={() => setFilter('DRAFT')}
+          variant={filter === 'DRAFT' && !showAllCampaigns ? 'contained' : 'outlined'}
+          onClick={() => {
+            setFilter('DRAFT');
+            setShowAllCampaigns(false);
+          }}
           endIcon={
             <Label>
               <Typography variant="caption">{filtered?.draft}</Typography>
@@ -207,8 +230,11 @@ const CampaignListView = () => {
         </Button>
         <Button
           size="medium"
-          variant={filter === 'SCHEDULED' ? 'contained' : 'outlined'}
-          onClick={() => setFilter('SCHEDULED')}
+          variant={filter === 'SCHEDULED' && !showAllCampaigns ? 'contained' : 'outlined'}
+          onClick={() => {
+            setFilter('SCHEDULED');
+            setShowAllCampaigns(false);
+          }}
           endIcon={
             <Label>
               <Typography variant="caption">{filtered?.scheduled}</Typography>
@@ -219,8 +245,11 @@ const CampaignListView = () => {
         </Button>
         <Button
           size="medium"
-          variant={filter === 'COMPLETED' ? 'contained' : 'outlined'}
-          onClick={() => setFilter('COMPLETED')}
+          variant={filter === 'COMPLETED' && !showAllCampaigns ? 'contained' : 'outlined'}
+          onClick={() => {
+            setFilter('COMPLETED');
+            setShowAllCampaigns(false);
+          }}
           endIcon={
             <Label>
               <Typography variant="caption">{filtered?.completed}</Typography>
@@ -231,8 +260,11 @@ const CampaignListView = () => {
         </Button>
         <Button
           size="medium"
-          variant={filter === 'PAUSED' ? 'contained' : 'outlined'}
-          onClick={() => setFilter('PAUSED')}
+          variant={filter === 'PAUSED' && !showAllCampaigns ? 'contained' : 'outlined'}
+          onClick={() => {
+            setFilter('PAUSED');
+            setShowAllCampaigns(false);
+          }}
           endIcon={
             <Label>
               <Typography variant="caption">{filtered?.paused}</Typography>
@@ -241,6 +273,19 @@ const CampaignListView = () => {
         >
           Paused
         </Button>
+        {/* All Campaigns tab - only visible to CSM admins */}
+        {isCSM && (
+          <Button
+            size="medium"
+            variant={showAllCampaigns ? 'contained' : 'outlined'}
+            onClick={() => {
+              setFilter('');
+              setShowAllCampaigns(true);
+            }}
+          >
+            All Campaigns
+          </Button>
+        )}
       </Box>
 
       {!isLoading ? (
@@ -261,6 +306,8 @@ const CampaignListView = () => {
                 <CampaignList
                   key={campaign?.id}
                   campaign={campaign}
+                  showAdmins={showAllCampaigns}
+                  viewOnly={showAllCampaigns}
                   onView={() => onView(campaign?.id)}
                   onEdit={() => onEdit(campaign?.id)}
                   onDelete={() => onDelete(campaign?.id)}
@@ -281,7 +328,11 @@ const CampaignListView = () => {
             )}
           </Box>
         ) : (
-          <EmptyContent filled title={`No Data for ${filter} campaigns`} sx={{ py: 10, mt: 2 }} />
+          <EmptyContent
+            filled
+            title={showAllCampaigns ? 'No campaigns from other admins' : `No Data for ${filter} campaigns`}
+            sx={{ py: 10, mt: 2 }}
+          />
         )
       ) : (
         <Box

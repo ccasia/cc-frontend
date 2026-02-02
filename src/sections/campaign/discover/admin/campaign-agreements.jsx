@@ -44,17 +44,19 @@ import FormProvider from 'src/components/hook-form/form-provider';
 import CampaignAgreementEdit from './campaign-agreement-edit';
 
 // Convert AgreementDialog to a full component with approve/reject functionality
-const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, onReject }) => {
+const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, onReject, isDisabled: propIsDisabled = false }) => {
   const isPendingReview = agreement?.submission?.status === 'PENDING_REVIEW';
   const [approveLoading, setApproveLoading] = useState(false);
   const [rejectLoading, setRejectLoading] = useState(false);
   const feedbackDialog = useBoolean();
   const { user } = useAuthContext();
 
-  const isDisabled = useMemo(
+  // Merge prop-based isDisabled with existing Finance role check
+  const financeDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+  const isDisabled = propIsDisabled || financeDisabled;
 
   const methods = useForm({
     defaultValues: {
@@ -270,6 +272,8 @@ const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, o
                 '&.Mui-disabled': {
                   border: '1.5px solid #e7e7e7',
                   borderBottom: '3px solid #e7e7e7',
+                  cursor: 'not-allowed',
+                  pointerEvents: 'auto',
                 },
               }}
             >
@@ -303,6 +307,8 @@ const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, o
                 '&.Mui-disabled': {
                   border: '1.5px solid #e7e7e7',
                   borderBottom: '3px solid #e7e7e7',
+                  cursor: 'not-allowed',
+                  pointerEvents: 'auto',
                 },
               }}
             >
@@ -395,9 +401,10 @@ AgreementDialog.propTypes = {
   campaign: PropTypes.object,
   onApprove: PropTypes.func,
   onReject: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };
 
-const CampaignAgreements = ({ campaign }) => {
+const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) => {
   const { data, isLoading } = useGetAgreements(campaign?.id);
   const [selectedFilter] = useState('all');
   const [submissions, setSubmissions] = useState([]);
@@ -665,10 +672,12 @@ const CampaignAgreements = ({ campaign }) => {
     }
   });
 
-  const isDisabled = useMemo(
+  // Merge prop-based isDisabled with existing Finance role check
+  const financeDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+  const isDisabled = propIsDisabled || financeDisabled;
 
   if (isLoading || loadingSubmissions) {
     return <div>Loading...</div>; // A loading message while the data is being fetched
@@ -1163,6 +1172,8 @@ const CampaignAgreements = ({ campaign }) => {
                                       bgcolor: 'rgba(19, 64, 255, 0.5)',
                                       border: '1px solid rgba(19, 64, 255, 0.5)',
                                       color: '#ffffff',
+                                      cursor: 'not-allowed',
+                                      pointerEvents: 'auto',
                                     },
                                   }}
                                 >
@@ -1202,6 +1213,8 @@ const CampaignAgreements = ({ campaign }) => {
                                   '&.Mui-disabled': {
                                     border: '1.5px solid #e7e7e7',
                                     borderBottom: '3px solid #e7e7e7',
+                                    cursor: 'not-allowed',
+                                    pointerEvents: 'auto',
                                   },
                                 }}
                               >
@@ -1238,6 +1251,8 @@ const CampaignAgreements = ({ campaign }) => {
                                       '&.Mui-disabled': {
                                         border: '1.5px solid #e7e7e7',
                                         borderBottom: '3px solid #e7e7e7',
+                                        cursor: 'not-allowed',
+                                        pointerEvents: 'auto',
                                       },
                                     }}
                                   >
@@ -1272,6 +1287,8 @@ const CampaignAgreements = ({ campaign }) => {
                                       '&.Mui-disabled': {
                                         border: '1.5px solid #e7e7e7',
                                         borderBottom: '3px solid #e7e7e7',
+                                        cursor: 'not-allowed',
+                                        pointerEvents: 'auto',
                                       },
                                     }}
                                   >
@@ -1319,6 +1336,8 @@ const CampaignAgreements = ({ campaign }) => {
                                       border: '1.5px solid #e7e7e7',
                                       borderBottom: '3px solid #e7e7e7',
                                       color: 'rgba(19, 64, 255, 0.5)',
+                                      cursor: 'not-allowed',
+                                      pointerEvents: 'auto',
                                     },
                                   }}
                                 >
@@ -1337,6 +1356,7 @@ const CampaignAgreements = ({ campaign }) => {
                             color="warning"
                             onClick={() => handleEditAgreement(item)}
                             disabled={isDisabled}
+                            sx={{ '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' } }}
                           >
                             <Iconify icon="iconamoon:edit-light" />
                           </IconButton>
@@ -1347,6 +1367,7 @@ const CampaignAgreements = ({ campaign }) => {
                                 color="error"
                                 onClick={() => handleOpenRejectDialog(item)}
                                 disabled={isDisabled || rejectLoading}
+                                sx={{ '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' } }}
                               >
                                 <Iconify icon="solar:close-circle-bold" />
                               </IconButton>
@@ -1354,6 +1375,7 @@ const CampaignAgreements = ({ campaign }) => {
                                 color="success"
                                 onClick={() => handleApproveAgreement(item)}
                                 disabled={isDisabled}
+                                sx={{ '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' } }}
                               >
                                 <Iconify icon="solar:check-circle-bold" />
                               </IconButton>
@@ -1363,6 +1385,7 @@ const CampaignAgreements = ({ campaign }) => {
                               color={item.isSent ? 'warning' : 'primary'}
                               onClick={() => handleSendAgreement(item)}
                               disabled={isDisabled || !isAmountValid}
+                              sx={{ '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' } }}
                             >
                               <Iconify icon="bx:send" />
                             </IconButton>
@@ -1384,6 +1407,7 @@ const CampaignAgreements = ({ campaign }) => {
         url={selectedUrl}
         agreement={selectedAgreement}
         campaign={campaign}
+        isDisabled={isDisabled}
         onApprove={async () => {
           // Refresh V3 pitches data to update pitch status
           mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
@@ -1486,6 +1510,7 @@ const CampaignAgreements = ({ campaign }) => {
 
 CampaignAgreements.propTypes = {
   campaign: PropTypes.any,
+  isDisabled: PropTypes.bool,
 };
 
 export default CampaignAgreements;

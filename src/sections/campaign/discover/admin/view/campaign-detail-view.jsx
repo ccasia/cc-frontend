@@ -32,6 +32,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
+import { useCampaignPermissions } from 'src/hooks/use-campaign-permissions';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -42,6 +43,7 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
 import CampaignTabs from 'src/components/campaign/CampaignTabs';
+import ViewOnlyBanner from 'src/components/banner/view-only-banner';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
@@ -51,6 +53,8 @@ import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 // HIDE: logistics
 import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 
+// import CampaignLogisticsClient from '../campaign-logistics-client';
+import CampaignFAQ from '../campaign-faq';
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
@@ -59,7 +63,6 @@ import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
-// import CampaignLogisticsClient from '../campaign-logistics-client';
 // import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
@@ -68,7 +71,6 @@ import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
-import CampaignFAQ from '../campaign-faq';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 
 // Ensure campaignTabs exists and is loaded from localStorage
@@ -112,6 +114,12 @@ const CampaignDetailView = ({ id }) => {
   const [password, setPassword] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const { user } = useAuthContext();
+
+  // Use centralized permission hook for view-only restrictions
+  // Covers: Finance (advanced mode), CSM viewing non-managed campaigns
+  const { isViewOnly } = useCampaignPermissions(campaign, user);
+  const isDisabled = isViewOnly;
+
   const [pages, setPages] = useState(0);
   const lgUp = useResponsive('up', 'lg');
   const templateModal = useBoolean();
@@ -574,7 +582,7 @@ const CampaignDetailView = ({ id }) => {
     overview: isClient ? (
       <CampaignOverviewClient campaign={campaign} onUpdate={campaignMutate} />
     ) : (
-      <CampaignOverview campaign={campaign} onUpdate={campaignMutate} />
+      <CampaignOverview campaign={campaign} onUpdate={campaignMutate} isDisabled={isDisabled} />
     ),
     'campaign-content': isClient ? (
       <CampaignDetailContentClient campaign={campaign} />
@@ -584,7 +592,7 @@ const CampaignDetailView = ({ id }) => {
     'creator-master-list': (
       <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
     ),
-    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
+    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
     // HIDE: logistics
     logistics: isClient ? (
       <CampaignLogisticsView
@@ -600,6 +608,7 @@ const CampaignDetailView = ({ id }) => {
         openBulkAssign={openBulkAssign}
         setOpenBulkAssign={setOpenBulkAssign}
         isAdmin={!isClient}
+        isDisabled={isDisabled}
         isSuperAdmin={isSuperAdmin}
       />
     ),
@@ -608,19 +617,19 @@ const CampaignDetailView = ({ id }) => {
     // ) : (
     //   <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
     // ),
-    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
+    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
-    pitch: <CampaignV3PitchesWrapper campaign={campaign} campaignMutate={campaignMutate} />,
+    pitch: <CampaignV3PitchesWrapper campaign={campaign} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
     submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
     deliverables: isClient ? (
       <CampaignCreatorDeliverablesClient campaign={campaign} campaignMutate={campaignMutate} />
     ) : (
-      <CampaignCreatorDeliverables campaign={campaign} />
+      <CampaignCreatorDeliverables campaign={campaign} isDisabled={isDisabled} />
     ),
-    'submissions-v4': <CampaignCreatorSubmissionsV4 campaign={campaign} />,
-    analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} />,
+    'submissions-v4': <CampaignCreatorSubmissionsV4 campaign={campaign} isDisabled={isDisabled} />,
+    analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
     faq: <CampaignFAQ />,
   };
 
@@ -711,11 +720,6 @@ const CampaignDetailView = ({ id }) => {
     setMenuAnchorEl(null);
   };
 
-  const isDisabled = useMemo(
-    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
-    [user]
-  );
-
   const isPendingCampaign = useMemo(
     () =>
       campaign?.status === 'SCHEDULED' ||
@@ -778,14 +782,12 @@ const CampaignDetailView = ({ id }) => {
           variant="outlined"
           size="small"
           startIcon={
-            <img
-              src="/assets/icons/overview/editButton.svg"
-              alt="edit"
-              style={{
-                width: 18,
-                height: 18,
-                opacity: isDisabled ? 0.3 : 1,
-              }}
+            <Iconify
+              icon="lucide:edit"
+              width={15}
+              height={15}
+              color={isDisabled ? '#9e9e9e' : '#221f20'}
+              style={{ opacity: isDisabled ? 0.6 : 1 }}
             />
           }
           onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
@@ -1024,8 +1026,9 @@ const CampaignDetailView = ({ id }) => {
                 //   )}
 
                 <Box
-                  onClick={handleMenuOpen}
+                  onClick={isDisabled ? undefined : handleMenuOpen}
                   component="button"
+                  disabled={isDisabled}
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
@@ -1033,16 +1036,17 @@ const CampaignDetailView = ({ id }) => {
                     height: 42,
                     width: 42,
                     borderRadius: 1,
-                    color: '#221f20',
+                    color: isDisabled ? '#9e9e9e' : '#221f20',
                     border: '1px solid #e7e7e7',
                     borderBottom: '4px solid #e7e7e7',
                     padding: 0,
                     backgroundColor: 'transparent',
-                    cursor: 'pointer',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    opacity: isDisabled ? 0.6 : 1,
                     '&:hover': {
-                      backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                      border: '1px solid #231F20',
-                      borderBottom: '4px solid #231F20',
+                      backgroundColor: isDisabled ? 'transparent' : 'rgba(34, 31, 32, 0.04)',
+                      border: isDisabled ? '1px solid #e7e7e7' : '1px solid #231F20',
+                      borderBottom: isDisabled ? '4px solid #e7e7e7' : '4px solid #231F20',
                     },
                   }}
                 >
@@ -1121,6 +1125,9 @@ const CampaignDetailView = ({ id }) => {
           </Stack>
         </Stack>
       </Stack>
+
+      {/* View-only banner for CSMs viewing non-managed campaigns */}
+      {isViewOnly && !isClient && <ViewOnlyBanner />}
 
       {renderTabs}
 
