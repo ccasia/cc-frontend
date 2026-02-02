@@ -1,12 +1,12 @@
-import Chart from 'react-apexcharts';
 import PropTypes from 'prop-types';
-import { useTheme } from '@mui/material/styles';
+import Chart from 'react-apexcharts';
 
-import { Box, Card, alpha, Stack, Divider, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { Box, Card, Stack, Divider, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
-export default function LogisticsAnalytics({ logistics = [] }) {
+export default function LogisticsAnalytics({ logistics = [], isReservation }) {
   const theme = useTheme();
 
   const stats = logistics.reduce(
@@ -15,6 +15,9 @@ export default function LogisticsAnalytics({ logistics = [] }) {
 
       switch (status) {
         case 'PENDING_ASSIGNMENT':
+          acc.unassigned += 1;
+          break;
+        case 'NOT_STARTED':
           acc.unassigned += 1;
           break;
         case 'SCHEDULED':
@@ -42,9 +45,32 @@ export default function LogisticsAnalytics({ logistics = [] }) {
   const total = logistics.length;
   const percentCompleted = total === 0 ? 0 : Math.round((stats.delivered / total) * 100);
 
-  const series = [stats.unassigned, stats.yetToShip, stats.shipped, stats.delivered, stats.failed];
+  let series = [];
+  let labels = [];
+  let chartColors = [];
 
-  const chartColors = ['#B0B0B0', '#FF9A02', '#8A5AFE', '#1ABF66', '#FF3500'];
+  if (isReservation) {
+    series = [stats.unassigned, stats.yetToShip, stats.delivered, stats.failed];
+    labels = ['Unconfirmed', 'Scheduled', 'Completed', 'Issue'];
+
+    chartColors = [
+      '#B0B0B0', // Unconfirmed (Grey)
+      '#1340FF', // Scheduled (Blue)
+      '#1ABF66', // Completed (Green)
+      '#FF3500', // Issue (Red)
+    ];
+  } else {
+    series = [stats.unassigned, stats.yetToShip, stats.shipped, stats.delivered, stats.failed];
+    labels = ['Unassigned', 'Yet To Ship', 'Shipped Out', 'Delivered', 'Failed'];
+
+    chartColors = [
+      '#B0B0B0', // Unassigned (Grey)
+      '#FF9A02', // Yet To Ship (Orange)
+      '#8A5AFE', // Shipped Out (Purple)
+      '#1ABF66', // Delivered (Green)
+      '#FF3500', // Failed (Red)
+    ];
+  }
 
   const chartOptions = {
     chart: {
@@ -77,7 +103,7 @@ export default function LogisticsAnalytics({ logistics = [] }) {
         },
       },
     },
-    labels: ['Unassigned', 'Yet To Ship', 'Shipped Out', 'Delivered', 'Failed'],
+    labels,
     dataLabels: { enabled: false },
   };
 
@@ -131,11 +157,22 @@ export default function LogisticsAnalytics({ logistics = [] }) {
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
           <Box sx={{ width: '100%', maxWidth: 200 }}>
-            {renderListRow(stats.unassigned, 'Uassigned', '#B0B0B0', '#EFEFEF')}
-            {renderListRow(stats.yetToShip, 'Yet To Ship', '#FF9A02', '#FFF7DB')}
-            {renderListRow(stats.shipped, 'Shipped Out', '#8A5AFE', '#ECE4FF')}
-            {renderListRow(stats.delivered, 'Delivered', '#1ABF66', '#DCFAE6')}
-            {renderListRow(stats.failed, 'Failed', '#FF3500', '#FFD0C9')}
+            {isReservation ? (
+              <>
+                {renderListRow(stats.unassigned, labels[0], '#B0B0B0', '#EFEFEF')}
+                {renderListRow(stats.yetToShip, labels[1], '#1340FF', '#F0F7FF')}
+                {renderListRow(stats.delivered, labels[2], '#1ABF66', '#DCFAE6')}
+                {renderListRow(stats.failed, labels[3], '#FF3500', '#FFD0C9')}
+              </>
+            ) : (
+              <>
+                {renderListRow(stats.unassigned, labels[0], '#B0B0B0', '#EFEFEF')}
+                {renderListRow(stats.yetToShip, labels[1], '#FF9A02', '#FFF7DB')}
+                {renderListRow(stats.shipped, labels[2], '#8A5AFE', '#ECE4FF')}
+                {renderListRow(stats.delivered, labels[3], '#1ABF66', '#DCFAE6')}
+                {renderListRow(stats.failed, labels[4], '#FF3500', '#FFD0C9')}
+              </>
+            )}
           </Box>
         </Box>
       </Stack>
@@ -145,4 +182,5 @@ export default function LogisticsAnalytics({ logistics = [] }) {
 
 LogisticsAnalytics.propTypes = {
   logistics: PropTypes.array,
+  isReservation: PropTypes.bool,
 };

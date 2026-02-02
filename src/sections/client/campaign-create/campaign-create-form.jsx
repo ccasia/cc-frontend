@@ -42,6 +42,11 @@ import OtherAttachments from 'src/sections/campaign/create/steps/other-attachmen
 import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-modal';
 
 import CampaignUploadPhotos from './campaign-upload-photos';
+import LogisticRemarks from 'src/sections/campaign/create/stepsV2/logistic-remarks';
+// Import steps from admin campaign creation
+import CampaignLogistics from 'src/sections/campaign/create/stepsV2/campaign-logistics';
+import ReservationSlotsV2 from 'src/sections/campaign/create/stepsV2/reservation-slots';
+
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
 import CampaignTargetAudience from './campaign-target-audience';
@@ -54,9 +59,9 @@ const steps = [
   { title: 'Target Audience', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
   // HIDE: logistics
-  // { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
-  // { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
-  // { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
+  { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
+  { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
+  { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
   { title: 'Other Attachment ( Optional )', logo: '🖇️', color: '#FF3500' },
 ];
 
@@ -199,43 +204,58 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   });
 
   const logisticsSchema = Yup.object().shape({
-    logisticsType: Yup.string(),
+    logisticsType: Yup.string().nullable(),
+    allowMultipleBookings: Yup.boolean(),
     products: Yup.array().when('logisticsType', {
       is: 'PRODUCT_DELIVERY',
+      then: (schema) =>
+        schema.test('at-least-one-product', 'Fill at least one product', (value) =>
+          value?.some((p) => p.name?.trim().length > 0)
+        ),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    clientRemarks: Yup.string(),
+    locations: Yup.array().when('logisticsType', {
+      is: 'RESERVATION',
       then: (schema) =>
         schema
           .of(
             Yup.object().shape({
-              name: Yup.string().required('Product name is required'),
+              name: Yup.string().trim().notRequired(),
+              pic: Yup.string().notRequired(),
+              contactNumber: Yup.string().notRequired(),
             })
           )
-          .min(1, 'At least on product is required'),
+          .test('at-least-one-location', 'At least one outlet is required', (value) =>
+            value?.some((l) => l.name?.trim().length > 0)
+          ),
       otherwise: (schema) => schema.notRequired(),
     }),
-    logisticRemarks: Yup.string(),
-    locations: Yup.array().notRequired(),
 
-    venueName: Yup.string().when('logisticType', {
-      is: 'RESERVATION',
-      then: (schema) => schema,
-      otherwise: (schema) => schema,
-    }),
-    venueAddress: Yup.string().when('logisticsType', {
-      is: 'RESERVATION',
-      then: (schema) => schema,
-      otherwise: (schema) => schema,
-    }),
-    reservationNotes: Yup.string().when('logisticsType', {
-      is: 'RESERVATION',
-      then: (schema) => schema,
-      otherwise: (schema) => schema,
-    }),
+    venueName: Yup.string(),
+    venueAddress: Yup.string(),
+    reservationNotes: Yup.string(),
   });
 
-  const campaignAdminSchema = Yup.object().shape({
-    adminManager: Yup.array()
-      .min(1, 'At least One Admin is required')
-      .required('Admin Manager is required'),
+  const reservationSlotsSchema = Yup.object().shape({
+    availabilityRules: Yup.array()
+      .of(
+        Yup.object().shape({
+          dates: Yup.array().min(1, 'Please select at least one date').required(),
+          slots: Yup.array()
+            .of(
+              Yup.object().shape({
+                startTime: Yup.string().required(),
+                endTime: Yup.string().required(),
+                label: Yup.string().nullable(), // Allow null/empty labels
+              })
+            )
+            .min(1, 'Please add at least one time slot')
+            .required(),
+        })
+      )
+      .min(1, 'At least one reservation rule is required')
+      .required(),
   });
 
   const timelineSchema = Yup.object().shape({
@@ -266,25 +286,26 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         return campaignImagesSchema;
 
       // HIDE: logistics
-      // case 3:
-      //   return logisticsSchema;
-      // case 4:
-      // case 5:
-      //   return Yup.object().shape({});
-      // case 6:
-      //   return Yup.object().shape({
-      //     otherAttachments: Yup.array(),
-      //     referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
-      //   });
-      // default:
-      //   return campaignSchema;
       case 3:
+        return logisticsSchema;
+      case 4:
+        return reservationSlotsSchema;
+      case 5:
+        return Yup.object().shape({});
+      case 6:
         return Yup.object().shape({
           otherAttachments: Yup.array(),
           referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
         });
       default:
         return campaignSchema;
+      // case 3:
+      //   return Yup.object().shape({
+      //     otherAttachments: Yup.array(),
+      //     referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
+      //   });
+      // default:
+      //   return campaignSchema;
     }
   };
 
@@ -321,10 +342,12 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     referencesLinks: [],
     submissionVersion: 'v3',
     logisticsType: '',
-    logisticRemarks: '',
+    clientRemarks: '',
+    allowMultipleBookings: false,
     schedulingOption: 'confirmation',
     products: [{ name: '' }],
-    locations: [{ name: '' }],
+    locations: [{ name: '', pic: '', contactNumber: '' }],
+    availabilityRules: [],
     venueName: '',
     venueAddress: '',
     reservationNotes: '',
@@ -521,13 +544,12 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         referencesLinks: Array.isArray(data.referencesLinks) ? data.referencesLinks : [],
         submissionVersion: data.submissionVersion || 'v3',
         logisticsType: data.logisticsType || '',
-        logisticRemarks: data.logisticRemarks || '',
-        products: data.products || [],
-        locations: data.locations || [],
-        venueName: data.venueName || '',
-        venueAddress: data.venueAddress || '',
-        reservationNotes: data.reservationNotes || '',
-        schedulingOption: data.schedulingOption || 'confirmation',
+        clientRemarks: data.clientRemarks || '',
+        products: data.products?.filter((p) => p.name?.trim().length > 0) || [],
+        availabilityRules: data.availabilityRules || [],
+        locations: data.locations?.filter((l) => l.name?.trim().length > 0) || [],
+        schedulingOption: data.schedulingOption,
+        allowMultipleBookings: data.allowMultipleBookings,
       };
 
       console.log('Client campaign data:', clientCampaignData);
@@ -696,17 +718,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 2:
         return <CampaignUploadPhotos isLoading={isLoading} />;
       // HIDE: logistics
-      // case 3:
-      //   return <CampaignLogistics />;
-      // case 4:
-      //   return <ReservationSlots />;
-      // case 5:
-      //   return <LogisticRemarks />;
-      // case 6:
-      //   return <OtherAttachments />;
-      // default:
-      //   return null;
       case 3:
+        return <CampaignLogistics />;
+      case 4:
+        return <ReservationSlotsV2 />;
+      case 5:
+        return <LogisticRemarks />;
+      case 6:
         return <OtherAttachments />;
       default:
         return null;
