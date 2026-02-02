@@ -4,7 +4,6 @@ import { mutate } from 'swr';
 import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
-import { PDFViewer } from '@react-pdf/renderer';
 import { yupResolver } from '@hookform/resolvers/yup';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
@@ -34,7 +33,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { _userAbout } from 'src/_mock';
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
-import AgreementTemplate from 'src/template/agreement';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -48,12 +46,12 @@ import API from './api';
 import UploadPhoto from './dropzone';
 import AccountSecurity from './security';
 import ClientProfile from './client-profile';
+import ChildAccounts from './child-accounts';
 import { Billing } from '../creator/profile/billing';
 import Preference from '../creator/profile/preferences';
 import AccountSocialLinks from '../creator/profile/social';
 import PaymentFormProfile from '../creator/profile/payment-form';
 import AccountNotifications from '../creator/profile/notification';
-import ChildAccounts from './child-accounts';
 
 // import x from '../creator/profile/notification';
 

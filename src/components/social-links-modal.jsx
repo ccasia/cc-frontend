@@ -1,20 +1,23 @@
-import PropTypes from 'prop-types';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+
 import {
-  Dialog,
-  DialogContent,
   Box,
-  Typography,
   Stack,
+  Dialog,
   Button,
-  TextField,
   Divider,
+  TextField,
+  Typography,
+  DialogContent,
 } from '@mui/material';
-import { useAuthContext } from 'src/auth/hooks';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 // Validation schema
 const SocialLinksSchema = Yup.object().shape({

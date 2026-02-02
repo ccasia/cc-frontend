@@ -1,18 +1,13 @@
 import { mutate } from 'swr';
-import { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
+import TextField from '@mui/material/TextField';
 import {
   Box,
-  Table,
   Button,
-  TableRow,
-  TableHead,
-  TableCell,
-  TableBody,
   Typography,
-  TableContainer,
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -20,8 +15,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import { confirmItemDelivered } from 'src/api/logistic';
 
-import Scrollbar from 'src/components/scrollbar';
-import TextField from '@mui/material/TextField';
 
 const statusMapping = {
   Product_is_being_packaged: 'BEING PACKAGED',

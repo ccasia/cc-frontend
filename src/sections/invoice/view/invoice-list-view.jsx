@@ -15,7 +15,6 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
-import { useTheme } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
@@ -40,7 +39,6 @@ import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import { useSnackbar } from 'src/components/snackbar';
 import { ConfirmDialog } from 'src/components/custom-dialog';
-import { useSettingsContext } from 'src/components/settings';
 import {
   useTable,
   emptyRows,
@@ -305,7 +303,7 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
       );
 
       // Get the creator details from the data passed from the modal
-      const creatorDetails = formData.creatorDetails;
+      const {creatorDetails} = formData;
       console.log('Creator Details:', creatorDetails);
 
       // Get the payment form from the creator details or other locations

@@ -43,8 +43,8 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
 import CampaignTabs from 'src/components/campaign/CampaignTabs';
-import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 import ViewOnlyBanner from 'src/components/banner/view-only-banner';
+import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
@@ -53,6 +53,8 @@ import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 // HIDE: logistics
 import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 
+// import CampaignLogisticsClient from '../campaign-logistics-client';
+import CampaignFAQ from '../campaign-faq';
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
@@ -61,7 +63,6 @@ import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
-// import CampaignLogisticsClient from '../campaign-logistics-client';
 // import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
@@ -70,7 +71,6 @@ import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
-import CampaignFAQ from '../campaign-faq';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 
 // Ensure campaignTabs exists and is loaded from localStorage

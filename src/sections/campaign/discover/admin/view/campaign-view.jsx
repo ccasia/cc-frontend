@@ -4,22 +4,20 @@ import useSWRInfinite from 'swr/infinite';
 import { m, AnimatePresence } from 'framer-motion';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Stack,
   Button,
   Dialog,
+  Avatar,
   Container,
   InputBase,
+  TextField,
   Typography,
   IconButton,
-  CircularProgress,
   Autocomplete,
-  TextField,
-  Avatar,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';

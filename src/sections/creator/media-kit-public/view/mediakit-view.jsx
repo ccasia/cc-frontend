@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import { m } from 'framer-motion';
 import { toPng } from 'html-to-image';
-import React, { useRef, useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,

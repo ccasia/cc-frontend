@@ -1,9 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+
 import { Box } from '@mui/material';
+
+import SubmissionFeedback from './SubmissionFeedback';
 import SubmissionCaptionField from './SubmissionCaptionField';
 import SubmissionPostingLinkField from './SubmissionPostingLinkField';
-import SubmissionFeedback from './SubmissionFeedback';
 
 /**
  * Right sidebar container for all submission types that combines:

@@ -8,8 +8,7 @@ import { useMemo } from 'react';
  * @param {Object} user - The current user object from auth context
  * @returns {Object} - { isViewOnly: boolean, isManagingAdmin: boolean }
  */
-export const useCampaignPermissions = (campaign, user) => {
-  return useMemo(() => {
+export const useCampaignPermissions = (campaign, user) => useMemo(() => {
     // Superadmin/god always have full access
     if (user?.role === 'superadmin' || user?.admin?.mode === 'god') {
       return { isViewOnly: false, isManagingAdmin: true };
@@ -27,13 +26,11 @@ export const useCampaignPermissions = (campaign, user) => {
     if (isCSM) {
       // Check if user is assigned to this campaign
       // Handle multiple possible ID matching patterns based on data structure
-      const isManagingAdmin = campaign?.campaignAdmin?.some((admin) => {
-        return (
+      const isManagingAdmin = campaign?.campaignAdmin?.some((admin) => (
           admin.adminId === user?.id ||
           admin.admin?.userId === user?.id ||
           admin.admin?.user?.id === user?.id
-        );
-      });
+        ));
 
       return { isViewOnly: !isManagingAdmin, isManagingAdmin };
     }
@@ -41,4 +38,3 @@ export const useCampaignPermissions = (campaign, user) => {
     // Default: full access for other admin roles (BD, Growth, etc.)
     return { isViewOnly: false, isManagingAdmin: true };
   }, [campaign, user]);
-};

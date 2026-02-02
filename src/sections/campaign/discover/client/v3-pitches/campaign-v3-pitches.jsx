@@ -25,8 +25,8 @@ import {
   DialogActions,
   DialogContent,
   TableContainer,
-  CircularProgress,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -1183,10 +1183,10 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
                 onChange={(e, val) => setSelected(val)}
                 getOptionLabel={(opt) => opt?.name || ''}
                 isOptionEqualToValue={(opt, val) => opt.id === val.id}
-                filterOptions={(options, { inputValue }) => {
+                filterOptions={(opts, { inputValue }) => {
                   const searchTerm = inputValue.toLowerCase().trim();
-                  if (!searchTerm) return options;
-                  return options.filter((option) => {
+                  if (!searchTerm) return opts;
+                  return opts.filter((option) => {
                     const name = (option?.name || '').toLowerCase();
                     const email = (option?.email || '').toLowerCase();
                     return name.includes(searchTerm) || email.includes(searchTerm);
