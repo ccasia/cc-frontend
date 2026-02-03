@@ -30,6 +30,11 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
 
   const creatorName = pitch?.user?.name || 'Creator';
 
+  const isSyntheticPitch = () => {
+    const pitchId = pitch?.id;
+    return pitchId && pitchId.startsWith('shortlisted-');
+  };
+
   const getRealPitchId = () => {
     const pitchId = pitch?.id;
     if (!pitchId) return null;
@@ -68,7 +73,24 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
     try {
       setLoading(true);
       
-      // Get the real pitch ID (without 'shortlisted-' prefix)
+      // If this is a synthetic pitch (shortlisted creator without a real pitch record),
+      // use the removeCreator endpoint instead of the withdraw endpoint
+      if (isSyntheticPitch()) {
+        console.log('Handling synthetic pitch - using removeCreator endpoint');
+        const res = await axiosInstance.post(endpoints.campaign.removeCreator, {
+          creatorId: pitch.userId,
+          campaignId,
+        });
+        
+        enqueueSnackbar(res?.data?.message || 'Creator withdrawn successfully');
+        setConfirmDialogOpen(false);
+        if (onRemoved) {
+          onRemoved();
+        }
+        return;
+      }
+      
+      // For real pitch records, use the withdraw endpoint
       const realPitchId = getRealPitchId();
       
       if (!realPitchId) {
