@@ -9,13 +9,15 @@ import CampaignView from 'src/sections/campaign/discover/admin/view/campaign-vie
 
 export default function Page() {
   const { user } = useAuthContext();
+  const isCreator = user?.role === 'creator';
+
   return (
     <>
       <Helmet>
-        <title>Campaign Discovery</title>
+        <title>{isCreator ? 'Campaign Discovery' : 'Manage Campaign'}</title>
       </Helmet>
 
-      {user?.role === 'creator' ? <CampaignListView /> : <CampaignView />}
+      {isCreator ? <CampaignListView /> : <CampaignView />}
     </>
   );
 }
