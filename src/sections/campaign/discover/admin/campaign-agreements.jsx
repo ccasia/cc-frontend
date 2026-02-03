@@ -21,6 +21,7 @@ import {
   TextField,
   IconButton,
   Typography,
+  TableFooter,
   DialogTitle,
   DialogContent,
   DialogActions,
@@ -44,6 +45,15 @@ import SortableHeader from 'src/components/table/sortable-header';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 import CampaignAgreementEdit from './campaign-agreement-edit';
+
+const CURRENCY_PREFIXES = {
+  SGD: { prefix: '$', label: 'SGD' },
+  MYR: { prefix: 'RM', label: 'MYR' },
+  AUD: { prefix: '$', label: 'AUD' },
+  JPY: { prefix: '\u00a5', label: 'JPY' },
+  IDR: { prefix: 'Rp', label: 'IDR' },
+  USD: { prefix: '$', label: 'USD' },
+};
 
 // Convert AgreementDialog to a full component with approve/reject functionality
 const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, onReject, isDisabled: propIsDisabled = false }) => {
@@ -658,6 +668,47 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     });
   }, [selectedFilter, sortColumn, sortDirection, pitchApprovedAgreements, searchQuery]);
 
+  const footerTotals = useMemo(() => {
+    const totalCreators = filteredData.length;
+    const amountsByCurrency = {};
+
+    const creditsUsed = campaign?.creditsUtilized ?? 0;
+    const creditsTotal = campaign?.campaignCredits ?? 0;
+    const creditsRemaining = Math.max(0, creditsTotal - creditsUsed);
+
+    filteredData.forEach((item) => {
+      const shortlisted = item?.user?.shortlisted?.[0] || item?.shortlistedCreator;
+      const rawAmount = parseFloat(item?.amount?.toString()) || parseFloat(shortlisted?.amount?.toString()) || 0;
+      if (rawAmount && !Number.isNaN(rawAmount)) {
+        const currency = shortlisted?.currency || 'MYR';
+        amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + rawAmount;
+      }
+    });
+
+    const remainingPct = creditsTotal > 0 ? creditsRemaining / creditsTotal : 0;
+    let creditsRemainingColor = '#1ABF66'; // green
+    if (remainingPct <= 0.25) creditsRemainingColor = '#FF5630'; // red
+    else if (remainingPct <= 0.5) creditsRemainingColor = '#FFAB00'; // orange
+
+    return { totalCreators, creditsUsed, creditsTotal, creditsRemaining, creditsRemainingColor, amountsByCurrency };
+  }, [filteredData, campaign?.creditsUtilized, campaign?.campaignCredits]);
+
+  const formattedAmounts = useMemo(() => {
+    const { amountsByCurrency } = footerTotals;
+    const entries = Object.entries(amountsByCurrency);
+    if (entries.length === 0) return '0';
+
+    const formatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+    return entries
+      .map(([code, amount]) => {
+        const config = CURRENCY_PREFIXES[code];
+        const prefix = config ? config.prefix : code;
+        return `${prefix} ${formatter.format(amount)}`;
+      })
+      .join(' | ');
+  }, [footerTotals]);
+
   const handleViewAgreement = (url, item) => {
     setSelectedUrl(url);
     setSelectedAgreement(item);
@@ -791,7 +842,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
   }
 
   return (
-    <Box sx={{ overflowX: 'auto' }}>
+    <Box>
       <Stack direction="column" spacing={2}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
@@ -1120,11 +1171,9 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
           <TableContainer
             sx={{
               width: '100%',
-              minWidth: { xs: '100%', sm: 800 },
               position: 'relative',
               bgcolor: 'transparent',
-              borderBottom: '1px solid',
-              borderColor: 'divider',
+              overflow: 'hidden',
             }}
           >
             <Table size={smUp ? 'medium' : 'small'}>
@@ -1700,6 +1749,65 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                 );
               })}
             </TableBody>
+            <TableFooter sx={{ position: 'sticky', bottom: 0, zIndex: 2, bgcolor: 'background.paper' }}>
+              <TableRow>
+                <TableCell
+                  colSpan={smUp ? 2 : 1}
+                  sx={{
+                    py: { xs: 0.5, sm: 1 },
+                    px: { xs: 1, sm: 2 },
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    borderRadius: '10px 0 0 10px',
+                    bgcolor: '#f5f5f5',
+                    whiteSpace: 'nowrap',
+                    borderBottom: 'none',
+                  }}
+                >
+                  <Box component="span" sx={{ color: '#8e8e93' }}>Total Creators: </Box>
+                  <Box component="span" sx={{ color: '#221f20' }}>{footerTotals.totalCreators}</Box>
+                </TableCell>
+                <TableCell
+                  colSpan={2}
+                  sx={{
+                    py: { xs: 0.5, sm: 1 },
+                    px: { xs: 1, sm: 2 },
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    bgcolor: '#f5f5f5',
+                    whiteSpace: 'nowrap',
+                    borderBottom: 'none',
+                  }}
+                >
+                  <Box component="span" sx={{ color: '#8e8e93' }}>Total Credits: </Box>
+                  <Box component="span" sx={{ color: '#221f20' }}>
+                    {`${footerTotals.creditsUsed}/${footerTotals.creditsTotal}`}
+                  </Box>
+                  <Box component="span" sx={{ color: footerTotals.creditsRemainingColor }}>
+                    {` (${footerTotals.creditsRemaining} remaining)`}
+                  </Box>
+                </TableCell>
+                {campaign?.isCreditTier && (
+                  <TableCell sx={{ bgcolor: '#f5f5f5', borderBottom: 'none' }} />
+                )}
+                <TableCell
+                  colSpan={2}
+                  sx={{
+                    py: { xs: 0.5, sm: 1 },
+                    px: { xs: 1, sm: 2 },
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    bgcolor: '#f5f5f5',
+                    whiteSpace: 'nowrap',
+                    borderBottom: 'none',
+                    borderRadius: '0 10px 10px 0',
+                  }}
+                >
+                  <Box component="span" sx={{ color: '#8e8e93' }}>Total: </Box>
+                  <Box component="span" sx={{ color: '#221f20' }}>{formattedAmounts}</Box>
+                </TableCell>
+              </TableRow>
+            </TableFooter>
           </Table>
         </TableContainer>
         )}
