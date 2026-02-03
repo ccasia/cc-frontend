@@ -7,6 +7,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
+  Menu,
   Stack,
   Button,
   Dialog,
@@ -17,6 +18,7 @@ import {
   Typography,
   IconButton,
   Autocomplete,
+  CircularProgress,
   CircularProgress,
 } from '@mui/material';
 
@@ -614,6 +616,7 @@ const CampaignView = () => {
                 borderRadius: '8px',
                 px: 2.5,
                 py: 1,
+                bottom: 5,
                 position: 'absolute',
                 right: 0,
                 top: -3,

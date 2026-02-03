@@ -22,7 +22,9 @@ import {
   Dialog,
   IconButton,
   Typography,
-  ListItemText,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
   LinearProgress,
 } from '@mui/material';
 
@@ -109,14 +111,17 @@ const PDFEditor = lazy(() => import('src/sections/campaign/create/pdf-editor'));
 
 function ClientCampaignCreateForm({ onClose, mutate }) {
   const { user } = useAuthContext();
-  const modal = useBoolean();
   const confirmation = useBoolean();
   const openPackage = useBoolean();
 
   const [status, setStatus] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
+
+  const handleOpenConfirm = () => setConfirmOpen(true);
+  const handleCloseConfirm = () => setConfirmOpen(false);
 
   const pdfModal = useBoolean();
 
@@ -127,96 +132,56 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const inFrontSection = isInFrontSection(activeStep);
   const inBackSection = isInBackSection(activeStep);
 
-  const campaignSchema = Yup.object().shape({
-    campaignIndustries: Yup.array()
-      .min(1, 'At least one industry is required')
-      .required('Campaign Industry is required.'),
-    campaignDescription: Yup.string().required('Campaign Description is required.'),
-    campaignTitle: Yup.string()
-      .required('Campaign title is required')
-      .max(40, 'Campaign title must be 40 characters or less'),
-    campaignObjectives: Yup.string().required('Campaign objective is required'),
-    brandTone: Yup.string().required('Brand tone is required'),
-    audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
-    audienceGender: Yup.array()
-      .min(1, 'At least one option')
-      .required('Audience Gender is required'),
-    audienceLocation: Yup.array()
-      .min(1, 'At least one option')
-      .required('Audience location is required'),
-    othersAudienceLocation: Yup.string(),
-    audienceLanguage: Yup.array()
-      .min(1, 'At least one option')
-      .required('Audience language is required'),
-    audienceCreatorPersona: Yup.array()
-      .min(1, 'At least one option')
-      .required('Audience creator persona is required'),
-    audienceUserPersona: Yup.string(),
-    campaignDo: Yup.array()
-      .min(1, 'At least one option')
-      .of(
-        Yup.object().shape({
-          value: Yup.string(),
-        })
-      ),
-    campaignDont: Yup.array()
-      .min(1, 'At least one option')
-      .of(
-        Yup.object().shape({
-          value: Yup.string(),
-        })
-      ),
-    adminManager: Yup.array()
-      .min(1, 'At least One Admin is required')
-      .required('Admin Manager is required'),
-    campaignCredits: Yup.number()
-      .min(1, 'Minimum need to be 1')
-      .required('Campaign credits is required'),
-    otherAttachments: Yup.array(),
-  });
-
   const campaignInformationSchema = Yup.object().shape({
-    campaignIndustries: Yup.array()
-      .min(1, 'At least one industry is required')
-      .required('Campaign industry is required.'),
-    campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignTitle: Yup.string()
-      .required('Campaign title is required')
+      .required('Campaign title is required.')
       .max(40, 'Campaign title must be 40 characters or less'),
-    campaignCredits: Yup.number()
-      .min(1, 'Assign at least 1 credit')
-      .required('Campaign credits is required'),
-    campaignImages: Yup.array()
-      .min(1, 'Must have at least 1 image')
-      .max(3, 'Must have at most 3 images'),
+    campaignDescription: Yup.string().required('Campaign Description is required.'),
+    brandAbout: Yup.string(),
     campaignStartDate: Yup.date().required('Campaign Start Date is required.'),
     campaignEndDate: Yup.date().required('Campaign End Date is required.'),
-    brandTone: Yup.string(),
-    brandAbout: Yup.string(),
-    productName: Yup.string(),
+    productName: Yup.string().required('Product/service name required.'),
+    campaignIndustries: Yup.array()
+      .min(1, 'At least one industry is required.')
+      .required('Campaign industry is required.'),
     websiteLink: Yup.string(),
+    campaignCredits: Yup.number()
+      .min(1, 'Assign at least 1 credit')
+      .required('Campaign credits is required.'),
+    campaignImages: Yup.array()
+      .min(1, 'Must have at least 1 image')
+      .required('Campaign image is required.'),
+  });
+
+  const objectiveSchema = Yup.object().shape({
+    campaignObjectives: Yup.string().required('Campaign objective is required.'),
+    secondaryObjectives: Yup.array().max(2, 'You can select up to 2 secondary objectives'),
+    boostContent: Yup.string().required('Boost content is required.'),
+    primaryKPI: Yup.string().required('Primary KPI is required.'),
+    performanceBaseline: Yup.string().required('Performance baseline is required.'),
   });
 
   const campaignRequirementSchema = Yup.object().shape({
-    country: Yup.string().required('Country is required'),
-    audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
     audienceGender: Yup.array()
       .min(1, 'At least one option')
-      .required('Audience Gender is required'),
+      .required('Audience gender is required.'),
+    audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required.'),
+    country: Yup.string().required('Country is required.'),
     audienceLanguage: Yup.array()
       .min(1, 'At least one option')
-      .required('Audience language is required'),
+      .required('Audience language is required.'),
     audienceCreatorPersona: Yup.array()
       .min(1, 'At least one option')
-      .required('Audience creator persona is required'),
-    audienceUserPersona: Yup.string(),
+      .required('Audience creator persona is required.'),
+    audienceUserPersona: Yup.string().required('User persona is required.'),
     // Secondary Audience - all optional
     secondaryAudienceGender: Yup.array(),
     secondaryAudienceAge: Yup.array(),
+    secondaryCountry: Yup.string(),
     secondaryAudienceLanguage: Yup.array(),
     secondaryAudienceCreatorPersona: Yup.array(),
     secondaryAudienceUserPersona: Yup.string(),
-    geographicFocus: Yup.string().required('Geographic focus is required'),
+    geographicFocus: Yup.string().required('Geographic focus is required.'),
     geographicFocusOthers: Yup.string(),
   });
 
@@ -275,29 +240,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       .required(),
   });
 
-  // Schema for Objective step (step 1)
-  const objectiveSchema = Yup.object().shape({
-    campaignObjectives: Yup.string().required('Campaign objective is required'),
-    secondaryObjectives: Yup.array().max(2, 'You can select up to 2 secondary objectives'),
-    boostContent: Yup.string(),
-    primaryKPI: Yup.string(),
-    performanceBaseline: Yup.string(),
-    campaignDo: Yup.array()
-      .min(1, 'At least one option')
-      .of(
-        Yup.object().shape({
-          value: Yup.string(),
-        })
-      ),
-    campaignDont: Yup.array()
-      .min(1, 'At least one option')
-      .of(
-        Yup.object().shape({
-          value: Yup.string(),
-        })
-      ),
-  });
-
   // Schema for Next Steps/Publish step (step 6)
   const publishSchema = Yup.object().shape({
     otherAttachments: Yup.array(),
@@ -331,64 +273,45 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 8:
         return additionalDetails2Schema; // Additional Details 2 - optional
       default:
-        return campaignSchema;
-      // case 3:
-      //   return Yup.object().shape({
-      //     otherAttachments: Yup.array(),
-      //     referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
-      //   });
-      // default:
-      //   return campaignSchema;
+        return Yup.object().shape({});
     }
   };
 
   const defaultValues = {
+    // General info
     campaignTitle: '',
     campaignDescription: '',
+    brandAbout: '',
     campaignStartDate: null,
     campaignEndDate: null,
-    campaignCredits: '',
+    productName: '',
     campaignIndustries: [],
+    campaignCredits: '',
+    campaignImages: [],
+    // Objectives
     campaignObjectives: '',
     secondaryObjectives: [],
     boostContent: '',
     primaryKPI: '',
     performanceBaseline: '',
-    brandTone: '',
-    brandAbout: '',
-    productServiceName: '',
     websiteLink: '',
-    // Primary Audience
-    audienceUserPersona: '',
+    // Target audience
     audienceGender: [],
     audienceAge: [],
-    audienceLocation: [],
-    othersAudienceLocation: '',
+    country: '',
     audienceLanguage: [],
     audienceCreatorPersona: [],
-    country: '',
-    // Secondary Audience
-    secondaryAudienceUserPersona: '',
-    secondaryAudienceGender: [],
-    secondaryAudienceAge: [],
-    secondaryAudienceLocation: [],
-    secondaryOthersAudienceLocation: '',
-    secondaryAudienceLanguage: [],
-    secondaryAudienceCreatorPersona: [],
-    secondaryCountry: '',
+    audienceUserPersona: '',
     geographicFocus: '',
     geographicFocusOthers: '',
-    campaignDo: [{ value: '' }],
-    campaignDont: [{ value: '' }],
-    campaignImages: [],
-    campaignType: '',
-    campaignTimelineType: '',
-    deliverables: [],
-    campaignAdminManagers: [],
-    campaignForm: [],
-    otherAttachments: [],
-    referencesLinks: [],
-    submissionVersion: 'v4',
+    // Secondary audience
+    secondaryAudienceGender: [],
+    secondaryAudienceAge: [],
+    secondaryCountry: '',
+    secondaryAudienceLanguage: [],
+    secondaryAudienceCreatorPersona: [],
+    secondaryAudienceUserPersona: '',
+    // Logistics
     logisticsType: '',
     clientRemarks: '',
     allowMultipleBookings: false,
@@ -429,14 +352,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     mode: 'onChange',
   });
 
-  const {
-    handleSubmit,
-    getValues,
-    reset,
-    setValue,
-    watch,
-    trigger,
-  } = methods;
+  const { handleSubmit, getValues, reset, setValue, watch, trigger } = methods;
 
   const values = watch();
 
@@ -452,9 +368,16 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           'campaignImages',
           'campaignStartDate',
           'campaignEndDate',
+          'productName',
         ];
       case 1: // Objective
-        return ['campaignObjectives', 'campaignDo', 'campaignDont'];
+        return [
+          'campaignObjectives',
+          'secondaryObjectives',
+          'boostContent',
+          'primaryKPI',
+          'performanceBaseline',
+        ];
       case 2: // Audience
         return [
           'country',
@@ -462,6 +385,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           'audienceGender',
           'audienceLanguage',
           'audienceCreatorPersona',
+          'audienceUserPersona',
           'geographicFocus',
         ];
       case 3: // Logistics
@@ -605,16 +529,17 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
       // Create client campaign data object with all necessary fields
       const clientCampaignData = {
+        // General info
         campaignTitle: data.campaignTitle || '',
         campaignDescription: data.campaignDescription || '',
+        brandAbout: data.brandAbout || '',
         campaignStartDate: data.campaignStartDate || null,
         campaignEndDate: data.campaignEndDate || null,
-        campaignCredits: Number(data.campaignCredits) || 0,
-        brandTone: data.brandTone || '',
-        brandAbout: data.brandAbout || '',
         productName: data.productName || '',
-        websiteLink: data.websiteLink || '',
         campaignIndustries: Array.isArray(data.campaignIndustries) ? data.campaignIndustries : [],
+        campaignCredits: Number(data.campaignCredits) || 0,
+        websiteLink: data.websiteLink || '',
+        // Objectives
         campaignObjectives: data.campaignObjectives || '',
         secondaryObjectives: Array.isArray(data.secondaryObjectives)
           ? data.secondaryObjectives
@@ -622,26 +547,22 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         boostContent: data.boostContent || '',
         primaryKPI: data.primaryKPI || '',
         performanceBaseline: data.performanceBaseline || '',
+        // Target audience
         audienceGender: Array.isArray(data.audienceGender) ? data.audienceGender : [],
         audienceAge: Array.isArray(data.audienceAge) ? data.audienceAge : [],
-        audienceLocation: Array.isArray(data.audienceLocation)
-          ? data.audienceLocation.filter((item) => item !== 'Others')
-          : [],
+        country: data.country || '',
         audienceLanguage: Array.isArray(data.audienceLanguage) ? data.audienceLanguage : [],
         audienceCreatorPersona: Array.isArray(data.audienceCreatorPersona)
           ? data.audienceCreatorPersona
           : [],
         audienceUserPersona: data.audienceUserPersona || '',
-        country: data.country || '',
         secondaryAudienceGender: Array.isArray(data.secondaryAudienceGender)
           ? data.secondaryAudienceGender
           : [],
         secondaryAudienceAge: Array.isArray(data.secondaryAudienceAge)
           ? data.secondaryAudienceAge
           : [],
-        secondaryAudienceLocation: Array.isArray(data.secondaryAudienceLocation)
-          ? data.secondaryAudienceLocation.filter((item) => item !== 'Others')
-          : [],
+        secondaryCountry: data.secondaryCountry || '',
         secondaryAudienceLanguage: Array.isArray(data.secondaryAudienceLanguage)
           ? data.secondaryAudienceLanguage
           : [],
@@ -649,32 +570,17 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           ? data.secondaryAudienceCreatorPersona
           : [],
         secondaryAudienceUserPersona: data.secondaryAudienceUserPersona || '',
-        secondaryCountry: data.secondaryCountry || '',
         geographicFocus: data.geographicFocus || '',
         geographicFocusOthers: data.geographicFocusOthers || '',
-        socialMediaPlatform: Array.isArray(data.socialMediaPlatform)
-          ? data.socialMediaPlatform
-          : [],
-        videoAngle: Array.isArray(data.videoAngle) ? data.videoAngle : [],
-        campaignDo: Array.isArray(data.campaignDo)
-          ? data.campaignDo
-              .filter(Boolean)
-              .map((item) => (typeof item === 'object' ? item : { value: item }))
-              .filter((item) => item.value)
-          : [],
-        campaignDont: Array.isArray(data.campaignDont)
-          ? data.campaignDont
-              .filter(Boolean)
-              .map((item) => (typeof item === 'object' ? item : { value: item }))
-              .filter((item) => item.value)
-          : [],
-        referencesLinks: Array.isArray(data.referencesLinks) ? data.referencesLinks : [],
-        submissionVersion: data.submissionVersion || 'v3',
+        // Logistics
         logisticsType: data.logisticsType || '',
         clientRemarks: data.clientRemarks || '',
         products: data.products?.filter((p) => p.name?.trim().length > 0) || [],
         availabilityRules: data.availabilityRules || [],
         // Additional Details 1 fields
+        socialMediaPlatform: Array.isArray(data.socialMediaPlatform)
+          ? data.socialMediaPlatform
+          : [],
         contentFormat: Array.isArray(data.contentFormat) ? data.contentFormat : [],
         postingStartDate: data.postingStartDate || null,
         postingEndDate: data.postingEndDate || null,
@@ -868,10 +774,17 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           values.campaignCredits &&
           values.campaignStartDate &&
           values.campaignEndDate &&
-          values.campaignImages?.length > 0
+          values.campaignImages?.length > 0 &&
+          values.productName
         );
       case 1: // Objective
-        return values.campaignObjectives?.length > 0;
+        return (
+          values.campaignObjectives?.length > 0 &&
+          values.secondaryObjectives?.length > 0 &&
+          values.boostContent &&
+          values.primaryKPI &&
+          values.performanceBaseline
+        );
       case 2: // Audience
         return (
           values.country &&
@@ -879,6 +792,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           values.audienceGender?.length > 0 &&
           values.audienceLanguage?.length > 0 &&
           values.audienceCreatorPersona?.length > 0 &&
+          values.audienceUserPersona &&
           values.geographicFocus
         );
       case 3: // Logistics - optional
@@ -901,6 +815,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   
   // Determine if Next Steps should be highlighted (step 6 or beyond)
   const isNextStepsActive = activeStep >= 6;
+
+  const campaignStartDate = watch('campaignStartDate');
 
   return (
     <Box>
@@ -1148,9 +1064,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                 >
                   Next
                 </Button>
-                <Button
+                <LoadingButton
                   variant="contained"
-                  onClick={confirmation.onTrue}
+                  onClick={handleOpenConfirm}
                   disabled={isLoading || !isStepValid()}
                   sx={{
                     bgcolor: '#1340FF',
@@ -1162,15 +1078,15 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                   }}
                 >
                   {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
-                </Button>
+                </LoadingButton>
               </Stack>
             )}
 
             {/* Step 8: Show only Confirm Campaign button (last step) */}
             {activeStep === 8 && (
-              <Button
+              <LoadingButton
                 variant="contained"
-                onClick={confirmation.onTrue}
+                onClick={handleOpenConfirm}
                 disabled={isLoading || !isStepValid()}
                 sx={{
                   bgcolor: '#1340FF',
@@ -1182,7 +1098,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                 }}
               >
                 {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
-              </Button>
+              </LoadingButton>
             )}
           </Stack>
         </Stack>
@@ -1308,7 +1224,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                 </Button>
                 <Button
                   variant="contained"
-                  onClick={confirmation.onTrue}
+                  onClick={handleOpenConfirm}
                   disabled={isLoading || !isStepValid()}
                   fullWidth
                   sx={{
@@ -1329,7 +1245,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             {activeStep === 8 && (
               <Button
                 variant="contained"
-                onClick={confirmation.onTrue}
+                onClick={handleOpenConfirm}
                 disabled={isLoading || !isStepValid()}
                 fullWidth
                 sx={{
@@ -1347,89 +1263,89 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           </Stack>
         </Box>
 
+        {/* Confirmation Dialog */}
         <Dialog
-          open={confirmation.value}
-          fullWidth
+          open={confirmOpen}
+          onClose={handleCloseConfirm}
           maxWidth="xs"
+          fullWidth
           PaperProps={{
-            bgcolor: 'background.paper',
+            sx: {
+              borderRadius: 3,
+            },
           }}
         >
-          <Box
-            sx={{
-              borderRadius: 2,
-              boxShadow: 24,
-              p: 4,
-              textAlign: 'center',
-            }}
-          >
-            <Avatar
-              src="/assets/images/notification/markread.png"
-              alt="archive"
-              sx={{
-                width: 60,
-                height: 60,
-                margin: '0 auto 16px',
-                backgroundColor: '#ffeb3b',
-              }}
-            />
-
-            <ListItemText
-              primary="Confirm Campaign"
-              secondary="Are you sure you're ready to publish your campaign?"
-              primaryTypographyProps={{
-                fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                fontSize: 40,
-              }}
-              secondaryTypographyProps={{
-                variant: 'body1',
-              }}
-              sx={{ mb: 2 }}
-            />
-
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <LoadingButton
-                variant="contained"
-                fullWidth
-                onClick={() => {
-                  confirmation.onFalse();
-                  handleSubmit(onSubmit)();
-                }}
-                loading={isLoading}
-                sx={{
-                  fontWeight: 'bold',
-                  backgroundColor: '#3A3A3C',
-                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                  py: 1,
-                  '&:hover': {
-                    backgroundColor: '#3A3A3C',
-                  },
-                }}
-              >
-                Yes
-              </LoadingButton>
+          <DialogTitle sx={{ textAlign: 'center', pb: 0 }}>
+            <Iconify icon="mdi:rocket-launch" width={32} sx={{ color: '#1340FF' }} />
+            <Typography variant="h6" mt={1}>
+              Confirm Campaign
+            </Typography>
+          </DialogTitle>
+          <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Are you sure you want to publish this campaign?
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
+            <Button variant="contained" onClick={handleCloseConfirm} sx={{ px: 2, py: 1.2 }}>
+              Cancel
+            </Button>
+            {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
               <Button
-                variant="outlined"
-                fullWidth
+                variant="contained"
+                onClick={() => {
+                  const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
+                    ? 'ACTIVE'
+                    : 'SCHEDULED';
+                  setStatus(campaignStatus);
+                  // Directly trigger form submission with the campaign status
+                  onSubmit(campaignStatus);
+                }}
+                startIcon={<Iconify icon="material-symbols:publish" />}
+                disabled={isLoading}
                 sx={{
+                  bgcolor: '#1340FF',
+                  px: 4,
+                  py: 1.2,
                   fontWeight: 600,
-                  py: 1,
-                  bgcolor: 'white',
-                  border: '1px solid #E7E7E7',
-                  color: '#3A3A3C',
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
                   '&:hover': {
-                    bgcolor: '#F8F8F8',
-                    border: '1px solid #E7E7E7',
+                    bgcolor: '#0030e0',
                   },
                 }}
+              >
+                {isLoading ? 'Publishing...' : 'Publish Now'}
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
                 onClick={() => {
-                  confirmation.onFalse();
+                  const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
+                    ? 'ACTIVE'
+                    : 'SCHEDULED';
+                  setStatus(campaignStatus);
+                  // Directly trigger form submission with the campaign status
+                  onSubmit(campaignStatus);
+                }}
+                disabled={isLoading}
+                startIcon={<Iconify icon="mdi:calendar-clock" />}
+                sx={{
+                  bgcolor: '#1340FF',
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 600,
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                  '&:hover': {
+                    bgcolor: '#0030e0',
+                  },
                 }}
               >
-                Cancel
+                {isLoading
+                  ? 'Scheduling...'
+                  : `Schedule on ${dayjs(campaignStartDate).format('ddd LL')}`}
               </Button>
-            </Box>
-          </Box>
+            )}
+          </DialogActions>
         </Dialog>
       </FormProvider>
 
