@@ -128,7 +128,7 @@ const CollapsibleHeader = ({ icon, iconColor, title, expanded, onClick }) => (
     sx={{
       '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
       borderRadius: expanded ? '8px 8px 0 0' : 2,
-			borderBottom: expanded ? `1px solid ${iconColor}` : ''
+      borderBottom: expanded ? `1px solid ${iconColor}` : '',
     }}
   >
     <Iconify
@@ -257,6 +257,8 @@ const CampaignDetailContentMobile = ({ campaign }) => {
   const getGeographicFocus = () => {
     if (!requirement?.geographic_focus) return 'Not specified';
     if (requirement.geographic_focus === 'SEAregion') return 'SEA Region';
+    if (requirement.geographic_focus === 'EastMalaysia') return 'East Malaysia';
+    if (requirement.geographic_focus === 'KualaLumpur') return 'Kuala Lumpur';
     if (requirement.geographic_focus === 'others') return requirement.geographicFocusOthers;
     return capitalizeFirstLetter(requirement.geographic_focus);
   };
@@ -382,12 +384,7 @@ const CampaignDetailContentMobile = ({ campaign }) => {
           <Typography sx={SectionTitleStyle}>Preferred Platforms</Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
             {campaign.campaignBrief.socialMediaPlatform.map((platform, idx) => (
-              <Chip
-                key={idx}
-                label={capitalizeFirstLetter(platform)}
-                size="small"
-                sx={ChipStyle}
-              />
+              <Chip key={idx} label={capitalizeFirstLetter(platform)} size="small" sx={ChipStyle} />
             ))}
           </Box>
         </Box>
@@ -666,7 +663,13 @@ const CampaignDetailContentMobile = ({ campaign }) => {
         </Box>
 
         {/* CAMPAIGN OBJECTIVES - Collapsible */}
-        <Box sx={{ ...CollapsibleBoxStyle, border: '1px solid #8A5AFE', boxShadow: '0px 2px 0px #8A5AFE' }}>
+        <Box
+          sx={{
+            ...CollapsibleBoxStyle,
+            border: '1px solid #8A5AFE',
+            boxShadow: '0px 2px 0px #8A5AFE',
+          }}
+        >
           <CollapsibleHeader
             icon="mingcute:target-line"
             iconColor="#8A5AFE"
@@ -709,7 +712,7 @@ const CampaignDetailContentMobile = ({ campaign }) => {
                           wordBreak: 'break-word',
                           display: 'inline-block',
                           maxWidth: '100%',
-													mb: 0.5
+                          mb: 0.5,
                         }}
                       >
                         {objective}
@@ -750,7 +753,13 @@ const CampaignDetailContentMobile = ({ campaign }) => {
         </Box>
 
         {/* PRIMARY AUDIENCE - Collapsible */}
-        <Box sx={{ ...CollapsibleBoxStyle, border: '1px solid #FF3500', boxShadow: '0px 2px 0px #FF3500'}}>
+        <Box
+          sx={{
+            ...CollapsibleBoxStyle,
+            border: '1px solid #FF3500',
+            boxShadow: '0px 2px 0px #FF3500',
+          }}
+        >
           <CollapsibleHeader
             icon="material-symbols-light:groups-outline"
             iconColor="#FF3500"
@@ -765,7 +774,13 @@ const CampaignDetailContentMobile = ({ campaign }) => {
 
         {/* SECONDARY AUDIENCE - Collapsible (only if exists) */}
         {hasSecondaryAudience && (
-          <Box sx={{ ...CollapsibleBoxStyle, border: '1px solid #FF3500', boxShadow: '0px 2px 0px #FF3500'}}>
+          <Box
+            sx={{
+              ...CollapsibleBoxStyle,
+              border: '1px solid #FF3500',
+              boxShadow: '0px 2px 0px #FF3500',
+            }}
+          >
             <CollapsibleHeader
               icon="material-symbols-light:groups-outline"
               iconColor="#FF3500"
@@ -781,7 +796,13 @@ const CampaignDetailContentMobile = ({ campaign }) => {
 
         {/* ADDITIONAL DETAILS 1 - Collapsible */}
         {hasAdditionalDetails1 && (
-          <Box sx={{ ...CollapsibleBoxStyle, border: '1px solid #026D54', boxShadow: '0px 2px 0px #026D54'}}>
+          <Box
+            sx={{
+              ...CollapsibleBoxStyle,
+              border: '1px solid #026D54',
+              boxShadow: '0px 2px 0px #026D54',
+            }}
+          >
             <CollapsibleHeader
               icon="material-symbols:note-stack-add-outline"
               iconColor="#026D54"
@@ -797,7 +818,13 @@ const CampaignDetailContentMobile = ({ campaign }) => {
 
         {/* ADDITIONAL DETAILS 2 - Collapsible */}
         {hasAdditionalDetails2 && (
-          <Box sx={{ ...CollapsibleBoxStyle, border: '1px solid #026D54', boxShadow: '0px 2px 0px #026D54'}}>
+          <Box
+            sx={{
+              ...CollapsibleBoxStyle,
+              border: '1px solid #026D54',
+              boxShadow: '0px 2px 0px #026D54',
+            }}
+          >
             <CollapsibleHeader
               icon="material-symbols:note-stack-add-outline"
               iconColor="#026D54"
@@ -1073,7 +1100,7 @@ const CampaignDetailContentMobile = ({ campaign }) => {
                 <Link
                   href={
                     (campaign?.company?.website ?? campaign?.brand?.website)?.startsWith('http')
-                      ? campaign?.company?.website ?? campaign?.brand?.website
+                      ? (campaign?.company?.website ?? campaign?.brand?.website)
                       : `https://${campaign?.company?.website ?? campaign?.brand?.website}`
                   }
                   target="_blank"
