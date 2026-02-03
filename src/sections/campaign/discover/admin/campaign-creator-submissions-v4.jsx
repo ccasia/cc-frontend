@@ -98,9 +98,10 @@ function ScrollingName({ name }) {
               fontSize: { xs: '0.9rem', sm: '1rem' },
               whiteSpace: 'nowrap',
               display: 'inline-block',
-              ...(shouldScroll && scrollDistance > 0 && {
-                animation: `${animationName} 8s ease-in-out infinite`,
-              }),
+              ...(shouldScroll &&
+                scrollDistance > 0 && {
+                  animation: `${animationName} 8s ease-in-out infinite`,
+                }),
             }}
           >
             {name}
@@ -134,17 +135,7 @@ function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false
     return null;
   }
 
-<<<<<<< HEAD
-  return (
-    <CreatorAccordion
-      creator={creator}
-      campaign={campaign}
-      isDisabled={isDisabled}
-    />
-  );
-=======
-  return <CreatorAccordion creator={creator} campaign={campaign} />;
->>>>>>> 2c58be8b (a)
+  return <CreatorAccordion creator={creator} campaign={campaign} isDisabled={isDisabled} />;
 }
 
 function CreatorAccordion({ creator, campaign, isDisabled = false }) {
@@ -928,17 +919,9 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
             }}
             InputProps={{
               startAdornment: (
-<<<<<<< HEAD
                 <InputAdornment position="start">
-                  <Iconify
-                    icon="eva:search-fill"
-                    width={18}
-                    sx={{ color: '#637381' }}
-                  />
+                  <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
                 </InputAdornment>
-=======
-                <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />
->>>>>>> 2c58be8b (a)
               ),
             }}
           />
@@ -1001,35 +984,12 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
               boxShadow: 'none',
               alignSelf: { xs: 'flex-start', sm: 'center' },
               '&:hover': {
-<<<<<<< HEAD
                 backgroundColor: 'transparent',
                 color: '#221f20',
               },
             }}
           >
             Alphabetical
-=======
-                border: '1px solid #E7E7E7',
-                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                bgcolor: '#fff',
-              },
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Typography variant="body" color="#636366">
-                Alphabetical
-              </Typography>
-              <Iconify
-                icon={
-                  sortDirection === 'asc'
-                    ? 'mdi:sort-alphabetical-ascending'
-                    : 'mdi:sort-alphabetical-descending'
-                }
-                width={18}
-                sx={{ color: '#636366' }}
-              />
-            </Box>
->>>>>>> 2c58be8b (a)
           </Button>
         </Stack>
       </Box>
@@ -1073,9 +1033,5 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
 
 CampaignCreatorSubmissionsV4.propTypes = {
   campaign: PropTypes.object,
-<<<<<<< HEAD
   isDisabled: PropTypes.bool,
 };
-=======
-};
->>>>>>> 2c58be8b (a)
