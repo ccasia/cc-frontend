@@ -154,6 +154,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               isShortlisted: false,
             }))
           .filter((creator) => !!creator.user && !!creator.user.id)
+          .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT')
       );
     }
 
@@ -188,8 +189,10 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
       ? campaign.pitches
           .filter(
             (pitch) =>
-              // Only include pitches that aren't already in shortlisted
-              !shortlistedCreators.some((sc) => sc.id === pitch.userId)
+              // Only include pitches that aren't already in shortlisted and exclude drafts
+              !shortlistedCreators.some((sc) => sc.id === pitch.userId) &&
+              pitch.status !== 'draft' &&
+              pitch.status !== 'DRAFT'
           )
           .map((pitch) => ({
             pitchId: pitch.id,
@@ -858,6 +861,34 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                   >
                     Follower Count
                   </TableCell>
+                  {campaign?.isCreditTier && (
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
+                        fontWeight: 600,
+                        width: 100,
+                        bgcolor: '#f5f5f5',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Tier
+                    </TableCell>
+                  )}
+                  {campaign?.isCreditTier && (
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
+                        fontWeight: 600,
+                        width: 80,
+                        bgcolor: '#f5f5f5',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Credits
+                    </TableCell>
+                  )}
                   <TableCell
                     sx={{
                       py: 1,
@@ -900,6 +931,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                       pitch={pitch}
                       getStatusInfo={getStatusInfo}
                       onViewPitch={handleViewPitch}
+                      campaign={campaign}
+                      isCreditTier={campaign?.isCreditTier}
                     />
                   ))
                 )}

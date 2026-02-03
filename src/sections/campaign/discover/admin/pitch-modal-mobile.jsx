@@ -219,6 +219,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
       mutate();
       enqueueSnackbar(response?.data?.message || 'Pitch approved successfully');
       setConfirmDialog({ open: false, type: null });
+      onClose();
     } catch (error) {
       console.error('Error approving pitch:', error);
       enqueueSnackbar('Error approving pitch', { variant: 'error' });
@@ -267,8 +268,10 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
       if (onUpdate) {
         onUpdate(updatedPitch);
       }
+      mutate();
       enqueueSnackbar(response?.data?.message || 'Pitch declined successfully');
       setConfirmDialog({ open: false, type: null });
+      onClose();
     } catch (error) {
       console.error('Error declining pitch:', error);
       enqueueSnackbar('Error declining pitch', { variant: 'error' });

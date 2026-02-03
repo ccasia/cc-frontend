@@ -8,7 +8,6 @@ import {
 } from '@mui/material';
 
 import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
-
 import CampaignV3Pitches from './campaign-v3-pitches';
 
 const CampaignV3PitchesWrapper = ({ campaign, campaignMutate, isDisabled = false }) => {
