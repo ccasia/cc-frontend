@@ -331,6 +331,8 @@ const CampaignDetailContentClient = ({ campaign }) => {
             const getGeographicFocus = () => {
               if (!requirement?.geographic_focus) return 'Not specified';
               if (requirement.geographic_focus === 'SEAregion') return 'SEA Region';
+              if (requirement.geographic_focus === 'EastMalaysia') return 'East Malaysia';
+              if (requirement.geographic_focus === 'KualaLumpur') return 'Kuala Lumpur';
               if (requirement.geographic_focus === 'others')
                 return requirement.geographicFocusOthers;
               return capitalizeFirstLetter(requirement.geographic_focus);
@@ -1220,7 +1222,11 @@ const CampaignDetailContentClient = ({ campaign }) => {
               {[
                 {
                   label: 'About',
-                  value: campaign?.brandAbout || campaign?.brand?.company?.about || campaign?.company?.about || 'None',
+                  value:
+                    campaign?.brandAbout ||
+                    campaign?.brand?.company?.about ||
+                    campaign?.company?.about ||
+                    'None',
                 },
                 {
                   label: 'Industry',
@@ -1236,9 +1242,8 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       return uniqueIndustries.length > 0
                         ? uniqueIndustries.join(', ')
                         : 'Not specified';
-                    } 
-                      return campaign?.campaignBrief.industries
-                    
+                    }
+                    return campaign?.campaignBrief.industries;
                   })(),
                 },
               ].map((item) => (
