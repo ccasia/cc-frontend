@@ -194,7 +194,7 @@ export function useNavData() {
             roles: ['superadmin', 'god'],
             title: 'Credit Tier',
             path: paths.dashboard.creditTier.root,
-            icon: <Iconify icon="mdi:account-star" width={25} />,
+            icon: <Iconify icon="mdi:account-star-outline" width={25} />,
           },
         ],
       },
