@@ -9,6 +9,6 @@ export const OUTREACH_STATUS_OPTIONS = [
   { value: 'UNRESPONSIVE', label: 'Unresponsive', color: '#FF3500' },
 ];
 
-//Get outreach status configuration by status value
+// Get outreach status configuration by status value
 export const getOutreachStatusConfig = (status) =>
   OUTREACH_STATUS_OPTIONS.find((opt) => opt.value === status) || null;
