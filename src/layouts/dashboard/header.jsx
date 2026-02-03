@@ -53,6 +53,7 @@ export default function Header({ onOpenNav, isOnline }) {
     await axiosInstance.post('/api/admin/impersonate-creator/end');
     initialize();
     router.replace('/dashboard');
+    router.reload();
   };
 
   const renderHeader = (
