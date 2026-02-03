@@ -113,8 +113,6 @@ export default function AdditionalDetails1() {
                       fullWidth: true,
                       placeholder: 'Start Date',
                       error: false,
-                      size: 'small',
-                      sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
                     },
                   }}
                 />
@@ -132,8 +130,6 @@ export default function AdditionalDetails1() {
                       fullWidth: true,
                       placeholder: 'End Date',
                       error: false,
-                      size: 'small',
-                      sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
                     },
                   }}
                 />
@@ -146,8 +142,6 @@ export default function AdditionalDetails1() {
             <RHFTextField
               name="mainMessage"
               placeholder="Core Message"
-              size="small"
-              sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
             />
           </FormField>
 
@@ -156,8 +150,7 @@ export default function AdditionalDetails1() {
             <RHFTextField
               name="keyPoints"
               placeholder="Key Points"
-              size="small"
-              sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
+              multiline
             />
           </FormField>
 
@@ -167,10 +160,9 @@ export default function AdditionalDetails1() {
             <RHFTextField
               name="toneAndStyle"
               placeholder="Tone & Style"
-              size="small"
-              sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
+              multiline
             />
-          </FormField>          
+          </FormField>
         </Grid>
 
         {/* Column Two */}
