@@ -295,6 +295,8 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
   return (
     <>
       <Card
+        component={Box}
+        id={`campaign-${campaign.id}`}
         sx={{
           overflow: 'hidden',
           cursor: 'pointer',

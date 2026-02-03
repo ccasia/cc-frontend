@@ -42,6 +42,10 @@ import CampaignLists from '../campaign-list';
 const CampaignView = () => {
   const settings = useSettingsContext();
 
+  const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');
+  const pageSizing = localStorage.getItem('pageSizing');
+  const scrollTop = localStorage.getItem('scrollTop');
+
   const [search, setSearch] = useState({
     query: '',
     results: [],
@@ -54,9 +58,6 @@ const CampaignView = () => {
     debounce((q) => setDebouncedQuery(q), 300), // 300ms delay
     []
   );
-
-  // Remove the useGetCampaigns hook since we're using useSWRInfinite for the actual data
-  // const { campaigns } = useGetCampaigns();
 
   const create = useBoolean();
 
@@ -123,7 +124,8 @@ const CampaignView = () => {
   // Check if user is a CSM admin (not advanced mode)
   const isCSM = useMemo(
     () =>
-      (user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager') &&
+      (user?.admin?.role?.name === 'CSM' ||
+        user?.admin?.role?.name === 'Customer Success Manager') &&
       user?.admin?.mode !== 'advanced',
     [user]
   );
@@ -159,48 +161,39 @@ const CampaignView = () => {
   const { data, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(getKey, fetcher, {
     revalidateFirstPage: false,
   });
-  
-  // Make mutate function available globally for campaign activation
-  React.useEffect(() => {
-    window.swrMutate = mutate;
-    return () => {
-      delete window.swrMutate;
-    };
-  }, [mutate]);
 
   const dataFiltered = useMemo(
     () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
     [data]
   );
 
-  // Persistent counts across tabs: fetch per-status counts independently of current filter
-  const buildCountKey = useCallback((statusString) => 
-     `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(
-      debouncedQuery
-    )}&status=${statusString}&limit=${500}` // larger limit to approximate full count
-  , [user?.id, debouncedQuery]);
+  // Make mutate function available globally for campaign activation
+  useEffect(() => {
+    window.swrMutate = mutate;
+    return () => {
+      delete window.swrMutate;
+    };
+  }, [mutate]);
 
-  const { data: activeData } = useSWR(buildCountKey('ACTIVE'), fetcher, { revalidateOnFocus: false });
-  const { data: completedData } = useSWR(buildCountKey('COMPLETED'), fetcher, { revalidateOnFocus: false });
-  const { data: pausedData } = useSWR(buildCountKey('PAUSED'), fetcher, { revalidateOnFocus: false });
-  const { data: pendingData } = useSWR(
-    buildCountKey('SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION'),
-    fetcher,
-    { revalidateOnFocus: false }
+  const { data: campaignStatusData, isLoading: campaignStatusLoading } = useSWR(
+    '/api/campaign/campaignStatus',
+    fetcher
   );
 
   // Fetch count for "All Campaigns" (other admins' active campaigns) - only for CSM users
   const { data: allCampaignsData } = useSWR(
-    isCSM ? `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=&excludeOwn=true&limit=500` : null,
+    isCSM
+      ? `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=&excludeOwn=true&limit=500`
+      : null,
     fetcher,
     { revalidateOnFocus: false }
   );
 
   // Use independent datasets for counts so they persist regardless of the current tab
-  const activeCount = activeData?.data?.campaigns?.length || 0;
-  const completedCount = completedData?.data?.campaigns?.length || 0;
-  const pausedCount = pausedData?.data?.campaigns?.length || 0;
-  const pendingCount = pendingData?.data?.campaigns?.length || 0;
+  const activeCount = campaignStatusData?.activeCampaigns || 0;
+  const completedCount = campaignStatusData?.completedCampaigns || 0;
+  const pausedCount = campaignStatusData?.pausedCampaigns || 0;
+  const pendingCount = campaignStatusData?.pendingCampaigns || 0;
   const allCampaignsCount = allCampaignsData?.data?.campaigns?.length || 0;
 
   // Restore smDown and menu handlers
@@ -220,30 +213,58 @@ const CampaignView = () => {
   };
 
   useEffect(() => {
-    // Debug: verify counts persist across tabs
-    console.log('[CampaignView] Counts -> Active:', activeCount, 'Pending:', pendingCount, 'Completed:', completedCount, 'Paused:', pausedCount);
+    if (process.env.NODE_ENV !== 'production') {
+      // Debug: verify counts persist across tabs
+      console.log(
+        '[CampaignView] Counts -> Active:',
+        activeCount,
+        'Pending:',
+        pendingCount,
+        'Completed:',
+        completedCount,
+        'Paused:',
+        pausedCount
+      );
+    }
   }, [activeCount, pendingCount, completedCount, pausedCount]);
 
   // Reset filter if non-superadmin/non-CSM tries to access pending tab
   useEffect(() => {
-    if (filter === 'pending' && !isSuperAdmin && user?.admin?.role?.name !== 'CSM' && user?.admin?.role?.name !== 'Customer Success Manager') {
+    if (
+      filter === 'pending' &&
+      !isSuperAdmin &&
+      user?.admin?.role?.name !== 'CSM' &&
+      user?.admin?.role?.name !== 'Customer Success Manager'
+    ) {
       setFilter('active');
     }
   }, [filter, isSuperAdmin, user]);
 
   const handleScroll = useCallback(() => {
-    const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
+    const scrollContainer = mainRef?.current;
 
     const bottom =
       scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
 
+    if (lastCampaignOpenId) {
+      localStorage.removeItem('lastCampaignOpenId');
+    }
+
     if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
       setSize(size + 1);
+      localStorage.setItem('pageSizing', size + 1);
     }
-  }, [data, isValidating, setSize, size, mainRef, lgUp]);
+  }, [data, isValidating, setSize, size, mainRef, lastCampaignOpenId]);
+
+  const handleChangeTab = (value) => {
+    setFilter(value);
+    if (scrollTop) {
+      localStorage.removeItem('scrollTop');
+    }
+  };
 
   useEffect(() => {
-    const scrollContainer = lgUp ? mainRef?.current : window;
+    const scrollContainer = mainRef?.current;
 
     scrollContainer.addEventListener('scroll', handleScroll);
 
@@ -251,6 +272,41 @@ const CampaignView = () => {
       scrollContainer.removeEventListener('scroll', handleScroll);
     };
   }, [handleScroll, mainRef, lgUp]);
+
+  useEffect(() => {
+    if (pageSizing) {
+      setSize(Number(pageSizing));
+    }
+  }, [setSize, pageSizing]);
+
+  useEffect(() => {
+    if (!isLoading && lastCampaignOpenId) {
+      const el = document.getElementById(`campaign-${lastCampaignOpenId}`);
+
+      if (!el) return;
+
+      el.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    } else if (scrollTop) {
+      const main = mainRef?.current;
+
+      if (!main) return;
+
+      main.scrollTo({
+        behavior: 'auto',
+        top: Number(scrollTop),
+      });
+    }
+  }, [mainRef, lastCampaignOpenId, setSize, isLoading, scrollTop]);
+
+  useEffect(() => {
+    const scrollContainer = mainRef?.current;
+    window.addEventListener('beforeunload', (event) => {
+      localStorage.setItem('scrollTop', scrollContainer.scrollTop);
+    });
+  }, [mainRef]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
@@ -298,10 +354,10 @@ const CampaignView = () => {
               disableRipple
               size="large"
               onClick={() => {
-                  setFilter('active');
-                  setShowAllCampaigns(false);
-                  setSelectedAdmin(null);
-                }}
+                handleChangeTab('active');
+                setShowAllCampaigns(false);
+                setSelectedAdmin(null);
+              }}
               sx={{
                 px: 0.5,
                 py: 0.5,
@@ -345,22 +401,25 @@ const CampaignView = () => {
               Active ({activeCount})
             </Button>
             {/* Show Pending tab for superadmins and CSM users */}
-            {(isSuperAdmin || user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager') && (
+            {(isSuperAdmin ||
+              user?.admin?.role?.name === 'CSM' ||
+              user?.admin?.role?.name === 'Customer Success Manager') && (
               <Button
                 disableRipple
                 size="large"
                 onClick={() => {
-                    setFilter('pending');
-                    setShowAllCampaigns(false);
-                    setSelectedAdmin(null);
-                  }}
+                  handleChangeTab('pending');
+                  setShowAllCampaigns(false);
+                  setSelectedAdmin(null);
+                }}
                 sx={{
                   px: 1,
                   py: 0.5,
                   pb: 1,
                   ml: 2,
                   minWidth: 'fit-content',
-                  color: filter === 'pending' && !showAllCampaigns ? theme.palette.common : '#8e8e93',
+                  color:
+                    filter === 'pending' && !showAllCampaigns ? theme.palette.common : '#8e8e93',
                   position: 'relative',
                   fontSize: '1.05rem',
                   fontWeight: 650,
@@ -402,17 +461,18 @@ const CampaignView = () => {
               disableRipple
               size="large"
               onClick={() => {
-                  setFilter('completed');
-                  setShowAllCampaigns(false);
-                  setSelectedAdmin(null);
-                }}
+                handleChangeTab('completed');
+                setShowAllCampaigns(false);
+                setSelectedAdmin(null);
+              }}
               sx={{
                 px: 1,
                 py: 0.5,
                 pb: 1,
                 ml: 2,
                 minWidth: 'fit-content',
-                color: filter === 'completed' && !showAllCampaigns ? theme.palette.common : '#8e8e93',
+                color:
+                  filter === 'completed' && !showAllCampaigns ? theme.palette.common : '#8e8e93',
                 position: 'relative',
                 fontSize: '1.05rem',
                 fontWeight: 650,
@@ -453,10 +513,10 @@ const CampaignView = () => {
               disableRipple
               size="large"
               onClick={() => {
-                  setFilter('paused');
-                  setShowAllCampaigns(false);
-                  setSelectedAdmin(null);
-                }}
+                handleChangeTab('paused');
+                setShowAllCampaigns(false);
+                setSelectedAdmin(null);
+              }}
               sx={{
                 px: 1,
                 py: 0.5,
@@ -636,7 +696,14 @@ const CampaignView = () => {
             startAdornment={
               <Iconify
                 icon="eva:search-fill"
-                sx={{ width: 20, height: 20, mr: 1, ml: 1.5, color: 'text.disabled', flexShrink: 0 }}
+                sx={{
+                  width: 20,
+                  height: 20,
+                  mr: 1,
+                  ml: 1.5,
+                  color: 'text.disabled',
+                  flexShrink: 0,
+                }}
               />
             }
             sx={{
@@ -672,7 +739,11 @@ const CampaignView = () => {
                 isOptionEqualToValue={(option, value) => option.id === value?.id}
                 loading={adminsLoading}
                 renderOption={(props, option) => (
-                  <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    component="li"
+                    {...props}
+                    sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                  >
                     <Avatar
                       src={option.photoURL}
                       alt={option.name}
@@ -700,13 +771,25 @@ const CampaignView = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', ml: 0.5 }}>
                           <Iconify
                             icon="mdi:account-filter"
-                            sx={{ width: 20, height: 20, mr: 1, color: 'text.disabled', flexShrink: 0 }}
+                            sx={{
+                              width: 20,
+                              height: 20,
+                              mr: 1,
+                              color: 'text.disabled',
+                              flexShrink: 0,
+                            }}
                           />
                           {selectedAdmin && (
                             <Avatar
                               src={selectedAdmin.photoURL}
                               alt={selectedAdmin.name}
-                              sx={{ width: 20, height: 20, fontSize: '0.625rem', mr: 0.5, flexShrink: 0 }}
+                              sx={{
+                                width: 20,
+                                height: 20,
+                                fontSize: '0.625rem',
+                                mr: 0.5,
+                                flexShrink: 0,
+                              }}
                             >
                               {selectedAdmin.name?.charAt(0)}
                             </Avatar>
@@ -749,7 +832,7 @@ const CampaignView = () => {
         </AnimatePresence>
       </Stack>
 
-      {isLoading && (
+      {(isLoading || campaignStatusLoading) && (
         <Box sx={{ position: 'relative', top: 200, textAlign: 'center' }}>
           <CircularProgress
             thickness={7}
@@ -794,16 +877,7 @@ const CampaignView = () => {
             }
           />
         ))}
-      {/* <CampaignFilter
-        open={openFilters.value}
-        onOpen={openFilters.onTrue}
-        onClose={openFilters.onFalse}
-        //
-        filters={filters}
-        onFilters={handleFilters}
-        reset={handleResetFitlers}
-        brands={brandOptions}
-      /> */}
+
       <Dialog
         fullWidth
         fullScreen
