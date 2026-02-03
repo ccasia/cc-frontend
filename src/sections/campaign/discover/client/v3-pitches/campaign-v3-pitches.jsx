@@ -9,6 +9,8 @@ import { LoadingButton } from '@mui/lab';
 import { alpha } from '@mui/material/styles';
 import {
   Box,
+  Chip,
+  Menu,
   Stack,
   Table,
   Dialog,
@@ -16,7 +18,9 @@ import {
   Avatar,
   Divider,
   Tooltip,
+  Checkbox,
   TableRow,
+  MenuItem,
   TableBody,
   TextField,
   TableCell,
@@ -30,6 +34,7 @@ import {
   TableContainer,
   InputAdornment,
   CircularProgress,
+  FormControlLabel,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -39,6 +44,8 @@ import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllCreators } from 'src/api/creator';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { OUTREACH_STATUS_OPTIONS } from 'src/contants/outreach';
 
 import Iconify from 'src/components/iconify';
 import SortableHeader from 'src/components/table/sortable-header';
@@ -46,6 +53,7 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
+import usePitchSocket from './use-pitch-socket';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
 
 const countPitchesByStatus = (pitches, statusList) =>
@@ -58,6 +66,7 @@ const countPitchesByStatus = (pitches, statusList) =>
 
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisabled = false }) => {
   const { user } = useAuthContext();
+  const { socket } = useSocketContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
@@ -67,6 +76,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const [addCreatorOpen, setAddCreatorOpen] = useState(false);
   const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
+  const [outreachStatusFilter, setOutreachStatusFilter] = useState([]);
+  const [outreachFilterAnchorEl, setOutreachFilterAnchorEl] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   // Merge prop-based isDisabled with existing Finance role check
@@ -78,6 +89,14 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const smUp = useResponsive('up', 'sm');
   const smDown = useResponsive('down', 'sm');
   const mdUp = useResponsive('up', 'md');
+
+  // Listen for real-time outreach status updates
+  usePitchSocket({
+    socket,
+    campaignId: campaign?.id,
+    onOutreachUpdate: () => onUpdate?.(),
+    userId: user?.id,
+  });
 
   const shortlistedCreators = campaign?.shortlisted;
 
@@ -154,7 +173,29 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
- 
+  // Outreach status filter handlers
+  const handleOutreachFilterClick = (event) => {
+    setOutreachFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleOutreachFilterClose = () => {
+    setOutreachFilterAnchorEl(null);
+  };
+
+  const handleOutreachFilterToggle = (value) => {
+    setOutreachStatusFilter((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
+  };
+
+  const handleOutreachFilterClear = () => {
+    setOutreachStatusFilter([]);
+  };
+
+  // Handler for outreach status update from row
+  const handleOutreachUpdate = () => {
+    onUpdate?.();
+  };
 
   const filteredPitches = useMemo(() => {
     const isV4 = campaign?.submissionVersion === 'v4';
@@ -237,13 +278,25 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         const instagramUsername = (pitch.user?.creator?.instagramUser?.username || '').toLowerCase();
         const tiktokUsername = (pitch.user?.creator?.tiktokUser?.username || '').toLowerCase();
         const profileLink = (pitch.user?.creator?.profileLink || pitch.user?.profileLink || '').toLowerCase();
-        
+
         return (
           creatorName.includes(query) ||
           instagramUsername.includes(query) ||
           tiktokUsername.includes(query) ||
           profileLink.includes(query)
         );
+      });
+    }
+
+    // Outreach status filter (multi-select)
+    if (outreachStatusFilter.length > 0) {
+      filtered = filtered?.filter((pitch) => {
+        // Handle "NOT_SET" filter for null/undefined outreachStatus
+        if (outreachStatusFilter.includes('NOT_SET')) {
+          if (!pitch.outreachStatus) return true;
+        }
+        // Check if pitch's outreach status matches any selected filter
+        return outreachStatusFilter.includes(pitch.outreachStatus);
       });
     }
 
@@ -317,7 +370,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [mergedPitchesAndShortlisted, selectedFilter, sortColumn, sortDirection, campaign, searchQuery]);
+  }, [mergedPitchesAndShortlisted, selectedFilter, sortColumn, sortDirection, campaign, searchQuery, outreachStatusFilter]);
 
   // Reopen modal when returning from media kit if state indicates
   useEffect(() => {
@@ -516,6 +569,165 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
               ),
             }}
           />
+          {/* Outreach Status Filter */}
+          <Button
+            onClick={handleOutreachFilterClick}
+            endIcon={<Iconify icon="eva:chevron-down-fill" width={18} />}
+            sx={{
+              height: 44,
+              px: 2,
+              bgcolor: outreachStatusFilter.length > 0 ? 'rgba(32, 63, 245, 0.08)' : '#FFFFFF',
+              border: '1.5px solid',
+              borderColor: outreachStatusFilter.length > 0 ? '#1340FF' : '#e7e7e7',
+              borderBottom: outreachStatusFilter.length > 0 ? '3px solid #1340FF' : '3px solid #e7e7e7',
+              borderRadius: 1.15,
+              color: outreachStatusFilter.length > 0 ? '#1340FF' : '#637381',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              textTransform: 'none',
+              whiteSpace: 'nowrap',
+              '&:hover': {
+                bgcolor: outreachStatusFilter.length > 0 ? 'rgba(32, 63, 245, 0.08)' : '#F5F5F5',
+                borderColor: outreachStatusFilter.length > 0 ? '#1340FF' : '#e7e7e7',
+              },
+            }}
+          >
+            Outreach
+            {outreachStatusFilter.length > 0 && (
+              <Chip
+                label={outreachStatusFilter.length}
+                size="small"
+                sx={{
+                  ml: 1,
+                  height: 20,
+                  minWidth: 20,
+                  bgcolor: '#1340FF',
+                  color: '#fff',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  '& .MuiChip-label': { px: 0.75 },
+                }}
+              />
+            )}
+          </Button>
+          <Menu
+            anchorEl={outreachFilterAnchorEl}
+            open={Boolean(outreachFilterAnchorEl)}
+            onClose={handleOutreachFilterClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            slotProps={{
+              paper: {
+                sx: {
+                  mt: 0.5,
+                  p: 1.25,
+                  bgcolor: 'white',
+                  boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
+                  borderRadius: 1.5,
+                  '& .MuiList-root': {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
+                    p: 0,
+                  },
+                },
+              },
+            }}
+          >
+            {/* Not Set option */}
+            <Box
+              onClick={() => handleOutreachFilterToggle('NOT_SET')}
+              sx={{
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                py: 0.75,
+                px: 1.5,
+                fontSize: 13,
+                border: '1px dashed',
+                borderBottom: '3px dashed',
+                borderRadius: 0.8,
+                bgcolor: 'white',
+                whiteSpace: 'nowrap',
+                color: '#8E8E93',
+                borderColor: '#D0D0D0',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
+                ...(outreachStatusFilter.includes('NOT_SET') && {
+                  boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 2px rgba(142, 142, 147, 0.2)',
+                }),
+                '&:hover': {
+                  bgcolor: '#F5F5F5',
+                },
+              }}
+            >
+              <Box component="span" sx={{ flex: 1, textAlign: 'center' }}>Not Set</Box>
+              {outreachStatusFilter.includes('NOT_SET') && (
+                <Iconify icon="eva:checkmark-fill" width={16} sx={{ ml: 1, flexShrink: 0 }} />
+              )}
+            </Box>
+            {/* Status options */}
+            {OUTREACH_STATUS_OPTIONS.map((option) => (
+              <Box
+                key={option.value}
+                onClick={() => handleOutreachFilterToggle(option.value)}
+                sx={{
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  py: 0.75,
+                  px: 1.5,
+                  fontSize: 13,
+                  border: '1px solid',
+                  borderBottom: '3px solid',
+                  borderRadius: 0.8,
+                  bgcolor: 'white',
+                  whiteSpace: 'nowrap',
+                  color: option.color,
+                  borderColor: option.color,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
+                  ...(outreachStatusFilter.includes(option.value) && {
+                    boxShadow: `0px 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 2px ${option.color}20`,
+                  }),
+                  '&:hover': {
+                    bgcolor: '#F5F5F5',
+                  },
+                }}
+              >
+                <Box component="span" sx={{ flex: 1, textAlign: 'center' }}>{option.label}</Box>
+                {outreachStatusFilter.includes(option.value) && (
+                  <Iconify icon="eva:checkmark-fill" width={16} sx={{ ml: 1, flexShrink: 0 }} />
+                )}
+              </Box>
+            ))}
+            {/* Clear button */}
+            {outreachStatusFilter.length > 0 && (
+              <Typography
+                onClick={handleOutreachFilterClear}
+                sx={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: '#637381',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  mt: 0.5,
+                  '&:hover': {
+                    color: '#212B36',
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                Clear all
+              </Typography>
+            )}
+          </Menu>
           {/* Alphabetical Sort Button */}
           <Button
             onClick={handleToggleSort}
@@ -919,7 +1131,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                     px: { xs: 1, sm: 2 },
                     color: '#221f20',
                     fontWeight: 600,
-                    width: '30%',
+                    width: '25%',
                     borderRadius: '10px 0 0 10px',
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
@@ -927,6 +1139,21 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                   }}
                 >
                   Creator
+                </TableCell>
+                <TableCell
+                  sx={{
+                    py: { xs: 0.5, sm: 1 },
+                    px: { xs: 1, sm: 2 },
+                    color: '#221f20',
+                    fontWeight: 600,
+                    width: { xs: 120, sm: '12%' },
+                    minWidth: { xs: 120, sm: 'auto' },
+                    bgcolor: '#f5f5f5',
+                    whiteSpace: 'nowrap',
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  }}
+                >
+                  Outreach Status
                 </TableCell>
                 <SortableHeader
                   column="followers"
@@ -1016,6 +1243,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                     isCreditTier={campaign?.isCreditTier}
                     onViewPitch={handleViewPitch}
                     onRemoved={handleRemoveCreator}
+                    onOutreachUpdate={handleOutreachUpdate}
                     isDisabled={isDisabled}
                   />
                 );
