@@ -33,6 +33,10 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
+  dashboard: {
+    stats: '/api/dashboard/stats',
+    campaigns: '/api/dashboard/campaigns',
+  },
   overview: {
     root: (userId) => `/api/user/overview/${userId}`,
   },
@@ -95,6 +99,7 @@ export const endpoints = {
   },
   creators: {
     getCreators: '/api/creator/getAllCreators',
+    getCreatorCount: '/api/creator/count',
     getCreatorById: '/api/creator/getCreatorByID',
     deleteCreator: '/api/creator/delete',
     updateCreator: '/api/creator/update-creator',
@@ -339,6 +344,8 @@ export const endpoints = {
     updateInvoice: '/api/invoice/update',
     create: '/api/invoice/create',
     getInvoicesByCampaignId: (id) => `/api/invoice/getInvoicesByCampaignId/${id}`,
+    getStats: '/api/invoice/stats', // Stats for all invoices
+    getStatsByCampaign: (campaignId) => `/api/invoice/stats/${campaignId}`, // Stats for specific campaign
     getInvoiceById: (id) => `/api/invoice/${id}`,
     getInvoicesByCreatorAndCampiagn: (creatorId, campaignId) =>
       `/api/invoice/creator/${creatorId}/campaign/${campaignId}`,

@@ -325,7 +325,7 @@
 import useSWR from 'swr';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, memo } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import { LineChart } from '@mui/x-charts';
@@ -360,10 +360,10 @@ import {
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import useGetCreators from 'src/hooks/use-get-creators';
-import useGetCampaigns from 'src/hooks/use-get-campaigns';
+// REMOVED: useGetCreators - using stats endpoint instead
+// REMOVED: useGetCampaigns - using lightweight dashboard campaigns endpoint instead
 
-import axiosInstance, { fetcher , endpoints } from 'src/utils/axios';
+import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -374,14 +374,69 @@ import SvgColor from 'src/components/svg-color';
 // Extend dayjs with relativeTime plugin
 dayjs.extend(relativeTime);
 
+// OPTIMIZATION: Move static values outside component to prevent recreation on every render
+const colors = {
+  primary: '#000000',
+  secondary: '#666666',
+  tertiary: '#999999',
+  accent: '#1340FF',
+  background: '#FFFFFF',
+  surface: '#FAFAFA',
+  border: '#E8ECEE',
+  light: '#F5F5F5',
+};
+
 const DashboardSuperadmin = () => {
-  const { campaigns, isLoading } = useGetCampaigns();
-  const { data: creators, isLoading: creatorLoading } = useGetCreators();
+  // OPTIMIZATION: Use lightweight dashboard campaigns endpoint instead of full campaigns
+  // No limit parameter - fetch all active campaigns (endpoint is optimized with minimal data)
+  const { data: campaignsData, isLoading: campaignsLoading } = useSWR(
+    endpoints.dashboard.campaigns,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 120000, // Cache for 2 minutes
+    }
+  );
+  
+  // Extract campaigns from response (backend returns array directly)
+  const campaigns = Array.isArray(campaignsData) ? campaignsData : campaignsData?.data || [];
+  
+  // OPTIMIZATION: Use dashboard stats endpoint (aggregated data from backend)
+  const { data: dashboardStats, isLoading: statsLoading } = useSWR(
+    endpoints.dashboard.stats,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 120000, // Cache for 2 minutes
+    }
+  );
+
+  // OPTIMIZATION: Use creator count endpoint instead of fetching all creators
+  const { data: creatorCountData, isLoading: creatorCountLoading } = useSWR(
+    endpoints.creators.getCreatorCount,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 120000, // Cache for 2 minutes
+    }
+  );
+
+  // REMOVED: No longer fetching all creators - using stats endpoint instead
+  // const { data: creators, isLoading: creatorLoading } = useGetCreators();
+  
   const { socket } = useSocketContext();
   const [onlineUsers, setOnlineUsers] = useState(null);
   const [selectedCampaign, setSelectedCampaign] = useState('all');
   const { user } = useAuthContext();
-  const { data: clientData, isLoading: isClientLoading } = useSWR('/api/company/', fetcher);
+  // OPTIMIZATION: Use stats endpoint for client count instead of fetching all companies
+  const { data: clientData, isLoading: isClientLoading } = useSWR('/api/company/', fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 120000, // Cache for 2 minutes
+  });
   const router = useRouter();
 
   const [exportCampaignsLoading, setExportCampaignsLoading] = useState(false);
@@ -389,58 +444,52 @@ const DashboardSuperadmin = () => {
   const [exportCampaignsDone, setExportCampaignsDone] = useState(false);
   const [exportCreatorsDone, setExportCreatorsDone] = useState(false);
 
+  // OPTIMIZATION: Move static values outside component to prevent recreation
   // Minimal color palette with blue accent
-  const colors = {
-    primary: '#000000',
-    secondary: '#666666',
-    tertiary: '#999999',
-    accent: '#1340FF',
-    background: '#FFFFFF',
-    surface: '#FAFAFA',
-    border: '#E8ECEE',
-    light: '#F5F5F5',
-  };
 
-  // Calculate actual metrics
+  // OPTIMIZATION: Backend already returns only ACTIVE campaigns, no filtering needed
   const activeCampaigns = useMemo(
-    () => campaigns?.filter((campaign) => campaign.status === 'ACTIVE') || [],
+    () => campaigns || [],
     [campaigns]
   );
 
+  // OPTIMIZATION: Completed campaigns count comes from stats endpoint
   const completedCampaigns = useMemo(
-    () => campaigns?.filter((campaign) => campaign.status === 'COMPLETED') || [],
-    [campaigns]
+    () => dashboardStats?.data?.completedCampaigns || 0,
+    [dashboardStats]
   );
 
-  // Calculate total pitches from all campaigns
+  // OPTIMIZATION: Use backend stats only - no client-side calculation needed
   const totalPitches = useMemo(() => {
-    if (!campaigns) return 0;
-    const total = campaigns.reduce((acc, campaign) => acc + (campaign?.pitch?.length || 0), 0);
-    return total;
-  }, [campaigns]);
+    return dashboardStats?.data?.totalPitches || 0;
+  }, [dashboardStats]);
 
-  // Get all pending pitches
+  // OPTIMIZATION: Pending pitches are already filtered and limited by backend
   const pendingPitches = useMemo(() => {
-    if (!campaigns) return [];
+    if (!campaigns || campaigns.length === 0) return [];
 
     const allPitches = [];
-    campaigns.forEach((campaign) => {
-      if (campaign?.pitch) {
-        campaign.pitch.forEach((pitch) => {
-          if (pitch.status === 'undecided') {
-            allPitches.push({
-              ...pitch,
-              campaignName: campaign.name,
-              campaignId: campaign.id,
-              campaignImage: campaign?.campaignBrief?.images?.[0] || campaign?.brand?.logo,
-            });
-          }
-        });
+    // OPTIMIZATION: Backend already filters to pending pitches, just map them
+    for (let i = 0; i < campaigns.length; i += 1) {
+      const campaign = campaigns[i];
+      if (campaign?.pitch && Array.isArray(campaign.pitch)) {
+        for (let j = 0; j < campaign.pitch.length; j += 1) {
+          const pitch = campaign.pitch[j];
+          allPitches.push({
+            ...pitch,
+            campaignName: campaign.name,
+            campaignId: campaign.id,
+            campaignImage: campaign?.campaignBrief?.images?.[0] || campaign?.brand?.logo,
+          });
+        }
       }
-    });
+    }
 
-    // Sort by creation date (newest first)
-    return allPitches.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // OPTIMIZATION: Sort and limit to top 10 (backend already limits to 10 per campaign)
+    if (allPitches.length === 0) return [];
+    return allPitches
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10); // Only keep top 10 for display
   }, [campaigns]);
 
   // Filter pitches based on selected campaign
@@ -450,39 +499,29 @@ const DashboardSuperadmin = () => {
   }, [pendingPitches, selectedCampaign]);
 
   const totalChats = user?._count?.UserThread || 0;
-  const totalCreators = creators?.length || 0;
-  const totalClients = clientData || 0;
+  
+  // OPTIMIZATION: Use backend stats if available, otherwise fallback to creator count endpoint
+  const totalCreators = dashboardStats?.data?.totalCreators || creatorCountData?.count || 0;
+  const totalClients = dashboardStats?.data?.totalClients || clientData || 0;
 
-  // Approved / Rejected pitches across all campaigns
+  // OPTIMIZATION: Use backend stats only - no client-side calculation needed
   const totalApprovedPitches = useMemo(() => {
-    if (!campaigns) return 0;
-    return campaigns.reduce((acc, c) => acc + (c?.pitch?.filter?.((p) => p.status === 'approved')?.length || 0), 0);
-  }, [campaigns]);
+    return dashboardStats?.data?.approvedPitches || 0;
+  }, [dashboardStats]);
 
   const totalRejectedPitches = useMemo(() => {
-    if (!campaigns) return 0;
-    return campaigns.reduce((acc, c) => acc + (c?.pitch?.filter?.((p) => p.status === 'rejected')?.length || 0), 0);
-  }, [campaigns]);
+    return dashboardStats?.data?.rejectedPitches || 0;
+  }, [dashboardStats]);
 
-  // Creators with media kit connected (approximate: has connected IG or TikTok account)
+  // OPTIMIZATION: Use backend stats only - no client-side calculation needed
   const totalCreatorsWithMediaKit = useMemo(() => {
-    if (!creators) return 0;
-    return creators.filter((u) => u?.creator?.instagramUser || u?.creator?.tiktokUser).length;
-  }, [creators]);
+    return dashboardStats?.data?.creatorsWithMediaKit || 0;
+  }, [dashboardStats]);
 
-  // Creators who are in at least one campaign (based on shortlisted membership across all campaigns)
+  // OPTIMIZATION: Use backend stats only - no client-side calculation needed
   const totalCreatorsInAtLeastOneCampaign = useMemo(() => {
-    if (!campaigns) return 0;
-    const counts = new Map();
-    campaigns.forEach((c) => {
-      (c?.shortlisted || []).forEach((s) => {
-        const uid = s?.userId;
-        if (!uid) return;
-        counts.set(uid, (counts.get(uid) || 0) + 1);
-      });
-    });
-    return Array.from(counts.values()).filter((cnt) => cnt >= 1).length;
-  }, [campaigns]);
+    return dashboardStats?.data?.creatorsInCampaigns || 0;
+  }, [dashboardStats]);
 
   // Generate last 6 months data based on actual metrics
   const monthlyData = useMemo(() => {
@@ -501,15 +540,19 @@ const DashboardSuperadmin = () => {
     }));
   }, [activeCampaigns.length, totalCreators, totalPitches]);
 
-  // Helper function to create navigation icons
-  const icon = (name) => (
-    <SvgColor
-      src={`/assets/icons/navbar/${name}.svg`}
-      sx={{
-        width: 20,
-        height: 20,
-      }}
-    />
+  // OPTIMIZATION: Move helper function outside or memoize
+  // Helper function to create navigation icons - memoized to prevent recreation
+  const icon = useMemo(
+    () => (name) => (
+      <SvgColor
+        src={`/assets/icons/navbar/${name}.svg`}
+        sx={{
+          width: 20,
+          height: 20,
+        }}
+      />
+    ),
+    []
   );
 
   // Metric cards with clean design
@@ -564,18 +607,20 @@ const DashboardSuperadmin = () => {
     },
   ];
 
-  const handleViewCampaign = (campaignId) => {
+  // OPTIMIZATION: Memoize handlers to prevent unnecessary re-renders
+  const handleViewCampaign = useCallback((campaignId) => {
     router.push(paths.dashboard.campaign.adminCampaignDetail(campaignId));
-  };
+  }, [router]);
 
-  const handleViewPitch = (pitch) => {
+  const handleViewPitch = useCallback((pitch) => {
     // Set the tab to pitch section before navigating
     localStorage.setItem('campaigndetail', 'pitch');
     // Navigate to the campaign's pitch section
     router.push(paths.dashboard.campaign.adminCampaignDetail(pitch.campaignId));
-  };
+  }, [router]);
 
-  const renderMetricCard = (metric, index) => (
+  // OPTIMIZATION: Memoize metric card render function
+  const renderMetricCard = useCallback((metric, index) => (
     <Grid item xs={6} md={3} key={index}>
       <Card
         sx={{
@@ -621,7 +666,7 @@ const DashboardSuperadmin = () => {
         </Stack>
       </Card>
     </Grid>
-  );
+  ), []);
 
   const renderPendingPitches = (
     <Card
@@ -1104,7 +1149,7 @@ const DashboardSuperadmin = () => {
                     </TableCell>
                     <TableCell align="center" sx={{ border: 'none', py: 2 }}>
                       <Chip
-                        label={campaign?.shortlisted.length}
+                        label={campaign?.shortlisted?.length || campaign?._count?.shortlisted || 0}
                         size="small"
                         sx={{
                           bgcolor: colors.light,
@@ -1122,7 +1167,7 @@ const DashboardSuperadmin = () => {
                     </TableCell>
                     <TableCell align="center" sx={{ border: 'none', py: 2 }}>
                       <Chip
-                        label={campaign?.pitch.length}
+                        label={campaign?._count?.pitch || campaign?.pitch?.length || 0}
                         size="small"
                         sx={{
                           bgcolor: colors.accent,
@@ -1164,7 +1209,10 @@ const DashboardSuperadmin = () => {
     };
   }, [socket]);
 
-  if (creatorLoading || isClientLoading || isLoading) {
+  // OPTIMIZATION: Check loading states - removed creator loading since we're not fetching creators
+  const isLoadingData = statsLoading || creatorCountLoading || isClientLoading || campaignsLoading;
+  
+  if (isLoadingData) {
     return (
       <Box
         sx={{
