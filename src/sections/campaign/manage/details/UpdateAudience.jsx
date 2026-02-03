@@ -1,19 +1,29 @@
+import * as Yup from 'yup';
 import PropTypes from 'prop-types';
-import React, { memo } from 'react';
-import { useFormContext } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
+import { yupResolver } from '@hookform/resolvers/yup';
+import React, { memo, useMemo, useEffect, useCallback } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import { Box, Grid, Stack, MenuItem, FormLabel, Typography } from '@mui/material';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { langList } from 'src/contants/language';
 import { countriesCities } from 'src/contants/countries';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
-import { RHFSelectV2, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+import FormProvider from 'src/components/hook-form/form-provider';
+import {
+  RHFSelectV2,
+  RHFTextField,
+  RHFMultiSelect,
+  RHFAutocomplete,
+} from 'src/components/hook-form';
 
-import { CustomRHFMultiSelect } from './custom-rhf-multi-select';
-
-// Form field component with consistent styling
+// Form field component with consistent styling (matching campaign-target-audience.jsx)
 const FormField = ({ label, children, required = true }) => (
   <Stack spacing={0.5}>
     <FormLabel
@@ -40,6 +50,7 @@ FormField.propTypes = {
   required: PropTypes.bool,
 };
 
+// Options matching campaign-target-audience.jsx
 const GENDER_OPTIONS = [
   { value: 'female', label: 'Female' },
   { value: 'male', label: 'Male' },
@@ -77,8 +88,74 @@ const GEOGRAPHIC_FOCUS_OPTIONS = [
   { value: 'others', label: 'Others' },
 ];
 
-const CampaignTargetAudience = () => {
-  const { watch } = useFormContext();
+// Validation schema
+const UpdateAudienceSchema = Yup.object().shape({
+  // Primary Audience
+  audienceGender: Yup.array().min(1, 'At least one gender is required'),
+  audienceAge: Yup.array().min(1, 'At least one age group is required'),
+  country: Yup.string().required('Country is required'),
+  audienceLanguage: Yup.array().min(1, 'At least one language is required'),
+  audienceCreatorPersona: Yup.array().min(1, "At least one creator's interest is required"),
+  audienceUserPersona: Yup.string().required('User persona is required'),
+  // Secondary Audience (optional)
+  secondaryAudienceGender: Yup.array(),
+  secondaryAudienceAge: Yup.array(),
+  secondaryCountry: Yup.string().nullable(),
+  secondaryAudienceLanguage: Yup.array(),
+  secondaryAudienceCreatorPersona: Yup.array(),
+  secondaryAudienceUserPersona: Yup.string().nullable(),
+  // Geographic Focus
+  geographicFocus: Yup.string().required('Geographic focus is required'),
+  geographicFocusOthers: Yup.string().when('geographicFocus', {
+    is: 'others',
+    then: (schema) => schema.required('Please specify the geographic focus'),
+    otherwise: (schema) => schema.nullable(),
+  }),
+});
+
+const UpdateAudience = ({ campaign, campaignMutate }) => {
+  // Get existing values from campaign
+  const defaultValues = useMemo(
+    () => ({
+      // Primary Audience
+      audienceGender: campaign?.campaignRequirement?.gender || [],
+      audienceAge: campaign?.campaignRequirement?.age || [],
+      country: campaign?.campaignRequirement?.country || '',
+      audienceLanguage: campaign?.campaignRequirement?.language || [],
+      audienceCreatorPersona: campaign?.campaignRequirement?.creator_persona || [],
+      audienceUserPersona: campaign?.campaignRequirement?.user_persona || '',
+      // Secondary Audience
+      secondaryAudienceGender: campaign?.campaignRequirement?.secondary_gender || [],
+      secondaryAudienceAge: campaign?.campaignRequirement?.secondary_age || [],
+      secondaryCountry: campaign?.campaignRequirement?.secondary_country || '',
+      secondaryAudienceLanguage: campaign?.campaignRequirement?.secondary_language || [],
+      secondaryAudienceCreatorPersona: campaign?.campaignRequirement?.secondary_creator_persona || [],
+      secondaryAudienceUserPersona: campaign?.campaignRequirement?.secondary_user_persona || '',
+      // Geographic Focus
+      geographicFocus: campaign?.campaignRequirement?.geographic_focus || '',
+      geographicFocusOthers: campaign?.campaignRequirement?.geographicFocusOthers || '',
+    }),
+    [campaign]
+  );
+
+  const methods = useForm({
+    resolver: yupResolver(UpdateAudienceSchema),
+    defaultValues,
+  });
+
+  const {
+    handleSubmit,
+    watch,
+    reset,
+    formState: { isSubmitting, isDirty },
+  } = methods;
+
+  // Reset form when campaign data changes
+  useEffect(() => {
+    if (campaign) {
+      reset(defaultValues);
+    }
+  }, [campaign, defaultValues, reset]);
 
   const country = watch('country');
   const secondaryCountry = watch('secondaryCountry');
@@ -90,9 +167,51 @@ const CampaignTargetAudience = () => {
     ? GEOGRAPHIC_FOCUS_OPTIONS
     : GEOGRAPHIC_FOCUS_OPTIONS.slice(0, 2);
 
+  const onSubmit = useCallback(
+    async (data) => {
+      try {
+        // Payload matching editCampaignRequirements controller
+        const payload = {
+          campaignId: campaign?.id,
+          // Primary Audience
+          audienceGender: data.audienceGender,
+          audienceAge: data.audienceAge,
+          audienceLocation: [], // geoLocation - keeping empty, using country instead
+          audienceLanguage: data.audienceLanguage,
+          audienceCreatorPersona: data.audienceCreatorPersona,
+          audienceUserPersona: data.audienceUserPersona,
+          country: data.country,
+          // Secondary Audience
+          secondaryAudienceGender: data.secondaryAudienceGender,
+          secondaryAudienceAge: data.secondaryAudienceAge,
+          secondaryAudienceLocation: [],
+          secondaryAudienceLanguage: data.secondaryAudienceLanguage,
+          secondaryAudienceCreatorPersona: data.secondaryAudienceCreatorPersona,
+          secondaryAudienceUserPersona: data.secondaryAudienceUserPersona,
+          secondaryCountry: data.secondaryCountry,
+          // Geographic Focus
+          geographicFocus: data.geographicFocus,
+          geographicFocusOthers: data.geographicFocus === 'others' ? data.geographicFocusOthers : null,
+        };
+
+        await axiosInstance.patch(endpoints.campaign.editCampaignRequirements, payload);
+
+        enqueueSnackbar('Requirements updated successfully!', { variant: 'success' });
+
+        if (campaignMutate) {
+          campaignMutate();
+        }
+      } catch (error) {
+        console.error('Error updating requirements:', error);
+        enqueueSnackbar(error?.message || 'Failed to update requirements', { variant: 'error' });
+      }
+    },
+    [campaign?.id, campaignMutate]
+  );
+
   return (
-    <Box sx={{ maxWidth: '816px', mx: 'auto', mb: { xs: 10, sm: 30 } }}>
-      <Box sx={{ mt: 4 }}>
+    <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
+      <Box sx={{ maxWidth: '820px' }}>
         <Grid container spacing={3}>
           {/* PRIMARY AUDIENCE SECTION */}
           <Grid item xs={12} md={6}>
@@ -109,7 +228,7 @@ const CampaignTargetAudience = () => {
             <Stack spacing={2}>
               {/* Gender */}
               <FormField label="Gender">
-                <CustomRHFMultiSelect
+                <RHFMultiSelect
                   name="audienceGender"
                   placeholder="Select Gender"
                   options={GENDER_OPTIONS}
@@ -118,12 +237,13 @@ const CampaignTargetAudience = () => {
                   sx={{
                     '& .MuiOutlinedInput-root': { minHeight: '50px' },
                   }}
+                  chip
                 />
               </FormField>
 
               {/* Age */}
               <FormField label="Age">
-                <CustomRHFMultiSelect
+                <RHFMultiSelect
                   name="audienceAge"
                   placeholder="Select Age"
                   options={AGE_OPTIONS}
@@ -132,6 +252,7 @@ const CampaignTargetAudience = () => {
                   sx={{
                     '& .MuiOutlinedInput-root': { minHeight: '50px' },
                   }}
+                  chip
                 />
               </FormField>
 
@@ -183,7 +304,7 @@ const CampaignTargetAudience = () => {
 
               {/* Language */}
               <FormField label="Language">
-                <CustomRHFMultiSelect
+                <RHFMultiSelect
                   name="audienceLanguage"
                   placeholder="Select Language"
                   options={LANGUAGE_OPTIONS}
@@ -192,12 +313,13 @@ const CampaignTargetAudience = () => {
                   sx={{
                     '& .MuiOutlinedInput-root': { minHeight: '50px' },
                   }}
+                  chip
                 />
               </FormField>
 
-              {/* Interests */}
+              {/* Creator's Interest */}
               <FormField label="Creator's Interest">
-                <CustomRHFMultiSelect
+                <RHFMultiSelect
                   name="audienceCreatorPersona"
                   placeholder="Select Creator's Interest"
                   options={CREATOR_PERSONA_OPTIONS}
@@ -206,17 +328,13 @@ const CampaignTargetAudience = () => {
                   sx={{
                     '& .MuiOutlinedInput-root': { minHeight: '50px' },
                   }}
+                  chip
                 />
               </FormField>
 
               {/* User Persona */}
               <FormField label="User Persona">
-                <RHFTextField
-                  name="audienceUserPersona"
-                  placeholder="User Persona"
-                  size="medium"
-                  multiline
-                />
+                <RHFTextField name="audienceUserPersona" placeholder="User Persona" size="medium" />
               </FormField>
             </Stack>
           </Grid>
@@ -236,7 +354,7 @@ const CampaignTargetAudience = () => {
             <Stack spacing={2}>
               {/* Gender */}
               <FormField label="Gender" required={false}>
-                <CustomRHFMultiSelect
+                <RHFMultiSelect
                   name="secondaryAudienceGender"
                   placeholder="Select Gender"
                   options={GENDER_OPTIONS}
@@ -245,12 +363,13 @@ const CampaignTargetAudience = () => {
                   sx={{
                     '& .MuiOutlinedInput-root': { minHeight: '50px' },
                   }}
+                  chip
                 />
               </FormField>
 
               {/* Age */}
               <FormField label="Age" required={false}>
-                <CustomRHFMultiSelect
+                <RHFMultiSelect
                   name="secondaryAudienceAge"
                   placeholder="Select Age"
                   options={AGE_OPTIONS}
@@ -259,6 +378,7 @@ const CampaignTargetAudience = () => {
                   sx={{
                     '& .MuiOutlinedInput-root': { minHeight: '50px' },
                   }}
+                  chip
                 />
               </FormField>
 
@@ -310,7 +430,7 @@ const CampaignTargetAudience = () => {
 
               {/* Language */}
               <FormField label="Language" required={false}>
-                <CustomRHFMultiSelect
+                <RHFMultiSelect
                   name="secondaryAudienceLanguage"
                   placeholder="Select Language"
                   options={LANGUAGE_OPTIONS}
@@ -319,12 +439,13 @@ const CampaignTargetAudience = () => {
                   sx={{
                     '& .MuiOutlinedInput-root': { minHeight: '50px' },
                   }}
+                  chip
                 />
               </FormField>
 
               {/* Interests */}
               <FormField label="Interests" required={false}>
-                <CustomRHFMultiSelect
+                <RHFMultiSelect
                   name="secondaryAudienceCreatorPersona"
                   placeholder="Select interests"
                   options={CREATOR_PERSONA_OPTIONS}
@@ -333,6 +454,7 @@ const CampaignTargetAudience = () => {
                   sx={{
                     '& .MuiOutlinedInput-root': { minHeight: '50px' },
                   }}
+                  chip
                 />
               </FormField>
 
@@ -342,42 +464,69 @@ const CampaignTargetAudience = () => {
                   name="secondaryAudienceUserPersona"
                   placeholder="User Persona"
                   size="medium"
-                  multiline
                 />
               </FormField>
             </Stack>
           </Grid>
         </Grid>
-      </Box>
 
-      {/* Geographic Focus */}
-      <Box mt={2} sx={{ display: 'flex', justifyContent: 'center' }}>
-        <FormField label="Geographic Focus">
-          <Stack spacing={1} direction="row">
-            <RHFSelectV2
-              name="geographicFocus"
-              placeholder="Select Geographic Focus"
-              multiple={false}
-              sx={{ minWidth: { sm: geographicFocus === 'others' ? 150 : 400 } }}
-            >
-              {filteredGeographicFocusOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </RHFSelectV2>
-            {geographicFocus === 'others' && (
-              <RHFTextField
-                name="geographicFocusOthers"
-                placeholder="Geopraphic Focus"
-                sx={{ minWidth: { xs: 250, sm: 300 } }}
-              />
-            )}
-          </Stack>
-        </FormField>
+        {/* Geographic Focus */}
+        <Box mt={3} sx={{ justifyContent: 'center' }}>
+          <FormField label="Geographic Focus">
+            <Stack spacing={1} direction="row">
+              <RHFSelectV2
+                name="geographicFocus"
+                placeholder="Select Geographic Focus"
+                multiple={false}
+              >
+                {filteredGeographicFocusOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </RHFSelectV2>
+              {geographicFocus === 'others' && (
+                <RHFTextField
+                  name="geographicFocusOthers"
+                  placeholder="Geographic Focus"
+                />
+              )}
+            </Stack>
+          </FormField>
+        </Box>
+
+        {/* Submit Button */}
+        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
+          <LoadingButton
+            type="submit"
+            variant="contained"
+            loading={isSubmitting}
+            disabled={!isDirty}
+            size='large'
+            sx={{
+              bgcolor: '#1340ff',
+              boxShadow: '0px -3px 0px 0px rgba(0,0,0,0.45) inset',
+              '&:hover': {
+                bgcolor: '#1340ff',
+              },
+              '&:disabled': {
+                bgcolor: 'rgba(19, 64, 255, 0.3)',
+                color: '#fff',
+                boxShadow: '0px -3px 0px 0px inset rgba(0, 0, 0, 0.1)',
+              },
+            }}
+          >
+            Save Target Audience
+          </LoadingButton>
+        </Stack>
       </Box>
-    </Box>
+    </FormProvider>
   );
 };
 
-export default memo(CampaignTargetAudience);
+UpdateAudience.propTypes = {
+  campaign: PropTypes.object,
+  campaignMutate: PropTypes.func,
+};
+
+export default memo(UpdateAudience);

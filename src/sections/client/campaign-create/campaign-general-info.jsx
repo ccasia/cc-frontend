@@ -190,7 +190,6 @@ const ClientCampaignGeneralInfo = () => {
                   name="brandAbout"
                   placeholder="About"
                   multiline
-                  rows={1}
                   size="small"
                   sx={{ '& .MuiOutlinedInput-root': { padding: '12px' } }}
                 />

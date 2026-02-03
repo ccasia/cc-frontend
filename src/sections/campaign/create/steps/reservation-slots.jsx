@@ -2075,7 +2075,7 @@ const ReservationSlotsV2 = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 1000, mx: 'auto', p: 3, mb: 10 }}>
+    <Box sx={{ maxWidth: 900, mx: 'auto', p: 2, mb: 10 }}>
       <Stack alignItems="center" spacing={1} sx={{ mb: 4 }}>
         <Typography variant="body2" textAlign="center" sx={{ color: '#636366', maxWidth: 500 }}>
           Add options for creators to select their available time slots. Times are standardized to
