@@ -557,8 +557,8 @@ const CampaignView = () => {
 
           <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
             <Button
-              onClick={handleClick}
-              endIcon={<Iconify icon="eva:chevron-down-fill" width={20} height={20} />}
+              onClick={create.onTrue}
+              startIcon={<Iconify icon="eva:plus-fill" width={20} height={20} />}
               disabled={isDisabled}
               sx={{
                 bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
@@ -583,7 +583,7 @@ const CampaignView = () => {
           </Box>
 
           <IconButton
-            onClick={handleClick}
+            onClick={create.onTrue}
             sx={{
               display: { xs: 'flex', sm: 'none' },
               position: 'fixed',
