@@ -101,7 +101,10 @@ export default function V4AgreementSubmission({ submission, campaign, onUpdate }
     return statusColors[status] || 'default';
   };
 
-  const formatStatus = (status) => status?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
+  const formatStatus = (status) => {
+    if (status === 'IN_PROGRESS') return 'Processing';
+    return status?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
+  };
 
   return (
     <>

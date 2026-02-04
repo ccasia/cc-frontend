@@ -10,7 +10,8 @@ import {
   Slider,
   TextField,
   Typography,
-  IconButton
+  IconButton,
+  CircularProgress
 } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
@@ -278,12 +279,24 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                     Video content is being processed.
                   </Typography>
                   <Chip
-                    label="In Progress"
+                    label="Processing"
                     color="info"
                     size="small"
                   />
                 </Stack>
               </Card>
+            );
+          }
+
+          // Processing state — creator has uploaded, worker is compressing
+          if (submission.status === 'IN_PROGRESS') {
+            return (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, gap: 2 }}>
+                <CircularProgress size={40} thickness={5} sx={{ color: '#8A5AFE' }} />
+                <Typography variant="body2" color="text.secondary">
+                  Creator&apos;s new video is being processed
+                </Typography>
+              </Box>
             );
           }
 

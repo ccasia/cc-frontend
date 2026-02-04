@@ -67,6 +67,8 @@ function MobileSubmissionRow({
     // Admin specific
     if (!isClient && campaignType === 'normal') {
       switch (submissionStatus) {
+        case 'IN_PROGRESS':
+          return 'PROCESSING';
         case 'CLIENT_APPROVED':
           if (submissionType === 'video' || submissionType === 'photo') {
             return 'PENDING LINK';
@@ -76,6 +78,7 @@ function MobileSubmissionRow({
           return formatStatus(submissionStatus);
       }
     } else if (!isClient) {
+      if (submissionStatus === 'IN_PROGRESS') return 'PROCESSING';
       return formatStatus(submissionStatus);
     }
 

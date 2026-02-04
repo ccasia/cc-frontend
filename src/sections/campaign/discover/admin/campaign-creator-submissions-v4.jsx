@@ -227,6 +227,8 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
       // Admin specific
       if (!isClient && campaignType === 'normal') {
         switch (status) {
+          case 'IN_PROGRESS':
+            return 'PROCESSING';
           case 'CLIENT_APPROVED':
             // Only show PENDING POSTING for video and photo submissions, not raw footage
             if (submissionType === 'video' || submissionType === 'photo') {
@@ -237,6 +239,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
             return formatStatus(status);
         }
       } else if (!isClient) {
+        if (status === 'IN_PROGRESS') return 'PROCESSING';
         return formatStatus(status)
       }
 
