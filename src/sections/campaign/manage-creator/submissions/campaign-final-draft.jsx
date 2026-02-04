@@ -951,8 +951,8 @@ const CampaignFinalDraft = ({
                 </>
               )}
               
-              {/* Upload button - always show when eligible */}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+              {/* Upload button - commented out to avoid duplicate with Re-Upload below */}
+              {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                 <Button
                   variant="contained"
                   onClick={handleUploadClick}
@@ -973,7 +973,7 @@ const CampaignFinalDraft = ({
                 >
                   Upload
                 </Button>
-              </Box>
+              </Box> */}
 
 
             </Box>
