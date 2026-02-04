@@ -7,13 +7,15 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useMemo, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import { DatePicker } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker , LocalizationProvider } from '@mui/x-date-pickers';
 import { Box, Grid, Stack, FormLabel, Typography } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import FormProvider from 'src/components/hook-form/form-provider';
+import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form/rhf-upload';
+import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 import { RHFUploadCover } from 'src/components/hook-form/rhf-upload-cover';
 
@@ -249,51 +251,76 @@ const UpdateAdditionalOne = ({ campaign, campaignMutate }) => {
             </FormField>
 
             {/* Campaign Posting Period */}
-            <Typography variant="subtitle2" fontWeight={600} mb={1}>
+            <Typography variant="subtitle2" fontWeight={600}>
               Campaign Posting Period
             </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <FormField>
-                  <DatePicker
-                    value={postingStartDateDayjs}
-                    onChange={(newValue) => {
-                      setValue('postingStartDate', newValue ? newValue.toISOString() : null, {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                      });
-                    }}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        placeholder: 'Start Date',
-                        error: false,
-                      },
-                    }}
-                  />
-                </FormField>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <FormField>
+                    <DatePicker
+                      defaultValue={postingStartDateDayjs}
+                      format="DD/MM/YY"
+                      onChange={(newValue) => {
+                        setValue('postingStartDate', newValue ? newValue.toISOString() : null, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
+                        // Auto-set postingEndDate to +5 days if not manually set
+                        if (newValue) {
+                          const newEndDate = dayjs(newValue).add(5, 'day');
+                          // Only auto-set if postingEndDate is empty or was previously auto-set
+                          if (!postingEndDateDayjs || postingEndDateDayjs.isSame(dayjs(postingStartDate).add(5, 'day'))) {
+                            setValue('postingEndDate', newEndDate.toISOString(), {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+                          }
+                        }
+                      }}
+                      slots={{
+                        openPickerIcon: () => (
+                          <Iconify icon="meteor-icons:calendar" width={22} />
+                        ),
+                      }}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          placeholder: 'Start Date',
+                          error: false,
+                        },
+                      }}
+                    />
+                  </FormField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormField>
+                    <DatePicker
+                      value={postingEndDateDayjs}
+                      onChange={(newValue) => {
+                        setValue('postingEndDate', newValue ? newValue.toISOString() : null, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
+                      }}
+                      format="DD/MM/YY"
+                      slots={{
+                        openPickerIcon: () => (
+                          <Iconify icon="meteor-icons:calendar" width={22} />
+                        ),
+                      }}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          placeholder: 'End Date',
+                          error: false,
+                        },
+                      }}
+                    />
+                  </FormField>
+                </Grid>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormField>
-                  <DatePicker
-                    value={postingEndDateDayjs}
-                    onChange={(newValue) => {
-                      setValue('postingEndDate', newValue ? newValue.toISOString() : null, {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                      });
-                    }}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        placeholder: 'End Date',
-                        error: false,
-                      },
-                    }}
-                  />
-                </FormField>
-              </Grid>
-            </Grid>
+            </LocalizationProvider>
 
             {/* Main Message/Theme */}
             <FormField label="Main Message/Theme - What's the core message?">

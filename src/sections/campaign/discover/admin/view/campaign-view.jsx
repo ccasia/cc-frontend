@@ -7,6 +7,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
+  Menu,
   Stack,
   Button,
   Dialog,
@@ -14,9 +15,11 @@ import {
   Container,
   InputBase,
   TextField,
+  TextField,
   Typography,
   IconButton,
   Autocomplete,
+  CircularProgress,
   CircularProgress,
 } from '@mui/material';
 
@@ -35,7 +38,7 @@ import { useSettingsContext } from 'src/components/settings';
 import CampaignTabs from 'src/components/campaign/CampaignTabs';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-import CreateCampaignForm from 'src/sections/campaign/create/form';
+import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 
 import CampaignLists from '../campaign-list';
 
@@ -99,10 +102,6 @@ const CampaignView = () => {
   }, [adminsData]);
 
   const theme = useTheme();
-
-  const [anchorEl, setAnchorEl] = useState(null);
-
-  const open = Boolean(anchorEl);
 
   const { user } = useAuthContext();
 
@@ -199,17 +198,8 @@ const CampaignView = () => {
   // Restore smDown and menu handlers
   const smDown = useResponsive('down', 'sm');
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
   const handleNewCampaign = () => {
     create.onTrue();
-    handleClose();
   };
 
   useEffect(() => {
@@ -625,11 +615,11 @@ const CampaignView = () => {
                 color: isDisabled ? '#9e9e9e' : 'white',
                 borderBottom: isDisabled ? '3px solid #bdbdbd' : '3px solid #102387',
                 borderRadius: '8px',
-                padding: '8px 20px',
+                px: 2.5,
+                py: 1,
                 position: 'absolute',
                 right: 0,
                 top: -3,
-                minWidth: '150px',
                 fontSize: '0.9rem',
                 cursor: isDisabled ? 'not-allowed' : 'pointer',
                 '&:hover': {
@@ -899,7 +889,7 @@ const CampaignView = () => {
         scroll="paper"
         open={create.value}
       >
-        <CreateCampaignForm onClose={create.onFalse} mutate={mutate} />
+        <CreateCampaignFormV2 onClose={create.onFalse} mutate={mutate} />
       </Dialog>
     </Container>
   );
