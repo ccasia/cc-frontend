@@ -155,8 +155,9 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
   } = methods;
 
   // Product editing state
-  const [, setEditingIndex] = useState(-1);
-  const [, setLastAddedIndex] = useState(0);
+  const [editingIndex, setEditingIndex] = useState(-1);
+  const [editValue, setEditValue] = useState('');
+  const [lastAddedIndex, setLastAddedIndex] = useState(0);
 
   // Field arrays for products and locations
   const {

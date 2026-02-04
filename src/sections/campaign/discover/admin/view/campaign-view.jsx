@@ -7,7 +7,6 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
-  Menu,
   Stack,
   Button,
   Dialog,
@@ -15,11 +14,9 @@ import {
   Container,
   InputBase,
   TextField,
-  TextField,
   Typography,
   IconButton,
   Autocomplete,
-  CircularProgress,
   CircularProgress,
 } from '@mui/material';
 
@@ -197,10 +194,6 @@ const CampaignView = () => {
 
   // Restore smDown and menu handlers
   const smDown = useResponsive('down', 'sm');
-
-  const handleNewCampaign = () => {
-    create.onTrue();
-  };
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production') {

@@ -2,11 +2,11 @@ import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
 import { useMemo, useEffect } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Chip, Stack, Avatar, MenuItem, FormLabel, Typography } from '@mui/material';
+import { Box, Chip, Stack, Avatar, MenuItem, FormLabel } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -69,12 +69,6 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
   const { user } = useAuthContext();
   const { data: admins } = useGetAdmins('active');
 
-  const existedAdmins = campaign?.campaignAdmin?.map(({ admin }) => ({
-    id: admin?.user?.id,
-    name: admin?.user?.name,
-    role: admin?.role?.name,
-  }));
-
   // Get existing campaign managers from campaignAdmin (includes both CSM and Client users)
   const existingManagers = useMemo(() => {
     if (!campaign?.campaignAdmin) return [];
@@ -88,10 +82,9 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
       }));
   }, [campaign]);
 
-  // Extract deliverables from campaign boolean flags (same as createCampaign/activateClientCampaign)
   // UGC_VIDEOS is the default/base deliverable
   const existingDeliverables = useMemo(() => {
-    const delivs = ['UGC_VIDEOS']; // UGC_VIDEOS is always included as the base
+    const delivs = ['UGC_VIDEOS'];
     if (campaign?.rawFootage) delivs.push('RAW_FOOTAGES');
     if (campaign?.photos) delivs.push('PHOTOS');
     if (campaign?.ads) delivs.push('ADS');
