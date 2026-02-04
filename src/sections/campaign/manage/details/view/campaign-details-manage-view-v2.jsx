@@ -8,6 +8,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
+  Chip,
   Stack,
   Button,
   Dialog,
@@ -170,9 +171,6 @@ const CampaignDetailManageViewV2 = ({ id }) => {
     additional2: <UpdateAdditionalTwo campaign={campaign} campaignMutate={campaignMutate} />
   };
 
-  console.log('Campaign object: ', campaign)
-
-  // Render Tabs - styled like campaign-detail-view.jsx
   const renderTabs = (
     <Box sx={{ mb: 2.5 }} overflow="hidden">
       <Stack
@@ -265,19 +263,58 @@ const CampaignDetailManageViewV2 = ({ id }) => {
 
   return (
     <Container maxWidth="lg">
-      <Button
-        color="inherit"
-        startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
-        onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(id))}
-        sx={{
-          alignSelf: 'flex-start',
-          color: '#636366',
-          fontSize: { xs: '0.875rem', sm: '1rem' },
-          mb: 1,
-        }}
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ mb: 1 }}
       >
-        Back
-      </Button>
+        <Button
+          color="inherit"
+          startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
+          onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(id))}
+          sx={{
+            alignSelf: 'flex-start',
+            color: '#636366',
+            fontSize: { xs: '0.875rem', sm: '1rem' },
+          }}
+        >
+          Back
+        </Button>
+
+        {campaign?.status && (
+          <Chip
+            label={campaign.status.replace(/_/g, ' ')}
+            size="medium"
+            sx={{
+              fontWeight: 600,
+              fontSize: '0.75rem',
+              textTransform: 'capitalize',
+              ...(campaign.status === 'ACTIVE' && {
+                bgcolor: '#E8F5E9',
+                color: '#2E7D32',
+              }),
+              ...(campaign.status === 'PAUSED' && {
+                bgcolor: '#FFF3E0',
+                color: '#E65100',
+              }),
+              ...(campaign.status === 'SCHEDULED' && {
+                bgcolor: '#E3F2FD',
+                color: '#1565C0',
+              }),
+              ...(campaign.status === 'DRAFT' && {
+                bgcolor: '#F5F5F5',
+                color: '#616161',
+              }),
+              ...((campaign.status === 'COMPLETED' || campaign.status === 'CLOSED') && {
+                bgcolor: '#ECEFF1',
+                color: '#546E7A',
+              }),
+            }}
+          />
+        )}
+      </Stack>
+
       <CustomBreadcrumbs
         heading="Edit Campaign"
         links={[

@@ -24,6 +24,7 @@ const FormField = ({ label, children, required = true }) => (
         fontSize: '0.875rem',
         mb: 0.5,
         '& .MuiFormLabel-asterisk': {
+          display: required ? 'inline-block' : 'none',
           color: '#FF3500',
         },
       }}
@@ -88,10 +89,10 @@ const CampaignTargetAudience = () => {
   const showMalaysiaOptions = country === 'Malaysia';
   const filteredGeographicFocusOptions = showMalaysiaOptions
     ? GEOGRAPHIC_FOCUS_OPTIONS
-    : GEOGRAPHIC_FOCUS_OPTIONS.slice(0, 2);
+    : [GEOGRAPHIC_FOCUS_OPTIONS[0], GEOGRAPHIC_FOCUS_OPTIONS[1], GEOGRAPHIC_FOCUS_OPTIONS[4]];
 
   return (
-    <Box sx={{ maxWidth: '816px', mx: 'auto', mb: { xs: 10, sm: 30 } }}>
+    <Box sx={{ maxWidth: '816px', mx: 'auto', mb: { xs: 10, sm: 25 } }}>
       <Box sx={{ mt: 4 }}>
         <Grid container spacing={3}>
           {/* PRIMARY AUDIENCE SECTION */}
@@ -351,14 +352,12 @@ const CampaignTargetAudience = () => {
       </Box>
 
       {/* Geographic Focus */}
-      <Box mt={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Box mt={2} sx={{ display: { xs: 'inherit', sm: 'flex' },  justifyContent: 'center' }}>
         <FormField label="Geographic Focus">
-          <Stack spacing={1} direction="row">
+          <Stack spacing={1} direction="row" minWidth={{ xs: '100%', sm: 400 }}>
             <RHFSelectV2
               name="geographicFocus"
               placeholder="Select Geographic Focus"
-              multiple={false}
-              sx={{ minWidth: { sm: geographicFocus === 'others' ? 150 : 400 } }}
             >
               {filteredGeographicFocusOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
@@ -369,8 +368,8 @@ const CampaignTargetAudience = () => {
             {geographicFocus === 'others' && (
               <RHFTextField
                 name="geographicFocusOthers"
-                placeholder="Geopraphic Focus"
-                sx={{ minWidth: { xs: 250, sm: 300 } }}
+                placeholder="Geographic Focus"
+                sx={{ minWidth: { xs: '50%', sm: 300 } }}
               />
             )}
           </Stack>

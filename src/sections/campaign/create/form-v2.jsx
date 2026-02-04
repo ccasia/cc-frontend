@@ -174,13 +174,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       .required('Audience Gender is required.'),
     audienceAge: Yup.array().min(1, 'At least 1 option').required('Audience age is required.'),
     country: Yup.string().required('Country is required.'),
-    audienceLocation: Yup.array().when('country', {
-      is: 'Malaysia',
-      then: (schema) =>
-        schema.min(1, 'At least 1 option').required('Audience location is required.'),
-      otherwise: (schema) => schema.notRequired(),
-    }),
-    othersAudienceLocation: Yup.string(),
     audienceLanguage: Yup.array()
       .min(1, 'At least 1 option')
       .required('Audience language is required.'),
@@ -343,7 +336,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     countries: [],
     audienceGender: [],
     audienceAge: [],
-    audienceLocation: [],
     audienceLanguage: [],
     audienceCreatorPersona: [],
     audienceUserPersona: '',
@@ -353,12 +345,10 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     // Target audience secondary
     secondaryAudienceGender: [],
     secondaryAudienceAge: [],
-    secondaryAudienceLocation: [],
     secondaryAudienceLanguage: [],
     secondaryAudienceCreatorPersona: [],
     secondaryAudienceUserPersona: '',
     secondaryCountry: '',
-    secondaryOthersAudienceLocation: '',
 
     // Logistics
     logisticsType: '',
@@ -687,7 +677,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     // Build campaign data object
     const campaignData = {
       ...data,
-      audienceLocation: data.audienceLocation.filter((item) => item !== 'Others'),
       rawFootage: data.deliverables.includes('RAW_FOOTAGES'),
       photos: data.deliverables.includes('PHOTOS'),
       ads: data.deliverables.includes('ADS'),
@@ -717,9 +706,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
         : [],
       secondaryAudienceAge: Array.isArray(data.secondaryAudienceAge)
         ? data.secondaryAudienceAge
-        : [],
-      secondaryAudienceLocation: Array.isArray(data.secondaryAudienceLocation)
-        ? data.secondaryAudienceLocation.filter((item) => item !== 'Others')
         : [],
       secondaryAudienceLanguage: Array.isArray(data.secondaryAudienceLanguage)
         ? data.secondaryAudienceLanguage
@@ -1456,6 +1442,132 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           </Box>
         </Box>
       </FormProvider>
+
+      {/* Mobile Navigation Buttons */}
+      <Box
+        sx={{
+          display: { xs: 'flex', md: 'none' },
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          bgcolor: 'white',
+          borderTop: '1px solid #E7E7E7',
+          px: 2,
+          py: 2,
+          zIndex: 1000,
+          gap: 1,
+          justifyContent: 'space-between',
+          boxShadow: '0px -4px 12px rgba(0, 0, 0, 0.08)',
+        }}
+      >
+        <Button
+          color="inherit"
+          disabled={activeStep === 0}
+          onClick={handleBack}
+          sx={{
+            height: 48,
+            flex: 1,
+            bgcolor: 'white',
+            border: '1px solid #E7E7E7',
+            color: '#3A3A3C',
+            '&:hover': {
+              bgcolor: '#F8F8F8',
+              border: '1px solid #E7E7E7',
+            },
+            fontWeight: 600,
+            boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
+          }}
+        >
+          Back
+        </Button>
+
+        {/* Steps 0-6: Show Next button */}
+        {activeStep >= 0 && activeStep <= 6 && (
+          <Button
+            variant="contained"
+            onClick={handleNext}
+            disabled={!isStepValid() || isLoading}
+            sx={{
+              height: 48,
+              flex: 1,
+              bgcolor: '#3A3A3C',
+              '&:hover': {
+                bgcolor: '#47474a',
+              },
+              boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
+              fontWeight: 600,
+            }}
+          >
+            Next
+          </Button>
+        )}
+
+        {/* Step 7 (Next Steps): No navigation buttons - handled by component */}
+        {activeStep === 7 && <Box sx={{ flex: 1 }} />}
+
+        {/* Step 8: Show Next and Confirm Campaign buttons */}
+        {activeStep === 8 && (
+          <>
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              disabled={!isStepValid() || isLoading}
+              sx={{
+                height: 48,
+                flex: 1,
+                bgcolor: '#3A3A3C',
+                '&:hover': {
+                  bgcolor: '#47474a',
+                },
+                boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                fontWeight: 600,
+              }}
+            >
+              Next
+            </Button>
+            <LoadingButton
+              variant="contained"
+              onClick={handleOpenConfirm}
+              disabled={isLoading || !isStepValid()}
+              sx={{
+                height: 48,
+                flex: 1,
+                bgcolor: '#1340FF',
+                '&:hover': {
+                  bgcolor: '#0030e0',
+                },
+                boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                fontWeight: 600,
+                fontSize: '0.8rem',
+              }}
+            >
+              {isLoading ? 'Creating...' : 'Confirm'}
+            </LoadingButton>
+          </>
+        )}
+
+        {/* Step 9: Show only Confirm Campaign button (last step) */}
+        {activeStep === 9 && (
+          <LoadingButton
+            variant="contained"
+            onClick={handleOpenConfirm}
+            disabled={isLoading || !isStepValid()}
+            sx={{
+              height: 48,
+              flex: 1,
+              bgcolor: '#1340FF',
+              '&:hover': {
+                bgcolor: '#0030e0',
+              },
+              boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
+              fontWeight: 600,
+            }}
+          >
+            {isLoading ? 'Creating...' : 'Confirm Campaign'}
+          </LoadingButton>
+        )}
+      </Box>
 
       {/* Loading Overlay for Campaign Creation */}
       {isLoading && (
