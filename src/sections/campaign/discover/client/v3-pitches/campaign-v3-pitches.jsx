@@ -90,11 +90,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const smDown = useResponsive('down', 'sm');
   const mdUp = useResponsive('up', 'md');
 
-  // Listen for real-time outreach status updates
+  // Listen for real-time pitch updates (outreach + status changes)
   usePitchSocket({
     socket,
     campaignId: campaign?.id,
     onOutreachUpdate: () => onUpdate?.(),
+    onPitchStatusUpdate: () => onUpdate?.(),
     userId: user?.id,
   });
 
