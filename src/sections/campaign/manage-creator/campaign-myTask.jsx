@@ -899,4 +899,5 @@ CampaignMyTasks.propTypes = {
   logistic: PropTypes.func,
   mutateLogistic: PropTypes.func,
   setCurrentTab: PropTypes.func,
+  onConfirm: PropTypes.func,
 };
