@@ -8,9 +8,9 @@ export function normalizeUrl(url) {
   
   // Add www. if not present and doesn't start with a protocol
   if (!url.startsWith('www.') && !url.startsWith('http')) {
-    url = `www.${url}`;
+    url = 'www.' + url;
   }
   
   // Prepend https://
-  return `https://${url}`;
+  return 'https://' + url;
 }

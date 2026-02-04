@@ -7,10 +7,10 @@ import { useForm } from 'react-hook-form';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { enqueueSnackbar } from 'notistack';
 import { mutate as globalMutate } from 'swr';
+import React, { lazy, useState } from 'react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
-import React, { lazy, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
@@ -234,16 +234,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     audienceGender: Yup.array()
       .min(1, 'At least one option')
       .required('Audience Gender is required'),
-    countries: Yup.array()
-      .min(1, 'At least one country is required')
-      .required('Countries is required'),
-    audienceLocation: Yup.array().when('countries', {
-      is: (countries) => countries && countries.includes('Malaysia'),
-      then: (schema) =>
-        schema.min(1, 'At least one option').required('Audience location is required'),
-      otherwise: (schema) => schema.notRequired(),
-    }),
-    othersAudienceLocation: Yup.string(),
     audienceLanguage: Yup.array()
       .min(1, 'At least one option')
       .required('Audience language is required'),
@@ -254,26 +244,11 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     // Secondary Audience - all optional
     secondaryAudienceGender: Yup.array(),
     secondaryAudienceAge: Yup.array(),
-    secondaryAudienceLocation: Yup.array(),
-    secondaryOthersAudienceLocation: Yup.string(),
     secondaryAudienceLanguage: Yup.array(),
     secondaryAudienceCreatorPersona: Yup.array(),
     secondaryAudienceUserPersona: Yup.string(),
     geographicFocus: Yup.string(),
-    campaignDo: Yup.array()
-      .min(1, 'At least one option')
-      .of(
-        Yup.object().shape({
-          value: Yup.string(),
-        })
-      ),
-    campaignDont: Yup.array()
-      .min(1, 'At least one option')
-      .of(
-        Yup.object().shape({
-          value: Yup.string(),
-        })
-      ),
+    geographicFocusOthers: Yup.string(),
   });
 
   const logisticsSchema = Yup.object().shape({
@@ -433,6 +408,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     secondaryAudienceCreatorPersona: [],
     secondaryCountry: '',
     geographicFocus: '',
+    geographicFocusOthers: '',
     campaignDo: [{ value: '' }],
     campaignDont: [{ value: '' }],
     campaignImages: [],
@@ -514,13 +490,11 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         return ['campaignObjectives', 'campaignDo', 'campaignDont'];
       case 2: // Audience
         return [
+          'country',
           'audienceAge',
           'audienceGender',
-          'audienceLocation',
           'audienceLanguage',
           'audienceCreatorPersona',
-          'socialMediaPlatform',
-          'videoAngle',
         ];
       case 3: // Logistics
         return ['logisticsType'];
@@ -709,6 +683,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         secondaryAudienceUserPersona: data.secondaryAudienceUserPersona || '',
         secondaryCountry: data.secondaryCountry || '',
         geographicFocus: data.geographicFocus || '',
+        geographicFocusOthers: data.geographicFocusOthers || '',
         socialMediaPlatform: Array.isArray(data.socialMediaPlatform)
           ? data.socialMediaPlatform
           : [],
@@ -874,43 +849,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       setIsLoading(false);
     }
   });
-
-
-
-  // Add function to handle final submission
-  const handleFinalSubmit = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      confirmation.onFalse(); // Close the modal immediately when submission starts
-
-      // Try to create client record and associate with company first
-      try {
-        console.log('Creating client record with company if needed...');
-        const response = await axiosInstance.post('/api/client/createClientWithCompany');
-        console.log('Client setup response:', response.data);
-      } catch (setupError) {
-        console.error('Error setting up client account:', setupError);
-        // Continue anyway, as the main submission might still work
-      }
-
-      // Get form values
-      const formValues = methods.getValues();
-      console.log('Form values before submission:', formValues);
-
-      // Use the existing onSubmit logic for actual submission
-      await onSubmit(formValues);
-
-      // Reset form or redirect as needed
-      // setActiveStep(0);
-    } catch (error) {
-      console.error('Error submitting campaign:', error);
-      enqueueSnackbar('Failed to submit campaign', { variant: 'error' });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onSubmit, methods, confirmation]);
-
-
 
   // Modify the step content function to handle client flow with 7 internal steps
   const getStepContent = (step) => {
