@@ -37,13 +37,9 @@ import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
-import ReservationSlots from 'src/sections/campaign/create/steps/reservation-slots';
-import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
-// Import steps from campaign creation
-import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-modal';
 // Import steps from admin campaign creation
-import CampaignLogistics from 'src/sections/campaign/create/stepsV2/campaign-logistics';
-import ReservationSlotsV2 from 'src/sections/campaign/create/stepsV2/reservation-slots';
+import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
+import ReservationSlotsV2 from 'src/sections/campaign/create/steps/reservation-slots';
 
 import NextSteps from './next-steps';
 import CampaignObjective from './campaign-objective';
@@ -129,35 +125,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   // Determine if we're in the front or back section
   const inFrontSection = isInFrontSection(activeStep);
   const inBackSection = isInBackSection(activeStep);
-
-
-
-  // Client brand info for preview
-  const clientBrandName =
-    user?.company?.name || user?.client?.company?.name || user?.brandName || user?.name || 'Your Brand';
-
-  // Resolve client company logo
-  let clientLogoUrl = '';
-  try {
-    const stored = localStorage.getItem('client_company_logo');
-    clientLogoUrl = stored || user?.company?.logo || user?.client?.company?.logo || '';
-  } catch {
-    clientLogoUrl = user?.company?.logo || user?.client?.company?.logo || '';
-  }
-
-  // Format date helper
-  const formatDate = (date) => {
-    if (!date) return 'Not set';
-    try {
-      return new Date(date).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return 'Invalid date';
-    }
-  };
 
   const campaignSchema = Yup.object().shape({
     campaignIndustries: Yup.array()
@@ -1461,8 +1428,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         onClose={openPackage.onFalse}
         setValue={setValue}
       />
-
-      <TimelineTypeModal open={modal.value} onClose={modal.onFalse} />
 
       <PDFEditor
         open={pdfModal.value}
