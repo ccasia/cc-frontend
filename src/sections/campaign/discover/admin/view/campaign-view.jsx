@@ -17,6 +17,7 @@ import {
   InputBase,
   TextField,
   Typography,
+  IconButton,
   Autocomplete,
   CircularProgress,
 } from '@mui/material';
@@ -679,6 +680,8 @@ const CampaignView = () => {
           >
             <Iconify icon="eva:plus-fill" width={24} height={24} />
           </IconButton>
+            </>
+          )}
         </Stack>
       </Box>
 
