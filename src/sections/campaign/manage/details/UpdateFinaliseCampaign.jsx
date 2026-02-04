@@ -82,10 +82,9 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
       }));
   }, [campaign]);
 
-  // Extract deliverables from campaign boolean flags (same as createCampaign/activateClientCampaign)
   // UGC_VIDEOS is the default/base deliverable
   const existingDeliverables = useMemo(() => {
-    const delivs = ['UGC_VIDEOS']; // UGC_VIDEOS is always included as the base
+    const delivs = ['UGC_VIDEOS'];
     if (campaign?.rawFootage) delivs.push('RAW_FOOTAGES');
     if (campaign?.photos) delivs.push('PHOTOS');
     if (campaign?.ads) delivs.push('ADS');
