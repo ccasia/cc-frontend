@@ -286,7 +286,7 @@ const CampaignView = () => {
       if (!el) return;
 
       el.scrollIntoView({
-        behavior: 'smooth',
+        behavior: 'auto',
         block: 'center',
       });
     } else if (scrollTop) {
