@@ -2,11 +2,11 @@ import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
 import { useMemo, useEffect } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Chip, Stack, Avatar, MenuItem, FormLabel, Typography } from '@mui/material';
+import { Box, Chip, Stack, Avatar, MenuItem, FormLabel } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -68,12 +68,6 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const { data: admins } = useGetAdmins('active');
-
-  const existedAdmins = campaign?.campaignAdmin?.map(({ admin }) => ({
-    id: admin?.user?.id,
-    name: admin?.user?.name,
-    role: admin?.role?.name,
-  }));
 
   // Get existing campaign managers from campaignAdmin (includes both CSM and Client users)
   const existingManagers = useMemo(() => {
