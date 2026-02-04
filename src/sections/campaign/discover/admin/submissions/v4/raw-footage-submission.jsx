@@ -6,6 +6,7 @@ import {
   Box,
   Card,
   Chip,
+  CircularProgress,
   Stack,
   TextField,
   Typography,
@@ -280,12 +281,24 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                     Raw footage content is being processed.
                   </Typography>
                   <Chip
-                    label="In Progress"
+                    label="Processing"
                     color="info"
                     size="small"
                   />
                 </Stack>
               </Card>
+            );
+          }
+
+          // Processing state — creator has uploaded, worker is processing
+          if (submission.status === 'IN_PROGRESS') {
+            return (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, gap: 2 }}>
+                <CircularProgress size={40} thickness={5} sx={{ color: '#8A5AFE' }} />
+                <Typography variant="body2" color="text.secondary">
+                  Creator&apos;s new raw footage is being processed
+                </Typography>
+              </Box>
             );
           }
 
