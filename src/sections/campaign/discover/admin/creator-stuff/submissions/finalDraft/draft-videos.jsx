@@ -532,10 +532,10 @@ const VideoCard = ({
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
                     borderBottomColor: '#e7e7e7',
-                    color: '#637381',
+                    color: '#231F20',
                     '&:hover': {
                       bgcolor: '#f5f5f5',
-                      borderColor: '#b0b0b0',
+                      borderColor: '#231F20',
                     },
                     textTransform: 'none',
                     py: 1.2,

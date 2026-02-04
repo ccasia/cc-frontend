@@ -915,8 +915,29 @@ const CampaignFinalDraft = ({
                 </>
               )}
               
-              {/* Upload button - always show when eligible */}
-              
+              {/* Upload button - commented out to avoid duplicate with Re-Upload below */}
+              {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                <Button
+                  variant="contained"
+                  onClick={handleUploadClick}
+                  startIcon={<Iconify icon="material-symbols:add" width={24} />}
+                  sx={{
+                    bgcolor: '#203ff5',
+                    color: 'white',
+                    borderBottom: 3.5,
+                    borderBottomColor: '#112286',
+                    borderRadius: 1.5,
+                    px: 2.5,
+                    py: 1.2,
+                    '&:hover': {
+                      bgcolor: '#203ff5',
+                      opacity: 0.9,
+                    },
+                  }}
+                >
+                  Upload
+                </Button>
+              </Box> */}
 
 
             </Box>
