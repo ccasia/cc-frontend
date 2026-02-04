@@ -1,6 +1,7 @@
+import useSWR from 'swr';
+import { useMemo } from 'react';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import React, { useState, useEffect } from 'react';
 
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
@@ -17,36 +18,32 @@ import {
   TableContainer,
 } from '@mui/material';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import { fetcher, endpoints } from 'src/utils/axios';
 
 dayjs.extend(duration);
 
 export default function ApproveAgreementsAnalytics() {
-  const [submissions, setSubmissions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    async function fetchSubmissions() {
-      try {
-        const response = await axiosInstance.get(endpoints.submission.all);
-        setSubmissions(response.data.submissions || []);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch submissions');
-      } finally {
-        setLoading(false);
-      }
+  // OPTIMIZED: Use SWR with aggressive caching - shared across multiple components
+  const { data, isLoading: loading, error } = useSWR(
+    endpoints.submission.all,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnMount: true,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      dedupingInterval: 120000, // Cache for 2 minutes - shared cache
+      keepPreviousData: true,
     }
-
-    fetchSubmissions();
-  }, []);
-
-  // Filter only submissions with type "AGREEMENT_FORM"
-  const agreementSubmissions = submissions.filter(
-    (submission) => submission.type === 'AGREEMENT_FORM' && submission.status === 'APPROVED'
   );
 
-  console.log('Agreement', agreementSubmissions);
+  // OPTIMIZED: Memoize filtered data to prevent unnecessary re-calculations
+  const agreementSubmissions = useMemo(() => {
+    const submissions = data?.submissions || [];
+    return submissions.filter(
+      (submission) => submission.type === 'AGREEMENT_FORM' && submission.status === 'APPROVED'
+    );
+  }, [data]);
   // Check if there are any completed submissions for "Completed Date" column to show
   //    const showCompletedDateColumn = agreementSubmissions.some(submission => submission.completedAt);
 

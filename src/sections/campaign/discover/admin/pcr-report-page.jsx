@@ -852,7 +852,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 cornerRadius: 12,
                 cx: 180,
                 cy: 160,
-                startAngle: startAngle,
+                startAngle,
               },
             ]}
             slotProps={{

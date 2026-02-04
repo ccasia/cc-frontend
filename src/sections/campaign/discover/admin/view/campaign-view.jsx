@@ -17,6 +17,7 @@ import {
   InputBase,
   TextField,
   Typography,
+  IconButton,
   Autocomplete,
   CircularProgress,
 } from '@mui/material';
@@ -153,8 +154,12 @@ const CampaignView = () => {
     return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}${excludeParam}${filterAdminParam}`;
   };
 
+  // OPTIMIZED: Add comprehensive caching configuration to reduce unnecessary re-fetches
   const { data, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(getKey, fetcher, {
     revalidateFirstPage: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 30000, // Cache for 30 seconds
   });
   
   // Make mutate function available globally for campaign activation
@@ -177,20 +182,36 @@ const CampaignView = () => {
     )}&status=${statusString}&limit=${500}` // larger limit to approximate full count
   , [user?.id, debouncedQuery]);
 
-  const { data: activeData } = useSWR(buildCountKey('ACTIVE'), fetcher, { revalidateOnFocus: false });
-  const { data: completedData } = useSWR(buildCountKey('COMPLETED'), fetcher, { revalidateOnFocus: false });
-  const { data: pausedData } = useSWR(buildCountKey('PAUSED'), fetcher, { revalidateOnFocus: false });
+  // OPTIMIZED: Add dedupingInterval to count queries for better caching
+  const { data: activeData } = useSWR(buildCountKey('ACTIVE'), fetcher, { 
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  });
+  const { data: completedData } = useSWR(buildCountKey('COMPLETED'), fetcher, { 
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  });
+  const { data: pausedData } = useSWR(buildCountKey('PAUSED'), fetcher, { 
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  });
   const { data: pendingData } = useSWR(
     buildCountKey('SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION'),
     fetcher,
-    { revalidateOnFocus: false }
+    { 
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
   );
 
   // Fetch count for "All Campaigns" (other admins' active campaigns) - only for CSM users
   const { data: allCampaignsData } = useSWR(
     isCSM ? `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=&excludeOwn=true&limit=500` : null,
     fetcher,
-    { revalidateOnFocus: false }
+    { 
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
   );
 
   // Use independent datasets for counts so they persist regardless of the current tab
@@ -631,102 +652,57 @@ const CampaignView = () => {
             )}
               </Stack>
 
-              <Box>
-                <Button
-                  onClick={handleNewCampaign}
-                  disabled={isDisabled}
-                  sx={{
-                    bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
-                    color: isDisabled ? '#9e9e9e' : 'white',
-                    borderBottom: isDisabled ? '3px solid #bdbdbd' : '3px solid #102387',
-                    borderRadius: '8px',
-                    px: 2.5,
-                    py: 1,
-                    bottom: 5,
-                    fontSize: '0.9rem',
-                    cursor: isDisabled ? 'not-allowed' : 'pointer',
-                    '&:hover': {
-                      bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
-                      opacity: isDisabled ? 1 : 0.9,
-                    },
-                  }}
-                >
-                  New Campaign
-                </Button>
-              </Box>
+          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+            <Button
+              onClick={create.onTrue}
+              startIcon={<Iconify icon="eva:plus-fill" width={20} height={20} />}
+              disabled={isDisabled}
+              sx={{
+                bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
+                color: isDisabled ? '#9e9e9e' : 'white',
+                borderBottom: isDisabled ? '3px solid #bdbdbd' : '3px solid #102387',
+                borderRadius: '8px',
+                padding: '8px 20px',
+                position: 'absolute',
+                right: 0,
+                top: -3,
+                minWidth: '150px',
+                fontSize: '0.9rem',
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
+                '&:hover': {
+                  bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
+                  opacity: isDisabled ? 1 : 0.9,
+                },
+              }}
+            >
+              New Campaign
+            </Button>
+          </Box>
+
+          <IconButton
+            onClick={create.onTrue}
+            sx={{
+              display: { xs: 'flex', sm: 'none' },
+              position: 'fixed',
+              right: 20,
+              bottom: 20,
+              width: 56,
+              height: 56,
+              bgcolor: '#203ff5',
+              color: 'white',
+              zIndex: 1100,
+              boxShadow: '0 2px 12px rgba(32, 63, 245, 0.3)',
+              '&:hover': {
+                bgcolor: '#203ff5',
+                opacity: 0.9,
+              },
+            }}
+          >
+            <Iconify icon="eva:plus-fill" width={24} height={24} />
+          </IconButton>
             </>
           )}
         </Stack>
-        
-        {/* Filter Dropdown Menu */}
-        <Menu
-          anchorEl={filterMenuAnchor}
-          open={filterMenuOpen}
-          onClose={handleFilterMenuClose}
-          PaperProps={{
-            sx: {
-              mt: 1,
-              minWidth: 200,
-              borderRadius: 1,
-              boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            },
-          }}
-        >
-          <MenuItem
-            onClick={() => handleFilterSelect('active')}
-            selected={filter === 'active' && !showAllCampaigns}
-            sx={{
-              fontWeight: filter === 'active' && !showAllCampaigns ? 600 : 400,
-              color: filter === 'active' && !showAllCampaigns ? '#1340ff' : 'text.primary',
-            }}
-          >
-            Active ({activeCount})
-          </MenuItem>
-          {(isSuperAdmin || user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager') && (
-            <MenuItem
-              onClick={() => handleFilterSelect('pending')}
-              selected={filter === 'pending' && !showAllCampaigns}
-              sx={{
-                fontWeight: filter === 'pending' && !showAllCampaigns ? 600 : 400,
-                color: filter === 'pending' && !showAllCampaigns ? '#1340ff' : 'text.primary',
-              }}
-            >
-              Pending ({pendingCount})
-            </MenuItem>
-          )}
-          <MenuItem
-            onClick={() => handleFilterSelect('completed')}
-            selected={filter === 'completed' && !showAllCampaigns}
-            sx={{
-              fontWeight: filter === 'completed' && !showAllCampaigns ? 600 : 400,
-              color: filter === 'completed' && !showAllCampaigns ? '#1340ff' : 'text.primary',
-            }}
-          >
-            Completed ({completedCount})
-          </MenuItem>
-          <MenuItem
-            onClick={() => handleFilterSelect('paused')}
-            selected={filter === 'paused' && !showAllCampaigns}
-            sx={{
-              fontWeight: filter === 'paused' && !showAllCampaigns ? 600 : 400,
-              color: filter === 'paused' && !showAllCampaigns ? '#1340ff' : 'text.primary',
-            }}
-          >
-            Paused ({pausedCount})
-          </MenuItem>
-          {isCSM && (
-            <MenuItem
-              onClick={() => handleFilterSelect('all')}
-              selected={showAllCampaigns}
-              sx={{
-                fontWeight: showAllCampaigns ? 600 : 400,
-                color: showAllCampaigns ? '#1340ff' : 'text.primary',
-              }}
-            >
-              All ({allCampaignsCount})
-            </MenuItem>
-          )}
-        </Menu>
       </Box>
 
       <Stack direction="row" sx={{ width: '100%', gap: 0 }}>

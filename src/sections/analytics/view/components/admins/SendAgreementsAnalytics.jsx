@@ -1,6 +1,7 @@
+import useSWR from 'swr';
+import { useMemo } from "react";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
-import React, { useState, useEffect } from "react";
 
 import { 
     Box, 
@@ -15,37 +16,30 @@ import {
     TableContainer
  } from "@mui/material";
 
-import axiosInstance, { endpoints } from "src/utils/axios";
+import { fetcher, endpoints } from "src/utils/axios";
 
 // Extend dayjs to use duration plugin
 dayjs.extend(duration);
 
 export default function SendAgreementsAnalytics() {
-  const [creatorAgreements, setCreatorAgreements] = useState([]); // Ensure it's initialized as an empty array
-  const [loading, setLoading] = useState(true);
-  //    const [error, setError] = useState(null);
+  // OPTIMIZED: Use SWR with aggressive caching to reduce load time
+  const { data: creatorAgreements, isLoading: loading } = useSWR(
+    endpoints.campaign.allcreatorAgreement,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnMount: true,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      dedupingInterval: 120000, // Cache for 2 minutes
+      keepPreviousData: true,
+    }
+  );
 
-  useEffect(() => {
-    async function fetchCreatorAgreements() {
-        try {
-            const response = await axiosInstance.get(endpoints.campaign.allcreatorAgreement);
-            // console.log(response.data);
-            setCreatorAgreements(response.data); 
-          } catch (error) {
-            console.error('Error fetching creator agreements:', error);
-            // setError(error.message || 'An error occurred');
-          }
-        }
-
-    fetchCreatorAgreements();
-  }, []);
-
-  console.log("creators", creatorAgreements)
-  
-  // Filter only creator agreements with a completedAt value
-  const completedCreatorAgreements = (creatorAgreements || []).filter(agreement => agreement.completedAt);
-
-  console.log("Completed Creator Agreements", completedCreatorAgreements)
+  // OPTIMIZED: Memoize filtered data to prevent unnecessary re-calculations
+  const completedCreatorAgreements = useMemo(() => 
+    (creatorAgreements || []).filter(agreement => agreement.completedAt)
+  , [creatorAgreements]);
 
   return (
     <Card sx={{ mb: 2 }}>
