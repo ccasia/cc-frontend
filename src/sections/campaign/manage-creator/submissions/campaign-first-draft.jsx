@@ -1685,8 +1685,73 @@ const CampaignFirstDraft = ({
                   Preview First Draft
                 </Button>
               </Stack>
-            </Box>
-          )}
+
+              {/* Detailed Feedback Display - Disabled: feedback is shown in 2nd Draft tab instead */}
+              {false && ((submission?.feedback && submission.feedback.length > 0) ||
+                (submission?.status === 'NOT_STARTED' &&
+                  feedbacksTesting &&
+                  feedbacksTesting.length > 0)) && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                    Content Requiring Changes
+                  </Typography>
+
+                  {(
+                    (submission?.status === 'NOT_STARTED' && feedbacksTesting?.length > 0 ? feedbacksTesting : (submission.feedback || []))
+                      .filter((feedback) => {
+                        const isClient = (feedback.admin?.role === 'client') || (feedback.role === 'client');
+                        const isAdmin = (feedback.admin?.role === 'admin') || (feedback.role === 'admin');
+                        const isChangeRequest = feedback.type === 'REQUEST' || feedback.videosToUpdate?.length > 0 || feedback.photosToUpdate?.length > 0 || feedback.rawFootageToUpdate?.length > 0;
+                        
+                        // Show client feedback always, and admin feedback when it's a change request
+                        return isClient || (isAdmin && isChangeRequest);
+                      })
+                      .filter((feedback) => {
+                        const hasMediaUpdates =
+                          feedback.videosToUpdate?.length > 0 ||
+                          feedback.photosToUpdate?.length > 0 ||
+                          feedback.rawFootageToUpdate?.length > 0;
+                        const hasContent = !!feedback.content;
+                        const isValidType =
+                          feedback.type === 'REQUEST' ||
+                          feedback.type === 'REASON' ||
+                          feedback.type === 'COMMENT';
+                        return isValidType && (hasMediaUpdates || hasContent);
+                      })
+                      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                  ).map((feedback, feedbackIndex) => (
+                        <Box
+                          key={feedback.id || feedbackIndex}
+                          mb={2}
+                          p={2}
+                          border={1}
+                          borderColor="warning.main"
+                          borderRadius={2}
+                          sx={{ bgcolor: 'warning.lighter' }}
+                        >
+                          <Box sx={{ mb: 2 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                              Admin
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {`Admin • ${dayjs(feedback.createdAt).format('MMM DD, YYYY')}`}
+                            </Typography>
+                          </Box>
+
+                          {!!feedback?.content && (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                Feedback:
+                              </Typography>
+                              {feedback.content
+                                .split('\n')
+                                .map((line, i) => (
+                                  <Typography key={i} variant="body2" sx={{ mb: 0.5 }}>
+                                    {line}
+                                  </Typography>
+                                ))}
+                            </Box>
+                          )}
 
   
 
