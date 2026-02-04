@@ -13,8 +13,10 @@ import {
   Button,
   Dialog,
   Avatar,
+  Select,
   Tooltip,
   TableRow,
+  MenuItem,
   TableCell,
   TableHead,
   TableBody,
@@ -437,6 +439,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
 
   const smUp = useResponsive('up', 'sm');
   const mdUp = useResponsive('up', 'md');
+  const lgUp = useResponsive('up', 'lg');
 
   // Get tier data for an agreement item
   const getTierDataForItem = (item) => {
@@ -845,10 +848,10 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     <Box>
       <Stack direction="column" spacing={2}>
         <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={2}
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={{ xs: 1, sm: 1.5 }}
           justifyContent="flex-start"
-          alignItems={{ xs: 'flex-start', md: 'center' }}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
           sx={{ mb: 1 }}
         >
           {/* Alphabetical Sort Button */}
@@ -918,13 +921,14 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
             Alphabetical
           </Button>
 
+          {lgUp ? (
           <Stack
-            direction={{ xs: 'column', sm: 'row' }}
+            direction="row"
             spacing={1}
-            sx={{ width: { xs: '100%', md: 'auto' }, flexWrap: 'wrap' }}
+            sx={{ flexWrap: 'nowrap' }}
           >
             <Button
-              fullWidth={!mdUp}
+
               onClick={() => setSelectedFilter('all')}
               sx={{
                 px: 1.5,
@@ -954,7 +958,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
             </Button>
 
             <Button
-              fullWidth={!mdUp}
+
               onClick={() => setSelectedFilter('pendingAgreement')}
               sx={{
                 px: 1.5,
@@ -988,7 +992,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
             </Button>
 
             <Button
-              fullWidth={!mdUp}
+
               onClick={() => setSelectedFilter('pendingApproval')}
               sx={{
                 px: 1.5,
@@ -1022,7 +1026,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
             </Button>
 
             <Button
-              fullWidth={!mdUp}
+
               onClick={() => setSelectedFilter('sentToCreator')}
               sx={{
                 px: 1.5,
@@ -1054,7 +1058,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
             </Button>
 
             <Button
-              fullWidth={!mdUp}
+
               onClick={() => setSelectedFilter('rejected')}
               sx={{
                 px: 1.5,
@@ -1085,7 +1089,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
             </Button>
 
             <Button
-              fullWidth={!mdUp}
+
               onClick={() => setSelectedFilter('approved')}
               sx={{
                 px: 1.5,
@@ -1115,6 +1119,36 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
               {`Approved (${filterCounts.approved})`}
             </Button>
           </Stack>
+          ) : (
+          <Select
+            value={selectedFilter}
+            onChange={(e) => setSelectedFilter(e.target.value)}
+            size="small"
+            sx={{
+              minWidth: { xs: '100%', sm: 200 },
+              height: 42,
+              bgcolor: '#FFFFFF',
+              border: '1.5px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1.15,
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: 'none',
+              },
+              '& .MuiSelect-select': {
+                py: 1.25,
+              },
+            }}
+          >
+            <MenuItem value="all">{`All (${filterCounts.all})`}</MenuItem>
+            <MenuItem value="pendingAgreement">{`Pending Agreement (${filterCounts.pendingAgreement})`}</MenuItem>
+            <MenuItem value="pendingApproval">{`Pending Approval (${filterCounts.pendingApproval})`}</MenuItem>
+            <MenuItem value="sentToCreator">{`Sent To Creator (${filterCounts.sentToCreator})`}</MenuItem>
+            <MenuItem value="rejected">{`Rejected (${filterCounts.rejected})`}</MenuItem>
+            <MenuItem value="approved">{`Approved (${filterCounts.approved})`}</MenuItem>
+          </Select>
+          )}
 
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', flex: 1 }}>
             <TextField
@@ -1173,7 +1207,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
               width: '100%',
               position: 'relative',
               bgcolor: 'transparent',
-              overflow: 'hidden',
+              overflow: 'auto',
             }}
           >
             <Table size={smUp ? 'medium' : 'small'}>
