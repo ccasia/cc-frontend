@@ -796,12 +796,43 @@ export default function CampaignItem({
   );
 
   return (
+    // <Card
+    //   component={RouterLink}
+    //   href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
+    //   sx={{
+    //     overflow: 'hidden',
+    //     textDecoration: 'none',
+    //     cursor: 'pointer',
+    //     transition: 'all 0.3s',
+    //     bgcolor: 'background.default',
+    //     borderRadius: '15px',
+    //     border: '1.2px solid',
+    //     borderColor: theme.palette.divider,
+    //     position: 'relative',
+    //     pb: 1.5,
+    //     mb: -0.5,
+    //     maxHeight: 370,
+    //     '&:hover': {
+    //       borderColor: '#1340ff',
+    //       transform: 'translateY(-2px)',
+    //     },
+    //   }}
+    // >
     <Card
-      component={RouterLink}
+      component={Box}
+      id={`campaign-${campaign?.id}`}
+      ref={ref}
       href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
+      onClick={() => {
+        const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');
+        if (lastCampaignOpenId || lastCampaignOpenId !== campaign.id) {
+          localStorage.setItem('lastCampaignOpenId', campaign?.id);
+        }
+        localStorage.removeItem('scrollTop');
+        router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
+      }}
       sx={{
         overflow: 'hidden',
-        textDecoration: 'none',
         cursor: 'pointer',
         transition: 'all 0.3s',
         bgcolor: 'background.default',

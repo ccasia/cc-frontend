@@ -296,6 +296,41 @@ const CampaignView = () => {
     };
   }, [handleScroll, mainRef, lgUp]);
 
+  useEffect(() => {
+    if (pageSizing) {
+      setSize(Number(pageSizing));
+    }
+  }, [setSize, pageSizing]);
+
+  useEffect(() => {
+    if (!isLoading && lastCampaignOpenId) {
+      const el = document.getElementById(`campaign-${lastCampaignOpenId}`);
+
+      if (!el) return;
+
+      el.scrollIntoView({
+        behavior: 'auto',
+        block: 'center',
+      });
+    } else if (scrollTop) {
+      const main = mainRef?.current;
+
+      if (!main) return;
+
+      main.scrollTo({
+        behavior: 'auto',
+        top: Number(scrollTop),
+      });
+    }
+  }, [mainRef, lastCampaignOpenId, setSize, isLoading, scrollTop]);
+
+  useEffect(() => {
+    const scrollContainer = mainRef?.current;
+    window.addEventListener('beforeunload', (event) => {
+      localStorage.setItem('scrollTop', scrollContainer.scrollTop);
+    });
+  }, [mainRef]);
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
       <Typography
