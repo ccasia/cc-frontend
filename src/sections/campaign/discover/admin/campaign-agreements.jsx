@@ -3,7 +3,7 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -39,6 +39,8 @@ import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
@@ -419,7 +421,8 @@ AgreementDialog.propTypes = {
 };
 
 const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) => {
-  const { data, isLoading } = useGetAgreements(campaign?.id);
+  const { data, isLoading, mutate: mutateAgreements } = useGetAgreements(campaign?.id);
+  const { socket } = useSocketContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [submissions, setSubmissions] = useState([]);
@@ -509,25 +512,41 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     formState: { isSubmitting },
   } = methods;
 
-  // Fetch submissions to get PENDING_REVIEW status
-  useEffect(() => {
-    const fetchSubmissions = async () => {
-      if (!campaign?.id) return;
+  // Extract submissions fetch into reusable callback
+  const fetchSubmissions = useCallback(async () => {
+    if (!campaign?.id) return;
+    try {
+      const response = await axiosInstance.get(
+        `${endpoints.submission.root}?campaignId=${campaign.id}`
+      );
+      setSubmissions(response.data);
+    } catch (error) {
+      console.error('Error fetching submissions:', error);
+    } finally {
+      setLoadingSubmissions(false);
+    }
+  }, [campaign?.id]);
 
-      try {
-        const response = await axiosInstance.get(
-          `${endpoints.submission.root}?campaignId=${campaign.id}`
-        );
-        setSubmissions(response.data);
-      } catch (error) {
-        console.error('Error fetching submissions:', error);
-      } finally {
-        setLoadingSubmissions(false);
-      }
+  // Initial fetch
+  useEffect(() => {
+    fetchSubmissions();
+  }, [fetchSubmissions]);
+
+  // Real-time updates when creator submits agreement
+  useEffect(() => {
+    if (!socket) return undefined;
+
+    const handleAgreementReady = () => {
+      mutateAgreements();  // Refresh agreements data (SWR)
+      fetchSubmissions();  // Refresh submissions data (status for approve/reject buttons)
     };
 
-    fetchSubmissions();
-  }, [campaign?.id]);
+    socket.on('agreementReady', handleAgreementReady);
+
+    return () => {
+      socket.off('agreementReady', handleAgreementReady);
+    };
+  }, [socket, mutateAgreements, fetchSubmissions]);
 
   // Combine the agreements data with submission status
   const combinedData = useMemo(() => {
