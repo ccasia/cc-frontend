@@ -58,7 +58,13 @@ const CampaignListView = () => {
     return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${statusParam}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}${excludeParam}`;
   };
 
-  const { data, error, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher);
+  // OPTIMIZED: Add caching configuration to reduce unnecessary re-fetches
+  const { data, error, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateFirstPage: false,
+    dedupingInterval: 30000, // Cache for 30 seconds
+  });
 
   const router = useRouter();
   // Remove unused state variables that were used by the removed useEffect
