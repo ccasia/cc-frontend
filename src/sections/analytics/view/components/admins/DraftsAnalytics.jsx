@@ -1,8 +1,9 @@
 // components/admins/SendAgreementsAnalytics.jsx
 
+import useSWR from 'swr';
+import { useMemo } from "react";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
-import React, { useState, useEffect } from "react";
 
 import EditIcon from "@mui/icons-material/Edit";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -12,16 +13,12 @@ import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import PauseCircleOutlineIcon from "@mui/icons-material/PauseCircleOutline";
 import { Box, Card, Table, TableRow, TableHead, TableBody, TableCell, Typography, CardContent, TableContainer, CircularProgress } from "@mui/material";
 
-import axiosInstance, { endpoints } from "src/utils/axios";
+import { fetcher, endpoints } from "src/utils/axios";
 
 // Extend dayjs to use duration plugin
 dayjs.extend(duration);
 
 export default function DraftAnalytics() {
-  const [submissions, setSubmissions] = useState([]); // Ensure it's initialized as an empty array
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
   const statusConfig = {
     APPROVED: { label: "Approved", icon: <CheckCircleIcon color="success" sx={{ mr: 1 }} /> },
     REJECTED: { label: "Rejected", icon: <CancelIcon color="error" sx={{ mr: 1 }} /> },
@@ -33,28 +30,30 @@ export default function DraftAnalytics() {
 
   const getStatusContent = (status) => statusConfig[status] || statusConfig.PENDING;
 
-  useEffect(() => {
-    async function fetchSubmissions() {
-      try {
-        const response = await axiosInstance.get(endpoints.submission.all);
-        setSubmissions(response.data.submissions || []); // Ensure submissions is an array
-      } catch (err) {
-        setError(err.response?.data?.message || "Failed to fetch submissions");
-      } finally {
-        setLoading(false);
-      }
+  // OPTIMIZED: Use SWR with aggressive caching - shared across multiple components
+  const { data, isLoading: loading, error } = useSWR(
+    endpoints.submission.all,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnMount: true,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      dedupingInterval: 120000, // Cache for 2 minutes - shared cache
+      keepPreviousData: true,
     }
+  );
 
-    fetchSubmissions();
-  }, []);
+  // OPTIMIZED: Memoize filtered data to prevent unnecessary re-calculations
+  const fistDraftSubmissions = useMemo(() => {
+    const submissions = data?.submissions || [];
+    return submissions.filter(submission => submission.type === "FIRST_DRAFT" && submission.turnaroundTime > 0);
+  }, [data]);
 
-  console.log("All submissions", submissions);
-
-  // Filter only submissions with type "First Draft"
-  const fistDraftSubmissions = submissions.filter(submission => submission.type === "FIRST_DRAFT" && submission.turnaroundTime > 0);
-
-  // Filter only submissions with type "Final Draft"
-  const finalDraftSubmissions = submissions.filter(submission => submission.type === "FINAL_DRAFT" && submission.status === "APPROVED");
+  const finalDraftSubmissions = useMemo(() => {
+    const submissions = data?.submissions || [];
+    return submissions.filter(submission => submission.type === "FINAL_DRAFT" && submission.status === "APPROVED");
+  }, [data]);
 
   return (
     <>

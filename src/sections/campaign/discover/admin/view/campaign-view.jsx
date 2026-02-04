@@ -154,8 +154,12 @@ const CampaignView = () => {
     return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}${excludeParam}${filterAdminParam}`;
   };
 
+  // OPTIMIZED: Add comprehensive caching configuration to reduce unnecessary re-fetches
   const { data, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(getKey, fetcher, {
     revalidateFirstPage: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 30000, // Cache for 30 seconds
   });
   
   // Make mutate function available globally for campaign activation
@@ -178,20 +182,36 @@ const CampaignView = () => {
     )}&status=${statusString}&limit=${500}` // larger limit to approximate full count
   , [user?.id, debouncedQuery]);
 
-  const { data: activeData } = useSWR(buildCountKey('ACTIVE'), fetcher, { revalidateOnFocus: false });
-  const { data: completedData } = useSWR(buildCountKey('COMPLETED'), fetcher, { revalidateOnFocus: false });
-  const { data: pausedData } = useSWR(buildCountKey('PAUSED'), fetcher, { revalidateOnFocus: false });
+  // OPTIMIZED: Add dedupingInterval to count queries for better caching
+  const { data: activeData } = useSWR(buildCountKey('ACTIVE'), fetcher, { 
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  });
+  const { data: completedData } = useSWR(buildCountKey('COMPLETED'), fetcher, { 
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  });
+  const { data: pausedData } = useSWR(buildCountKey('PAUSED'), fetcher, { 
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  });
   const { data: pendingData } = useSWR(
     buildCountKey('SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION'),
     fetcher,
-    { revalidateOnFocus: false }
+    { 
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
   );
 
   // Fetch count for "All Campaigns" (other admins' active campaigns) - only for CSM users
   const { data: allCampaignsData } = useSWR(
     isCSM ? `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=&excludeOwn=true&limit=500` : null,
     fetcher,
-    { revalidateOnFocus: false }
+    { 
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
   );
 
   // Use independent datasets for counts so they persist regardless of the current tab
