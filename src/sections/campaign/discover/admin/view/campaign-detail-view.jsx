@@ -60,7 +60,6 @@ import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
-import CampaignDetailContent from '../campaign-detail-content';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
 // import { CampaignLog } from '../../../manage/list/CampaignLog';
@@ -584,11 +583,7 @@ const CampaignDetailView = ({ id }) => {
     ) : (
       <CampaignOverview campaign={campaign} onUpdate={campaignMutate} isDisabled={isDisabled} />
     ),
-    'campaign-content': isClient ? (
-      <CampaignDetailContentClient campaign={campaign} />
-    ) : (
-      <CampaignDetailContent campaign={campaign} />
-    ),
+    'campaign-content': <CampaignDetailContentClient campaign={campaign} />,
     'creator-master-list': (
       <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
     ),
@@ -782,14 +777,12 @@ const CampaignDetailView = ({ id }) => {
           variant="outlined"
           size="small"
           startIcon={
-            <img
-              src="/assets/icons/overview/editButton.svg"
-              alt="edit"
-              style={{
-                width: 64,
-                height: 64,
-                opacity: isDisabled ? 0.3 : 1,
-              }}
+            <Iconify
+              icon="lucide:edit"
+              width={15}
+              height={15}
+              color={isDisabled ? '#bdbdbd' : '#221f20'}
+              style={{ opacity: isDisabled ? 0.3 : 1 }}
             />
           }
           onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
@@ -890,7 +883,7 @@ const CampaignDetailView = ({ id }) => {
               variant="h5"
               sx={{
                 fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.5rem', sm: '2rem', md: '2.4rem' },
+                fontSize: { xs: '1.5rem', sm: '2rem' },
                 fontWeight: 550,
               }}
             >
@@ -902,7 +895,7 @@ const CampaignDetailView = ({ id }) => {
             direction={{ xs: 'column', sm: 'row' }}
             alignItems={{ xs: 'stretch', sm: 'center' }}
             spacing={{ xs: 1, sm: 0 }}
-            width={{ xs: '100%', sm: 'auto' }}
+            width={{ xs: '100%' }}
             justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
           >
             <Stack
@@ -927,8 +920,9 @@ const CampaignDetailView = ({ id }) => {
                 sx={{
                   color: '#221f20',
                   fontWeight: 500,
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  whiteSpace: 'nowrap',
+                  fontSize: { xs: 12, sm: 15 },
+                  overflow: 'hidden',
+                  whiteSpace: 'none'
                 }}
               >
                 {formatDate(campaign?.campaignBrief?.startDate)} -{' '}

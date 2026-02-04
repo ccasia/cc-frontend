@@ -5,7 +5,6 @@ import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { formatIncompletePhoneNumber } from 'libphonenumber-js';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -13,9 +12,8 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
-import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-import { Stack, Typography, InputAdornment } from '@mui/material';
+import { Stack, Typography, IconButton, InputAdornment } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -59,24 +57,21 @@ export default function CreateBrand({ setBrand, open, onClose, brandName, client
     setValue,
     handleSubmit,
     formState: { isSubmitting },
-    control,
   } = methods;
-
-  const handlePhoneChange = (event, onChange) => {
-    const formattedNumber = formatIncompletePhoneNumber(event.target.value, 'MY');
-    onChange(formattedNumber);
-  };
 
   const onSubmit = handleSubmit(async (data) => {
     try {
       const res = await axiosInstance.post(endpoints.company.createOneBrand, data);
+      enqueueSnackbar(res?.data?.message, { variant: 'success' });
+      mutate(endpoints.company.getOptions);
+      if (setBrand) {
+        await setBrand(res?.data?.brand);
+      }
       reset();
       onClose();
-      mutate(endpoints.company.getOptions);
-      setBrand(res?.data?.brand);
-      enqueueSnackbar(res?.data?.message, { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.message, {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create brand';
+      enqueueSnackbar(errorMessage, {
         variant: 'error',
       });
     }
@@ -94,123 +89,42 @@ export default function CreateBrand({ setBrand, open, onClose, brandName, client
     }
   }, [client, setValue]);
 
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
+
   return (
     <Dialog
       open={open}
-      onClose={onClose}
-      PaperProps={{
-        sx: { maxWidth: 720 },
-      }}
+      onClose={handleClose}
       fullWidth
+      PaperProps={{
+        sx: { maxWidth: 720, borderRadius: 0.8 },
+      }}
     >
       <DialogTitle>
-        <Typography
-          variant="h4"
-          sx={{
-            mb: 2,
-            mt: 3,
-          }}
-        >
-          Create Brand for {client?.name}
-        </Typography>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Iconify icon="mdi:store" width={28} />
+          <Typography
+            sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
+            fontSize={30}
+          >
+            Create Brand for {client?.name}
+          </Typography>
+          <IconButton
+            type="button"
+            size="small"
+            sx={{ borderRadius: 1 }}
+            onClick={handleClose}
+            aria-label="close"
+          >
+            <Iconify icon="material-symbols:close-rounded" width={24} />
+          </IconButton>
+        </Stack>
       </DialogTitle>
       <DialogContent>
-        <FormProvider methods={methods} onSubmit={onSubmit}>
-          {/* <Box
-            rowGap={2}
-            columnGap={3}
-            display="grid"
-            mt={4}
-            gridTemplateColumns={{
-              xs: 'repeat(1, 1fr)',
-              sm: 'repeat(2, 1fr)',
-            }}
-          >
-            <RHFTextField name="name" label="Name" fullWidth />
-            <RHFTextField name="email" label="Email" fullWidth />
-            <Controller
-              name="phone"
-              control={control}
-              defaultValue=""
-              rules={{ required: 'Phone number is required' }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  placeholder="Phone Number"
-                  variant="outlined"
-                  fullWidth
-                  error={!!fieldState.error}
-                  helperText={fieldState.error ? fieldState.error.message : ''}
-                  onChange={(event) => handlePhoneChange(event, field.onChange)}
-                />
-              )}
-            />
-            <RHFTextField
-              key="brandInstagram"
-              name="brandInstagram"
-              label="Instagram"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Iconify icon="mdi:instagram" width={20} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <RHFTextField
-              key="brandTiktok"
-              name="brandTiktok"
-              label="Tiktok"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Iconify icon="ic:baseline-tiktok" width={20} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <RHFTextField
-              key="brandFacebook"
-              name="brandFacebook"
-              label="Facebook"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Iconify icon="mage:facebook" width={20} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            <RHFAutocomplete
-              key="brandIndustries"
-              name="brandIndustries"
-              placeholder="+ Brand Industries"
-              multiple
-              freeSolo
-              disableCloseOnSelect
-              options={interestsLists.map((option) => option)}
-              getOptionLabel={(option) => option}
-              renderOption={(props, option) => (
-                <li {...props} key={option}>
-                  {option}
-                </li>
-              )}
-              renderTags={(selected, getTagProps) =>
-                selected.map((option, index) => (
-                  <Chip
-                    {...getTagProps({ index })}
-                    key={option}
-                    label={option}
-                    size="small"
-                    color="info"
-                    variant="soft"
-                  />
-                ))
-              }
-            />
-          </Box> */}
-
+        <FormProvider methods={methods}>
           <Box
             rowGap={2}
             columnGap={3}
@@ -221,10 +135,9 @@ export default function CreateBrand({ setBrand, open, onClose, brandName, client
               sm: 'repeat(2, 1fr)',
             }}
           >
-            {/* <Box sx={{ flexGrow: 1 }} /> */}
-            <RHFTextField key="brandName" name="name" label="Brand  Name" />
+            <RHFTextField key="brandName" name="name" label="Brand Name" />
             <RHFTextField key="brandEmail" name="email" label="Brand Email" />
-            <RHFTextField key="brandPhone" name="phone" label="Brand  Phone" />
+            <RHFTextField key="brandPhone" name="phone" label="Brand Phone" />
 
             <RHFAutocomplete
               key="brandIndustries"
@@ -255,18 +168,22 @@ export default function CreateBrand({ setBrand, open, onClose, brandName, client
             />
           </Box>
 
-          <Stack mt={5}>
-            <Typography variant="h5">Social Media</Typography>
+          <Stack mt={3}>
+            <Typography
+              variant="h5"
+              sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, mb: 2 }}
+              letterSpacing={0.5}
+            >
+              Social Media
+            </Typography>
 
-            <Stack
-              direction="row"
-              spacing={3}
-              my={2}
-              sx={{
-                flexWrap: {
-                  xs: 'wrap',
-                  md: 'nowrap',
-                },
+            <Box
+              rowGap={2}
+              columnGap={3}
+              display="grid"
+              gridTemplateColumns={{
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(3, 1fr)',
               }}
             >
               <RHFTextField
@@ -305,17 +222,24 @@ export default function CreateBrand({ setBrand, open, onClose, brandName, client
                   ),
                 }}
               />
-            </Stack>
+            </Box>
           </Stack>
 
-          <DialogActions>
-            <Button size="small" onClick={onClose}>
+          <Stack direction="row" spacing={1} justifyContent="end" my={3}>
+            <Button size="small" type="button" onClick={handleClose} sx={{ borderRadius: 0.6 }}>
               Cancel
             </Button>
-            <LoadingButton size="small" type="submit" variant="contained" loading={isSubmitting}>
+            <LoadingButton
+              size="small"
+              type="button"
+              variant="contained"
+              loading={isSubmitting}
+              onClick={onSubmit}
+              sx={{ borderRadius: 0.6 }}
+            >
               Create
             </LoadingButton>
-          </DialogActions>
+          </Stack>
         </FormProvider>
       </DialogContent>
     </Dialog>

@@ -4,12 +4,10 @@ import PropTypes from 'prop-types';
 import React, { memo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 
-// import CustomRHFSelect from './custom-rhf-select'; // Will reuse RHFMultiSelect hook instead
 import { DatePicker } from '@mui/x-date-pickers';
-import { Box, Grid, Stack, FormLabel, TextField, Typography } from '@mui/material';
+import { Box, Grid, Stack, FormLabel, Typography } from '@mui/material';
 
 import socket from 'src/hooks/socket';
-import useGetClientCredits from 'src/hooks/use-get-client-credits';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
@@ -27,11 +25,11 @@ const FormField = ({ label, children, required = true }) => (
       sx={{
         fontWeight: 700,
         color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-        fontSize: '0.875rem', // Smaller font size for labels
+        fontSize: '0.875rem',
         mb: 0.5,
         '& .MuiFormLabel-asterisk': {
           display: required ? 'inline-block' : 'none',
-          color: '#FF3500', // Change this to your desired color
+          color: '#FF3500',
         },
       }}
     >
@@ -47,51 +45,13 @@ FormField.propTypes = {
   required: PropTypes.bool,
 };
 
-const ClientCampaignGeneralInfo = () => {
+const CampaignGeneralInfo = () => {
   const { data, isLoading, mutate } = useSWR(endpoints.campaign.total, fetcher);
   const { setValue, watch } = useFormContext();
-  const { availableCredits, isLoading: isLoadingCredits } = useGetClientCredits();
 
   // For date handling
   const startDate = watch('campaignStartDate');
   const endDate = watch('campaignEndDate');
-  const credits = watch('campaignCredits');
-
-  // Persist available credits for parent validation
-  useEffect(() => {
-    try {
-      localStorage.setItem('clientAvailableCredits', String(availableCredits || 0));
-    } catch (e) {
-      // Ignore localStorage persistence errors
-    }
-  }, [availableCredits]);
-
-  // Compute exceed state and notify parent
-  const numericAvailable = Number(availableCredits) || 0;
-  const requestedCredits = Number(credits ?? 0);
-  const exceedOnly =
-    (numericAvailable <= 0 && requestedCredits > 0) ||
-    (numericAvailable > 0 && requestedCredits > numericAvailable);
-  const blockInvalid = numericAvailable <= 0 || requestedCredits <= 0 || exceedOnly;
-  let creditHelperText = '';
-
-  if (exceedOnly) {
-    if (numericAvailable <= 0) {
-      creditHelperText = 'No credits available';
-    } else {
-      creditHelperText = `Exceeds limits: available ${numericAvailable}`;
-    }
-  }
-
-  useEffect(() => {
-    try {
-      window.dispatchEvent(
-        new CustomEvent('client-campaign-credits-error', { detail: blockInvalid })
-      );
-    } catch (e) {
-      // Ignore failures when notifying window listeners
-    }
-  }, [blockInvalid]);
 
   useEffect(() => {
     if (socket) {
@@ -118,10 +78,8 @@ const ClientCampaignGeneralInfo = () => {
   // Auto-set end date 14 days after start date
   useEffect(() => {
     if (startDate) {
-      // Ensure startDate is a valid dayjs object
       const start = dayjs(startDate);
       if (start.isValid()) {
-        // Calculate end date as 14 days after start date
         const newEndDate = start.add(14, 'day');
         setValue('campaignEndDate', newEndDate.toDate());
       }
@@ -142,7 +100,7 @@ const ClientCampaignGeneralInfo = () => {
           <Grid item xs={12} sm={6}>
             <FormField label="Campaign Name">
               <RHFTextField
-                name="campaignTitle"
+                name="campaignName"
                 placeholder="Campaign Name (max 40 characters)"
                 size="small"
                 inputProps={{
@@ -185,7 +143,7 @@ const ClientCampaignGeneralInfo = () => {
             {/* About Brand - Full width */}
             <Box mb={2}>
               <FormField label="About the Brand" required={false}>
-                <Typography mt={-1} mb={0.5} variant='caption' color="#8E8E93">Let us know a bit more about you!</Typography>
+                <Typography mt={-1} mb={0.5} variant='caption' color="#8E8E93">Let us know a bit more about the brand!</Typography>
                 <RHFTextField
                   name="brandAbout"
                   placeholder="About"
@@ -238,7 +196,7 @@ const ClientCampaignGeneralInfo = () => {
             </Grid>
             {/* Product/Service Name - Full width */}
             <Box sx={{ mt: 2 }}>
-              <FormField label="Product/Service Name">
+              <FormField label="Product/Service Name" required={false}>
                 <RHFTextField
                   name="productName"
                   placeholder="Product/Service Name"
@@ -262,41 +220,6 @@ const ClientCampaignGeneralInfo = () => {
                 />
               </FormField>
             </Box>
-            {/* Credits - Two columns */}
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <FormField label="Available Credits">
-                  <TextField
-                    fullWidth
-                    disabled
-                    size="small"
-                    value={isLoadingCredits ? 'Loading...' : availableCredits.toString()}
-                    InputProps={{
-                      readOnly: true,
-                    }}
-                    sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
-                  />
-                </FormField>
-              </Grid>
-              <Grid item xs={6}>
-                <FormField label="Number Of Credits">
-                  <RHFTextField
-                    name="campaignCredits"
-                    placeholder="Assign Credits"
-                    type="number"
-                    InputProps={{
-                      inputProps: {
-                        min: 1,
-                        max: numericAvailable > 0 ? numericAvailable : 0,
-                      },
-                    }}
-                    helperText={creditHelperText}
-                    error={Boolean(creditHelperText)}
-                    sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
-                  />
-                </FormField>
-              </Grid>
-            </Grid>
 
             {/* Campaign Photo - Full width */}
             <Box sx={{ mt: 2, mb: 4 }}>
@@ -316,4 +239,4 @@ const ClientCampaignGeneralInfo = () => {
   );
 };
 
-export default memo(ClientCampaignGeneralInfo);
+export default memo(CampaignGeneralInfo);

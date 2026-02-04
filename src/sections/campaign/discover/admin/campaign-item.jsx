@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
@@ -32,6 +32,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
 
 import { CampaignLog } from '../../manage/list/CampaignLog';
 import ActivateCampaignDialog from './activate-campaign-dialog';
@@ -39,15 +40,7 @@ import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({
-  campaign,
-  onView,
-  onEdit,
-  onDelete,
-  status,
-  pitchStatus,
-  showAdmins = false,
-}) {
+export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus, showAdmins = false }) {
   console.log('CampaignItem rendered:', {
     campaignId: campaign?.id,
     campaignStatus: campaign?.status,
@@ -58,8 +51,7 @@ export default function CampaignItem({
 
   const theme = useTheme();
   const { user } = useAuthContext();
-  const ref = useRef(null);
-
+  const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
   const isCopy = useBoolean();
 
@@ -171,6 +163,26 @@ export default function CampaignItem({
   const isCSM =
     user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
 
+  // For debugging - log the actual user structure
+  console.log('User role structure:', {
+    userRole: user?.role,
+    adminRole: user?.admin?.role?.name,
+    adminMode: user?.admin?.mode,
+    isAdmin,
+    isCSM,
+  });
+
+  // Debug user details
+  console.log('User details:', {
+    userRole: user?.role,
+    adminMode: user?.admin?.mode,
+    adminRole: user?.admin?.role?.name,
+    isCSL,
+    isSuperAdmin,
+    isAdmin,
+    isCSM,
+  });
+
   // Check if user can perform initial activation (CSL or Superadmin)
   const canInitialActivate = isCSL || isSuperAdmin;
 
@@ -192,11 +204,26 @@ export default function CampaignItem({
 
     return adminIdMatch || adminUserIdMatch || adminUserMatch;
   });
-
   const canCompleteActivation =
     (isCSM || isAdmin) &&
     campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
     isUserAssignedToCampaign;
+
+  // Debug campaign admin assignment
+  console.log('Campaign admin check:', {
+    campaignId: campaign?.id,
+    campaignStatus: campaign?.status,
+    userId: user?.id,
+    campaignAdmins: campaign?.campaignAdmin?.map((admin) => ({
+      adminId: admin.adminId,
+      adminUserId: admin.admin?.userId,
+      adminUser: admin.admin?.user?.id,
+      role: admin.admin?.role?.name,
+      fullAdmin: admin.admin,
+    })),
+    isUserAssigned: isUserAssignedToCampaign,
+    canCompleteActivation,
+  });
 
   const isPendingReview =
     campaign?.status === 'PENDING_CSM_REVIEW' ||
@@ -507,78 +534,76 @@ export default function CampaignItem({
         </Stack>
 
         {/* Show managing admins - only in "All" tab - with menu button */}
-        {showAdmins &&
-          campaign?.campaignAdmin?.length > 0 &&
-          (() => {
-            // Helper to check if an admin is a Client (not CSM staff)
-            const isClientAdmin = (ca) => {
-              const roleName = ca.admin?.role?.name;
-              const userRole = ca.admin?.user?.role;
-              // Client admins have role.name === 'Client' OR user.role === 'client'
-              return roleName === 'Client' || userRole === 'client';
-            };
+        {showAdmins && campaign?.campaignAdmin?.length > 0 && (() => {
+          // Helper to check if an admin is a Client (not CSM staff)
+          const isClientAdmin = (ca) => {
+            const roleName = ca.admin?.role?.name;
+            const userRole = ca.admin?.user?.role;
+            // Client admins have role.name === 'Client' OR user.role === 'client'
+            return roleName === 'Client' || userRole === 'client';
+          };
 
-            // Helper to check if an admin is a CSM
-            const isCSMAdmin = (ca) => {
-              const roleName = ca.admin?.role?.name;
-              return roleName === 'CSM' || roleName === 'Customer Success Manager';
-            };
+          // Helper to check if an admin is a CSM
+          const isCSMAdmin = (ca) => {
+            const roleName = ca.admin?.role?.name;
+            return roleName === 'CSM' || roleName === 'Customer Success Manager';
+          };
 
-            // First, filter to only CSM admins (exclude Client admins entirely)
-            const csmAdmins = campaign.campaignAdmin.filter((ca) => {
-              if (!ca.admin?.user) return false;
-              return isCSMAdmin(ca) && !isClientAdmin(ca);
-            });
+          // First, filter to only CSM admins (exclude Client admins entirely)
+          const csmAdmins = campaign.campaignAdmin.filter((ca) => {
+            if (!ca.admin?.user) return false;
+            return isCSMAdmin(ca) && !isClientAdmin(ca);
+          });
 
-            // If no CSM admins, fall back to any non-client admin
-            const nonClientAdmins = campaign.campaignAdmin.filter((ca) => {
-              if (!ca.admin?.user) return false;
-              return !isClientAdmin(ca);
-            });
+          // If no CSM admins, fall back to any non-client admin
+          const nonClientAdmins = campaign.campaignAdmin.filter((ca) => {
+            if (!ca.admin?.user) return false;
+            return !isClientAdmin(ca);
+          });
 
-            const admins = csmAdmins.length > 0 ? csmAdmins : nonClientAdmins;
-            if (admins.length === 0) return null;
+          const admins = csmAdmins.length > 0 ? csmAdmins : nonClientAdmins;
+          if (admins.length === 0) return null;
 
-            const mainAdmin = admins[0];
-            const additionalCount = admins.length - 1;
+          const mainAdmin = admins[0];
+          const additionalCount = admins.length - 1;
 
-            return (
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <Avatar
-                    src={mainAdmin?.admin?.user?.photoURL}
-                    alt={mainAdmin?.admin?.user?.name}
-                    sx={{ width: 20, height: 20, fontSize: '0.625rem' }}
-                  >
-                    {mainAdmin?.admin?.user?.name?.charAt(0)}
-                  </Avatar>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: '#8e8e93',
-                      fontSize: '0.875rem',
-                      fontWeight: 500,
-                    }}
-                  >
-                    {mainAdmin?.admin?.user?.name}
-                    {additionalCount > 0 && ` +${additionalCount}`}
-                  </Typography>
-                </Stack>
-
-                <IconButton
-                  size="small"
-                  onClick={handleClick}
+          return (
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Avatar
+                  src={mainAdmin?.admin?.user?.photoURL}
+                  alt={mainAdmin?.admin?.user?.name}
+                  sx={{ width: 20, height: 20, fontSize: '0.625rem' }}
+                >
+                  {mainAdmin?.admin?.user?.name?.charAt(0)}
+                </Avatar>
+                <Typography
+                  variant="caption"
                   sx={{
-                    ml: 1,
-                    p: 0.5,
-                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                    color: '#8e8e93',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
                   }}
                 >
-                  <MoreHorizIcon fontSize="small" />
-                </IconButton>
+                  {mainAdmin?.admin?.user?.name}
+                  {additionalCount > 0 && ` +${additionalCount}`}
+                </Typography>
               </Stack>
-            );
-          })()}
+
+              <IconButton
+                size="small"
+                onClick={handleClick}
+                sx={{
+                  ml: 1,
+                  p: 0.5,
+                  '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                }}
+              >
+                <MoreHorizIcon fontSize="small" />
+              </IconButton>
+            </Stack>
+          );
+        })()}
 
         <Menu
           anchorEl={anchorEl}
@@ -812,6 +837,24 @@ export default function CampaignItem({
         },
       }}
     >
+      {/* <Box
+        sx={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          zIndex: 1,
+          border: 0.5,
+          borderRadius: 20,
+          display: 'inline-flex',
+          borderColor: 'gray',
+          boxShadow: '0px 0px 5px 0px #5c5c5c',
+        }}
+      >
+        <Iconify
+          icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
+          width={40}
+        />
+      </Box> */}
       {false && (
         <Box
           mt={4}

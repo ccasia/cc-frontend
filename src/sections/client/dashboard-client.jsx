@@ -1807,7 +1807,6 @@ const ClientDashboard = () => {
                 borderColor: 'divider',
                 position: 'relative',
                 mb: -0.5,
-                height: 240,
                 '&:hover': {
                   borderColor: '#1340ff',
                   transform: 'translateY(-2px)',
