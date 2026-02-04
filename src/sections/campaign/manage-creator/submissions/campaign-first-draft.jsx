@@ -1730,8 +1730,8 @@ const CampaignFirstDraft = ({
                 </Button>
               </Stack>
 
-              {/* Detailed Feedback Display - Show specific content that needs changes */}
-              {((submission?.feedback && submission.feedback.length > 0) ||
+              {/* Detailed Feedback Display - Disabled: feedback is shown in 2nd Draft tab instead */}
+              {false && ((submission?.feedback && submission.feedback.length > 0) ||
                 (submission?.status === 'NOT_STARTED' &&
                   feedbacksTesting &&
                   feedbacksTesting.length > 0)) && (
