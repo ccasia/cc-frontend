@@ -26,6 +26,8 @@ import {
   DialogActions,
 } from '@mui/material';
 
+import Markdown from 'src/components/markdown';
+
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -905,17 +907,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     border: '1px solid #EBEBEB',
                   }}
                 >
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: '#231F20',
-                      lineHeight: 1.5,
-                      whiteSpace: 'pre-wrap',
-                      fontSize: 15,
-                    }}
-                  >
-                    {currentPitch.content?.replace(/<[^>]*>/g, '') || ''}
-                  </Typography>
+                  <Markdown children={currentPitch.content || ''} />
                 </Box>
               )}
             </Box>
