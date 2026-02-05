@@ -12,6 +12,7 @@ import {
   Typography,
   useMediaQuery,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
@@ -374,9 +375,15 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                 flexShrink: 1,
               }}
             >
+              {videoSubmission.status === 'IN_PROGRESS' && (
+                <CircularProgress
+                  size={12}
+                  thickness={5}
+                  sx={{ color: getClientStatusColor(videoSubmission.status, 'video'), display: 'flex' }}
+                />
+              )}
               <Typography
                 fontWeight="SemiBold"
-                pb={0.2}
                 fontSize={{ xs: 8, sm: 12 }}
                 color={getClientStatusColor(videoSubmission.status, 'video')}
                 noWrap
