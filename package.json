@@ -47,6 +47,7 @@
     "@react-pdf-viewer/default-layout": "^3.12.0",
     "@react-pdf/renderer": "^3.4.4",
     "@tanstack/react-query": "^5.62.0",
+    "@tanstack/react-virtual": "^3.13.18",
     "@types/croppie": "^2.6.4",
     "apexcharts": "^3.52.0",
     "autosuggest-highlight": "^3.3.4",

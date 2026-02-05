@@ -27,6 +27,8 @@ import { useResponsive } from 'src/hooks/use-responsive';
 // Removed useGetAdminsForSuperadmin - using direct SWR call to /api/user/alladmins for CSM access
 // import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
+import { useVirtualizer } from '@tanstack/react-virtual';
+
 import { fetcher } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -35,11 +37,10 @@ import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CampaignTabs from 'src/components/campaign/CampaignTabs';
-import EmptyContent from 'src/components/empty-content/empty-content';
 
 import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 
-import CampaignLists from '../campaign-list';
+import CampaignItem from '../campaign-item';
 
 const CampaignView = () => {
   const settings = useSettingsContext();
@@ -106,6 +107,7 @@ const CampaignView = () => {
   const { mainRef } = useMainContext();
 
   const lgUp = useResponsive('up', 'lg');
+  const mdUp = useResponsive('up', 'md');
 
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
@@ -161,7 +163,39 @@ const CampaignView = () => {
     revalidateOnReconnect: false,
     dedupingInterval: 30000, // Cache for 30 seconds
   });
-  
+
+  const dataFiltered = useMemo(
+    () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
+    [data]
+  );
+
+  // eslint-disable-next-line no-nested-ternary
+  const columns = lgUp ? 3 : mdUp ? 2 : 1;
+  // eslint-disable-next-line no-unsafe-optional-chaining
+  const rowCount = Math.ceil(dataFiltered?.length / columns);
+
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => mainRef?.current,
+    estimateSize: () => 370 + 16,
+    overscan: 2,
+  });
+
+  const virtualRows = rowVirtualizer.getVirtualItems();
+  const isLoadingMore = isValidating && dataFiltered && dataFiltered?.length > size;
+  const isReachingEnd = data && data[data.length - 1]?.metaData?.lastCursor === null;
+
+  useEffect(() => {
+    const [lastItem] = [...virtualRows].reverse();
+
+    if (!lastItem) return;
+
+    // Trigger load when scrolled to last 2 rows (not items)
+    if (lastItem.index >= rowCount - 2 && !isValidating && !isReachingEnd) {
+      setSize(size + 1);
+    }
+  }, [virtualRows, rowCount, isReachingEnd, setSize, size, isValidating]);
+
   // Make mutate function available globally for campaign activation
   React.useEffect(() => {
     window.swrMutate = mutate;
@@ -275,26 +309,12 @@ const CampaignView = () => {
     }
   }, [filter, isSuperAdmin, user]);
 
-  const handleScroll = useCallback(() => {
-    const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
-
-    const bottom =
-      scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
-
-    if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
-      setSize(size + 1);
+  const handleChangeTab = (value) => {
+    setFilter(value);
+    if (scrollTop) {
+      localStorage.removeItem('scrollTop');
     }
-  }, [data, isValidating, setSize, size, mainRef, lgUp]);
-
-  useEffect(() => {
-    const scrollContainer = lgUp ? mainRef?.current : window;
-
-    scrollContainer.addEventListener('scroll', handleScroll);
-
-    return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll);
-    };
-  }, [handleScroll, mainRef, lgUp]);
+  };
 
   useEffect(() => {
     if (pageSizing) {
@@ -898,7 +918,72 @@ const CampaignView = () => {
         </Box>
       )}
 
-      {!isLoading &&
+      <div
+        style={{
+          height: `${rowVirtualizer.getTotalSize()}px`,
+          position: 'relative',
+          marginBottom: 40,
+        }}
+      >
+        {virtualRows.map((virtualRow) => {
+          // eslint-disable-next-line no-nested-ternary
+          const cols = lgUp ? 3 : mdUp ? 2 : 1;
+
+          const startIndex = virtualRow.index * cols;
+
+          const endIndex = Math.min(startIndex + cols, dataFiltered.length);
+          const rowCampaigns = dataFiltered.slice(startIndex, endIndex);
+
+          return (
+            <div
+              key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              <Box
+                gap={2}
+                display="grid"
+                gridTemplateColumns={
+                  // eslint-disable-next-line no-nested-ternary
+                  `repeat(${cols}, 1fr)`
+                }
+                sx={{ mt: 2 }}
+              >
+                {rowCampaigns?.map((a) => (
+                  <CampaignItem
+                    key={a?.id}
+                    campaign={a}
+                    status={a?.status}
+                    showAdmins={showAllCampaigns}
+                  />
+                ))}
+              </Box>
+            </div>
+          );
+        })}
+      </div>
+
+      {isLoadingMore && (
+        <Box sx={{ textAlign: 'center', my: 2 }}>
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
+      )}
+
+      {/* {!isLoading &&
         (dataFiltered?.length > 0 ? (
           <Box mt={2}>
             <CampaignLists campaigns={dataFiltered} showAdmins={showAllCampaigns} />
@@ -929,17 +1014,8 @@ const CampaignView = () => {
                   })()} campaigns available`
             }
           />
-        ))}
-      {/* <CampaignFilter
-        open={openFilters.value}
-        onOpen={openFilters.onTrue}
-        onClose={openFilters.onFalse}
-        //
-        filters={filters}
-        onFilters={handleFilters}
-        reset={handleResetFitlers}
-        brands={brandOptions}
-      /> */}
+        ))} */}
+
       <Dialog
         fullWidth
         fullScreen
