@@ -107,6 +107,9 @@ const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 // Credit Tier
 const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tier'));
 
+// Feedback
+const Feedback = lazy(() => import('src/pages/dashboard/feedback/feedback'));
+
 // Mobile View
 const MobileModalView = lazy(
   () => import('src/sections/campaign/discover/creator/mobile-modal-view')
@@ -612,6 +615,14 @@ export const dashboardRoutes = [
         element: (
           <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
             <CreditTier />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'feedback',
+        element: (
+          <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+            <Feedback />
           </RoleBasedGuard>
         ),
       },
