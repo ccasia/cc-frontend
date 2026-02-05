@@ -27,6 +27,7 @@ import {
   DialogActions,
 } from '@mui/material';
 
+import Markdown from 'src/components/markdown';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -1241,16 +1242,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
                   },
                 }}
               >
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: '#000000',
-                    lineHeight: 1.5,
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {currentPitch?.content?.replace(/<[^>]*>/g, '') || 'No content available'}
-                </Typography>
+                <Markdown children={currentPitch?.content || 'No content available'} />
               </Box>
             </Box>
 
