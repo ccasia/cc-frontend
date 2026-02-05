@@ -17,8 +17,13 @@ export const useGetNpsFeedback = (params) => {
   }), [data, isLoading, mutate]);
 };
 
-export const useGetNpsFeedbackStats = () => {
-  const { data, isLoading } = useSWR(endpoints.npsFeedback.stats, fetcher);
+export const useGetNpsFeedbackStats = (params = {}) => {
+  const queryString = new URLSearchParams(params).toString();
+  const url = queryString
+    ? `${endpoints.npsFeedback.stats}?${queryString}`
+    : endpoints.npsFeedback.stats;
+
+  const { data, isLoading } = useSWR(url, fetcher);
 
   return useMemo(() => ({
     stats: data,

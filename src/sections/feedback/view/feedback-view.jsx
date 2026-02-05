@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { useState, useCallback } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
+import { endOfDay } from 'date-fns';
 
 import {
   Box,
@@ -42,6 +42,8 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 import { useGetNpsFeedback, useGetNpsFeedbackStats } from 'src/hooks/use-get-nps-feedback';
 
+import DateFilterSelect from '../components/date-filter-select';
+
 // ----------------------------------------------------------------------
 
 const COLUMNS = [
@@ -66,6 +68,14 @@ export default function FeedbackView() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [selectedRow, setSelectedRow] = useState(null);
   const [statsExpanded, setStatsExpanded] = useState(false);
+  const [dateFilter, setDateFilter] = useState('all');
+  const [filterStartDate, setFilterStartDate] = useState(null);
+  const [filterEndDate, setFilterEndDate] = useState(null);
+
+  const dateParams = {
+    ...(filterStartDate && { startDate: filterStartDate.toISOString() }),
+    ...(filterEndDate && { endDate: endOfDay(filterEndDate).toISOString() }),
+  };
 
   const { feedback, total, isLoading } = useGetNpsFeedback({
     page: page + 1,
@@ -73,9 +83,17 @@ export default function FeedbackView() {
     ...(search && { search }),
     sortBy,
     sortOrder,
+    ...dateParams,
   });
 
-  const { stats, isLoading: statsLoading } = useGetNpsFeedbackStats();
+  const { stats, isLoading: statsLoading } = useGetNpsFeedbackStats(dateParams);
+
+  const handleDateFilterChange = useCallback(({ preset, startDate, endDate }) => {
+    setDateFilter(preset);
+    setFilterStartDate(startDate);
+    setFilterEndDate(endDate);
+    setPage(0);
+  }, []);
 
   const handleSort = useCallback((column) => {
     setSortOrder((prev) => (sortBy === column && prev === 'desc' ? 'asc' : 'desc'));
@@ -154,6 +172,13 @@ export default function FeedbackView() {
               )}
             </AnimatePresence>
           )}
+
+          <DateFilterSelect
+            value={dateFilter}
+            startDate={filterStartDate}
+            endDate={filterEndDate}
+            onChange={handleDateFilterChange}
+          />
 
           {/* Spacer when expanded (pills hidden) */}
           {statsExpanded && <Box sx={{ flex: 1 }} />}

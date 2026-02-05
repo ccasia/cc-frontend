@@ -6,7 +6,7 @@ export default function FeedbackPage() {
   return (
     <>
       <Helmet>
-        <title>Feedback | Cult Creative</title>
+        <title>NPS Feedback</title>
       </Helmet>
 
       <FeedbackView />
