@@ -99,9 +99,9 @@ const MobileSubmissionLayout = ({
   };
 
   const getStageIcon = (stageType, status) => {
+    // Only show green checkmark for APPROVED status
     if (
       status === 'APPROVED' ||
-      (stageType === 'FIRST_DRAFT' && status === 'CHANGES_REQUIRED') ||
       (stageType === 'PRODUCT_DELIVERY' && isLogisticsCompleted)
     ) {
       return (
@@ -255,8 +255,6 @@ const MobileSubmissionLayout = ({
                     color: '#636366',
                     display: 'block',
                     ...((value(stage.type)?.status === 'APPROVED' ||
-                      (stage.type === 'FIRST_DRAFT' &&
-                        value(stage.type)?.status === 'CHANGES_REQUIRED') ||
                       (stage.type === 'PRODUCT_DELIVERY' && isLogisticsCompleted)) && {
                       textDecoration: 'line-through',
                       color: '#b0b0b0',
