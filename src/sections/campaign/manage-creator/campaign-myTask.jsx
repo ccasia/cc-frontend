@@ -229,23 +229,14 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
     ) {
       console.log('Auto-selecting POSTING stage');
       setSelectedStage('POSTING');
-      return; // Don't check other conditions if posting is selected
+      return;
     }
     
-    // Auto-select Final Draft if First Draft has changes required or client feedback
-    if (
-      (firstDraftSubmission?.status === 'CHANGES_REQUIRED' || firstDraftSubmission?.status === 'CLIENT_FEEDBACK') &&
-      finalDraftSubmission?.status === 'IN_PROGRESS' &&
-      selectedStage !== 'FINAL_DRAFT'
-    ) {
-      console.log('Auto-selecting FINAL_DRAFT stage (changes required or client feedback from First Draft)');
-      setSelectedStage('FINAL_DRAFT');
-    }
-  }, [submissions, selectedStage]); // Depend on submissions and selectedStage
+  }, [submissions, selectedStage]); 
 
   const getVisibleStages = useCallback(() => {
     let stages = [];
-    const addedStages = new Set(); // Track which stages have been added
+    const addedStages = new Set(); 
     const agreementSubmission = value('AGREEMENT_FORM');
     const firstDraftSubmission = value('FIRST_DRAFT');
     const finalDraftSubmission = value('FINAL_DRAFT');
@@ -307,7 +298,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
          finalDraftSubmission?.status === 'APPROVED'))) &&
       !addedStages.has('FINAL_DRAFT')
     ) {
-      stages.unshift({ ...defaultSubmission[2] });
+      stages.unshift({ ...defaultSubmission[3] });
       addedStages.add('FINAL_DRAFT');
     }
 
@@ -318,7 +309,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
        (finalDraftSubmission?.status === 'APPROVED')) &&
       !addedStages.has('POSTING')
     ) {
-      stages.unshift({ ...defaultSubmission[3] });
+      stages.unshift({ ...defaultSubmission[4] });
       addedStages.add('POSTING');
     }
 
@@ -328,7 +319,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
       (!finalDraftSubmission || finalDraftSubmission?.status === 'NOT_STARTED') &&
       !addedStages.has('POSTING')
     ) {
-      stages.unshift({ ...defaultSubmission[3] });
+      stages.unshift({ ...defaultSubmission[4] });
       addedStages.add('POSTING');
     }
 
@@ -340,7 +331,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
        postingSubmission?.status === 'APPROVED') &&
       !addedStages.has('POSTING')
     ) {
-      stages.unshift({ ...defaultSubmission[3] });
+      stages.unshift({ ...defaultSubmission[4] });
       addedStages.add('POSTING');
     }
 
@@ -365,14 +356,9 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
       const stageValue = value(stageType);
       if (!stageValue) return false;
 
-      // V2 statuses
+      // V2 statuses - Only APPROVED means completed
       if (stageValue.status === 'APPROVED') {
         return true;
-      }
-
-      // Special case for First Draft - CHANGES_REQUIRED means it's been reviewed and sent to creator
-      if (stageType === 'FIRST_DRAFT' && stageValue.status === 'CHANGES_REQUIRED') {
-        return true; // Show as completed so creator focuses on 2nd Draft
       }
 
       return false;
@@ -420,12 +406,12 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
       if (!stageValue) return 'Not Started';
 
       // Special handling for 1st Draft when 2nd Draft is active
-      // This prevents confusion about which stage creators should work on
-      if (stageType === 'FIRST_DRAFT') {
+      // Show 1st Draft as "In Review" when 2nd Draft exists and is being worked on
+      // BUT only if the first draft doesn't have CHANGES_REQUIRED status
+      if (stageType === 'FIRST_DRAFT' && stageValue.status !== 'CHANGES_REQUIRED') {
         const finalDraftSubmission = value('FINAL_DRAFT');
 
         // If 2nd Draft exists and is active, show 1st Draft as "In Review"
-        // to prevent confusion about which stage to work on
         if (
           finalDraftSubmission &&
           (finalDraftSubmission.status === 'IN_PROGRESS' ||
@@ -435,12 +421,6 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
             finalDraftSubmission.status === 'CHANGES_REQUIRED')
         ) {
           return 'In Review';
-        }
-
-        // Special case: Show 1st Draft as "Completed" when it has changes required
-        // This makes creators focus on 2nd Draft instead
-        if (stageValue.status === 'CHANGES_REQUIRED') {
-          return 'Completed';
         }
       }
 
@@ -452,11 +432,11 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
         case 'PENDING_REVIEW':
           return 'Pending Review';
         case 'SENT_TO_CLIENT':
-          return 'In Review'; // For creators, SENT_TO_CLIENT means "In Review"
+          return 'In Review'; 
         case 'CLIENT_FEEDBACK':
-          return 'In Review'; // For creators, CLIENT_FEEDBACK means "In Review" (client requested changes, admin reviewing)
+          return 'In Review'; 
         case 'CHANGES_REQUIRED':
-          return 'Changes Required';
+          return 'Revision Requested';
         case 'APPROVED':
           return 'Approved';
         case 'CLIENT_APPROVED':
