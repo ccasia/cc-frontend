@@ -359,7 +359,19 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
       const stageValue = value(stageType);
       if (!stageValue) return false;
 
-      // V2 statuses
+      // If Posting stage is active, mark First Draft and Final Draft as completed
+      const postingSubmission = value('POSTING');
+      if (
+        (stageType === 'FIRST_DRAFT' || stageType === 'FINAL_DRAFT') &&
+        postingSubmission &&
+        (postingSubmission.status === 'IN_PROGRESS' ||
+          postingSubmission.status === 'PENDING_REVIEW' ||
+          postingSubmission.status === 'APPROVED')
+      ) {
+        return true;
+      }
+
+      // V2 statuses - Only APPROVED means completed
       if (stageValue.status === 'APPROVED') {
         return true;
       }
@@ -412,6 +424,18 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
 
       const stageValue = value(stageType);
       if (!stageValue) return 'Not Started';
+
+      // If Posting stage is active, show First Draft and Final Draft as "Approved"
+      const postingSubmission = value('POSTING');
+      if (
+        (stageType === 'FIRST_DRAFT' || stageType === 'FINAL_DRAFT') &&
+        postingSubmission &&
+        (postingSubmission.status === 'IN_PROGRESS' ||
+          postingSubmission.status === 'PENDING_REVIEW' ||
+          postingSubmission.status === 'APPROVED')
+      ) {
+        return 'Approved';
+      }
 
       // Special handling for 1st Draft when 2nd Draft is active
       // This prevents confusion about which stage creators should work on
