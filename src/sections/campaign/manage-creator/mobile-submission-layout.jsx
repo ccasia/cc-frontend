@@ -99,10 +99,19 @@ const MobileSubmissionLayout = ({
   };
 
   const getStageIcon = (stageType, status) => {
-    // Only show green checkmark for APPROVED status
+    // Check if Posting stage is active
+    const postingSubmission = value('POSTING');
+    const isPostingActive =
+      postingSubmission &&
+      (postingSubmission.status === 'IN_PROGRESS' ||
+        postingSubmission.status === 'PENDING_REVIEW' ||
+        postingSubmission.status === 'APPROVED');
+
+    // Show green checkmark for APPROVED status or when Posting is active for draft stages
     if (
       status === 'APPROVED' ||
-      (stageType === 'PRODUCT_DELIVERY' && isLogisticsCompleted)
+      (stageType === 'PRODUCT_DELIVERY' && isLogisticsCompleted) ||
+      ((stageType === 'FIRST_DRAFT' || stageType === 'FINAL_DRAFT') && isPostingActive)
     ) {
       return (
         <Label
@@ -255,7 +264,12 @@ const MobileSubmissionLayout = ({
                     color: '#636366',
                     display: 'block',
                     ...((value(stage.type)?.status === 'APPROVED' ||
-                      (stage.type === 'PRODUCT_DELIVERY' && isLogisticsCompleted)) && {
+                      (stage.type === 'PRODUCT_DELIVERY' && isLogisticsCompleted) ||
+                      ((stage.type === 'FIRST_DRAFT' || stage.type === 'FINAL_DRAFT') &&
+                        value('POSTING') &&
+                        (value('POSTING').status === 'IN_PROGRESS' ||
+                          value('POSTING').status === 'PENDING_REVIEW' ||
+                          value('POSTING').status === 'APPROVED'))) && {
                       textDecoration: 'line-through',
                       color: '#b0b0b0',
                     }),
