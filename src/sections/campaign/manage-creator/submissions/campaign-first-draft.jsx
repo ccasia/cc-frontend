@@ -662,6 +662,281 @@ const CampaignFirstDraft = ({
             </Stack>
           )}
 
+          {/* Upload Section for CHANGES_REQUIRED - Disabled: creator uploads via 2nd Draft tab instead */}
+          {false && submission?.status === 'CHANGES_REQUIRED' && (
+            <Stack gap={2} sx={{ mt: 3 }}>
+              <Box>
+                <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
+                  Make sure to address all the feedback points mentioned in the review above.
+                </Typography>
+              </Box>
+
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                alignItems={{ xs: 'stretch', sm: 'center' }}
+                gap={2}
+                pb={3}
+                mt={1}
+              >
+                {/* Draft Video Button */}
+                <Box
+                  sx={{
+                    position: 'relative',
+                    border: 1,
+                    p: 2,
+                    borderRadius: 2,
+                    borderColor: submission?.video?.length > 0 ? '#5abc6f' : grey[100],
+                    transition: 'all .2s ease',
+                    width: { xs: '100%', sm: '32%' },
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      borderColor: grey[700],
+                      transform: 'scale(1.02)',
+                    },
+                  }}
+                  onClick={() => setDraftVideoModalOpen(true)}
+                >
+                  {submission?.video?.length > 0 && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: -10,
+                        right: -10,
+                        bgcolor: '#5abc6f',
+                        borderRadius: '50%',
+                        width: 28,
+                        height: 28,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        zIndex: 1,
+                      }}
+                    >
+                      <Iconify
+                        icon="eva:checkmark-fill"
+                        sx={{ color: 'white', width: 20 }}
+                      />
+                    </Box>
+                  )}
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: submission?.video?.length > 0 ? '#5abc6f' : '#203ff5',
+                        mb: 2,
+                      }}
+                    >
+                      <Iconify icon="solar:video-library-bold" />
+                    </Avatar>
+
+                    <ListItemText
+                      sx={{
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}
+                      primary="Draft Video"
+                      secondary="Upload your updated draft video for the campaign"
+                      primaryTypographyProps={{
+                        variant: 'body1',
+                        fontWeight: 'bold',
+                        gutterBottom: true,
+                        sx: { mb: 1 },
+                      }}
+                      secondaryTypographyProps={{
+                        color: 'text.secondary',
+                        lineHeight: 1.2,
+                        sx: {
+                          minHeight: '2.4em',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        },
+                      }}
+                    />
+                  </Box>
+                </Box>
+
+                {/* Raw Footage Button */}
+                {campaign.rawFootage && (
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      border: 1,
+                      p: 2,
+                      borderRadius: 2,
+                      borderColor: submission?.rawFootages?.length > 0 ? '#5abc6f' : grey[100],
+                      transition: 'all .2s ease',
+                      width: { xs: '100%', sm: '32%' },
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        borderColor: grey[700],
+                        transform: 'scale(1.02)',
+                      },
+                    }}
+                    onClick={() => setRawFootageModalOpen(true)}
+                  >
+                    {submission?.rawFootages?.length > 0 && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: -10,
+                          right: -10,
+                          bgcolor: '#5abc6f',
+                          borderRadius: '50%',
+                          width: 28,
+                          height: 28,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          zIndex: 1,
+                        }}
+                      >
+                        <Iconify
+                          icon="eva:checkmark-fill"
+                          sx={{ color: 'white', width: 20 }}
+                        />
+                      </Box>
+                    )}
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      <Avatar
+                        sx={{
+                          bgcolor: submission?.rawFootages?.length > 0 ? '#5abc6f' : '#203ff5',
+                          mb: 2,
+                        }}
+                      >
+                        <Iconify icon="solar:video-library-bold" />
+                      </Avatar>
+
+                      <ListItemText
+                        sx={{
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                        primary="Raw Footage"
+                        secondary="Upload your updated raw footage for the campaign"
+                        primaryTypographyProps={{
+                          variant: 'body1',
+                          fontWeight: 'bold',
+                          gutterBottom: true,
+                          sx: { mb: 1 },
+                        }}
+                        secondaryTypographyProps={{
+                          color: 'text.secondary',
+                          lineHeight: 1.2,
+                          sx: {
+                            minHeight: '2.4em',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          },
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                )}
+
+                {/* Photos Button */}
+                {campaign.photos && (
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      border: 1,
+                      p: 2,
+                      borderRadius: 2,
+                      borderColor: submission?.photos?.length > 0 ? '#5abc6f' : grey[100],
+                      transition: 'all .2s ease',
+                      width: { xs: '100%', sm: '32%' },
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        borderColor: grey[700],
+                        transform: 'scale(1.02)',
+                      },
+                    }}
+                    onClick={() => setPhotosModalOpen(true)}
+                  >
+                    {submission?.photos?.length > 0 && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: -10,
+                          right: -10,
+                          bgcolor: '#5abc6f',
+                          borderRadius: '50%',
+                          width: 28,
+                          height: 28,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          zIndex: 1,
+                        }}
+                      >
+                        <Iconify
+                          icon="eva:checkmark-fill"
+                          sx={{ color: 'white', width: 20 }}
+                        />
+                      </Box>
+                    )}
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      <Avatar
+                        sx={{
+                          bgcolor: submission?.photos?.length > 0 ? '#5abc6f' : '#203ff5',
+                          mb: 2,
+                        }}
+                      >
+                        <Iconify icon="solar:gallery-bold" />
+                      </Avatar>
+
+                      <ListItemText
+                        sx={{
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                        primary="Photos"
+                        secondary="Upload your updated photos for the campaign"
+                        primaryTypographyProps={{
+                          variant: 'body1',
+                          fontWeight: 'bold',
+                          gutterBottom: true,
+                          sx: { mb: 1 },
+                        }}
+                        secondaryTypographyProps={{
+                          color: 'text.secondary',
+                          lineHeight: 1.2,
+                          sx: {
+                            minHeight: '2.4em',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          },
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                )}
+              </Stack>
+            </Stack>
+          )}
+
           {(submission?.status === 'IN_PROGRESS' ||
             (submission?.status === 'NOT_STARTED' &&
               feedbacksTesting &&
@@ -1454,6 +1729,125 @@ const CampaignFirstDraft = ({
                   Preview First Draft
                 </Button>
               </Stack>
+
+              {/* Detailed Feedback Display - Disabled: feedback is shown in 2nd Draft tab instead */}
+              {false && ((submission?.feedback && submission.feedback.length > 0) ||
+                (submission?.status === 'NOT_STARTED' &&
+                  feedbacksTesting &&
+                  feedbacksTesting.length > 0)) && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                    Content Requiring Changes
+                  </Typography>
+
+                  {(
+                    (submission?.status === 'NOT_STARTED' && feedbacksTesting?.length > 0 ? feedbacksTesting : (submission.feedback || []))
+                      .filter((feedback) => {
+                        const isClient = (feedback.admin?.role === 'client') || (feedback.role === 'client');
+                        const isAdmin = (feedback.admin?.role === 'admin') || (feedback.role === 'admin');
+                        const isChangeRequest = feedback.type === 'REQUEST' || feedback.videosToUpdate?.length > 0 || feedback.photosToUpdate?.length > 0 || feedback.rawFootageToUpdate?.length > 0;
+                        
+                        // Show client feedback always, and admin feedback when it's a change request
+                        return isClient || (isAdmin && isChangeRequest);
+                      })
+                      .filter((feedback) => {
+                        const hasMediaUpdates =
+                          feedback.videosToUpdate?.length > 0 ||
+                          feedback.photosToUpdate?.length > 0 ||
+                          feedback.rawFootageToUpdate?.length > 0;
+                        const hasContent = !!feedback.content;
+                        const isValidType =
+                          feedback.type === 'REQUEST' ||
+                          feedback.type === 'REASON' ||
+                          feedback.type === 'COMMENT';
+                        return isValidType && (hasMediaUpdates || hasContent);
+                      })
+                      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                  ).map((feedback, feedbackIndex) => (
+                        <Box
+                          key={feedback.id || feedbackIndex}
+                          mb={2}
+                          p={2}
+                          border={1}
+                          borderColor="warning.main"
+                          borderRadius={2}
+                          sx={{ bgcolor: 'warning.lighter' }}
+                        >
+                          <Box sx={{ mb: 2 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                              Admin
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {`Admin • ${dayjs(feedback.createdAt).format('MMM DD, YYYY')}`}
+                            </Typography>
+                          </Box>
+
+                          {!!feedback?.content && (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                Feedback:
+                              </Typography>
+                              {feedback.content
+                                .split('\n')
+                                .map((line, i) => (
+                                  <Typography key={i} variant="body2" sx={{ mb: 0.5 }}>
+                                    {line}
+                                  </Typography>
+                                ))}
+                            </Box>
+                          )}
+
+                          {!!feedback?.reasons?.length && (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                Reasons for changes:
+                              </Typography>
+                              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                                {feedback.reasons.map((reason, idx) => (
+                                  <Chip
+                                    key={idx}
+                                    label={reason}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: 'warning.main',
+                                      color: 'white',
+                                      fontSize: '0.75rem',
+                                      height: 20,
+                                    }}
+                                  />
+                                ))}
+                              </Stack>
+                            </Box>
+                          )}
+
+                          {(feedback.videosToUpdate?.length ||
+                            feedback.photosToUpdate?.length ||
+                            feedback.rawFootageToUpdate?.length) && (
+                            <Box sx={{ mt: 2 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                Media requiring changes:
+                              </Typography>
+                              {!!feedback.videosToUpdate?.length && (
+                                <Typography variant="body2" color="text.secondary">
+                                  Videos: {feedback.videosToUpdate.length}
+                                </Typography>
+                              )}
+                              {!!feedback.photosToUpdate?.length && (
+                                <Typography variant="body2" color="text.secondary">
+                                  Photos: {feedback.photosToUpdate.length}
+                                </Typography>
+                              )}
+                              {!!feedback.rawFootageToUpdate?.length && (
+                                <Typography variant="body2" color="text.secondary">
+                                  Raw Footage: {feedback.rawFootageToUpdate.length}
+                                </Typography>
+                              )}
+                            </Box>
+                          )}
+                        </Box>
+                      ))}
+                </Box>
+              )}
             </Box>
           )}
 

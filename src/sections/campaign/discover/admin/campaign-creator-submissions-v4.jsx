@@ -12,11 +12,14 @@ import {
   Typography,
   useMediaQuery,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
 
 import { useAuthContext } from 'src/auth/hooks';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+
 import { getStatusColor } from 'src/contants/statusColors';
 
 import Iconify from 'src/components/iconify';
@@ -26,6 +29,7 @@ import V4VideoSubmission from './submissions/v4/video-submission';
 import V4PhotoSubmission from './submissions/v4/photo-submission';
 import V4RawFootageSubmission from './submissions/v4/raw-footage-submission';
 import MobileCreatorSubmissions from './submissions/v4/mobile/mobile-creator-submissions';
+import useV4SubmissionListSocket from './submissions/v4/shared/use-v4-submission-list-socket';
 
 // ----------------------------------------------------------------------
 
@@ -140,6 +144,7 @@ function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false
 
 function CreatorAccordion({ creator, campaign, isDisabled = false }) {
   const { user } = useAuthContext();
+  const { socket } = useSocketContext();
   const [expandedSubmission, setExpandedSubmission] = useState(null);
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
@@ -148,12 +153,21 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
   const {campaignType} = campaign;
 
   // Get V4 submissions for this creator
-  const { 
-    submissions, 
-    grouped, 
+  const {
+    submissions,
+    grouped,
     submissionsLoading,
-    submissionsMutate 
+    submissionsMutate
   } = useGetV4Submissions(campaign?.id, creator?.userId);
+
+  // Listen for real-time submission updates for this creator
+  useV4SubmissionListSocket({
+    socket,
+    campaignId: campaign?.id,
+    creatorUserId: creator?.userId,
+    onUpdate: () => submissionsMutate(),
+    userId: user?.id,
+  });
 
   const onlyAgreement = submissions.length === 1 && submissions[0].submissionType.type === 'AGREEMENT_FORM';
 
@@ -214,6 +228,8 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
       // Admin specific
       if (!isClient && campaignType === 'normal') {
         switch (status) {
+          case 'IN_PROGRESS':
+            return 'PROCESSING';
           case 'CLIENT_APPROVED':
             // Only show PENDING POSTING for video and photo submissions, not raw footage
             if (submissionType === 'video' || submissionType === 'photo') {
@@ -224,6 +240,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
             return formatStatus(status);
         }
       } else if (!isClient) {
+        if (status === 'IN_PROGRESS') return 'PROCESSING';
         return formatStatus(status)
       }
 
@@ -344,13 +361,19 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                 flexShrink: 1,
               }}
             >
-              <Typography 
-                fontWeight="SemiBold" 
-                pb={0.2} 
-                fontSize={{ xs: 8, sm: 12 }} 
+              {videoSubmission.status === 'IN_PROGRESS' && (
+                <CircularProgress
+                  size={12}
+                  thickness={5}
+                  sx={{ color: getClientStatusColor(videoSubmission.status, 'video'), display: 'flex' }}
+                />
+              )}
+              <Typography
+                fontWeight="SemiBold"
+                fontSize={{ xs: 8, sm: 12 }}
                 color={getClientStatusColor(videoSubmission.status, 'video')}
                 noWrap
-                sx={{ 
+                sx={{
                   maxWidth: { xs: 60, sm: 210 },
                 }}
                 textOverflow="ellipsis"

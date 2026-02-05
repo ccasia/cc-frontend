@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useRef, useMemo, useState, useCallback } from 'react';
 
-import { Box, Card, Chip, Stack, TextField, Typography } from '@mui/material';
+import { Box, Card, Chip, CircularProgress, Stack, TextField, Typography } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
 
@@ -202,11 +202,23 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate, isDi
                   <Typography variant="body2" color="text.secondary">
                     Photo content is being processed.
                   </Typography>
-                  <Chip label="In Progress" color="info" size="small" />
+                  <Chip label="Processing" color="info" size="small" />
                 </Stack>
               </Card>
             );
           }
+          // Processing state — creator has uploaded, worker is processing
+          if (submission.status === 'IN_PROGRESS') {
+            return (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, gap: 2 }}>
+                <CircularProgress size={40} thickness={5} sx={{ color: '#8A5AFE' }} />
+                <Typography variant="body2" color="text.secondary">
+                  Creator&apos;s new photos are being processed
+                </Typography>
+              </Box>
+            );
+          }
+
           if (photos.length === 0) {
             return (
               <Box
