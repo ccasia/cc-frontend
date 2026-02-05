@@ -516,10 +516,10 @@ const VideoCard = ({
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
                     borderBottomColor: '#e7e7e7',
-                    color: '#1ABF66',
+                    color: '#231F20',
                     '&:hover': {
                       bgcolor: '#f5f5f5',
-                      borderColor: '#1ABF66',
+                      borderColor: '#231F20',
                     },
                     textTransform: 'none',
                     py: 1.2,
@@ -533,7 +533,7 @@ const VideoCard = ({
                     },
                   }}
                 >
-                  Approve
+                  Back
                 </Button>
 
                 <LoadingButton

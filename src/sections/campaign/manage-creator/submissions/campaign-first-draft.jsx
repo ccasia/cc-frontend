@@ -662,8 +662,8 @@ const CampaignFirstDraft = ({
             </Stack>
           )}
 
-          {/* Upload Section for CHANGES_REQUIRED - Show upload options when creator wants to resubmit */}
-          {submission?.status === 'CHANGES_REQUIRED' && (
+          {/* Upload Section for CHANGES_REQUIRED - Disabled: creator uploads via 2nd Draft tab instead */}
+          {false && submission?.status === 'CHANGES_REQUIRED' && (
             <Stack gap={2} sx={{ mt: 3 }}>
               <Box>
                 <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
@@ -1730,8 +1730,8 @@ const CampaignFirstDraft = ({
                 </Button>
               </Stack>
 
-              {/* Detailed Feedback Display - Show specific content that needs changes */}
-              {((submission?.feedback && submission.feedback.length > 0) ||
+              {/* Detailed Feedback Display - Disabled: feedback is shown in 2nd Draft tab instead */}
+              {false && ((submission?.feedback && submission.feedback.length > 0) ||
                 (submission?.status === 'NOT_STARTED' &&
                   feedbacksTesting &&
                   feedbacksTesting.length > 0)) && (

@@ -253,8 +253,9 @@ const CampaignFinalDraft = ({
 
           return {
             id: item.id,
-            adminName: 'Admin',
-            role: 'Admin',
+            adminName: item?.admin?.name || item?.admin?.admin?.name || 'Admin',
+            adminPhoto: item?.admin?.photoURL || item?.admin?.admin?.photoURL || null,
+            role: item?.admin?.admin?.role?.name || item?.admin?.role || 'Admin',
             content: item?.content,
             changes: changes.length > 0 ? changes : null,
             reasons: item?.reasons?.length ? item?.reasons : null,
@@ -502,8 +503,9 @@ const CampaignFinalDraft = ({
 
         const mappedItem = {
           id: item.id,
-          adminName: 'Admin',
-          role: 'Admin',
+          adminName: item?.admin?.name || item?.admin?.admin?.name || 'Admin',
+          adminPhoto: item?.admin?.photoURL || item?.admin?.admin?.photoURL || null,
+          role: item?.admin?.admin?.role?.name || item?.admin?.role || 'Admin',
           content: item?.content, // Include the original content
           changes: changes.length > 0 ? changes : null,
         };
@@ -951,8 +953,8 @@ const CampaignFinalDraft = ({
                 </>
               )}
               
-              {/* Upload button - always show when eligible */}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+              {/* Upload button - commented out to avoid duplicate with Re-Upload below */}
+              {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                 <Button
                   variant="contained"
                   onClick={handleUploadClick}
@@ -973,7 +975,7 @@ const CampaignFinalDraft = ({
                 >
                   Upload
                 </Button>
-              </Box>
+              </Box> */}
 
 
             </Box>
@@ -1035,7 +1037,7 @@ const CampaignFinalDraft = ({
                                 )}
                               </Box>
                               <Avatar
-                                src="/default-avatar.png"
+                                src={feedback?.adminPhoto || '/default-avatar.png'}
                                 alt={feedback?.adminName || 'User'}
                                 sx={{ mr: 2 }}
                               />
