@@ -125,11 +125,15 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     mutate: v3PitchesMutate,
   } = useGetV3Pitches(fetchV3Pitches ? campaign?.id : null);
 
-  // Listen for real-time outreach status updates
+  // Listen for real-time pitch updates (outreach + status changes)
   usePitchSocket({
     socket,
     campaignId: campaign?.id,
     onOutreachUpdate: () => v3PitchesMutate?.(),
+    onPitchStatusUpdate: () => {
+      v3PitchesMutate?.();
+      campaignMutate?.();
+    },
     userId: user?.id,
   });
 
@@ -380,8 +384,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   };
 
   const handlePitchUpdate = (updatedPitch) => {
-    // Refresh V3 pitches data when a pitch is updated (approved/rejected)
-    if (campaign?.origin === 'CLIENT') {
+    // Refresh V3 pitches data when a pitch is updated (approved/rejected/maybe)
+    if (fetchV3Pitches) {
       v3PitchesMutate();
     }
 
