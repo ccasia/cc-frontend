@@ -202,7 +202,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
               <Box>
                 <Typography sx={SectionTitleStyle}>Product / Service Name</Typography>
                 <Typography sx={SectionBodyStyle}>
-                  {campaign?.productName || 'No product/service name.'}
+                  {campaign?.productName || 'Not specified'}
                 </Typography>
               </Box>
 
@@ -330,6 +330,8 @@ const CampaignDetailContentClient = ({ campaign }) => {
             const getGeographicFocus = () => {
               if (!requirement?.geographic_focus) return 'Not specified';
               if (requirement.geographic_focus === 'SEAregion') return 'SEA Region';
+              if (requirement.geographic_focus === 'KualaLumpur') return 'Kuala Lumpur';
+              if (requirement.geographic_focus === 'EastMalaysia') return 'East Malaysia';
               if (requirement.geographic_focus === 'others')
                 return requirement.geographicFocusOthers;
               return capitalizeFirstLetter(requirement.geographic_focus);
@@ -431,7 +433,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
 
                     <Box>
                       <Typography sx={SectionTitleStyle}>User Persona</Typography>
-                      <Typography sx={SectionBodyStyle}>
+                      <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
                         {userPersona || 'Not specified'}
                       </Typography>
                     </Box>
@@ -777,99 +779,130 @@ const CampaignDetailContentClient = ({ campaign }) => {
               </Stack>
             );
 
-            const renderAdditionalDetails2 = () => (
-              <Stack className="body" spacing={3}>
-                <Stack direction="row" spacing={2}>
-                  {/* Left Column */}
-                  <Stack spacing={2} flex={1}>
+            const renderAdditionalDetails2 = () => {
+              const hasLeftColumnData =
+                additionalDetails?.hashtagsToUse ||
+                additionalDetails?.mentionsTagsRequired ||
+                additionalDetails?.creatorCompensation ||
+                additionalDetails?.ctaDesiredAction ||
+                additionalDetails?.ctaLinkUrl;
+
+              const leftColumnContent = (
+                <>
+                  {additionalDetails?.hashtagsToUse && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Hashtags</Typography>
                       <Typography sx={SectionBodyStyle}>
-                        {additionalDetails?.hashtagsToUse || 'Not specified'}
+                        {additionalDetails.hashtagsToUse}
                       </Typography>
                     </Box>
+                  )}
 
+                  {additionalDetails?.mentionsTagsRequired && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Mentions/Tags Required</Typography>
                       <Typography sx={SectionBodyStyle}>
-                        {additionalDetails?.mentionsTagsRequired || 'Not specified'}
+                        {additionalDetails.mentionsTagsRequired}
                       </Typography>
                     </Box>
+                  )}
 
+                  {additionalDetails?.creatorCompensation && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Creator Compensation</Typography>
                       <Typography sx={SectionBodyStyle}>
-                        {additionalDetails?.creatorCompensation || 'Not specified'}
+                        {additionalDetails.creatorCompensation}
                       </Typography>
                     </Box>
+                  )}
 
+                  {additionalDetails?.ctaDesiredAction && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Desired Action</Typography>
                       <Typography sx={SectionBodyStyle}>
-                        {additionalDetails?.ctaDesiredAction || 'Not specified'}
+                        {additionalDetails.ctaDesiredAction}
                       </Typography>
                     </Box>
+                  )}
 
+                  {additionalDetails?.ctaLinkUrl && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Link/URL</Typography>
-                      {additionalDetails?.ctaLinkUrl ? (
-                        <Link
-                          href={normalizeUrl(additionalDetails.ctaLinkUrl)}
-                          target="_blank"
-                          sx={{
-                            fontSize: '0.8rem',
-                            color: '#203ff5',
-                            textDecoration: 'none',
-                            overflowWrap: 'anywhere',
-                            whiteSpace: 'normal',
-                            '&:hover': { textDecoration: 'underline' },
-                          }}
-                        >
-                          {additionalDetails.ctaLinkUrl}
-                        </Link>
-                      ) : (
-                        <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
-                          Not specified
-                        </Typography>
-                      )}
+                      <Link
+                        href={normalizeUrl(additionalDetails.ctaLinkUrl)}
+                        target="_blank"
+                        sx={{
+                          fontSize: '0.8rem',
+                          color: '#203ff5',
+                          textDecoration: 'none',
+                          overflowWrap: 'anywhere',
+                          whiteSpace: 'normal',
+                          '&:hover': { textDecoration: 'underline' },
+                        }}
+                      >
+                        {additionalDetails.ctaLinkUrl}
+                      </Link>
                     </Box>
-                  </Stack>
+                  )}
+                </>
+              );
 
-                  {/* Right Column */}
-                  <Stack spacing={2} flex={1}>
+              const rightColumnContent = (
+                <>
+                  {additionalDetails?.ctaPromoCode && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Promo Code</Typography>
                       <Typography sx={SectionBodyStyle}>
-                        {additionalDetails?.ctaPromoCode || 'Not specified'}
+                        {additionalDetails.ctaPromoCode}
                       </Typography>
                     </Box>
+                  )}
 
+                  {additionalDetails?.ctaLinkInBioRequirements && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Link in Bio Requirements</Typography>
                       <Typography sx={SectionBodyStyle}>
-                        {additionalDetails?.ctaLinkInBioRequirements || 'Not specified'}
+                        {additionalDetails.ctaLinkInBioRequirements}
                       </Typography>
                     </Box>
+                  )}
 
+                  {additionalDetails?.specialNotesInstructions && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Special Notes/Instructions</Typography>
                       <Typography sx={SectionBodyStyle}>
-                        {additionalDetails?.specialNotesInstructions || 'Not specified'}
+                        {additionalDetails.specialNotesInstructions}
                       </Typography>
                     </Box>
+                  )}
 
+                  {additionalDetails?.needAds && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Do you need ads?</Typography>
                       <Typography sx={SectionBodyStyle}>
-                        {additionalDetails?.needAds
-                          ? capitalizeFirstLetter(additionalDetails.needAds)
-                          : 'Not specified'}
+                        {capitalizeFirstLetter(additionalDetails.needAds)}
                       </Typography>
                     </Box>
+                  )}
+                </>
+              );
+
+              return (
+                <Stack className="body" spacing={3}>
+                  <Stack direction="row" spacing={2}>
+                    {hasLeftColumnData && (
+                      <Stack spacing={2} flex={1}>
+                        {leftColumnContent}
+                      </Stack>
+                    )}
+
+                    <Stack spacing={2} flex={hasLeftColumnData ? 1 : undefined}>
+                      {rightColumnContent}
+                    </Stack>
                   </Stack>
                 </Stack>
-              </Stack>
-            );
+              );
+            };
 
             // Render based on which sections have data
             if (hasAdditionalDetails1 && hasAdditionalDetails2) {
@@ -1219,7 +1252,11 @@ const CampaignDetailContentClient = ({ campaign }) => {
               {[
                 {
                   label: 'About',
-                  value: campaign?.brandAbout || campaign?.brand?.company?.about || campaign?.company?.about || 'None',
+                  value:
+                    campaign?.brandAbout ||
+                    campaign?.brand?.company?.about ||
+                    campaign?.company?.about ||
+                    'None',
                 },
                 {
                   label: 'Industry',
@@ -1235,9 +1272,8 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       return uniqueIndustries.length > 0
                         ? uniqueIndustries.join(', ')
                         : 'Not specified';
-                    } 
-                      return campaign?.campaignBrief.industries
-                    
+                    }
+                    return campaign?.campaignBrief.industries;
                   })(),
                 },
               ].map((item) => (
