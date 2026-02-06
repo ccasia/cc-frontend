@@ -63,9 +63,10 @@ const defaultFilters = {
 };
 
 const TABLE_HEAD = [
+  { id: 'checkbox', label: '', width: 48, hideSortIcon: true },
   { id: 'invoiceNumber', label: 'Invoice ID', width: 180, hideSortIcon: false },
   { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true },
-  { id: 'creatorName', label: 'Creator Name', width: 180, hideSortIcon: true },
+  { id: 'creatorName', label: 'Recepient', width: 180, hideSortIcon: true },
   { id: 'createdAt', label: 'Invoice Date', width: 120, hideSortIcon: true },
   { id: 'dueDate', label: 'Due Date', width: 120, hideSortIcon: false },
   { id: 'amount', label: 'Amount', width: 120, hideSortIcon: true },
@@ -74,11 +75,15 @@ const TABLE_HEAD = [
 ];
 
 const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
+  const { enqueueSnackbar } = useSnackbar();
   const [filters, setFilters] = useState(defaultFilters);
   const [datePresetLabel, setDatePresetLabel] = useState(null);
 
   const editDialog = useBoolean();
   const exportPreview = useBoolean();
+  const xeroDialog = useBoolean();
+  const xeroLoading = useBoolean();
+
   const [selectedId, setSelectedId] = useState('');
   const [selectedData, setSelectedData] = useState();
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -89,9 +94,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const [addStatusAnchor, setAddStatusAnchor] = useState(null);
   const [exportingCSV, setExportingCSV] = useState(false);
   const [exportFormatAnchor, setExportFormatAnchor] = useState(null);
-
-  const xeroLoading = useBoolean();
-  const xeroDialog = useBoolean();
 
   const smUp = useResponsive('up', 'sm');
   const { mainRef } = useMainContext();
@@ -210,9 +212,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   const canReset = !isEqual(defaultFilters, filters) || dateRange.selected;
 
-  // Show "No Data" if:
-  // 1. Not loading AND no filtered data AND filters are reset (no active filters)
-  // 2. Not loading AND no filtered data (even with filters)
   const notFound = !invoicesLoading && !dataFiltered?.length;
 
   const handleFilters = useCallback(
@@ -809,7 +808,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       enqueueSnackbar('Failed to initiate Xero connection', { variant: 'error' });
       xeroLoading.onFalse();
     }
-  }, [xeroLoading]);
+  }, [xeroLoading, enqueueSnackbar]);
 
   const handleBulkUpdate = async () => {
     setBulkLoading(true);
@@ -861,7 +860,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           mb: 2,
           width: '100%',
           display: 'flex',
-          flexDirection: 'row',
+          flexDirection: { xs: 'column', md: 'row' },
           justifyContent: 'space-between',
           alignItems: 'center',
           px: 2.5,
@@ -874,7 +873,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         <Box
           sx={{
             display: 'flex',
-            flexDirection: 'row',
+            flexDirection: { xs: 'column', md: 'row' },
             flexWrap: 'wrap',
             gap: 0.5,
             flexGrow: 1,
@@ -916,6 +915,41 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
             </Button>
           ))}
         </Box>
+        <Button
+          variant="contained"
+          color="success"
+          onClick={handleBulkUpdate}
+          disabled={bulkLoading || table.selected.length === 0}
+          startIcon={
+            bulkLoading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <Iconify icon="eva:checkmark-circle-2-fill" />
+            )
+          }
+          sx={{
+            width: 'fit-content',
+            height: 40,
+            padding: { xs: '4px 8px', sm: '6px 10px' },
+            borderRadius: '8px',
+            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            backgroundColor: '#1340FF',
+            color: '#FFFFFF',
+            fontSize: { xs: 12, md: 14 },
+            fontWeight: 600,
+            textTransform: 'none',
+            '&:hover': {
+              backgroundColor: '#133effd3',
+              boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            },
+            '&:active': {
+              boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+              transform: 'translateY(1px)',
+            },
+          }}
+        >
+          Approve & Send ({table.selected.length})
+        </Button>
       </Box>
 
       <InvoiceTableToolbar
@@ -1505,6 +1539,35 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
             </Menu>
           </Box>
         </Box>
+      </Dialog>
+
+      {/* connect to xero */}
+      <Dialog open={xeroDialog.value} onClose={xeroDialog.onFalse}>
+        <DialogTitle>Connect to Xero</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            You need to be connected to Xero to approve these invoices. Please connect your account
+            to proceed.
+          </DialogContentText>
+
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <LoadingButton
+              variant="contained"
+              size="large"
+              loading={xeroLoading.value}
+              onClick={handleActivateXero}
+              startIcon={<Iconify icon="logos:xero" width={24} />}
+              sx={{ bgcolor: '#13B5EA', '&:hover': { bgcolor: '#0e9bc7' } }} // Xero Blue
+            >
+              Connect to Xero
+            </LoadingButton>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={xeroDialog.onFalse} color="inherit">
+            Cancel
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* connect to xero */}
