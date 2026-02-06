@@ -332,7 +332,7 @@ const UpdateAudience = ({ campaign, campaignMutate }) => {
 
               {/* User Persona */}
               <FormField label="User Persona">
-                <RHFTextField name="audienceUserPersona" placeholder="User Persona" size="medium" />
+                <RHFTextField name="audienceUserPersona" multiline placeholder="User Persona" size="medium" />
               </FormField>
             </Stack>
           </Grid>
@@ -461,6 +461,7 @@ const UpdateAudience = ({ campaign, campaignMutate }) => {
                 <RHFTextField
                   name="secondaryAudienceUserPersona"
                   placeholder="User Persona"
+                  multiline
                   size="medium"
                 />
               </FormField>
