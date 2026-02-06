@@ -219,6 +219,16 @@ export default function AgreementTemplate({
                 for attending the designated location. Any delay will require a valid, reasonable
                 reason.
               </Text>
+              {isForSurfShark && (
+                <Text style={styles.item}>
+                  d) In performing the Services and producing the Deliverables, the Freelancer shall
+                  comply with the Campaign Creator Guide solely in connection with this campaign.
+                  This Campaign Creator Guide provides creative guidance, product information and
+                  recommended best practices for promoting Surfshark products and does not amend the
+                  Freelancer’s payment, intellectual property or termination rights except as
+                  expressly provided in this Agreement.
+                </Text>
+              )}
             </View>
           </View>
 
@@ -254,6 +264,12 @@ export default function AgreementTemplate({
                 c) The Freelancer shall perform such other duties and tasks, or changes to the
                 Services and Deliverables, as may be agreed upon by the Parties.
               </Text>
+              {isForSurfShark && (
+                <Text style={styles.item}>
+                  d) All Deliverables must comply with the Campaign Brief and the Campaign Creator
+                  Guide to be deemed acceptable and approved.
+                </Text>
+              )}
             </View>
           </View>
         </View>
