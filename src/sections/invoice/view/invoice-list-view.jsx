@@ -445,7 +445,7 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
           // Use the payment form we found
           bankName: paymentForm.bankName || '',
           accountName: paymentForm.bankAccountName || formData.creator,
-          payTo: formData.creator,
+          payTo: paymentForm.bankAccountName || formData.creator,
           accountNumber: paymentForm.bankAccountNumber || '',
           
           // Email from the creator data
@@ -1004,8 +1004,8 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                                 borderRadius: 0.8,
                                 bgcolor: 'white',
                                 ...(row.status === 'paid' && {
-                                  color: '#2e6b55',
-                                  borderColor: '#2e6b55',
+                                  color: '#1340FF',
+                                  borderColor: '#1340FF',
                                 }),
                                 ...(row.status === 'approved' && {
                                   color: '#1ABF66',

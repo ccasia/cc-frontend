@@ -2,19 +2,27 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
-import { Avatar, Button, Stack, TableRow, TableCell, Typography } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Avatar,
+  Button,
+  Checkbox,
+  TableRow,
+  TableCell,
+  Typography,
+  Tooltip,
+} from '@mui/material';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
 import { STATUS_COLORS } from './invoices-list';
 
-
 const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditInvoice }) => {
   const [value, setValue] = useState(invoice?.status);
-  
+
   // Get currency information
   const currencyCode = invoice?.currency || 'MYR';
   const currencySymbol = invoice?.task?.currencySymbol || invoice?.currencySymbol;
-  
 
   useEffect(() => {
     setValue(invoice?.status);
@@ -25,6 +33,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       key={invoice?.id}
       hover
       selected={selected}
+      onClick={onSelectRow}
       sx={{
         bgcolor: 'transparent',
         borderBottom: '1px solid',
@@ -40,26 +49,34 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         },
       }}
     >
+      <TableCell padding="checkbox">
+        <Checkbox checked={selected} onClick={onSelectRow} />
+      </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
           {invoice?.invoiceNumber}
         </Typography>
       </TableCell>
       <TableCell>
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Avatar
-            src={invoice?.campaign?.campaignBrief?.images?.[0] || invoice?.campaign?.brand?.logo}
-            variant="rounded"
-            sx={{ width: 32, height: 32, flexShrink: 0 }}
-          />
-          <Typography variant="body2" noWrap>
-            {invoice?.campaign?.name}
-          </Typography>
-        </Stack>
+        <Tooltip title={invoice?.campaign?.name} placement="top-start">
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Avatar
+              src={invoice?.campaign?.campaignBrief?.images?.[0] || invoice?.campaign?.brand?.logo}
+              variant="rounded"
+              sx={{ width: 32, height: 32, flexShrink: 0 }}
+            />
+            <Typography variant="body2" noWrap>
+              {invoice?.campaign?.name}
+            </Typography>
+          </Stack>
+        </Tooltip>
       </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
-          {invoice?.creator?.user?.name}
+          {invoice?.creator?.user?.paymentForm?.bankAccountName ||
+            invoice?.bankAcc?.payTo ||
+            invoice?.creator?.user?.name ||
+            'N/A'}
         </Typography>
       </TableCell>
       <TableCell>
@@ -85,11 +102,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
-          {formatCurrencyAmount(
-            invoice?.amount, 
-            currencyCode,
-            currencySymbol
-          )}
+          {formatCurrencyAmount(invoice?.amount, currencyCode, currencySymbol)}
         </Typography>
       </TableCell>
       <TableCell>
