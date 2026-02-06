@@ -210,7 +210,7 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                   {item?.invoiceNumber}
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  {dayjs(item?.date).format('LL')}
+                  {dayjs(item?.date).format('DD MMM YYYY')}
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
                   {formatAmount(item?.amount)}

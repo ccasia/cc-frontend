@@ -73,12 +73,21 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         </Tooltip>
       </TableCell>
       <TableCell>
-        <Typography variant="body2" noWrap>
-          {invoice?.creator?.user?.paymentForm?.bankAccountName ||
+        <Tooltip
+          title={
+            invoice?.creator?.user?.paymentForm?.bankAccountName ||
             invoice?.bankAcc?.payTo ||
-            invoice?.creator?.user?.name ||
-            'N/A'}
-        </Typography>
+            invoice?.creator?.user?.name
+          }
+          placement="top-start"
+        >
+          <Typography variant="body2">
+            {invoice?.creator?.user?.paymentForm?.bankAccountName ||
+              invoice?.bankAcc?.payTo ||
+              invoice?.creator?.user?.name ||
+              'N/A'}
+          </Typography>
+        </Tooltip>
       </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
