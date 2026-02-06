@@ -179,9 +179,9 @@ export default function InvoiceNewEditDetails() {
   );
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h6" sx={{ color: 'text.disabled', mb: 3 }}>
-        Details:
+    <Box>
+      <Typography variant="overline" sx={{ color: 'text.secondary', mb: 2, display: 'block' }}>
+        Details
       </Typography>
 
       <Stack divider={<Divider flexItem sx={{ borderStyle: 'dashed' }} />} spacing={3}>
