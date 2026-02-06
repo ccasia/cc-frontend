@@ -270,6 +270,20 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
     editor.onTrue();
   };
 
+  if (!agreementUrl) {
+    return (
+      <Stack alignItems="center" spacing={1.5} sx={{ py: 4, px: 2 }}>
+        <Iconify icon="mdi:file-document-edit-outline" width={40} sx={{ color: 'text.disabled' }} />
+        <Typography variant="body1" sx={{ color: '#221f20', fontWeight: 600 }}>
+          Preparing agreement
+        </Typography>
+        <Typography variant="body1" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+          We are preparing your agreement. You&apos;ll be notified when it&apos;s ready.
+        </Typography>
+      </Stack>
+    );
+  }
+
   return (
     <>
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
