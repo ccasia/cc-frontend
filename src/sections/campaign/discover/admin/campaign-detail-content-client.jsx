@@ -433,7 +433,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
 
                     <Box>
                       <Typography sx={SectionTitleStyle}>User Persona</Typography>
-                      <Typography sx={SectionBodyStyle}>
+                      <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
                         {userPersona || 'Not specified'}
                       </Typography>
                     </Box>
