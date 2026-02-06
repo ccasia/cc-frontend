@@ -330,6 +330,8 @@ const CampaignDetailContentClient = ({ campaign }) => {
             const getGeographicFocus = () => {
               if (!requirement?.geographic_focus) return 'Not specified';
               if (requirement.geographic_focus === 'SEAregion') return 'SEA Region';
+              if (requirement.geographic_focus === 'KualaLumpur') return 'Kuala Lumpur';
+              if (requirement.geographic_focus === 'EastMalaysia') return 'East Malaysia';
               if (requirement.geographic_focus === 'others')
                 return requirement.geographicFocusOthers;
               return capitalizeFirstLetter(requirement.geographic_focus);
