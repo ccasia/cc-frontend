@@ -196,6 +196,12 @@ export function useNavData() {
             path: paths.dashboard.creditTier.root,
             icon: <Iconify icon="mdi:account-star-outline" width={25} />,
           },
+          {
+            roles: ['superadmin', 'god'],
+            title: 'Feedback',
+            path: paths.dashboard.feedback.root,
+            icon: <Iconify icon="material-symbols:rate-review-outline" width={25} />,
+          },
         ],
       },
 

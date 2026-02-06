@@ -133,6 +133,9 @@ export const paths = {
     creditTier: {
       root: `${ROOTS.DASHBOARD}/credit-tier`,
     },
+    feedback: {
+      root: `${ROOTS.DASHBOARD}/feedback`,
+    },
     report: {
       root: `${ROOTS.DASHBOARD}/report`,
     },

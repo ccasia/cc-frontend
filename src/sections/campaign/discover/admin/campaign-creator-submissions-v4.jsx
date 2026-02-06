@@ -789,6 +789,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
           {renderExpandedSubmission()}
         </Box>
       )}
+
     </Box>
   );
 }
