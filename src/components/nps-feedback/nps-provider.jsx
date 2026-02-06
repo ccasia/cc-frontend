@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useMemo, useState, useContext, useCallback, createContext } from 'react';
+import { useRef, useMemo, useState, useContext, useCallback, createContext } from 'react';
 
 import NpsFeedbackModal from './nps-feedback-modal';
 
@@ -9,6 +9,7 @@ export const useNps = () => useContext(NpsContext);
 
 const NpsProvider = ({ children }) => {
   const [open, setOpen] = useState(false);
+  const onMutateRef = useRef(null);
 
   const showNpsModal = useCallback(() => {
     setOpen(true);
@@ -18,18 +19,27 @@ const NpsProvider = ({ children }) => {
     setOpen(false);
   }, []);
 
+  const setOnMutate = useCallback((fn) => {
+    onMutateRef.current = fn;
+  }, []);
+
   const memoizedValue = useMemo(
     () => ({
       showNpsModal,
+      setOnMutate,
     }),
-    [showNpsModal]
+    [showNpsModal, setOnMutate]
   );
 
   return (
     <NpsContext.Provider value={memoizedValue}>
       {children}
 
-      <NpsFeedbackModal open={open} onSuccess={hideNpsModal} />
+      <NpsFeedbackModal
+        open={open}
+        onSuccess={hideNpsModal}
+        onMutate={() => onMutateRef.current?.()}
+      />
     </NpsContext.Provider>
   );
 };

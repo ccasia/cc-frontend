@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { enqueueSnackbar } from 'notistack';
 import { m, AnimatePresence } from 'framer-motion';
 
@@ -173,11 +173,20 @@ function SuccessView() {
   );
 }
 
-export default function NpsFeedbackModal({ open, onSuccess }) {
+export default function NpsFeedbackModal({ open, onSuccess, onMutate }) {
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setRating(0);
+      setFeedback('');
+      setLoading(false);
+      setSubmitted(false);
+    }
+  }, [open]);
 
   const handleSubmit = async () => {
     if (rating < 1) {
@@ -192,6 +201,7 @@ export default function NpsFeedbackModal({ open, onSuccess }) {
         feedback: feedback.trim() || undefined,
       });
       setSubmitted(true);
+      onMutate?.();
       setTimeout(() => {
         onSuccess?.();
       }, 2000);
@@ -350,4 +360,5 @@ export default function NpsFeedbackModal({ open, onSuccess }) {
 NpsFeedbackModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onSuccess: PropTypes.func,
+  onMutate: PropTypes.func,
 };

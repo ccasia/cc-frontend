@@ -146,6 +146,8 @@ export default function DateFilterSelect({ value, startDate, endDate, onChange }
           endIcon={<Iconify icon="eva:arrow-ios-downward-fill" width={16} />}
           sx={{
             bgcolor: 'white',
+            border: '1px solid',
+            borderColor: 'divider',
             borderRadius: 1.5,
             px: 1.5,
             py: 0.75,

@@ -1,18 +1,24 @@
 import React, { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { m, AnimatePresence } from 'framer-motion';
 import { endOfDay } from 'date-fns';
+import { m } from 'framer-motion';
+
+import { varFade, varContainer } from 'src/components/animate';
 
 import {
   Box,
   Card,
+  Chip,
+  Menu,
   Stack,
   Table,
+  Button,
   Rating,
   Avatar,
   Drawer,
   Divider,
   Tooltip,
+  MenuItem,
   TableRow,
   Container,
   TableBody,
@@ -21,8 +27,9 @@ import {
   TextField,
   Typography,
   IconButton,
+  ListItemIcon,
+  ListItemText,
   useMediaQuery,
-  LinearProgress,
   TableContainer,
   InputAdornment,
   TablePagination,
@@ -31,13 +38,12 @@ import {
 
 import { useTheme } from '@mui/material/styles';
 
+import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
 
 import { fDateTime, fToNow } from 'src/utils/format-time';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import { useGetNpsFeedback, useGetNpsFeedbackStats } from 'src/hooks/use-get-nps-feedback';
@@ -47,13 +53,60 @@ import DateFilterSelect from '../components/date-filter-select';
 // ----------------------------------------------------------------------
 
 const COLUMNS = [
-  { id: 'name', label: 'Client', align: 'left', sortable: false },
+  { id: 'name', label: 'User', align: 'left', sortable: false },
+  { id: 'userType', label: 'Type', align: 'left', sortable: false },
   { id: 'email', label: 'Email', align: 'left', sortable: false },
   { id: 'rating', label: 'Rating', align: 'left' },
   { id: 'feedback', label: 'Feedback', align: 'left', sortable: false },
   { id: 'createdAt', label: 'Date', align: 'left' },
   { id: 'action', label: '', align: 'center', sortable: false },
 ];
+
+const USER_TYPE_TABS = [
+  { value: 'all', label: 'All' },
+  { value: 'CLIENT', label: 'Client' },
+  { value: 'CREATOR', label: 'Creator' },
+];
+
+const USER_TYPE_COLORS = {
+  CREATOR: '#1340FF',
+  CLIENT: '#00AB55',
+};
+
+function UserTypeChip({ userType, compact, sx }) {
+  const color = USER_TYPE_COLORS[userType] || USER_TYPE_COLORS.CLIENT;
+  const label = userType === 'CREATOR' ? 'Creator' : 'Client';
+
+  return (
+    <Chip
+      label={label}
+      size="small"
+      sx={{
+        borderRadius: 0.8,
+        border: `1px solid ${color}`,
+        boxShadow: `0px -2px 0px 0px ${color} inset`,
+        backgroundColor: '#FFFFFF',
+        color,
+        fontWeight: 600,
+        fontSize: compact ? 11 : 12,
+        height: compact ? 22 : 28,
+        width: 'fit-content',
+        lineHeight: 1,
+        '& .MuiChip-label': {
+          pb: compact ? 0 : '2px',
+        },
+        '&:hover': { backgroundColor: '#FFFFFF' },
+        ...sx,
+      }}
+    />
+  );
+}
+
+UserTypeChip.propTypes = {
+  userType: PropTypes.string,
+  compact: PropTypes.bool,
+  sx: PropTypes.object,
+};
 
 // ----------------------------------------------------------------------
 
@@ -67,15 +120,19 @@ export default function FeedbackView() {
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
   const [selectedRow, setSelectedRow] = useState(null);
-  const [statsExpanded, setStatsExpanded] = useState(false);
+  const [userTypeFilter, setUserTypeFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [filterStartDate, setFilterStartDate] = useState(null);
   const [filterEndDate, setFilterEndDate] = useState(null);
+  const [ratingFilter, setRatingFilter] = useState('all');
 
   const dateParams = {
     ...(filterStartDate && { startDate: filterStartDate.toISOString() }),
     ...(filterEndDate && { endDate: endOfDay(filterEndDate).toISOString() }),
   };
+
+  const userTypeParam = userTypeFilter !== 'all' ? { userType: userTypeFilter } : {};
+  const ratingParam = ratingFilter !== 'all' ? { rating: ratingFilter } : {};
 
   const { feedback, total, isLoading } = useGetNpsFeedback({
     page: page + 1,
@@ -84,9 +141,11 @@ export default function FeedbackView() {
     sortBy,
     sortOrder,
     ...dateParams,
+    ...userTypeParam,
+    ...ratingParam,
   });
 
-  const { stats, isLoading: statsLoading } = useGetNpsFeedbackStats(dateParams);
+  const { stats, isLoading: statsLoading } = useGetNpsFeedbackStats({ ...dateParams, ...userTypeParam });
 
   const handleDateFilterChange = useCallback(({ preset, startDate, endDate }) => {
     setDateFilter(preset);
@@ -111,98 +170,233 @@ export default function FeedbackView() {
 
   return (
     <Container maxWidth="lg">
-      <CustomBreadcrumbs
-        heading="Feedback"
-        links={[
-          { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Feedback' },
-        ]}
-        sx={{ mb: 3 }}
-      />
+      <Typography variant="h2" fontFamily="Instrument Serif" fontWeight="normal" gutterBottom>
+        Feedback
+      </Typography>
 
-      {/* Stats + Search */}
-      <Box sx={{ mb: 2, borderRadius: 2, bgcolor: '#F4F6F8', px: 1.5, py: 1.5 }}>
-        {/* Top bar: stats pills + toggle + search — all on one line */}
-        <Stack direction="row" alignItems="center" spacing={1}>
-          {/* Compact pills (visible when collapsed) */}
-          {!statsLoading && stats && (
-            <AnimatePresence mode="wait">
-              {!statsExpanded && (
-                <m.div
-                  key="pills"
-                  initial={{ opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.97 }}
-                  transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                  style={{ display: 'flex', alignItems: 'stretch', gap: 8, flex: 1, minWidth: 0 }}
-                >
-                  <Box sx={{ bgcolor: 'white', borderRadius: 1.5, px: 1.5, py: 0.75, flexShrink: 0 }}>
-                    <Stack direction="row" alignItems="center" spacing={0.75}>
-                      <Iconify icon="mdi:message-reply-text-outline" width={16} sx={{ color: '#1340FF' }} />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{stats.totalResponses}</Typography>
-                      <Typography variant="caption" color="text.secondary">responses</Typography>
-                    </Stack>
-                  </Box>
-                  <Box sx={{ bgcolor: 'white', borderRadius: 1.5, px: 1.5, py: 0.75, flexShrink: 0 }}>
-                    <Stack direction="row" alignItems="center" spacing={0.75}>
-                      <Rating value={stats.averageRating} precision={0.1} size="small" readOnly sx={{ '& .MuiRating-iconFilled': { color: '#FFAB00' } }} />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{stats.averageRating}</Typography>
-                      <Typography variant="caption" color="text.secondary">avg</Typography>
-                    </Stack>
-                  </Box>
-                  <Box sx={{ bgcolor: 'white', borderRadius: 1.5, px: 1.5, py: 0.75, display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 1, minWidth: 0, overflow: 'hidden' }}>
-                    {[...stats.distribution].reverse().map((item, idx, arr) => {
-                      const pct = stats.totalResponses > 0 ? (item.count / stats.totalResponses) * 100 : 0;
-                      return (
-                        <React.Fragment key={item.rating}>
-                          <Stack direction="row" alignItems="center" spacing={0.25} sx={{ flexShrink: 0 }}>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}>{item.rating}</Typography>
-                            <Iconify icon="mdi:star" width={11} sx={{ color: item.count > 0 ? '#FFAB00' : '#DFE3E8' }} />
-                            <Box sx={{ width: 24, height: 5, borderRadius: 3, bgcolor: '#EBEBEB', overflow: 'hidden' }}>
-                              {pct > 0 && <Box sx={{ width: `${pct}%`, minWidth: 3, height: '100%', borderRadius: 3, bgcolor: '#FFAB00' }} />}
-                            </Box>
-                            <Typography variant="caption" sx={{ fontWeight: 600, fontSize: 11, color: item.count > 0 ? 'text.primary' : 'text.disabled' }}>{item.count}</Typography>
-                          </Stack>
-                          {idx < arr.length - 1 && <Divider orientation="vertical" flexItem sx={{ borderColor: '#E0E0E0', my: 0.5 }} />}
-                        </React.Fragment>
-                      );
-                    })}
-                  </Box>
-                </m.div>
-              )}
-            </AnimatePresence>
-          )}
-
-          <DateFilterSelect
-            value={dateFilter}
-            startDate={filterStartDate}
-            endDate={filterEndDate}
-            onChange={handleDateFilterChange}
-          />
-
-          {/* Spacer when expanded (pills hidden) */}
-          {statsExpanded && <Box sx={{ flex: 1 }} />}
-
-          {/* Toggle + Search */}
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ flexShrink: 0, ml: 'auto' }}>
-            {!statsLoading && stats && (
-              <Tooltip title={statsExpanded ? 'Collapse stats' : 'Expand stats'} arrow>
-                <IconButton
+      {/* Stat Cards — bento row */}
+      {stats && (
+        <Stack
+          component={m.div}
+          variants={varContainer({ staggerIn: 0.1 })}
+          initial="initial"
+          animate="animate"
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={2}
+          sx={{ mb: 3 }}
+        >
+          {/* Total Responses */}
+          <Card
+            component={m.div}
+            variants={varFade({ distance: 24 }).inUp}
+            sx={{
+              flex: 1,
+              p: 2.5,
+              borderRadius: 3,
+              boxShadow: '0 2px 12px 0 rgba(145,158,171,0.12)',
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+              <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Iconify icon="mdi:message-reply-text-outline" width={16} sx={{ color: '#1340FF' }} />
+              </Box>
+              <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 0.5, fontSize: 11 }}>
+                Total Responses
+              </Typography>
+            </Stack>
+            <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+              {stats.totalResponses}
+            </Typography>
+            {userTypeFilter === 'all' && stats.creatorResponses != null && (
+              <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 1 }}>
+                <Chip
                   size="small"
-                  onClick={() => setStatsExpanded((prev) => !prev)}
-                  sx={{
-                    bgcolor: 'white',
-                    width: 32,
-                    height: 32,
-                    transition: 'transform 0.3s ease',
-                    transform: statsExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                    '&:hover': { bgcolor: 'white' },
-                  }}
-                >
-                  <Iconify icon="eva:arrow-ios-downward-fill" width={18} sx={{ color: 'text.secondary' }} />
-                </IconButton>
-              </Tooltip>
+                  label={`${stats.creatorResponses} creators`}
+                  sx={{ height: 22, fontSize: 11, fontWeight: 600, bgcolor: '#EEF2FF', color: '#1340FF', '& .MuiChip-label': { px: 1 }, '&:hover': { bgcolor: '#EEF2FF' } }}
+                />
+                <Chip
+                  size="small"
+                  label={`${stats.clientResponses} clients`}
+                  sx={{ height: 22, fontSize: 11, fontWeight: 600, bgcolor: '#E8F5E9', color: '#00AB55', '& .MuiChip-label': { px: 1 }, '&:hover': { bgcolor: '#E8F5E9' } }}
+                />
+              </Stack>
             )}
+          </Card>
+
+          {/* Average Rating */}
+          <Card
+            component={m.div}
+            variants={varFade({ distance: 24 }).inUp}
+            sx={{
+              flex: 1,
+              p: 2.5,
+              borderRadius: 3,
+              boxShadow: '0 2px 12px 0 rgba(145,158,171,0.12)',
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+              <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Iconify icon="mdi:star" width={16} sx={{ color: '#FFAB00' }} />
+              </Box>
+              <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 0.5, fontSize: 11 }}>
+                Average Rating
+              </Typography>
+            </Stack>
+            <Stack direction="row" alignItems="baseline" spacing={0.75}>
+              <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                {stats.averageRating}
+              </Typography>
+              <Typography variant="body2" color="text.disabled">/ 5</Typography>
+            </Stack>
+            <Rating
+              value={stats.averageRating}
+              precision={0.1}
+              size="small"
+              readOnly
+              sx={{ mt: 0.5, '& .MuiRating-iconFilled': { color: '#FFAB00' }, '& .MuiRating-iconEmpty': { color: '#DFE3E8' } }}
+            />
+          </Card>
+
+          {/* Rating Distribution */}
+          <Card
+            component={m.div}
+            variants={varFade({ distance: 24 }).inUp}
+            sx={{
+              flex: 2,
+              p: 2.5,
+              borderRadius: 3,
+              boxShadow: '0 2px 12px 0 rgba(145,158,171,0.12)',
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.25 }}>
+              <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Iconify icon="mdi:chart-bar" width={16} sx={{ color: '#FFAB00' }} />
+              </Box>
+              <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 0.5, fontSize: 11 }}>
+                Distribution
+              </Typography>
+            </Stack>
+            <Stack spacing={0.5}>
+              {[...stats.distribution].reverse().map((item, idx) => {
+                const pct = stats.totalResponses > 0 ? (item.count / stats.totalResponses) * 100 : 0;
+                return (
+                  <Stack key={item.rating} direction="row" alignItems="center" spacing={0.75}>
+                    <Stack direction="row" alignItems="center" spacing={0.25} sx={{ minWidth: 28 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 11, color: 'text.secondary' }}>{item.rating}</Typography>
+                      <Iconify icon="mdi:star" width={11} sx={{ color: item.count > 0 ? '#FFAB00' : '#DFE3E8' }} />
+                    </Stack>
+                    <Box sx={{ flex: 1, height: 7, borderRadius: 4, bgcolor: '#F4F6F8', overflow: 'hidden' }}>
+                      <Box
+                        sx={{
+                          height: 7,
+                          borderRadius: 4,
+                          bgcolor: '#FFAB00',
+                          width: `${pct}%`,
+                          minWidth: pct > 0 ? 3 : 0,
+                          transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        }}
+                      />
+                    </Box>
+                    <Typography variant="caption" sx={{ fontWeight: 600, fontSize: 11, minWidth: 16, textAlign: 'right', color: item.count > 0 ? 'text.primary' : 'text.disabled' }}>
+                      {item.count}
+                    </Typography>
+                  </Stack>
+                );
+              })}
+            </Stack>
+          </Card>
+        </Stack>
+      )}
+
+      {/* Tabs + Filters row */}
+      <Box sx={{ mb: 2 }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          sx={{
+            position: 'relative',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '1px',
+              bgcolor: 'divider',
+            },
+          }}
+        >
+          {/* Tabs — left */}
+          <Stack direction="row" spacing={0.5} sx={{ overflow: 'auto', flexShrink: 0 }}>
+            {USER_TYPE_TABS.map((tab) => (
+              <Button
+                key={tab.value}
+                disableRipple
+                size="large"
+                onClick={() => { setUserTypeFilter(tab.value); setPage(0); }}
+                sx={{
+                  px: 1.2,
+                  py: 0.5,
+                  pb: 1,
+                  minWidth: 'fit-content',
+                  color: userTypeFilter === tab.value ? '#221f20' : '#8e8e93',
+                  position: 'relative',
+                  fontSize: { xs: '0.9rem', sm: '1.05rem' },
+                  fontWeight: 650,
+                  whiteSpace: 'nowrap',
+                  mr: { xs: 1, sm: 2 },
+                  textTransform: 'none',
+                  transition: 'transform 0.1s ease-in-out',
+                  '&:focus': {
+                    outline: 'none',
+                    bgcolor: 'transparent',
+                  },
+                  '&:active': {
+                    transform: 'scale(0.95)',
+                    bgcolor: 'transparent',
+                  },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: '2px',
+                    width: userTypeFilter === tab.value ? '100%' : '0%',
+                    bgcolor: '#1340ff',
+                    transition: 'all 0.3s ease-in-out',
+                    transform: 'scaleX(1)',
+                    transformOrigin: 'left',
+                  },
+                  '&:hover': {
+                    bgcolor: 'transparent',
+                    '&::after': {
+                      width: '100%',
+                      opacity: userTypeFilter === tab.value ? 1 : 0.5,
+                    },
+                  },
+                }}
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </Stack>
+
+          {/* Filters + Search — right */}
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ ml: { xs: 0, sm: 'auto' }, pb: 0.5, mt: { xs: 1, sm: 0 }, flexWrap: 'wrap', gap: 1 }}>
+            <RatingFilterSelect value={ratingFilter} onChange={(val) => { setRatingFilter(val); setPage(0); }} />
+            <DateFilterSelect
+              value={dateFilter}
+              startDate={filterStartDate}
+              endDate={filterEndDate}
+              onChange={handleDateFilterChange}
+            />
             <TextField
               size="small"
               placeholder="Search..."
@@ -215,109 +409,10 @@ export default function FeedbackView() {
                   </InputAdornment>
                 ),
               }}
-              sx={{ width: { xs: '100%', sm: 240 }, bgcolor: 'white', borderRadius: 1 }}
+              sx={{ width: { xs: '100%', sm: 220 }, '& .MuiOutlinedInput-root': { bgcolor: 'white', borderRadius: 1 } }}
             />
           </Stack>
         </Stack>
-
-        {/* Expanded detailed cards (below the top bar) */}
-        {!statsLoading && stats && (
-          <AnimatePresence mode="wait">
-            {statsExpanded && (
-              <m.div
-                key="expanded"
-                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
-                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                style={{ overflow: 'hidden' }}
-              >
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-                  {/* Total Responses */}
-                  <m.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, delay: 0.05 }}
-                    style={{ flex: 1 }}
-                  >
-                    <Box sx={{ bgcolor: 'white', borderRadius: 2, p: 2, height: '100%' }}>
-                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-                        <Box sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: '#EEF0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Iconify icon="mdi:message-reply-text-outline" width={18} sx={{ color: '#1340FF' }} />
-                        </Box>
-                        <Typography variant="subtitle2" color="text.secondary">Total Responses</Typography>
-                      </Stack>
-                      <Typography variant="h3" sx={{ fontWeight: 700 }}>{stats.totalResponses}</Typography>
-                      <Typography variant="caption" color="text.disabled">All time feedback collected</Typography>
-                    </Box>
-                  </m.div>
-
-                  {/* Average Rating */}
-                  <m.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                    style={{ flex: 1 }}
-                  >
-                    <Box sx={{ bgcolor: 'white', borderRadius: 2, p: 2, height: '100%' }}>
-                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-                        <Box sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: '#FFF8E1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Iconify icon="mdi:star-outline" width={18} sx={{ color: '#FFAB00' }} />
-                        </Box>
-                        <Typography variant="subtitle2" color="text.secondary">Average Rating</Typography>
-                      </Stack>
-                      <Stack direction="row" alignItems="baseline" spacing={1} sx={{ mb: 0.5 }}>
-                        <Typography variant="h3" sx={{ fontWeight: 700 }}>{stats.averageRating}</Typography>
-                        <Typography variant="body2" color="text.secondary">/ 5</Typography>
-                      </Stack>
-                      <Rating
-                        value={stats.averageRating}
-                        precision={0.1}
-                        readOnly
-                        sx={{ '& .MuiRating-iconFilled': { color: '#FFAB00' }, '& .MuiRating-iconEmpty': { color: '#C4CDD5' } }}
-                      />
-                    </Box>
-                  </m.div>
-
-                  {/* Distribution */}
-                  <m.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, delay: 0.15 }}
-                    style={{ flex: 1.5 }}
-                  >
-                    <Box sx={{ bgcolor: 'white', borderRadius: 2, p: 2, height: '100%' }}>
-                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-                        <Box sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: '#FFF8E1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Iconify icon="mdi:chart-bar" width={18} sx={{ color: '#FFAB00' }} />
-                        </Box>
-                        <Typography variant="subtitle2" color="text.secondary">Rating Distribution</Typography>
-                      </Stack>
-                      <Stack spacing={0.75}>
-                        {[...stats.distribution].reverse().map((item) => {
-                          const pct = stats.totalResponses > 0 ? (item.count / stats.totalResponses) * 100 : 0;
-                          return (
-                            <Stack key={item.rating} direction="row" alignItems="center" spacing={1}>
-                              <Typography variant="body2" sx={{ minWidth: 12, textAlign: 'right', fontWeight: 600 }}>{item.rating}</Typography>
-                              <Iconify icon="mdi:star" width={14} sx={{ color: item.count > 0 ? '#FFAB00' : '#DFE3E8' }} />
-                              <LinearProgress
-                                variant="determinate"
-                                value={pct}
-                                sx={{ flex: 1, height: 8, borderRadius: 4, bgcolor: '#EBEBEB', '& .MuiLinearProgress-bar': { borderRadius: 4, bgcolor: '#FFAB00' } }}
-                              />
-                              <Typography variant="body2" sx={{ minWidth: 28, textAlign: 'right', fontWeight: 600 }}>{item.count}</Typography>
-                              <Typography variant="caption" color="text.disabled" sx={{ minWidth: 32 }}>{pct > 0 ? `${Math.round(pct)}%` : ''}</Typography>
-                            </Stack>
-                          );
-                        })}
-                      </Stack>
-                    </Box>
-                  </m.div>
-                </Stack>
-              </m.div>
-            )}
-          </AnimatePresence>
-        )}
       </Box>
 
       {/* Table (desktop) / Cards (mobile) */}
@@ -377,14 +472,14 @@ export default function FeedbackView() {
               <TableBody>
                 {isLoading && (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={COLUMNS.length} align="center" sx={{ py: 8 }}>
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
                 )}
                 {!isLoading && feedback.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6}>
+                    <TableCell colSpan={COLUMNS.length}>
                       <EmptyContent title="No feedback yet" />
                     </TableCell>
                   </TableRow>
@@ -410,10 +505,95 @@ export default function FeedbackView() {
         </Card>
       )}
 
-      <FeedbackDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
+      <FeedbackDrawer
+        row={selectedRow}
+        rows={feedback}
+        onClose={() => setSelectedRow(null)}
+        onNavigate={setSelectedRow}
+      />
     </Container>
   );
 }
+
+// ----------------------------------------------------------------------
+
+const RATING_OPTIONS = [
+  { value: 'all', label: 'All stars' },
+  { value: '5', label: '5 stars' },
+  { value: '4', label: '4 stars' },
+  { value: '3', label: '3 stars' },
+  { value: '2', label: '2 stars' },
+  { value: '1', label: '1 star' },
+];
+
+function RatingFilterSelect({ value, onChange }) {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const isFiltered = value !== 'all';
+  const selected = RATING_OPTIONS.find((o) => o.value === value);
+
+  return (
+    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexShrink: 0 }}>
+      <Button
+        size="small"
+        color="inherit"
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        endIcon={<Iconify icon="eva:arrow-ios-downward-fill" width={16} />}
+        startIcon={<Iconify icon="mdi:star" width={16} sx={{ color: isFiltered ? '#FFAB00' : 'text.disabled' }} />}
+        sx={{
+          bgcolor: 'white',
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 1.5,
+          px: 1.5,
+          py: 0.75,
+          fontWeight: 600,
+          fontSize: 13,
+          whiteSpace: 'nowrap',
+          '&:hover': { bgcolor: 'white' },
+        }}
+      >
+        {selected?.label || 'All stars'}
+      </Button>
+
+      {isFiltered && (
+        <IconButton size="small" onClick={() => onChange('all')} sx={{ width: 28, height: 28 }}>
+          <Iconify icon="eva:close-circle-fill" width={18} sx={{ color: 'text.disabled' }} />
+        </IconButton>
+      )}
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+        slotProps={{ paper: { sx: { minWidth: 160 } } }}
+      >
+        {RATING_OPTIONS.map((option) => (
+          <MenuItem
+            key={option.value}
+            selected={value === option.value}
+            onClick={() => { onChange(option.value); setAnchorEl(null); }}
+          >
+            <ListItemIcon sx={{ minWidth: 28 }}>
+              {option.value === 'all' ? (
+                <Iconify icon="mdi:star-outline" width={18} sx={{ color: 'text.secondary' }} />
+              ) : (
+                <Rating value={Number(option.value)} size="small" readOnly max={Number(option.value)} sx={{ '& .MuiRating-iconFilled': { color: '#FFAB00' } }} />
+              )}
+            </ListItemIcon>
+            <ListItemText primaryTypographyProps={{ variant: 'body2' }}>
+              {option.label}
+            </ListItemText>
+          </MenuItem>
+        ))}
+      </Menu>
+    </Stack>
+  );
+}
+
+RatingFilterSelect.propTypes = {
+  value: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+};
 
 // ----------------------------------------------------------------------
 
@@ -443,11 +623,11 @@ function SortableHeader({ column, label, align, isFirst, isLast, sortColumn, sor
     >
       <Stack direction="row" alignItems="center" spacing={0.5} justifyContent={align === 'center' ? 'center' : 'flex-start'}>
         {label}
-        {onSort && sortColumn === column && (
+        {onSort && (
           <Iconify
-            icon={sortDirection === 'asc' ? 'eva:arrow-upward-fill' : 'eva:arrow-downward-fill'}
+            icon={sortColumn === column && sortDirection === 'asc' ? 'eva:arrow-upward-fill' : 'eva:arrow-downward-fill'}
             width={16}
-            sx={{ color: '#1340FF' }}
+            sx={{ color: sortColumn === column ? '#1340FF' : '#bdbdbd' }}
           />
         )}
       </Stack>
@@ -474,10 +654,21 @@ function FeedbackRow({ row, onRowClick }) {
       <TableCell>
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <Avatar src={row.user?.photoURL} alt={row.user?.name} sx={{ width: 36, height: 36 }} />
-          <Typography variant="body2" fontWeight={600}>
-            {row.user?.name || '-'}
-          </Typography>
+          <Box>
+            <Typography variant="body2" fontWeight={600}>
+              {row.user?.name || '-'}
+            </Typography>
+            {row.user?.client?.company?.name && (
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {row.user.client.company.name}
+              </Typography>
+            )}
+          </Box>
         </Stack>
+      </TableCell>
+
+      <TableCell>
+        <UserTypeChip userType={row.userType} />
       </TableCell>
 
       <TableCell>
@@ -492,20 +683,18 @@ function FeedbackRow({ row, onRowClick }) {
 
       <TableCell sx={{ maxWidth: 300 }}>
         {row.feedback ? (
-          <Tooltip title={row.feedback} arrow placement="top">
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: 300,
-              }}
-            >
-              {row.feedback}
-            </Typography>
-          </Tooltip>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: 300,
+            }}
+          >
+            {row.feedback}
+          </Typography>
         ) : (
           <Typography variant="body2" color="text.disabled">-</Typography>
         )}
@@ -551,9 +740,12 @@ function FeedbackCard({ row, onClick }) {
         <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 0 }}>
           <Avatar src={row.user?.photoURL} alt={row.user?.name} sx={{ width: 36, height: 36 }} />
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle2" fontWeight={600} noWrap>
-              {row.user?.name || '-'}
-            </Typography>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Typography variant="subtitle2" fontWeight={600} noWrap>
+                {row.user?.name || '-'}
+              </Typography>
+              <UserTypeChip userType={row.userType} compact />
+            </Stack>
             <Typography variant="caption" color="text.secondary" noWrap>
               {row.user?.email || '-'}
             </Typography>
@@ -594,116 +786,410 @@ FeedbackCard.propTypes = {
 
 // ----------------------------------------------------------------------
 
-function FeedbackDrawer({ row, onClose }) {
-  const companyName = row?.user?.client?.company?.name;
+const formatFollowerCount = (num) => {
+  if (num == null) return null;
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num.toString();
+};
+
+const getCampaignChipColor = (status) => {
+  const map = {
+    ACTIVE: '#1abf66',
+    DRAFT: '#ff9800',
+    COMPLETED: '#3366FF',
+    PAUSED: '#f44336',
+    PENDING_ADMIN_ACTIVATION: '#1340FF',
+    PENDING_CSM_REVIEW: '#1340FF',
+    SCHEDULED: '#1340FF',
+  };
+  return map[status] || '#48484a';
+};
+
+const formatCampaignStatus = (status) => {
+  if (!status) return '';
+  if (['PENDING_ADMIN_ACTIVATION', 'PENDING_CSM_REVIEW', 'SCHEDULED'].includes(status))
+    return 'PENDING';
+  return status;
+};
+
+function FeedbackDrawer({ row, rows = [], onClose, onNavigate }) {
+  const router = useRouter();
+
+  const currentIndex = rows.findIndex((r) => r.id === row?.id);
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex >= 0 && currentIndex < rows.length - 1;
+  const handlePrev = () => hasPrev && onNavigate(rows[currentIndex - 1]);
+  const handleNext = () => hasNext && onNavigate(rows[currentIndex + 1]);
+
+  const isCreator = row?.userType === 'CREATOR';
+  const isClient = row?.userType === 'CLIENT';
+
+  const creator = row?.user?.creator;
+  const client = row?.user?.client;
+  const company = client?.company;
+  const companyName = company?.name;
+
+  const igHandle = creator?.instagram;
+  const igFollowers = creator?.instagramUser?.followers_count;
+  const igEngagement = creator?.instagramUser?.engagement_rate;
+
+  const ttHandle = creator?.tiktok;
+  const ttFollowers = creator?.tiktokUser?.follower_count;
+  const ttEngagement = creator?.tiktokUser?.engagement_rate;
+
+  const hasSocialStats = isCreator && (igHandle || ttHandle);
+
+  const creatorCampaigns = row?.user?.shortlisted || [];
+  const clientCampaigns = row?.user?.client?.company?.campaign || [];
+  const campaigns = isCreator ? creatorCampaigns : clientCampaigns;
+  const totalCampaigns = isCreator
+    ? (row?.user?._count?.shortlisted || 0)
+    : (row?.user?.client?.company?._count?.campaign || 0);
+  const hasCampaigns = campaigns.length > 0;
+
+  const handleViewProfile = () => {
+    if (isCreator && row?.user?.id) {
+      router.push(paths.dashboard.creator.profile(row.user.id));
+    } else if (isClient && client?.companyId) {
+      router.push(paths.dashboard.company.companyEdit(client.companyId));
+    }
+  };
+
+  const hasActionButton = (isCreator && row?.user?.id) || (isClient && client?.companyId);
 
   return (
     <Drawer
       open={!!row}
       onClose={onClose}
       anchor="right"
+      slotProps={{ backdrop: { invisible: true } }}
       PaperProps={{
         sx: {
-          width: { xs: 1, sm: 370 },
-          backgroundColor: '#F4F6F8 !important',
+          width: { xs: 1, sm: 480 },
           borderTopLeftRadius: 12,
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '-12px 0 40px -4px rgba(145, 158, 171, 0.24)',
+          borderLeft: '1px solid #919EAB3D',
         },
       }}
     >
-      {/* Header — close button right-aligned */}
-      <Stack direction="row" alignItems="center" justifyContent="flex-end" sx={{ py: 2, px: 2.5 }}>
-        <IconButton onClick={onClose}>
-          <Iconify icon="eva:close-fill" sx={{ height: 24, width: 24 }} />
-        </IconButton>
-      </Stack>
-
-      {/* User Info Card */}
+      {/* Sticky Header — user info + close */}
       <Box
         sx={{
-          p: 2.5,
-          border: '1px solid #919EAB3D',
-          bgcolor: 'white',
-          borderRadius: 2,
-          mx: 3,
-          mb: 3,
+          position: 'sticky',
+          top: 0,
+          zIndex: 1,
+          bgcolor: 'background.paper',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          flexShrink: 0,
         }}
       >
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <Avatar
-            alt={row?.user?.name}
-            src={row?.user?.photoURL}
-            sx={{ width: 48, height: 48 }}
-          />
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1">{row?.user?.name || '-'}</Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>
-              {row?.user?.email || '-'}
-            </Typography>
-            {companyName && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                {companyName}
+        <Stack direction="row" alignItems="center" justifyContent="flex-end" sx={{ pt: 1.5, px: 2.5 }}>
+          <IconButton onClick={onClose}>
+            <Iconify icon="eva:close-fill" sx={{ height: 24, width: 24 }} />
+          </IconButton>
+        </Stack>
+        <Box sx={{ px: 3, pb: 2.5 }}>
+          <Stack direction="row" alignItems="flex-start" spacing={2}>
+            <Box sx={{ position: 'relative' }}>
+              <Avatar
+                alt={row?.user?.name}
+                src={row?.user?.photoURL}
+                sx={{ width: 56, height: 56 }}
+              />
+              {isClient && company?.logo && (
+                <Avatar
+                  src={company.logo}
+                  alt={companyName}
+                  sx={{
+                    width: 22,
+                    height: 22,
+                    fontSize: 9,
+                    position: 'absolute',
+                    bottom: -2,
+                    right: -4,
+                    border: '2px solid white',
+                  }}
+                >
+                  {companyName?.charAt(0)}
+                </Avatar>
+              )}
+            </Box>
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Typography variant="subtitle1" fontWeight={700} noWrap>{row?.user?.name || '-'}</Typography>
+                <UserTypeChip userType={row?.userType} compact />
+              </Stack>
+              <Typography variant="body2" color="text.secondary" noWrap>
+                {row?.user?.email || '-'}
+              </Typography>
+              {isClient && companyName && (
+                <Typography variant="caption" color="text.secondary" noWrap sx={{ mt: 0.25, display: 'block' }}>
+                  {companyName}
+                </Typography>
+              )}
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.75 }}>
+                <Rating
+                  value={row?.rating || 0}
+                  readOnly
+                  size="small"
+                  sx={{
+                    '& .MuiRating-iconFilled': { color: '#FFAB00' },
+                    '& .MuiRating-iconEmpty': { color: '#C4CDD5' },
+                  }}
+                />
+                <Typography variant="caption" fontWeight={700} color="text.secondary">
+                  {row?.rating || 0}/5
+                </Typography>
+                {row?.createdAt && (
+                  <Typography variant="caption" color="text.disabled">
+                    &middot; {fToNow(row.createdAt)}
+                  </Typography>
+                )}
+              </Stack>
+            </Box>
+          </Stack>
+        </Box>
+      </Box>
+
+      {/* Scrollable content */}
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+
+        {/* Feedback */}
+        <Box sx={{ px: 3, py: 2 }}>
+          <Box sx={{ bgcolor: '#F4F6F8', borderRadius: 2, px: 2.5, py: 2 }}>
+            {row?.feedback ? (
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: '#221f20' }}>
+                {row.feedback}
+              </Typography>
+            ) : (
+              <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                No feedback provided
               </Typography>
             )}
-            <Label variant="soft" color="success" sx={{ mt: 0.5 }}>
-              {row?.userType || 'Client'}
-            </Label>
           </Box>
-        </Stack>
-      </Box>
+        </Box>
 
-      {/* Rating */}
-      <Box sx={{ p: 2.5, border: '1px solid #919EAB3D', bgcolor: 'white', borderRadius: 2, mx: 3, mb: 3 }}>
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-          <Iconify icon="mdi:star-outline" sx={{ color: '#1340FF' }} />
-          <Typography variant="subtitle2">Rating</Typography>
-        </Stack>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Rating
-            value={row?.rating || 0}
-            readOnly
-            size="medium"
-            sx={{
-              '& .MuiRating-iconFilled': { color: '#FFAB00' },
-              '& .MuiRating-iconEmpty': { color: '#C4CDD5' },
-            }}
-          />
-          <Typography variant="body1" fontWeight={600}>
-            {row?.rating || 0}/5
-          </Typography>
-        </Stack>
-      </Box>
+        <Divider />
 
-      {/* Feedback */}
-      <Box sx={{ p: 2.5, border: '1px solid #919EAB3D', bgcolor: 'white', borderRadius: 2, mx: 3, mb: 3 }}>
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-          <Iconify icon="mdi:message-reply-text-outline" sx={{ color: '#1340FF' }} />
-          <Typography variant="subtitle2">Feedback</Typography>
-        </Stack>
-        {row?.feedback ? (
-          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
-            {row.feedback}
-          </Typography>
-        ) : (
-          <Typography variant="body2" color="text.disabled">
-            No feedback provided
-          </Typography>
+        {/* Social Stats — creators only */}
+        {hasSocialStats && (
+          <>
+            <Box sx={{ px: 3, py: 2.5 }}>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                <Iconify icon="mdi:chart-bar" sx={{ color: '#1340FF' }} />
+                <Typography variant="subtitle2">Social Media</Typography>
+              </Stack>
+              <Stack spacing={1.5}>
+                {igHandle && (
+                  <Stack direction="row" alignItems="center" spacing={1.5}>
+                    <Iconify icon="mdi:instagram" width={20} sx={{ color: '#E4405F' }} />
+                    <Typography variant="body2" fontWeight={600} sx={{ minWidth: 80 }} noWrap>
+                      @{igHandle}
+                    </Typography>
+                    {igFollowers != null && (
+                      <Typography variant="caption" color="text.secondary">
+                        {formatFollowerCount(igFollowers)} followers
+                      </Typography>
+                    )}
+                    {igEngagement != null && (
+                      <Typography variant="caption" color="text.secondary">
+                        {Number(igEngagement).toFixed(1)}%
+                      </Typography>
+                    )}
+                  </Stack>
+                )}
+                {ttHandle && (
+                  <Stack direction="row" alignItems="center" spacing={1.5}>
+                    <Iconify icon="ic:baseline-tiktok" width={20} sx={{ color: '#000000' }} />
+                    <Typography variant="body2" fontWeight={600} sx={{ minWidth: 80 }} noWrap>
+                      @{ttHandle}
+                    </Typography>
+                    {ttFollowers != null && (
+                      <Typography variant="caption" color="text.secondary">
+                        {formatFollowerCount(ttFollowers)} followers
+                      </Typography>
+                    )}
+                    {ttEngagement != null && (
+                      <Typography variant="caption" color="text.secondary">
+                        {Number(ttEngagement).toFixed(1)}%
+                      </Typography>
+                    )}
+                  </Stack>
+                )}
+              </Stack>
+            </Box>
+            <Divider />
+          </>
+        )}
+
+        {/* Campaign History */}
+        {hasCampaigns && (
+          <Box sx={{ px: 3, py: 2.5 }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <Iconify icon="mdi:briefcase-outline" sx={{ color: '#1340FF' }} />
+              <Typography variant="subtitle2">{isCreator ? 'Campaign History' : 'Campaigns'}</Typography>
+            </Stack>
+            <Stack spacing={0.5}>
+              {campaigns.map((item) => {
+                const campaign = isCreator ? item.campaign : item;
+                const thumbnail = Array.isArray(campaign?.campaignBrief?.images)
+                  ? campaign.campaignBrief.images[0]
+                  : null;
+
+                return (
+                  <Stack
+                    key={isCreator ? item.id : campaign.id}
+                    direction="row"
+                    alignItems="center"
+                    spacing={1.5}
+                    onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id))}
+                    sx={{
+                      py: 1,
+                      px: 1,
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: '#F4F6F8' },
+                    }}
+                  >
+                    {thumbnail ? (
+                      <Box
+                        component="img"
+                        src={thumbnail}
+                        alt={campaign?.name}
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 1,
+                          objectFit: 'cover',
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 1,
+                          bgcolor: '#F4F6F8',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Iconify icon="mdi:image-outline" width={20} sx={{ color: 'text.disabled' }} />
+                      </Box>
+                    )}
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle2" fontWeight={600} noWrap>
+                        {campaign?.name || '-'}
+                      </Typography>
+                      {campaign?.brand?.name && (
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                          {campaign.brand.name}
+                        </Typography>
+                      )}
+                    </Box>
+                    <Chip
+                      label={formatCampaignStatus(campaign?.status)}
+                      size="small"
+                      sx={{
+                        borderRadius: 0.8,
+                        border: `1px solid ${getCampaignChipColor(campaign?.status)}`,
+                        boxShadow: `0px -2px 0px 0px ${getCampaignChipColor(campaign?.status)} inset`,
+                        backgroundColor: '#FFFFFF',
+                        color: getCampaignChipColor(campaign?.status),
+                        fontWeight: 600,
+                        fontSize: 11,
+                        height: 24,
+                        '&:hover': { backgroundColor: '#FFFFFF' },
+                      }}
+                    />
+                  </Stack>
+                );
+              })}
+            </Stack>
+            {totalCampaigns > 3 && (
+              <Typography
+                variant="caption"
+                onClick={() =>
+                  isCreator
+                    ? router.push(paths.dashboard.creator.profile(row.user.id))
+                    : router.push(paths.dashboard.company.companyEdit(client.companyId))
+                }
+                sx={{
+                  mt: 1.5,
+                  display: 'inline-block',
+                  color: '#1340FF',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                View all on profile &rarr;
+              </Typography>
+            )}
+          </Box>
         )}
       </Box>
 
-      {/* Date */}
-      <Box sx={{ p: 2.5, border: '1px solid #919EAB3D', bgcolor: 'white', borderRadius: 2, mx: 3, mb: 3 }}>
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-          <Iconify icon="material-symbols:calendar-month-outline" sx={{ color: '#1340FF' }} />
-          <Typography variant="subtitle2">Date</Typography>
+      {/* Sticky Footer */}
+      <Box
+        sx={{
+          position: 'sticky',
+          bottom: 0,
+          p: 2.5,
+          px: 3,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          flexShrink: 0,
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+          {hasActionButton && (
+            <Button
+              variant="contained"
+              onClick={handleViewProfile}
+              endIcon={<Iconify icon="eva:diagonal-arrow-right-up-fill" width={18} />}
+              sx={{
+                bgcolor: '#1340FF',
+                borderBottom: '3px solid #0c2aa6 inset',
+                '&:hover': { bgcolor: '#0c2aa6' },
+              }}
+            >
+              {isCreator ? 'View Creator Profile' : 'View Client Profile'}
+            </Button>
+          )}
+          <Stack direction="row" spacing={0.5} sx={{ ml: 'auto' }}>
+            <IconButton
+              onClick={handlePrev}
+              disabled={!hasPrev}
+              sx={{
+                border: '1px solid',
+                borderColor: hasPrev ? '#E7E7E7' : 'action.disabledBackground',
+                borderRadius: 1,
+              }}
+            >
+              <Iconify icon="eva:arrow-back-fill" width={18} />
+            </IconButton>
+            <IconButton
+              onClick={handleNext}
+              disabled={!hasNext}
+              sx={{
+                border: '1px solid',
+                borderColor: hasNext ? '#E7E7E7' : 'action.disabledBackground',
+                borderRadius: 1,
+              }}
+            >
+              <Iconify icon="eva:arrow-forward-fill" width={18} />
+            </IconButton>
+          </Stack>
         </Stack>
-        <Typography variant="body2" color="text.secondary">
-          {row?.createdAt ? fDateTime(row.createdAt) : '-'}
-        </Typography>
-        {row?.createdAt && (
-          <Typography variant="caption" color="text.disabled">
-            {fToNow(row.createdAt)}
-          </Typography>
-        )}
       </Box>
     </Drawer>
   );
@@ -711,5 +1197,7 @@ function FeedbackDrawer({ row, onClose }) {
 
 FeedbackDrawer.propTypes = {
   row: PropTypes.object,
+  rows: PropTypes.array,
   onClose: PropTypes.func.isRequired,
+  onNavigate: PropTypes.func,
 };

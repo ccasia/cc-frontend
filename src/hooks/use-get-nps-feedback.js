@@ -17,13 +17,26 @@ export const useGetNpsFeedback = (params) => {
   }), [data, isLoading, mutate]);
 };
 
+export const useCheckCreatorNps = (enabled = true) => {
+  const { data, isLoading, mutate } = useSWR(
+    enabled ? endpoints.npsFeedback.checkCreator : null,
+    fetcher
+  );
+
+  return useMemo(() => ({
+    shouldShowNps: data?.showNPS || false,
+    isLoading,
+    mutate,
+  }), [data, isLoading, mutate]);
+};
+
 export const useGetNpsFeedbackStats = (params = {}) => {
   const queryString = new URLSearchParams(params).toString();
   const url = queryString
     ? `${endpoints.npsFeedback.stats}?${queryString}`
     : endpoints.npsFeedback.stats;
 
-  const { data, isLoading } = useSWR(url, fetcher);
+  const { data, isLoading } = useSWR(url, fetcher, { keepPreviousData: true });
 
   return useMemo(() => ({
     stats: data,

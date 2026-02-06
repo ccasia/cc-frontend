@@ -346,6 +346,7 @@ export const endpoints = {
   npsFeedback: {
     root: '/api/nps-feedback',
     stats: '/api/nps-feedback/stats',
+    checkCreator: '/api/nps-feedback/check-creator',
   },
   invoice: {
     getAll: '/api/invoice/',
