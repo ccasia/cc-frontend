@@ -1151,8 +1151,8 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
           onPageChange={table.onChangePage}
           onRowsPerPageChange={table.onChangeRowsPerPage}
           dense={table.dense}
-          onChangeDense={table.onChangeDense}
-          sx={{ py: 2, ml: { xs: 0, md: -4 } }}
+          // onChangeDense={table.onChangeDense}
+          // sx={{ py: 2 }}
         />
       </Container>
 
