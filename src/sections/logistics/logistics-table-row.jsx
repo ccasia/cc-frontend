@@ -68,19 +68,18 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus, isReserv
             confirmedSlot ? (
               formatReservationSlot(confirmedSlot.startTime, confirmedSlot.endTime, true)
             ) : (
-              <Iconify
-                icon="eva:edit-2-outline"
-                sx={{ color: 'text.disabled', mt: 0.5 }}
-              />
+              <Iconify icon="eva:edit-2-outline" sx={{ color: 'text.disabled', mt: 0.5 }} />
             )
           }
           primaryTypographyProps={{
             typography: 'body2',
+            fontSize: { xs: 12, md: 14 },
             fontWeight: 600,
             textTransform: 'capitalize',
           }}
           secondaryTypographyProps={{
             typography: 'caption',
+            fontSize: { xs: 10, md: 12 },
             component: 'div',
             color: confirmedSlot ? 'text.primary' : 'text.disabled',
           }}
@@ -95,7 +94,13 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus, isReserv
       return (
         <Box display="flex" flexDirection="row" flexWrap="wrap" justifyContent="center">
           {items.map((item, index) => (
-            <Typography key={index} variant="body2">
+            <Typography
+              key={index}
+              variant="body2"
+              sx={{
+                fontSize: { xs: 12, md: 14 },
+              }}
+            >
               {item.product?.productName} ({item.quantity}){index < items.length - 1 && ',\u00A0'}
             </Typography>
           ))}
@@ -112,59 +117,72 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus, isReserv
 
   return (
     <TableRow hover onClick={onClick} sx={{ cursor: 'pointer' }}>
-        {/* Column 1: Name */}
-        <TableCell sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-          <Avatar alt={creator?.name} src={creator?.photoURL} sx={{ mr: 2 }} />
+      {/* Column 1: Name */}
+      <TableCell>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Avatar alt={creator?.name} src={creator?.photoURL} sx={{ mr: { xs: 1, md: 2 } }} />
           <ListItemText
             primary={creator?.name}
-            primaryTypographyProps={{ typography: 'subtitle2', noWrap: true }}
+            primaryTypographyProps={{
+              typography: 'subtitle2',
+              fontSize: { xs: 12, md: 14 },
+              noWrap: true,
+            }}
             sx={{ minWidth: 0 }}
           />
-        </TableCell>
-        {/* Column 2: Products */}
-        <TableCell align="center" sx={{ width: '30%' }}>
-          {renderMiddleColumn()}
-        </TableCell>
-        {/* Column 3: Status */}
-        <TableCell sx={{ width: '20%', textAlign: 'right' }}>
-          <Box sx={{ display: 'flex', pr: 2 }}>
-            <Box
-              onClick={onEditStatus}
+        </Box>
+      </TableCell>
+      {/* Column 2: Products */}
+      <TableCell align="center" sx={{ width: '30%' }}>
+        {renderMiddleColumn()}
+      </TableCell>
+      {/* Column 3: Status */}
+      <TableCell sx={{ width: '20%', textAlign: 'center' }}>
+        <Box sx={{ display: 'flex', pr: 2 }}>
+          <Box
+            onClick={onEditStatus}
+            sx={{
+              position: 'relative',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 'fit-content',
+              height: { xs: 28, sm: 30 },
+              padding: { xs: '4px 8px', sm: '6px 10px' },
+              borderRadius: '6px',
+              border: `1px solid ${configCurrentStatus.color}`,
+              boxShadow: `0px -2px 0px 0px ${configCurrentStatus.color} inset`,
+              backgroundColor: '#FFFFFF',
+              color: configCurrentStatus.color,
+              fontSize: { xs: 8, sm: 10, md: 12 },
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              ...(onEditStatus && {
+                '&:hover': {
+                  backgroundColor: '#F8F9FA',
+                  border: `1px solid ${configCurrentStatus.color}`,
+                  boxShadow: `0px -2px 0px 0px ${configCurrentStatus.color} inset`,
+                },
+                '&:active': {
+                  boxShadow: `0px -1px 0px 0px ${configCurrentStatus.color} inset`,
+                  transform: 'translateY(1px)',
+                },
+              }),
+            }}
+          >
+            <Typography
+              variant="subtitle2"
               sx={{
-                position: 'relative',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 'fit-content',
-                height: { xs: 28, sm: 30 },
-                padding: { xs: '4px 8px', sm: '6px 10px' },
-                borderRadius: '6px',
-                border: `1px solid ${configCurrentStatus.color}`,
-                boxShadow: `0px -2px 0px 0px ${configCurrentStatus.color} inset`,
-                backgroundColor: '#FFFFFF',
-                color: configCurrentStatus.color,
                 fontSize: { xs: 8, sm: 10, md: 12 },
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                ...(onEditStatus && {
-                  '&:hover': {
-                    backgroundColor: '#F8F9FA',
-                    border: `1px solid ${configCurrentStatus.color}`,
-                    boxShadow: `0px -2px 0px 0px ${configCurrentStatus.color} inset`,
-                  },
-                  '&:active': {
-                    boxShadow: `0px -1px 0px 0px ${configCurrentStatus.color} inset`,
-                    transform: 'translateY(1px)',
-                  },
-                }),
               }}
             >
-              <Typography variant="subtitle2">{configCurrentStatus.label}</Typography>
-              {onEditStatus && <Iconify icon="eva:edit-2-outline" width={12} sx={{ ml: 0.5 }} />}
-            </Box>
+              {configCurrentStatus.label}
+            </Typography>
+            {onEditStatus && <Iconify icon="eva:edit-2-outline" width={12} sx={{ ml: 0.5 }} />}
           </Box>
-        </TableCell>
-      </TableRow>
+        </Box>
+      </TableCell>
+    </TableRow>
   );
 }
 
