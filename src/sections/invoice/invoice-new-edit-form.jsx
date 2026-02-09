@@ -280,14 +280,37 @@ export default function InvoiceNewEditForm({ id, creators }) {
       newContact = false;
     }
 
-    try {
-      await axiosInstance.patch(endpoints.invoice.updateInvoice, {
+    const formData = new FormData();
+
+    const pdfBlob = await pdf(<InvoicePDF invoice={invoice} />).toBlob();
+    
+    formData.append('file', pdfBlob, `Invoice-${id}.pdf`);
+    formData.append(
+      'data',
+      JSON.stringify({
         ...data,
         invoiceId: id,
         newContact,
         xeroContactId: invoice.creator.xeroContactId,
         reason: data.otherReason || data.reason,
         campaignId: invoice?.campaignId,
+      })
+    );
+
+    try {
+      // await axiosInstance.patch(endpoints.invoice.updateInvoice, {
+      // ...data,
+      // invoiceId: id,
+      // newContact,
+      // xeroContactId: invoice.creator.xeroContactId,
+      // reason: data.otherReason || data.reason,
+      // campaignId: invoice?.campaignId,
+      // });
+
+      await axiosInstance.patch(endpoints.invoice.updateInvoice, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
       reset();
