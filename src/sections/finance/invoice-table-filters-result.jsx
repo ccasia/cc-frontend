@@ -18,6 +18,8 @@ export default function InvoiceTableFiltersResult({
   onResetFilters,
   //
   results,
+  dateRange,
+  onRemoveCampaign,
   ...other
 }) {
   const handleRemoveKeyword = useCallback(() => {
@@ -38,18 +40,39 @@ export default function InvoiceTableFiltersResult({
   );
 
   return (
-    <Stack spacing={1.5} {...other}>
-      <Box sx={{ typography: 'body2' }}>
+    <Stack direction="row" alignItems="center" flexWrap="wrap" spacing={1} {...other}>
+      <Box sx={{ typography: 'body2', whiteSpace: 'nowrap' }}>
         <strong>{results}</strong>
         <Box component="span" sx={{ color: 'text.secondary', ml: 0.25 }}>
           results found
         </Box>
       </Box>
-
-      <Stack flexGrow={1} spacing={1} direction="row" flexWrap="wrap" alignItems="center">
         {filters.status !== 'all' && (
           <Block label="Status:">
             <Chip size="small" label={filters.status} onDelete={handleRemoveStatus} />
+          </Block>
+        )}
+
+        {!!filters.campaigns?.length && (
+          <Block label="Campaigns:">
+            {filters.campaigns.map((campaign) => (
+              <Chip
+                key={campaign}
+                label={campaign}
+                size="small"
+                onDelete={() => onRemoveCampaign(campaign)}
+              />
+            ))}
+          </Block>
+        )}
+
+        {dateRange?.selected && (
+          <Block label="Date:">
+            <Chip
+              label={dateRange.shortLabel}
+              size="small"
+              onDelete={dateRange.onReset}
+            />
           </Block>
         )}
 
@@ -67,14 +90,14 @@ export default function InvoiceTableFiltersResult({
           </Block>
         )}
 
-        <Button
-          color="error"
-          onClick={onResetFilters}
-          startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
-        >
-          Clear
-        </Button>
-      </Stack>
+      <Button
+        color="error"
+        onClick={onResetFilters}
+        startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+        sx={{ whiteSpace: 'nowrap' }}
+      >
+        Clear
+      </Button>
     </Stack>
   );
 }
@@ -84,6 +107,8 @@ InvoiceTableFiltersResult.propTypes = {
   onFilters: PropTypes.func,
   onResetFilters: PropTypes.func,
   results: PropTypes.number,
+  dateRange: PropTypes.object,
+  onRemoveCampaign: PropTypes.func,
 };
 
 // ----------------------------------------------------------------------
