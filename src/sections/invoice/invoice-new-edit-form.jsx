@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
-import { pdf } from '@react-pdf/renderer';
+import { pdf, PDFViewer } from '@react-pdf/renderer';
 import { FixedSizeList } from 'react-window';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useMemo, useEffect, useCallback } from 'react';
@@ -16,6 +16,7 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import CircularProgress from '@mui/material/CircularProgress';
 import {
   Table,
+  Button,
   Dialog,
   Tooltip,
   TableRow,
@@ -24,6 +25,7 @@ import {
   TableHead,
   IconButton,
   ListItemText,
+  DialogActions,
   DialogContent,
   TableContainer,
   createFilterOptions,
@@ -140,6 +142,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
   const { isLoading, invoice, mutate } = useGetInvoiceById(id);
   const { user } = useAuthContext();
   const dialog = useBoolean();
+  const preview = useBoolean();
   const xeroLoading = useBoolean();
   const smDown = useResponsive('down', 'sm');
 
@@ -318,11 +321,11 @@ export default function InvoiceNewEditForm({ id, creators }) {
   const filter = createFilterOptions();
 
   const bankAccount = (
-    <Box>
-      <Typography variant="h6" sx={{ color: 'text.disabled', mt: 3, ml: 2 }}>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ color: 'text.disabled', mb: 3 }}>
         Bank Information:
       </Typography>
-      <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} sx={{ p: 3 }}>
+      <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }}>
         <RHFAutocomplete
           name="bankInfo.bankName"
           ListboxComponent={ListboxComponent}
@@ -339,7 +342,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
             '& .MuiInputBase-root': {
               bgcolor: 'white',
               borderRadius: 1,
-              height: { xs: 40, sm: 48 },
             },
             '& .MuiInputLabel-root': {
               display: 'none',
@@ -358,9 +360,10 @@ export default function InvoiceNewEditForm({ id, creators }) {
           required
           fullWidth
           value={values.bankInfo?.payTo}
+          sx={{ '& .MuiFormLabel-asterisk': { color: 'error.main' } }}
         />
-        <RHFTextField label="Account Number" name="bankInfo.accountNumber" required fullWidth />
-        <RHFTextField fullWidth required name="bankInfo.accountEmail" label="Account Email" />
+        <RHFTextField label="Account Number" name="bankInfo.accountNumber" required fullWidth sx={{ '& .MuiFormLabel-asterisk': { color: 'error.main' } }} />
+        <RHFTextField fullWidth required name="bankInfo.accountEmail" label="Account Email" sx={{ '& .MuiFormLabel-asterisk': { color: 'error.main' } }} />
       </Stack>
     </Box>
   );
@@ -431,18 +434,41 @@ export default function InvoiceNewEditForm({ id, creators }) {
   return (
     <>
       <Stack spacing={2}>
-        <Box sx={{ textAlign: 'end' }}>
+        <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+          <LoadingButton
+            variant="outlined"
+            startIcon={<Iconify icon="solar:eye-bold" width={18} />}
+            onClick={preview.onTrue}
+            sx={{
+              border: '1px solid #E7E7E7',
+              borderRadius: '8px',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 2.5,
+            }}
+          >
+            Preview Invoice
+          </LoadingButton>
           <LoadingButton
             variant="outlined"
             startIcon={<Iconify icon="material-symbols:download-rounded" width={18} />}
             onClick={handleDownload}
+            sx={{
+              border: '1px solid #E7E7E7',
+              borderRadius: '8px',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 2.5,
+            }}
           >
             Download Invoice
           </LoadingButton>
-        </Box>
+        </Stack>
 
         <FormProvider methods={methods}>
-          <Card sx={{ p: 1, height: '80vh', overflow: 'auto', scrollbarWidth: 'thin' }}>
+          <Card sx={{ p: 2, height: '80vh', overflow: 'auto', scrollbarWidth: 'thin' }}>
             <InvoiceNewEditAddress creators={creatorList} />
 
             <InvoiceNewEditStatusDate />
@@ -540,13 +566,24 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
                 {invoice?.status !== 'paid' && (
                   <LoadingButton
-                    size="large"
-                    variant="outlined"
+                    variant="contained"
                     loading={loadingSend.value && isSubmitting}
                     onClick={handleCreateAndSend}
                     sx={{
-                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                      width: 180,
+                      bgcolor: '#1340FF',
+                      borderRadius: '8px',
+                      border: '1px solid #1a32c4',
+                      borderBottom: '3px solid #102387',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      px: 3,
+                      '&:hover': { bgcolor: '#1a32c4' },
+                      '&.Mui-disabled': {
+                        bgcolor: '#E7E7E7',
+                        color: '#8E8E93',
+                        border: '1px solid #E7E7E7',
+                        borderBottom: '3px solid #C4CDD5',
+                      },
                     }}
                     disabled={!isValid}
                   >
@@ -577,6 +614,51 @@ export default function InvoiceNewEditForm({ id, creators }) {
           >
             Connect to Xero
           </LoadingButton>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={preview.value}
+        onClose={preview.onFalse}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { height: '80vh' } }}
+      >
+        <DialogActions sx={{ p: 1.5, gap: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<Iconify icon="material-symbols:download-rounded" width={18} />}
+            onClick={() => { handleDownload(); preview.onFalse(); }}
+            sx={{
+              border: '1px solid #E7E7E7',
+              borderRadius: '8px',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 2.5,
+            }}
+          >
+            Download
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={preview.onFalse}
+            sx={{
+              border: '1px solid #E7E7E7',
+              borderRadius: '8px',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 2.5,
+            }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+        <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+          <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
+            <InvoicePDF invoice={invoice} />
+          </PDFViewer>
         </DialogContent>
       </Dialog>
     </>
