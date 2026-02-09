@@ -82,7 +82,7 @@ function InvoiceTableToolbar({
 
   // Determine date button label
   const dateLabel = useMemo(() => {
-    if (!dateRange?.selected) return 'Date';
+    if (!dateRange?.selected) return 'Due Date';
     if (dateRange.presetLabel) return dateRange.presetLabel;
     return dateRange.shortLabel;
   }, [dateRange]);
