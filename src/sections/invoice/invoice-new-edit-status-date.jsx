@@ -56,6 +56,7 @@ export default function InvoiceNewEditStatusDate() {
             disabled
             label="Invoice Date"
             value={field.value}
+            format="dd/MM/yyyy"
             onChange={(newValue) => {
               field.onChange(newValue);
             }}
@@ -82,6 +83,7 @@ export default function InvoiceNewEditStatusDate() {
           <DatePicker
             label="Due date"
             value={field.value}
+            format="dd/MM/yyyy"
             onChange={(newValue) => {
               field.onChange(newValue);
             }}
