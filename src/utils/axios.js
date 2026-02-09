@@ -344,6 +344,11 @@ export const endpoints = {
     update: (id) => `/api/credit-tier/${id}`,
     delete: (id) => `/api/credit-tier/${id}`,
   },
+  npsFeedback: {
+    root: '/api/nps-feedback',
+    stats: '/api/nps-feedback/stats',
+    checkCreator: '/api/nps-feedback/check-creator',
+  },
   invoice: {
     getAll: '/api/invoice/',
     getCampaignById: (id) => `/api/campaign/getCampaignByIdInvoice/${id}`,

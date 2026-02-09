@@ -1,5 +1,5 @@
 import { orderBy } from 'lodash';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -16,12 +16,14 @@ import {
 } from '@mui/material';
 
 import { useGetMyCampaign } from 'src/hooks/use-get-my-campaign';
+import { useCheckCreatorNps } from 'src/hooks/use-get-nps-feedback';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+import { useNps } from 'src/components/nps-feedback/nps-provider';
 
 import ActiveCampaignView from '../active-campaign-view';
 import AppliedCampaignView from '../applied-campaign-view';
@@ -36,6 +38,22 @@ const ManageCampaignView = () => {
 
   const { user } = useAuthContext();
   const { data: campaigns, isLoading, mutate } = useGetMyCampaign(user?.id);
+
+  // NPS feedback check for creators
+  const { showNpsModal, setOnMutate } = useNps();
+  const { shouldShowNps, mutate: mutateNps } = useCheckCreatorNps(user?.role === 'creator');
+  const npsTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    if (mutateNps) setOnMutate(() => mutateNps);
+  }, [mutateNps, setOnMutate]);
+
+  useEffect(() => {
+    if (shouldShowNps && !npsTriggeredRef.current) {
+      npsTriggeredRef.current = true;
+      showNpsModal();
+    }
+  }, [shouldShowNps, showNpsModal]);
 
   useEffect(() => {
     socket?.on('pitchUpdate', () => mutate());

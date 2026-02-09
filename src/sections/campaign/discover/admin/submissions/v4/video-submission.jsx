@@ -22,6 +22,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
+import { useNps } from 'src/components/nps-feedback/nps-provider';
 
 import FeedbackLogs from './shared/feedback-logs';
 import FeedbackSection from './shared/feedback-section';
@@ -35,6 +36,7 @@ import { VideoModal } from '../../creator-stuff/submissions/firstDraft/media-mod
 export default function V4VideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
+  const { showNpsModal } = useNps();
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
@@ -82,7 +84,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
       setLocalActionInProgress(true);
 
       if (isClient) {
-        await axiosInstance.post('/api/submissions/v4/approve/client', {
+        const response = await axiosInstance.post('/api/submissions/v4/approve/client', {
           submissionId: submission.id,
           action: 'approve',
           feedback: feedback.trim(),
@@ -90,6 +92,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         });
 
         enqueueSnackbar('Video approved successfully', { variant: 'success' });
+
+        if (response.data?.showNPS) {
+          showNpsModal();
+        }
       } else {
         await approveV4Submission({
           submissionId: submission.id,
@@ -120,7 +126,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         setTimeout(() => setLocalActionInProgress(false), 300);
       }
     }
-  }, [feedback, reasons, caption, submission.id, onUpdate, isClient, localActionInProgress]);
+  }, [feedback, reasons, caption, submission.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
 
   const handleRequestChanges = useCallback(async () => {
     const currentFeedback = feedback;
@@ -140,7 +146,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
       }
 
       if (isClient) {
-        await axiosInstance.post('/api/submissions/v4/approve/client', {
+        const response = await axiosInstance.post('/api/submissions/v4/approve/client', {
           submissionId: submission.id,
           action: 'request_changes',
           feedback: hasContent ? currentFeedback.trim() : '',
@@ -148,6 +154,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         });
 
         enqueueSnackbar('Changes requested successfully', { variant: 'success' });
+
+        if (response.data?.showNPS) {
+          showNpsModal();
+        }
       } else {
         await approveV4Submission({
           submissionId: submission.id,
@@ -178,7 +188,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         setTimeout(() => setLocalActionInProgress(false), 300);
       }
     }
-  }, [feedback, reasons, caption, submission.id, onUpdate, isClient, localActionInProgress]);
+  }, [feedback, reasons, caption, submission.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
 
   const videoControls = useMemo(() => ({
     togglePlay: () => {
@@ -785,6 +795,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           title="Video Submission"
         />
       )}
+
     </Box>
   );
 }
