@@ -152,7 +152,10 @@ export default function InvoiceNewEditForm({ id, creators }) {
     () =>
       creators?.campaign?.shortlisted?.map((creator) => ({
         id: creator.user.id,
-        name: creator.user.name,
+        name:
+          invoice?.creator?.user?.paymentForm?.bankAccountName ||
+          invoice?.bankAcc?.payTo ||
+          creator.user.name,
         email: creator.user.email,
         fullAddress: creator.user.creator.location,
         phoneNumber: creator.user.phoneNumber,
@@ -161,7 +164,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
         primary: false,
         contactId: creator.user.creator.xeroContactId || null,
       })),
-    [creators]
+    [creators, invoice]
   );
 
   const defaultValues = useMemo(
