@@ -2,9 +2,10 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
-import { Button, TableRow, Checkbox, TableCell, Typography } from '@mui/material';
+import { Avatar, Button, Stack, TableRow, TableCell, Typography } from '@mui/material';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
+import { STATUS_COLORS } from './invoices-list';
 
 
 const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditInvoice }) => {
@@ -14,15 +15,6 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
   const currencyCode = invoice?.currency || 'MYR';
   const currencySymbol = invoice?.task?.currencySymbol || invoice?.currencySymbol;
   
-  // Debug log currency information
-  console.log('Invoice Currency Info:', {
-    invoiceId: invoice?.invoiceNumber,
-    currencyCode,
-    currencySymbol,
-    taskCurrency: invoice?.task?.currency,
-    taskCurrencySymbol: invoice?.task?.currencySymbol,
-    topLevelCurrencySymbol: invoice?.currencySymbol
-  });
 
   useEffect(() => {
     setValue(invoice?.status);
@@ -48,18 +40,22 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         },
       }}
     >
-      <TableCell padding="checkbox">
-        <Checkbox checked={selected} onClick={onSelectRow} />
-      </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
           {invoice?.invoiceNumber}
         </Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="body2" noWrap>
-          {invoice?.campaign?.name}
-        </Typography>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <Avatar
+            src={invoice?.campaign?.campaignBrief?.images?.[0] || invoice?.campaign?.brand?.logo}
+            variant="rounded"
+            sx={{ width: 32, height: 32, flexShrink: 0 }}
+          />
+          <Typography variant="body2" noWrap>
+            {invoice?.campaign?.name}
+          </Typography>
+        </Stack>
       </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
@@ -68,7 +64,23 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
-          {dayjs(invoice?.createdAt).format('LL')}
+          {dayjs(invoice?.createdAt).format('DD/MM/YYYY')}
+        </Typography>
+      </TableCell>
+      <TableCell>
+        <Typography
+          variant="body2"
+          noWrap
+          sx={{
+            ...(invoice?.dueDate &&
+              dayjs(invoice.dueDate).isBefore(dayjs()) &&
+              !['paid', 'approved'].includes(invoice?.status) && {
+                color: '#ff4842',
+                fontWeight: 600,
+              }),
+          }}
+        >
+          {invoice?.dueDate ? dayjs(invoice.dueDate).format('DD/MM/YYYY') : '-'}
         </Typography>
       </TableCell>
       <TableCell>
@@ -94,30 +106,8 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
             borderBottom: '3px solid',
             borderRadius: 0.8,
             bgcolor: 'white',
-            ...(invoice?.status === 'paid' && {
-              color: '#2e6b55',
-              borderColor: '#2e6b55',
-            }),
-            ...(invoice?.status === 'approved' && {
-              color: '#1ABF66',
-              borderColor: '#1ABF66',
-            }),
-            ...(invoice?.status === 'pending' && {
-              color: '#f19f39',
-              borderColor: '#f19f39',
-            }),
-            ...(invoice?.status === 'overdue' && {
-              color: '#ff4842',
-              borderColor: '#ff4842',
-            }),
-            ...(invoice?.status === 'draft' && {
-              color: '#637381',
-              borderColor: '#637381',
-            }),
-            ...(invoice?.status === 'rejected' && {
-              color: '#ff4842',
-              borderColor: '#ff4842',
-            }),
+            color: STATUS_COLORS[invoice?.status] || '#637381',
+            borderColor: STATUS_COLORS[invoice?.status] || '#637381',
           }}
         >
           {invoice?.status || 'pending'}
