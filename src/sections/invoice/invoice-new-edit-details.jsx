@@ -179,9 +179,9 @@ export default function InvoiceNewEditDetails() {
   );
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h6" sx={{ color: 'text.disabled', mb: 3 }}>
-        Details:
+    <Box>
+      <Typography variant="overline" sx={{ color: 'text.secondary', mb: 2, display: 'block' }}>
+        Details
       </Typography>
 
       <Stack divider={<Divider flexItem sx={{ borderStyle: 'dashed' }} />} spacing={3}>
@@ -291,33 +291,6 @@ export default function InvoiceNewEditDetails() {
                   ),
                 }}
                 sx={{ maxWidth: { md: 120 } }}
-              />
-
-              <RHFTextField
-                disabled
-                type="number"
-                name={`items[${index}].total`}
-                label="Total"
-                placeholder="0.00"
-                value={
-                  Number(values.items[index]?.total) === 0
-                    ? ''
-                    : Number(values.items[index]?.total)?.toFixed(2)
-                }
-                onChange={(event) => handleChangePrice(event, index)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>{displayCurrency}</Box>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  maxWidth: { md: 140 },
-                  [`& .${inputBaseClasses.input}`]: {
-                    textAlign: { md: 'right' },
-                  },
-                }}
               />
             </Stack>
           </Stack>

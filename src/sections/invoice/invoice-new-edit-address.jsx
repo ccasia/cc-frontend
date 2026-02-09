@@ -30,7 +30,7 @@ export default function InvoiceNewEditAddress({ creators }) {
 
   const values = watch();
 
-  const { invoiceFrom, invoiceTo } = values;
+  const { invoiceFrom, invoiceTo, bankInfo } = values;
 
   const from = useBoolean();
 
@@ -48,11 +48,13 @@ export default function InvoiceNewEditAddress({ creators }) {
             sx={{ borderStyle: 'dashed' }}
           />
         }
-        sx={{ p: 3 }}
       >
         <Stack sx={{ width: 1 }}>
-          <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
-            <Typography variant="h6" sx={{ color: 'text.disabled', flexGrow: 1 }}>
+          <Stack direction="row" alignItems="center">
+            <Typography
+              variant="overline"
+              sx={{ color: 'text.secondary', display: 'block', flexGrow: 1, mb: 1 }}
+            >
               From:
             </Typography>
 
@@ -61,26 +63,32 @@ export default function InvoiceNewEditAddress({ creators }) {
             </IconButton> */}
           </Stack>
 
-          <Stack spacing={1}>
-            <Typography variant="subtitle2">{invoiceFrom?.name}</Typography>
+          <Stack spacing={0.5}>
+            <Typography variant="subtitle2">{bankInfo?.payTo || invoiceFrom?.name}</Typography>
             <Typography variant="body2">{invoiceFrom?.fullAddress}</Typography>
             <Typography variant="body2"> {invoiceFrom?.phoneNumber}</Typography>
           </Stack>
         </Stack>
 
         <Stack sx={{ width: 1 }}>
-          <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
-            <Typography variant="h6" sx={{ color: 'text.disabled', flexGrow: 1 }}>
+          <Stack direction="row" alignItems="flex-start">
+            <Typography
+              variant="overline"
+              sx={{ color: 'text.secondary', display: 'block', flexGrow: 1 }}
+            >
               To:
             </Typography>
 
             <IconButton onClick={to.onTrue}>
-              <Iconify icon={invoiceTo ? 'solar:pen-bold' : 'mingcute:add-line'} />
+              <Iconify
+                icon={invoiceTo ? 'solar:pen-bold' : 'mingcute:add-line'}
+                sx={{ color: '#1340FF' }}
+              />
             </IconButton>
           </Stack>
 
           {invoiceTo ? (
-            <Stack spacing={1}>
+            <Stack spacing={0.5}>
               <Typography variant="subtitle2">{invoiceTo.name}</Typography>
               <Typography variant="body2">{invoiceTo.fullAddress}</Typography>
               <Typography variant="body2"> {invoiceTo.phoneNumber}</Typography>
@@ -112,11 +120,11 @@ export default function InvoiceNewEditAddress({ creators }) {
           {
             id: '1',
             primary: true,
-            name: 'Cult Creative',
+            name: 'Cult Creative Sdn. Bhd.',
             email: 'support@cultcreative.asia',
             fullAddress:
-              '4-402, Level 4, The Starling Mall, Lot 4-401 &, 6, Jalan SS 21/37, Damansara Utama, 47400 Petaling Jaya, Selangor',
-            phoneNumber: '+60 11-5415 5751',
+              '5-3A, Block A, Jaya One, No.72A, Jalan Universiti, 46200 Petaling Jaya, Selangor',
+            phoneNumber: '(+60) 12-849 6499',
             company: 'Cult Creative',
             addressType: 'Hq',
           },

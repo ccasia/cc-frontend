@@ -2,19 +2,27 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
-import { Avatar, Button, Stack, TableRow, TableCell, Typography } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Avatar,
+  Button,
+  Checkbox,
+  TableRow,
+  TableCell,
+  Typography,
+  Tooltip,
+} from '@mui/material';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
 import { STATUS_COLORS } from './invoices-list';
 
-
 const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditInvoice }) => {
   const [value, setValue] = useState(invoice?.status);
-  
+
   // Get currency information
   const currencyCode = invoice?.currency || 'MYR';
   const currencySymbol = invoice?.task?.currencySymbol || invoice?.currencySymbol;
-  
 
   useEffect(() => {
     setValue(invoice?.status);
@@ -25,6 +33,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       key={invoice?.id}
       hover
       selected={selected}
+      onClick={openEditInvoice}
       sx={{
         bgcolor: 'transparent',
         borderBottom: '1px solid',
@@ -40,6 +49,9 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         },
       }}
     >
+      <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
+        <Checkbox checked={selected} onClick={onSelectRow} />
+      </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
           {invoice?.invoiceNumber}
@@ -49,22 +61,23 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <Avatar
             src={invoice?.campaign?.campaignBrief?.images?.[0] || invoice?.campaign?.brand?.logo}
-            variant="rounded"
-            sx={{ width: 32, height: 32, flexShrink: 0 }}
+            variant="circular"
+            sx={{ width: 36, height: 36, flexShrink: 0 }}
           />
-          <Typography variant="body2" noWrap>
-            {invoice?.campaign?.name}
-          </Typography>
+          <Typography variant="body2">{invoice?.campaign?.name}</Typography>
         </Stack>
       </TableCell>
       <TableCell>
-        <Typography variant="body2" noWrap>
-          {invoice?.creator?.user?.name}
+        <Typography variant="body2">
+          {invoice?.creator?.user?.paymentForm?.bankAccountName ||
+            invoice?.bankAcc?.payTo ||
+            invoice?.creator?.user?.name ||
+            'N/A'}
         </Typography>
       </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
-          {dayjs(invoice?.createdAt).format('DD/MM/YYYY')}
+          {dayjs(invoice?.createdAt).format('DD MMM YYYY')}
         </Typography>
       </TableCell>
       <TableCell>
@@ -80,16 +93,12 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
               }),
           }}
         >
-          {invoice?.dueDate ? dayjs(invoice.dueDate).format('DD/MM/YYYY') : '-'}
+          {invoice?.dueDate ? dayjs(invoice.dueDate).format('DD MMM YYYY') : '-'}
         </Typography>
       </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
-          {formatCurrencyAmount(
-            invoice?.amount, 
-            currencyCode,
-            currencySymbol
-          )}
+          {formatCurrencyAmount(invoice?.amount, currencyCode, currencySymbol)}
         </Typography>
       </TableCell>
       <TableCell>
@@ -112,27 +121,6 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         >
           {invoice?.status || 'pending'}
         </Typography>
-      </TableCell>
-      <TableCell>
-        <Button
-          sx={{
-            textTransform: 'none',
-            fontWeight: 700,
-            px: 1.5,
-            py: 0.5,
-            fontSize: '0.85rem',
-            border: '1px solid #e0e0e0',
-            borderBottom: '3px solid #e0e0e0',
-            borderRadius: 0.8,
-            bgcolor: 'white',
-            color: '#221f20',
-            minWidth: '65px',
-            height: '32px',
-          }}
-          onClick={openEditInvoice}
-        >
-          View
-        </Button>
       </TableCell>
     </TableRow>
   );

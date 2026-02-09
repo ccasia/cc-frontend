@@ -8,17 +8,19 @@ import {
   Table,
   Button,
   Dialog,
+  Checkbox,
   TableRow,
   TableBody,
   TableCell,
   TableHead,
   Typography,
   DialogTitle,
-  DialogActions,
   DialogContent,
+  DialogActions,
   TableContainer,
   TableSortLabel,
   CircularProgress,
+  DialogContentText,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -31,11 +33,11 @@ import { formatCurrencyAmount } from 'src/utils/currency';
 import Scrollbar from 'src/components/scrollbar';
 import useDateRangePicker from 'src/components/custom-date-range-picker/use-date-range-picker';
 import CustomDateRangePicker from 'src/components/custom-date-range-picker/custom-date-range-picker';
-import {
-  useTable,
-  TableNoData,
-  TablePaginationCustom,
-} from 'src/components/table';
+import { useTable, TableNoData, TablePaginationCustom } from 'src/components/table';
+import { useSnackbar } from 'src/components/snackbar';
+import Iconify from 'src/components/iconify';
+import { LoadingButton } from '@mui/lab';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import InvoiceItem from './invoice-item';
 import InvoiceTableToolbar from './invoice-table-toolbar';
@@ -43,7 +45,7 @@ import InvoiceNewEditForm from '../invoice/invoice-new-edit-form';
 import InvoiceTableFiltersResult from './invoice-table-filters-result';
 
 export const STATUS_COLORS = {
-  paid: '#2e6b55',
+  paid: '#1340FF',
   approved: '#1ABF66',
   pending: '#f19f39',
   pending_approval: '#f19f39',
@@ -63,24 +65,29 @@ const defaultFilters = {
 };
 
 const TABLE_HEAD = [
-  { id: 'invoiceNumber', label: 'Invoice ID', width: 180, hideSortIcon: false },
+  { id: 'checkbox', label: '', width: 48, hideSortIcon: true },
+  { id: 'invoiceNumber', label: 'Invoice ID', width: 150, hideSortIcon: false },
   { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true },
-  { id: 'creatorName', label: 'Creator Name', width: 180, hideSortIcon: true },
+  { id: 'creatorName', label: 'Recipient', width: 180, hideSortIcon: true },
   { id: 'createdAt', label: 'Invoice Date', width: 120, hideSortIcon: true },
   { id: 'dueDate', label: 'Due Date', width: 120, hideSortIcon: false },
   { id: 'amount', label: 'Amount', width: 120, hideSortIcon: true },
   { id: 'status', label: 'Status', width: 120, hideSortIcon: true },
-  { id: 'action', label: '', width: 100, hideSortIcon: true },
 ];
 
 const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
+  const { enqueueSnackbar } = useSnackbar();
   const [filters, setFilters] = useState(defaultFilters);
   const [datePresetLabel, setDatePresetLabel] = useState(null);
 
   const editDialog = useBoolean();
   const exportPreview = useBoolean();
+  const xeroDialog = useBoolean();
+  const xeroLoading = useBoolean();
+
   const [selectedId, setSelectedId] = useState('');
   const [selectedData, setSelectedData] = useState();
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const smUp = useResponsive('up', 'sm');
   const table = useTable({ defaultRowsPerPage: 25 });
@@ -178,7 +185,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   const canReset = !isEqual(defaultFilters, filters) || dateRange.selected;
 
-  const notFound = (!invoicesLoading && !dataFiltered?.length);
+  const notFound = !invoicesLoading && !dataFiltered?.length;
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -227,7 +234,16 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const handleExportCSV = useCallback(() => {
     if (!dataFiltered?.length) return;
 
-    const headers = ['Invoice ID', 'Campaign Name', 'Creator Name', 'Invoice Date', 'Due Date', 'Amount', 'Currency', 'Status'];
+    const headers = [
+      'Invoice ID',
+      'Campaign Name',
+      'Creator Name',
+      'Invoice Date',
+      'Due Date',
+      'Amount',
+      'Currency',
+      'Status',
+    ];
 
     const rows = dataFiltered.map((invoice) => [
       invoice?.invoiceNumber || '',
@@ -243,14 +259,16 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     const csvContent = [
       headers.join(','),
       ...rows.map((row) =>
-        row.map((cell) => {
-          const str = String(cell);
-          // Escape cells containing commas, quotes, or newlines
-          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-            return `"${str.replace(/"/g, '""')}"`;
-          }
-          return str;
-        }).join(',')
+        row
+          .map((cell) => {
+            const str = String(cell);
+            // Escape cells containing commas, quotes, or newlines
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+              return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+          })
+          .join(',')
       ),
     ].join('\n');
 
@@ -278,8 +296,9 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const { stats: invoiceStats, isLoading: statsLoading } = useGetAllInvoiceStats();
 
   const TABS = useMemo(() => {
+    // Check if stats are loaded and have counts
     if (invoiceStats && invoiceStats.counts) {
-      const {counts} = invoiceStats;
+      const { counts } = invoiceStats;
       return [
         { value: 'all', label: 'All', count: counts.total ?? 0 },
         { value: 'paid', label: 'Paid', count: counts.paid ?? 0 },
@@ -317,6 +336,62 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     editDialog.onFalse();
   }, [editDialog]);
 
+  const handleActivateXero = useCallback(async () => {
+    try {
+      xeroLoading.onTrue();
+      const response = await axiosInstance.get(endpoints.invoice.xero, { withCredientials: true });
+
+      window.location.href = response.data.url;
+    } catch (error) {
+      console.error('Error connecting to Xero:', error);
+      enqueueSnackbar('Failed to initiate Xero connection', { variant: 'error' });
+      xeroLoading.onFalse();
+    }
+  }, [xeroLoading, enqueueSnackbar]);
+
+  const handleBulkUpdate = async () => {
+    setBulkLoading(true);
+
+    try {
+      const selectedInvoices = dataFiltered.filter((row) => table.selected.includes(row.id));
+
+      const actionableIds = selectedInvoices
+        .filter((invoice) => invoice.status === 'pending' || invoice.status === 'draft')
+        .map((invoice) => invoice.id);
+
+      if (actionableIds.length === 0) {
+        enqueueSnackbar('No Pending or Draft invoices selected.', { variant: 'info' });
+        setBulkLoading(false);
+        return;
+      }
+
+      const res = await axiosInstance.post(endpoints.invoice.bulkUpdateInvoices, {
+        invoiceIds: actionableIds,
+      });
+
+      if (res.status === 200) {
+        enqueueSnackbar(res.data.message, { variant: 'success' });
+        if (mutateInvoices) mutateInvoices();
+        table.onSelectAllRows(false, []);
+      }
+    } catch (error) {
+      console.error(error);
+
+      const errorMessage = error?.message || error?.error || '';
+
+      if (
+        errorMessage.toLowerCase().includes('xero') ||
+        errorMessage.toLowerCase().includes('connect')
+      ) {
+        xeroDialog.onTrue();
+      } else {
+        enqueueSnackbar(errorMessage || 'Failed to approve invoices', { variant: 'error' });
+      }
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   return (
     <Box>
       <Box
@@ -324,7 +399,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           mb: 2,
           width: '100%',
           display: 'flex',
-          flexDirection: 'row',
+          flexDirection: { xs: 'column', md: 'row' },
           justifyContent: 'space-between',
           alignItems: 'center',
           px: 2.5,
@@ -337,7 +412,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         <Box
           sx={{
             display: 'flex',
-            flexDirection: 'row',
+            flexDirection: { xs: 'column', md: 'row' },
             flexWrap: 'wrap',
             gap: 0.5,
             flexGrow: 1,
@@ -371,8 +446,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                       bgcolor: 'transparent',
                     }),
                 '&:hover': {
-                  bgcolor:
-                    filters.status === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                  bgcolor: filters.status === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
                 },
               }}
             >
@@ -380,6 +454,41 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
             </Button>
           ))}
         </Box>
+        <Button
+          variant="contained"
+          color="success"
+          onClick={handleBulkUpdate}
+          disabled={bulkLoading || table.selected.length === 0}
+          startIcon={
+            bulkLoading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <Iconify icon="eva:checkmark-circle-2-fill" />
+            )
+          }
+          sx={{
+            width: 'fit-content',
+            height: 40,
+            padding: { xs: '4px 8px', sm: '6px 10px' },
+            borderRadius: '8px',
+            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            backgroundColor: '#1340FF',
+            color: '#FFFFFF',
+            fontSize: { xs: 12, md: 14 },
+            fontWeight: 600,
+            textTransform: 'none',
+            '&:hover': {
+              backgroundColor: '#133effd3',
+              boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            },
+            '&:active': {
+              boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+              transform: 'translateY(1px)',
+            },
+          }}
+        >
+          Approve & Send ({table.selected.length})
+        </Button>
       </Box>
 
       <InvoiceTableToolbar
@@ -432,48 +541,73 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
             >
               <TableHead>
                 <TableRow>
-                  {TABLE_HEAD.map((headCell, index) => (
-                    <TableCell
-                      key={headCell.id}
-                      padding="normal"
-                      sortDirection={table.orderBy === headCell.id ? table.order : false}
-                      sx={{
-                        py: 1,
-                        color: '#221f20',
-                        fontWeight: 600,
-                        width: headCell.width,
-                        ...(index === 0 && {
-                          borderRadius: '10px 0 0 10px',
-                        }),
-                        ...(index === TABLE_HEAD.length - 1 && {
-                          borderRadius: '0 10px 10px 0',
-                        }),
-                        bgcolor: '#f5f5f5',
-                        whiteSpace: 'nowrap',
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                      }}
-                    >
-                      {headCell.id === 'dueDate' ? (
-                        <TableSortLabel
-                          active
-                          direction={table.orderBy === 'dueDate' ? table.order : 'asc'}
-                          onClick={() => table.onSort('dueDate')}
-                          sx={{
-                            color: 'inherit !important',
-                            '& .MuiTableSortLabel-icon': {
-                              opacity: 1,
-                              color: table.orderBy === 'dueDate' ? '#1340ff !important' : '#c4cdd5 !important',
-                            },
-                          }}
-                        >
-                          {headCell.label}
-                        </TableSortLabel>
-                      ) : (
-                        headCell.label
-                      )}
-                    </TableCell>
-                  ))}
+                  {TABLE_HEAD.map((headCell, index) => {
+                    const isSorted = table.orderBy === headCell.id;
+                    const reversedOrder = table.order === 'asc' ? 'desc' : 'asc';
+                    return (
+                      <TableCell
+                        key={headCell.id}
+                        padding={headCell.id === 'checkbox' ? 'checkbox' : 'normal'}
+                        sortDirection={isSorted ? reversedOrder : false}
+                        sx={{
+                          py: 1,
+                          color: '#221f20',
+                          fontWeight: 600,
+                          width: headCell.width,
+                          ...(index === 0 && {
+                            borderRadius: '10px 0 0 10px',
+                          }),
+                          ...(index === TABLE_HEAD.length - 1 && {
+                            borderRadius: '0 10px 10px 0',
+                          }),
+                          bgcolor: '#f5f5f5',
+                          whiteSpace: 'nowrap',
+                          borderBottom: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        {headCell.id === 'checkbox' && (
+                          <Checkbox
+                            indeterminate={
+                              table.selected.length > 0 &&
+                              table.selected.length < dataFiltered.length
+                            }
+                            checked={
+                              dataFiltered.length > 0 &&
+                              table.selected.length === dataFiltered.length
+                            }
+                            onChange={(event) =>
+                              table.onSelectAllRows(
+                                event.target.checked,
+                                dataFiltered.map((row) => row.id)
+                              )
+                            }
+                          />
+                        )}
+                        {headCell.id === 'dueDate' ? (
+                          <TableSortLabel
+                            active
+                            direction={isSorted ? reversedOrder : 'desc'}
+                            onClick={() => table.onSort('dueDate')}
+                            sx={{
+                              color: 'inherit !important',
+                              '& .MuiTableSortLabel-icon': {
+                                opacity: 1,
+                                color:
+                                  table.orderBy === 'dueDate'
+                                    ? '#1340ff !important'
+                                    : '#c4cdd5 !important',
+                              },
+                            }}
+                          >
+                            {headCell.label}
+                          </TableSortLabel>
+                        ) : (
+                          headCell.label
+                        )}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               </TableHead>
 
@@ -585,7 +719,9 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           </Box>
 
           {/* Mini-table */}
-          <TableContainer sx={{ maxHeight: 340, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+          <TableContainer
+            sx={{ maxHeight: 340, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+          >
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
@@ -675,6 +811,35 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* connect to xero */}
+      <Dialog open={xeroDialog.value} onClose={xeroDialog.onFalse}>
+        <DialogTitle>Connect to Xero</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            You need to be connected to Xero to approve these invoices. Please connect your account
+            to proceed.
+          </DialogContentText>
+
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <LoadingButton
+              variant="contained"
+              size="large"
+              loading={xeroLoading.value}
+              onClick={handleActivateXero}
+              startIcon={<Iconify icon="logos:xero" width={24} />}
+              sx={{ bgcolor: '#13B5EA', '&:hover': { bgcolor: '#0e9bc7' } }} // Xero Blue
+            >
+              Connect to Xero
+            </LoadingButton>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={xeroDialog.onFalse} color="inherit">
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
@@ -737,9 +902,7 @@ function applyFilter({ inputData, comparator, filters }) {
   }
 
   if (campaigns?.length) {
-    inputData = inputData.filter((item) =>
-      campaigns.includes(item?.campaign?.name)
-    );
+    inputData = inputData.filter((item) => campaigns.includes(item?.campaign?.name));
   }
 
   if (status !== 'all') {
@@ -750,9 +913,8 @@ function applyFilter({ inputData, comparator, filters }) {
   if (currency) {
     inputData = inputData.filter((item) => {
       // Check for currency in different possible locations
-      const invoiceCurrency = item.currency ||
-                            item.task?.currency ||
-                            (item.items && item.items[0]?.currency);
+      const invoiceCurrency =
+        item.currency || item.task?.currency || (item.items && item.items[0]?.currency);
       return invoiceCurrency === currency;
     });
   }
