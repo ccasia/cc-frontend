@@ -292,33 +292,6 @@ export default function InvoiceNewEditDetails() {
                 }}
                 sx={{ maxWidth: { md: 120 } }}
               />
-
-              <RHFTextField
-                disabled
-                type="number"
-                name={`items[${index}].total`}
-                label="Total"
-                placeholder="0.00"
-                value={
-                  Number(values.items[index]?.total) === 0
-                    ? ''
-                    : Number(values.items[index]?.total)?.toFixed(2)
-                }
-                onChange={(event) => handleChangePrice(event, index)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>{displayCurrency}</Box>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  maxWidth: { md: 140 },
-                  [`& .${inputBaseClasses.input}`]: {
-                    textAlign: { md: 'right' },
-                  },
-                }}
-              />
             </Stack>
           </Stack>
         ))}

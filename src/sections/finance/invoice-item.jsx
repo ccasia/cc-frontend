@@ -33,7 +33,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       key={invoice?.id}
       hover
       selected={selected}
-      onClick={onSelectRow}
+      onClick={openEditInvoice}
       sx={{
         bgcolor: 'transparent',
         borderBottom: '1px solid',
@@ -49,7 +49,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         },
       }}
     >
-      <TableCell padding="checkbox">
+      <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
         <Checkbox checked={selected} onClick={onSelectRow} />
       </TableCell>
       <TableCell>
@@ -58,35 +58,22 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         </Typography>
       </TableCell>
       <TableCell>
-        <Tooltip title={invoice?.campaign?.name} placement="top-start">
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Avatar
-              src={invoice?.campaign?.campaignBrief?.images?.[0] || invoice?.campaign?.brand?.logo}
-              variant="rounded"
-              sx={{ width: 32, height: 32, flexShrink: 0 }}
-            />
-            <Typography variant="body2" noWrap>
-              {invoice?.campaign?.name}
-            </Typography>
-          </Stack>
-        </Tooltip>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <Avatar
+            src={invoice?.campaign?.campaignBrief?.images?.[0] || invoice?.campaign?.brand?.logo}
+            variant="rounded"
+            sx={{ width: 32, height: 32, flexShrink: 0 }}
+          />
+          <Typography variant="body2">{invoice?.campaign?.name}</Typography>
+        </Stack>
       </TableCell>
       <TableCell>
-        <Tooltip
-          title={
-            invoice?.creator?.user?.paymentForm?.bankAccountName ||
+        <Typography variant="body2">
+          {invoice?.creator?.user?.paymentForm?.bankAccountName ||
             invoice?.bankAcc?.payTo ||
-            invoice?.creator?.user?.name
-          }
-          placement="top-start"
-        >
-          <Typography variant="body2">
-            {invoice?.creator?.user?.paymentForm?.bankAccountName ||
-              invoice?.bankAcc?.payTo ||
-              invoice?.creator?.user?.name ||
-              'N/A'}
-          </Typography>
-        </Tooltip>
+            invoice?.creator?.user?.name ||
+            'N/A'}
+        </Typography>
       </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
@@ -134,27 +121,6 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         >
           {invoice?.status || 'pending'}
         </Typography>
-      </TableCell>
-      <TableCell>
-        <Button
-          sx={{
-            textTransform: 'none',
-            fontWeight: 700,
-            px: 1.5,
-            py: 0.5,
-            fontSize: '0.85rem',
-            border: '1px solid #e0e0e0',
-            borderBottom: '3px solid #e0e0e0',
-            borderRadius: 0.8,
-            bgcolor: 'white',
-            color: '#221f20',
-            minWidth: '65px',
-            height: '32px',
-          }}
-          onClick={openEditInvoice}
-        >
-          View
-        </Button>
       </TableCell>
     </TableRow>
   );

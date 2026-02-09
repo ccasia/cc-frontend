@@ -35,13 +35,9 @@ import useDateRangePicker from 'src/components/custom-date-range-picker/use-date
 import CustomDateRangePicker from 'src/components/custom-date-range-picker/custom-date-range-picker';
 import { useTable, TableNoData, TablePaginationCustom } from 'src/components/table';
 import { useSnackbar } from 'src/components/snackbar';
-import axiosInstance, { endpoints } from 'src/utils/axios';
-import { LoadingButton } from '@mui/lab';
 import Iconify from 'src/components/iconify';
 import { LoadingButton } from '@mui/lab';
-import Iconify from 'src/components/iconify';
 import axiosInstance, { endpoints } from 'src/utils/axios';
-import { useSnackbar } from 'src/components/snackbar';
 
 import InvoiceItem from './invoice-item';
 import InvoiceTableToolbar from './invoice-table-toolbar';
@@ -70,14 +66,13 @@ const defaultFilters = {
 
 const TABLE_HEAD = [
   { id: 'checkbox', label: '', width: 48, hideSortIcon: true },
-  { id: 'invoiceNumber', label: 'Invoice ID', width: 180, hideSortIcon: false },
+  { id: 'invoiceNumber', label: 'Invoice ID', width: 150, hideSortIcon: false },
   { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true },
   { id: 'creatorName', label: 'Recepient', width: 180, hideSortIcon: true },
   { id: 'createdAt', label: 'Invoice Date', width: 120, hideSortIcon: true },
   { id: 'dueDate', label: 'Due Date', width: 120, hideSortIcon: false },
   { id: 'amount', label: 'Amount', width: 120, hideSortIcon: true },
   { id: 'status', label: 'Status', width: 120, hideSortIcon: true },
-  { id: 'action', label: '', width: 100, hideSortIcon: true },
 ];
 
 const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
@@ -546,51 +541,73 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
             >
               <TableHead>
                 <TableRow>
-                  {TABLE_HEAD.map((headCell, index) => (
-                    <TableCell
-                      key={headCell.id}
-                      padding="normal"
-                      sortDirection={table.orderBy === headCell.id ? table.order : false}
-                      sx={{
-                        py: 1,
-                        color: '#221f20',
-                        fontWeight: 600,
-                        width: headCell.width,
-                        ...(index === 0 && {
-                          borderRadius: '10px 0 0 10px',
-                        }),
-                        ...(index === TABLE_HEAD.length - 1 && {
-                          borderRadius: '0 10px 10px 0',
-                        }),
-                        bgcolor: '#f5f5f5',
-                        whiteSpace: 'nowrap',
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                      }}
-                    >
-                      {headCell.id === 'dueDate' ? (
-                        <TableSortLabel
-                          active
-                          direction={table.orderBy === 'dueDate' ? table.order : 'asc'}
-                          onClick={() => table.onSort('dueDate')}
-                          sx={{
-                            color: 'inherit !important',
-                            '& .MuiTableSortLabel-icon': {
-                              opacity: 1,
-                              color:
-                                table.orderBy === 'dueDate'
-                                  ? '#1340ff !important'
-                                  : '#c4cdd5 !important',
-                            },
-                          }}
-                        >
-                          {headCell.label}
-                        </TableSortLabel>
-                      ) : (
-                        headCell.label
-                      )}
-                    </TableCell>
-                  ))}
+                  {TABLE_HEAD.map((headCell, index) => {
+                    const isSorted = table.orderBy === headCell.id;
+                    const reversedOrder = table.order === 'asc' ? 'desc' : 'asc';
+                    return (
+                      <TableCell
+                        key={headCell.id}
+                        padding={headCell.id === 'checkbox' ? 'checkbox' : 'normal'}
+                        sortDirection={isSorted ? reversedOrder : false}
+                        sx={{
+                          py: 1,
+                          color: '#221f20',
+                          fontWeight: 600,
+                          width: headCell.width,
+                          ...(index === 0 && {
+                            borderRadius: '10px 0 0 10px',
+                          }),
+                          ...(index === TABLE_HEAD.length - 1 && {
+                            borderRadius: '0 10px 10px 0',
+                          }),
+                          bgcolor: '#f5f5f5',
+                          whiteSpace: 'nowrap',
+                          borderBottom: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        {headCell.id === 'checkbox' && (
+                          <Checkbox
+                            indeterminate={
+                              table.selected.length > 0 &&
+                              table.selected.length < dataFiltered.length
+                            }
+                            checked={
+                              dataFiltered.length > 0 &&
+                              table.selected.length === dataFiltered.length
+                            }
+                            onChange={(event) =>
+                              table.onSelectAllRows(
+                                event.target.checked,
+                                dataFiltered.map((row) => row.id)
+                              )
+                            }
+                          />
+                        )}
+                        {headCell.id === 'dueDate' ? (
+                          <TableSortLabel
+                            active
+                            direction={isSorted ? reversedOrder : 'desc'}
+                            onClick={() => table.onSort('dueDate')}
+                            sx={{
+                              color: 'inherit !important',
+                              '& .MuiTableSortLabel-icon': {
+                                opacity: 1,
+                                color:
+                                  table.orderBy === 'dueDate'
+                                    ? '#1340ff !important'
+                                    : '#c4cdd5 !important',
+                              },
+                            }}
+                          >
+                            {headCell.label}
+                          </TableSortLabel>
+                        ) : (
+                          headCell.label
+                        )}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               </TableHead>
 

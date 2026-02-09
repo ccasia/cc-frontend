@@ -24,7 +24,6 @@ import {
   TableHead,
   Typography,
   DialogTitle,
-  DialogActions,
   DialogContent,
   DialogActions,
   TableContainer,
@@ -333,35 +332,35 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
           <Stack direction="row" spacing={1.5}>
             <LoadingButton
-            variant="outlined"
-            startIcon={<Iconify icon="solar:eye-bold" width={18} />}
-            onClick={preview.onTrue}
-            sx={{
-              border: '1px solid #E7E7E7',
-              borderRadius: '8px',
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 2.5,
-            }}
-          >
-            Preview Invoice
-          </LoadingButton>
-          <LoadingButton
-            variant="outlined"
-            startIcon={<Iconify icon="material-symbols:download-rounded" width={18} />}
-            onClick={handleDownload}
-            sx={{
-              border: '1px solid #E7E7E7',
-              borderRadius: '8px',
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 2.5,
-            }}
-          >
-            Download Invoice
-          </LoadingButton>
+              variant="outlined"
+              startIcon={<Iconify icon="solar:eye-bold" width={18} />}
+              onClick={preview.onTrue}
+              sx={{
+                border: '1px solid #E7E7E7',
+                borderRadius: '8px',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 2.5,
+              }}
+            >
+              Preview Invoice
+            </LoadingButton>
+            <LoadingButton
+              variant="outlined"
+              startIcon={<Iconify icon="material-symbols:download-rounded" width={18} />}
+              onClick={handleDownload}
+              sx={{
+                border: '1px solid #E7E7E7',
+                borderRadius: '8px',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 2.5,
+              }}
+            >
+              Download Invoice
+            </LoadingButton>
           </Stack>
         </Stack>
 
@@ -604,7 +603,10 @@ export default function InvoiceNewEditForm({ id, creators }) {
           <Button
             variant="outlined"
             startIcon={<Iconify icon="material-symbols:download-rounded" width={18} />}
-            onClick={() => { handleDownload(); preview.onFalse(); }}
+            onClick={() => {
+              handleDownload();
+              preview.onFalse();
+            }}
             sx={{
               border: '1px solid #E7E7E7',
               borderRadius: '8px',
