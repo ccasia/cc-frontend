@@ -39,6 +39,7 @@ export default function InvoiceNewEditStatusDate() {
             key={option}
             value={option}
             sx={{
+              textTransform: 'capitalize',
               color: (theme) => option === 'rejected' && theme.palette.error.main,
             }}
           >
