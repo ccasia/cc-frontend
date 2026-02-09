@@ -61,8 +61,8 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <Avatar
             src={invoice?.campaign?.campaignBrief?.images?.[0] || invoice?.campaign?.brand?.logo}
-            variant="rounded"
-            sx={{ width: 32, height: 32, flexShrink: 0 }}
+            variant="circular"
+            sx={{ width: 36, height: 36, flexShrink: 0 }}
           />
           <Typography variant="body2">{invoice?.campaign?.name}</Typography>
         </Stack>
@@ -77,7 +77,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
-          {dayjs(invoice?.createdAt).format('DD/MM/YYYY')}
+          {dayjs(invoice?.createdAt).format('DD MMM YYYY')}
         </Typography>
       </TableCell>
       <TableCell>
@@ -93,7 +93,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
               }),
           }}
         >
-          {invoice?.dueDate ? dayjs(invoice.dueDate).format('DD/MM/YYYY') : '-'}
+          {invoice?.dueDate ? dayjs(invoice.dueDate).format('DD MMM YYYY') : '-'}
         </Typography>
       </TableCell>
       <TableCell>

@@ -209,7 +209,11 @@ export default function InvoiceNewEditForm({ id, creators }) {
       ],
       bankInfo: invoice?.bankAcc || {
         bankName: '',
-        payTo: '',
+        payTo:
+          invoice?.creator?.user?.paymentForm?.bankAccountName ||
+          invoice?.bankAcc?.payTo ||
+          invoice?.creator?.user?.name ||
+          '',
         accountNumber: '',
         accountEmail: '',
       },
@@ -521,38 +525,38 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
               {/* Main Actions Area */}
               <Box sx={{ pt: 2 }}>
-                {invoice?.status !== 'paid' && (
-                  <LoadingButton
-                    fullWidth
-                    size="large"
-                    variant="contained"
-                    color="primary"
-                    loading={loadingSend.value && isSubmitting}
-                    onClick={handleCreateAndSend}
-                    disabled={!isValid}
-                    sx={{
-                      py: 1.5,
-                      fontSize: '1.1rem',
-                      padding: { xs: '4px 8px', sm: '6px 10px' },
-                      borderRadius: '8px',
+                {/* {invoice?.status !== 'paid' && ( */}
+                <LoadingButton
+                  fullWidth
+                  size="large"
+                  variant="contained"
+                  color="primary"
+                  loading={loadingSend.value && isSubmitting}
+                  onClick={handleCreateAndSend}
+                  disabled={!isValid}
+                  sx={{
+                    py: 1.5,
+                    fontSize: '1.1rem',
+                    padding: { xs: '4px 8px', sm: '6px 10px' },
+                    borderRadius: '8px',
+                    boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                    backgroundColor: '#1340FF',
+                    color: '#FFFFFF',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    '&:hover': {
+                      backgroundColor: '#133effd3',
                       boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-                      backgroundColor: '#1340FF',
-                      color: '#FFFFFF',
-                      fontWeight: 600,
-                      textTransform: 'none',
-                      '&:hover': {
-                        backgroundColor: '#133effd3',
-                        boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-                      },
-                      '&:active': {
-                        boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
-                        transform: 'translateY(1px)',
-                      },
-                    }}
-                  >
-                    {invoice ? 'Update & Send' : 'Create & Send'}
-                  </LoadingButton>
-                )}
+                    },
+                    '&:active': {
+                      boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+                      transform: 'translateY(1px)',
+                    },
+                  }}
+                >
+                  {invoice ? 'Update & Send' : 'Create & Send'}
+                </LoadingButton>
+                {/* )} */}
                 <Typography
                   variant="caption"
                   sx={{ color: 'text.secondary', display: 'block', mt: 2, textAlign: 'center' }}

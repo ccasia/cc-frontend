@@ -68,7 +68,7 @@ const TABLE_HEAD = [
   { id: 'checkbox', label: '', width: 48, hideSortIcon: true },
   { id: 'invoiceNumber', label: 'Invoice ID', width: 150, hideSortIcon: false },
   { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true },
-  { id: 'creatorName', label: 'Recepient', width: 180, hideSortIcon: true },
+  { id: 'creatorName', label: 'Recipient', width: 180, hideSortIcon: true },
   { id: 'createdAt', label: 'Invoice Date', width: 120, hideSortIcon: true },
   { id: 'dueDate', label: 'Due Date', width: 120, hideSortIcon: false },
   { id: 'amount', label: 'Amount', width: 120, hideSortIcon: true },

@@ -30,7 +30,7 @@ export default function InvoiceNewEditAddress({ creators }) {
 
   const values = watch();
 
-  const { invoiceFrom, invoiceTo } = values;
+  const { invoiceFrom, invoiceTo, bankInfo } = values;
 
   const from = useBoolean();
 
@@ -64,7 +64,7 @@ export default function InvoiceNewEditAddress({ creators }) {
           </Stack>
 
           <Stack spacing={0.5}>
-            <Typography variant="subtitle2">{invoiceFrom?.name}</Typography>
+            <Typography variant="subtitle2">{bankInfo?.payTo || invoiceFrom?.name}</Typography>
             <Typography variant="body2">{invoiceFrom?.fullAddress}</Typography>
             <Typography variant="body2"> {invoiceFrom?.phoneNumber}</Typography>
           </Stack>
