@@ -227,11 +227,13 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
             <Typography
               sx={{
                 fontWeight: 700,
-                color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+                color: '#231F20',
+                opacity: 0.6,
                 fontSize: '0.875rem',
+                mr: -0.5
               }}
             >
-              Enable this as a client campaign?
+              Enable this as a Client Campaign?
             </Typography>
             <Switch
               checked={isV4Submission || false}
@@ -243,7 +245,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
           <Typography variant="caption" fontWeight={400} color="text.secondary">
             {isV4Submission
               ? 'Client users will be added as campaign managers. Disabling will remove them.'
-              : 'Enabling this option will add client users as campaign managers.'}
+              : 'Enabling this option makes it a campaign that the previously selected client will manage.'}
           </Typography>
         </Stack>
 
@@ -290,7 +292,10 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
                 }
               />
             </FormField>
+          </Stack>
 
+          {/* Right column */}
+          <Stack flex={1} spacing={2}>
             <FormField label="Campaign Type">
               <RHFSelectV2 name="campaignType" placeholder="Select campaign type">
                 {campaignTypeOptions.map((option) => (
@@ -301,19 +306,18 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
               </RHFSelectV2>
             </FormField>
           </Stack>
+        </Stack>
 
-          {/* Right column */}
-          <Stack flex={1} spacing={2}>
-            <FormField label="Deliverables">
-              <RHFMultiSelect
-                name="deliverables"
-                placeholder="Select deliverable(s)"
-                chip
-                checkbox
-                options={deliverableOptions}
-              />
-            </FormField>
-          </Stack>
+        <Stack>
+          <FormField label="Additional Deliverables">
+            <RHFMultiSelect
+              name="deliverables"
+              placeholder="Select deliverable(s)"
+              chip
+              checkbox
+              options={deliverableOptions}
+            />
+          </FormField>
         </Stack>
 
         {/* Submit Button */}
