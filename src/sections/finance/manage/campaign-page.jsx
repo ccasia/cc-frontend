@@ -1,10 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-// import { Stack, Container, Button } from '@mui/material';
-import { Container } from '@mui/material';
-
-import { paths } from 'src/routes/paths';
+import { Container, Typography } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -13,8 +10,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import { useSettingsContext } from 'src/components/settings';
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
-
 import InvoiceLists from '../invoices-list';
 
 function CampaignPage() {
@@ -56,20 +51,16 @@ function CampaignPage() {
   }, [user, dialog]);
 
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <CustomBreadcrumbs
-        heading="Invoice"
-        links={[
-          { name: 'Dashboard', href: paths.dashboard.finance.root },
-          {
-            name: 'Invoice',
-            href: paths.dashboard.finance.invoice,
-          },
-        ]}
-        sx={{
-          mb: { xs: 3, md: 5 },
-        }}
-      />
+    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
+      <Typography
+        variant="h2"
+        fontFamily="fontSecondaryFamily"
+        fontWeight="normal"
+        gutterBottom
+        sx={{ mb: { xs: 3, md: 5 } }}
+      >
+        Invoice
+      </Typography>
 
       <InvoiceLists />
     </Container>

@@ -1,33 +1,35 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
-import { pdf } from '@react-pdf/renderer';
+import { pdf, PDFViewer } from '@react-pdf/renderer';
 import { FixedSizeList } from 'react-window';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useMemo, useEffect, useCallback } from 'react';
 
-import Box from '@mui/material/Box';
-import { alpha } from '@mui/system';
-import Card from '@mui/material/Card';
-import Stack from '@mui/material/Stack';
-import MenuItem from '@mui/material/MenuItem';
-import Typography from '@mui/material/Typography';
-import LoadingButton from '@mui/lab/LoadingButton';
-import CircularProgress from '@mui/material/CircularProgress';
 import {
+  Box,
+  Card,
+  Grid,
+  alpha,
+  Paper,
+  Stack,
   Table,
+  Button,
   Dialog,
-  Tooltip,
+  Divider,
   TableRow,
+  MenuItem,
   TableBody,
   TableCell,
   TableHead,
-  IconButton,
-  ListItemText,
+  Typography,
+  DialogTitle,
   DialogContent,
+  DialogActions,
   TableContainer,
-  createFilterOptions,
+  CircularProgress,
 } from '@mui/material';
+import LoadingButton from '@mui/lab/LoadingButton';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
@@ -57,9 +59,7 @@ const reasons = [
   'Incorrect Bank Name',
   'Others',
 ];
-
 const LISTBOX_PADDING = 10;
-const OuterElementContext = React.createContext({});
 
 const ListboxComponent = React.forwardRef((props, ref) => {
   // eslint-disable-next-line react/prop-types
@@ -67,26 +67,23 @@ const ListboxComponent = React.forwardRef((props, ref) => {
   const items = React.Children.toArray(children);
 
   const itemCount = items.length;
-
-  const itemSize = 60; // Adjust row height
+  const itemSize = 48;
 
   return (
     <div ref={ref} {...other}>
-      <OuterElementContext.Provider value={other}>
-        <FixedSizeList
-          height={
-            itemCount > 5 ? 5 * itemSize + LISTBOX_PADDING : itemCount * itemSize + LISTBOX_PADDING
-          }
-          width="100%"
-          itemSize={itemSize}
-          itemCount={itemCount}
-          overscanCount={5}
-        >
-          {({ index, style }) => (
-            <div style={{ ...style, top: style.top + LISTBOX_PADDING }}>{items[index]}</div>
-          )}
-        </FixedSizeList>
-      </OuterElementContext.Provider>
+      <FixedSizeList
+        height={
+          itemCount > 5 ? 5 * itemSize + LISTBOX_PADDING : itemCount * itemSize + LISTBOX_PADDING
+        }
+        width="100%"
+        itemSize={itemSize}
+        itemCount={itemCount}
+        overscanCount={5}
+      >
+        {({ index, style }) => (
+          <div style={{ ...style, top: style.top + LISTBOX_PADDING }}>{items[index]}</div>
+        )}
+      </FixedSizeList>
     </div>
   );
 });
@@ -106,8 +103,6 @@ const NewInvoiceSchema = Yup.object().shape({
       Yup.object({
         campaignName: Yup.string().required('Campaign name is required'),
         clientName: Yup.string().required('Client name is required'),
-        // title: Yup.string().required('Title is required'),
-        // service: Yup.string().required('Service is required'),
         quantity: Yup.number()
           .required('Quantity is required')
           .min(1, 'Quantity must be more than 0'),
@@ -121,18 +116,9 @@ const NewInvoiceSchema = Yup.object().shape({
     payTo: Yup.string().required('Pay to is required'),
   }),
   status: Yup.string().required('Status is required'),
-  invoiceFrom: Yup.mixed(),
-  totalAmount: Yup.number(),
-  invoiceNumber: Yup.string(),
   reason: Yup.string().when('status', {
-    is: (val) => val === 'rejected',
+    is: 'rejected',
     then: (s) => s.required('Reason of rejection is required'),
-    otherwise: (s) => s,
-  }),
-  otherReason: Yup.string().when('reason', {
-    is: (val) => val === 'Others',
-    then: (s) => s.required('Reason of rejection is required'),
-    otherwise: (s) => s,
   }),
 });
 
@@ -140,8 +126,11 @@ export default function InvoiceNewEditForm({ id, creators }) {
   const { isLoading, invoice, mutate } = useGetInvoiceById(id);
   const { user } = useAuthContext();
   const dialog = useBoolean();
+  const preview = useBoolean();
   const xeroLoading = useBoolean();
-  const smDown = useResponsive('down', 'sm');
+  const loadingSend = useBoolean();
+  const { enqueueSnackbar } = useSnackbar();
+  const smUp = useResponsive('up', 'sm');
 
   const creatorAgreement = useMemo(
     () => invoice?.user?.creatorAgreement?.find((i) => i.campaignId === invoice.campaignId),
@@ -158,32 +147,30 @@ export default function InvoiceNewEditForm({ id, creators }) {
     return tenant;
   }, [creatorAgreement, xeroInformation]);
 
-  const { enqueueSnackbar } = useSnackbar();
-
-  const loadingSend = useBoolean();
-
-  const creatorList = creators?.campaign?.shortlisted?.map((creator) => ({
-    id: creator.user.id,
-    name: creator.user.name,
-    email: creator.user.email,
-    fullAddress: creator.user.creator.location,
-    phoneNumber: creator.user.phoneNumber,
-    company: creator.user.creator.employment,
-    addressType: 'Home',
-    primary: false,
-    contactId: creator.user.creator.xeroContactId || null,
-  }));
-
-  const generateRandomInvoiceNumber = () => {
-    const randomNumber = Math.floor(1000 + Math.random() * 9000);
-    return `INV-${randomNumber}`;
-  };
+  const creatorList = useMemo(
+    () =>
+      creators?.campaign?.shortlisted?.map((creator) => ({
+        id: creator.user.id,
+        name:
+          invoice?.creator?.user?.paymentForm?.bankAccountName ||
+          invoice?.bankAcc?.payTo ||
+          creator.user.name,
+        email: creator.user.email,
+        fullAddress: creator.user.creator.location,
+        phoneNumber: creator.user.phoneNumber,
+        company: creator.user.creator.employment,
+        addressType: 'Home',
+        primary: false,
+        contactId: creator.user.creator.xeroContactId || null,
+      })),
+    [creators, invoice]
+  );
 
   const defaultValues = useMemo(
     () => ({
-      invoiceNumber: invoice?.invoiceNumber || generateRandomInvoiceNumber(),
-      createDate: new Date(invoice?.createdAt) || new Date(),
-      dueDate: new Date(invoice?.dueDate) || null,
+      invoiceNumber: invoice?.invoiceNumber || `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+      createDate: invoice?.createdAt ? new Date(invoice.createdAt) : new Date(),
+      dueDate: invoice?.dueDate ? new Date(invoice.dueDate) : null,
       status: invoice?.status || 'draft',
       invoiceFrom: invoice?.invoiceFrom || null,
       invoiceTo: invoice?.invoiceTo || [
@@ -222,7 +209,11 @@ export default function InvoiceNewEditForm({ id, creators }) {
       ],
       bankInfo: invoice?.bankAcc || {
         bankName: '',
-        payTo: '',
+        payTo:
+          invoice?.creator?.user?.paymentForm?.bankAccountName ||
+          invoice?.bankAcc?.payTo ||
+          invoice?.creator?.user?.name ||
+          '',
         accountNumber: '',
         accountEmail: '',
       },
@@ -244,18 +235,18 @@ export default function InvoiceNewEditForm({ id, creators }) {
     watch,
     handleSubmit,
     formState: { isSubmitting, isValid },
-    setValue,
   } = methods;
+  const values = watch();
+
+  useEffect(() => {
+    reset(defaultValues);
+  }, [invoice, reset, defaultValues]);
 
   const handleCreateAndSend = handleSubmit(async (data) => {
-    // Check if this is an approved invoice and amount has changed
-    const originalAmount = invoice?.amount || 0;
-    const newAmount = data.totalAmount || 0;
-    const isApprovedInvoice = invoice?.status === 'approved';
-    const hasAmountChanged = Math.abs(originalAmount - newAmount) > 0.01; // Using small threshold for floating point comparison
-
-    // If approved invoice amount changed, set status to draft
-    if (isApprovedInvoice && hasAmountChanged) {
+    if (
+      invoice?.status === 'approved' &&
+      Math.abs((invoice?.amount || 0) - (data.totalAmount || 0)) > 0.01
+    ) {
       data.status = 'draft';
       enqueueSnackbar('Amount changed on approved invoice. Status automatically set to draft.', {
         variant: 'warning',
@@ -272,34 +263,32 @@ export default function InvoiceNewEditForm({ id, creators }) {
     }
 
     loadingSend.onTrue();
-    let newContact;
-
-    if (!invoice.creator.xeroContactId) {
-      newContact = true;
-    } else {
-      newContact = false;
-    }
-
     try {
       await axiosInstance.patch(endpoints.invoice.updateInvoice, {
         ...data,
         invoiceId: id,
-        newContact,
+        newContact: !invoice.creator.xeroContactId,
         xeroContactId: invoice.creator.xeroContactId,
-        reason: data.otherReason || data.reason,
+        reason: data.reason === 'Others' ? data.otherReason : data.reason,
         campaignId: invoice?.campaignId,
       });
-
-      reset();
+      enqueueSnackbar('Invoice Updated Successfully!', { variant: 'success' });
       mutate();
-      loadingSend.onFalse();
-      enqueueSnackbar('Invoice Updated Successfully !', { variant: 'success' });
     } catch (error) {
-      console.log(error);
+      enqueueSnackbar('Failed to update invoice', { variant: 'error' });
+    } finally {
       loadingSend.onFalse();
-      enqueueSnackbar('Failed to send invoice', { variant: 'error' });
     }
   });
+
+  const handleDownload = async () => {
+    const blob = await pdf(<InvoicePDF invoice={invoice} />).toBlob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${values.invoiceNumber}.pdf`;
+    link.click();
+  };
 
   const handleActivateXero = useCallback(async () => {
     try {
@@ -313,273 +302,348 @@ export default function InvoiceNewEditForm({ id, creators }) {
     }
   }, [xeroLoading]);
 
-  const values = watch();
-
-  const filter = createFilterOptions();
-
-  const bankAccount = (
-    <Box>
-      <Typography variant="h6" sx={{ color: 'text.disabled', mt: 3, ml: 2 }}>
-        Bank Information:
-      </Typography>
-      <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} sx={{ p: 3 }}>
-        <RHFAutocomplete
-          name="bankInfo.bankName"
-          ListboxComponent={ListboxComponent}
-          selectOnFocus
-          clearOnBlur
-          options={newBanks?.flatMap((a) => a.banks) || []}
-          getOptionLabel={(option) => option}
-          filterOptions={(options, params) => {
-            const filtered = filter(options, params);
-            return filtered;
-          }}
-          sx={{
-            width: 1,
-            '& .MuiInputBase-root': {
-              bgcolor: 'white',
-              borderRadius: 1,
-              height: { xs: 40, sm: 48 },
-            },
-            '& .MuiInputLabel-root': {
-              display: 'none',
-            },
-            '& .MuiInputBase-input::placeholder': {
-              color: '#B0B0B0',
-              fontSize: { xs: '14px', sm: '16px' },
-              opacity: 1,
-            },
-          }}
-        />
-
-        <RHFTextField
-          label="Recipent Name"
-          name="bankInfo.payTo"
-          required
-          fullWidth
-          value={values.bankInfo?.payTo}
-        />
-        <RHFTextField label="Account Number" name="bankInfo.accountNumber" required fullWidth />
-        <RHFTextField fullWidth required name="bankInfo.accountEmail" label="Account Email" />
-      </Stack>
-    </Box>
-  );
-
-  const handleDownload = async () => {
-    try {
-      const blob = await pdf(<InvoicePDF invoice={invoice} />).toBlob();
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = `${invoice?.invoiceNumber}.pdf`;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(link.href);
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const deliverablesInfo = (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h6" sx={{ color: 'text.disabled', mb: 3 }}>
-        Deliverables Information:
-      </Typography>
-      <TableContainer>
-        <Table size="small">
-          <TableHead>
-            <TableCell
-              sx={{ borderTopLeftRadius: 10, borderBottomLeftRadius: 10, border: 'none' }}
-              align="center"
-            >
-              Type of deliverables
-            </TableCell>
-            <TableCell
-              sx={{ borderTopRightRadius: 10, borderBottomRightRadius: 10, border: 'none' }}
-              align="center"
-            >
-              Quantity
-            </TableCell>
-          </TableHead>
-          <TableBody>
-            {invoice?.deliverables?.map((item) => (
-              <TableRow>
-                <TableCell align="center">
-                  <Label>{item?.type}</Label>
-                </TableCell>
-                <TableCell align="center">{item?.count}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
-  );
-
-  useEffect(() => {
-    reset(defaultValues);
-  }, [reset, defaultValues]);
-
   if (isLoading)
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="80vh">
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
         <CircularProgress />
       </Box>
     );
 
   return (
-    <>
-      <Stack spacing={2}>
-        <Box sx={{ textAlign: 'end' }}>
-          <LoadingButton
-            variant="outlined"
-            startIcon={<Iconify icon="material-symbols:download-rounded" width={18} />}
-            onClick={handleDownload}
-          >
-            Download Invoice
-          </LoadingButton>
-        </Box>
+    <FormProvider methods={methods}>
+      <Stack spacing={3} sx={{ pb: 5 }}>
+        {/* Top Header / Actions */}
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Box>
+            <Typography variant="h4">Invoice Details</Typography>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Status:
+              </Typography>
+              <Label
+                color={
+                  (values.status === 'approved' && 'success') ||
+                  (values.status === 'paid' && 'info') ||
+                  (values.status === 'rejected' && 'error') ||
+                  'default'
+                }
+                variant="soft"
+              >
+                {values.status.toUpperCase()}
+              </Label>
+            </Stack>
+          </Box>
 
-        <FormProvider methods={methods}>
-          <Card sx={{ p: 1, height: '80vh', overflow: 'auto', scrollbarWidth: 'thin' }}>
-            <InvoiceNewEditAddress creators={creatorList} />
+          <Stack direction="row" spacing={1.5}>
+            <LoadingButton
+              variant="outlined"
+              startIcon={<Iconify icon="solar:eye-bold" width={18} />}
+              onClick={preview.onTrue}
+              sx={{
+                border: '1px solid #E7E7E7',
+                borderRadius: '8px',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 2.5,
+              }}
+            >
+              Preview Invoice
+            </LoadingButton>
+            <LoadingButton
+              variant="outlined"
+              startIcon={<Iconify icon="material-symbols:download-rounded" width={18} />}
+              onClick={handleDownload}
+              sx={{
+                border: '1px solid #E7E7E7',
+                borderRadius: '8px',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 2.5,
+              }}
+            >
+              Download Invoice
+            </LoadingButton>
+          </Stack>
+        </Stack>
 
-            <InvoiceNewEditStatusDate />
+        <Grid container spacing={3}>
+          {/* Main Form Area */}
+          <Grid item xs={12} md={9}>
+            <Card sx={{ px: 4, py: 3, borderRadius: 2, overflowY: 'auto' }}>
+              <InvoiceNewEditAddress creators={creatorList} />
 
-            {bankAccount}
+              <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
 
-            {invoice?.deliverables?.length && deliverablesInfo}
+              <InvoiceNewEditStatusDate />
 
-            <InvoiceNewEditDetails />
+              <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
 
-            <Stack direction={{ sm: 'row' }} spacing={2} justifyContent="flex-end">
+              {/* Bank Information Section */}
+              <Box>
+                <Typography
+                  variant="overline"
+                  sx={{ color: 'text.secondary', mb: 2, display: 'block' }}
+                >
+                  Payment Details
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <RHFAutocomplete
+                      name="bankInfo.bankName"
+                      label="Bank Name"
+                      ListboxComponent={ListboxComponent}
+                      options={newBanks?.flatMap((a) => a.banks) || []}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <RHFTextField name="bankInfo.payTo" label="Recipient Name" />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <RHFTextField name="bankInfo.accountNumber" label="Account Number" />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <RHFTextField name="bankInfo.accountEmail" label="Payment Notification Email" />
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
+
+              {/* Items Section */}
+              <InvoiceNewEditDetails />
+            </Card>
+          </Grid>
+
+          {/* Sidebar / Additional Info */}
+          <Grid item xs={12} md={3}>
+            <Stack spacing={3}>
+              {/* Integration Status */}
               {getTenant && (
+                <Paper
+                  variant="outlined"
+                  sx={{ p: 2, bgcolor: alpha('#13B5EA', 0.04), borderColor: alpha('#13B5EA', 0.2) }}
+                >
+                  <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                    <Iconify icon="logos:xero" width={24} sx={{ mt: 0.5 }} />
+                    <Box>
+                      <Typography variant="subtitle2">Xero Connected</Typography>
+                      <Typography
+                        variant="caption"
+                        display="block"
+                        sx={{ color: 'text.secondary', mb: 1 }}
+                      >
+                        Invoice will be synced to:
+                      </Typography>
+                      <Label color="info" variant="soft" sx={{ mb: 1 }}>
+                        {getTenant?.tenantName}
+                      </Label>
+                      <Typography variant="caption" display="block">
+                        Currency: <b>{getTenant?.orgData?.baseCurrency}</b>
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Paper>
+              )}
+
+              {/* Deliverables Summary */}
+              {invoice?.deliverables?.length > 0 && (
+                <Card sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Deliverables
+                  </Typography>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow
+                          sx={{
+                            '& th': {
+                              bgcolor: (theme) => theme.palette.background.neutral,
+                              color: 'text.secondary',
+                              borderBottom: 'none',
+                            },
+                            '& th:first-of-type': {
+                              borderTopLeftRadius: 8,
+                              borderBottomLeftRadius: 8,
+                            },
+                            '& th:last-of-type': {
+                              borderTopRightRadius: 8,
+                              borderBottomRightRadius: 8,
+                            },
+                          }}
+                        >
+                          <TableCell sx={{ pl: 1 }}>Type</TableCell>
+                          <TableCell align="right" sx={{ pr: 1 }}>
+                            Qty
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {invoice.deliverables.map((item, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell sx={{ pl: 1 }}>
+                              <Typography variant="body2">{item.type}</Typography>
+                            </TableCell>
+                            <TableCell align="right" sx={{ pr: 1 }}>
+                              {item.count}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Card>
+              )}
+
+              {/* Rejection Handling */}
+              {values.status === 'rejected' && (
                 <Card
                   sx={{
                     p: 2,
-                    borderRadius: 1 / 2,
-                    bgcolor: (theme) => alpha(theme.palette.secondary.light, 0.2),
-                    color: (theme) => theme.palette.secondary.dark,
-                    display: 'inline-flex',
-                    position: 'relative',
-                    maxWidth: !smDown ? 200 : 1,
+                    border: (theme) => `1px solid ${theme.palette.error.light}`,
+                    bgcolor: alpha('#FF5630', 0.04),
                   }}
                 >
-                  <Iconify
-                    icon="material-symbols:info-outline"
-                    sx={{ position: 'absolute', top: 18, left: 10 }}
-                  />
-                  <Stack spacing={1} marginLeft={2}>
-                    <ListItemText
-                      primary="Organization"
-                      secondary={getTenant?.tenantName
-                        ?.toLowerCase()
-                        .split(' ')
-                        .map((i) => `${i[0]?.toUpperCase()}${i.slice(1)}`)
-                        .join(' ')}
-                      secondaryTypographyProps={{ color: (theme) => theme.palette.secondary.dark }}
-                    />
-                    <ListItemText
-                      primary="Currency"
-                      secondary={getTenant?.orgData?.baseCurrency}
-                      secondaryTypographyProps={{ color: (theme) => theme.palette.secondary.dark }}
-                    />
+                  <Typography variant="subtitle2" color="error" sx={{ mb: 2 }}>
+                    Rejection Reason
+                  </Typography>
+                  <Stack spacing={2}>
+                    <RHFSelect name="reason" label="Select Reason">
+                      {reasons.map((opt) => (
+                        <MenuItem key={opt} value={opt}>
+                          {opt}
+                        </MenuItem>
+                      ))}
+                    </RHFSelect>
+                    {values.reason === 'Others' && (
+                      <RHFTextField name="otherReason" label="Explain Reason" multiline rows={3} />
+                    )}
                   </Stack>
                 </Card>
               )}
 
-              <Stack
-                justifyContent="flex-end"
-                direction={{ sm: 'column', md: 'row' }}
-                gap={2}
-                sx={{ mt: 3 }}
-                alignItems="end"
-              >
-                {values?.status === 'rejected' && (
-                  <>
-                    {invoice?.creator?.user?.paymentForm?.status === 'rejected' ? (
-                      <Box width={1} alignSelf="center" ml={2}>
-                        <Typography variant="subtitle1">
-                          Reason: {invoice?.creator?.user?.paymentForm?.reason}
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <>
-                        {values?.reason !== 'Others' ? (
-                          <RHFSelect
-                            fullWidth
-                            name="reason"
-                            label="Reason for Rejection"
-                            InputLabelProps={{ shrink: true }}
-                            PaperPropsSx={{ textTransform: 'capitalize' }}
-                          >
-                            {reasons.map((option, index) => (
-                              <MenuItem key={index} value={option}>
-                                {option}
-                              </MenuItem>
-                            ))}
-                          </RHFSelect>
-                        ) : (
-                          <Stack direction="row" width={1} spacing={1} alignItems="center">
-                            <Tooltip title="Back">
-                              <IconButton onClick={() => setValue('reason', '')}>
-                                <Iconify icon="majesticons:arrow-left" width={18} />
-                              </IconButton>
-                            </Tooltip>
-                            <RHFTextField
-                              name="otherReason"
-                              placeholder="Others - Reason for Rejection"
-                            />
-                          </Stack>
-                        )}
-                      </>
-                    )}
-                  </>
-                )}
-
-                {invoice?.status !== 'paid' && (
-                  <LoadingButton
-                    size="large"
-                    variant="outlined"
-                    loading={loadingSend.value && isSubmitting}
-                    onClick={handleCreateAndSend}
-                    sx={{
-                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                      width: 180,
-                    }}
-                    disabled={!isValid}
-                  >
-                    {invoice ? 'Update' : 'Create'} & Send
-                  </LoadingButton>
-                )}
-              </Stack>
+              {/* Main Actions Area */}
+              <Box sx={{ pt: 2 }}>
+                {/* {invoice?.status !== 'paid' && ( */}
+                <LoadingButton
+                  fullWidth
+                  size="large"
+                  variant="contained"
+                  color="primary"
+                  loading={loadingSend.value && isSubmitting}
+                  onClick={handleCreateAndSend}
+                  disabled={!isValid}
+                  sx={{
+                    py: 1.5,
+                    fontSize: '1.1rem',
+                    padding: { xs: '4px 8px', sm: '6px 10px' },
+                    borderRadius: '8px',
+                    boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                    backgroundColor: '#1340FF',
+                    color: '#FFFFFF',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    '&:hover': {
+                      backgroundColor: '#133effd3',
+                      boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                    },
+                    '&:active': {
+                      boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+                      transform: 'translateY(1px)',
+                    },
+                  }}
+                >
+                  {invoice ? 'Update & Send' : 'Create & Send'}
+                </LoadingButton>
+                {/* )} */}
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'text.secondary', display: 'block', mt: 2, textAlign: 'center' }}
+                >
+                  Ensure all information is correct before updating.
+                </Typography>
+              </Box>
             </Stack>
-          </Card>
-        </FormProvider>
+          </Grid>
+        </Grid>
       </Stack>
 
-      <Dialog
-        open={dialog.value}
-        onClose={dialog.onFalse}
-        PaperProps={{
-          sx: {
-            borderRadius: 1,
-            p: 1,
-          },
-        }}
-      >
-        <DialogContent>
+      {/* Xero Connection Dialog */}
+      <Dialog open={dialog.value} onClose={dialog.onFalse} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ textAlign: 'center', pt: 4 }}>
+          <Iconify icon="logos:xero" width={48} sx={{ mb: 2 }} />
+          <br />
+          Connect to Xero
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: 'center' }}>
+          <Typography sx={{ color: 'text.secondary' }}>
+            To approve and sync invoices, you must authorize access to your Xero account.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
+          <Button variant="outlined" onClick={dialog.onFalse} sx={{ mr: 1 }}>
+            Cancel
+          </Button>
           <LoadingButton
-            startIcon={<Iconify icon="logos:xero" width={18} />}
-            onClick={handleActivateXero}
+            variant="contained"
             loading={xeroLoading.value}
+            onClick={handleActivateXero}
+            sx={{ bgcolor: '#13B5EA', '&:hover': { bgcolor: '#0e9bc7' } }}
           >
-            Connect to Xero
+            Connect Now
           </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={preview.value}
+        onClose={preview.onFalse}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { height: '80vh' } }}
+      >
+        <DialogActions sx={{ p: 1.5, gap: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<Iconify icon="material-symbols:download-rounded" width={18} />}
+            onClick={() => {
+              handleDownload();
+              preview.onFalse();
+            }}
+            sx={{
+              border: '1px solid #E7E7E7',
+              borderRadius: '8px',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 2.5,
+            }}
+          >
+            Download
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={preview.onFalse}
+            sx={{
+              border: '1px solid #E7E7E7',
+              borderRadius: '8px',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 2.5,
+            }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+        <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+          <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
+            <InvoicePDF invoice={invoice} />
+          </PDFViewer>
         </DialogContent>
       </Dialog>
-    </>
+    </FormProvider>
   );
 }
 

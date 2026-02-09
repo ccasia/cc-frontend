@@ -17,7 +17,7 @@ export default function InvoiceNewEditStatusDate() {
     <Stack
       spacing={2}
       direction={{ xs: 'column', sm: 'row' }}
-      sx={{ p: 3, bgcolor: 'background.neutral' }}
+      sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: '10px' }}
     >
       <RHFTextField
         disabled
@@ -39,6 +39,7 @@ export default function InvoiceNewEditStatusDate() {
             key={option}
             value={option}
             sx={{
+              textTransform: 'capitalize',
               color: (theme) => option === 'rejected' && theme.palette.error.main,
             }}
           >
@@ -59,6 +60,11 @@ export default function InvoiceNewEditStatusDate() {
               field.onChange(newValue);
             }}
             slotProps={{
+              openPickerButton: {
+                sx: {
+                  color: '#1340FF',
+                },
+              },
               textField: {
                 fullWidth: true,
                 error: !!error,
@@ -80,6 +86,11 @@ export default function InvoiceNewEditStatusDate() {
               field.onChange(newValue);
             }}
             slotProps={{
+              openPickerButton: {
+                sx: {
+                  color: '#1340FF',
+                },
+              },
               textField: {
                 fullWidth: true,
                 error: !!error,

@@ -139,6 +139,7 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
             inputProps={{ 'aria-label': 'Filter by status' }}
           >
             <MenuItem value="All">All Status</MenuItem>
+            <MenuItem value="approved">Approved</MenuItem>
             <MenuItem value="paid">Paid</MenuItem>
             <MenuItem value="pending">Pending</MenuItem>
             <MenuItem value="overdue">Overdue</MenuItem>
@@ -209,101 +210,53 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                   {item?.invoiceNumber}
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  {dayjs(item?.date).format('LL')}
+                  {dayjs(item?.date).format('DD MMM YYYY')}
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
                   {formatAmount(item?.amount)}
                 </TableCell>
-                <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  <Label>{item.status}</Label>
-                  {/* <FormControl fullWidth size="small">
-                    <Select
-                      value={item.status}
-                      onChange={(e) => handleStatusChangeInTable(item.id, e.target.value)}
-                      sx={{ textAlign: 'center' }}
-                    >
-                      <MenuItem value="draft">Draft</MenuItem>
-                      <MenuItem value="paid">Paid</MenuItem>
-                      <MenuItem value="pending">Pending</MenuItem>
-                      <MenuItem value="overdue">Overdue</MenuItem>
-                      <MenuItem value="approved">Approved</MenuItem>
-                    </Select>
-                  </FormControl> */}
+                <TableCell>
+                  <Typography
+                    sx={{
+                      textTransform: 'uppercase',
+                      fontWeight: 700,
+                      display: 'inline-block',
+                      px: 1.5,
+                      py: 0.5,
+                      fontSize: '0.75rem',
+                      border: '1px solid',
+                      borderBottom: '3px solid',
+                      borderRadius: 0.8,
+                      bgcolor: 'white',
+                      ...(item?.status === 'paid' && {
+                        color: '#1340FF',
+                        borderColor: '#1340FF',
+                      }),
+                      ...(item?.status === 'approved' && {
+                        color: '#1ABF66',
+                        borderColor: '#1ABF66',
+                      }),
+                      ...(item?.status === 'pending' && {
+                        color: '#f19f39',
+                        borderColor: '#f19f39',
+                      }),
+                      ...(item?.status === 'overdue' && {
+                        color: '#ff4842',
+                        borderColor: '#ff4842',
+                      }),
+                      ...(item?.status === 'draft' && {
+                        color: '#637381',
+                        borderColor: '#637381',
+                      }),
+                      ...(item?.status === 'rejected' && {
+                        color: '#ff4842',
+                        borderColor: '#ff4842',
+                      }),
+                    }}
+                  >
+                    {item.status}
+                  </Typography>
                 </TableCell>
-                {/* <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  {item.status === 'overdue' && (
-                    <Stack>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Iconify icon="eva:eye-outline" width={20} />}
-                        onClick={() => console.log(`Viewing ${item.invoice}`)}
-                        sx={{
-                          color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                          borderColor: theme.palette.grey[150],
-                          mr: 1,
-                        }}
-                      >
-                        View
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        sx={{ color: '#fbc02d', borderColor: '#fbc02d' }}
-                        startIcon={<Iconify icon="eva:alert-circle-outline" width={20} />}
-                        onClick={() => handleSendReminder(item.invoice)}
-                      >
-                        Notify
-                      </Button>
-                    </Stack>
-                  )}
-                  {item.status === 'pending' && (
-                    <Stack>
-                      <Button
-                        variant="outlined"
-                        sx={{
-                          color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                          borderColor: theme.palette.grey[150],
-                          mr: 1,
-                        }}
-                        startIcon={<Iconify icon="eva:eye-outline" width={20} />}
-                        onClick={() => console.log(`Viewing ${item.invoice}`)}
-                      >
-                        View
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="success"
-                        startIcon={<Iconify icon="eva:checkmark-outline" width={20} />}
-                        onClick={() => handleStatusChangeInTable(item.id, 'Paid')}
-                      >
-                        Paid
-                      </Button>
-                    </Stack>
-                  )}
-                  {item.status !== 'overdue' && item.status !== 'pending' && (
-                    <>
-                      <Button
-                        variant="outlined"
-                        sx={{
-                          color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                          borderColor: theme.palette.grey[150],
-                          mr: 1,
-                        }}
-                        startIcon={<Iconify icon="eva:eye-outline" width={20} />}
-                        onClick={() => console.log(`Viewing ${item.invoice}`)}
-                      >
-                        View
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        startIcon={<Iconify icon="eva:download-outline" width={20} />}
-                        onClick={() => handleDownload(item.invoice)}
-                      >
-                        PDF
-                      </Button>
-                    </>
-                  )}
-                </TableCell> */}
               </TableRow>
             ))}
           </TableBody>

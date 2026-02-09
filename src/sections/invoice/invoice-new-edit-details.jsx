@@ -179,33 +179,32 @@ export default function InvoiceNewEditDetails() {
   );
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h6" sx={{ color: 'text.disabled', mb: 3 }}>
-        Details:
+    <Box>
+      <Typography variant="overline" sx={{ color: 'text.secondary', mb: 2, display: 'block' }}>
+        Details
       </Typography>
 
       <Stack divider={<Divider flexItem sx={{ borderStyle: 'dashed' }} />} spacing={3}>
         {fields.map((item, index) => (
-          <Stack key={item.id} alignItems="flex-end" spacing={1.5}>
+          <Stack key={item.id} alignItems="flex-end" spacing={2}>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ width: 1 }}>
               <RHFTextField
-                size="small"
                 name={`items[${index}].clientName`}
                 label="Client Name"
                 InputLabelProps={{ shrink: true }}
               />
 
               <RHFTextField
-                size="small"
                 name={`items[${index}].campaignName`}
                 label="Campaign Name"
                 InputLabelProps={{ shrink: true }}
               />
               
-              <FormControl sx={{ minWidth: 200 }}>
+              <FormControl sx={{ minWidth: 220 }}>
                 <InputLabel id={`service-label-${index}`}>Service</InputLabel>
                 <Select
                   labelId={`service-label-${index}`}
+                  label="Service"
                   multiple
                   value={selectedServicesList}
                   onChange={(e) => {
@@ -220,9 +219,8 @@ export default function InvoiceNewEditDetails() {
                     }
                   }}
                   renderValue={(selected) => selected.join(', ')}
-                  size="small"
                   sx={{
-                    minWidth: 200,
+                    minWidth: 220,
                     '& .MuiSelect-select': {
                       display: 'flex',
                       alignItems: 'center',
@@ -271,17 +269,15 @@ export default function InvoiceNewEditDetails() {
 
               {(values.items[index]?.service?.includes('Others') || selectedServicesList.includes('Others')) && (
                 <RHFTextField
-                  size="small"
                   name={`items[${index}].description`}
                   label="Specify Others"
                   placeholder="Enter details for Others"
                   InputLabelProps={{ shrink: true }}
-                  sx={{ maxWidth: { md: 200 } }}
+                  sx={{ maxWidth: { md: 220 } }}
                 />
               )}
 
               <RHFTextField
-                size="small"
                 type="number"
                 name={`items[${index}].price`}
                 label="Price"
@@ -294,35 +290,7 @@ export default function InvoiceNewEditDetails() {
                     </InputAdornment>
                   ),
                 }}
-                sx={{ maxWidth: { md: 100 } }}
-              />
-
-              <RHFTextField
-                disabled
-                size="small"
-                type="number"
-                name={`items[${index}].total`}
-                label="Total"
-                placeholder="0.00"
-                value={
-                  Number(values.items[index]?.total) === 0
-                    ? ''
-                    : Number(values.items[index]?.total)?.toFixed(2)
-                }
-                onChange={(event) => handleChangePrice(event, index)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>{displayCurrency}</Box>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  maxWidth: { md: 120 },
-                  [`& .${inputBaseClasses.input}`]: {
-                    textAlign: { md: 'right' },
-                  },
-                }}
+                sx={{ maxWidth: { md: 120 } }}
               />
             </Stack>
           </Stack>
