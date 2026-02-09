@@ -86,7 +86,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
   const companyId = campaign?.company?.id || campaign?.brand?.company?.id;
 
   // Fetch clients for this company using the new hook
-  const { clients: campaignClients, isLoading: clientsLoading } = useGetClients(companyId);
+  const { clients: campaignClients } = useGetClients(companyId);
 
   // Warning dialog state for v4 submission toggle
   const [v4WarningOpen, setV4WarningOpen] = useState(false);
@@ -108,10 +108,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
         photoURL: ca.admin?.user?.photoURL,
         role: ca.admin?.role?.name || ca.admin?.user.role,
       }));
-  }, [campaign]);
-
-  console.log('existing managers:', existingManagers);
-  console.log('campaign clients:', campaignClients);
+  }, [campaign?.campaignAdmin]);
 
   // UGC_VIDEOS is the default/base deliverable
   const existingDeliverables = useMemo(() => {
@@ -121,7 +118,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
     if (campaign?.ads) delivs.push('ADS');
     if (campaign?.crossPosting) delivs.push('CROSS_POSTING');
     return delivs;
-  }, [campaign]);
+  }, [campaign?.rawFootage, campaign?.photos, campaign?.ads, campaign?.crossPosting]);
 
   const defaultValues = useMemo(
     () => ({
@@ -130,14 +127,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
       deliverables: existingDeliverables,
       isV4Submission: campaign?.submissionVersion === 'v4',
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      campaign?.id,
-      campaign?.submissionVersion,
-      campaign?.campaignType,
-      JSON.stringify(existingManagers),
-      JSON.stringify(existingDeliverables),
-    ]
+    [existingManagers, campaign?.submissionVersion, campaign?.campaignType, existingDeliverables]
   );
 
   const methods = useForm({
@@ -247,6 +237,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
               checked={isV4Submission || false}
               onChange={handleV4ToggleChange}
               color="primary"
+              disabled
             />
           </Stack>
           <Typography variant="caption" fontWeight={400} color="text.secondary">
