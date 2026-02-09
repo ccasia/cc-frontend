@@ -249,7 +249,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
           </Typography>
         </Stack>
 
-        <Stack direction="row" spacing={2}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           {/* Left column */}
           <Stack flex={1} spacing={2}>
             <FormField label="Campaign Managers">
