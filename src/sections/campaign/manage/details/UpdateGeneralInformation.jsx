@@ -165,7 +165,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
 
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
-      <Box sx={{ maxWidth: '80%' }}>
+      <Box sx={{ maxWidth: { xs: '100%', sm: '80%' } }}>
         {/* Campaign Title & Industry - Two Columns */}
         <Grid container spacing={2} mb={2}>
           <Grid item xs={12} sm={6}>
