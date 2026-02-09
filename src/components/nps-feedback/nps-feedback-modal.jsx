@@ -278,7 +278,7 @@ export default function NpsFeedbackModal({ open, onSuccess, onMutate }) {
                   lineHeight: 1.2,
                 }}
               >
-                How would you rate our platform?
+                How would you rate your experience?
               </Typography>
 
               {/* Animated Stars */}
@@ -287,7 +287,7 @@ export default function NpsFeedbackModal({ open, onSuccess, onMutate }) {
               {/* Feedback field */}
               <Box sx={{ width: '100%' }}>
                 <Typography variant="body2" sx={{ color: '#636366', mb: 0.75 }}>
-                  What&apos;s one thing we could do to make this better?
+                  What&apos;s the main reason for your rating?
                 </Typography>
                 <TextField
                   fullWidth
