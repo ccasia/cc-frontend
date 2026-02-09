@@ -17,14 +17,27 @@ import StyledMarkdown from './styles';
 
 // ----------------------------------------------------------------------
 
-export default function Markdown({ sx, ...other }) {
+// Convert plain URLs in text to HTML anchor tags so rehypeRaw renders them as clickable links.
+// Skips URLs already inside markdown links ](url) or HTML href="url" attributes.
+const linkifyContent = (text) => {
+  if (!text || typeof text !== 'string') return text;
+  return text.replace(
+    /(?<!\]\()(?<!="|=')(https?:\/\/[^\s<>)"']+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+  );
+};
+
+export default function Markdown({ sx, children, ...other }) {
   return (
     <StyledMarkdown sx={sx}>
       <ReactMarkdown
-        rehypePlugins={[rehypeRaw, rehypeHighlight, [remarkGfm, { singleTilde: false }]]}
+        remarkPlugins={[[remarkGfm, { singleTilde: false }]]}
+        rehypePlugins={[rehypeRaw, rehypeHighlight]}
         components={components}
         {...other}
-      />
+      >
+        {linkifyContent(children)}
+      </ReactMarkdown>
     </StyledMarkdown>
   );
 }
