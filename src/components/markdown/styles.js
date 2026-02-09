@@ -6,6 +6,10 @@ const StyledMarkdown = styled('div')(({ theme }) => {
   const lightMode = theme.palette.mode === 'light';
 
   return {
+    // Prevent long unbroken strings (URLs) from overflowing
+    overflowWrap: 'anywhere',
+    wordBreak: 'break-word',
+
     // Text
     h1: { margin: 0, ...theme.typography.h1 },
     h2: { margin: 0, ...theme.typography.h2 },

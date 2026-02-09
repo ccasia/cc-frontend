@@ -974,7 +974,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
         </Stack>
 
         {/* Right Column */}
-        <Stack sx={{ flex: { xs: 1, md: 1 } }}>
+        <Stack sx={{ flex: { xs: 1, md: 1 }, minWidth: 0 }}>
           {/* DELIVERABLES */}
           <Box sx={{ ...BoxStyle, mt: 1 }}>
             <Box className="header">
@@ -1295,6 +1295,8 @@ const CampaignDetailContentClient = ({ campaign }) => {
                         fontSize: '0.8rem',
                         color: '#203ff5',
                         textDecoration: 'none',
+                        overflowWrap: 'anywhere',
+                        whiteSpace: 'normal',
                         '&:hover': {
                           textDecoration: 'underline',
                         },
