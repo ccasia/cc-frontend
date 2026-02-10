@@ -263,16 +263,48 @@ export default function InvoiceNewEditForm({ id, creators }) {
     }
 
     loadingSend.onTrue();
-    try {
-      await axiosInstance.patch(endpoints.invoice.updateInvoice, {
+    let newContact;
+
+    if (!invoice.creator.xeroContactId) {
+      newContact = true;
+    } else {
+      newContact = false;
+    }
+
+    const formData = new FormData();
+
+    const pdfBlob = await pdf(<InvoicePDF invoice={invoice} />).toBlob();
+    
+    formData.append('file', pdfBlob, `Invoice-${id}.pdf`);
+    formData.append(
+      'data',
+      JSON.stringify({
         ...data,
         invoiceId: id,
         newContact: !invoice.creator.xeroContactId,
         xeroContactId: invoice.creator.xeroContactId,
         reason: data.reason === 'Others' ? data.otherReason : data.reason,
         campaignId: invoice?.campaignId,
+      })
+    );
+
+    try {
+      // await axiosInstance.patch(endpoints.invoice.updateInvoice, {
+      // ...data,
+      // invoiceId: id,
+      // newContact,
+      // xeroContactId: invoice.creator.xeroContactId,
+      // reason: data.otherReason || data.reason,
+      // campaignId: invoice?.campaignId,
+      // });
+
+      await axiosInstance.patch(endpoints.invoice.updateInvoice, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-      enqueueSnackbar('Invoice Updated Successfully!', { variant: 'success' });
+
+      reset();
       mutate();
     } catch (error) {
       enqueueSnackbar('Failed to update invoice', { variant: 'error' });
