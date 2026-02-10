@@ -2,15 +2,7 @@ import PropTypes from 'prop-types';
 import { memo, useCallback, useMemo } from 'react';
 
 import Stack from '@mui/material/Stack';
-import {
-  Select,
-  MenuItem,
-  TextField,
-  IconButton,
-  InputLabel,
-  FormControl,
-  InputAdornment,
-} from '@mui/material';
+import { MenuItem, TextField, IconButton, InputAdornment } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
@@ -34,10 +26,7 @@ function InvoiceTableToolbar({ filters, onFilters, campaigns }) {
   );
 
   // OPTIMIZED: Memoize campaigns list to prevent unnecessary re-renders
-  const campaignOptions = useMemo(
-    () => campaigns || [],
-    [campaigns]
-  );
+  const campaignOptions = useMemo(() => campaigns || [], [campaigns]);
 
   // OPTIMIZED: Memoize sx objects to prevent recreation on every render
   const stackSx = useMemo(
@@ -155,7 +144,7 @@ function InvoiceTableToolbar({ filters, onFilters, campaigns }) {
     },
     [onFilters]
   );
-  
+
   const handleFilterCurrency = useCallback(
     (e) => {
       onFilters('currency', e.target.value);

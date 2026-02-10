@@ -44,7 +44,6 @@ export default function InvoiceAnalytic({ title, total, icon, color, percent, pr
       </Stack>
 
       <Stack spacing={0.5} alignItems="flex-start">
-        {' '}
         {/* Align text to the left */}
         <Typography variant="subtitle1">{title}</Typography>
         <Box component="span" sx={{ color: 'text.disabled', typography: 'body2' }}>

@@ -1,30 +1,34 @@
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
-  Button,
   Card,
   Table,
-  Stack,
+  alpha,
+  Button,
   Dialog,
+  Tooltip,
   Checkbox,
-  TableBody,
   TableRow,
+  TableBody,
   TableCell,
   TableHead,
+  IconButton,
   DialogContent,
   TableContainer,
-  Typography,
   CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useGetAllInvoiceStats from 'src/hooks/use-get-all-invoice-stats';
 
-import Scrollbar from 'src/components/scrollbar';
+import { useGetAllInvoices } from 'src/api/invoices';
+
 import Iconify from 'src/components/iconify';
+import Scrollbar from 'src/components/scrollbar';
 import {
   useTable,
   emptyRows,
@@ -33,12 +37,11 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
-import { useGetAllInvoices } from 'src/api/invoices';
-import useGetAllInvoiceStats from 'src/hooks/use-get-all-invoice-stats';
 import InvoiceItem from './invoice-item';
 import InvoiceTableToolbar from './invoice-table-toolbar';
 import InvoiceNewEditForm from '../invoice/invoice-new-edit-form';
 import InvoiceTableFiltersResult from './invoice-table-filters-result';
+import InvoiceConfirmationDialog from './dialog/invoice-confirmation-dialog';
 
 const defaultFilters = {
   name: '',
@@ -49,7 +52,7 @@ const defaultFilters = {
 };
 
 const TABLE_HEAD = [
-  { id: 'checkbox', label: '', width: 48, hideSortIcon: true },
+  // { id: 'checkbox', label: '', width: 48, hideSortIcon: true },
   { id: 'invoiceNumber', label: 'Invoice ID', width: 180, hideSortIcon: false },
   { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true },
   { id: 'creatorName', label: 'Creator Name', width: 180, hideSortIcon: true },
@@ -65,6 +68,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const editDialog = useBoolean();
   const [selectedId, setSelectedId] = useState('');
   const [selectedData, setSelectedData] = useState();
+  const confirmationDialog = useBoolean();
 
   const smUp = useResponsive('up', 'sm');
   const table = useTable({ defaultRowsPerPage: 5 }); // Default to 5
@@ -94,11 +98,12 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   // Use paginated data if available, otherwise fallback to prop
   // Wait for data to load - if invoicesData is undefined, we're still loading
   // Once loaded, invoicesData will be an array (empty or with items)
-  const invoices = invoicesData !== undefined 
-    ? invoicesData 
-    : (invoicesProp && invoicesProp.length > 0) 
-      ? invoicesProp 
-      : [];
+  const invoices =
+    invoicesData !== undefined
+      ? invoicesData
+      : invoicesProp && invoicesProp.length > 0
+        ? invoicesProp
+        : [];
 
   const campaigns = useMemo(() => {
     const data = invoices?.map((invoice) => invoice?.campaign?.name);
@@ -126,7 +131,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   // Show "No Data" if:
   // 1. Not loading AND no filtered data AND filters are reset (no active filters)
   // 2. Not loading AND no filtered data (even with filters)
-  const notFound = (!invoicesLoading && !dataFiltered?.length);
+  const notFound = !invoicesLoading && !dataFiltered?.length;
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -159,10 +164,9 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   // Create TABS array using backend stats - always use backend stats for accuracy
   const TABS = useMemo(() => {
-
     // Check if stats are loaded and have counts
     if (invoiceStats && invoiceStats.counts) {
-      const counts = invoiceStats.counts;
+      const { counts } = invoiceStats;
       return [
         { value: 'all', label: 'All', count: counts.total ?? 0 },
         { value: 'paid', label: 'Paid', count: counts.paid ?? 0 },
@@ -173,7 +177,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         { value: 'rejected', label: 'Rejected', count: counts.rejected ?? 0 },
       ];
     }
-    
+
     // Show 0 while loading or if there's an error (prevents showing incorrect counts)
     return [
       { value: 'all', label: 'All', count: 0 },
@@ -184,7 +188,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       { value: 'draft', label: 'Draft', count: 0 },
       { value: 'rejected', label: 'Rejected', count: 0 },
     ];
-  }, [invoiceStats, statsLoading]);
+  }, [invoiceStats]);
 
   const openEditInvoice = useCallback(
     (id, data) => {
@@ -305,46 +309,84 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                 }}
               >
                 <TableHead>
-                  <TableRow>
+                  <TableRow sx={{ height: 50 }}>
+                    {/* Checkbox column */}
+                    <TableCell
+                      padding="checkbox"
+                      sx={{
+                        borderRadius: table.selected.length ? '10px 0 0 10px' : '10px 0 0 10px',
+                        bgcolor: (theme) =>
+                          !table.selected.length
+                            ? '#f5f5f5'
+                            : alpha(theme.palette.success.light, 0.5),
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <Checkbox
+                        indeterminate={
+                          table.selected.length > 0 && table.selected.length < dataFiltered.length
+                        }
+                        checked={
+                          dataFiltered.length > 0 && table.selected.length === dataFiltered.length
+                        }
+                        onChange={(event) =>
+                          table.onSelectAllRows(
+                            event.target.checked,
+                            dataFiltered.map((row) => row.id)
+                          )
+                        }
+                      />
+                    </TableCell>
+                    {/* When rows are selected */}
+
                     {TABLE_HEAD.map((headCell, index) => (
                       <TableCell
                         key={headCell.id}
-                        padding={headCell.id === 'checkbox' ? 'checkbox' : 'normal'}
                         sx={{
                           py: 1,
                           color: '#221f20',
                           fontWeight: 600,
                           width: headCell.width,
-                          ...(index === 0 && {
-                            borderRadius: '10px 0 0 10px',
-                          }),
-                          ...(index === TABLE_HEAD.length - 1 && {
-                            borderRadius: '0 10px 10px 0',
-                          }),
-                          bgcolor: '#f5f5f5',
+                          bgcolor: (theme) =>
+                            !table.selected.length
+                              ? '#f5f5f5'
+                              : alpha(theme.palette.success.light, 0.5),
                           whiteSpace: 'nowrap',
                           borderBottom: '1px solid',
                           borderColor: 'divider',
+                          ...(index === TABLE_HEAD.length - 1 && {
+                            borderRadius: '0 10px 10px 0',
+                          }),
                         }}
                       >
-                        {headCell.id === 'checkbox' ? (
-                          <Checkbox
-                            indeterminate={
-                              table.selected.length > 0 && table.selected.length < dataFiltered.length
-                            }
-                            checked={
-                              dataFiltered.length > 0 && table.selected.length === dataFiltered.length
-                            }
-                            onChange={(event) =>
-                              table.onSelectAllRows(
-                                event.target.checked,
-                                dataFiltered.map((row) => row.id)
-                              )
-                            }
-                          />
-                        ) : (
-                          headCell.label
-                        )}
+                        {!table.selected.length
+                          ? headCell.label
+                          : index === TABLE_HEAD.length - 1 && (
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyItems: 'center',
+                                  gap: 1,
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <Tooltip title="Approve">
+                                  <IconButton
+                                    size="small"
+                                    color="success"
+                                    onClick={confirmationDialog.onTrue}
+                                  >
+                                    <Iconify icon="iconamoon:send-fill" width={18} />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Reject">
+                                  <IconButton size="small" color="success">
+                                    <Iconify icon="rivet-icons:ban" width={17} />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
+                            )}
                       </TableCell>
                     ))}
                   </TableRow>
@@ -372,7 +414,11 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
                       <TableEmptyRows
                         height={denseHeight}
-                        emptyRows={emptyRows(table.page, table.rowsPerPage, pagination?.total || dataFiltered.length)}
+                        emptyRows={emptyRows(
+                          table.page,
+                          table.rowsPerPage,
+                          pagination?.total || dataFiltered.length
+                        )}
                       />
 
                       <TableNoData
@@ -420,6 +466,14 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           <InvoiceNewEditForm id={selectedId} creators={selectedData} />
         </DialogContent>
       </Dialog>
+
+      {confirmationDialog.value && (
+        <InvoiceConfirmationDialog
+          open={confirmationDialog.value}
+          onClose={confirmationDialog.onFalse}
+          selectedInvoices={table.selected}
+        />
+      )}
     </Box>
   );
 };
@@ -484,14 +538,13 @@ function applyFilter({ inputData, comparator, filters }) {
   if (status !== 'all') {
     inputData = inputData.filter((item) => item.status === status);
   }
-  
+
   // Filter by currency
   if (currency) {
     inputData = inputData.filter((item) => {
       // Check for currency in different possible locations
-      const invoiceCurrency = item.currency || 
-                            item.task?.currency || 
-                            (item.items && item.items[0]?.currency);
+      const invoiceCurrency =
+        item.currency || item.task?.currency || (item.items && item.items[0]?.currency);
       return invoiceCurrency === currency;
     });
   }

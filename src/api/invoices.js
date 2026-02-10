@@ -8,7 +8,17 @@ import { fetcher, endpoints } from 'src/utils/axios';
  * @param {object} options - Query options (page, limit, status, currency, search, campaignName, startDate, endDate)
  */
 export const useGetAllInvoices = (options = {}) => {
-  const { page = 1, limit = 50, status, currency, search, campaignName, startDate, endDate } = options;
+  const {
+    page = 1,
+    limit = 50,
+    status,
+    currency,
+    search,
+    campaignName,
+    startDate,
+    endDate,
+    ids,
+  } = options;
 
   // Build query string
   const queryParams = new URLSearchParams();
@@ -20,6 +30,7 @@ export const useGetAllInvoices = (options = {}) => {
   if (campaignName) queryParams.append('campaignName', campaignName);
   if (startDate) queryParams.append('startDate', startDate);
   if (endDate) queryParams.append('endDate', endDate);
+  if (ids?.length) queryParams.append('invoiceIds', ids);
 
   const queryString = queryParams.toString();
   const url = `${endpoints.invoice.getAll}${queryString ? `?${queryString}` : ''}`;

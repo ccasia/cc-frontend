@@ -19,38 +19,38 @@ import { RHFTextField } from 'src/components/hook-form';
 // ----------------------------------------------------------------------
 
 export default function InvoiceNewEditDetails() {
-  const { control, setValue, watch, resetField, getValues } = useFormContext();
+  const { control, setValue, watch, getValues } = useFormContext();
 
-  const { fields, remove } = useFieldArray({
+  const { fields } = useFieldArray({
     control,
     name: 'items',
   });
 
   const values = watch();
-  
+
   // Parse existing services from the invoice data
   const parseExistingServices = () => {
     const items = getValues('items') || [];
     if (!items.length) return [];
-    
+
     const item = items[0];
     if (!item) return [];
-    
+
     // Check if service is a string that might contain multiple services
     if (item.service && typeof item.service === 'string') {
       // Split by comma and trim each service
-      return item.service.split(',').map(s => s.trim());
+      return item.service.split(',').map((s) => s.trim());
     }
-    
+
     return [];
   };
-  
+
   // Get the list of selected services
   const selectedServices = parseExistingServices();
 
   // State to track selected services
   const [selectedServicesList, setSelectedServicesList] = useState(selectedServices);
-  
+
   // State to control dropdown visibility
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -72,7 +72,7 @@ export default function InvoiceNewEditDetails() {
   // Get the currency code and symbol
   const currencyCode = values.items[0]?.currency || values.currency || 'MYR';
   const currencySymbol = values.items[0]?.currencySymbol || getCurrencySymbol(currencyCode);
-  
+
   // For display in the UI
   const displayCurrency = currencySymbol || currencyCode || '';
 
@@ -83,72 +83,27 @@ export default function InvoiceNewEditDetails() {
   useEffect(() => {
     setValue('totalAmount', totalAmount);
   }, [setValue, totalAmount]);
-  
+
   // Initialize selectedServicesList with the parsed services when component mounts
   useEffect(() => {
     setSelectedServicesList(selectedServices);
   }, [selectedServices]);
-  
+
   // Handle clicking outside to close dropdown
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = () => {
       if (dropdownOpen) {
         setDropdownOpen(false);
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [dropdownOpen]);
 
-  const handleClearService = useCallback(
-    (index) => {
-      resetField(`items[${index}].quantity`);
-      resetField(`items[${index}].price`);
-      resetField(`items[${index}].total`);
-    },
-    [resetField]
-  );
-  
   // Handle toggling a service on/off
-  const handleToggleService = useCallback(
-    (index, serviceName, servicePrice) => {
-      // Create a copy of the current selected services
-      const updatedServices = [...selectedServicesList];
-      
-      // Check if the service is already selected
-      const serviceIndex = updatedServices.indexOf(serviceName);
-      
-      if (serviceIndex === -1) {
-        // Add the service if not already selected
-        updatedServices.push(serviceName);
-      } else {
-        // Remove the service if already selected
-        updatedServices.splice(serviceIndex, 1);
-      }
-      
-      // Update the state with the new selection
-      setSelectedServicesList(updatedServices);
-      
-      // Update the form field with the comma-separated list of services
-      setValue(`items[${index}].service`, updatedServices.join(', '));
-      
-      // If this is the first service being selected, set the price
-      if (updatedServices.length === 1 && servicePrice > 0) {
-        setValue(`items[${index}].price`, servicePrice);
-        setValue(`items[${index}].total`, servicePrice);
-      }
-      
-      // If Others is selected, make sure the description field is visible
-      // Otherwise, clear the description field
-      if (!updatedServices.includes('Others')) {
-        setValue(`items[${index}].description`, '');
-      }
-    },
-    [selectedServicesList, setValue]
-  );
 
   const handleChangePrice = useCallback(
     (event, index) => {
@@ -201,7 +156,7 @@ export default function InvoiceNewEditDetails() {
                 label="Campaign Name"
                 InputLabelProps={{ shrink: true }}
               />
-              
+
               <FormControl sx={{ minWidth: 200 }}>
                 <InputLabel id={`service-label-${index}`}>Service</InputLabel>
                 <Select
@@ -212,7 +167,7 @@ export default function InvoiceNewEditDetails() {
                     const newValues = e.target.value;
                     setSelectedServicesList(newValues);
                     setValue(`items[${index}].service`, newValues.join(', '));
-                    
+
                     // If Others is selected, make sure the description field is visible
                     // Otherwise, clear the description field
                     if (!newValues.includes('Others')) {
@@ -234,10 +189,17 @@ export default function InvoiceNewEditDetails() {
                     { id: 2, name: 'Ads', price: 0 },
                     { id: 3, name: 'Cross Posting', price: 0 },
                     { id: 4, name: 'Reimbursement', price: 0 },
-                    { id: 5, name: 'Others', price: 0 }
+                    { id: 5, name: 'Others', price: 0 },
                   ].map((service) => (
                     <MenuItem key={service.id} value={service.name}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                        }}
+                      >
                         {service.name}
                         {selectedServicesList.includes(service.name) && (
                           <Box
@@ -253,7 +215,11 @@ export default function InvoiceNewEditDetails() {
                               ml: 1,
                             }}
                           >
-                            <Iconify icon="eva:checkmark-fill" width={16} sx={{ color: 'common.white' }} />
+                            <Iconify
+                              icon="eva:checkmark-fill"
+                              width={16}
+                              sx={{ color: 'common.white' }}
+                            />
                           </Box>
                         )}
                       </Box>
@@ -263,13 +229,14 @@ export default function InvoiceNewEditDetails() {
               </FormControl>
 
               {/* Hidden field to store the actual value */}
-              <input 
-                type="hidden" 
-                name={`items[${index}].service`} 
-                value={selectedServicesList.join(', ')} 
+              <input
+                type="hidden"
+                name={`items[${index}].service`}
+                value={selectedServicesList.join(', ')}
               />
 
-              {(values.items[index]?.service?.includes('Others') || selectedServicesList.includes('Others')) && (
+              {(values.items[index]?.service?.includes('Others') ||
+                selectedServicesList.includes('Others')) && (
                 <RHFTextField
                   size="small"
                   name={`items[${index}].description`}
@@ -290,7 +257,9 @@ export default function InvoiceNewEditDetails() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>{displayCurrency}</Box>
+                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>
+                        {displayCurrency}
+                      </Box>
                     </InputAdornment>
                   ),
                 }}
@@ -313,7 +282,9 @@ export default function InvoiceNewEditDetails() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>{displayCurrency}</Box>
+                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>
+                        {displayCurrency}
+                      </Box>
                     </InputAdornment>
                   ),
                 }}

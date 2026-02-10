@@ -210,9 +210,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
         {
           campaignName: '',
           clientName: '',
-          // currency: '',
-          // title: '',
-          // description: '',
           service: '',
           quantity: 1,
           currency: '',
@@ -283,7 +280,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
     const formData = new FormData();
 
     const pdfBlob = await pdf(<InvoicePDF invoice={invoice} />).toBlob();
-    
+
     formData.append('file', pdfBlob, `Invoice-${id}.pdf`);
     formData.append(
       'data',
