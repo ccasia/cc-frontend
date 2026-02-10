@@ -1814,14 +1814,21 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                                       border: '1px solid #E7E7E7',
                                       borderBottom: '3px solid #E7E7E7',
                                       borderRadius: 1,
-                                      px: 1.5,
+                                      pl: 0.75,
+                                      pr: 0.75,
                                       py: 0.5,
                                       fontWeight: 500,
                                       fontSize: '0.875rem',
-                                      gap: 0.5,
-                                      maxWidth: 180,
+                                      gap: 0.75,
+                                      maxWidth: 210,
                                     }}
                                   >
+                                    <Avatar
+                                      src={row.creator?.photoURL}
+                                      sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: '#e0e0e0', flexShrink: 0 }}
+                                    >
+                                      {row.creator?.name?.charAt(0)}
+                                    </Avatar>
                                     <Box
                                       component="span"
                                       sx={{
@@ -1838,7 +1845,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                                         e.stopPropagation();
                                         handleCreatorRowChange(row.id, null);
                                       }}
-                                      sx={{ p: 0, ml: 0.5, flexShrink: 0 }}
+                                      sx={{ p: 0, flexShrink: 0 }}
                                     >
                                       <Iconify icon="mdi:close" width={16} sx={{ color: '#636366' }} />
                                     </IconButton>
