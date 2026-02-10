@@ -122,7 +122,7 @@ const NewInvoiceSchema = Yup.object().shape({
   }),
 });
 
-export default function InvoiceNewEditForm({ id, creators }) {
+export default function InvoiceNewEditForm({ id, creators, onClose, mutateInvoices }) {
   const { isLoading, invoice, mutate } = useGetInvoiceById(id);
   const { user } = useAuthContext();
   const dialog = useBoolean();
@@ -303,11 +303,14 @@ export default function InvoiceNewEditForm({ id, creators }) {
           'Content-Type': 'multipart/form-data',
         },
       });
-      enqueueSnackbar('Invoice Updated Successfully!', { variant: 'success' });
-      mutate();
+
+      reset();
+      onClose?.();
+      enqueueSnackbar('Invoice updated', { variant: 'success' });
+
+      if (mutateInvoices) mutateInvoices();
     } catch (error) {
       enqueueSnackbar('Failed to update invoice', { variant: 'error' });
-    } finally {
       loadingSend.onFalse();
     }
   });
@@ -681,4 +684,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
 InvoiceNewEditForm.propTypes = {
   id: PropTypes.string,
   creators: PropTypes.object,
+  onClose: PropTypes.func,
+  mutateInvoices: PropTypes.func,
 };
