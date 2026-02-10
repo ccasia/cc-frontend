@@ -574,7 +574,11 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   const changeInvoiceStatus = useCallback(() => {}, []);
 
-  const { stats: invoiceStats, isLoading: statsLoading } = useGetAllInvoiceStats();
+  const {
+    stats: invoiceStats,
+    isLoading: statsLoading,
+    mutate: mutateStats,
+  } = useGetAllInvoiceStats();
 
   const TABS = useMemo(() => {
     // Check if stats are loaded and have counts
@@ -662,6 +666,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       if (res.status === 200) {
         enqueueSnackbar(res.data.message, { variant: 'success' });
         if (mutateInvoices) mutateInvoices();
+        if (mutateStats) mutateStats();
         table.onSelectAllRows(false, []);
       }
     } catch (error) {
@@ -963,7 +968,13 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         }}
       >
         <DialogContent sx={{ p: 2, overflow: 'hidden' }}>
-          <InvoiceNewEditForm id={selectedId} creators={selectedData} />
+          <InvoiceNewEditForm
+            id={selectedId}
+            creators={selectedData}
+            onClose={closeEditInvoice}
+            mutateInvoices={mutateInvoices}
+            mutateStats={mutateStats}
+          />
         </DialogContent>
       </Dialog>
 
