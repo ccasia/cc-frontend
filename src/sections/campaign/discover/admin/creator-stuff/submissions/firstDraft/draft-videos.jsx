@@ -99,6 +99,16 @@ const VideoCard = ({
     });
   }, [cardType, reset]);
 
+  // Reset form and cardType when video changes (creator re-uploads after CHANGES_REQUIRED)
+  useEffect(() => {
+    setCardType('approve');
+    reset({
+      feedback: 'Thank you for submitting!',
+      dueDate: null,
+      reasons: [],
+    });
+  }, [videoItem.url, reset]);
+
   // Reset local status when videoItem status changes (server update)
   useEffect(() => {
     setLocalStatus(null);
@@ -135,9 +145,14 @@ const VideoCard = ({
   const getVideoFeedback = () => {
     // Check for individual feedback first (from deliverables API)
     if (videoItem.individualFeedback && videoItem.individualFeedback.length > 0) {
+      // When showing a previous draft, only return the oldest (first draft's) feedback
+      if (videoItem.previousDrafts?.length > 0) {
+        const sorted = [...videoItem.individualFeedback].sort((a, b) => dayjs(a.createdAt).diff(dayjs(b.createdAt)));
+        return sorted.length > 0 ? [sorted[0]] : [];
+      }
       return videoItem.individualFeedback;
     }
-    
+
     // Get all feedback from submission (from deliverables API)
     const allFeedbacks = [
       ...(deliverables?.submissions?.flatMap(sub => sub.feedback) || []),
@@ -147,7 +162,7 @@ const VideoCard = ({
     // Filter feedback for this specific video
     const videoSpecificFeedback = allFeedbacks
       .filter(feedback => feedback.videosToUpdate?.includes(videoItem.id))
-      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+      .sort((a, b) => dayjs(a.createdAt).diff(dayjs(b.createdAt))); // ascending (oldest first)
 
     // Also include client feedback for this submission (when video status is CLIENT_FEEDBACK)
     const clientFeedback = allFeedbacks
@@ -155,10 +170,15 @@ const VideoCard = ({
         const isClient = feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client';
         const isFeedback = feedback.type === 'REASON' || feedback.type === 'COMMENT';
         const isClientFeedbackStatus = videoItem.status === 'CLIENT_FEEDBACK';
-        
+
         return isClient && isFeedback && isClientFeedbackStatus;
       })
       .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+
+    // When showing a previous draft (first draft), only return the oldest feedback
+    if (videoItem.previousDrafts?.length > 0) {
+      return videoSpecificFeedback.length > 0 ? [videoSpecificFeedback[0]] : [];
+    }
 
     const allFeedback = [...videoSpecificFeedback, ...clientFeedback];
     // Return only the latest feedback
@@ -632,7 +652,7 @@ const VideoCard = ({
         >
           <Box
             component="video"
-            src={videoItem.url}
+            src={videoItem.previousDrafts?.length > 0 ? videoItem.previousDrafts[0] : videoItem.url}
             sx={{
               width: '100%',
               height: '100%',
@@ -669,10 +689,12 @@ const VideoCard = ({
         </Box>
       </Box>
 
-      {/* Form Section */}
-      <CardContent sx={{ pt: 0 }}>
-        {renderFormContent()}
-      </CardContent>
+      {/* Form Section - hide when viewing a previous draft (actions belong in Final Draft) */}
+      {!(videoItem.previousDrafts?.length > 0) && (
+        <CardContent sx={{ pt: 0 }}>
+          {renderFormContent()}
+        </CardContent>
+      )}
 
       {/* Feedback History */}
       {videoFeedback.length > 0 && (
@@ -899,6 +921,7 @@ const VideoCard = ({
           </Stack>
         </Box>
       )}
+
     </Card>
   );
 };
@@ -911,6 +934,7 @@ VideoCard.propTypes = {
     createdAt: PropTypes.string,
     caption: PropTypes.string,
     individualFeedback: PropTypes.array,
+    previousDrafts: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
   index: PropTypes.number.isRequired,
   submission: PropTypes.object,
