@@ -2,6 +2,8 @@ import dayjs from 'dayjs';
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
 import React, { useRef, useMemo, useState, useCallback } from 'react';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 import {
   Box,
@@ -90,6 +92,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const [exportStatuses, setExportStatuses] = useState([]);
   const [addStatusAnchor, setAddStatusAnchor] = useState(null);
   const [exportingCSV, setExportingCSV] = useState(false);
+  const [exportFormatAnchor, setExportFormatAnchor] = useState(null);
 
   const smUp = useResponsive('up', 'sm');
   const { mainRef } = useMainContext();
@@ -245,12 +248,12 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     setDatePresetLabel(null);
   }, [dateRange]);
 
-  const handleExportCSV = useCallback(() => {
+  const handleExportCSV = useCallback(async () => {
     const source = (exportData?.length ? exportData : dataFiltered)
       .filter((inv) => exportSelected.has(inv.id));
     if (!source?.length) return;
 
-    // Alliance Bank BizSmart Bulk Payment format (17 columns)
+    // Alliance Bank BizSmart Bulk Payment format (59 columns)
     const headers = [
       'Payment Mode',
       'Beneficiary Name',
@@ -266,6 +269,18 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       'Payment Advice Indicator',
       'Mobile Phone No',
       'Beneficiary Email 1',
+      'Beneficiary Email 2',
+      'Generic Payment Information',
+      'Invoice Date 1', 'Invoice Amount 1', 'Payment Amount 1', 'Payment Description 1',
+      'Invoice Date 2', 'Invoice Amount 2', 'Payment Amount 2', 'Payment Description 2',
+      'Invoice Date 3', 'Invoice Amount 3', 'Payment Amount 3', 'Payment Description 3',
+      'Invoice Date 4', 'Invoice Amount 4', 'Payment Amount 4', 'Payment Description 4',
+      'Invoice Date 5', 'Invoice Amount 5', 'Payment Amount 5', 'Payment Description 5',
+      'Invoice Date 6', 'Invoice Amount 6', 'Payment Amount 6', 'Payment Description 6',
+      'Invoice Date 7', 'Invoice Amount 7', 'Payment Amount 7', 'Payment Description 7',
+      'Invoice Date 8', 'Invoice Amount 8', 'Payment Amount 8', 'Payment Description 8',
+      'Invoice Date 9', 'Invoice Amount 9', 'Payment Amount 9', 'Payment Description 9',
+      'Invoice Date 10', 'Invoice Amount 10', 'Payment Amount 10', 'Payment Description 10',
       'Batch Reference No.',
       'Payment Date',
       'Beneficiary Address',
@@ -298,35 +313,138 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         '', // Beneficiary Old IC No
         '', // Beneficiary Business Registration
         '', // Beneficiary Others
-        '', // Payment Advice Indicator
+        'E', // Payment Advice Indicator
         phone,
         email,
+        '', // Beneficiary Email 2
+        'Email For Notification', // Generic Payment Information
+        '', '', '', '', // Invoice Date 1, Invoice Amount 1, Payment Amount 1, Payment Description 1
+        '', '', '', '', // Invoice Date 2, Invoice Amount 2, Payment Amount 2, Payment Description 2
+        '', '', '', '', // Invoice Date 3, Invoice Amount 3, Payment Amount 3, Payment Description 3
+        '', '', '', '', // Invoice Date 4, Invoice Amount 4, Payment Amount 4, Payment Description 4
+        '', '', '', '', // Invoice Date 5, Invoice Amount 5, Payment Amount 5, Payment Description 5
+        '', '', '', '', // Invoice Date 6, Invoice Amount 6, Payment Amount 6, Payment Description 6
+        '', '', '', '', // Invoice Date 7, Invoice Amount 7, Payment Amount 7, Payment Description 7
+        '', '', '', '', // Invoice Date 8, Invoice Amount 8, Payment Amount 8, Payment Description 8
+        '', '', '', '', // Invoice Date 9, Invoice Amount 9, Payment Amount 9, Payment Description 9
+        '', '', '', '', // Invoice Date 10, Invoice Amount 10, Payment Amount 10, Payment Description 10
         '', // Batch Reference No.
         '', // Payment Date
         '', // Beneficiary Address
       ];
     });
 
-    const escapeCell = (cell) => {
-      const str = String(cell);
+    const workbook = new ExcelJS.Workbook();
+    const sheetName = `BP_${dayjs().format('DDMMMYYYY')}`;
+    const worksheet = workbook.addWorksheet(sheetName);
+
+    const redHeaders = new Set([
+      'Payment Mode',
+      'Beneficiary Name',
+      'Beneficiary Account',
+      'Beneficiary Bank Code',
+      'Amount',
+      'Payment Description',
+      'Generic Payment Information',
+      'Beneficiary Address',
+    ]);
+
+    const headerRow = worksheet.addRow(headers);
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFFFFF00' },
+      };
+      cell.font = {
+        bold: true,
+        color: redHeaders.has(String(cell.value)) ? { argb: 'FFFF0000' } : undefined,
+      };
+      cell.alignment = { vertical: 'middle', horizontal: 'left' };
+    });
+
+    rows.forEach((row) => worksheet.addRow(row));
+
+    // Auto-fit column widths based on header and data content
+    worksheet.columns.forEach((column, i) => {
+      const headerLen = String(headers[i] || '').length;
+      let maxLen = headerLen;
+      rows.forEach((row) => {
+        const cellLen = String(row[i] || '').length;
+        if (cellLen > maxLen) maxLen = cellLen;
+      });
+      column.width = Math.min(maxLen + 2, 40);
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    saveAs(blob, `BP_${dayjs().format('DDMMMYYYY')}.xlsx`);
+  }, [exportData, dataFiltered, exportSelected]);
+
+  const handleExportPlainCSV = useCallback(async () => {
+    const source = (exportData?.length ? exportData : dataFiltered)
+      .filter((inv) => exportSelected.has(inv.id));
+    if (!source?.length) return;
+
+    const headers = [
+      'Payment Mode', 'Beneficiary Name', 'Beneficiary Account', 'Beneficiary Bank Code',
+      'Amount', 'Payment Description', 'Payment Reference',
+      'Beneficiary New IC No', 'Beneficiary Old IC No', 'Beneficiary Business Registration',
+      'Beneficiary Others', 'Payment Advice Indicator', 'Mobile Phone No',
+      'Beneficiary Email 1', 'Beneficiary Email 2', 'Generic Payment Information',
+      'Invoice Date 1', 'Invoice Amount 1', 'Payment Amount 1', 'Payment Description 1',
+      'Invoice Date 2', 'Invoice Amount 2', 'Payment Amount 2', 'Payment Description 2',
+      'Invoice Date 3', 'Invoice Amount 3', 'Payment Amount 3', 'Payment Description 3',
+      'Invoice Date 4', 'Invoice Amount 4', 'Payment Amount 4', 'Payment Description 4',
+      'Invoice Date 5', 'Invoice Amount 5', 'Payment Amount 5', 'Payment Description 5',
+      'Invoice Date 6', 'Invoice Amount 6', 'Payment Amount 6', 'Payment Description 6',
+      'Invoice Date 7', 'Invoice Amount 7', 'Payment Amount 7', 'Payment Description 7',
+      'Invoice Date 8', 'Invoice Amount 8', 'Payment Amount 8', 'Payment Description 8',
+      'Invoice Date 9', 'Invoice Amount 9', 'Payment Amount 9', 'Payment Description 9',
+      'Invoice Date 10', 'Invoice Amount 10', 'Payment Amount 10', 'Payment Description 10',
+      'Batch Reference No.', 'Payment Date', 'Beneficiary Address',
+    ];
+
+    const escapeCSV = (val) => {
+      const str = String(val ?? '');
       if (str.includes(',') || str.includes('"') || str.includes('\n')) {
         return `"${str.replace(/"/g, '""')}"`;
       }
       return str;
     };
 
+    const rows = source.map((invoice) => {
+      const paymentForm = invoice?.creator?.user?.paymentForm;
+      const bankName = paymentForm?.bankName || '';
+      const bankCode = getBankCode(bankName);
+      const paymentMode = getPaymentMode(bankCode);
+      const beneficiaryName = paymentForm?.bankAccountName || invoice?.creator?.user?.name || '';
+      const beneficiaryAccount = paymentForm?.bankAccountNumber || '';
+      const amount = invoice?.amount != null ? Number(invoice.amount).toFixed(2) : '0.00';
+      const description = invoice?.task?.service || invoice?.task?.description || 'Content Creation';
+      const campaignName = invoice?.campaign?.name || '';
+      const paymentRef = campaignName.replace(/\s/g, '').substring(0, 20);
+      const phone = invoice?.creator?.user?.phoneNumber || '';
+      const email = invoice?.creator?.user?.email || '';
+
+      return [
+        paymentMode, beneficiaryName, beneficiaryAccount, bankCode, amount, description, paymentRef,
+        paymentForm?.icNumber || '', '', '', '', 'E', phone, email, '', 'Email For Notification',
+        '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+        '', '', '',
+      ];
+    });
+
     const csvContent = [
-      headers.map(escapeCell).join(','),
-      ...rows.map((row) => row.map(escapeCell).join(',')),
+      headers.map(escapeCSV).join(','),
+      ...rows.map((row) => row.map(escapeCSV).join(',')),
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `BP_${dayjs().format('DDMMMYYYY')}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    saveAs(blob, `BP_${dayjs().format('DDMMMYYYY')}.csv`);
   }, [exportData, dataFiltered, exportSelected]);
 
   const handleOpenExportPreview = useCallback(async () => {
@@ -362,17 +480,25 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     }
   }, [dataFiltered, exportPreview, filters, dateRange, enqueueSnackbar]);
 
-  const handleConfirmExport = useCallback(() => {
+  const handleConfirmExport = useCallback(async (format = 'xlsx') => {
     setExportingCSV(true);
-    setTimeout(() => {
-      handleExportCSV();
+    try {
+      if (format === 'csv') {
+        await handleExportPlainCSV();
+      } else {
+        await handleExportCSV();
+      }
+    } catch (err) {
+      console.error(`Failed to generate ${format.toUpperCase()} export:`, err);
+      enqueueSnackbar(`Failed to generate ${format.toUpperCase()} export`, { variant: 'error' });
+    } finally {
       setExportingCSV(false);
       exportPreview.onFalse();
       setExportData([]);
       setExportSelected(new Set());
       setExportStatuses([]);
-    }, 400);
-  }, [handleExportCSV, exportPreview]);
+    }
+  }, [handleExportCSV, handleExportPlainCSV, exportPreview, enqueueSnackbar]);
 
   const handleAddStatus = useCallback(async (statusValue) => {
     setAddStatusAnchor(null);
@@ -859,7 +985,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ pt: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {/* Preview table — mirrors all 17 CSV columns in export order */}
+          {/* Preview table — shows key columns from the 59-column XLSX export */}
           <TableContainer
             sx={{
               flex: 1,
@@ -1038,7 +1164,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                       {/* 11. Beneficiary Others */}
                       <TableCell sx={cellSx}>-</TableCell>
                       {/* 12. Payment Advice Indicator */}
-                      <TableCell sx={cellSx}>-</TableCell>
+                      <TableCell sx={cellSx}>E</TableCell>
                       {/* 13. Mobile Phone No */}
                       <TableCell sx={cellSx}>
                         {inv?.creator?.user?.phoneNumber || '-'}
@@ -1066,10 +1192,11 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         <Box
           sx={{
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: { xs: 'stretch', md: 'center' },
             justifyContent: 'space-between',
-            gap: 1,
-            px: 3,
+            gap: { xs: 1.5, md: 1 },
+            px: { xs: 2, md: 3 },
             py: 1.5,
             borderTop: '1px solid',
             borderColor: 'divider',
@@ -1181,37 +1308,78 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           </Box>
 
           {/* Right side: selection summary + actions */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-            <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600 }}>
-              {exportSummary.count}/{exportSummary.totalCount} selected
-            </Typography>
-            <Box sx={{ width: '1px', height: 20, bgcolor: 'divider' }} />
-            <Typography variant="body2" sx={{ fontWeight: 700 }}>
-              {exportSummary.totals
-                .map((t) => formatCurrencyAmount(t.total, t.currencyCode, t.currencySymbol))
-                .join(' \u00B7 ')}
-            </Typography>
-            <Button
-              variant="outlined"
-              onClick={exportPreview.onFalse}
-              sx={{ textTransform: 'none', fontWeight: 600 }}
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: { xs: 1, md: 2 },
+            flexShrink: 0,
+            justifyContent: { xs: 'space-between', md: 'flex-end' },
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 2 } }}>
+              <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {exportSummary.count}/{exportSummary.totalCount} selected
+              </Typography>
+              <Box sx={{ width: '1px', height: 20, bgcolor: 'divider' }} />
+              <Typography variant="body2" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                {exportSummary.totals
+                  .map((t) => formatCurrencyAmount(t.total, t.currencyCode, t.currencySymbol))
+                  .join(' \u00B7 ')}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <Button
+                variant="outlined"
+                onClick={exportPreview.onFalse}
+                sx={{ textTransform: 'none', fontWeight: 600 }}
+              >
+                Cancel
+              </Button>
+              <LoadingButton
+                variant="contained"
+                onClick={(e) => setExportFormatAnchor(e.currentTarget)}
+                loading={exportingCSV}
+                disabled={exportSelected.size === 0}
+                endIcon={<Iconify icon="eva:arrow-ios-downward-fill" width={16} />}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  minWidth: 120,
+                  bgcolor: '#203ff5',
+                  '&:hover': { bgcolor: '#1a33c4' },
+                }}
+              >
+                Export
+              </LoadingButton>
+            </Box>
+            <Menu
+              anchorEl={exportFormatAnchor}
+              open={Boolean(exportFormatAnchor)}
+              onClose={() => setExportFormatAnchor(null)}
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
-              Cancel
-            </Button>
-            <LoadingButton
-              variant="contained"
-              onClick={handleConfirmExport}
-              loading={exportingCSV}
-              disabled={exportSelected.size === 0}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-                bgcolor: '#203ff5',
-                '&:hover': { bgcolor: '#1a33c4' },
-              }}
-            >
-              Export CSV
-            </LoadingButton>
+              <MenuItem
+                onClick={() => {
+                  setExportFormatAnchor(null);
+                  handleConfirmExport('xlsx');
+                }}
+                sx={{ fontSize: '0.875rem' }}
+              >
+                <Iconify icon="vscode-icons:file-type-excel" width={20} sx={{ mr: 1 }} />
+                Export as XLSX
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  setExportFormatAnchor(null);
+                  handleConfirmExport('csv');
+                }}
+                sx={{ fontSize: '0.875rem' }}
+              >
+                <Iconify icon="mdi:file-delimited-outline" width={20} sx={{ mr: 1 }} />
+                Export as CSV
+              </MenuItem>
+            </Menu>
           </Box>
         </Box>
       </Dialog>
