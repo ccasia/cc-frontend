@@ -366,7 +366,7 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
       console.log('Payment Form:', selectedCreator?.user?.paymentForm || selectedCreator?.user?.creator?.paymentForm);
       
       // Get the creator details from the data passed from the modal
-      const {creatorDetails} = formData;
+      const { creatorDetails } = formData;
       console.log('Creator Details:', creatorDetails);
       
       // Get the payment form from the creator details or other locations
@@ -802,7 +802,9 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                           color="primary"
                           onClick={confirm.onTrue}
                           disabled={isDisabled}
-                          sx={{ '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' } }}
+                          sx={{
+                            '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' },
+                          }}
                         >
                           <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>

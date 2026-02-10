@@ -44,6 +44,7 @@ export default function Markdown({ sx, children, ...other }) {
 
 Markdown.propTypes = {
   sx: PropTypes.object,
+  children: PropTypes.node,
 };
 
 // ----------------------------------------------------------------------

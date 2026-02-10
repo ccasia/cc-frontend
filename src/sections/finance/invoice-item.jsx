@@ -35,6 +35,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       selected={selected}
       onClick={openEditInvoice}
       sx={{
+        cursor: 'pointer',
         bgcolor: 'transparent',
         borderBottom: '1px solid',
         borderColor: 'divider',
