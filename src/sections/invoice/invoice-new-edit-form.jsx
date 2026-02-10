@@ -274,7 +274,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
     const formData = new FormData();
 
     const pdfBlob = await pdf(<InvoicePDF invoice={invoice} />).toBlob();
-    
+
     formData.append('file', pdfBlob, `Invoice-${id}.pdf`);
     formData.append(
       'data',
@@ -404,7 +404,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
           {/* Main Form Area */}
           <Grid item xs={12} md={9}>
             <Card sx={{ px: 4, py: 3, borderRadius: 2, overflowY: 'auto' }}>
-              <InvoiceNewEditAddress creators={creatorList} />
+              <InvoiceNewEditAddress creators={creatorList} invoice={invoice} />
 
               <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
 

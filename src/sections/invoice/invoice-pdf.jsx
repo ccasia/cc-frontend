@@ -119,7 +119,13 @@ export default function InvoicePDF({ invoice, currentStatus }) {
           </View>
 
           <View style={styles.tableCell_2}>
-            <Text style={styles.subtitle2}>{invoice?.bankAcc?.payTo || invoice?.bankAcc?.recipientName || invoice?.bankAcc?.accountName || invoice?.invoiceFrom?.name || 'N/A'}</Text>
+            <Text style={styles.subtitle2}>
+              {invoice?.bankAcc?.payTo ||
+                invoice?.bankAcc?.recipientName ||
+                invoice?.bankAcc?.accountName ||
+                invoice?.invoiceFrom?.name ||
+                'N/A'}
+            </Text>
           </View>
 
           <View style={[styles.tableCell_2]}>
@@ -129,7 +135,12 @@ export default function InvoicePDF({ invoice, currentStatus }) {
             <Text>{invoice?.bankAcc?.accountNumber || 'N/A'}</Text>
           </View>
           <View style={[styles.tableCell_2]}>
-            <Text>{invoice?.bankAcc?.accountEmail || invoice?.bankAcc?.recipientEmail || invoice?.invoiceFrom?.email || 'N/A'}</Text>
+            <Text>
+              {invoice?.bankAcc?.accountEmail ||
+                invoice?.bankAcc?.recipientEmail ||
+                invoice?.invoiceFrom?.email ||
+                'N/A'}
+            </Text>
           </View>
         </View>
       </View>
@@ -154,6 +165,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
             <Text style={styles.body2}>{invoice?.invoiceFrom?.name}</Text>
             <Text style={styles.body2}>{invoice?.invoiceFrom?.fullAddress}</Text>
             <Text style={styles.body2}>{invoice?.invoiceFrom?.phoneNumber}</Text>
+            <Text style={styles.body2}>{invoice?.creator?.user?.paymentForm?.icNumber}</Text>
           </View>
 
           <View style={styles.col6}>
@@ -222,7 +234,9 @@ export default function InvoicePDF({ invoice, currentStatus }) {
                       return invoice.task.description;
                     }
                     if (invoice?.deliverables) {
-                      return typeof invoice.deliverables === 'string' ? invoice.deliverables : JSON.stringify(invoice.deliverables);
+                      return typeof invoice.deliverables === 'string'
+                        ? invoice.deliverables
+                        : JSON.stringify(invoice.deliverables);
                     }
                     return 'None';
                   })()}
@@ -242,7 +256,9 @@ export default function InvoicePDF({ invoice, currentStatus }) {
                 <Text style={styles.h4}>Total</Text>
               </View>
               <View style={[styles.tableCell_2, styles.alignRight]}>
-                <Text style={styles.h4}>{`${invoice.task?.currencySymbol || invoice.task?.currency || invoice.campaign?.creatorAgreement?.[0]?.currency || 'RM'} ${invoice?.amount}`}</Text>
+                <Text
+                  style={styles.h4}
+                >{`${invoice.task?.currencySymbol || invoice.task?.currency || invoice.campaign?.creatorAgreement?.[0]?.currency || 'RM'} ${invoice?.amount}`}</Text>
               </View>
             </View>
           </View>
