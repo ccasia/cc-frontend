@@ -3,7 +3,7 @@ import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
@@ -58,6 +58,8 @@ const VideoCard = ({
   handleAdminSendToCreator,
   // View-only mode
   isDisabled = false,
+  // Feedback IDs already shown on previous draft cards
+  excludeFeedbackIds,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -97,6 +99,16 @@ const VideoCard = ({
     });
   }, [cardType, reset]);
 
+  // Reset form and cardType when video changes (creator re-uploads after CHANGES_REQUIRED)
+  useEffect(() => {
+    setCardType('approve');
+    reset({
+      feedback: 'Thank you for submitting!',
+      dueDate: null,
+      reasons: [],
+    });
+  }, [videoItem.url, reset]);
+
   // Reset local status when videoItem status changes (server update)
   useEffect(() => {
     setLocalStatus(null);
@@ -117,19 +129,23 @@ const VideoCard = ({
   const isPendingReview = (currentStatus === 'PENDING' || currentStatus === 'PENDING_REVIEW') && isVideoNotApproved && !hasRevisionRequested;
 
   const getVideoFeedback = () => {
+    let feedback;
     // Check for individual feedback first
     if (videoItem.individualFeedback && videoItem.individualFeedback.length > 0) {
-      return videoItem.individualFeedback;
+      feedback = [...videoItem.individualFeedback];
+    } else {
+      // Fallback to submission-level feedback
+      feedback = [...(submission?.feedback || [])]
+        .filter(f => f.videosToUpdate?.includes(videoItem.id))
+        .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
     }
-    
-    // Fallback to submission-level feedback
-    const allFeedbacks = [
-      ...(submission?.feedback || [])
-    ];
 
-    return allFeedbacks
-      .filter(feedback => feedback.videosToUpdate?.includes(videoItem.id))
-      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+    // Exclude feedback already shown on previous draft cards
+    if (excludeFeedbackIds?.size > 0) {
+      feedback = feedback.filter(f => !excludeFeedbackIds.has(f.id));
+    }
+
+    return feedback;
   };
 
   const videoFeedback = getVideoFeedback();
@@ -516,10 +532,10 @@ const VideoCard = ({
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
                     borderBottomColor: '#e7e7e7',
-                    color: '#231F20',
+                    color: '#637381',
                     '&:hover': {
                       bgcolor: '#f5f5f5',
-                      borderColor: '#231F20',
+                      borderColor: '#b0b0b0',
                     },
                     textTransform: 'none',
                     py: 1.2,
@@ -909,6 +925,7 @@ const VideoCard = ({
           </Stack>
         </Box>
       )}
+
     </Card>
   );
 };
@@ -945,6 +962,8 @@ VideoCard.propTypes = {
   handleAdminSendToCreator: PropTypes.func,
   // View-only mode
   isDisabled: PropTypes.bool,
+  // Feedback IDs already shown on previous draft cards
+  excludeFeedbackIds: PropTypes.instanceOf(Set),
 };
 
 const DraftVideos = ({
@@ -952,6 +971,7 @@ const DraftVideos = ({
   submission,
   deliverables,
   onVideoClick,
+  onPreviousDraftClick,
   onSubmit,
   isDisabled,
   // V2 individual handlers
@@ -1091,7 +1111,7 @@ const DraftVideos = ({
   };
 
   // Check if all videos are already approved
-  const allVideosApproved = deliverables?.videos?.length > 0 && 
+  const allVideosApproved = deliverables?.videos?.length > 0 &&
     deliverables.videos.every(v => v.status === 'APPROVED');
 
   // Determine layout type
@@ -1148,6 +1168,37 @@ const DraftVideos = ({
     }
   };
 
+  // Map feedback entries to previous drafts chronologically
+  // When admin requests changes → Feedback record created → creator re-uploads → old URL appended to previousDrafts
+  // So previousDrafts[0] (oldest) corresponds to the oldest feedback, etc.
+  const feedbackByVideo = useMemo(() => {
+    const map = {};
+    deliverables?.videos?.forEach((video) => {
+      if (!video.previousDrafts?.length) return;
+
+      let allFeedback = [];
+      if (video.individualFeedback?.length > 0) {
+        allFeedback = [...video.individualFeedback];
+      } else {
+        allFeedback = [...(submission?.feedback || [])]
+          .filter(f => f.videosToUpdate?.includes(video.id));
+      }
+
+      // Sort ascending (oldest first) to match previousDrafts order
+      allFeedback.sort((a, b) => dayjs(a.createdAt).diff(dayjs(b.createdAt)));
+
+      const draftFeedback = []; // feedback[i] → previousDrafts[i]
+      const matchedIds = new Set();
+      for (let i = 0; i < video.previousDrafts.length && i < allFeedback.length; i += 1) {
+        draftFeedback.push(allFeedback[i]);
+        if (allFeedback[i].id) matchedIds.add(allFeedback[i].id);
+      }
+
+      map[video.id] = { draftFeedback, matchedIds };
+    });
+    return map;
+  }, [deliverables?.videos, submission?.feedback]);
+
   return (
     <>
       {/* Videos Horizontal Scroll */}
@@ -1183,38 +1234,89 @@ const DraftVideos = ({
           {deliverables.videos.map((video, index) => (
             <Box
               key={video.id || index}
-              sx={{
-                width: { xs: '280px', sm: '300px', md: '300px' },
-                minWidth: { xs: '280px', sm: '300px', md: '300px' },
-                flexShrink: 0,
-              }}
+              sx={{ display: 'flex', gap: 2, flexShrink: 0 }}
             >
-              <VideoCard
-                videoItem={video}
-                index={index}
-                submission={submission}
-                onVideoClick={onVideoClick}
-                handleApprove={handleApprove}
-                handleRequestChange={handleRequestChange}
-                selectedVideosForChange={selectedVideosForChange}
-                handleVideoSelection={handleVideoSelection}
-                // V2 individual handlers
-                onIndividualApprove={onIndividualApprove}
-                onIndividualRequestChange={onIndividualRequestChange}
-                isV3={isV3}
-                userRole={userRole}
-                handleSendToClient={handleSendToClient}
-                // V3 client handlers
-                handleClientApprove={handleClientApproveVideo}
-                handleClientReject={handleClientRejectVideo}
-                // V3 deliverables for status checking
-                deliverables={deliverables}
-                // V3 admin feedback handlers
-                handleAdminEditFeedback={handleAdminEditFeedback}
-                handleAdminSendToCreator={handleAdminSendToCreator}
-                // View-only mode
-                isDisabled={isDisabled}
-              />
+              <Box
+                sx={{
+                  width: { xs: '280px', sm: '300px', md: '300px' },
+                  minWidth: { xs: '280px', sm: '300px', md: '300px' },
+                }}
+              >
+                <VideoCard
+                  videoItem={video}
+                  index={index}
+                  submission={submission}
+                  onVideoClick={onVideoClick}
+                  handleApprove={handleApprove}
+                  handleRequestChange={handleRequestChange}
+                  selectedVideosForChange={selectedVideosForChange}
+                  handleVideoSelection={handleVideoSelection}
+                  onIndividualApprove={onIndividualApprove}
+                  onIndividualRequestChange={onIndividualRequestChange}
+                  isV3={isV3}
+                  userRole={userRole}
+                  handleSendToClient={handleSendToClient}
+                  handleClientApprove={handleClientApproveVideo}
+                  handleClientReject={handleClientRejectVideo}
+                  deliverables={deliverables}
+                  handleAdminEditFeedback={handleAdminEditFeedback}
+                  handleAdminSendToCreator={handleAdminSendToCreator}
+                  isDisabled={isDisabled}
+                  excludeFeedbackIds={feedbackByVideo[video.id]?.matchedIds}
+                />
+              </Box>
+              {video.previousDrafts?.length > 0 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: 240, minWidth: 240, flexShrink: 0 }}>
+                  {video.previousDrafts.map((draftUrl, draftIdx) => {
+                    const draftFeedback = feedbackByVideo[video.id]?.draftFeedback?.[draftIdx];
+                    return (
+                    <Card key={`${video.id}_prev_${draftIdx}`} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                      <Box sx={{ p: 1.5 }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', mb: 0.75 }}>
+                          {`Previous Draft ${draftIdx + 1}`}
+                        </Typography>
+                        <Box sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', aspectRatio: '16/9', cursor: 'pointer' }}
+                          onClick={() => onPreviousDraftClick(draftUrl)}
+                        >
+                          <Box component="video" src={draftUrl} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Iconify icon="mdi:play" sx={{ color: 'white', width: 24, height: 24, opacity: 0.9 }} />
+                          </Box>
+                        </Box>
+                        {draftFeedback && (
+                          <Box sx={{ mt: 1, p: 1, borderRadius: 1, bgcolor: '#f9f9f9', border: '1px solid #e0e0e0' }}>
+                            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5 }}>
+                              <Avatar src={draftFeedback.admin?.photoURL} sx={{ width: 16, height: 16 }} />
+                              <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.6rem' }}>
+                                {draftFeedback.admin?.name || 'Admin'}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.55rem' }}>
+                                {dayjs(draftFeedback.createdAt).format('MMM D, h:mm A')}
+                              </Typography>
+                            </Stack>
+                            <Typography variant="caption" sx={{ color: '#333', fontSize: '0.65rem', display: 'block', lineHeight: 1.4 }}>
+                              {draftFeedback.content}
+                            </Typography>
+                            {draftFeedback.reasons?.length > 0 && (
+                              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                                {draftFeedback.reasons.map((reason, ri) => (
+                                  <Box key={ri} sx={{
+                                    bgcolor: '#fff', color: '#666', border: '1px solid #e0e0e0',
+                                    borderRadius: 0.5, py: 0.2, px: 0.5, fontSize: '0.55rem', fontWeight: 600,
+                                  }}>
+                                    {reason}
+                                  </Box>
+                                ))}
+                              </Stack>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
+                    </Card>
+                    );
+                  })}
+                </Box>
+              )}
             </Box>
           ))}
         </Box>
@@ -1223,39 +1325,86 @@ const DraftVideos = ({
       {shouldUseGrid && (
         <Grid container spacing={2}>
           {deliverables.videos.map((video, index) => (
-            <Grid
-              item
-              xs={12}
-              md={7}
-              key={video.id || index}
-            >
-              <VideoCard
-                videoItem={video}
-                index={index}
-                submission={submission}
-                onVideoClick={onVideoClick}
-                handleApprove={handleApprove}
-                handleRequestChange={handleRequestChange}
-                selectedVideosForChange={selectedVideosForChange}
-                handleVideoSelection={handleVideoSelection}
-                // V2 individual handlers
-                onIndividualApprove={onIndividualApprove}
-                onIndividualRequestChange={onIndividualRequestChange}
-                isV3={isV3}
-                userRole={userRole}
-                handleSendToClient={handleSendToClient}
-                // V3 client handlers
-                handleClientApprove={handleClientApproveVideo}
-                handleClientReject={handleClientRejectVideo}
-                // V3 deliverables for status checking
-                deliverables={deliverables}
-                // V3 admin feedback handlers
-                handleAdminEditFeedback={handleAdminEditFeedback}
-                handleAdminSendToCreator={handleAdminSendToCreator}
-                // View-only mode
-                isDisabled={isDisabled}
-              />
-            </Grid>
+            <React.Fragment key={video.id || index}>
+              <Grid item xs={12} md={video.previousDrafts?.length > 0 ? 7 : 7}>
+                <VideoCard
+                  videoItem={video}
+                  index={index}
+                  submission={submission}
+                  onVideoClick={onVideoClick}
+                  handleApprove={handleApprove}
+                  handleRequestChange={handleRequestChange}
+                  selectedVideosForChange={selectedVideosForChange}
+                  handleVideoSelection={handleVideoSelection}
+                  onIndividualApprove={onIndividualApprove}
+                  onIndividualRequestChange={onIndividualRequestChange}
+                  isV3={isV3}
+                  userRole={userRole}
+                  handleSendToClient={handleSendToClient}
+                  handleClientApprove={handleClientApproveVideo}
+                  handleClientReject={handleClientRejectVideo}
+                  deliverables={deliverables}
+                  handleAdminEditFeedback={handleAdminEditFeedback}
+                  handleAdminSendToCreator={handleAdminSendToCreator}
+                  isDisabled={isDisabled}
+                  excludeFeedbackIds={feedbackByVideo[video.id]?.matchedIds}
+                />
+              </Grid>
+              {video.previousDrafts?.length > 0 && (
+                <Grid item xs={12} md={5}>
+                  <Stack spacing={1}>
+                    {video.previousDrafts.map((draftUrl, draftIdx) => {
+                      const draftFeedback = feedbackByVideo[video.id]?.draftFeedback?.[draftIdx];
+                      return (
+                      <Card key={`${video.id}_prev_${draftIdx}`} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                        <Box sx={{ p: 1.5 }}>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', mb: 0.75 }}>
+                            {`Previous Draft ${draftIdx + 1}`}
+                          </Typography>
+                          <Box sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', aspectRatio: '16/9', cursor: 'pointer' }}
+                            onClick={() => onPreviousDraftClick(draftUrl)}
+                          >
+                            <Box component="video" src={draftUrl} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Iconify icon="mdi:play" sx={{ color: 'white', width: 24, height: 24, opacity: 0.9 }} />
+                            </Box>
+                          </Box>
+                          {draftFeedback && (
+                            <Box sx={{ mt: 1, p: 1, borderRadius: 1, bgcolor: '#f9f9f9', border: '1px solid #e0e0e0' }}>
+                              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5 }}>
+                                <Avatar src={draftFeedback.admin?.photoURL} sx={{ width: 16, height: 16 }} />
+                                <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.6rem' }}>
+                                  {draftFeedback.admin?.name || 'Admin'}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.55rem' }}>
+                                  {dayjs(draftFeedback.createdAt).format('MMM D, h:mm A')}
+                                </Typography>
+                              </Stack>
+                              <Typography variant="caption" sx={{ color: '#333', fontSize: '0.65rem', display: 'block', lineHeight: 1.4 }}>
+                                {draftFeedback.content}
+                              </Typography>
+                              {draftFeedback.reasons?.length > 0 && (
+                                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                                  {draftFeedback.reasons.map((reason, ri) => (
+                                    <Box key={ri} sx={{
+                                      bgcolor: '#fff', color: '#666', border: '1px solid #e0e0e0',
+                                      borderRadius: 0.5, py: 0.2, px: 0.5, fontSize: '0.55rem', fontWeight: 600,
+                                    }}>
+                                      {reason}
+                                    </Box>
+                                  ))}
+                                </Stack>
+                              )}
+                            </Box>
+                          )}
+                        </Box>
+                      </Card>
+                      );
+                    })}
+                  </Stack>
+                </Grid>
+              )}
+            </React.Fragment>
           ))}
         </Grid>
       )}
@@ -1389,6 +1538,7 @@ const DraftVideos = ({
           </ConfirmationRequestModal>
         </FormProvider>
       )}
+
     </>
   );
 };
@@ -1398,6 +1548,7 @@ DraftVideos.propTypes = {
   submission: PropTypes.object,
   deliverables: PropTypes.object,
   onVideoClick: PropTypes.func.isRequired,
+  onPreviousDraftClick: PropTypes.func,
   onSubmit: PropTypes.func.isRequired,
   isDisabled: PropTypes.bool,
   // V2 props

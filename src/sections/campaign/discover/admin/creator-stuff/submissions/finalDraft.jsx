@@ -91,6 +91,10 @@ const FinalDraft = ({
   const [draftVideoModalOpen, setDraftVideoModalOpen] = useState(false);
   const [currentDraftVideoIndex, setCurrentDraftVideoIndex] = useState(0);
 
+  // Previous draft video modal states
+  const [prevDraftModalOpen, setPrevDraftModalOpen] = useState(false);
+  const [prevDraftVideoUrl, setPrevDraftVideoUrl] = useState(null);
+
   // Confirmation modal states
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
@@ -495,6 +499,11 @@ const FinalDraft = ({
     setDraftVideoModalOpen(true);
   };
 
+  const handlePrevDraftVideoClick = (url) => {
+    setPrevDraftVideoUrl(url);
+    setPrevDraftModalOpen(true);
+  };
+
   // Determine available tabs based on deliverables
   const availableTabs = useMemo(() => {
     const tabs = [];
@@ -623,6 +632,7 @@ const FinalDraft = ({
           <DraftVideos
             {...commonProps}
             onVideoClick={handleDraftVideoClick}
+            onPreviousDraftClick={handlePrevDraftVideoClick}
             onSubmit={onSubmitDraftVideo}
             // V2 individual handlers
             onIndividualApprove={handleIndividualVideoApprove}
@@ -971,12 +981,23 @@ const FinalDraft = ({
         creator={creator}
         submission={submission}
         showCaption
-        onPrev={() => setCurrentDraftVideoIndex(prev => 
+        onPrev={() => setCurrentDraftVideoIndex(prev =>
           prev === 0 ? deliverables.videos.length - 1 : prev - 1
         )}
-        onNext={() => setCurrentDraftVideoIndex(prev => 
+        onNext={() => setCurrentDraftVideoIndex(prev =>
           prev === deliverables.videos.length - 1 ? 0 : prev + 1
         )}
+      />
+
+      <VideoModal
+        open={prevDraftModalOpen}
+        onClose={() => { setPrevDraftModalOpen(false); setPrevDraftVideoUrl(null); }}
+        videos={prevDraftVideoUrl ? [{ url: prevDraftVideoUrl }] : []}
+        currentIndex={0}
+        setCurrentIndex={() => {}}
+        creator={creator}
+        submission={submission}
+        showCaption={false}
       />
 
       <PhotoModal

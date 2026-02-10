@@ -888,7 +888,9 @@ const FirstDraft = ({
       <VideoModal
         open={draftVideoModalOpen}
         onClose={() => setDraftVideoModalOpen(false)}
-        videos={deliverables?.videos || []}
+        videos={(deliverables?.videos || []).map((v) =>
+          v.previousDrafts?.length > 0 ? { ...v, url: v.previousDrafts[0] } : v
+        )}
         currentIndex={currentDraftVideoIndex}
         setCurrentIndex={setCurrentDraftVideoIndex}
         creator={creator}
