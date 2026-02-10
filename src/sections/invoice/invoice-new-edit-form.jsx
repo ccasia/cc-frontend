@@ -468,8 +468,8 @@ export default function InvoiceNewEditForm({ id, creators }) {
         </Stack>
 
         <FormProvider methods={methods}>
-          <Card sx={{ p: 2, height: '80vh', overflow: 'auto', scrollbarWidth: 'thin' }}>
-            <InvoiceNewEditAddress creators={creatorList} />
+          <Card sx={{ p: 1, height: '80vh', overflow: 'auto', scrollbarWidth: 'thin' }}>
+            <InvoiceNewEditAddress creators={creatorList} invoice={invoice} />
 
             <InvoiceNewEditStatusDate />
 

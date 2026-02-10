@@ -19,7 +19,7 @@ import { AddressListDialog } from '../address';
 
 // fetch creator only shortlisted creator with completed jobs to be able to send invoice to
 // eslint-disable-next-line no-unused-vars
-export default function InvoiceNewEditAddress({ creators }) {
+export default function InvoiceNewEditAddress({ creators, invoice }) {
   const {
     watch,
     setValue,
@@ -55,16 +55,13 @@ export default function InvoiceNewEditAddress({ creators }) {
             <Typography variant="h6" sx={{ color: 'text.disabled', flexGrow: 1 }}>
               From:
             </Typography>
-
-            {/* <IconButton onClick={from.onTrue}>
-              <Iconify icon="solar:pen-bold" />
-            </IconButton> */}
           </Stack>
 
           <Stack spacing={1}>
             <Typography variant="subtitle2">{invoiceFrom?.name}</Typography>
             <Typography variant="body2">{invoiceFrom?.fullAddress}</Typography>
             <Typography variant="body2"> {invoiceFrom?.phoneNumber}</Typography>
+            <Typography variant="body2">{invoice?.creator?.user?.paymentForm?.icNumber}</Typography>
           </Stack>
         </Stack>
 
@@ -127,4 +124,5 @@ export default function InvoiceNewEditAddress({ creators }) {
 }
 InvoiceNewEditAddress.propTypes = {
   creators: PropTypes.array.isRequired,
+  invoice: PropTypes.any,
 };

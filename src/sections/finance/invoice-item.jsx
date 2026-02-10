@@ -26,6 +26,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       hover
       selected={selected}
       sx={{
+        cursor: 'pointer',
         bgcolor: 'transparent',
         borderBottom: '1px solid',
         borderColor: 'divider',
