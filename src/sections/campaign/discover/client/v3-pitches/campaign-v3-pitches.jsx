@@ -1776,6 +1776,15 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                           onChange={(e, val) => handleCreatorRowChange(row.id, val)}
                           options={getFilteredOptions(row.id)}
                           getOptionLabel={(option) => option?.name || ''}
+                          filterOptions={(options, state) => {
+                            if (!state.inputValue) return options;
+                            const lowercaseInput = state.inputValue.toLowerCase();
+                            return options.filter(
+                              (option) =>
+                                option?.name?.toLowerCase().includes(lowercaseInput) ||
+                                option?.email?.toLowerCase().includes(lowercaseInput)
+                            );
+                          }}
                           isOptionEqualToValue={(option, value) => option?.id === value?.id}
                           disableClearable={!!row.creator}
                           popupIcon={<Iconify icon="eva:chevron-down-fill" width={20} sx={{ color: '#231F20' }} />}
