@@ -134,9 +134,10 @@ InvoiceTableFiltersResult.propTypes = {
 // ----------------------------------------------------------------------
 
 function FilterChip({ label, prefix, icon, avatar, color = '#637381', onDelete }) {
+  const formatted = label.replace('_', ' ');
   const displayLabel = prefix
     ? `${prefix}: ${label}`
-    : label.replace('_', ' ');
+    : formatted.charAt(0).toUpperCase() + formatted.slice(1);
 
   return (
     <Box
