@@ -4,7 +4,6 @@ import { memo, useMemo, useState, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
 import Checkbox from '@mui/material/Checkbox';
 import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
@@ -12,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import Iconify from 'src/components/iconify';
 import usePopover from 'src/components/custom-popover/use-popover';
 import CustomPopover from 'src/components/custom-popover/custom-popover';
+import InlineDateRangePicker from 'src/components/custom-date-range-picker/inline-date-range-picker';
 
 // ----------------------------------------------------------------------
 
@@ -38,13 +38,17 @@ function InvoiceTableToolbar({
   selectedCampaigns = [],
   onFilterCampaigns,
   dateRange,
-  onDatePreset,
+  onDateApply,
+  onDateClear,
   onExportCSV,
 }) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [campaignSearch, setCampaignSearch] = useState('');
   const campaignPopover = usePopover();
-  const datePopover = usePopover();
+
+  // Date picker anchor
+  const [dateAnchorEl, setDateAnchorEl] = useState(null);
+  const datePickerOpen = Boolean(dateAnchorEl);
 
   const handleFilterName = useCallback(
     (event) => {
@@ -67,19 +71,6 @@ function InvoiceTableToolbar({
     onFilterCampaigns([]);
     setCampaignSearch('');
   }, [onFilterCampaigns]);
-
-  const handleDatePreset = useCallback(
-    (preset) => {
-      onDatePreset(preset);
-      datePopover.onClose();
-    },
-    [onDatePreset, datePopover]
-  );
-
-  const handleCustomRange = useCallback(() => {
-    datePopover.onClose();
-    dateRange?.onOpen();
-  }, [datePopover, dateRange]);
 
   const filteredCampaignOptions = useMemo(
     () =>
@@ -258,7 +249,7 @@ function InvoiceTableToolbar({
 
         {/* Date Range Filter Button */}
         <Button
-          onClick={datePopover.onOpen}
+          onClick={(e) => setDateAnchorEl(e.currentTarget)}
           sx={{
             ...filterButtonSx,
             ...(dateRange?.selected && {
@@ -271,92 +262,15 @@ function InvoiceTableToolbar({
           {dateLabel}
         </Button>
 
-        <CustomPopover
-          open={datePopover.open}
-          onClose={datePopover.onClose}
-          arrow="top-right"
-          sx={{ width: 180, p: 0 }}
-        >
-          <Box
-            onClick={() => handleDatePreset('week')}
-            sx={{
-              px: 2,
-              py: 1.25,
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              '&:hover': { bgcolor: 'action.hover' },
-              ...(dateRange?.presetLabel === 'This Week' && {
-                color: '#1340ff',
-                fontWeight: 600,
-              }),
-            }}
-          >
-            This Week
-          </Box>
-          <Box
-            onClick={() => handleDatePreset('month')}
-            sx={{
-              px: 2,
-              py: 1.25,
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              '&:hover': { bgcolor: 'action.hover' },
-              ...(dateRange?.presetLabel === 'This Month' && {
-                color: '#1340ff',
-                fontWeight: 600,
-              }),
-            }}
-          >
-            This Month
-          </Box>
-          <Divider />
-          <Box
-            onClick={handleCustomRange}
-            sx={{
-              px: 2,
-              py: 1.25,
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              '&:hover': { bgcolor: 'action.hover' },
-            }}
-          >
-            Custom Range...
-          </Box>
-          {dateRange?.selected && (
-            <>
-              <Divider />
-              <Box
-                onClick={() => handleDatePreset('clear')}
-                sx={{
-                  px: 2,
-                  py: 1.25,
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  fontWeight: 500,
-                  color: 'error.main',
-                  '&:hover': { bgcolor: 'action.hover' },
-                }}
-              >
-                Clear Due Date
-              </Box>
-            </>
-          )}
-        </CustomPopover>
-
-        {/* <Tooltip title="Print">
-          <IconButton sx={iconButtonSx}>
-            <Iconify icon="solar:printer-minimalistic-bold" />
-          </IconButton>
-        </Tooltip> */}
-
-        {/* <Tooltip title="Import">
-          <IconButton sx={iconButtonSx}>
-            <Iconify icon="solar:import-bold" />
-          </IconButton>
-        </Tooltip> */}
+        <InlineDateRangePicker
+          anchorEl={dateAnchorEl}
+          open={datePickerOpen}
+          onClose={() => setDateAnchorEl(null)}
+          startDate={dateRange?.startDate}
+          endDate={dateRange?.endDate}
+          onApply={onDateApply}
+          onClear={onDateClear}
+        />
 
         <Button
           onClick={onExportCSV}
@@ -377,7 +291,8 @@ InvoiceTableToolbar.propTypes = {
   selectedCampaigns: PropTypes.array,
   onFilterCampaigns: PropTypes.func,
   dateRange: PropTypes.object,
-  onDatePreset: PropTypes.func,
+  onDateApply: PropTypes.func,
+  onDateClear: PropTypes.func,
   onExportCSV: PropTypes.func,
 };
 
