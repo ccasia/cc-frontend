@@ -86,7 +86,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
   const companyId = campaign?.company?.id || campaign?.brand?.company?.id;
 
   // Fetch clients for this company using the new hook
-  const { clients: campaignClients, isLoading: clientsLoading } = useGetClients(companyId);
+  const { clients: campaignClients } = useGetClients(companyId);
 
   // Warning dialog state for v4 submission toggle
   const [v4WarningOpen, setV4WarningOpen] = useState(false);
@@ -108,10 +108,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
         photoURL: ca.admin?.user?.photoURL,
         role: ca.admin?.role?.name || ca.admin?.user.role,
       }));
-  }, [campaign]);
-
-  console.log('existing managers:', existingManagers);
-  console.log('campaign clients:', campaignClients);
+  }, [campaign?.campaignAdmin]);
 
   // UGC_VIDEOS is the default/base deliverable
   const existingDeliverables = useMemo(() => {
@@ -121,7 +118,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
     if (campaign?.ads) delivs.push('ADS');
     if (campaign?.crossPosting) delivs.push('CROSS_POSTING');
     return delivs;
-  }, [campaign]);
+  }, [campaign?.rawFootage, campaign?.photos, campaign?.ads, campaign?.crossPosting]);
 
   const defaultValues = useMemo(
     () => ({
@@ -130,14 +127,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
       deliverables: existingDeliverables,
       isV4Submission: campaign?.submissionVersion === 'v4',
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      campaign?.id,
-      campaign?.submissionVersion,
-      campaign?.campaignType,
-      JSON.stringify(existingManagers),
-      JSON.stringify(existingDeliverables),
-    ]
+    [existingManagers, campaign?.submissionVersion, campaign?.campaignType, existingDeliverables]
   );
 
   const methods = useForm({
@@ -237,26 +227,29 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
             <Typography
               sx={{
                 fontWeight: 700,
-                color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+                color: '#231F20',
+                opacity: 0.6,
                 fontSize: '0.875rem',
+                mr: -0.5
               }}
             >
-              Enable this as a client campaign?
+              Enable this as a Client Campaign?
             </Typography>
             <Switch
               checked={isV4Submission || false}
               onChange={handleV4ToggleChange}
               color="primary"
+              disabled
             />
           </Stack>
           <Typography variant="caption" fontWeight={400} color="text.secondary">
             {isV4Submission
               ? 'Client users will be added as campaign managers. Disabling will remove them.'
-              : 'Enabling this option will add client users as campaign managers.'}
+              : 'Enabling this option makes it a campaign that the previously selected client will manage.'}
           </Typography>
         </Stack>
 
-        <Stack direction="row" spacing={2}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           {/* Left column */}
           <Stack flex={1} spacing={2}>
             <FormField label="Campaign Managers">
@@ -299,7 +292,10 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
                 }
               />
             </FormField>
+          </Stack>
 
+          {/* Right column */}
+          <Stack flex={1} spacing={2}>
             <FormField label="Campaign Type">
               <RHFSelectV2 name="campaignType" placeholder="Select campaign type">
                 {campaignTypeOptions.map((option) => (
@@ -310,19 +306,18 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
               </RHFSelectV2>
             </FormField>
           </Stack>
+        </Stack>
 
-          {/* Right column */}
-          <Stack flex={1} spacing={2}>
-            <FormField label="Deliverables">
-              <RHFMultiSelect
-                name="deliverables"
-                placeholder="Select deliverable(s)"
-                chip
-                checkbox
-                options={deliverableOptions}
-              />
-            </FormField>
-          </Stack>
+        <Stack>
+          <FormField label="Additional Deliverables">
+            <RHFMultiSelect
+              name="deliverables"
+              placeholder="Select deliverable(s)"
+              chip
+              checkbox
+              options={deliverableOptions}
+            />
+          </FormField>
         </Stack>
 
         {/* Submit Button */}
