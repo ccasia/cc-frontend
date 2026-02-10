@@ -436,9 +436,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
         return [
           'campaignObjectives',
           'secondaryObjectives',
-          'boostContent',
-          'primaryKPI',
-          'performanceBaseline',
         ];
       case 2: // Audience
         return [
@@ -927,10 +924,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       case 1: {
         const objectives = formValues.campaignObjectives;
         const secObjectives = formValues.secondaryObjectives;
-        const boost = formValues.boostContent;
-        const kpi = formValues.primaryKPI;
-        const baseline = formValues.performanceBaseline;
-        return objectives && secObjectives && boost && kpi && baseline;
+        return objectives && secObjectives
       }
       case 2: {
         const { country } = formValues;
