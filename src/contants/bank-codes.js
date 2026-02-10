@@ -14,9 +14,9 @@ export const BANK_CODE_MAP = {
   'OCBC Bank (Malaysia) Berhad': 'OCBCMYKL',
   'Public Bank Berhad': 'PBBEMYKL',
   'RHB Bank Berhad': 'RHBBMYKL',
-  'Standard Chartered Bank Malaysia Berhad': 'SCBLMYKL',
-  'United Overseas Bank (Malaysia) Bhd': 'ULOZMYKL',
-  'Agrobank / Bank Pertanian Malaysia Berhad': 'BPMBMYKL',
+  'Standard Chartered Bank Malaysia Berhad': 'SCBLMYKX',
+  'United Overseas Bank (Malaysia) Bhd': 'UOVBMYKL',
+  'Agrobank / Bank Pertanian Malaysia Berhad': 'AGOBMYKL',
   'Citibank Berhad': 'CITIMYKL',
 };
 
@@ -38,9 +38,9 @@ const IBG_CODES = [
   'OCBCMYKL',
   'PBBEMYKL',
   'RHBBMYKL',
-  'SCBLMYKL',
-  'ULOZMYKL',
-  'BPMBMYKL',
+  'SCBLMYKX',
+  'UOVBMYKL',
+  'AGOBMYKL',
   'CITIMYKL',
 ];
 
