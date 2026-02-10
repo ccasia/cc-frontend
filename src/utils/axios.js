@@ -173,6 +173,7 @@ export const endpoints = {
     editBrand: '/api/company/editBrand',
     getOptions: '/api/company/getOptions',
     getBrandsByClientId: (id) => `/api/company/getBrands/${id}`,
+    getClients: (companyId) => `/api/company/getClientUsers/${companyId}`,
     linkPackage: (id) => `/api/company/linkPackage/${id}`,
   },
   event: {

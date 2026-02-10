@@ -2,11 +2,25 @@ import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
-import { useMemo, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Chip, Stack, Avatar, MenuItem, FormLabel } from '@mui/material';
+import {
+  Box,
+  Chip,
+  Stack,
+  Avatar,
+  Dialog,
+  Button,
+  Switch,
+  MenuItem,
+  FormLabel,
+  Typography,
+  DialogContent,
+} from '@mui/material';
+
+import useGetClients from 'src/hooks/use-get-clients';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -69,18 +83,32 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
   const { user } = useAuthContext();
   const { data: admins } = useGetAdmins('active');
 
+  const companyId = campaign?.company?.id || campaign?.brand?.company?.id;
+
+  // Fetch clients for this company using the new hook
+  const { clients: campaignClients } = useGetClients(companyId);
+
+  // Warning dialog state for v4 submission toggle
+  const [v4WarningOpen, setV4WarningOpen] = useState(false);
+  const [pendingV4Value, setPendingV4Value] = useState(null);
+
   // Get existing campaign managers from campaignAdmin (includes both CSM and Client users)
   const existingManagers = useMemo(() => {
     if (!campaign?.campaignAdmin) return [];
     return campaign.campaignAdmin
-      .filter((ca) => ca.admin?.role?.name === 'CSM' || ca.admin?.role?.name === 'Client' || ca.admin?.user?.role === 'client')
+      .filter(
+        (ca) =>
+          ca.admin?.role?.name === 'CSM' ||
+          ca.admin?.role?.name === 'Client' ||
+          ca.admin?.user?.role === 'client'
+      )
       .map((ca) => ({
         id: ca.admin?.userId,
         name: ca.admin?.user?.name || ca.admin?.name,
         photoURL: ca.admin?.user?.photoURL,
-        role: ca.admin?.role?.name,
+        role: ca.admin?.role?.name || ca.admin?.user.role,
       }));
-  }, [campaign]);
+  }, [campaign?.campaignAdmin]);
 
   // UGC_VIDEOS is the default/base deliverable
   const existingDeliverables = useMemo(() => {
@@ -90,16 +118,16 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
     if (campaign?.ads) delivs.push('ADS');
     if (campaign?.crossPosting) delivs.push('CROSS_POSTING');
     return delivs;
-  }, [campaign]);
+  }, [campaign?.rawFootage, campaign?.photos, campaign?.ads, campaign?.crossPosting]);
 
   const defaultValues = useMemo(
     () => ({
       campaignManager: existingManagers,
       campaignType: campaign?.campaignType || 'normal',
       deliverables: existingDeliverables,
+      isV4Submission: campaign?.submissionVersion === 'v4',
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [campaign?.id, campaign?.submissionVersion, campaign?.campaignType, JSON.stringify(existingManagers), JSON.stringify(existingDeliverables)]
+    [existingManagers, campaign?.submissionVersion, campaign?.campaignType, existingDeliverables]
   );
 
   const methods = useForm({
@@ -111,8 +139,51 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
   const {
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { isSubmitting, isDirty },
   } = methods;
+
+  const isV4Submission = watch('isV4Submission');
+  const currentManagers = watch('campaignManager');
+
+  // Handle v4 toggle change with warning dialog
+  const handleV4ToggleChange = (event) => {
+    const newValue = event.target.checked;
+    // Show warning for both enabling and disabling
+    setPendingV4Value(newValue);
+    setV4WarningOpen(true);
+  };
+
+  const handleV4WarningConfirm = () => {
+    const newValue = pendingV4Value;
+    setValue('isV4Submission', newValue, { shouldDirty: true });
+
+    if (newValue) {
+      // Enabling v4: Add all client users to campaign managers
+      const currentManagerIds = currentManagers?.map((m) => m.id) || [];
+      const clientsToAdd = campaignClients.filter((c) => !currentManagerIds.includes(c.id));
+      if (clientsToAdd.length > 0) {
+        setValue('campaignManager', [...(currentManagers || []), ...clientsToAdd], {
+          shouldDirty: true,
+        });
+      }
+    } else {
+      // Disabling v4: Remove all client users from campaign managers
+      const nonClientManagers = (currentManagers || []).filter(
+        (m) => m.role !== 'Client' && m.role !== 'client'
+      );
+      setValue('campaignManager', nonClientManagers, { shouldDirty: true });
+    }
+
+    setV4WarningOpen(false);
+    setPendingV4Value(null);
+  };
+
+  const handleV4WarningCancel = () => {
+    setV4WarningOpen(false);
+    setPendingV4Value(null);
+  };
 
   // Reset form only when the campaign ID changes (new campaign loaded)
   useEffect(() => {
@@ -129,6 +200,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
         campaignManagers: data.campaignManager,
         campaignType: data.campaignType,
         deliverables: data.deliverables,
+        isV4Submission: data.isV4Submission,
       });
 
       enqueueSnackbar('Campaign finalise settings updated successfully');
@@ -149,7 +221,35 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
           maxWidth: 800,
         }}
       >
-        <Stack direction="row" spacing={2}>
+        {/* Submission Version Toggle */}
+        <Stack>
+          <Stack direction="row" alignItems="center" mb={-0.8}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                color: '#231F20',
+                opacity: 0.6,
+                fontSize: '0.875rem',
+                mr: -0.5
+              }}
+            >
+              Enable this as a Client Campaign?
+            </Typography>
+            <Switch
+              checked={isV4Submission || false}
+              onChange={handleV4ToggleChange}
+              color="primary"
+              disabled
+            />
+          </Stack>
+          <Typography variant="caption" fontWeight={400} color="text.secondary">
+            {isV4Submission
+              ? 'Client users will be added as campaign managers. Disabling will remove them.'
+              : 'Enabling this option makes it a campaign that the previously selected client will manage.'}
+          </Typography>
+        </Stack>
+
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           {/* Left column */}
           <Stack flex={1} spacing={2}>
             <FormField label="Campaign Managers">
@@ -169,7 +269,11 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
                         {...getTagProps({ index })}
                         avatar={<Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>}
                         key={option?.id}
-                        label={option?.id === user?.id ? 'Me' : `${option?.name}${isClient ? ' (Client)' : ''}`}
+                        label={
+                          option?.id === user?.id
+                            ? 'Me'
+                            : `${option?.name}${isClient ? ' (Client)' : ''}`
+                        }
                         size="small"
                         variant="outlined"
                         sx={{
@@ -188,7 +292,10 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
                 }
               />
             </FormField>
+          </Stack>
 
+          {/* Right column */}
+          <Stack flex={1} spacing={2}>
             <FormField label="Campaign Type">
               <RHFSelectV2 name="campaignType" placeholder="Select campaign type">
                 {campaignTypeOptions.map((option) => (
@@ -199,19 +306,18 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
               </RHFSelectV2>
             </FormField>
           </Stack>
+        </Stack>
 
-          {/* Right column */}
-          <Stack flex={1} spacing={2}>
-            <FormField label="Deliverables">
-              <RHFMultiSelect
-                name="deliverables"
-                placeholder="Select deliverable(s)"
-                chip
-                checkbox
-                options={deliverableOptions}
-              />
-            </FormField>
-          </Stack>
+        <Stack>
+          <FormField label="Additional Deliverables">
+            <RHFMultiSelect
+              name="deliverables"
+              placeholder="Select deliverable(s)"
+              chip
+              checkbox
+              options={deliverableOptions}
+            />
+          </FormField>
         </Stack>
 
         {/* Submit Button */}
@@ -237,6 +343,111 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
           </LoadingButton>
         </Stack>
       </Box>
+
+      {/* V4 Submission Warning Dialog */}
+      <Dialog
+        open={v4WarningOpen}
+        onClose={handleV4WarningCancel}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            p: 3,
+            textAlign: 'center',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 0 }}>
+          {/* Icon Circle */}
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              borderRadius: '50%',
+              bgcolor: pendingV4Value ? '#1340FF' : '#2C2C2C',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 3,
+            }}
+          >
+            <Typography sx={{ fontSize: 40 }}>{pendingV4Value ? '🔄' : '⚠️'}</Typography>
+          </Box>
+
+          {/* Title */}
+          <Typography
+            sx={{
+              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+              fontSize: 36,
+              fontWeight: 400,
+              mb: 1,
+              lineHeight: 1.2,
+            }}
+          >
+            {pendingV4Value ? 'Enable Client Campaign?' : 'Disable Client Campaign?'}
+          </Typography>
+
+          {/* Info Statement */}
+          <Typography
+            sx={{
+              color: '#636366',
+              fontSize: '0.875rem',
+              mb: 3,
+              mt: 1,
+              lineHeight: 1.5,
+            }}
+          >
+            This action will affect workflow if creators are already shortlisted with agreements
+            sent out. Ensure you are doing this before any creators are shortlisted.
+          </Typography>
+
+          {/* Buttons */}
+          <Stack spacing={1.5}>
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={handleV4WarningConfirm}
+              sx={{
+                bgcolor: pendingV4Value ? '#1340FF' : '#3A3A3C',
+                borderBottom: pendingV4Value ? '3px solid #0d2db3' : '3px solid #00000073',
+                color: '#fff',
+                py: 1,
+                fontSize: '1rem',
+                fontWeight: 600,
+                borderRadius: 1.5,
+                textTransform: 'none',
+                '&:hover': {
+                  bgcolor: pendingV4Value ? '#0d2db3' : '#2C2C2C',
+                },
+              }}
+            >
+              Confirm
+            </Button>
+            <Button
+              fullWidth
+              onClick={handleV4WarningCancel}
+              sx={{
+                color: '#3A3A3C',
+                border: '1px solid #E7E7E7',
+                borderBottom: '3px solid #e7e7e7',
+                py: 1,
+                fontSize: '1rem',
+                fontWeight: 600,
+                borderRadius: 1.5,
+                bgcolor: 'transparent',
+                textTransform: 'none',
+                '&:hover': {
+                  bgcolor: 'transparent',
+                },
+              }}
+            >
+              Cancel
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
     </FormProvider>
   );
 };
