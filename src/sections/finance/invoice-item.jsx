@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
-import { STATUS_COLORS } from './invoices-list';
+import { STATUS_COLORS } from './invoice-constants';
 
 const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditInvoice }) => {
   const [value, setValue] = useState(invoice?.status);
