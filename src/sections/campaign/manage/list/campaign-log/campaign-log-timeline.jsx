@@ -13,6 +13,7 @@ import CampaignLogTimelineItem from './campaign-log-timeline-item';
 
 const HEADER_HEIGHT = 36;
 const ITEM_HEIGHT = 72; // 64px card + 8px gap
+const BOTTOM_SPACER = 24;
 const CONTAINER_HEIGHT_VH = 70; // matches DialogContent height
 
 // ---------------------------------------------------------------------------
@@ -53,13 +54,19 @@ export default function CampaignLogTimeline({ logs, photoMap, selectedLogId, onS
       items.push({ type: 'header', label: group.label });
       group.items.forEach((entry) => items.push({ type: 'item', entry }));
     });
+    items.push({ type: 'spacer' });
     return items;
   }, [groups]);
 
   const listRef = useRef(null);
 
   const getItemSize = useCallback(
-    (index) => (flatItems[index].type === 'header' ? HEADER_HEIGHT : ITEM_HEIGHT),
+    (index) => {
+      const { type } = flatItems[index];
+      if (type === 'header') return HEADER_HEIGHT;
+      if (type === 'spacer') return BOTTOM_SPACER;
+      return ITEM_HEIGHT;
+    },
     [flatItems]
   );
 
@@ -87,9 +94,8 @@ export default function CampaignLogTimeline({ logs, photoMap, selectedLogId, onS
         const item = flatItems[index];
         return (
           <div style={{ ...style, paddingLeft: 20, paddingRight: 20 }}>
-            {item.type === 'header' ? (
-              <DateHeader label={item.label} />
-            ) : (
+            {item.type === 'header' && <DateHeader label={item.label} />}
+            {item.type === 'item' && (
               <CampaignLogTimelineItem
                 entry={item.entry}
                 photoMap={photoMap}
