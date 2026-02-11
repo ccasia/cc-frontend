@@ -801,7 +801,6 @@ export default function CampaignItem({
     <Card
       component={Box}
       id={`campaign-${campaign?.id}`}
-      ref={ref}
       href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
       onClick={() => {
         const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');
