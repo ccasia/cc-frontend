@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { useFormContext } from 'react-hook-form';
 
-import { DatePicker } from '@mui/x-date-pickers';
 import { Box, Grid, Stack, FormLabel, Typography } from '@mui/material';
 
 import { RHFUpload } from 'src/components/hook-form/rhf-upload';
@@ -64,10 +63,6 @@ AdditionalDetails1.propTypes = {
 
 export default function AdditionalDetails1() {
   const { setValue, watch } = useFormContext();
-
-  // Watch date fields
-  const postingStartDate = watch('postingStartDate');
-  const postingEndDate = watch('postingEndDate');
 
   return (
     <Box sx={{ maxWidth: '816px', mx: 'auto', mb: 12, mt: 8 }}>

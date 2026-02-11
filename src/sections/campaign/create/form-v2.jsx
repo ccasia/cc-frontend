@@ -911,8 +911,8 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
         const desc = formValues.campaignDescription;
         const startDate = formValues.campaignStartDate;
         const endDate = formValues.campaignEndDate;
-        const postingStartDate = formValues.postingStartDate;
-        const postingEndDate = formValues.postingEndDate;
+        const {postingStartDate} = formValues;
+        const {postingEndDate} = formValues;
         const { productName } = formValues;
         const industries = formValues.campaignIndustries;
         const images = formValues.campaignImages;
