@@ -232,7 +232,7 @@ const CampaignTargetAudience = () => {
                 color: (theme) => (theme.palette.mode === 'light' ? '#000' : '#fff'),
               }}
             >
-              Secondary Audience (if any)
+              Secondary Audience (optional)
             </Typography>
             <Stack spacing={2}>
               {/* Gender */}
