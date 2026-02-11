@@ -82,7 +82,7 @@ function JourneyDropdown({ creatorName, creatorPhoto, journey, selectedId, photo
   if (journey.length <= 1) return null;
 
   return (
-    <Box sx={{ mx: 2, mb: 1.5 }}>
+    <Box>
       {/* Toggle header */}
       <Box
         component="button"
@@ -92,14 +92,14 @@ function JourneyDropdown({ creatorName, creatorPhoto, journey, selectedId, photo
           alignItems: 'center',
           width: '100%',
           gap: 0.75,
-          px: 1.25,
-          py: 0.875,
+          px: 1,
+          py: 0.75,
           border: '1px solid #E7E7E7',
           borderRadius: open ? '8px 8px 0 0' : 1,
-          bgcolor: '#FFFFFF',
+          bgcolor: '#FAFBFC',
           cursor: 'pointer',
           transition: 'all 0.15s',
-          '&:hover': { bgcolor: '#F9FAFB' },
+          '&:hover': { bgcolor: '#F4F4F5' },
         }}
       >
         <Avatar
@@ -134,7 +134,7 @@ function JourneyDropdown({ creatorName, creatorPhoto, journey, selectedId, photo
             borderTop: 'none',
             borderRadius: '0 0 8px 8px',
             bgcolor: '#FFFFFF',
-            px: 1.25,
+            px: 1,
             py: 1,
           }}
         >
@@ -605,125 +605,131 @@ export default function CampaignLogDetailContent({ log, allLogs, campaign, photo
   return (
     <Box sx={{ height: '100%', overflow: 'auto' }}>
       {/* ── Event card ── */}
-      <Box sx={{ mx: 2, mt: 2, mb: 1.5, border: '1px solid #E7E7E7', borderRadius: 1.5, overflow: 'hidden', bgcolor: '#FFFFFF' }}>
-        {/* Action text — hero section */}
-        <Box sx={{ px: 1.75, pt: 1.75, pb: 1.25 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '5px',
-              fontSize: 15,
-              fontWeight: 500,
-              color: '#221F20',
-              lineHeight: 1.8,
-              mb: 0.5,
-            }}
-          >
-            {renderActionParts(log.formattedSummary, photoMap, 28)}
-          </Box>
-
-          <Typography sx={{ fontSize: 12, color: '#8e8e93' }}>
-            {formatLogTime(log.createdAt)}
-          </Typography>
-        </Box>
-
-        {/* Divider */}
-        <Box sx={{ borderTop: '1px solid #F0F0F0' }} />
-
-        {/* Performed By row */}
-        <Box sx={{ px: 1.75, py: 0.75, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#8e8e93', flexShrink: 0 }}>
-            Performed By
-          </Typography>
-          <Avatar
-            src={photoMap?.get(log.performedBy)}
-            alt={log.performedBy}
-            sx={{ width: 20, height: 20, fontSize: 9, fontWeight: 700, ml: 0.25 }}
-          >
-            {log.performedBy?.charAt(0)?.toUpperCase()}
-          </Avatar>
-          <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#221F20' }} noWrap>
-            {log.performedBy}
-          </Typography>
-          {badge && (
+      <Box sx={{ mx: 2, mt: 2, mb: 1 }}>
+        <DetailCard icon="solar:clipboard-text-bold" iconColor="#1340FF" headerBg="#EBF0FF" label="Log">
+          {/* Action text — hero section */}
+          <Box sx={{ mb: 1 }}>
             <Box
-              component="span"
               sx={{
-                px: 0.5,
-                py: '1px',
-                borderRadius: 0.5,
-                bgcolor: badge.bg,
-                color: badge.color,
-                fontSize: 9,
-                fontWeight: 700,
-                lineHeight: 1.3,
-                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '5px',
+                fontSize: 15,
+                fontWeight: 500,
+                color: '#221F20',
+                lineHeight: 1.8,
+                mb: 0.5,
               }}
             >
-              {badge.label}
+              {renderActionParts(log.formattedSummary, photoMap, 28)}
             </Box>
-          )}
-        </Box>
 
-        {/* Divider */}
-        <Box sx={{ borderTop: '1px solid #F0F0F0' }} />
-
-        {/* Action row */}
-        <Box sx={{ px: 1.75, py: 0.75, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#8e8e93', flexShrink: 0 }}>
-            Action
-          </Typography>
-          <Box
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              px: 0.625,
-              py: '2px',
-              borderRadius: 0.5,
-              bgcolor: meta.bg,
-              ml: 0.25,
-            }}
-          >
-            <Iconify icon={meta.icon} width={13} sx={{ color: meta.color }} />
-            <Typography sx={{ fontSize: 11, fontWeight: 600, color: meta.color }}>
-              {log.category}
+            <Typography sx={{ fontSize: 12, color: '#8e8e93' }}>
+              {formatLogTime(log.createdAt, { detailed: true })}
             </Typography>
           </Box>
-        </Box>
+
+          {/* Divider */}
+          <Box sx={{ borderTop: '1px solid #F0F0F0', mx: -1.5 }} />
+
+          {/* Performed By row */}
+          <Box sx={{ py: 0.75, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#8e8e93', flexShrink: 0 }}>
+              Performed By
+            </Typography>
+            <Avatar
+              src={photoMap?.get(log.performedBy)}
+              alt={log.performedBy}
+              sx={{ width: 20, height: 20, fontSize: 9, fontWeight: 700, ml: 0.25 }}
+            >
+              {log.performedBy?.charAt(0)?.toUpperCase()}
+            </Avatar>
+            <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#221F20' }} noWrap>
+              {log.performedBy}
+            </Typography>
+            {badge && (
+              <Box
+                component="span"
+                sx={{
+                  px: 0.5,
+                  py: '1px',
+                  borderRadius: 0.5,
+                  bgcolor: badge.bg,
+                  color: badge.color,
+                  fontSize: 9,
+                  fontWeight: 700,
+                  lineHeight: 1.3,
+                  flexShrink: 0,
+                }}
+              >
+                {badge.label}
+              </Box>
+            )}
+          </Box>
+
+          {/* Divider */}
+          <Box sx={{ borderTop: '1px solid #F0F0F0', mx: -1.5 }} />
+
+          {/* Action row */}
+          <Box sx={{ pt: 0.75, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#8e8e93', flexShrink: 0 }}>
+              Action
+            </Typography>
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                px: 0.625,
+                py: '2px',
+                borderRadius: 0.5,
+                bgcolor: meta.bg,
+                ml: 0.25,
+              }}
+            >
+              <Iconify icon={meta.icon} width={13} sx={{ color: meta.color }} />
+              <Typography sx={{ fontSize: 11, fontWeight: 600, color: meta.color }}>
+                {log.category}
+              </Typography>
+            </Box>
+          </Box>
+        </DetailCard>
       </Box>
 
       {/* ── Creator Journey (collapsible dropdown) ── */}
       {journey.length > 1 && (
-        <Box sx={{ pt: 1.5 }}>
-          <JourneyDropdown
-            creatorName={creatorName}
-            creatorPhoto={creatorPhoto}
-            journey={journey}
-            selectedId={log.id}
-            photoMap={photoMap}
-          />
+        <Box sx={{ mx: 2, mb: 1 }}>
+          <DetailCard icon="solar:history-bold" iconColor="#1340FF" headerBg="#EBF0FF" label="Timeline">
+            <JourneyDropdown
+              creatorName={creatorName}
+              creatorPhoto={creatorPhoto}
+              journey={journey}
+              selectedId={log.id}
+              photoMap={photoMap}
+            />
+          </DetailCard>
         </Box>
       )}
 
       {/* ── Detail cards ── */}
       {hasDetailCards && (
-        <Box sx={{ px: 2, pt: journey.length > 1 ? 0 : 1.5, pb: 2 }}>
+        <Box sx={{ px: 2, pb: 2 }}>
           {context.campaignInfo && (
             <DetailCampaignSection info={context.campaignInfo} />
           )}
 
-          {context.changes?.length > 0 ? (
+          {context.changes?.length > 0 && (
             <DetailChangesSection changes={context.changes} sectionName={context.editSection} />
-          ) : context.editSection ? (
+          )}
+
+          {!(context.changes?.length > 0) && context.editSection && (
             <DetailCard icon="solar:pen-bold" iconColor="#1340FF" headerBg="#EBF0FF" label="Section Edited">
               <Typography sx={{ fontSize: 13, color: '#221F20', fontWeight: 500 }}>
                 {context.editSection}
               </Typography>
             </DetailCard>
-          ) : null}
+          )}
 
           {context.invoice && (
             <DetailInvoiceSection invoice={context.invoice} invoices={invoices} invoicesLoading={invoicesLoading} />

@@ -87,7 +87,7 @@ const CampaignLogTimelineItem = memo(({
 
         {/* Time */}
         <Typography variant="caption" sx={TIME_SX}>
-          {formatLogTime(entry.createdAt)}
+          {formatLogTime(entry.createdAt, { relative: true })}
         </Typography>
       </Box>
     </Box>

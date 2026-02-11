@@ -1,9 +1,11 @@
 import dayjs from 'dayjs';
 import isToday from 'dayjs/plugin/isToday';
 import isYesterday from 'dayjs/plugin/isYesterday';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
+dayjs.extend(relativeTime);
 
 // ---------------------------------------------------------------------------
 // 1. Classification rules — checked in order, first match wins
@@ -588,13 +590,22 @@ export function groupLogsByDate(logs) {
 // 6. Format time
 // ---------------------------------------------------------------------------
 
-export function formatLogTime(createdAt) {
+export function formatLogTime(createdAt, { relative = false, detailed = false } = {}) {
   const d = dayjs(createdAt);
   const time = d.format('h:mm A');
 
-  if (d.isToday()) return `Today at ${time}`;
-  if (d.isYesterday()) return `Yesterday at ${time}`;
-  return `${d.format('MMM D')} at ${time}`;
+  let base;
+  if (d.isToday()) base = `Today at ${time}`;
+  else if (d.isYesterday()) base = `Yesterday at ${time}`;
+  else base = `${d.format('MMM D')} at ${time}`;
+
+  // Detailed: always show "Today at 2:35 PM · 5 minutes ago"
+  if (detailed) return `${base} · ${d.fromNow()}`;
+
+  // Relative: within 1 hour show only "5 minutes ago", otherwise normal
+  if (relative && dayjs().diff(d, 'minute') < 60) return d.fromNow();
+
+  return base;
 }
 
 // ---------------------------------------------------------------------------
