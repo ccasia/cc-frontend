@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { VariableSizeList } from 'react-window';
-import { useRef, useMemo, useState, useCallback } from 'react';
+import { useRef, useMemo, useEffect, useCallback } from 'react';
 
 import Typography from '@mui/material/Typography';
 
@@ -12,9 +12,8 @@ import CampaignLogTimelineItem from './campaign-log-timeline-item';
 // ---------------------------------------------------------------------------
 
 const HEADER_HEIGHT = 36;
-const COLLAPSED_HEIGHT = 72; // 64px card + 8px gap
-const EXPANDED_HEIGHT = 112; // ~104px card + 8px gap
-const CONTAINER_HEIGHT_VH = 60; // matches DialogContent height
+const ITEM_HEIGHT = 72; // 64px card + 8px gap
+const CONTAINER_HEIGHT_VH = 70; // matches DialogContent height
 
 // ---------------------------------------------------------------------------
 // Date header component
@@ -44,7 +43,7 @@ DateHeader.propTypes = { label: PropTypes.string.isRequired };
 
 // ---------------------------------------------------------------------------
 
-export default function CampaignLogTimeline({ logs, photoMap }) {
+export default function CampaignLogTimeline({ logs, photoMap, selectedLogId, onSelectLog }) {
   const groups = useMemo(() => groupLogsByDate(logs), [logs]);
 
   // Flatten groups into a renderable list: [{type:'header', label}, {type:'item', entry}]
@@ -57,32 +56,17 @@ export default function CampaignLogTimeline({ logs, photoMap }) {
     return items;
   }, [groups]);
 
-  // Expand state — lifted from individual items for react-window compat
   const listRef = useRef(null);
-  const [expandedIds, setExpandedIds] = useState(new Set());
 
   const getItemSize = useCallback(
-    (index) => {
-      const item = flatItems[index];
-      if (item.type === 'header') return HEADER_HEIGHT;
-      return expandedIds.has(item.entry.id) ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT;
-    },
-    [flatItems, expandedIds]
+    (index) => (flatItems[index].type === 'header' ? HEADER_HEIGHT : ITEM_HEIGHT),
+    [flatItems]
   );
 
-  const handleToggle = useCallback(
-    (entryId, flatIndex) => {
-      setExpandedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(entryId)) next.delete(entryId);
-        else next.add(entryId);
-        return next;
-      });
-      // Tell react-window to recalculate sizes from this index onward
-      listRef.current?.resetAfterIndex(flatIndex);
-    },
-    []
-  );
+  // Reset sizes when list content changes (e.g. filtering)
+  useEffect(() => {
+    listRef.current?.resetAfterIndex(0);
+  }, [flatItems]);
 
   // Calculate container height in pixels (fallback for SSR)
   const containerHeight =
@@ -109,8 +93,8 @@ export default function CampaignLogTimeline({ logs, photoMap }) {
               <CampaignLogTimelineItem
                 entry={item.entry}
                 photoMap={photoMap}
-                isExpanded={expandedIds.has(item.entry.id)}
-                onToggle={() => handleToggle(item.entry.id, index)}
+                isSelected={selectedLogId === item.entry.id}
+                onSelect={() => onSelectLog(item.entry.id)}
               />
             )}
           </div>
@@ -123,4 +107,6 @@ export default function CampaignLogTimeline({ logs, photoMap }) {
 CampaignLogTimeline.propTypes = {
   logs: PropTypes.array.isRequired,
   photoMap: PropTypes.instanceOf(Map),
+  selectedLogId: PropTypes.string,
+  onSelectLog: PropTypes.func,
 };
