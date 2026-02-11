@@ -1,6 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
+import { FixedSizeList } from 'react-window';
 import { m, AnimatePresence } from 'framer-motion';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -1516,6 +1517,35 @@ AddCreatorModal.propTypes = {
   campaign: PropTypes.object,
 };
 
+// Virtualized listbox for Autocomplete (reuses pattern from campaign-detail-creator)
+const LISTBOX_PADDING = 8;
+
+const ListboxComponent = React.forwardRef((props, ref) => {
+  // eslint-disable-next-line react/prop-types
+  const { children, ...other } = props;
+  const items = React.Children.toArray(children);
+  const itemCount = items.length;
+  const itemSize = 60;
+
+  return (
+    <div ref={ref} {...other}>
+      <FixedSizeList
+        height={
+          itemCount > 8 ? 8 * itemSize + LISTBOX_PADDING : itemCount * itemSize + LISTBOX_PADDING
+        }
+        width="100%"
+        itemSize={itemSize}
+        itemCount={itemCount}
+        overscanCount={5}
+      >
+        {({ index, style }) => (
+          <div style={{ ...style, top: style.top + LISTBOX_PADDING }}>{items[index]}</div>
+        )}
+      </FixedSizeList>
+    </div>
+  );
+});
+
 export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdated }) {
   const { data, isLoading } = useGetAllCreators();
   const { enqueueSnackbar } = useSnackbar();
@@ -1769,18 +1799,32 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                           Select Creators to add
                         </Typography>
                         <Autocomplete
+                          ListboxComponent={ListboxComponent}
+                          disableListWrap
                           value={row.creator}
                           onChange={(e, val) => handleCreatorRowChange(row.id, val)}
                           options={getFilteredOptions(row.id)}
                           getOptionLabel={(option) => option?.name || ''}
                           filterOptions={(options, state) => {
                             if (!state.inputValue) return options;
-                            const lowercaseInput = state.inputValue.toLowerCase();
-                            return options.filter(
-                              (option) =>
-                                option?.name?.toLowerCase().includes(lowercaseInput) ||
-                                option?.email?.toLowerCase().includes(lowercaseInput)
-                            );
+                            const query = state.inputValue.toLowerCase();
+
+                            return options
+                              .map((option) => {
+                                const name = (option?.name || '').toLowerCase();
+                                const email = (option?.email || '').toLowerCase();
+
+                                let score = -1;
+                                if (name.startsWith(query)) score = 3;
+                                else if (name.includes(query)) score = 2;
+                                else if (email.startsWith(query)) score = 1;
+                                else if (email.includes(query)) score = 0;
+
+                                return { option, score, name };
+                              })
+                              .filter((item) => item.score >= 0)
+                              .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+                              .map((item) => item.option);
                           }}
                           isOptionEqualToValue={(option, value) => option?.id === value?.id}
                           disableClearable={!!row.creator}
