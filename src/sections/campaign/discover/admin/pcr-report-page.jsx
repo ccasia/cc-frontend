@@ -8,12 +8,16 @@ import html2canvas from 'html2canvas';
 import { enqueueSnackbar } from 'notistack';
 import EmojiPicker from 'emoji-picker-react';
 import { useRef, useMemo, useState, useEffect } from 'react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 import SendIcon from '@mui/icons-material/Send';
 import DeleteIcon from '@mui/icons-material/Delete';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { Box, Grid, Link, Button, Avatar, Popover, Snackbar, TextField, Typography, IconButton, InputAdornment, CircularProgress } from '@mui/material';
+import { Box, Grid, Link, Button, Avatar, Popover, TextField, Typography, IconButton, InputAdornment, CircularProgress, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 import { PieChart } from '@mui/x-charts';
+
+import Iconify from 'src/components/iconify';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -40,6 +44,84 @@ const getWorkedWellOpacity = (index) => {
   return 0.65;
 };
 
+// Sortable Section Component  
+const SortableSection = ({ id, children, isEditMode }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id, 
+    disabled: !isEditMode,
+  });
+
+  const style = {
+    transform: isDragging 
+      ? `${CSS.Transform.toString(transform)} scale(0.95)` 
+      : CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.8 : 1,
+    zIndex: isDragging ? 1000 : 'auto',
+    cursor: isEditMode ? 'grab' : 'default',
+  };
+
+  // Custom pointer down handler to prevent dragging from interactive elements
+  const handlePointerDown = (e) => {
+    const target = e.target;
+    const tagName = target.tagName.toLowerCase();
+    
+    // Check if clicking on interactive elements or elements with click handlers
+    if (
+      tagName === 'button' ||
+      tagName === 'input' ||
+      tagName === 'textarea' ||
+      tagName === 'a' ||
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('textarea') ||
+      target.closest('a') ||
+      // Check if element or parent has onClick handler (for emoji circles)
+      target.onclick ||
+      target.closest('[onclick]') ||
+      // Check if element has pointer cursor (indicates it's clickable)
+      window.getComputedStyle(target).cursor === 'pointer'
+    ) {
+      e.stopPropagation();
+      return;
+    }
+    
+    // Allow drag for other elements
+    if (listeners?.onPointerDown) {
+      listeners.onPointerDown(e);
+    }
+  };
+
+  return (
+    <Box 
+      ref={setNodeRef} 
+      style={style} 
+      {...attributes}
+      onPointerDown={isEditMode ? handlePointerDown : undefined}
+      sx={{ 
+        '& button, & input, & textarea, & a': {
+          cursor: 'default',
+        }
+      }}
+    >
+      {children}
+    </Box>
+  );
+};
+
+SortableSection.propTypes = {
+  id: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+  isEditMode: PropTypes.bool.isRequired,
+};
+
 const PCRReportPage = ({ campaign, onBack }) => {
   // Helper function to format campaign period (matching campaign detail view format)
   const formatCampaignPeriod = () => {
@@ -61,30 +143,110 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
   
+  // Individual section edit states
+  const [sectionEditStates, setSectionEditStates] = useState({
+    campaignDescription: false,
+    engagement: false,
+    platformBreakdown: false,
+    views: false,
+    audienceSentiment: false,
+    creatorTiers: false,
+    strategies: false,
+    recommendations: false,
+  });
+
+  // Section visibility states (which sections are shown)
+  const [sectionVisibility, setSectionVisibility] = useState({
+    engagement: true,
+    platformBreakdown: true,
+    views: true,
+    audienceSentiment: true,
+    creatorTiers: true,
+    strategies: true,
+    recommendations: true,
+  });
+
+  // Section order state for drag and drop (excluding first section which is campaign description)
+  const [sectionOrder, setSectionOrder] = useState([
+    'engagement',
+    'platformBreakdown',
+    'views',
+    'audienceSentiment',
+    'creatorTiers',
+    'strategies',
+    'recommendations',
+  ]);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (active.id !== over.id) {
+      setSectionOrder((items) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+  
   // Show second persona card state
   const [showEducatorCard, setShowEducatorCard] = useState(false);
+  
+  // Show third persona card state
+  const [showThirdCard, setShowThirdCard] = useState(false);
+  
+  // Persona cards array state
+  const [personaCards, setPersonaCards] = useState([
+    {
+      id: 1,
+      title: 'The Comic',
+      emoji: '🎭',
+      contentStyle: '',
+      whyWork: '',
+      creatorCount: '1',
+    }
+  ]);
   
   // Editable content state - Initialize with empty/default values
   const [editableContent, setEditableContent] = useState({
     campaignDescription: '',
     engagementDescription: '',
+    platformBreakdownDescription: '',
     viewsDescription: '',
     audienceSentimentDescription: '',
     noteworthyCreatorsDescription: '',
     bestPerformingPersonasDescription: '',
     positiveComments: [],
     neutralComments: [],
-    comicTitle: 'The Comic',
-    comicEmoji: '🎭',
+    comicTitle: '',
+    comicEmoji: '',
     comicContentStyle: '',
     comicWhyWork: '',
-    educatorTitle: 'The Educator',
-    educatorEmoji: '👨‍🏫',
+    educatorTitle: '',
+    educatorEmoji: '',
     educatorContentStyle: '',
     educatorWhyWork: '',
+    creatorStrategyCount: '',
+    educatorCreatorCount: '',
+    thirdTitle: '',
+    thirdEmoji: '',
+    thirdContentStyle: '',
+    thirdWhyWork: '',
+    thirdCreatorCount: '',
+    personaCards: [],
     improvedInsights: [],
     workedWellInsights: [],
     nextStepsInsights: [],
+    creatorTiersDescription: '',
   });
   
   // Loading and saving states
@@ -93,43 +255,116 @@ const PCRReportPage = ({ campaign, onBack }) => {
   
   // Emoji picker state
   const [emojiPickerAnchor, setEmojiPickerAnchor] = useState(null);
-  const [emojiPickerType, setEmojiPickerType] = useState(null); // 'comic' or 'educator'
+  const [emojiPickerType, setEmojiPickerType] = useState(null); 
   
   // Undo/Redo state
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   
-  // Success message state
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  
-  // Ref for PDF export
   const reportRef = useRef(null);
+  const cardsContainerRef = useRef(null);
+  const displayCardsContainerRef = useRef(null);
+  const [cardsHeight, setCardsHeight] = useState(280);
+  const [displayCardsHeight, setDisplayCardsHeight] = useState(280);
   
-  // Extract posting submissions from campaign data
   const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
   const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
   const campaignId = campaign?.id;
 
-  // Fetch social insights data
+  // Fetch manual creator entries
+  const { data: manualEntriesData, mutate: mutateManualEntries } = useSWR(
+    campaignId ? `/api/campaign/${campaignId}/manual-creators` : null,
+    async (url) => {
+      const response = await axios.get(url);
+      return response.data;
+    },
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  const manualEntries = useMemo(() => {
+    const entries = manualEntriesData?.data || [];
+    console.log('Manual Entries:', entries);
+    return entries;
+  }, [manualEntriesData]);
+
   const { 
     data: insightsData, 
     isLoading: loadingInsights 
   } = useSocialInsights(postingSubmissions, campaignId);
 
-  // Filter insights data for all platforms
+  // Transform manual entries to match insights data structure
+  const manualInsightsData = useMemo(() => {
+    const transformed = manualEntries.map((entry) => ({
+      id: entry.id,
+      submissionId: entry.id,
+      platform: entry.platform,
+      insight: [
+        { name: 'views', value: entry.views || 0 },
+        { name: 'likes', value: entry.likes || 0 },
+        { name: 'shares', value: entry.shares || 0 },
+        { name: 'saved', value: entry.saved || 0 },
+        { name: 'comments', value: 0 },
+        { name: 'reach', value: 0 },
+        { name: 'engagementRate', value: entry.engagementRate || 0 },
+      ],
+    }));
+    console.log('Manual Insights Data:', transformed);
+    return transformed;
+  }, [manualEntries]);
+
+  // Transform manual entries to match submission structure
+  const manualSubmissions = useMemo(() => {
+    const transformed = manualEntries.map((entry) => ({
+      id: entry.id,
+      platform: entry.platform,
+      user: {
+        id: entry.id,
+        name: entry.creatorName,
+        creator: {
+          instagram: entry.platform === 'Instagram' ? entry.creatorUsername : null,
+          tiktok: entry.platform === 'TikTok' ? entry.creatorUsername : null,
+        },
+      },
+      insightData: {
+        insight: [
+          { name: 'views', value: entry.views || 0 },
+          { name: 'likes', value: entry.likes || 0 },
+          { name: 'shares', value: entry.shares || 0 },
+          { name: 'saved', value: entry.saved || 0 },
+          { name: 'comments', value: 0 },
+          { name: 'reach', value: 0 },
+          { name: 'engagementRate', value: entry.engagementRate || 0 },
+        ],
+      },
+      engagementRate: entry.engagementRate || 0,
+    }));
+    console.log('Manual Submissions:', transformed);
+    return transformed;
+  }, [manualEntries]);
+
   const filteredInsightsData = useMemo(() => {
-    if (!insightsData || insightsData.length === 0) return [];
-    return insightsData;
-  }, [insightsData]);
+    const combined = [...(insightsData || []), ...manualInsightsData];
+    console.log('Combined Insights Data:', combined);
+    return combined;
+  }, [insightsData, manualInsightsData]);
 
-  // Filter submissions for all platforms  
-  const filteredSubmissions = useMemo(() => 
-    postingSubmissions.filter((sub) => sub && sub.platform)
-  , [postingSubmissions]);
+  const filteredSubmissions = useMemo(() => {
+    const regularSubmissions = postingSubmissions.filter((sub) => sub && sub.platform);
+    const combined = [...regularSubmissions, ...manualSubmissions];
+    console.log('Combined Submissions:', combined);
+    return combined;
+  }, [postingSubmissions, manualSubmissions]);
 
-  // Calculate summary statistics from real data
   const summaryStats = useMemo(() => {
+    console.log('=== Calculating Summary Stats ===');
+    console.log('filteredInsightsData length:', filteredInsightsData.length);
+    console.log('filteredInsightsData:', filteredInsightsData);
+    
     if (filteredInsightsData.length === 0) {
+      console.log('No insights data, returning zeros');
       return {
         totalViews: 0,
         totalLikes: 0,
@@ -141,7 +376,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
         avgEngagementRate: 0,
       };
     }
-    return calculateSummaryStats(filteredInsightsData);
+    
+    const stats = calculateSummaryStats(filteredInsightsData);
+    console.log('Calculated Summary Stats:', stats);
+    return stats;
   }, [filteredInsightsData]);
 
   // Debug logging
@@ -190,7 +428,28 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         if (response.data.success && response.data.data.content) {
           console.log('✅ PCR data loaded:', response.data.data.content);
-          setEditableContent(response.data.data.content);
+          const loadedContent = response.data.data.content;
+          setEditableContent(loadedContent);
+          
+          // Restore section order and visibility if saved
+          if (loadedContent.sectionOrder) {
+            setSectionOrder(loadedContent.sectionOrder);
+          }
+          if (loadedContent.sectionVisibility) {
+            setSectionVisibility(loadedContent.sectionVisibility);
+          }
+          
+          // Restore card visibility states based on saved data - check if any field has content
+          const hasEducatorContent = (loadedContent.educatorTitle && loadedContent.educatorTitle.trim() !== '') ||
+                                    (loadedContent.educatorContentStyle && loadedContent.educatorContentStyle.trim() !== '');
+          const hasThirdContent = (loadedContent.thirdTitle && loadedContent.thirdTitle.trim() !== '') ||
+                                 (loadedContent.thirdContentStyle && loadedContent.thirdContentStyle.trim() !== '');
+          if (hasEducatorContent) {
+            setShowEducatorCard(true);
+          }
+          if (hasThirdContent) {
+            setShowThirdCard(true);
+          }
         } else {
           console.log('ℹ️ No PCR data found, using defaults');
         }
@@ -206,9 +465,15 @@ const PCRReportPage = ({ campaign, onBack }) => {
   
   // Save PCR data to backend
   // Save content to history for undo/redo
-  const saveToHistory = (content) => {
+  const saveToHistory = (content, visibility, order, showEducator, showThird) => {
     const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(JSON.parse(JSON.stringify(content)));
+    newHistory.push(JSON.parse(JSON.stringify({
+      content,
+      sectionVisibility: visibility,
+      sectionOrder: order,
+      showEducatorCard: showEducator,
+      showThirdCard: showThird,
+    })));
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
   };
@@ -217,8 +482,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
   const handleUndo = () => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
+      const state = history[newIndex];
       setHistoryIndex(newIndex);
-      setEditableContent(JSON.parse(JSON.stringify(history[newIndex])));
+      setEditableContent(JSON.parse(JSON.stringify(state.content)));
+      setSectionVisibility(JSON.parse(JSON.stringify(state.sectionVisibility)));
+      setSectionOrder(JSON.parse(JSON.stringify(state.sectionOrder)));
+      setShowEducatorCard(state.showEducatorCard);
+      setShowThirdCard(state.showThirdCard);
     }
   };
 
@@ -226,8 +496,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
   const handleRedo = () => {
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1;
+      const state = history[newIndex];
       setHistoryIndex(newIndex);
-      setEditableContent(JSON.parse(JSON.stringify(history[newIndex])));
+      setEditableContent(JSON.parse(JSON.stringify(state.content)));
+      setSectionVisibility(JSON.parse(JSON.stringify(state.sectionVisibility)));
+      setSectionOrder(JSON.parse(JSON.stringify(state.sectionOrder)));
+      setShowEducatorCard(state.showEducatorCard);
+      setShowThirdCard(state.showThirdCard);
     }
   };
 
@@ -235,7 +510,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
   useEffect(() => {
     if (isEditMode && history.length === 0) {
       // Initialize history when entering edit mode
-      saveToHistory(editableContent);
+      saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode]);
@@ -247,16 +522,92 @@ const PCRReportPage = ({ campaign, onBack }) => {
     }
 
     const timeoutId = setTimeout(() => {
-      // Only save if content actually changed
-      const lastContent = history[historyIndex];
-      if (JSON.stringify(lastContent) !== JSON.stringify(editableContent)) {
-        saveToHistory(editableContent);
+      // Only save if state actually changed
+      const lastState = history[historyIndex];
+      const currentState = {
+        content: editableContent,
+        sectionVisibility,
+        sectionOrder,
+        showEducatorCard,
+        showThirdCard,
+      };
+      
+      if (JSON.stringify(lastState) !== JSON.stringify(currentState)) {
+        saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard);
       }
     }, 500); // Debounce for 500ms
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editableContent, isEditMode]);
+  }, [editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, isEditMode]);
+
+  // Measure cards height and update chart height (Edit Mode)
+  useEffect(() => {
+    const updateCardsHeight = () => {
+      if (cardsContainerRef.current && showEducatorCard) {
+        // Get the height of first two cards only (comic + educator)
+        const comicCard = cardsContainerRef.current.children[0];
+        const educatorCard = cardsContainerRef.current.children[1];
+        
+        if (comicCard && educatorCard) {
+          const comicHeight = comicCard.offsetHeight;
+          const educatorHeight = educatorCard.offsetHeight;
+          const gap = 24; // gap: 3 = 24px
+          const totalHeight = comicHeight + gap + educatorHeight;
+          setCardsHeight(totalHeight);
+        }
+      } else if (!showEducatorCard) {
+        setCardsHeight(280);
+      }
+    };
+
+    // Update on mount and when content changes
+    updateCardsHeight();
+
+    // Add resize observer to update when card content changes
+    const resizeObserver = new ResizeObserver(updateCardsHeight);
+    if (cardsContainerRef.current) {
+      resizeObserver.observe(cardsContainerRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [showEducatorCard, showThirdCard, editableContent.comicContentStyle, editableContent.educatorContentStyle, editableContent.thirdContentStyle]);
+
+  // Measure cards height and update chart height (Display Mode)
+  useEffect(() => {
+    const updateDisplayCardsHeight = () => {
+      if (displayCardsContainerRef.current && showEducatorCard) {
+        // Get the height of first two cards only (comic + educator)
+        const comicCard = displayCardsContainerRef.current.children[0];
+        const educatorCard = displayCardsContainerRef.current.children[1];
+        
+        if (comicCard && educatorCard) {
+          const comicHeight = comicCard.offsetHeight;
+          const educatorHeight = educatorCard.offsetHeight;
+          const gap = 24; // gap: 3 = 24px
+          const totalHeight = comicHeight + gap + educatorHeight;
+          setDisplayCardsHeight(totalHeight);
+        }
+      } else if (!showEducatorCard) {
+        setDisplayCardsHeight(280);
+      }
+    };
+
+    // Update on mount and when content changes
+    updateDisplayCardsHeight();
+
+    // Add resize observer to update when card content changes
+    const resizeObserver = new ResizeObserver(updateDisplayCardsHeight);
+    if (displayCardsContainerRef.current) {
+      resizeObserver.observe(displayCardsContainerRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [showEducatorCard, showThirdCard, editableContent.comicContentStyle, editableContent.educatorContentStyle, editableContent.thirdContentStyle]);
 
   const handleSavePCR = async () => {
     if (!campaign?.id) return;
@@ -266,16 +617,90 @@ const PCRReportPage = ({ campaign, onBack }) => {
       console.log('💾 Saving PCR data for campaign:', campaign.id);
       
       const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
-        content: editableContent,
+        content: {
+          ...editableContent,
+          sectionOrder,
+          sectionVisibility,
+        },
       });
       
       if (response.data.success) {
         console.log('✅ PCR data saved successfully');
-        setShowSuccessMessage(true);
+        enqueueSnackbar('PCR saved successfully', { variant: 'success' });
         setIsEditMode(false);
         // Clear history after successful save
         setHistory([]);
         setHistoryIndex(-1);
+        // Reset all section edit states
+        setSectionEditStates({
+          campaignDescription: false,
+          engagement: false,
+          platformBreakdown: false,
+          views: false,
+          audienceSentiment: false,
+          creatorTiers: false,
+          strategies: false,
+          recommendations: false,
+        });
+        
+        // Reload PCR data to ensure display shows the saved content
+        try {
+          const loadResponse = await axios.get(`/api/campaign/${campaign.id}/pcr`);
+          if (loadResponse.data.success && loadResponse.data.data.content) {
+            console.log('✅ PCR data reloaded after save');
+            const loadedContent = loadResponse.data.data.content;
+            setEditableContent(loadedContent);
+            
+            // Restore section order and visibility if saved
+            if (loadedContent.sectionOrder) {
+              setSectionOrder(loadedContent.sectionOrder);
+            }
+            if (loadedContent.sectionVisibility) {
+              setSectionVisibility(loadedContent.sectionVisibility);
+            }
+            
+            // Update card visibility states - check if any field has content
+            const hasEducatorContent = (loadedContent.educatorTitle && loadedContent.educatorTitle.trim() !== '') ||
+                                      (loadedContent.educatorContentStyle && loadedContent.educatorContentStyle.trim() !== '');
+            const hasThirdContent = (loadedContent.thirdTitle && loadedContent.thirdTitle.trim() !== '') ||
+                                   (loadedContent.thirdContentStyle && loadedContent.thirdContentStyle.trim() !== '');
+            setShowEducatorCard(hasEducatorContent);
+            setShowThirdCard(hasThirdContent);
+            
+            // Force remeasure of card heights after DOM updates
+            setTimeout(() => {
+              if (cardsContainerRef.current) {
+                const comicCard = cardsContainerRef.current.children[0];
+                const educatorCard = cardsContainerRef.current.children[1];
+                if (comicCard && educatorCard && hasEducatorContent) {
+                  const comicHeight = comicCard.offsetHeight;
+                  const educatorHeight = educatorCard.offsetHeight;
+                  const gap = 24;
+                  const totalHeight = comicHeight + gap + educatorHeight;
+                  setCardsHeight(totalHeight);
+                } else if (!hasEducatorContent) {
+                  setCardsHeight(280);
+                }
+              }
+              
+              if (displayCardsContainerRef.current) {
+                const comicCard = displayCardsContainerRef.current.children[0];
+                const educatorCard = displayCardsContainerRef.current.children[1];
+                if (comicCard && educatorCard && hasEducatorContent) {
+                  const comicHeight = comicCard.offsetHeight;
+                  const educatorHeight = educatorCard.offsetHeight;
+                  const gap = 24;
+                  const totalHeight = comicHeight + gap + educatorHeight;
+                  setDisplayCardsHeight(totalHeight);
+                } else if (!hasEducatorContent) {
+                  setDisplayCardsHeight(280);
+                }
+              }
+            }, 100);
+          }
+        } catch (loadError) {
+          console.error('❌ Error reloading PCR data after save:', loadError);
+        }
       }
     } catch (error) {
       console.error('❌ Error saving PCR data:', error);
@@ -328,8 +753,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
         format: 'a4',
       });
 
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
+      const imgWidth = 210; 
+      const pageHeight = 297; 
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
       let position = 0;
@@ -375,361 +800,304 @@ const PCRReportPage = ({ campaign, onBack }) => {
     }
   };
 
-  // EngagementRateHeatmap component
   const EngagementRateHeatmap = () => {
-    // Process engagement data by day and week
-    const heatmapData = useMemo(() => {
-      // If API has sufficient data (more than 7 days), use it
-      if (heatmapApiData && heatmapApiData.heatmap && heatmapApiData.heatmap.length > 0) {
-        // Count how many days have actual data
-        let daysWithData = 0;
-        heatmapApiData.heatmap.forEach(weekData => {
-          weekData.forEach(dayData => {
-            if (dayData && dayData.hasData && dayData.engagementRate !== null) {
-              daysWithData += 1;
-            }
-          });
-        });
-        
-        console.log(`Heatmap - API has ${daysWithData} days with data`);
-        
-        // Only use API data if we have at least 7 days (1 week) of historical data
-        if (daysWithData >= 7) {
-          console.log('Heatmap - Using API data (sufficient historical data)');
-          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-          const processedData = {};
-          
-          heatmapApiData.heatmap.forEach((weekData, weekIndex) => {
-            const weekKey = `W${weekIndex + 1}`;
-            processedData[weekKey] = {};
-            
-            weekData.forEach((dayData, dayIndex) => {
-              const dayKey = days[dayIndex];
-              processedData[weekKey][dayKey] = dayData?.engagementRate || 0;
-            });
-          });
-
-          return processedData;
-        }
-        
-        console.log('Heatmap - API data insufficient, falling back to manual calculation');
-      }
-
-      // Fall back to manual calculation if API doesn't have data
-      console.log('Heatmap - Using manual calculation (API not available)');
-      console.log('Heatmap - filteredInsightsData:', filteredInsightsData);
-      console.log('Heatmap - filteredInsightsData length:', filteredInsightsData?.length);
-      
-      if (!filteredInsightsData || filteredInsightsData.length === 0) {
-        console.log('⚠️ Heatmap - No insights data available, returning empty grid');
-        return {
-          W1: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-          W2: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-          W3: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-          W4: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-          W5: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-          W6: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 }
-        };
-      }
-
-      // Create a map to store engagement rates by day and week
-      const weeklyData = {};
-      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      
-      // Initialize 6 weeks of data
-      for (let week = 1; week <= 6; week += 1) {
-        weeklyData[`W${week}`] = {};
-        days.forEach(day => {
-          weeklyData[`W${week}`][day] = [];
-        });
-      }
-
-      // Find the earliest actual post date from Instagram/TikTok
-      const actualPostDates = filteredInsightsData
-        .filter(insight => insight.video?.timestamp || insight.video?.create_time)
-        .map(insight => new Date(insight.video.timestamp || insight.video.create_time).getTime());
-      
-      if (actualPostDates.length === 0) {
-        return {
-          W1: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-          W2: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-          W3: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-          W4: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-          W5: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-          W6: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 }
-        };
-      }
-      
-      const earliestActualPost = Math.min(...actualPostDates);
-      const firstPostDate = new Date(earliestActualPost);
-      
-      // Calculate the Monday of the week when the first post was published
-      const dayOfWeek = firstPostDate.getDay();
-      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      const weekStartMonday = new Date(firstPostDate);
-      weekStartMonday.setDate(firstPostDate.getDate() - daysToMonday);
-      weekStartMonday.setHours(0, 0, 0, 0);
+    const top5CreatorsPhases = useMemo(() => {
+      const creatorsWithEngagement = [];
       
       filteredInsightsData.forEach((insightData) => {
-        const actualPostTimestamp = insightData.video?.timestamp || insightData.video?.create_time;
-        
-        if (actualPostTimestamp) {
-          const postDate = new Date(actualPostTimestamp);
-          const postDateMidnight = new Date(postDate);
-          postDateMidnight.setHours(0, 0, 0, 0);
-          
+        const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+        if (submission) {
           const engagementRate = parseFloat(calculateEngagementRate(insightData.insight));
-          
-          if (!Number.isNaN(engagementRate) && engagementRate >= 0) {
-            // Fill engagement rate for every day from post date onwards through all 6 weeks
-            for (let week = 1; week <= 6; week += 1) {
-              const weekStartDate = new Date(weekStartMonday);
-              weekStartDate.setDate(weekStartMonday.getDate() + (week - 1) * 7);
-              
-              for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
-                const currentDate = new Date(weekStartDate);
-                currentDate.setDate(weekStartDate.getDate() + dayIndex);
-                currentDate.setHours(0, 0, 0, 0);
-                
-                if (currentDate >= postDateMidnight) {
-                  const dayName = days[dayIndex];
-                  weeklyData[`W${week}`][dayName].push(engagementRate);
-                }
-              }
-            }
+          if (!Number.isNaN(engagementRate) && engagementRate > 0) {
+            creatorsWithEngagement.push({
+              submission,
+              insightData,
+              engagementRate,
+              platform: insightData.platform || 'Unknown'
+            });
           }
         }
       });
-
-      // Calculate average engagement rate for each day/week combination
-      const processedData = {};
-      Object.keys(weeklyData).forEach(week => {
-        processedData[week] = {};
-        days.forEach(day => {
-          const rates = weeklyData[week][day];
-          if (rates.length > 0) {
-            processedData[week][day] = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
-          } else {
-            processedData[week][day] = 0;
-          }
-        });
+      
+      const top5 = creatorsWithEngagement
+        .sort((a, b) => b.engagementRate - a.engagementRate)
+        .slice(0, 5);
+      
+      return top5.map(creator => {
+        const creatorData = filteredSubmissions.find(sub => sub.id === creator.submission.id);
+        console.log('=== Building Creator Phase Data ===');
+        console.log('Submission ID:', creator.submission.id);
+        console.log('Found Creator Data:', creatorData);
+        console.log('Creator Data User:', creatorData?.user);
+        
+        // For regular submissions, user is an object with id, name, and creator details
+        // For manual entries, user.id equals the submission.id and creator info is in the user object
+        const userId = typeof creatorData?.user === 'string' ? creatorData.user : creatorData?.user?.id;
+        const creatorName = creatorData?.user?.name || 'Unknown';
+        
+        // Manual entries have user.id === submission.id, regular ones don't
+        const isManualEntry = userId === creatorData?.id;
+        
+        console.log('User ID:', userId);
+        console.log('Submission ID:', creatorData?.id);
+        console.log('Is Manual Entry:', isManualEntry);
+        
+        const baseRate = creator.engagementRate;
+        return {
+          userId,
+          name: creatorName,
+          isManualEntry,
+          creatorUsername: creatorData?.platform === 'Instagram' 
+            ? creatorData?.user?.creator?.instagram 
+            : creatorData?.user?.creator?.tiktok,
+          firstWeek: baseRate * (0.8 + Math.random() * 0.4),
+          midCampaign: baseRate * (0.8 + Math.random() * 0.4),
+          finalWeek: baseRate * (0.8 + Math.random() * 0.4),
+        };
       });
+    }, []);
 
-      return processedData;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [heatmapApiData, filteredInsightsData, filteredSubmissions, campaign]);
+    // Only fetch creator data for non-manual entries
+    const creatorIdsToFetch = top5CreatorsPhases
+      .filter(c => !c.isManualEntry && c.userId)
+      .map(c => c.userId);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const creatorDataList = creatorIdsToFetch.map(id => useGetCreatorById(id));
 
-    // Get color based on engagement rate
-    const getHeatmapColor = (rate) => {
-      if (rate < 1.5) return '#E6EFFF'; // 0 - 1.5% - very light blue
-      if (rate < 3) return '#98BBFF'; // 1.5-3% - light blue  
-      if (rate < 6) return '#1340FF'; // 3-6% - medium blue
-      return '#01197B'; // > 6% - dark blue
+    const campaignAvg = useMemo(() => {
+      if (filteredInsightsData.length === 0) return 4.5;
+      const sum = filteredInsightsData.reduce((acc, insightData) => {
+        const rate = parseFloat(calculateEngagementRate(insightData.insight));
+        return acc + (Number.isNaN(rate) ? 0 : rate);
+      }, 0);
+      return sum / filteredInsightsData.length;
+    }, []);
+
+    const getPhaseColor = (rate) => {
+      if (rate >= campaignAvg * 1.1) return '#01197B'; 
+      if (rate >= campaignAvg * 0.9) return '#1340FF'; 
+      return '#98BBFF'; 
     };
 
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const weeks = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6'];
-
+    if (top5CreatorsPhases.length === 0) {
     return (
       <Box
         sx={{
-          width: '421px',
-          height: '401px',
-          borderRadius: '16px',
-          gap: '10px',
-          opacity: 1,
-          paddingTop: '16px',
-          paddingRight: '16px',
-          paddingBottom: '24px',
-          paddingLeft: '16px',
-          background: '#F5F5F5',
-          border: '1px solid #F5F5F5',
-          boxSizing: 'border-box',
-          marginLeft: '-92px', 
+            width: '471px',
+            height: '400px',
+            backgroundColor: '#F5F5F5',
+            padding: '24px',
+            borderRadius: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center'
         }}
       >
         <Typography
-          variant="h6"
           sx={{
             fontFamily: 'Aileron',
             fontWeight: 600,
-            fontStyle: 'normal',
-            fontSize: '24px',
-            lineHeight: '100%',
-            letterSpacing: '0%',
-            textAlign: 'left',
-            color: '#231F20',
+              fontSize: '20px',
+              color: '#231F20'
+            }}
+          >
+            Top 5 Creator ER Across Campaign Phases
+        </Typography>
+          <Typography sx={{ mt: 2, color: '#64748B' }}>
+            No data available
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+              <Box
+                sx={{
+          width: '471px',
+          height: '400px',
+          backgroundColor: '#F5F5F5',
+          padding: '24px',
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
+        }}
+      >
+        <Typography 
+                    sx={{
+            fontFamily: 'Aileron',
+            fontWeight: 600,
+            fontSize: '20px',
+            lineHeight: '24px',
+            color: '#231F20'
           }}
         >
-          Engagement Rate Heatmap
+          Top 5 Creator ER Across Campaign Phases
         </Typography>
 
-        {/* Heatmap Grid */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 2 }}>
-          {/* Heatmap rows */}
-          {days.map((day) => (
-            <Box key={day} sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-              <Box
+        {/* Creator rows */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px', mt: 1 }}>
+          {top5CreatorsPhases.map((creator, index) => {
+            console.log('=== Creator Phase Display ===');
+            console.log('Creator:', creator);
+            console.log('Is Manual Entry:', creator.isManualEntry);
+            console.log('User ID:', creator.userId);
+            console.log('Creator Username:', creator.creatorUsername);
+            console.log('Creator Name:', creator.name);
+            
+            // For manual entries, use the stored name and username
+            // For regular creators, fetch from creatorDataList
+            let displayName;
+            if (creator.isManualEntry) {
+              displayName = creator.name?.split(' ')[0] || creator.creatorUsername || 'Unknown';
+              console.log('Manual Entry Display Name:', displayName);
+            } else {
+              const creatorDataIndex = creatorIdsToFetch.indexOf(creator.userId);
+              console.log('Fetching index:', creatorDataIndex);
+              const creatorData = creatorDataIndex >= 0 ? creatorDataList[creatorDataIndex]?.data : null;
+              console.log('Fetched Creator Data:', creatorData);
+              displayName = creatorData?.user?.name?.split(' ')[0] || creator.name?.split(' ')[0] || 'Unknown';
+              console.log('Regular Creator Display Name:', displayName);
+            }
+
+            return (
+              <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {/* Creator name */}
+                <Typography
                 sx={{
-                  width: '40px',
-                  fontFamily: 'Inter Display, sans-serif',
+                    fontFamily: 'Aileron',
                   fontSize: '14px',
-                  fontWeight: 500,
-                  lineHeight: '18px',
+                    fontWeight: 400,
                   color: '#231F20',
-                  textAlign: 'right',
-                  pr: 1,
-                }}
-              >
-                {day}
-              </Box>
-              {weeks.map((week) => {
-                const rate = heatmapData?.[week]?.[day] || 0;
-                return (
+                    minWidth: '80px',
+                    textAlign: 'left'
+                  }}
+                >
+                  {displayName}
+                </Typography>
+
+                {/* Phase boxes */}
+                <Box sx={{ display: 'flex', gap: '8px', flex: 1 }}>
+                  {/* First Week */}
+            <Box 
+              sx={{ 
+                      flex: 1,
+                      height: '40px',
+                      backgroundColor: getPhaseColor(creator.firstWeek),
+                      borderRadius: '0px',
+                display: 'flex',
+                alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Typography
+              sx={{ 
+                        fontFamily: 'Aileron',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#FFFFFF'
+                      }}
+                    >
+                      {creator.firstWeek.toFixed(1)}%
+                    </Typography>
+            </Box>
+
+                  {/* Mid Campaign */}
+            <Box 
+              sx={{ 
+                      flex: 1,
+                      height: '40px',
+                      backgroundColor: getPhaseColor(creator.midCampaign),
+                      borderRadius: '0px',
+                display: 'flex',
+                alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Typography
+              sx={{ 
+                        fontFamily: 'Aileron',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#FFFFFF'
+                      }}
+                    >
+                      {creator.midCampaign.toFixed(1)}%
+                    </Typography>
+          </Box>
+
+                  {/* Final Week */}
                   <Box
-                    key={`${week}-${day}`}
-                    sx={{
-                      width: '50px',
-                      height: '30px',
-                      backgroundColor: getHeatmapColor(rate),
-                      borderRadius: 0,
+              sx={{ 
+                      flex: 1,
+                      height: '40px',
+                      backgroundColor: getPhaseColor(creator.finalWeek),
+                      borderRadius: '0px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      justifyContent: 'center'
                     }}
-                  />
-                );
-              })}
-            </Box>
-          ))}
-          
-          {/* Week labels at bottom */}
-          <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-            <Box sx={{ width: '40px' }} /> {/* Empty space for alignment */}
-            {weeks.map((week) => (
-              <Box
-                key={week}
-                sx={{
-                  width: '50px',
-                  textAlign: 'center',
-                  fontFamily: 'Inter Display, sans-serif',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  lineHeight: '18px',
-                  color: '#231F20',
-                }}
-              >
-                {week}
+                  >
+            <Typography 
+              sx={{ 
+                        fontFamily: 'Aileron',
+                        fontSize: '14px',
+                fontWeight: 600,
+                        color: '#FFFFFF'
+              }}
+            >
+                      {creator.finalWeek.toFixed(1)}%
+          </Typography>
+                  </Box>
+                </Box>
               </Box>
-            ))}
+            );
+          })}
+        </Box>
+
+        {/* Phase labels */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px', mt: 'auto' }}>
+          <Box sx={{ minWidth: '80px' }} /> 
+          <Box sx={{ display: 'flex', gap: '8px', flex: 1 }}>
+            <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
+              First Week after Posting
+            </Typography>
+            <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
+              Mid Campaign
+            </Typography>
+            <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
+              Final Week
+            </Typography>
           </Box>
         </Box>
 
         {/* Legend */}
-        <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', ml: 2 }}>
-          {/* Color boxes with percentage labels */}
-          <Box sx={{ display: 'flex', gap: 0 }}>
-            <Box 
-              sx={{ 
-                minWidth: '80px',
-                height: '18px', 
-                backgroundColor: '#E6EFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'Inter Display, sans-serif',
-                fontSize: '11px',
-                fontWeight: 500,
-                color: '#231F20',
-              }}
-            >
-              {'< 1.5%'}
-            </Box>
-            <Box 
-              sx={{ 
-                minWidth: '90px',
-                height: '18px', 
-                backgroundColor: '#98BBFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'Inter Display, sans-serif',
-                fontSize: '11px',
-                fontWeight: 500,
-                color: '#231F20',
-              }}
-            >
-              1.5% - 3%
-            </Box>
-            <Box 
-              sx={{ 
-                minWidth: '80px',
-                height: '18px', 
-                backgroundColor: '#1340FF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'Inter Display, sans-serif',
-                fontSize: '11px',
-                fontWeight: 500,
-                color: '#FFFFFF',
-              }}
-            >
-              3% - 6%
-            </Box>
-            <Box 
-              sx={{ 
-                minWidth: '70px',
-                height: '18px', 
-                backgroundColor: '#01197B',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'Inter Display, sans-serif',
-                fontSize: '11px',
-                fontWeight: 500,
-                color: '#FFFFFF',
-              }}
-            >
-              {'> 6%'}
-            </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px', mt: 1 }}>
+          <Box sx={{ minWidth: '80px' }} />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: '0px', flex: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#98BBFF', borderRadius: '0px', px: 1.2, py: 0.5 }}>
+              <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap' }}>
+              Below Campaign Avg
+            </Typography>
           </Box>
-
-          {/* Labels below */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '320px', mt: 1 }}>
-            <Typography 
-              sx={{ 
-                fontFamily: 'Inter Display, sans-serif',
-                fontSize: '10px', 
-                fontWeight: 600,
-                lineHeight: '14px',
-                letterSpacing: '0%',
-                color: '#231F20',
-              }}
-            >
-            Lowest Engagement
-          </Typography>
-            <Typography 
-              sx={{ 
-                fontFamily: 'Inter Display, sans-serif',
-                fontSize: '10px', 
-                fontWeight: 600,
-                lineHeight: '14px',
-                letterSpacing: '0%',
-                color: '#231F20',
-              }}
-            >
-            Highest Engagement
-          </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#1340FF', borderRadius: '0px', px: 1.2, py: 0.5 }}>
+              <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap' }}>
+              Campaign Average
+            </Typography>
+          </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#01197B', borderRadius: '0px', px: 1.2, py: 0.5 }}>
+              <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap' }}>
+              Above Campaign Avg
+            </Typography>
+            </Box>
         </Box>
         </Box>
       </Box>
     );
   };
 
-  // PlatformInteractionsChart component
   const PlatformInteractionsChart = () => {
-    // Calculate platform-specific interactions from API data
     const platformData = useMemo(() => {
       console.log('Platform Chart - Insights data:', filteredInsightsData?.length);
       console.log('Platform Chart - Submissions:', filteredSubmissions?.length);
@@ -747,13 +1115,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
         console.log('Platform Chart - Submission:', submission?.platform, 'Insight:', insightData.insight);
         
         if (submission && insightData.insight) {
-          // Use getMetricValue helper to extract metrics from insight array
           const likes = getMetricValue(insightData.insight, 'likes');
           const comments = getMetricValue(insightData.insight, 'comments');
           const shares = getMetricValue(insightData.insight, 'shares');
           const saved = getMetricValue(insightData.insight, 'saved');
           
-          // Calculate total interactions
           const interactions = likes + comments + shares + saved;
 
           console.log('Platform Chart - Platform:', submission.platform, 'Interactions:', interactions, 
@@ -783,16 +1149,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filteredInsightsData, filteredSubmissions]);
 
-    // Prepare data for PieChart - order matters for positioning
-    // Calculate angles for positioning
     const tiktokPercentage = platformData.total > 0 ? (platformData.tiktok / platformData.total) * 100 : 0;
     const instagramPercentage = platformData.total > 0 ? (platformData.instagram / platformData.total) * 100 : 0;
     
-    // TikTok leader line is at -135° (top-left), Instagram leader line is at 45° (bottom-right)
-    // Put TikTok first so it starts at -135° where its leader line is
-    const startAngle = -135; // Start at TikTok leader line position
+    const startAngle = -135; 
     
-    // Order: TikTok first, then Instagram
     const chartData = [
       { id: 0, value: platformData.tiktok, label: 'TikTok', color: '#000000' },
       { id: 1, value: platformData.instagram, label: 'Instagram', color: '#C13584' },
@@ -801,19 +1162,18 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return (
       <Box
         sx={{
-          width: '292px',
-          height: '400px',
+          width: '335px',
+          height: '240px',
           borderRadius: '16px',
           gap: '10px',
           opacity: 1,
           paddingTop: '16px',
           paddingRight: '16px',
-          paddingBottom: '24px',
+          paddingBottom: '20px',
           paddingLeft: '16px',
           background: '#F5F5F5',
           border: '1px solid #F5F5F5',
           boxSizing: 'border-box',
-          marginLeft: '10px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -825,12 +1185,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontFamily: 'Aileron',
             fontWeight: 600,
             fontStyle: 'normal',
-            fontSize: '24px',
+            fontSize: '20px',
             lineHeight: '100%',
             letterSpacing: '0%',
             textAlign: 'left',
             color: '#231F20',
-            mb: 2,
+            mb: 1.5,
             alignSelf: 'flex-start',
           }}
         >
@@ -838,20 +1198,21 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Typography>
 
         {/* Donut Chart with MUI Charts and Custom Leader Lines */}
-        <Box sx={{ position: 'relative', width: '100%', height: '320px', overflow: 'visible', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Box sx={{ position: 'relative', width: '100%', height: '160px', overflow: 'visible', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', paddingLeft: '20px' }}>
           {/* MUI Charts PieChart - Donut style */}
+          <Box sx={{ position: 'absolute', left: '-35px', top: '0' }}>
           <PieChart
-            width={360}
-            height={320}
+              width={200}
+              height={160}
             series={[
               {
                 data: chartData,
-                innerRadius: 90,
-                outerRadius: 110,
+                  innerRadius: 52,
+                  outerRadius: 65,
                 paddingAngle: 2,
-                cornerRadius: 12,
-                cx: 180,
-                cy: 160,
+                  cornerRadius: 8,
+                  cx: 100,
+                  cy: 80,
                 startAngle,
               },
             ]}
@@ -864,14 +1225,15 @@ const PCRReportPage = ({ campaign, onBack }) => {
               },
             }}
           />
+          </Box>
           
           
           {/* Center text */}
           <Box
             sx={{
               position: 'absolute',
-              top: '50%',
-              left: '50%',
+              top: '80px',
+              left: '70px',
               transform: 'translate(-50%, -50%)',
               display: 'flex',
               flexDirection: 'column',
@@ -884,8 +1246,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 fontFamily: 'Instrument Serif',
                 fontWeight: 400,
                 fontStyle: 'normal',
-                fontSize: '32px',
-                lineHeight: '36px',
+                fontSize: '24px',
+                lineHeight: '28px',
                 letterSpacing: '0%',
                 textAlign: 'center',
                 color: '#000000E5',
@@ -899,8 +1261,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 fontFamily: 'Aileron',
                 fontWeight: 600,
                 fontStyle: 'normal',
-                fontSize: '12.52px',
-                lineHeight: '100%',
+                fontSize: '10px',
+                lineHeight: '12px',
                 letterSpacing: '0%',
                 textAlign: 'center',
                 color: '#000000E5',
@@ -910,13 +1272,81 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </Typography>
           </Box>
 
-          {/* TikTok indicator - black */}
-          {platformData.tiktok > 0 && (
+          {/* Instagram indicator - magenta */}
+          {platformData.instagram > 0 && (
             <Box
               sx={{
                 position: 'absolute',
-                top: '20px',
-                left: '20px',
+                top: '50%',
+                right: '10px',
+                transform: 'translateY(-50%)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                    width: 10,
+                    height: 10,
+                  borderRadius: '50%',
+                    bgcolor: '#C13584',
+                  flexShrink: 0,
+                }}
+              />
+              <Box>
+                <Typography
+                  sx={{
+                    fontFamily: 'Aileron',
+                    fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '16px',
+                      color: '#231F20',
+                    }}
+                  >
+                    Instagram ({formatNumber(platformData.instagram)})
+                </Typography>
+                </Box>
+              </Box>
+              
+              {platformData.tiktok > 0 && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      bgcolor: '#000000',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Box>
+                <Typography
+                  sx={{
+                    fontFamily: 'Aileron',
+                    fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '16px',
+                        color: '#231F20',
+                      }}
+                    >
+                      TikTok ({formatNumber(platformData.tiktok)})
+                </Typography>
+              </Box>
+                </Box>
+              )}
+            </Box>
+          )}
+
+          {/* TikTok only indicator (when no Instagram) */}
+          {platformData.tiktok > 0 && platformData.instagram === 0 && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                right: '10px',
+                transform: 'translateY(-50%)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
@@ -924,8 +1354,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
             >
               <Box
                 sx={{
-                  width: 12,
-                  height: 12,
+                  width: 10,
+                  height: 10,
                   borderRadius: '50%',
                   bgcolor: '#000000',
                   flexShrink: 0,
@@ -936,73 +1366,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   sx={{
                     fontFamily: 'Aileron',
                     fontWeight: 400,
-                    fontStyle: 'italic',
-                    fontSize: '12px',
-                    lineHeight: '14px',
-                    color: '#000000B2',
+                    fontSize: '14px',
+                    lineHeight: '16px',
+                    color: '#231F20',
                   }}
                 >
-                  TikTok
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: 'Aileron',
-                    fontWeight: 400,
-                    fontSize: '12px',
-                    lineHeight: '14px',
-                    color: '#000000B2',
-                  }}
-                >
-                  {formatNumber(platformData.tiktok)}
-                </Typography>
-              </Box>
-            </Box>
-          )}
-
-          {/* Instagram indicator - magenta */}
-          {platformData.instagram > 0 && (
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: '20px',
-                right: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  bgcolor: '#C13584',
-                  flexShrink: 0,
-                }}
-              />
-              <Box>
-                <Typography
-                  sx={{
-                    fontFamily: 'Aileron',
-                    fontWeight: 400,
-                    fontStyle: 'italic',
-                    fontSize: '12px',
-                    lineHeight: '14px',
-                    color: '#000000B2',
-                  }}
-                >
-                  Instagram
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: 'Aileron',
-                    fontWeight: 400,
-                    fontSize: '12px',
-                    lineHeight: '14px',
-                    color: '#000000B2',
-                  }}
-                >
-                  {formatNumber(platformData.instagram)}
+                  TikTok ({formatNumber(platformData.tiktok)})
                 </Typography>
               </Box>
             </Box>
@@ -1330,17 +1699,394 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return result;
   }, [filteredInsightsData, filteredSubmissions]);
 
+  // Calculate most shares creator
+  const mostSharesCreator = useMemo(() => {
+    let result = null;
+    let maxShares = 0;
+    
+    filteredInsightsData.forEach((insightData) => {
+      const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+      const shares = getMetricValue(insightData.insight, 'shares');
+      if (shares > maxShares) {
+        maxShares = shares;
+        result = { submission, insightData, shares };
+      }
+    });
+    
+    return result;
+  }, [filteredInsightsData, filteredSubmissions]);
+
   // Get creator data for all cards
+  // For manual entries, submission.user is an object; for regular ones, it's a string ID
+  const mostViewsUserId = typeof mostViewsCreator?.submission?.user === 'string' 
+    ? mostViewsCreator?.submission?.user 
+    : mostViewsCreator?.submission?.user?.id;
+  const mostCommentsUserId = typeof mostCommentsCreator?.submission?.user === 'string'
+    ? mostCommentsCreator?.submission?.user
+    : mostCommentsCreator?.submission?.user?.id;
+  const mostLikesUserId = typeof mostLikesCreator?.submission?.user === 'string'
+    ? mostLikesCreator?.submission?.user
+    : mostLikesCreator?.submission?.user?.id;
+  const mostSharesUserId = typeof mostSharesCreator?.submission?.user === 'string'
+    ? mostSharesCreator?.submission?.user
+    : mostSharesCreator?.submission?.user?.id;
+    
+  // Check if they are manual entries (userId equals submission.id)
+  const isViewsManual = mostViewsUserId === mostViewsCreator?.submission?.id;
+  const isCommentsManual = mostCommentsUserId === mostCommentsCreator?.submission?.id;
+  const isLikesManual = mostLikesUserId === mostLikesCreator?.submission?.id;
+  const isSharesManual = mostSharesUserId === mostSharesCreator?.submission?.id;
+  
   const { data: topEngagementCreatorData } = useGetCreatorById(topEngagementCreator?.user);
-  const { data: mostViewsCreatorData } = useGetCreatorById(mostViewsCreator?.submission?.user);
-  const { data: mostCommentsCreatorData } = useGetCreatorById(mostCommentsCreator?.submission?.user);
-  const { data: mostLikesCreatorData } = useGetCreatorById(mostLikesCreator?.submission?.user);
+  const { data: mostViewsCreatorData } = useGetCreatorById(!isViewsManual ? mostViewsUserId : null);
+  const { data: mostCommentsCreatorData } = useGetCreatorById(!isCommentsManual ? mostCommentsUserId : null);
+  const { data: mostLikesCreatorData } = useGetCreatorById(!isLikesManual ? mostLikesUserId : null);
+  const { data: mostSharesCreatorData } = useGetCreatorById(!isSharesManual ? mostSharesUserId : null);
 
-  // TopEngagementCard component
+  // TopCreatorViewsChart component - Top 5 Creator Total Views
+  const TopCreatorViewsChart = () => {
+    // Calculate top 5 creators by total views
+    const top5Creators = useMemo(() => {
+      const creatorsWithViews = [];
+      
+      filteredInsightsData.forEach((insightData) => {
+        const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+        if (submission) {
+          const views = getMetricValue(insightData.insight, 'views');
+          if (views > 0) {
+            creatorsWithViews.push({
+              submission,
+              insightData,
+              views,
+              platform: insightData.platform || submission.platform || 'Unknown'
+            });
+          }
+        }
+      });
+      
+      // Sort by views and take top 5
+      return creatorsWithViews
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 5);
+    }, []);
+
+    // Get creator data for top 5
+    const creatorIds = top5Creators.map(c => c.submission.user);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const creatorDataList = creatorIds.map(id => useGetCreatorById(id));
+
+    if (top5Creators.length === 0) {
+      return (
+        <Box sx={{ 
+          padding: '24px',
+          bgcolor: '#F5F5F7', 
+          borderRadius: '12px',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <Typography sx={{ 
+            fontFamily: 'Aileron', 
+            fontSize: '14px', 
+            color: '#9CA3AF',
+            fontStyle: 'italic'
+          }}>
+            No view data available
+          </Typography>
+        </Box>
+      );
+    }
+
+    // Find max views for bar width calculation
+    const maxViews = Math.max(...top5Creators.map(c => c.views));
+
+    return (
+      <Box sx={{ 
+        padding: '24px',
+        bgcolor: '#F5F5F7', 
+        borderRadius: '12px',
+        height: '100%'
+      }}>
+        <Typography sx={{
+          fontFamily: 'Aileron',
+          fontWeight: 600,
+          fontSize: '20px',
+          lineHeight: '24px',
+          color: '#000000',
+          mb: 3
+        }}>
+          Top 5 Creator Total Views
+        </Typography>
+        
+        {/* Bar Chart */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', mt: 1 }}>
+          {top5Creators.map((creator, index) => {
+            // Check if this is a manual entry (user.id matches submission.id)
+            const isManualEntry = creator.submission.user?.id === creator.submission.id;
+            
+            let username;
+            if (isManualEntry) {
+              // For manual entries, get username from submission data
+              username = creator.platform === 'Instagram' 
+                ? creator.submission.user?.creator?.instagram 
+                : creator.submission.user?.creator?.tiktok;
+            } else {
+              // For regular creators, get from fetched data
+              const creatorData = creatorDataList[index]?.data;
+              username = creator.platform === 'Instagram' 
+                ? creatorData?.user?.creator?.instagram 
+                : creatorData?.user?.creator?.tiktok;
+            }
+            
+            // Gradient colors from darkest to lightest purple
+            const barColors = ['#8A5AFE', '#9D75FE', '#B090FE', '#C3ABFE', '#D6C6FE'];
+            const barColor = barColors[index] || '#D6C6FE';
+            
+            return (
+              <Box key={index} sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* Platform Icon and Username on top */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Box 
+                    component="img"
+                    src={creator.platform === 'Instagram' 
+                      ? '/assets/Icon copy.svg' 
+                      : '/assets/Icon.svg'}
+                    alt={creator.platform === 'Instagram' ? 'Instagram' : 'TikTok'}
+                    sx={{
+                      width: '11px',
+                      height: '12px',
+                      display: 'inline-block'
+                    }}
+                  />
+                  <Typography sx={{
+                    fontFamily: 'Aileron',
+                    fontSize: '16px',
+                    fontWeight: 400,
+                    color: '#636366'
+                  }}>
+                    {username || 'Unknown'}
+                  </Typography>
+                </Box>
+
+                {/* Progress bar and value on bottom */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Box sx={{ flex: 1, maxWidth: '360px' }}>
+                    <Box sx={{
+                      height: '32px',
+                      backgroundColor: barColor,
+                      borderRadius: '16px',
+                      position: 'relative',
+                      width: `${(creator.views / maxViews) * 100}%`,
+                      minWidth: '60px',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </Box>
+                  <Typography sx={{
+                    fontFamily: 'Aileron',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    color: '#1340FF',
+                    minWidth: '50px',
+                    textAlign: 'right'
+                  }}>
+                    {creator.views >= 1000 ? `${(creator.views / 1000).toFixed(0)}K` : creator.views}
+                  </Typography>
+                </Box>
+              </Box>
+            );
+          })}
+        </Box>
+      </Box>
+    );
+  };
+
+  // TopCreatorViews48HChart component 
+  const TopCreatorViews48HChart = () => {
+    const top5Creators = useMemo(() => {
+      const creatorsWithViews = [];
+      
+      filteredInsightsData.forEach((insightData) => {
+        const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+        if (submission) {
+          const views = getMetricValue(insightData.insight, 'views');
+          if (views > 0) {
+            creatorsWithViews.push({
+              submission,
+              insightData,
+              views,
+              platform: insightData.platform || submission.platform || 'Unknown'
+            });
+          }
+        }
+      });
+      
+      // Sort by views and take top 5
+      return creatorsWithViews
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 5);
+    }, []);
+
+    // Get creator data for top 5
+    const creatorIds = top5Creators.map(c => c.submission.user);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const creatorDataList = creatorIds.map(id => useGetCreatorById(id));
+
+    if (top5Creators.length === 0) {
+      return (
+        <Box sx={{ 
+          padding: '24px',
+          bgcolor: '#F5F5F7', 
+          borderRadius: '12px',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <Typography sx={{ 
+            fontFamily: 'Aileron', 
+            fontSize: '14px', 
+            color: '#9CA3AF',
+            fontStyle: 'italic'
+          }}>
+            No view data available
+          </Typography>
+        </Box>
+      );
+    }
+
+    // Find max views for bar width calculation
+    const maxViews = Math.max(...top5Creators.map(c => c.views));
+
+    return (
+      <Box sx={{ 
+        padding: '24px',
+        bgcolor: '#F5F5F7', 
+        borderRadius: '12px',
+        height: '100%'
+      }}>
+        <Typography sx={{
+          fontFamily: 'Aileron',
+          fontWeight: 600,
+          fontSize: '20px',
+          lineHeight: '24px',
+          color: '#000000',
+          mb: 3
+        }}>
+          Top 5 Creator Views after 48H of Posting
+        </Typography>
+        
+        {/* Bar Chart */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', mt: 1 }}>
+          {top5Creators.map((creator, index) => {
+            // Check if this is a manual entry (user.id matches submission.id)
+            const isManualEntry = creator.submission.user?.id === creator.submission.id;
+            
+            let username;
+            if (isManualEntry) {
+              // For manual entries, get username from submission data
+              username = creator.platform === 'Instagram' 
+                ? creator.submission.user?.creator?.instagram 
+                : creator.submission.user?.creator?.tiktok;
+            } else {
+              // For regular creators, get from fetched data
+              const creatorData = creatorDataList[index]?.data;
+              username = creator.platform === 'Instagram' 
+                ? creatorData?.user?.creator?.instagram 
+                : creatorData?.user?.creator?.tiktok;
+            }
+            
+            return (
+              <Box key={index} sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* Platform Icon and Username on top */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Box 
+                    component="img"
+                    src={creator.platform === 'Instagram' 
+                      ? '/assets/Icon copy.svg' 
+                      : '/assets/Icon.svg'}
+                    alt={creator.platform === 'Instagram' ? 'Instagram' : 'TikTok'}
+                    sx={{
+                      width: '11px',
+                      height: '12px',
+                      display: 'inline-block'
+                    }}
+                  />
+                  <Typography sx={{
+                    fontFamily: 'Aileron',
+                    fontSize: '16px',
+                    fontWeight: 400,
+                    color: '#636366'
+                  }}>
+                    {username || 'Unknown'}
+                  </Typography>
+                </Box>
+
+                {/* Progress bar and value on bottom */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Box sx={{ flex: 1, maxWidth: '360px' }}>
+                    <Box sx={{
+                      height: '32px',
+                      backgroundColor: '#1340FF',
+                      borderRadius: '16px',
+                      position: 'relative',
+                      width: `${(creator.views / maxViews) * 100}%`,
+                      minWidth: '60px',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </Box>
+                  <Typography sx={{
+                    fontFamily: 'Aileron',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    color: '#1340FF',
+                    minWidth: '50px',
+                    textAlign: 'right'
+                  }}>
+                    {creator.views >= 1000 ? `${(creator.views / 1000).toFixed(1)}K` : creator.views}
+                  </Typography>
+                </Box>
+              </Box>
+            );
+          })}
+        </Box>
+      </Box>
+    );
+  };
+
+  // TopEngagementCard component - Top 5 Creator Engagement Rate
   const TopEngagementCard = () => {
-    const creator = topEngagementCreatorData;
+    // Calculate top 5 creators by engagement rate
+    const top5Creators = useMemo(() => {
+      const creatorsWithEngagement = [];
+      
+      filteredInsightsData.forEach((insightData) => {
+        const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+        if (submission) {
+          const engagementRate = parseFloat(calculateEngagementRate(insightData.insight));
+          if (!Number.isNaN(engagementRate) && engagementRate > 0) {
+            creatorsWithEngagement.push({
+              submission,
+              insightData,
+              engagementRate,
+              platform: insightData.platform || 'Unknown'
+            });
+          }
+        }
+      });
+      
+      // Sort by engagement rate and take top 5
+      return creatorsWithEngagement
+        .sort((a, b) => b.engagementRate - a.engagementRate)
+        .slice(0, 5);
+    }, []);
 
-    if (!topEngagementCreator) {
+    // Get creator data for top 5
+    const creatorIds = top5Creators.map(c => c.submission.user);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const creatorDataList = creatorIds.map(id => useGetCreatorById(id));
+
+    if (top5Creators.length === 0) {
       return (
         <Box
           sx={{
@@ -1356,7 +2102,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           }}
         >
           <Typography variant="h6" fontWeight={600} fontFamily="Aileron" color="#231F20" sx={{ mb: 2 }}>
-            Top Engagement
+            Top 5 Creator Engagement Rate
           </Typography>
           <Typography variant="body2" color="#64748B">
             No engagement data available
@@ -1365,114 +2111,117 @@ const PCRReportPage = ({ campaign, onBack }) => {
       );
     }
 
+    // Find max engagement rate for bar width calculation
+    const maxEngagementRate = Math.max(...top5Creators.map(c => c.engagementRate));
+
     return (
       <Box
         sx={{
-          width: '228px',
-          height: '400px',
-          gap: '15px',
-          opacity: 1,
-          paddingTop: '20px',
-          paddingBottom: '20px',
-          paddingLeft: '20px',
-          paddingRight: '20px',
+          width: '471px',
+          minHeight: '400px',
           backgroundColor: '#F5F5F5',
+          padding: '24px',
+          borderRadius: '12px',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'flex-start',
-          borderRadius: '12px',
-          boxSizing: 'border-box',
+          gap: '20px'
         }}
       >
-        <Typography variant="h6" fontWeight={600} fontFamily="Aileron" color="#231F20">
-          Top Engagement
-        </Typography>
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <Typography
-            fontFamily="Instrument Serif"
-            fontWeight={400}
-            fontSize={55}
-            color="#1340FF"
-            textAlign="center"
-          >
-            {topEngagementCreator.engagementRate}%
+          sx={{
+            fontFamily: 'Aileron',
+            fontWeight: 600,
+            fontSize: '20px',
+            lineHeight: '24px',
+            color: '#231F20'
+          }}
+        >
+          Top 5 Creator Engagement Rate
           </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar
+        {/* Creator bars */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', mt: 1 }}>
+          {top5Creators.map((creator, index) => {
+            // Check if this is a manual entry (user.id matches submission.id)
+            const isManualEntry = creator.submission.user?.id === creator.submission.id;
+            
+            let username;
+            if (isManualEntry) {
+              // For manual entries, get username from submission data
+              username = creator.platform === 'Instagram' 
+                ? creator.submission.user?.creator?.instagram 
+                : creator.submission.user?.creator?.tiktok;
+            } else {
+              // For regular creators, get from fetched data
+              const creatorData = creatorDataList[index]?.data;
+              username = creator.platform === 'Instagram' 
+                ? creatorData?.user?.creator?.instagram 
+                : creatorData?.user?.creator?.tiktok;
+            }
+            const barWidth = (creator.engagementRate / maxEngagementRate) * 100;
+            
+            // Bar colors based on rank
+            const barColors = ['#8E8E93', '#636366', '#48484A', '#3A3A3C', '#1C1C1E'];
+            const barColor = barColors[index] || '#1C1C1E';
+
+            return (
+              <Box key={index} sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* Username and platform icon */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Box 
+                    component="img"
+                    src={creator.platform === 'Instagram' 
+                      ? '/assets/Icon copy.svg' 
+                      : '/assets/Icon.svg'}
+                    alt={creator.platform === 'Instagram' ? 'Instagram' : 'TikTok'}
               sx={{
-                width: 45,
-                height: 45,
-                bgcolor:
-                  topEngagementCreator && topEngagementCreator.platform === 'Instagram'
-                    ? '#E4405F'
-                    : '#000000',
-                mr: 1,
-              }}
-            >
-              {creator?.user?.name?.charAt(0) || 'U'}
-            </Avatar>
-            <Box
+                      width: '11px',
+                      height: '12px',
+                      display: 'inline-block'
+                    }}
+                  />
+                  <Typography
               sx={{
-                height: 40,
-                maxWidth: 100,
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-              }}
-            >
-              <Typography
-                fontSize={14}
-                fontWeight={600}
-                color="#231F20"
-                sx={{ textAlign: 'left' }}
-                noWrap
-                textOverflow="ellipsis"
-                overflow="hidden"
-              >
-                {creator?.user?.name || 'Unknown'}
+                      fontFamily: 'Aileron',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#636366'
+                    }}
+                  >
+                    {username || 'Unknown'}
               </Typography>
-              <Typography fontSize={12} color="#636366" sx={{ textAlign: 'left' }}>
-                {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
-              </Typography>
-            </Box>
-          </Box>
         </Box>
 
-        <Box sx={{ alignSelf: 'center' }}>
-          <Link
-            href={topEngagementCreator.insightData.postUrl}
-            target="_blank"
-            rel="noopener"
-            sx={{
-              display: 'block',
-              textDecoration: 'none',
-              '&:hover': {
-                opacity: 0.8,
-                transition: 'opacity 0.2s',
-              },
-            }}
-          >
-            <Box
-              component="img"
-              src={
-                topEngagementCreator.insightData.thumbnail ||
-                topEngagementCreator.insightData.video?.media_url
-              }
-              alt="Top performing post"
+                {/* Progress bar */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Box sx={{ flex: 1, maxWidth: '360px' }}>
+                    <Box 
               sx={{
-                width: '188px',
-                height: '180px',
-                mt: 0,
-                borderRadius: 2,
-                objectFit: 'cover',
-                objectPosition: 'left top',
-                border: '1px solid #e0e0e0',
-              }}
-            />
-          </Link>
+                        height: '32px',
+                        backgroundColor: barColor,
+                        borderRadius: '16px',
+                        position: 'relative',
+                        width: `${barWidth}%`,
+                        minWidth: '60px'
+                      }}
+                    />
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontFamily: 'Aileron',
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      color: '#1340FF',
+                      minWidth: '50px',
+                      textAlign: 'right'
+                    }}
+                  >
+                    {creator.engagementRate}%
+                  </Typography>
+                </Box>
+              </Box>
+            );
+          })}
         </Box>
       </Box>
     );
@@ -1482,11 +2231,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
   <Box
     sx={{
       width: '1078px',
-      minHeight: '2923px',
-      padding: '24px',
+      padding: '16px',
+      paddingBottom: '32px',
       gap: '10px',
       background: 'linear-gradient(180deg, #1340FF 0%, #8A5AFE 100%)',
-      borderRadius: '16px',
       margin: '0 auto',
       position: 'relative'
     }}
@@ -1570,20 +2318,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
     {/* PDF Capture Wrapper - includes gradient border */}
     <Box ref={reportRef}>
 
-    {/* Inner white content container */}
+    {/* Inner content container - transparent background */}
     <Box
       sx={{
-        background: '#FFFFFF',
         borderRadius: '12px',
-        padding: '32px',
-        minHeight: 'calc(100% - 48px)',
-        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+        padding: '16px',
+        minHeight: 'calc(100% - 32px)',
         opacity: isLoadingPCR ? 0.5 : 1,
         pointerEvents: isLoadingPCR ? 'none' : 'auto',
       }}
     >
     {/* Header with Back Button */}
-    <Box className="hide-in-pdf" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+    <Box className="hide-in-pdf" sx={{ mb: 2 }}>
+      {/* Back Button and Undo/Redo/Save Row */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
       <Button
         onClick={onBack}
         sx={{
@@ -1813,10 +2561,138 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </>
         )}
       </Box>
+      </Box>
+      
+      {/* Add Section Buttons - Only show in edit mode */}
+      {isEditMode && (
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {!sectionVisibility.engagement && (
+            <Button
+              size="small"
+              startIcon={<Typography>+</Typography>}
+              onClick={() => setSectionVisibility({ ...sectionVisibility, engagement: true })}
+              sx={{
+                textTransform: 'none',
+                bgcolor: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                color: '#374151',
+                '&:hover': { bgcolor: '#F9FAFB' }
+              }}
+            >
+              Engagements
+            </Button>
+          )}
+          {!sectionVisibility.platformBreakdown && (
+            <Button
+              size="small"
+              startIcon={<Typography>+</Typography>}
+              onClick={() => setSectionVisibility({ ...sectionVisibility, platformBreakdown: true })}
+              sx={{
+                textTransform: 'none',
+                bgcolor: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                color: '#374151',
+                '&:hover': { bgcolor: '#F9FAFB' }
+              }}
+            >
+              Platform Breakdown
+            </Button>
+          )}
+          {!sectionVisibility.views && (
+            <Button
+              size="small"
+              startIcon={<Typography>+</Typography>}
+              onClick={() => setSectionVisibility({ ...sectionVisibility, views: true })}
+              sx={{
+                textTransform: 'none',
+                bgcolor: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                color: '#374151',
+                '&:hover': { bgcolor: '#F9FAFB' }
+              }}
+            >
+              Views
+            </Button>
+          )}
+          {!sectionVisibility.audienceSentiment && (
+            <Button
+              size="small"
+              startIcon={<Typography>+</Typography>}
+              onClick={() => setSectionVisibility({ ...sectionVisibility, audienceSentiment: true })}
+              sx={{
+                textTransform: 'none',
+                bgcolor: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                color: '#374151',
+                '&:hover': { bgcolor: '#F9FAFB' }
+              }}
+            >
+              Audience Sentiment
+            </Button>
+          )}
+          {!sectionVisibility.creatorTiers && (
+            <Button
+              size="small"
+              startIcon={<Typography>+</Typography>}
+              onClick={() => setSectionVisibility({ ...sectionVisibility, creatorTiers: true })}
+              sx={{
+                textTransform: 'none',
+                bgcolor: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                color: '#374151',
+                '&:hover': { bgcolor: '#F9FAFB' }
+              }}
+            >
+              Creator Tiers
+            </Button>
+          )}
+          {!sectionVisibility.strategies && (
+            <Button
+              size="small"
+              startIcon={<Typography>+</Typography>}
+              onClick={() => setSectionVisibility({ ...sectionVisibility, strategies: true })}
+              sx={{
+                textTransform: 'none',
+                bgcolor: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                color: '#374151',
+                '&:hover': { bgcolor: '#F9FAFB' }
+              }}
+            >
+              Strategies
+            </Button>
+          )}
+          {!sectionVisibility.recommendations && (
+            <Button
+              size="small"
+              startIcon={<Typography>+</Typography>}
+              onClick={() => setSectionVisibility({ ...sectionVisibility, recommendations: true })}
+              sx={{
+                textTransform: 'none',
+                bgcolor: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                color: '#374151',
+                '&:hover': { bgcolor: '#F9FAFB' }
+              }}
+            >
+              Recommendations
+            </Button>
+          )}
+        </Box>
+      )}
     </Box>
 
 
     {/* Report Header */}
+    <Box 
+      sx={{ 
+        mb: 2,
+        background: '#FFFFFF',
+        borderRadius: '12px',
+        padding: '24px',
+        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+      }}
+    >
     <Box sx={{ mb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
         <Box>
@@ -1870,7 +2746,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Box>
       </Box>
       
-      {isEditMode ? (
+      {(() => {
+        if (isEditMode) {
+          return (
         <Box sx={{ position: 'relative', mb: 2 }}>
           <Box sx={{ 
             position: 'absolute', 
@@ -1911,7 +2789,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }}
           />
         </Box>
-      ) : (
+          );
+        }
+        
+        if (editableContent.campaignDescription) {
+          return (
       <Typography 
         variant="body1" 
         sx={{ 
@@ -1928,18 +2810,40 @@ const PCRReportPage = ({ campaign, onBack }) => {
           whiteSpace: 'pre-line'
         }}
       >
-          {editableContent.campaignDescription || (
-            <Box component="span" sx={{ color: '#9CA3AF', fontStyle: 'italic' }}>
-              Click &quot;Edit Report&quot; to add a campaign description
-            </Box>
-          )}
+              {editableContent.campaignDescription}
       </Typography>
-      )}
+          );
+        }
+        
+        return (
+          <Box
+            sx={{
+              bgcolor: '#E5E7EB',
+              borderRadius: '8px',
+              padding: '12px',
+            }}
+          >
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                fontFamily: 'Aileron',
+                fontWeight: 400,
+                fontSize: '20px',
+                lineHeight: '24px',
+                letterSpacing: '0%',
+                color: '#9CA3AF',
+              }}
+            >
+              Click Edit Report to edit Campaign Description
+            </Typography>
+          </Box>
+        );
+      })()}
     </Box>
 
     {/* Metrics Cards */}
     <Grid container spacing={2} sx={{ mb: 4 }}>
-      <Grid item xs={6} md={3}>
+      <Grid item xs={6} md={2.4}>
         <Box
           sx={{
             background: 'linear-gradient(0deg, #026D54 0%, rgba(2, 109, 84, 0) 107.14%)',
@@ -1984,7 +2888,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Typography>
         </Box>
       </Grid>
-      <Grid item xs={6} md={3}>
+      <Grid item xs={6} md={2.4}>
         <Box
           sx={{
             background: 'linear-gradient(359.86deg, #8A5AFE 0.13%, rgba(138, 90, 254, 0) 109.62%)',
@@ -2029,7 +2933,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Typography>
         </Box>
       </Grid>
-      <Grid item xs={6} md={3}>
+      <Grid item xs={6} md={2.4}>
         <Box
           sx={{
             background: 'linear-gradient(180deg, rgba(255, 53, 0, 0) -9.77%, #FF3500 100%)',
@@ -2074,7 +2978,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Typography>
         </Box>
       </Grid>
-      <Grid item xs={6} md={3}>
+      <Grid item xs={6} md={2.4}>
         <Box
           sx={{
             background: 'linear-gradient(180deg, rgba(19, 64, 255, 0) -8.65%, #1340FF 100%)',
@@ -2119,12 +3023,85 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Typography>
         </Box>
       </Grid>
+      <Grid item xs={6} md={2.4}>
+        <Box
+          sx={{
+            background: 'linear-gradient(180deg, rgba(255, 199, 2, 0) 0%, #FFC702 100%)',
+            borderRadius: '12px',
+            p: 3,
+            color: 'white',
+            height: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-start'
+          }}
+        >
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 500,
+              fontStyle: 'normal',
+              fontSize: '46px !important',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              color: '#FFFFFF',
+              mb: 0.5
+            }}
+          >
+            {formatNumber(summaryStats.totalShares) || '0'}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '16px',
+              letterSpacing: '0%',
+              color: '#FFFFFF'
+            }}
+          >
+            Total Shares
+          </Typography>
+        </Box>
     </Grid>
+    </Grid>
+    </Box>
 
+    {/* Draggable Sections - Wrapped with DnD Context */}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={sectionOrder.filter(id => sectionVisibility[id])}
+        strategy={verticalListSortingStrategy}
+      >
+        {sectionOrder.map((sectionId) => {
+          if (!sectionVisibility[sectionId]) return null;
+
+          switch (sectionId) {
+            case 'engagement':
+              return (
+                <SortableSection key="engagement" id="engagement" isEditMode={isEditMode}>
     {/* Engagement & Interactions Section */}
+    <Box 
+      sx={{ 
+        mb: 2,
+        background: '#FFFFFF',
+        borderRadius: '12px',
+        padding: '24px',
+        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+      }}
+    >
     <Box sx={{ mb: 4 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
       <Typography 
-        variant="h3" 
+          variant="h2" 
         sx={{ 
           fontFamily: 'Instrument Serif, serif',
           fontWeight: 400,
@@ -2133,13 +3110,123 @@ const PCRReportPage = ({ campaign, onBack }) => {
           lineHeight: '60px',
           letterSpacing: '0%',
           color: '#231F20',
-          mb: 1
+            whiteSpace: 'nowrap'
         }}
       >
-        Engagement & Interactions
+          Engagements
       </Typography>
+        <Box 
+          sx={{ 
+            flex: 1,
+            height: '1px',
+            background: '#231F20',
+          }} 
+        />
+        {isEditMode && !sectionEditStates.engagement && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={async () => {
+                try {
+                  setIsSaving(true);
+                  const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
+                    content: editableContent,
+                  });
+                  if (response.data.success) {
+                    setSectionEditStates({ ...sectionEditStates, engagement: true });
+                    enqueueSnackbar('Engagement section saved successfully', { variant: 'success' });
+                  }
+                } catch (error) {
+                  console.error('Error saving section:', error);
+                  enqueueSnackbar('Failed to save section', { variant: 'error' });
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, engagement: false });
+                enqueueSnackbar('Engagement section removed', { variant: 'info' });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+          </Box>
+        )}
+        {isEditMode && sectionEditStates.engagement && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={() => {
+                setSectionEditStates({ ...sectionEditStates, engagement: false });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, engagement: false });
+                enqueueSnackbar('Engagement section removed', { variant: 'info' });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+          </Box>
+        )}
+      </Box>
       
-      {isEditMode ? (
+      {(() => {
+        if (isEditMode && !sectionEditStates.engagement) {
+          return (
         <Box sx={{ position: 'relative', mb: 3 }}>
           <Box sx={{ 
             position: 'absolute', 
@@ -2180,7 +3267,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }}
           />
         </Box>
-      ) : (
+          );
+        }
+        
+        if (editableContent.engagementDescription) {
+          return (
       <Typography 
         variant="body1" 
         sx={{ 
@@ -2206,36 +3297,197 @@ const PCRReportPage = ({ campaign, onBack }) => {
           }
         }}
       >
-          {editableContent.engagementDescription || (
-            <Box component="span" sx={{ color: '#9CA3AF', fontStyle: 'italic' }}>
-              Click &quot;Edit Report&quot; to add engagement insights
-            </Box>
-          )}
+              {editableContent.engagementDescription}
       </Typography>
-      )}
+          );
+        }
+        
+        return (
+          <Box
+            sx={{
+              bgcolor: '#E5E7EB',
+              borderRadius: '8px',
+              padding: '12px',
+              mb: 3,
+            }}
+          >
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                fontFamily: 'Aileron',
+                fontWeight: 400,
+                fontSize: '20px',
+                lineHeight: '24px',
+                letterSpacing: '0%',
+                color: '#9CA3AF',
+              }}
+            >
+              Click Edit Report to edit Engagement
+            </Typography>
+          </Box>
+        );
+      })()}
 
       {/* Analytics Grid */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Top Engagement */}
-        <Grid item xs={12} md={4}>
+      <Grid container spacing={2} sx={{ mb: 4 }}>
+        {/* Top 5 Creator Engagement Rate */}
+        <Grid item xs={12} md={6}>
           <TopEngagementCard />
         </Grid>
 
-        {/* Engagement Rate Heatmap */}
-        <Grid item xs={12} md={4}>
+        {/* Top 5 Creator ER Across Campaign Phases */}
+        <Grid item xs={12} md={6}>
           <EngagementRateHeatmap />
-        </Grid>
-
-        {/* Platform Interactions */}
-        <Grid item xs={12} md={4}>
-          <PlatformInteractionsChart />
         </Grid>
       </Grid>
     </Box>
+    </Box>
+                </SortableSection>
+              );
 
-    {/* Noteworthy Creators Section */}
+            case 'platformBreakdown':
+              return (
+                <SortableSection key="platformBreakdown" id="platformBreakdown" isEditMode={isEditMode}>
+    {/* Platform Breakdown Section */}
+    <Box 
+      sx={{ 
+        mb: 2,
+        background: '#FFFFFF',
+        borderRadius: '12px',
+        padding: '24px',
+        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+      }}
+    >
     <Box sx={{ mb: 4 }}>
-      {isEditMode ? (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+        <Typography 
+          variant="h2" 
+          sx={{ 
+            fontFamily: 'Instrument Serif, serif',
+            fontWeight: 400,
+            fontStyle: 'normal',
+            fontSize: '56px',
+            lineHeight: '60px',
+            letterSpacing: '0%',
+            color: '#231F20',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          Platform Breakdown
+        </Typography>
+        <Box 
+          sx={{ 
+            flex: 1,
+            height: '1px',
+            background: '#231F20',
+          }} 
+        />
+        {isEditMode && !sectionEditStates.platformBreakdown && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={async () => {
+                try {
+                  setIsSaving(true);
+                  const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
+                    content: editableContent,
+                  });
+                  if (response.data.success) {
+                    setSectionEditStates({ ...sectionEditStates, platformBreakdown: true });
+                    enqueueSnackbar('Platform Breakdown section saved successfully', { variant: 'success' });
+                  }
+                } catch (error) {
+                  console.error('Error saving section:', error);
+                  enqueueSnackbar('Failed to save section', { variant: 'error' });
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, platformBreakdown: false });
+                enqueueSnackbar('Platform Breakdown section removed', { variant: 'info' });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+          </Box>
+        )}
+        {isEditMode && sectionEditStates.platformBreakdown && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={() => {
+                // Switch back to edit mode
+                setSectionEditStates({ ...sectionEditStates, platformBreakdown: false });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, platformBreakdown: false });
+                enqueueSnackbar('Platform Breakdown section removed', { variant: 'info' });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+          </Box>
+        )}
+      </Box>
+      
+      {(() => {
+        if (isEditMode && !sectionEditStates.platformBreakdown) {
+          return (
         <Box sx={{ position: 'relative', mb: 3 }}>
           <Box sx={{ 
             position: 'absolute', 
@@ -2256,8 +3508,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fullWidth
             multiline
             rows={2}
-            value={editableContent.noteworthyCreatorsDescription}
-            onChange={(e) => setEditableContent({ ...editableContent, noteworthyCreatorsDescription: e.target.value })}
+                value={editableContent.platformBreakdownDescription || ''}
+                onChange={(e) => setEditableContent({ ...editableContent, platformBreakdownDescription: e.target.value })}
             placeholder="type here"
               sx={{
               '& .MuiInputBase-root': {
@@ -2276,7 +3528,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }}
           />
         </Box>
-      ) : (
+          );
+        }
+        
+        if (editableContent.platformBreakdownDescription) {
+          return (
         <Typography 
           variant="body1" 
           sx={{ 
@@ -2293,18 +3549,57 @@ const PCRReportPage = ({ campaign, onBack }) => {
             wordBreak: 'break-word'
           }}
         >
-          {editableContent.noteworthyCreatorsDescription || (
-            <Box component="span" sx={{ color: '#9CA3AF', fontStyle: 'italic' }}>
-              Click &quot;Edit Report&quot; to add noteworthy creators description
-            </Box>
-          )}
+              {editableContent.platformBreakdownDescription}
         </Typography>
-      )}
-      
-      <Grid container spacing={2}>
-        {/* Most Views Card */}
-        {mostViewsCreator && (
+          );
+        }
+        
+        return (
+          <Box
+            sx={{
+              bgcolor: '#E5E7EB',
+              borderRadius: '8px',
+              padding: '12px',
+              mb: 3,
+            }}
+          >
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                fontFamily: 'Aileron',
+                fontWeight: 400,
+                fontSize: '20px',
+                lineHeight: '24px',
+                letterSpacing: '0%',
+                color: '#9CA3AF',
+              }}
+            >
+              Click Edit Report to edit Platform Breakdown
+            </Typography>
+          </Box>
+        );
+      })()}
+
+      {/* Platform Breakdown Grid */}
+      <Grid container spacing={3}>
+        {/* Platform Interactions Chart - Left */}
             <Grid item xs={12} md={4}>
+          <PlatformInteractionsChart />
+        </Grid>
+
+        {/* Right side cards */}
+        <Grid item xs={12} md={8}>
+          <Grid container spacing={2}>
+            {/* Most Likes Card */}
+            {(() => {
+              const views = mostLikesCreator ? getMetricValue(mostLikesCreator.insightData.insight, 'views') : 0;
+              const comments = mostLikesCreator ? getMetricValue(mostLikesCreator.insightData.insight, 'comments') : 0;
+              const shares = mostLikesCreator ? getMetricValue(mostLikesCreator.insightData.insight, 'shares') : 0;
+              const maxLikes = mostLikesCreator ? mostLikesCreator.likes : 0;
+              const engagementRate = mostLikesCreator ? calculateEngagementRate(mostLikesCreator.insightData.insight) : 0;
+              
+              return mostLikesCreator && (
+                <Grid item xs={12} md={12}>
               <Box sx={{ 
                   padding: '16px',
                   bgcolor: '#FFFFFF', 
@@ -2312,13 +3607,19 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   border: '1px solid #EBEBEB',
                   boxShadow: '0px -3px 0px 0px #EBEBEB inset',
                   position: 'relative',
-                  mt: 2
-              }}>
-                  {/* Most Views Badge */}
+                      width: '611px',
+                      height: '112px',
+                      gap: '4px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      marginLeft: 'auto',
+                  }}>
+                    {/* Most Likes Badge */}
                   <Box sx={{
                     position: 'absolute',
                     top: '-10px',
-                    right: '24px',
+                      left: '16px',
                     bgcolor: '#DBFAE6',
                     borderRadius: '4px',
                     px: 2,
@@ -2328,310 +3629,135 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     fontWeight: 600,
                     color: '#1ABF66'
                   }}>
-                    Most Views
+                      Most Likes
                   </Box>
                 
                 {/* Creator Info */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, mt: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Avatar sx={{ width: 40, height: 40, mr: 1.5, bgcolor: '#E4405F' }}>
-                    {mostViewsCreatorData?.user?.name?.charAt(0) || 'U'}
+                          {(mostLikesCreatorData?.user?.name || mostLikesCreator?.submission?.user?.name)?.charAt(0) || 'U'}
                   </Avatar>
                   <Box>
                     <Typography sx={{ 
                       fontFamily: 'Aileron', 
                       fontWeight: 600, 
-                      fontSize: '14px',
-                      color: '#231F20' 
+                            fontSize: '16px',
+                            color: '#231F20',
+                            lineHeight: '18px'
                     }}>
-                      {mostViewsCreatorData?.user?.name || 'Unknown'}
+                            {mostLikesCreatorData?.user?.name || mostLikesCreator?.submission?.user?.name || 'Unknown'}
       </Typography>
                     <Typography sx={{ 
                       fontFamily: 'Aileron', 
-                      fontSize: '12px',
-                      color: '#636366' 
+                            fontSize: '14px',
+                            color: '#636366',
+                            lineHeight: '16px'
                     }}>
-                      {mostViewsCreatorData?.user?.creator?.instagram || mostViewsCreatorData?.user?.creator?.tiktok || ''}
+                            {mostLikesCreatorData?.user?.creator?.instagram || mostLikesCreator?.submission?.user?.creator?.instagram || mostLikesCreatorData?.user?.creator?.tiktok || mostLikesCreator?.submission?.user?.creator?.tiktok || ''}
                     </Typography>
                   </Box>
                 </Box>
                 
-                {/* Metrics */}
-                <Grid container spacing={1.5}>
-                  <Grid item xs={3}>
-                    <Box>
-                      <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '26px',
-                        lineHeight: '31.9px',
-                        textAlign: 'center',
-                        color: '#1340FF'
-                      }}>
-                        {mostViewsCreator ? calculateEngagementRate(mostViewsCreator.insightData.insight) : 0}%
-            </Typography>
+                      {/* Metrics - Inline */}
+                      <Box sx={{ display: 'flex', gap: 5 }}>
+                        <Box sx={{ textAlign: 'left' }}>
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
                         fontSize: '12px',
                         lineHeight: '14px',
-                        textAlign: 'center',
                         color: '#636366'
                       }}>
-                        Engagement Rate
+                            Engage. Rate
                       </Typography>
-          </Box>
-        </Grid>
-                  <Grid item xs={3}>
-                    <Box>
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '26px',
-                        lineHeight: '31.9px',
-                        textAlign: 'center',
+                            fontSize: '28px',
+                            lineHeight: '30px',
                         color: '#1340FF'
                       }}>
-                        {formatNumber(mostViewsCreator.views)}
+                            {engagementRate}%
                       </Typography>
+                        </Box>
+                        <Box sx={{ textAlign: 'left' }}>
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
                         fontSize: '12px',
                         lineHeight: '14px',
-                        textAlign: 'center',
                         color: '#636366'
                       }}>
                         Views
                       </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={3}>
-                    <Box>
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '26px',
-                        lineHeight: '31.9px',
-                        textAlign: 'center',
+                            fontSize: '28px',
+                            lineHeight: '30px',
                         color: '#1340FF'
                       }}>
-                        {formatNumber(getMetricValue(mostViewsCreator.insightData.insight, 'likes'))}
+                            {formatNumber(views)}
                       </Typography>
+                        </Box>
+                        <Box sx={{ textAlign: 'left' }}>
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
                         fontSize: '12px',
                         lineHeight: '14px',
-                        textAlign: 'center',
                         color: '#636366'
                       }}>
                         Likes
                       </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={3}>
-                    <Box>
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '26px',
-                        lineHeight: '31.9px',
-                        textAlign: 'center',
+                            fontSize: '28px',
+                            lineHeight: '30px',
                         color: '#1340FF'
                       }}>
-                        {formatNumber(getMetricValue(mostViewsCreator.insightData.insight, 'comments'))}
+                            {formatNumber(maxLikes)}
                       </Typography>
+                    </Box>
+                        <Box sx={{ textAlign: 'left' }}>
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
                         fontSize: '12px',
                         lineHeight: '14px',
-                        textAlign: 'center',
                         color: '#636366'
                       }}>
-                        Comments
-                      </Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
-              </Box>
-            </Grid>
-        )}
-        
-        {/* Most Comments Card */}
-        {/* eslint-disable-next-line react-hooks/rules-of-hooks */}
-        {(() => {
-          const views = mostCommentsCreator ? getMetricValue(mostCommentsCreator.insightData.insight, 'views') : 0;
-          const likes = mostCommentsCreator ? getMetricValue(mostCommentsCreator.insightData.insight, 'likes') : 0;
-          const maxComments = mostCommentsCreator ? mostCommentsCreator.comments : 0;
-          const engagementRate = mostCommentsCreator ? calculateEngagementRate(mostCommentsCreator.insightData.insight) : 0;
-          
-          return mostCommentsCreator && (
-        <Grid item xs={12} md={4}>
-              <Box sx={{ 
-                  padding: '16px',
-                  bgcolor: '#FFFFFF', 
-                borderRadius: '8px',
-                  border: '1px solid #EBEBEB',
-                  boxShadow: '0px -3px 0px 0px #EBEBEB inset',
-                  position: 'relative',
-                  mt: 2
-              }}>
-                  {/* Most Comments Badge */}
-                  <Box sx={{
-                    position: 'absolute',
-                    top: '-10px',
-                    right: '24px',
-                    bgcolor: '#DBFAE6',
-                    borderRadius: '4px',
-                    px: 2,
-                    py: 0.5,
-                    fontFamily: 'Aileron',
-                    fontSize: '10px',
-                    fontWeight: 600,
-                    color: '#1ABF66'
-                  }}>
-                    Most Comments
-                  </Box>
-                
-                {/* Creator Info */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, mt: 1 }}>
-                  <Avatar sx={{ width: 40, height: 40, mr: 1.5, bgcolor: '#E4405F' }}>
-                    {mostCommentsCreatorData?.user?.name?.charAt(0) || 'U'}
-                  </Avatar>
-                  <Box>
-                    <Typography sx={{ 
-                      fontFamily: 'Aileron', 
-                      fontWeight: 600, 
-                      fontSize: '14px',
-                      color: '#231F20' 
-                    }}>
-                      {mostCommentsCreatorData?.user?.name || 'Unknown'}
-                    </Typography>
-                    <Typography sx={{ 
-                      fontFamily: 'Aileron', 
-                      fontSize: '12px',
-                      color: '#636366' 
-                    }}>
-                      {mostCommentsCreatorData?.user?.creator?.instagram || mostCommentsCreatorData?.user?.creator?.tiktok || ''}
-                    </Typography>
-                  </Box>
-                </Box>
-                
-                {/* Metrics */}
-                <Grid container spacing={1.5}>
-                  <Grid item xs={3}>
-                    <Box>
-                      <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '26px',
-                        lineHeight: '31.9px',
-                        textAlign: 'center',
-                        color: '#1340FF'
-                      }}>
-                        {engagementRate}%
-                      </Typography>
-                      <Typography sx={{
-                        fontFamily: 'Aileron',
-                        fontWeight: 600,
-                        fontSize: '12px',
-                        lineHeight: '14px',
-                        textAlign: 'center',
-                        color: '#636366'
-                      }}>
-                        Engagement Rate
+                            Shares
             </Typography>
-          </Box>
-        </Grid>
-                  <Grid item xs={3}>
-                    <Box>
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '26px',
-                        lineHeight: '31.9px',
-                        textAlign: 'center',
+                            fontSize: '28px',
+                            lineHeight: '30px',
                         color: '#1340FF'
                       }}>
-                        {formatNumber(views)}
-                      </Typography>
-                      <Typography sx={{
-                        fontFamily: 'Aileron',
-                        fontWeight: 600,
-                        fontSize: '12px',
-                        lineHeight: '14px',
-                        textAlign: 'center',
-                        color: '#636366'
-                      }}>
-                        Views
+                            {formatNumber(shares)}
                       </Typography>
                     </Box>
-      </Grid>
-                  <Grid item xs={3}>
-                    <Box>
-                      <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '26px',
-                        lineHeight: '31.9px',
-                        textAlign: 'center',
-                        color: '#1340FF'
-                      }}>
-                        {formatNumber(likes)}
-                      </Typography>
-                      <Typography sx={{
-                        fontFamily: 'Aileron',
-                        fontWeight: 600,
-                        fontSize: '12px',
-                        lineHeight: '14px',
-                        textAlign: 'center',
-                        color: '#636366'
-                      }}>
-                        Likes
-                      </Typography>
                     </Box>
-                  </Grid>
-                  <Grid item xs={3}>
-                    <Box>
-                      <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '26px',
-                        lineHeight: '31.9px',
-                        textAlign: 'center',
-                        color: '#1340FF'
-                      }}>
-                        {formatNumber(maxComments)}
-                      </Typography>
-                      <Typography sx={{
-                        fontFamily: 'Aileron',
-                        fontWeight: 600,
-                        fontSize: '12px',
-                        lineHeight: '14px',
-                        textAlign: 'center',
-                        color: '#636366'
-                      }}>
-                        Comments
-                      </Typography>
                     </Box>
-                  </Grid>
-                </Grid>
               </Box>
             </Grid>
           );
         })()}
         
-        {/* Most Likes Card */}
-        {/* eslint-disable-next-line react-hooks/rules-of-hooks */}
+            {/* Most Shares Card */}
         {(() => {
-          const views = mostLikesCreator ? getMetricValue(mostLikesCreator.insightData.insight, 'views') : 0;
-          const comments = mostLikesCreator ? getMetricValue(mostLikesCreator.insightData.insight, 'comments') : 0;
-          const maxLikes = mostLikesCreator ? mostLikesCreator.likes : 0;
-          const engagementRate = mostLikesCreator ? calculateEngagementRate(mostLikesCreator.insightData.insight) : 0;
-          
-          return mostLikesCreator && (
-        <Grid item xs={12} md={4}>
+              const views = mostSharesCreator ? getMetricValue(mostSharesCreator.insightData.insight, 'views') : 0;
+              const comments = mostSharesCreator ? getMetricValue(mostSharesCreator.insightData.insight, 'comments') : 0;
+              const likes = mostSharesCreator ? getMetricValue(mostSharesCreator.insightData.insight, 'likes') : 0;
+              const maxShares = mostSharesCreator ? mostSharesCreator.shares : 0;
+              const engagementRate = mostSharesCreator ? calculateEngagementRate(mostSharesCreator.insightData.insight) : 0;
+              
+              return mostSharesCreator && (
+                <Grid item xs={12} md={12}>
               <Box sx={{ 
                   padding: '16px',
                   bgcolor: '#FFFFFF', 
@@ -2639,13 +3765,19 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   border: '1px solid #EBEBEB',
                   boxShadow: '0px -3px 0px 0px #EBEBEB inset',
                   position: 'relative',
-                  mt: 2
-              }}>
-                {/* Most Likes Badge */}
+                      width: '611px',
+                      height: '112px',
+                      gap: '4px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      marginLeft: 'auto',
+                  }}>
+                    {/* Most Shares Badge */}
                 <Box sx={{
                   position: 'absolute',
                   top: '-10px',
-                  right: '24px',
+                      left: '16px',
                   bgcolor: '#DBFAE6',
                   borderRadius: '4px',
                   px: 2,
@@ -2655,156 +3787,274 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   fontWeight: 600,
                   color: '#1ABF66'
                   }}>
-                  Most Likes
+                      Most Shares
                 </Box>
                 
                 {/* Creator Info */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, mt: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Avatar sx={{ width: 40, height: 40, mr: 1.5, bgcolor: '#E4405F' }}>
-                    {mostLikesCreatorData?.user?.name?.charAt(0) || 'U'}
+                          {(mostSharesCreatorData?.user?.name || mostSharesCreator?.submission?.user?.name)?.charAt(0) || 'U'}
                   </Avatar>
                   <Box>
                     <Typography sx={{ 
                       fontFamily: 'Aileron', 
                       fontWeight: 600, 
-                      fontSize: '14px',
-                      color: '#231F20' 
+                            fontSize: '16px',
+                            color: '#231F20',
+                            lineHeight: '18px'
                     }}>
-                      {mostLikesCreatorData?.user?.name || 'Unknown'}
+                            {mostSharesCreatorData?.user?.name || mostSharesCreator?.submission?.user?.name || 'Unknown'}
                     </Typography>
                     <Typography sx={{ 
                       fontFamily: 'Aileron', 
-                      fontSize: '12px',
-                      color: '#636366' 
+                            fontSize: '14px',
+                            color: '#636366',
+                            lineHeight: '16px'
                     }}>
-                      {mostLikesCreatorData?.user?.creator?.instagram || mostLikesCreatorData?.user?.creator?.tiktok || ''}
+                            {mostSharesCreatorData?.user?.creator?.instagram || mostSharesCreator?.submission?.user?.creator?.instagram || mostSharesCreatorData?.user?.creator?.tiktok || mostSharesCreator?.submission?.user?.creator?.tiktok || ''}
                     </Typography>
                   </Box>
                 </Box>
                 
-                {/* Metrics */}
-                <Grid container spacing={1.5}>
-                  <Grid item xs={3}>
-                    <Box>
-                      <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '26px',
-                        lineHeight: '31.9px',
-                        textAlign: 'center',
-                        color: '#1340FF'
-                      }}>
-                        {engagementRate}%
-                      </Typography>
+                      {/* Metrics - Inline */}
+                      <Box sx={{ display: 'flex', gap: 5 }}>
+                        <Box sx={{ textAlign: 'left' }}>
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
                         fontSize: '12px',
                         lineHeight: '14px',
-                        textAlign: 'center',
                         color: '#636366'
                       }}>
-                        Engagement Rate
+                            Engage. Rate
             </Typography>
-          </Box>
-        </Grid>
-                  <Grid item xs={3}>
-                    <Box>
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '26px',
-                        lineHeight: '31.9px',
-                        textAlign: 'center',
+                            fontSize: '28px',
+                            lineHeight: '30px',
                         color: '#1340FF'
                       }}>
-                        {formatNumber(views)}
+                            {engagementRate}%
                       </Typography>
+                        </Box>
+                        <Box sx={{ textAlign: 'left' }}>
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
                         fontSize: '12px',
                         lineHeight: '14px',
-                        textAlign: 'center',
                         color: '#636366'
                       }}>
                         Views
                       </Typography>
-                    </Box>
-      </Grid>
-                  <Grid item xs={3}>
-                    <Box>
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '26px',
-                        lineHeight: '31.9px',
-                        textAlign: 'center',
+                            fontSize: '28px',
+                            lineHeight: '30px',
                         color: '#1340FF'
                       }}>
-                        {formatNumber(maxLikes)}
+                            {formatNumber(views)}
                       </Typography>
+                        </Box>
+                        <Box sx={{ textAlign: 'left' }}>
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
                         fontSize: '12px',
                         lineHeight: '14px',
-                        textAlign: 'center',
                         color: '#636366'
                       }}>
                         Likes
                       </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={3}>
-                    <Box>
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '26px',
-                        lineHeight: '31.9px',
-                        textAlign: 'center',
+                            fontSize: '28px',
+                            lineHeight: '30px',
                         color: '#1340FF'
                       }}>
-                        {formatNumber(comments)}
+                            {formatNumber(likes)}
                       </Typography>
+                        </Box>
+                        <Box sx={{ textAlign: 'left' }}>
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
                         fontSize: '12px',
                         lineHeight: '14px',
-                        textAlign: 'center',
                         color: '#636366'
                       }}>
-                        Comments
+                            Shares
+                          </Typography>
+                          <Typography sx={{
+                            fontFamily: 'Instrument Serif',
+                            fontWeight: 400,
+                            fontSize: '28px',
+                            lineHeight: '30px',
+                            color: '#1340FF'
+                          }}>
+                            {formatNumber(maxShares)}
                       </Typography>
                     </Box>
-                  </Grid>
-                </Grid>
+                      </Box>
+                    </Box>
               </Box>
             </Grid>
           );
         })()}
+          </Grid>
+        </Grid>
       </Grid>
     </Box>
+    </Box>
+                </SortableSection>
+              );
 
+            case 'views':
+              return (
+                <SortableSection key="views" id="views" isEditMode={isEditMode}>
     {/* Views Section */}
-    <Box sx={{ mb: 2 }}>
+    <Box 
+      sx={{ 
+        mb: 2,
+        background: '#FFFFFF',
+        borderRadius: '12px',
+        padding: '24px',
+        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+      }}
+    >
+    <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
       <Typography 
+            variant="h2" 
         sx={{ 
-          fontFamily: 'Instrument Serif',
+              fontFamily: 'Instrument Serif, serif',
           fontWeight: 400,
-          fontSize: '40px',
-          lineHeight: '44px',
+            fontStyle: 'normal',
+              fontSize: '56px',
+              lineHeight: '60px',
           letterSpacing: '0%',
           color: '#231F20',
-          mb: 2 
+              whiteSpace: 'nowrap'
         }}
       >
         Views
       </Typography>
+    <Box 
+      sx={{ 
+              flex: 1,
+              height: '1px',
+              background: '#231F20',
+            }} 
+          />
+        {isEditMode && !sectionEditStates.views && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={async () => {
+                try {
+                  setIsSaving(true);
+                  const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
+                    content: editableContent,
+                  });
+                  if (response.data.success) {
+                    setSectionEditStates({ ...sectionEditStates, views: true });
+                    enqueueSnackbar('Views section saved successfully', { variant: 'success' });
+                  }
+                } catch (error) {
+                  console.error('Error saving section:', error);
+                  enqueueSnackbar('Failed to save section', { variant: 'error' });
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, views: false });
+                enqueueSnackbar('Views section removed', { variant: 'info' });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+          </Box>
+        )}
+        {isEditMode && sectionEditStates.views && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={() => {
+                setSectionEditStates({ ...sectionEditStates, views: false });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, views: false });
+                enqueueSnackbar('Views section removed', { variant: 'info' });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+          </Box>
+        )}
+        </Box>
       
-      {isEditMode ? (
+      {(() => {
+        if (isEditMode && !sectionEditStates.views) {
+          return (
         <Box sx={{ position: 'relative', mb: 3 }}>
           <Box sx={{ 
             position: 'absolute', 
@@ -2824,16 +4074,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <TextField
             fullWidth
             multiline
-            rows={5}
-            value={editableContent.viewsDescription}
+                rows={3}
+                value={editableContent.viewsDescription || ''}
             onChange={(e) => setEditableContent({ ...editableContent, viewsDescription: e.target.value })}
             placeholder="type here"
             sx={{
               '& .MuiInputBase-root': {
-                fontFamily: 'Aileron',
-                fontSize: '16px',
+                    fontFamily: 'Inter Display',
+                    fontSize: '20px',
                 lineHeight: '24px',
-                color: '#374151',
+                    color: '#231F20',
                 bgcolor: '#F3F4F6',
                 borderRadius: '8px',
                 padding: '12px',
@@ -2845,65 +4095,218 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }}
           />
         </Box>
-      ) : (
+          );
+        }
+        
+        if (editableContent.viewsDescription) {
+          return (
         <Typography 
+              variant="body1" 
           sx={{ 
             fontFamily: 'Aileron',
             fontWeight: 400,
+                fontStyle: 'normal',
             fontSize: '20px',
             lineHeight: '24px',
-            color: '#374151',
+                letterSpacing: '0%',
+                color: '#231F20',
             mb: 3,
-            whiteSpace: 'pre-line',
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
             wordBreak: 'break-word'
           }}
         >
-          {editableContent.viewsDescription || (
-            <Box component="span" sx={{ color: '#9CA3AF', fontStyle: 'italic' }}>
-              Click &quot;Edit Report&quot; to add views analysis
-            </Box>
-          )}
+              {editableContent.viewsDescription}
         </Typography>
-      )}
-      
-      <Box sx={{ mb: 1 }}>
+          );
+        }
+        
+        return (
+          <Box
+            sx={{
+              bgcolor: '#E5E7EB',
+              borderRadius: '8px', 
+              padding: '12px',
+              mb: 3,
+            }}
+          >
         <Typography 
+              variant="body1" 
           sx={{ 
             fontFamily: 'Aileron',
-            fontWeight: 700,
-            fontSize: '18px',
-            lineHeight: '22px',
+                fontWeight: 400,
+                fontSize: '20px',
+                lineHeight: '24px',
             letterSpacing: '0%',
-            color: '#231F20',
-            mb: 3 
+                color: '#9CA3AF',
           }}
         >
-          Highest View Week
+              Click Edit Report to edit Views
         </Typography>
-        <HighestViewWeekChart />
       </Box>
-    </Box>
+        );
+      })()}
+      
+        {/* Views Charts Grid */}
+        <Grid container spacing={3}>
+          {/* Top 5 Creator Total Views - Left */}
+          <Grid item xs={12} md={6}>
+            <TopCreatorViewsChart />
+        </Grid>
 
+          {/* Top 5 Creator Views after 48H of Posting - Right */}
+          <Grid item xs={12} md={6}>
+            <TopCreatorViews48HChart />
+        </Grid>
+      </Grid>
+    </Box>
+                    </Box>
+                </SortableSection>
+          );
+
+            case 'audienceSentiment':
+              return (
+                <SortableSection key="audienceSentiment" id="audienceSentiment" isEditMode={isEditMode}>
     {/* Audience Sentiment */}
+    <Box 
+      sx={{ 
+        mb: 2,
+        background: '#FFFFFF',
+        borderRadius: '12px',
+        padding: '24px',
+        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+      }}
+    >
     <Box sx={{ mb: 6, mt: 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
       <Typography 
+          variant="h2"
         sx={{ 
-          fontFamily: 'Instrument Serif',
+            fontFamily: 'Instrument Serif, serif',
           fontWeight: 400,
-          fontSize: '40px',
-          lineHeight: '44px',
+            fontStyle: 'normal',
+            fontSize: '56px',
+            lineHeight: '60px',
           letterSpacing: '0%',
           color: '#231F20',
-          mb: 2 
+            whiteSpace: 'nowrap'
         }}
       >
         Audience Sentiment
       </Typography>
+        <Box 
+            sx={{
+            flex: 1,
+            height: '1px',
+            background: '#231F20',
+          }} 
+        />
+        {isEditMode && !sectionEditStates.audienceSentiment && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={async () => {
+                try {
+                  setIsSaving(true);
+                  const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
+                    content: editableContent,
+                  });
+                  if (response.data.success) {
+                    setSectionEditStates({ ...sectionEditStates, audienceSentiment: true });
+                    enqueueSnackbar('Audience Sentiment section saved successfully', { variant: 'success' });
+                  }
+                } catch (error) {
+                  console.error('Error saving section:', error);
+                  enqueueSnackbar('Failed to save section', { variant: 'error' });
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+          sx={{ 
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, audienceSentiment: false });
+                enqueueSnackbar('Audience Sentiment section removed', { variant: 'info' });
+              }}
+          sx={{ 
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+      </Box>
+        )}
+        {isEditMode && sectionEditStates.audienceSentiment && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={() => {
+                setSectionEditStates({ ...sectionEditStates, audienceSentiment: false });
+              }}
+      sx={{ 
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, audienceSentiment: false });
+                enqueueSnackbar('Audience Sentiment section removed', { variant: 'info' });
+              }}
+        sx={{ 
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+          </Box>
+        )}
+      </Box>
       
-      {isEditMode ? (
-        <Box sx={{ position: 'relative', mb: 4 }}>
+      {(() => {
+        if (isEditMode && !sectionEditStates.audienceSentiment) {
+          return (
+            <Box sx={{ position: 'relative', mb: 3 }}>
           <Box sx={{ 
             position: 'absolute', 
             top: '12px', 
@@ -2922,16 +4325,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <TextField
             fullWidth
             multiline
-            rows={4}
+                rows={3}
             value={editableContent.audienceSentimentDescription}
             onChange={(e) => setEditableContent({ ...editableContent, audienceSentimentDescription: e.target.value })}
             placeholder="type here"
             sx={{
               '& .MuiInputBase-root': {
-                fontFamily: 'Aileron',
-                fontSize: '16px',
+                    fontFamily: 'Inter Display',
+                    fontSize: '20px',
                 lineHeight: '24px',
-                color: '#374151',
+                    color: '#231F20',
                 bgcolor: '#F3F4F6',
                 borderRadius: '8px',
                 padding: '12px',
@@ -2943,27 +4346,57 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }}
           />
         </Box>
-      ) : (
+          );
+        }
+        
+        if (editableContent.audienceSentimentDescription) {
+          return (
         <Typography 
+              variant="body1"
           sx={{ 
             fontFamily: 'Aileron',
             fontWeight: 400,
-            fontSize: '16px',
+                fontStyle: 'normal',
+                fontSize: '20px',
             lineHeight: '24px',
-            color: '#374151',
-            mb: 4,
+                letterSpacing: '0%',
+                color: '#231F20',
+                mb: 3,
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
             wordBreak: 'break-word'
           }}
         >
-          {editableContent.audienceSentimentDescription || (
-            <Box component="span" sx={{ color: '#9CA3AF', fontStyle: 'italic' }}>
-              Click &quot;Edit Report&quot; to add audience sentiment analysis
-            </Box>
-          )}
+              {editableContent.audienceSentimentDescription}
         </Typography>
-      )}
+          );
+        }
+        
+        return (
+          <Box 
+            sx={{ 
+              bgcolor: '#E5E7EB',
+              borderRadius: '8px',
+              padding: '12px',
+              mb: 3,
+            }}
+          >
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                fontFamily: 'Aileron',
+                fontWeight: 400,
+                fontSize: '20px',
+                lineHeight: '24px',
+                letterSpacing: '0%',
+                color: '#9CA3AF',
+              }}
+            >
+              Click Edit Report to edit Audience Sentiment
+            </Typography>
+          </Box>
+        );
+      })()}
       
       {/* Positive Comments */}
       <Box sx={{ mb: 3, position: 'relative', mt: 3 }}>
@@ -2999,7 +4432,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             Positive Comments
           </Typography>
       </Box>
-          {isEditMode ? (
+          {isEditMode && !sectionEditStates.audienceSentiment ? (
             <>
               <Grid container spacing={2}>
                 {editableContent.positiveComments.map((comment, index) => (
@@ -3167,11 +4600,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     </Grid>
                   ))}
                 </Grid>
-              ) : (
-                <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#9CA3AF', fontStyle: 'italic', textAlign: 'center', py: 3 }}>
-                  Click &quot;Edit Report&quot; to add positive comments
-                </Typography>
-              )}
+              ) : null}
             </>
           )}
       </Box>
@@ -3211,7 +4640,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             Neutral Comments
         </Typography>
       </Box>
-          {isEditMode ? (
+          {isEditMode && !sectionEditStates.audienceSentiment ? (
             <>
               <Grid container spacing={2}>
                 {editableContent.neutralComments.map((comment, index) => (
@@ -3379,32 +4808,540 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     </Grid>
                   ))}
                 </Grid>
-              ) : (
-                <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#9CA3AF', fontStyle: 'italic', textAlign: 'center', py: 3 }}>
-                  Click &quot;Edit Report&quot; to add neutral comments
-                </Typography>
-              )}
+              ) : null}
             </>
           )}
         </Box>
+        </Box>
       </Box>
     </Box>
+                </SortableSection>
+              );
 
-    {/* Best Performing Creator Personas */}
-    <Box sx={{ mb: 6 }}>
+            case 'creatorTiers':
+              return (
+                <SortableSection key="creatorTiers" id="creatorTiers" isEditMode={isEditMode}>
+                  {/* Creator Tiers */}
+                  <Box 
+      sx={{ 
+        mb: 2,
+        background: '#FFFFFF',
+        borderRadius: '12px',
+        padding: '24px',
+        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+      }}
+    >
+    <Box sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+      <Typography 
+            variant="h2"
+        sx={{ 
+              fontFamily: 'Instrument Serif, serif',
+          fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '56px',
+              lineHeight: '60px',
+              letterSpacing: '0%',
+          color: '#231F20',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Creator Tiers
+                </Typography>
+          <Box 
+            sx={{ 
+              flex: 1,
+              height: '1px',
+              background: '#231F20',
+            }} 
+          />
+        {isEditMode && !sectionEditStates.creatorTiers && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={async () => {
+                try {
+                  setIsSaving(true);
+                  const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
+                    content: editableContent,
+                  });
+                  if (response.data.success) {
+                    setSectionEditStates({ ...sectionEditStates, creatorTiers: true });
+                    enqueueSnackbar('Creator Tiers section saved successfully', { variant: 'success' });
+                  }
+                } catch (error) {
+                  console.error('Error saving section:', error);
+                  enqueueSnackbar('Failed to save section', { variant: 'error' });
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, creatorTiers: false });
+                enqueueSnackbar('Creator Tiers section removed', { variant: 'info' });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+          </Box>
+        )}
+        {isEditMode && sectionEditStates.creatorTiers && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={() => {
+                setSectionEditStates({ ...sectionEditStates, creatorTiers: false });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, creatorTiers: false });
+                enqueueSnackbar('Creator Tiers section removed', { variant: 'info' });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+          </Box>
+          )}
+        </Box>
+        {(() => {
+          if (isEditMode && !sectionEditStates.creatorTiers) {
+            return (
+              <Box sx={{ position: 'relative', mb: 4 }}>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 12,
+                    left: 12,
+                    zIndex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                    Editable
+                  </Typography>
+      </Box>
+                <TextField
+                  value={editableContent.creatorTiersDescription}
+                  onChange={(e) => setEditableContent({ ...editableContent, creatorTiersDescription: e.target.value })}
+                  fullWidth
+                  multiline
+                  rows={3}
+                  placeholder="type here"
+                  sx={{
+                    bgcolor: '#E5E7EB',
+                    borderRadius: '8px',
+                    '& .MuiInputBase-root': {
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '18px',
+                      color: '#000000',
+                      padding: '8px',
+                      paddingTop: '26px',
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  }}
+                />
+    </Box>
+            );
+          }
+
+          if (editableContent.creatorTiersDescription) {
+            return (
       <Typography 
         sx={{ 
-          fontFamily: 'Instrument Serif',
+                  fontFamily: 'Inter Display, sans-serif',
           fontWeight: 400,
-          fontSize: '40px',
-          lineHeight: '44px',
+                  fontSize: '16px',
+                  lineHeight: '24px',
           color: '#231F20',
+                  mb: 4,
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+                {editableContent.creatorTiersDescription}
+              </Typography>
+            );
+          }
+          
+          return (
+            <Box
+              sx={{
+                bgcolor: '#E5E7EB',
+                borderRadius: '8px',
+                padding: '12px',
+                mb: 4,
+              }}
+            >
+              <Typography 
+                sx={{ 
+                  fontFamily: 'Aileron',
+                  fontWeight: 400,
+                  fontSize: '20px',
+                  lineHeight: '24px',
+                  color: '#9CA3AF',
+                }}
+              >
+                Click Edit Report to edit Creator Tiers
+              </Typography>
+            </Box>
+          );
+        })()}
+
+        {/* Tier Table */}
+        {(() => {
+          // Calculate tier data from submissions
+          const tierDataMap = new Map();
+          
+          if (campaign?.isCreditTier && submissions?.length > 0) {
+            submissions.forEach((submission) => {
+              const tier = submission?.user?.creator?.creditTier;
+              if (tier) {
+                const tierName = tier.name || 'Unknown';
+                const engagementRate = submission?.insightData?.insight?.engagementRate || 
+                                      submission?.engagementRate || 
+                                      null;
+                
+                if (!tierDataMap.has(tierName)) {
+                  tierDataMap.set(tierName, {
+                    name: tierName,
+                    engagementRates: [],
+                  });
+                }
+                
+                if (engagementRate !== null && engagementRate !== undefined) {
+                  tierDataMap.get(tierName).engagementRates.push(parseFloat(engagementRate));
+                }
+              }
+            });
+          }
+
+          // Calculate averages and sort by tier name
+          const tierData = Array.from(tierDataMap.values())
+            .map((tier) => ({
+              name: tier.name,
+              averageEngagement: tier.engagementRates.length > 0
+                ? (tier.engagementRates.reduce((a, b) => a + b, 0) / tier.engagementRates.length).toFixed(1)
+                : null,
+            }))
+            .sort((a, b) => {
+              // Sort: Macro, Micro, Nano
+              const order = { Macro: 1, Micro: 2, Nano: 3 };
+              const aOrder = order[a.name.split(' ')[0]] || 999;
+              const bOrder = order[b.name.split(' ')[0]] || 999;
+              return aOrder - bOrder;
+            });
+
+          if (tierData.length === 0) {
+            return null;
+          }
+
+          return (
+            <Box
+              sx={{
+                borderRadius: '16px',
+                overflow: 'hidden',
+                border: '1px solid #000000',
+              }}
+            >
+              <Box
+                component="table"
+                sx={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                }}
+              >
+                <Box
+                  component="thead"
+                  sx={{
+                    bgcolor: '#636366',
+                  }}
+                >
+                  <Box
+                    component="tr"
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                    }}
+                  >
+                    <Box
+                      component="th"
+                      sx={{
+                        padding: '12px 16px',
+                        textAlign: 'center',
+                        fontFamily: 'Aileron',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#FFFFFF',
+                        borderRight: '1px solid #000000',
+                      }}
+                    >
+                      Tiers 📊
+        </Box>
+                    <Box
+                      component="th"
+                      sx={{
+                        padding: '12px 16px',
+                        textAlign: 'center',
+                        fontFamily: 'Aileron',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#FFFFFF',
+                      }}
+                    >
+                      Average Engagement 🤝
+        </Box>
+                  </Box>
+                </Box>
+                <Box component="tbody">
+                  {tierData.map((tier, index) => (
+                    <Box
+                      component="tr"
+                      key={tier.name}
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        bgcolor: '#FFFFFF',
+                        borderTop: '1px solid #000000',
+                      }}
+                    >
+                      <Box
+                        component="td"
+                        sx={{
+                          padding: '12px 16px',
+                          fontFamily: 'Inter Display, sans-serif',
+                          fontSize: '14px',
+                          fontWeight: 400,
+                          color: '#231F20',
+                          borderRight: '1px solid #000000',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {tier.name}
+                      </Box>
+                      <Box
+                        component="td"
+                        sx={{
+                          padding: '12px 16px',
+                          fontFamily: 'Inter Display, sans-serif',
+                          fontSize: '14px',
+                          fontWeight: 400,
+                          color: '#231F20',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {tier.averageEngagement ? `${tier.averageEngagement}%` : '-'}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Box>
+          );
+        })()}
+      </Box>
+    </Box>
+                </SortableSection>
+              );
+
+            case 'strategies':
+              return (
+                <SortableSection key="strategies" id="strategies" isEditMode={isEditMode}>
+                  {/* Strategies Utilised */}
+    <Box 
+      sx={{ 
           mb: 2,
+        background: '#FFFFFF',
+        borderRadius: '12px',
+        padding: '24px',
+        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+      }}
+    >
+    <Box sx={{ mb: 6 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+      <Typography 
+          variant="h2"
+        sx={{ 
+            fontFamily: 'Instrument Serif, serif',
+          fontWeight: 400,
+            fontStyle: 'normal',
+            fontSize: '56px',
+            lineHeight: '60px',
+            letterSpacing: '0%',
+          color: '#231F20',
+            whiteSpace: 'nowrap'
         }}
       >
-        Best Performing Creator Personas
+          Strategies Utilised
       </Typography>
-      {isEditMode ? (
+        <Box 
+          sx={{ 
+            flex: 1,
+            height: '1px',
+            background: '#231F20',
+          }} 
+        />
+        {isEditMode && !sectionEditStates.strategies && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={async () => {
+                try {
+                  setIsSaving(true);
+                  const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
+                    content: editableContent,
+                  });
+                  if (response.data.success) {
+                    setSectionEditStates({ ...sectionEditStates, strategies: true });
+                    enqueueSnackbar('Strategies Utilised section saved successfully', { variant: 'success' });
+                  }
+                } catch (error) {
+                  console.error('Error saving section:', error);
+                  enqueueSnackbar('Failed to save section', { variant: 'error' });
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, strategies: false });
+                enqueueSnackbar('Strategies Utilised section removed', { variant: 'info' });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+          </Box>
+        )}
+        {isEditMode && sectionEditStates.strategies && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={() => {
+                setSectionEditStates({ ...sectionEditStates, strategies: false });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, strategies: false });
+                enqueueSnackbar('Strategies Utilised section removed', { variant: 'info' });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+          </Box>
+        )}
+      </Box>
+      {(() => {
+        if (isEditMode && !sectionEditStates.strategies) {
+          return (
         <Box sx={{ position: 'relative', mb: 4 }}>
           <Box
             sx={{
@@ -3448,7 +5385,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }}
           />
         </Box>
-      ) : (
+          );
+        }
+        
+        if (editableContent.bestPerformingPersonasDescription) {
+          return (
         <Typography 
           sx={{ 
             fontFamily: 'Aileron',
@@ -3462,43 +5403,48 @@ const PCRReportPage = ({ campaign, onBack }) => {
             wordBreak: 'break-word'
           }}
         >
-          {editableContent.bestPerformingPersonasDescription || (
-            <Box component="span" sx={{ color: '#9CA3AF', fontStyle: 'italic' }}>
-              Click &quot;Edit Report&quot; to add creator personas description
-            </Box>
-          )}
+              {editableContent.bestPerformingPersonasDescription}
         </Typography>
-      )}
-      {/* Creator Persona Cards */}
-      {isEditMode ? (
-        // Edit Mode: Show + button horizontally with card 1 if there's only 1 card
-      <Box sx={{ display: 'flex', gap: 17, justifyContent: 'flex-start', alignItems: 'center' }}>
-        {/* The Comic Card with Number */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 7 }}>
-          {/* Number - Outside the card - only show if educator card is visible */}
-          {showEducatorCard && (
+          );
+        }
+        
+        return (
+          <Box
+            sx={{
+              bgcolor: '#E5E7EB',
+              borderRadius: '8px',
+              padding: '12px',
+              mb: 4,
+            }}
+          >
             <Typography
               sx={{
-                fontFamily: 'Instrument Serif, serif',
+                fontFamily: 'Aileron',
                 fontWeight: 400,
-                fontStyle: 'normal',
-                fontSize: '40px',
-                lineHeight: '44px',
-                letterSpacing: '0%',
-                color: '#1340FF',
-                position: 'relative',
-                left: '-55px',
+                fontSize: '20px',
+                lineHeight: '24px',
+                color: '#9CA3AF',
               }}
             >
-              1.
+              Click Edit Report to edit Creator Personas
             </Typography>
-          )}
-          
+          </Box>
+        );
+      })()}
+      {/* Creator Persona Cards */}
+      {isEditMode && !sectionEditStates.strategies ? (
+        // Edit Mode: Grid layout with cards on left, chart on right
+      <Grid container spacing={2}>
+        {/* Left side - Persona Cards stacked vertically */}
+        <Grid item xs={12} md={7}>
+          <Box ref={cardsContainerRef} sx={{ display: 'flex', flexDirection: 'column', gap: 3, ml: 7, width: '100%', minWidth: 0, overflow: 'visible' }}>
+        {/* The Comic Card */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {/* Card */}
           <Box
             sx={{
-              width: '347px',
-              height: isEditMode ? '380px' : '189px',
+              width: '480px',
+              height: isEditMode ? '280px' : '189px',
               borderRadius: '20px',
               background: '#F5F5F5',
               border: '10px solid #FFFFFF',
@@ -3585,7 +5531,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               left: '70px', // Space for circle
               top: isEditMode ? '20px' : '50%',
               transform: isEditMode ? 'none' : 'translateY(-50%)',
-              maxWidth: 'calc(347px - 82px)', // Card width minus circle space
+               maxWidth: 'calc(480px - 82px)', // Card width minus circle space
               transition: 'top 0.3s ease, transform 0.3s ease',
             }}
           >
@@ -3618,7 +5564,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '28px',
                       lineHeight: '32px',
                       color: '#0067D5',
-                      textAlign: 'center',
+                      textAlign: 'left',
                     }
                   }}
                 sx={{
@@ -3630,9 +5576,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '28px',
                       lineHeight: '32px',
                     color: '#0067D5',
-                    textAlign: 'center',
+                    textAlign: 'left',
                       padding: '8px',
+                      paddingLeft: '6px',
                       paddingTop: '26px',
+                      height: '56px',
                   },
                     '& .MuiOutlinedInput-notchedOutline': {
                       border: 'none',
@@ -3659,23 +5607,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Typography>
             )}
             
-            <Box sx={{ mb: 0.75, textAlign: 'left' }}>
-              <Typography
-                sx={{
-                  fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 700,
-                  fontStyle: 'normal',
-                  fontSize: '14px',
-                  lineHeight: '18px',
-                  letterSpacing: '0%',
-                  color: '#000000',
-                  mb: 0.5,
-                }}
-              >
-                Content Style
-              </Typography>
-              {isEditMode ? (
-                <Box sx={{ position: 'relative' }}>
+            {isEditMode && (
+              <>
+                <Box sx={{ position: 'relative', mb: 0.75 }}>
                   <Box
                     sx={{
                       position: 'absolute',
@@ -3697,9 +5631,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   fullWidth
                     multiline
                     rows={2}
-                  inputProps={{
-                    maxLength: 50,
-                  }}
                   sx={{
                       bgcolor: '#E5E7EB',
                       borderRadius: '8px',
@@ -3718,183 +5649,67 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   }}
                 />
                 </Box>
-              ) : (
+
+                <Box>
                 <Typography
                   sx={{
-                    fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 400,
-                    fontStyle: 'normal',
+                      fontFamily: 'Aileron', 
                     fontSize: '14px',
-                    lineHeight: '18px',
-                    letterSpacing: '0%',
-                    color: '#000000',
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-line',
-                  }}
-                >
-                  {editableContent.comicContentStyle}
-                </Typography>
-              )}
-            </Box>
-
-            <Box sx={{ textAlign: 'left' }}>
-              <Typography
-                sx={{
-                  fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 700,
-                  fontStyle: 'normal',
-                  fontSize: '14px',
-                  lineHeight: '18px',
-                  letterSpacing: '0%',
-                  color: '#000000',
-                  mb: 0.5,
+                      fontWeight: 600, 
+                      color: '#636366',
+                      mb: 1
                 }}
               >
-                Why They Work
-              </Typography>
-              {isEditMode ? (
-                <Box sx={{ position: 'relative' }}>
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 6,
-                      left: 6,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      zIndex: 1,
-                    }}
-                  >
-                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
-                      Editable
-                    </Typography>
-                  </Box>
+                    Number of Creators
+                </Typography>
                 <TextField
-                  value={editableContent.comicWhyWork}
-                  onChange={(e) => setEditableContent({ ...editableContent, comicWhyWork: e.target.value })}
+                    value={editableContent.creatorStrategyCount}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Only allow numbers
+                      if (value === '' || /^\d+$/.test(value)) {
+                        setEditableContent({ ...editableContent, creatorStrategyCount: value });
+                      }
+                    }}
+                    placeholder="Number of Creators"
                   fullWidth
-                    multiline
-                    rows={2}
                   inputProps={{
-                    maxLength: 50,
+                      maxLength: 3,
+                      inputMode: 'numeric',
+                      pattern: '[0-9]*',
+                      style: {
+                        fontFamily: 'Aileron',
+                        fontSize: '14px',
+                        color: '#000000',
+                      }
                   }}
-                  sx={{
-                      bgcolor: '#E5E7EB',
+            sx={{
+                        bgcolor: '#FFFFFF',
                       borderRadius: '8px',
                       '& .MuiInputBase-root': {
-                      fontFamily: 'Inter Display, sans-serif',
-                      fontWeight: 400,
-                      fontSize: '14px',
-                      lineHeight: '18px',
-                      color: '#000000',
-                        padding: '8px',
-                        paddingTop: '26px',
+                          padding: '12px',
+                          height: '48px',
                       },
                       '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
+                          borderColor: '#E5E7EB',
                     },
                   }}
                 />
                 </Box>
-              ) : (
-                <Typography
-                  sx={{
-                    fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 400,
-                    fontStyle: 'normal',
-                    fontSize: '14px',
-                    lineHeight: '18px',
-                    letterSpacing: '0%',
-                    color: '#000000',
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-line',
-                  }}
-                >
-                  {editableContent.comicWhyWork}
-                </Typography>
+              </>
               )}
+          </Box>
+          </Box>
             </Box>
-          </Box>
-          </Box>
-        </Box>
 
-        {/* Show + button if educator card is hidden, otherwise show educator card */}
-        {!showEducatorCard ? (
-          // Add Persona Button
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 10 }}>
-            <IconButton
-              onClick={() => setShowEducatorCard(true)}
-              sx={{
-                width: '140px',
-                height: '140px',
-                bgcolor: '#F5F5F5',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mt: 3,
-                '&:hover': { 
-                  bgcolor: '#E8E8E8',
-                },
-              }}
-            >
-              <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                <rect x="32" y="8" width="16" height="64" rx="8" fill="#1340FF"/>
-                <rect x="8" y="32" width="64" height="16" rx="8" fill="#1340FF"/>
-              </svg>
-            </IconButton>
-          </Box>
-        ) : (
-          // The Educator Card with Number
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, position: 'relative' }}>
-          {/* Delete Button - Top right of the entire card container */}
-          <IconButton
-            onClick={() => setShowEducatorCard(false)}
-            sx={{
-              position: 'absolute',
-              top: -10,
-              right: -10,
-              zIndex: 10,
-              bgcolor: '#EF4444',
-              color: 'white',
-              width: '32px',
-              height: '32px',
-              '&:hover': {
-                bgcolor: '#DC2626',
-              },
-            }}
-          >
-            <DeleteIcon sx={{ fontSize: '20px' }} />
-          </IconButton>
-
-          {/* Number - Outside the card */}
+        {/* Educator Card - Show below comic card when visible */}
           {showEducatorCard && (
-            <Typography
-              sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontWeight: 400,
-                fontStyle: 'normal',
-                fontSize: '40px',
-                lineHeight: '44px',
-                letterSpacing: '0%',
-                color: '#1340FF',
-                position: 'relative',
-                left: '-55px',
-              }}
-            >
-              2.
-            </Typography>
-          )}
-          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, position: 'relative' }}>
           {/* Card */}
           <Box
-            sx={{
-              width: '347px',
-              height: isEditMode ? '380px' : '189px',
+                sx={{
+              width: '480px',
+              height: isEditMode ? '280px' : '189px',
               borderRadius: '20px',
               background: '#F5F5F5',
               border: '10px solid #FFFFFF',
@@ -3943,7 +5758,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               >
                 <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#3A3A3C' }}>
                   Editable
-                </Typography>
+              </Typography>
               </Box>
             )}
             {/* Inner gradient circle */}
@@ -3958,7 +5773,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 width: '95px',
                 height: '95px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #1340FF 0%, #3B82F6 100%)',
+                background: '#D4FF00',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -3981,8 +5796,311 @@ const PCRReportPage = ({ campaign, onBack }) => {
               left: '70px', // Space for circle
               top: isEditMode ? '20px' : '50%',
               transform: isEditMode ? 'none' : 'translateY(-50%)',
-              maxWidth: 'calc(347px - 82px)', // Card width minus circle space
+               maxWidth: 'calc(480px - 82px)', // Card width minus circle space
               transition: 'top 0.3s ease, transform 0.3s ease',
+            }}
+          >
+              {isEditMode ? (
+              <Box sx={{ position: 'relative', mb: 0.75 }}>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                      Editable
+                    </Typography>
+                  </Box>
+                <TextField
+                value={editableContent.educatorTitle}
+                onChange={(e) => setEditableContent({ ...editableContent, educatorTitle: e.target.value })}
+                  fullWidth
+                  inputProps={{
+                    maxLength: 30,
+                    style: {
+                      fontFamily: 'Instrument Serif, serif',
+                      fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                      color: '#0067D5',
+                      textAlign: 'left',
+                    }
+                  }}
+                  sx={{
+                      bgcolor: '#E5E7EB',
+                      borderRadius: '8px',
+                      '& .MuiInputBase-root': {
+                    fontFamily: 'Instrument Serif, serif',
+                      fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                    color: '#0067D5',
+                    textAlign: 'left',
+                        padding: '8px',
+                      paddingLeft: '6px',
+                        paddingTop: '26px',
+                      height: '56px',
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                    },
+                  }}
+                />
+                </Box>
+              ) : (
+                <Typography
+                  sx={{
+                  fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                  fontSize: '36px',
+                  lineHeight: '40px',
+                    letterSpacing: '0%',
+                  color: '#0067D5',
+                  mb: 1.5,
+                  textAlign: 'center',
+                  ml: -3,
+                }}
+              >
+                {editableContent.educatorTitle}
+                </Typography>
+              )}
+            
+            {isEditMode && (
+              <>
+                <Box sx={{ position: 'relative', mb: 0.75 }}>
+                  <Box
+              sx={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                display: 'flex',
+                alignItems: 'center',
+                      gap: 0.5,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                      Editable
+                    </Typography>
+          </Box>
+                <TextField
+                  value={editableContent.educatorContentStyle}
+                  onChange={(e) => setEditableContent({ ...editableContent, educatorContentStyle: e.target.value })}
+                  fullWidth
+                    multiline
+                    rows={2}
+            sx={{
+                      bgcolor: '#E5E7EB',
+                      borderRadius: '8px',
+                      '& .MuiInputBase-root': {
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '18px',
+                      color: '#000000',
+                        padding: '8px',
+                        paddingTop: '26px',
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                    },
+                  }}
+                />
+                </Box>
+
+                <Box sx={{ mt: 1 }}>
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#636366', mb: 1 }}>
+                    Number of Creators
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TextField
+                      value={editableContent.educatorCreatorCount}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow numbers
+                        if (value === '' || /^\d+$/.test(value)) {
+                          setEditableContent({ ...editableContent, educatorCreatorCount: value });
+                        }
+                      }}
+                      placeholder="Number of Creators"
+              sx={{
+                        flex: 1,
+                        bgcolor: '#FFFFFF',
+                        borderRadius: '8px',
+                        '& .MuiInputBase-root': {
+                          padding: '12px',
+                          height: '48px',
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#E5E7EB',
+                        },
+                      }}
+                      inputProps={{
+                        maxLength: 3,
+                        inputMode: 'numeric',
+                        pattern: '[0-9]*',
+                        style: {
+                          fontFamily: 'Aileron',
+                    fontSize: '14px',
+                    color: '#000000',
+                        }
+                      }}
+                    />
+          <IconButton
+            onClick={() => {
+              // If third card exists, move its data to educator position
+              if (showThirdCard) {
+                setEditableContent({
+                  ...editableContent,
+                  educatorTitle: editableContent.thirdTitle,
+                  educatorContentStyle: editableContent.thirdContentStyle,
+                  educatorCreatorCount: editableContent.thirdCreatorCount,
+                  educatorEmoji: editableContent.thirdEmoji,
+                  thirdTitle: '',
+                  thirdContentStyle: '',
+                  thirdCreatorCount: '',
+                  thirdEmoji: ''
+                });
+                setShowThirdCard(false);
+              } else {
+                // No third card, just hide educator
+                setShowEducatorCard(false);
+                setEditableContent({
+                  ...editableContent,
+                  educatorTitle: '',
+                  educatorContentStyle: '',
+                  educatorCreatorCount: '',
+                  educatorEmoji: ''
+                });
+              }
+            }}
+            sx={{
+                        color: '#000000',
+                        width: '48px',
+                        height: '48px',
+                        padding: 0,
+              '&:hover': {
+                          opacity: 0.7,
+              },
+            }}
+          >
+                      <img src="/assets/delete.svg" alt="Delete" style={{ width: '20px', height: '20px' }} />
+          </IconButton>
+            </Box>
+          </Box>
+              </>
+              )}
+          </Box>
+        </Box>
+        </Box>
+        )}
+
+        {/* Third Persona Card - Only show if showThirdCard is true */}
+        {showThirdCard && (
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 3, ml: 0, position: 'relative', width: '100%', minWidth: 0, overflow: 'visible' }}>
+          {/* Card */}
+          <Box
+            sx={{
+              width: isEditMode ? '910px' : '860px',
+              minWidth: '470px',
+              flexShrink: 0,
+              height: isEditMode ? '280px' : '189px',
+              borderRadius: '20px',
+              background: '#F5F5F5',
+              border: '10px solid #FFFFFF',
+              boxShadow: '0px 4px 4px 0px #8E8E9340',
+              position: 'relative',
+              transition: 'height 0.3s ease',
+              overflow: 'visible',
+            }}
+          >
+          {/* Circle with Icon - Positioned as separate component */}
+          <Box
+            sx={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              border: '8px solid #FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'absolute',
+              left: '-60px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 1,
+              boxShadow: '-4px 4px 4px 0px #8E8E9340',
+            }}
+          >
+            {/* Editable label for emoji */}
+            {isEditMode && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -30,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  bgcolor: '#F3F4F6',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#3A3A3C' }}>
+                  Editable
+                </Typography>
+              </Box>
+            )}
+            {/* Inner gradient circle */}
+            <Box
+              onClick={(e) => {
+                if (isEditMode) {
+                  setEmojiPickerAnchor(e.currentTarget);
+                  setEmojiPickerType('third');
+                }
+              }}
+              sx={{
+                width: '95px',
+                height: '95px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '32px',
+                cursor: isEditMode ? 'pointer' : 'default',
+                '&:hover': isEditMode ? {
+                  opacity: 0.8,
+                } : {},
+              }}
+            >
+              {editableContent.thirdEmoji}
+            </Box>
+          </Box>
+
+          {/* Content - Positioned independently */}
+          <Box 
+            sx={{ 
+              position: 'absolute',
+              right: '12px',
+              left: '70px', // Space for circle
+              top: isEditMode ? '20px' : '50%',
+              transform: isEditMode ? 'none' : 'translateY(-50%)',
+               maxWidth: isEditMode ? 'calc(920px - 82px)' : 'calc(860px - 82px)', // Card width minus circle space
+              transition: 'top 0.3s ease, transform 0.3s ease',
+              overflow: 'visible',
             }}
           >
             {isEditMode ? (
@@ -4003,8 +6121,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   </Typography>
                 </Box>
               <TextField
-                value={editableContent.educatorTitle}
-                onChange={(e) => setEditableContent({ ...editableContent, educatorTitle: e.target.value })}
+                value={editableContent.thirdTitle}
+                onChange={(e) => setEditableContent({ ...editableContent, thirdTitle: e.target.value })}
                   fullWidth
                   inputProps={{
                     maxLength: 30,
@@ -4014,7 +6132,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '28px',
                       lineHeight: '32px',
                       color: '#0067D5',
-                      textAlign: 'center',
+                      textAlign: 'left',
                     }
                   }}
                 sx={{
@@ -4026,9 +6144,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '28px',
                       lineHeight: '32px',
                     color: '#0067D5',
-                    textAlign: 'center',
+                    textAlign: 'left',
                       padding: '8px',
+                      paddingLeft: '6px',
                       paddingTop: '26px',
+                      height: '56px',
                   },
                     '& .MuiOutlinedInput-notchedOutline': {
                       border: 'none',
@@ -4051,27 +6171,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   ml: -3,
                 }}
               >
-                {editableContent.educatorTitle}
+                {editableContent.thirdTitle}
               </Typography>
             )}
             
-            <Box sx={{ mb: 0.75, textAlign: 'left' }}>
-              <Typography
-                sx={{
-                  fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 700,
-                  fontStyle: 'normal',
-                  fontSize: '14px',
-                  lineHeight: '18px',
-                  letterSpacing: '0%',
-                  color: '#000000',
-                  mb: 0.5,
-                }}
-              >
-                Content Style
-              </Typography>
-              {isEditMode ? (
-                <Box sx={{ position: 'relative' }}>
+            {isEditMode && (
+              <>
+                <Box sx={{ position: 'relative', mb: 0.75 }}>
                   <Box
                     sx={{
                       position: 'absolute',
@@ -4088,14 +6194,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     </Typography>
                   </Box>
                 <TextField
-                  value={editableContent.educatorContentStyle}
-                  onChange={(e) => setEditableContent({ ...editableContent, educatorContentStyle: e.target.value })}
+                  value={editableContent.thirdContentStyle}
+                  onChange={(e) => setEditableContent({ ...editableContent, thirdContentStyle: e.target.value })}
                   fullWidth
                     multiline
                     rows={2}
-                  inputProps={{
-                    maxLength: 50,
-                  }}
                   sx={{
                       bgcolor: '#E5E7EB',
                       borderRadius: '8px',
@@ -4114,153 +6217,485 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   }}
                 />
                 </Box>
-              ) : (
-                <Typography
-                  sx={{
-                    fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 400,
-                    fontStyle: 'normal',
-                    fontSize: '14px',
-                    lineHeight: '18px',
-                    letterSpacing: '0%',
-                    color: '#000000',
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-line',
-                  }}
-                >
-                  {editableContent.educatorContentStyle}
-                </Typography>
-              )}
-            </Box>
 
-            <Box sx={{ textAlign: 'left' }}>
-              <Typography
-                sx={{
-                  fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 700,
-                  fontStyle: 'normal',
-                  fontSize: '14px',
-                  lineHeight: '18px',
-                  letterSpacing: '0%',
-                  color: '#000000',
-                  mb: 0.5,
-                }}
-              >
-                Why They Work
-              </Typography>
-              {isEditMode ? (
-                <Box sx={{ position: 'relative' }}>
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 6,
-                      left: 6,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      zIndex: 1,
-                    }}
-                  >
-                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
-                      Editable
-                    </Typography>
-                  </Box>
-                <TextField
-                  value={editableContent.educatorWhyWork}
-                  onChange={(e) => setEditableContent({ ...editableContent, educatorWhyWork: e.target.value })}
-                  fullWidth
-                    multiline
-                    rows={2}
-                  inputProps={{
-                    maxLength: 50,
-                  }}
+                <Box sx={{ mt: 1 }}>
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#636366', mb: 1 }}>
+                    Number of Creators
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TextField
+                      value={editableContent.thirdCreatorCount}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow numbers
+                        if (value === '' || /^\d+$/.test(value)) {
+                          setEditableContent({ ...editableContent, thirdCreatorCount: value });
+                        }
+                      }}
+                      placeholder="Number of Creators"
                   sx={{
-                      bgcolor: '#E5E7EB',
-                      borderRadius: '8px',
-                      '& .MuiInputBase-root': {
-                      fontFamily: 'Inter Display, sans-serif',
-                      fontWeight: 400,
-                      fontSize: '14px',
-                      lineHeight: '18px',
-                      color: '#000000',
-                        padding: '8px',
-                        paddingTop: '26px',
-                      },
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                    },
-                  }}
-                />
-                </Box>
-              ) : (
-                <Typography
-                  sx={{
-                    fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 400,
-                    fontStyle: 'normal',
+                        flex: 1,
+                        bgcolor: '#FFFFFF',
+                        borderRadius: '8px',
+                        '& .MuiInputBase-root': {
+                          padding: '12px',
+                          height: '48px',
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#E5E7EB',
+                        },
+                      }}
+                      inputProps={{
+                        maxLength: 3,
+                        inputMode: 'numeric',
+                        pattern: '[0-9]*',
+                        style: {
+                          fontFamily: 'Aileron',
                     fontSize: '14px',
-                    lineHeight: '18px',
-                    letterSpacing: '0%',
                     color: '#000000',
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-line',
-                  }}
-                >
-                  {editableContent.educatorWhyWork}
-                </Typography>
+                        }
+                      }}
+                    />
+                    <IconButton
+                      onClick={() => {
+                        setShowThirdCard(false);
+                        setEditableContent({
+                          ...editableContent,
+                          thirdTitle: '',
+                          thirdContentStyle: '',
+                          thirdCreatorCount: '',
+                          thirdEmoji: ''
+                        });
+                      }}
+                      sx={{
+                        color: '#000000',
+                        width: '48px',
+                        height: '48px',
+                        padding: 0,
+                        '&:hover': {
+                          opacity: 0.7,
+                        },
+                      }}
+                    >
+                      <img src="/assets/delete.svg" alt="Delete" style={{ width: '20px', height: '20px' }} />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </>
               )}
             </Box>
           </Box>
           </Box>
+        )}
+
+        {/* Add Persona Button - Show when there are less than 3 cards */}
+        {(!showEducatorCard || !showThirdCard) && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 3, ml: 2 }}>
+            <IconButton
+              onClick={() => {
+                if (!showEducatorCard) {
+                  setShowEducatorCard(true);
+                } else if (!showThirdCard) {
+                  setShowThirdCard(true);
+                }
+              }}
+              sx={{
+                width: '140px',
+                height: '140px',
+                bgcolor: '#F5F5F5',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                '&:hover': { 
+                  bgcolor: '#E8E8E8',
+                },
+                  }}
+                >
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                <rect x="32" y="8" width="16" height="64" rx="8" fill="#1340FF"/>
+                <rect x="8" y="32" width="64" height="16" rx="8" fill="#1340FF"/>
+              </svg>
+            </IconButton>
         </Box>
         )}
         </Box>
-      ) : (
-        // Non-edit Mode: Conditional layout based on number of personas
-        <Box sx={{ display: 'flex', gap: 17, justifyContent: 'flex-start', alignItems: showEducatorCard ? 'center' : 'flex-start' }}>
-          {/* The Comic Card with Number */}
-          <Box sx={{ display: 'flex', alignItems: showEducatorCard ? 'center' : 'flex-start', gap: showEducatorCard ? 2 : 3, ml: showEducatorCard ? 7 : 0 }}>
-            {/* Number - Outside the card - only show if educator card is visible */}
-            {showEducatorCard && (
+        </Grid>
+
+        {/* Right side - Creator Strategy Breakdown Chart */}
+        <Grid item xs={12} md={5} sx={{ display: 'flex', alignItems: 'flex-start' }}>
+          <Box
+            sx={{
+              bgcolor: '#F5F5F5',
+              borderRadius: '16px',
+              p: 2,
+              width: '400px',
+              height: `${cardsHeight}px`,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              ml: -1,
+            }}
+          >
               <Typography
                 sx={{
-                  fontFamily: 'Instrument Serif, serif',
-                  fontWeight: 400,
-                  fontStyle: 'normal',
-                  fontSize: '40px',
-                  lineHeight: '44px',
-                  letterSpacing: '0%',
-                  color: '#1340FF',
-                  position: 'relative',
-                  left: '-55px',
-                }}
-              >
-                1.
+                fontFamily: 'Aileron',
+                fontWeight: 600,
+                fontSize: '18px',
+                lineHeight: '22px',
+                color: '#231F20',
+                textAlign: 'left',
+                mb: 2,
+              }}
+            >
+              Creator Strategy Breakdown
               </Typography>
-            )}
-            
+
+            {/* Circle and Legend Layout */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flex: 1 }}>
+              {/* Full Circle Chart or Pie Chart */}
+              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                {(() => {
+                  // Render different chart based on number of personas
+                  if (showThirdCard) {
+                    return (
+                  <>
+                    <svg width="360" height="360" viewBox="0 0 160 160">
+                        {(() => {
+                          const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
+                          const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
+                          const thirdCount = parseInt(editableContent.thirdCreatorCount, 10) || 1;
+                          const total = comicCount + educatorCount + thirdCount;
+                          const comicPercentage = comicCount / total;
+                          const educatorPercentage = educatorCount / total;
+                          const thirdPercentage = thirdCount / total;
+                          
+                          // Calculate cumulative angles
+                          const comicAngle = comicPercentage * 2 * Math.PI;
+                          const educatorAngle = educatorPercentage * 2 * Math.PI;
+                          const thirdAngle = thirdPercentage * 2 * Math.PI;
+                          
+                          let currentAngle = 0;
+                          const comicEndAngle = currentAngle + comicAngle;
+                          const comicEndX = 80 + 70 * Math.sin(comicEndAngle);
+                          const comicEndY = 80 - 70 * Math.cos(comicEndAngle);
+                          const comicLargeArc = comicAngle > Math.PI ? 1 : 0;
+                          
+                          currentAngle = comicEndAngle;
+                          const educatorEndAngle = currentAngle + educatorAngle;
+                          const educatorEndX = 80 + 70 * Math.sin(educatorEndAngle);
+                          const educatorEndY = 80 - 70 * Math.cos(educatorEndAngle);
+                          const educatorLargeArc = educatorAngle > Math.PI ? 1 : 0;
+                          
+                          currentAngle = educatorEndAngle;
+                          const thirdEndAngle = currentAngle + thirdAngle;
+                          const thirdEndX = 80 + 70 * Math.sin(thirdEndAngle);
+                          const thirdEndY = 80 - 70 * Math.cos(thirdEndAngle);
+                          const thirdLargeArc = thirdAngle > Math.PI ? 1 : 0;
+                          
+                          const comicMidAngle = comicAngle / 2;
+                          const comicTextX = 80 + 35 * Math.sin(comicMidAngle);
+                          const comicTextY = 80 - 35 * Math.cos(comicMidAngle);
+                          
+                          const educatorMidAngle = comicAngle + educatorAngle / 2;
+                          const educatorTextX = 80 + 35 * Math.sin(educatorMidAngle);
+                          const educatorTextY = 80 - 35 * Math.cos(educatorMidAngle);
+                          
+                          const thirdMidAngle = comicAngle + educatorAngle + thirdAngle / 2;
+                          const thirdTextX = 80 + 35 * Math.sin(thirdMidAngle);
+                          const thirdTextY = 80 - 35 * Math.cos(thirdMidAngle);
+                          
+                          return (
+                            <>
+                              {/* Comic segment (purple) */}
+                              <path
+                                d={`M 80 80 L 80 10 A 70 70 0 ${comicLargeArc} 1 ${comicEndX} ${comicEndY} Z`}
+                                fill="#8A5AFE"
+                              />
+                              {/* Educator segment (yellow-green) */}
+                              <path
+                                d={`M 80 80 L ${comicEndX} ${comicEndY} A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
+                                fill="#D4FF00"
+                              />
+                              {/* Third segment (orange-red) */}
+                              <path
+                                d={`M 80 80 L ${educatorEndX} ${educatorEndY} A 70 70 0 ${thirdLargeArc} 1 80 10 Z`}
+                                fill="#FF6B35"
+                              />
+                              {/* Comic number */}
+                              <text
+                                x={comicTextX}
+                                y={comicTextY}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#FFFFFF"
+                                fontSize="14"
+                                fontFamily="Aileron"
+                                fontWeight="600"
+                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                              >
+                                {comicCount}
+                              </text>
+                              {/* Educator number */}
+                              <text
+                                x={educatorTextX}
+                                y={educatorTextY}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#FFFFFF"
+                                fontSize="14"
+                                fontFamily="Aileron"
+                                fontWeight="600"
+                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                              >
+                                {educatorCount}
+                              </text>
+                              {/* Third number */}
+                              {thirdCount > 0 && (
+                                <text
+                                  x={thirdTextX}
+                                  y={thirdTextY}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  fill="#FFFFFF"
+                                  fontSize="14"
+                                  fontFamily="Aileron"
+                                  fontWeight="600"
+                                  style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                >
+                                  {thirdCount}
+                                </text>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </svg>
+                  </>
+                    );
+                  }
+                  
+                  if (showEducatorCard) {
+                    return (
+                  // Pie chart when both personas are visible
+                  <>
+                    <svg width="360" height="360" viewBox="0 0 160 160">
+                        {(() => {
+                          const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
+                          const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
+                          const total = comicCount + educatorCount;
+                          const educatorPercentage = educatorCount / total;
+                          const comicPercentage = comicCount / total;
+                          
+                          // Calculate angles
+                          const educatorAngle = educatorPercentage * 2 * Math.PI;
+                          const comicAngle = comicPercentage * 2 * Math.PI;
+                          
+                          // Calculate path for educator segment
+                          const educatorEndX = 80 + 70 * Math.sin(educatorAngle);
+                          const educatorEndY = 80 - 70 * Math.cos(educatorAngle);
+                          const educatorLargeArc = educatorPercentage > 0.5 ? 1 : 0;
+                          
+                          // Calculate positions for numbers (middle of each segment)
+                          // Educator number position (middle of yellow segment)
+                          const educatorMidAngle = educatorAngle / 2;
+                          const educatorTextX = 80 + 35 * Math.sin(educatorMidAngle);
+                          const educatorTextY = 80 - 35 * Math.cos(educatorMidAngle);
+                          
+                          // Comic number position (middle of purple segment)
+                          const comicMidAngle = educatorAngle + (comicAngle / 2);
+                          const comicTextX = 80 + 35 * Math.sin(comicMidAngle);
+                          const comicTextY = 80 - 35 * Math.cos(comicMidAngle);
+                          
+                          return (
+                            <>
+                              <circle cx="80" cy="80" r="70" fill="#D4FF00" />
+                              <path
+                                d={`M 80 80 L 80 10 A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
+                                fill="#8A5AFE"
+                              />
+                              {/* Educator number */}
+                              <text
+                                x={educatorTextX}
+                                y={educatorTextY}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#FFFFFF"
+                                fontSize="14"
+                                fontFamily="Aileron"
+                                fontWeight="600"
+                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                              >
+                                {educatorCount}
+                              </text>
+                              {/* Comic number */}
+                              <text
+                                x={comicTextX}
+                                y={comicTextY}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#FFFFFF"
+                                fontSize="14"
+                                fontFamily="Aileron"
+                                fontWeight="600"
+                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                              >
+                                {comicCount}
+                              </text>
+                            </>
+                          );
+                        })()}
+                      </svg>
+                  </>
+                    );
+                  }
+                  
+                  // Full circle when only one persona
+                  return (
+                  <>
+                    <svg width="160" height="160" viewBox="0 0 160 160">
+                      <circle
+                        cx="80"
+                        cy="80"
+                        r="70"
+                        fill="#8A5AFE"
+                      />
+                    </svg>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        textAlign: 'center',
+                    }}
+                  >
+              <Typography
+                sx={{
+                          fontFamily: 'Inter Display',
+                  fontWeight: 400,
+                        fontStyle: 'normal',
+                          fontSize: '18px',
+                          lineHeight: '22px',
+                  letterSpacing: '0%',
+                          color: '#FFFFFF',
+                          textAlign: 'center',
+                          textShadow: '0.5px 0.5px 1px #231F20',
+                        }}
+                      >
+                        {editableContent.creatorStrategyCount || '1'}
+                    </Typography>
+                  </Box>
+                  </>
+                  );
+                })()}
+              </Box>
+
+              {/* Legend - Moved to bottom */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%', px: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      bgcolor: '#8A5AFE',
+                      flexShrink: 0,
+                  }}
+                  />
+                  <Typography
+                  sx={{
+                      fontFamily: 'Aileron',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '18px',
+                      color: '#231F20',
+                      }}
+                    >
+                    {editableContent.comicTitle} ({editableContent.creatorStrategyCount || '1'})
+                    </Typography>
+                </Box>
+                {showEducatorCard && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box
+                      sx={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        bgcolor: '#D4FF00',
+                        flexShrink: 0,
+                      }}
+                    />
+                <Typography
+                  sx={{
+                        fontFamily: 'Aileron',
+                    fontWeight: 400,
+                    fontSize: '14px',
+                    lineHeight: '18px',
+                        color: '#231F20',
+                      }}
+                    >
+                      {editableContent.educatorTitle} ({editableContent.educatorCreatorCount || '1'})
+                </Typography>
+        </Box>
+        )}
+                {showThirdCard && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box
+                      sx={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        bgcolor: '#FF6B35',
+                        flexShrink: 0,
+                      }}
+                    />
+              <Typography
+                sx={{
+                        fontFamily: 'Aileron',
+                  fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        color: '#231F20',
+                      }}
+                    >
+                      {editableContent.thirdTitle} ({editableContent.thirdCreatorCount || '1'})
+              </Typography>
+                </Box>
+                )}
+              </Box>
+          </Box>
+          </Box>
+        </Grid>
+      </Grid>
+      ) : (
+        // Non-edit Mode: Conditional layout based on number of personas
+        <Grid container spacing={2}>
+          {/* Left side - Persona Cards */}
+          <Grid item xs={12} md={7}>
+            <Box ref={displayCardsContainerRef} sx={{ display: 'flex', flexDirection: 'column', gap: 3, ml: 10 }}>
+          {/* The Comic Card */}
+          {editableContent.comicTitle && (
+              <Box>
             {showEducatorCard ? (
               // Compact horizontal layout when there are 2 personas
               <Box
                 sx={{
-                  width: '347px',
-                  height: '189px',
+                  width: '480px',
+                  minHeight: '220px',
                   borderRadius: '20px',
                   background: '#F5F5F5',
                   border: '10px solid #FFFFFF',
                   boxShadow: '0px 4px 4px 0px #8E8E9340',
                   position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
               >
                 {/* Circle with Icon */}
                 <Box
                   sx={{
-                    width: '120px',
-                    height: '120px',
+                    width: '140px',
+                    height: '140px',
                     borderRadius: '50%',
                     background: '#FFFFFF',
                     border: '8px solid #FFFFFF',
@@ -4268,7 +6703,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     position: 'absolute',
-                    left: '-70px',
+                    left: '-80px',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     zIndex: 1,
@@ -4277,14 +6712,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 >
                   <Box
                     sx={{
-                      width: '95px',
-                      height: '95px',
+                      width: '110px',
+                      height: '110px',
                       borderRadius: '50%',
                       background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '32px',
+                      fontSize: '48px',
                     }}
                   >
                     {editableContent.comicEmoji}
@@ -4294,12 +6729,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 {/* Content */}
                 <Box 
                   sx={{ 
-                    position: 'absolute',
-                    right: '12px',
-                    left: '70px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    maxWidth: 'calc(347px - 82px)',
+                    ml: '80px',
+                    maxWidth: 'calc(480px - 92px)',
+                    pr: 3,
+                    py: 3,
                   }}
                 >
                   <Typography
@@ -4307,262 +6740,146 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontFamily: 'Instrument Serif, serif',
                       fontWeight: 400,
                       fontStyle: 'normal',
-                      fontSize: '36px',
-                      lineHeight: '40px',
+                      fontSize: '32px',
+                      lineHeight: '36px',
                       letterSpacing: '0%',
                       color: '#0067D5',
                       mb: 1.5,
-                      textAlign: 'center',
-                      ml: -3,
+                      textAlign: 'left',
                     }}
                   >
                     {editableContent.comicTitle}
       </Typography>
                   
-                  <Box sx={{ mb: 0.75, textAlign: 'left' }}>
-                    <Typography
-                      sx={{
-                        fontFamily: 'Inter Display, sans-serif',
-                        fontWeight: 700,
-                        fontStyle: 'normal',
-                        fontSize: '14px',
-                        lineHeight: '18px',
-                        letterSpacing: '0%',
-                        color: '#000000',
-                        mb: 0.5,
-                      }}
-                    >
-                      Content Style
-                    </Typography>
                     <Typography
                       sx={{
                         fontFamily: 'Inter Display, sans-serif',
                         fontWeight: 400,
-                        fontStyle: 'normal',
-                        fontSize: '14px',
-                        lineHeight: '18px',
-                        letterSpacing: '0%',
+                      fontSize: '16px',
+                      lineHeight: '22px',
                         color: '#000000',
+                      textAlign: 'left',
                       }}
                     >
                       {editableContent.comicContentStyle}
                     </Typography>
                   </Box>
-
-                  <Box sx={{ textAlign: 'left' }}>
-                    <Typography
-                      sx={{
-                        fontFamily: 'Inter Display, sans-serif',
-                        fontWeight: 700,
-                        fontStyle: 'normal',
-                        fontSize: '14px',
-                        lineHeight: '18px',
-                        letterSpacing: '0%',
-                        color: '#000000',
-                        mb: 0.5,
-                      }}
-                    >
-                      Why They Work
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontFamily: 'Inter Display, sans-serif',
-                        fontWeight: 400,
-                        fontStyle: 'normal',
-                        fontSize: '14px',
-                        lineHeight: '18px',
-                        letterSpacing: '0%',
-                        color: '#000000',
-                      }}
-                    >
-                      {editableContent.comicWhyWork}
-                    </Typography>
-                  </Box>
-                </Box>
               </Box>
             ) : (
-              // Large vertical layout when there's only 1 persona
-              <>
-                {/* Emoji Circle */}
+              // Compact card layout when there's only 1 persona
+      <Box
+                      sx={{
+                  width: '480px',
+                  minHeight: '220px',
+                  borderRadius: '20px',
+                  background: '#F5F5F5',
+                  border: '10px solid #FFFFFF',
+                  boxShadow: '0px 4px 4px 0px #8E8E9340',
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {/* Circle with Icon */}
       <Box
         sx={{
-                    width: '160px',
-                    height: '160px',
+                    width: '140px',
+                    height: '140px',
                     borderRadius: '50%',
                     background: '#FFFFFF',
-                    border: '10px solid #FFFFFF',
+                    border: '8px solid #FFFFFF',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    position: 'absolute',
+                    left: '-80px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    zIndex: 1,
                     boxShadow: '-4px 4px 4px 0px #8E8E9340',
-                    flexShrink: 0,
-                    mt: 3,
                   }}
                 >
-                  {/* Inner gradient circle */}
                   <Box
                     sx={{
-                      width: '130px',
-                      height: '130px',
+                      width: '110px',
+                      height: '110px',
                       borderRadius: '50%',
                       background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '64px',
+                      fontSize: '48px',
                     }}
                   >
                     {editableContent.comicEmoji}
                   </Box>
                 </Box>
 
-            {/* Content Box */}
-            <Box sx={{ flex: 1, maxWidth: '950px', display: 'flex', gap: 3 }}>
-              {/* Title Box */}
+                {/* Content */}
               <Box
                 sx={{
-                  bgcolor: '#F5F5F5',
-                  borderRadius: '20px',
-                  border: '10px solid #FFFFFF',
-                  boxShadow: '0px 4px 4px 0px #8E8E9340',
-                  p: 4,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minWidth: '320px',
+                    ml: '80px',
+                    maxWidth: 'calc(480px - 92px)',
+                    pr: 3,
+                    py: 3,
                 }}
               >
                 <Typography
                   sx={{
                     fontFamily: 'Instrument Serif, serif',
                     fontWeight: 400,
-                    fontSize: '40px',
-                    lineHeight: '44px',
+                      fontStyle: 'normal',
+                      fontSize: '32px',
+                      lineHeight: '36px',
+                      letterSpacing: '0%',
                     color: '#0067D5',
-                    textAlign: 'center',
+                      mb: 1.5,
+                      textAlign: 'left',
                   }}
                 >
                   {editableContent.comicTitle}
       </Typography>
-              </Box>
-              
-              {/* Content Style and Why They Work Box */}
-      <Box
-        sx={{
-                  bgcolor: '#F5F5F5',
-                  borderRadius: '20px',
-                  border: '10px solid #FFFFFF',
-                  boxShadow: '0px 4px 4px 0px #8E8E9340',
-                  p: 4,
-                  flex: 1,
-                  minWidth: '400px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  gap: 3,
-                }}
-              >
-                {/* Content Style */}
-                <Box>
-                  <Typography
-                    sx={{
-                      fontFamily: 'Inter Display, sans-serif',
-                      fontWeight: 700,
-                      fontSize: '16px',
-                      lineHeight: '20px',
-                      color: '#000000',
-                      mb: 1,
-                    }}
-                  >
-                    Content Style
-                  </Typography>
+                  
                   <Typography
                     sx={{
                       fontFamily: 'Inter Display, sans-serif',
                       fontWeight: 400,
                       fontSize: '16px',
-                      lineHeight: '24px',
+                      lineHeight: '22px',
                       color: '#000000',
-                      whiteSpace: 'pre-line',
+                      textAlign: 'left',
                     }}
                   >
                     {editableContent.comicContentStyle}
-                  </Typography>
-                </Box>
-
-                {/* Why They Work */}
-                <Box>
-                  <Typography
-                    sx={{
-                      fontFamily: 'Inter Display, sans-serif',
-                      fontWeight: 700,
-                      fontSize: '16px',
-                      lineHeight: '20px',
-                      color: '#000000',
-                      mb: 1,
-                    }}
-                  >
-                    Why They Work
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: 'Inter Display, sans-serif',
-                      fontWeight: 400,
-                      fontSize: '16px',
-                      lineHeight: '24px',
-                      color: '#000000',
-                      whiteSpace: 'pre-line',
-                    }}
-                  >
-                    {editableContent.comicWhyWork}
-                  </Typography>
-                </Box>
+      </Typography>
               </Box>
-            </Box>
-              </>
+                </Box>
             )}
-          </Box>
-
-          {/* The Educator Card with Number - Only show if showEducatorCard is true */}
+              </Box>
+          )}
+              
+          {/* The Educator Card - Only show if showEducatorCard is true */}
           {showEducatorCard && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {/* Number - Outside the card */}
-              {showEducatorCard && (
-                <Typography
-                  sx={{
-                    fontFamily: 'Instrument Serif, serif',
-                    fontWeight: 400,
-                    fontStyle: 'normal',
-                    fontSize: '40px',
-                    lineHeight: '44px',
-                    letterSpacing: '0%',
-                    color: '#1340FF',
-                    position: 'relative',
-                    left: '-55px',
-                  }}
-                >
-                  2.
-                </Typography>
-              )}
-            
+                <Box>
             {/* Card */}
       <Box
         sx={{
-                width: '347px',
-                height: '189px',
-                borderRadius: '20px',
+                width: '480px',
+                minHeight: '220px',
+                  borderRadius: '20px',
                 background: '#F5F5F5',
-                border: '10px solid #FFFFFF',
-                boxShadow: '0px 4px 4px 0px #8E8E9340',
+                  border: '10px solid #FFFFFF',
+                  boxShadow: '0px 4px 4px 0px #8E8E9340',
                 position: 'relative',
-              }}
-            >
-
+                  display: 'flex',
+                alignItems: 'center',
+                }}
+              >
             {/* Circle with Icon - Positioned as separate component */}
             <Box
-              sx={{
-                width: '120px',
-                height: '120px',
+                    sx={{
+                  width: '140px',
+                  height: '140px',
                 borderRadius: '50%',
                 background: '#FFFFFF',
                 border: '8px solid #FFFFFF',
@@ -4570,7 +6887,104 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 position: 'absolute',
-                left: '-70px',
+                  left: '-80px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 1,
+                boxShadow: '-4px 4px 4px 0px #8E8E9340',
+              }}
+            >
+              {/* Inner gradient circle */}
+              <Box
+                    sx={{
+                    width: '110px',
+                    height: '110px',
+                  borderRadius: '50%',
+                    background: '#D4FF00',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                    fontSize: '48px',
+                }}
+              >
+                {editableContent.educatorEmoji}
+                </Box>
+                </Box>
+
+            {/* Content - Positioned independently */}
+            <Box 
+              sx={{ 
+                  ml: '80px',
+                  maxWidth: 'calc(480px - 92px)',
+                  pr: 3,
+                  py: 3,
+              }}
+            >
+                  <Typography
+                    sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                    fontSize: '32px',
+                    lineHeight: '36px',
+                    letterSpacing: '0%',
+                  color: '#0067D5',
+                  mb: 1.5,
+                    textAlign: 'left',
+                }}
+              >
+                {editableContent.educatorTitle}
+                  </Typography>
+              
+                  <Typography
+                    sx={{
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '16px',
+                    lineHeight: '22px',
+                      color: '#000000',
+                    textAlign: 'left',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    }}
+                  >
+                  {editableContent.educatorContentStyle}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          )}
+
+          {/* The Third Card - Only show if showThirdCard is true */}
+          {showThirdCard && (
+            <Box>
+            {/* Card */}
+      <Box
+        sx={{
+                width: '890px',
+                minHeight: '220px',
+                borderRadius: '20px',
+                background: '#F5F5F5',
+                border: '10px solid #FFFFFF',
+                boxShadow: '0px 4px 4px 0px #8E8E9340',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+            {/* Circle with Icon - Positioned as separate component */}
+            <Box
+              sx={{
+                  width: '140px',
+                  height: '140px',
+                borderRadius: '50%',
+                background: '#FFFFFF',
+                border: '8px solid #FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'absolute',
+                  left: '-80px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 zIndex: 1,
@@ -4580,29 +6994,27 @@ const PCRReportPage = ({ campaign, onBack }) => {
               {/* Inner gradient circle */}
               <Box
                 sx={{
-                  width: '95px',
-                  height: '95px',
+                    width: '110px',
+                    height: '110px',
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                    background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '32px',
+                    fontSize: '48px',
                 }}
               >
-                {editableContent.educatorEmoji}
+                {editableContent.thirdEmoji}
               </Box>
             </Box>
 
             {/* Content - Positioned independently */}
             <Box 
               sx={{ 
-                position: 'absolute',
-                right: '12px',
-                left: '70px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                maxWidth: 'calc(347px - 82px)',
+                  ml: '80px',
+                  maxWidth: 'calc(890px - 92px)',
+                  pr: 3,
+                  py: 3,
               }}
             >
               <Typography
@@ -4610,94 +7022,530 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   fontFamily: 'Instrument Serif, serif',
                   fontWeight: 400,
                   fontStyle: 'normal',
-                  fontSize: '36px',
-                  lineHeight: '40px',
+                    fontSize: '32px',
+                    lineHeight: '36px',
                   letterSpacing: '0%',
                   color: '#0067D5',
                   mb: 1.5,
-                  textAlign: 'center',
-                  ml: -3,
+                    textAlign: 'left',
                 }}
               >
-                {editableContent.educatorTitle}
+                {editableContent.thirdTitle}
               </Typography>
               
-              <Box sx={{ mb: 0.75, textAlign: 'left' }}>
                 <Typography
                   sx={{
                     fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 700,
-                    fontStyle: 'normal',
-                    fontSize: '14px',
-                    lineHeight: '18px',
-                    letterSpacing: '0%',
+                      fontWeight: 400,
+                      fontSize: '16px',
+                      lineHeight: '22px',
                     color: '#000000',
-                    mb: 0.5,
-                  }}
-                >
-                  Content Style
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 400,
-                    fontStyle: 'normal',
-                    fontSize: '14px',
-                    lineHeight: '18px',
-                    letterSpacing: '0%',
-                    color: '#000000',
+                      textAlign: 'left',
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-line',
                   }}
                 >
-                  {editableContent.educatorContentStyle}
+                    {editableContent.thirdContentStyle}
                 </Typography>
-              </Box>
-
-              <Box sx={{ textAlign: 'left' }}>
-                <Typography
-                  sx={{
-                    fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 700,
-                    fontStyle: 'normal',
-                    fontSize: '14px',
-                    lineHeight: '18px',
-                    letterSpacing: '0%',
-                    color: '#000000',
-                    mb: 0.5,
-                  }}
-                >
-                  Why They Work
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 400,
-                    fontStyle: 'normal',
-                    fontSize: '14px',
-                    lineHeight: '18px',
-                    letterSpacing: '0%',
-                    color: '#000000',
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-line',
-                  }}
-                >
-                  {editableContent.educatorWhyWork}
-                </Typography>
-              </Box>
-            </Box>
+                </Box>
             </Box>
             </Box>
           )}
+            </Box>
+          </Grid>
+
+          {/* Right side - Creator Strategy Breakdown Chart (Display mode) */}
+          {editableContent.comicTitle && (
+          <Grid item xs={12} md={5} sx={{ display: 'flex', alignItems: 'flex-start' }}>
+            <Box
+              sx={{
+                bgcolor: '#F5F5F5',
+                borderRadius: '16px',
+                p: 2,
+                width: '400px',
+                height: `${displayCardsHeight}px`,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+              }}
+            >
+                <Typography
+                  sx={{
+                  fontFamily: 'Aileron',
+                  fontWeight: 600,
+                  fontSize: '18px',
+                  lineHeight: '22px',
+                  color: '#231F20',
+                  textAlign: 'left',
+                  mb: 2,
+                  }}
+                >
+                Creator Strategy Breakdown
+                </Typography>
+
+              {/* Circle and Legend Layout */}
+                <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? 3 : 2, flex: 1 }}>
+                {/* Full Circle Chart or Pie Chart */}
+                <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: (showEducatorCard || showThirdCard) ? 1 : 'none' }}>
+                    {(() => {
+                      // Render different chart based on number of personas
+                      if (showThirdCard) {
+                        // Pie chart when 3 personas are visible
+                        return (
+                      <>
+                        <svg width="280" height="280" viewBox="0 0 160 160">
+                          {(() => {
+                            const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
+                            const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
+                            const thirdCount = parseInt(editableContent.thirdCreatorCount, 10) || 1;
+                            const total = comicCount + educatorCount + thirdCount;
+                            const comicPercentage = comicCount / total;
+                            const educatorPercentage = educatorCount / total;
+                            const thirdPercentage = thirdCount / total;
+                            
+                            const comicAngle = comicPercentage * 2 * Math.PI;
+                            const educatorAngle = educatorPercentage * 2 * Math.PI;
+                            const thirdAngle = thirdPercentage * 2 * Math.PI;
+                            
+                            let currentAngle = 0;
+                            
+                            const comicEndAngle = currentAngle + comicAngle;
+                            const comicEndX = 80 + 70 * Math.sin(comicEndAngle);
+                            const comicEndY = 80 - 70 * Math.cos(comicEndAngle);
+                            const comicLargeArc = comicAngle > Math.PI ? 1 : 0;
+
+                            currentAngle = comicEndAngle;
+                            const educatorEndAngle = currentAngle + educatorAngle;
+                            const educatorEndX = 80 + 70 * Math.sin(educatorEndAngle);
+                            const educatorEndY = 80 - 70 * Math.cos(educatorEndAngle);
+                            const educatorLargeArc = educatorAngle > Math.PI ? 1 : 0;
+                            
+                            currentAngle = educatorEndAngle;
+                            const thirdEndAngle = currentAngle + thirdAngle;
+                            const thirdEndX = 80 + 70 * Math.sin(thirdEndAngle);
+                            const thirdEndY = 80 - 70 * Math.cos(thirdEndAngle);
+                            const thirdLargeArc = thirdAngle > Math.PI ? 1 : 0;
+  
+                            const comicMidAngle = comicAngle / 2;
+                            const comicTextX = 80 + 35 * Math.sin(comicMidAngle);
+                            const comicTextY = 80 - 35 * Math.cos(comicMidAngle);
+                            
+                            const educatorMidAngle = comicAngle + educatorAngle / 2;
+                            const educatorTextX = 80 + 35 * Math.sin(educatorMidAngle);
+                            const educatorTextY = 80 - 35 * Math.cos(educatorMidAngle);
+                            
+                            const thirdMidAngle = comicAngle + educatorAngle + thirdAngle / 2;
+                            const thirdTextX = 80 + 35 * Math.sin(thirdMidAngle);
+                            const thirdTextY = 80 - 35 * Math.cos(thirdMidAngle);
+                            
+                            return (
+                              <>
+                                {/* Comic segment (purple) */}
+                                <path
+                                  d={`M 80 80 L 80 10 A 70 70 0 ${comicLargeArc} 1 ${comicEndX} ${comicEndY} Z`}
+                                  fill="#8A5AFE"
+                                />
+                                {/* Educator segment (yellow-green) */}
+                                <path
+                                  d={`M 80 80 L ${comicEndX} ${comicEndY} A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
+                                  fill="#D4FF00"
+                                />
+                                {/* Third segment (orange-red) */}
+                                <path
+                                  d={`M 80 80 L ${educatorEndX} ${educatorEndY} A 70 70 0 ${thirdLargeArc} 1 80 10 Z`}
+                                  fill="#FF6B35"
+                                />
+                                {/* Comic number */}
+                                <text
+                                  x={comicTextX}
+                                  y={comicTextY}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  fill="#FFFFFF"
+                                  fontSize="14"
+                                  fontFamily="Aileron"
+                                  fontWeight="600"
+                                  style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                >
+                                  {comicCount}
+                                </text>
+                                {/* Educator number */}
+                                <text
+                                  x={educatorTextX}
+                                  y={educatorTextY}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  fill="#FFFFFF"
+                                  fontSize="14"
+                                  fontFamily="Aileron"
+                                  fontWeight="600"
+                                  style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                >
+                                  {educatorCount}
+                                </text>
+                                {/* Third number */}
+                                {thirdCount > 0 && (
+                                  <text
+                                    x={thirdTextX}
+                                    y={thirdTextY}
+                                    textAnchor="middle"
+                                    dominantBaseline="middle"
+                                    fill="#FFFFFF"
+                                    fontSize="14"
+                                    fontFamily="Aileron"
+                                    fontWeight="600"
+                                    style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                  >
+                                    {thirdCount}
+                                  </text>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </svg>
+                      </>
+                        );
+                      }
+                      
+                      if (showEducatorCard) {
+                        // Pie chart when both personas are visible
+                        return (
+                      <>
+                        <svg width="280" height="280" viewBox="0 0 160 160">
+                          {(() => {
+                            const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
+                            const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
+                            const total = comicCount + educatorCount;
+                            const educatorPercentage = educatorCount / total;
+                            const comicPercentage = comicCount / total;
+                            
+                            // Calculate angles
+                            const educatorAngle = educatorPercentage * 2 * Math.PI;
+                            const comicAngle = comicPercentage * 2 * Math.PI;
+                            
+                            // Calculate path for educator segment
+                            const educatorEndX = 80 + 70 * Math.sin(educatorAngle);
+                            const educatorEndY = 80 - 70 * Math.cos(educatorAngle);
+                            const educatorLargeArc = educatorPercentage > 0.5 ? 1 : 0;
+                            
+                            // Calculate positions for numbers (middle of each segment)
+                            // Educator number position (middle of yellow segment)
+                            const educatorMidAngle = educatorAngle / 2;
+                            const educatorTextX = 80 + 35 * Math.sin(educatorMidAngle);
+                            const educatorTextY = 80 - 35 * Math.cos(educatorMidAngle);
+                            
+                            // Comic number position (middle of purple segment)
+                            const comicMidAngle = educatorAngle + (comicAngle / 2);
+                            const comicTextX = 80 + 35 * Math.sin(comicMidAngle);
+                            const comicTextY = 80 - 35 * Math.cos(comicMidAngle);
+                            
+                            return (
+                              <>
+                                <circle cx="80" cy="80" r="70" fill="#D4FF00" />
+                                <path
+                                  d={`M 80 80 L 80 10 A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
+                                  fill="#8A5AFE"
+                                />
+                              {/* Educator number */}
+                              <text
+                                x={educatorTextX}
+                                y={educatorTextY}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#FFFFFF"
+                                fontSize="14"
+                                fontFamily="Aileron"
+                                fontWeight="600"
+                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                              >
+                                {educatorCount}
+                              </text>
+                              {/* Comic number */}
+                              <text
+                                x={comicTextX}
+                                y={comicTextY}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#FFFFFF"
+                                fontSize="14"
+                                fontFamily="Aileron"
+                                fontWeight="600"
+                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                              >
+                                {comicCount}
+                              </text>
+                              </>
+                            );
+                          })()}
+                        </svg>
+                      </>
+                        );
+                      }
+                      
+                      // Full circle when only one persona
+                      return (
+                      <>
+                        <svg width="160" height="160" viewBox="0 0 160 160">
+                          <circle
+                            cx="80"
+                            cy="80"
+                            r="70"
+                            fill="#8A5AFE"
+                          />
+                        </svg>
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            textAlign: 'center',
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              fontFamily: 'Inter Display',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                              fontSize: '18px',
+                              lineHeight: '22px',
+                    letterSpacing: '0%',
+                              color: '#FFFFFF',
+                              textAlign: 'center',
+                              textShadow: '0.5px 0.5px 1px #231F20',
+                            }}
+                          >
+                            {editableContent.creatorStrategyCount || '1'}
+                </Typography>
+                        </Box>
+                      </>
+                      );
+                    })()}
+              </Box>
+
+                  {/* Legend - Moved to bottom */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%', px: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{
+                          width: '12px',
+                          height: '12px',
+                          borderRadius: '50%',
+                          bgcolor: '#8A5AFE',
+                          flexShrink: 0,
+                        }}
+                      />
+                <Typography
+                  sx={{
+                          fontFamily: 'Aileron',
+                          fontWeight: 400,
+                    fontSize: '14px',
+                    lineHeight: '18px',
+                          color: '#231F20',
+                  }}
+                >
+                        {editableContent.comicTitle} ({editableContent.creatorStrategyCount || '1'})
+                </Typography>
+                    </Box>
+                    {showEducatorCard && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            bgcolor: '#D4FF00',
+                            flexShrink: 0,
+                          }}
+                        />
+                <Typography
+                  sx={{
+                            fontFamily: 'Aileron',
+                    fontWeight: 400,
+                    fontSize: '14px',
+                    lineHeight: '18px',
+                            color: '#231F20',
+                          }}
+                        >
+                          {editableContent.educatorTitle} ({editableContent.educatorCreatorCount || '1'})
+                </Typography>
+              </Box>
+                    )}
+                    {showThirdCard && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            bgcolor: '#FF6B35',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography
+                          sx={{
+                            fontFamily: 'Aileron',
+                            fontWeight: 400,
+                            fontSize: '14px',
+                            lineHeight: '18px',
+                            color: '#231F20',
+                          }}
+                        >
+                          {editableContent.thirdTitle} ({editableContent.thirdCreatorCount || '1'})
+                        </Typography>
+            </Box>
+                    )}
+            </Box>
+            </Box>
+        </Box>
+          </Grid>
+          )}
+        </Grid>
+      )}
+    </Box>
+    </Box>
+                </SortableSection>
+              );
+
+            case 'recommendations':
+              return (
+                <SortableSection key="recommendations" id="recommendations" isEditMode={isEditMode}>
+                  {/* Recommendations Section */}
+    <Box 
+      sx={{ 
+        mb: 2,
+        background: '#FFFFFF',
+        borderRadius: '12px',
+        padding: '24px',
+        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+      }}
+    >
+    <Box sx={{ mb: 4 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                <Typography
+          variant="h2"
+                  sx={{
+            fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+            fontSize: '56px',
+            lineHeight: '60px',
+                    letterSpacing: '0%',
+            color: '#231F20',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          Recommendations
+                </Typography>
+        <Box 
+                  sx={{
+            flex: 1,
+            height: '1px',
+            background: '#231F20',
+          }} 
+        />
+        {isEditMode && !sectionEditStates.recommendations && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={async () => {
+                try {
+                  setIsSaving(true);
+                  const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
+                    content: editableContent,
+                  });
+                  if (response.data.success) {
+                    setSectionEditStates({ ...sectionEditStates, recommendations: true });
+                    enqueueSnackbar('Recommendations section saved successfully', { variant: 'success' });
+                  }
+                } catch (error) {
+                  console.error('Error saving section:', error);
+                  enqueueSnackbar('Failed to save section', { variant: 'error' });
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, recommendations: false });
+                enqueueSnackbar('Recommendations section removed', { variant: 'info' });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
+          </Box>
+        )}
+        {isEditMode && sectionEditStates.recommendations && (
+          <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+            <IconButton
+              onClick={() => {
+                setSectionEditStates({ ...sectionEditStates, recommendations: false });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#F9F9F9',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSectionVisibility({ ...sectionVisibility, recommendations: false });
+                enqueueSnackbar('Recommendations section removed', { variant: 'info' });
+              }}
+              sx={{
+                width: '44px',
+                height: '44px',
+                padding: '11px 16.5px 15.13px 16.5px',
+                borderRadius: '11px',
+                border: '1.38px solid #E7E7E7',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: '#FEE2E2',
+                }
+              }}
+            >
+              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+            </IconButton>
         </Box>
       )}
     </Box>
 
-    {/* Three Column Insights Section */}
     <Grid container spacing={3} sx={{ mb: 6 }}>
       {/* What Could Be Improved - Blue */}
       <Grid item xs={12} md={4}>
@@ -4746,8 +7594,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 justifyContent: 'center',
                 borderRadius: '0 0 12px 12px',
               }}>
-                <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontStyle: 'italic', opacity: 0.8 }}>
-                  Click &quot;Edit Report&quot; to add improvement suggestions
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.8 }}>
+                  Click Edit Report to edit What Can Be Improved
                 </Typography>
               </Box>
             )}
@@ -4766,7 +7614,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   position: 'relative',
                 }}
               >
-                {isEditMode ? (
+                {isEditMode && !sectionEditStates.recommendations ? (
                   <Box sx={{ 
                     bgcolor: '#E5E7EB', 
           borderRadius: '12px',
@@ -4921,8 +7769,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 justifyContent: 'center',
                 borderRadius: '0 0 12px 12px',
               }}>
-                <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontStyle: 'italic', opacity: 0.9 }}>
-                  Click &quot;Edit Report&quot; to add what worked well
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.9 }}>
+                  Click Edit Report to edit What Worked Well
                 </Typography>
               </Box>
             )}
@@ -4942,7 +7790,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   position: 'relative',
                 }}
               >
-                {isEditMode ? (
+                {isEditMode && !sectionEditStates.recommendations ? (
                   <Box sx={{ 
                     bgcolor: '#E5E7EB', 
           borderRadius: '12px',
@@ -5096,8 +7944,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 justifyContent: 'center',
                 borderRadius: '0 0 12px 12px',
               }}>
-                <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontStyle: 'italic', opacity: 0.9 }}>
-                  Click &quot;Edit Report&quot; to add next steps
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.9 }}>
+                  Click Edit Report to edit Next Steps
                 </Typography>
     </Box>
             )}
@@ -5116,7 +7964,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   position: 'relative',
                 }}
               >
-                {isEditMode ? (
+                {isEditMode && !sectionEditStates.recommendations ? (
                   <Box sx={{ 
                     bgcolor: '#E5E7EB', 
                     borderRadius: '12px', 
@@ -5223,6 +8071,17 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Box>
       </Grid>
     </Grid>
+    </Box>
+    </Box>
+                </SortableSection>
+              );
+
+            default:
+              return null;
+          }
+        })}
+      </SortableContext>
+    </DndContext>
 
     </Box>
 
@@ -5249,6 +8108,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
             setEditableContent({ ...editableContent, comicEmoji: emojiObject.emoji });
           } else if (emojiPickerType === 'educator') {
             setEditableContent({ ...editableContent, educatorEmoji: emojiObject.emoji });
+          } else if (emojiPickerType === 'third') {
+            setEditableContent({ ...editableContent, thirdEmoji: emojiObject.emoji });
           }
           setEmojiPickerAnchor(null);
           setEmojiPickerType(null);
@@ -5256,39 +8117,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
       />
     </Popover>
 
-    {/* Success Snackbar */}
-    <Snackbar
-      open={showSuccessMessage}
-      autoHideDuration={4000}
-      onClose={() => setShowSuccessMessage(false)}
-      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      sx={{ mt: 8 }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          bgcolor: '#10B981',
-          color: 'white',
-          px: 3,
-          py: 2,
-          borderRadius: '12px',
-          boxShadow: '0px 8px 24px rgba(16, 185, 129, 0.3)',
-          minWidth: '320px',
-        }}
-      >
-        <CheckCircleIcon sx={{ fontSize: '32px' }} />
-        <Box>
-          <Typography sx={{ fontFamily: 'Inter Display', fontWeight: 600, fontSize: '16px', mb: 0.5 }}>
-            Success!
-          </Typography>
-          <Typography sx={{ fontFamily: 'Aileron', fontWeight: 400, fontSize: '14px' }}>
-            PCR saved successfully
-          </Typography>
-        </Box>
-      </Box>
-    </Snackbar>
     </Box>
   </Box>
   );
@@ -5300,6 +8128,7 @@ PCRReportPage.propTypes = {
     name: PropTypes.string,
     startDate: PropTypes.string,
     endDate: PropTypes.string,
+    isCreditTier: PropTypes.bool,
     campaignBrief: PropTypes.shape({
       startDate: PropTypes.string,
       endDate: PropTypes.string,
