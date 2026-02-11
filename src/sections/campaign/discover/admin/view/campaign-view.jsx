@@ -2,7 +2,7 @@ import useSWR from 'swr';
 import { debounce } from 'lodash';
 import useSWRInfinite from 'swr/infinite';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -267,7 +267,12 @@ const CampaignView = () => {
 
     const handleScroll = () => {
       // Don't save scroll position while we're restoring it
-      if (isRestoringScroll.current) return;
+      if (isRestoringScroll.current) {
+        if (localStorage.getItem('lastOpenedIndex')) {
+          localStorage.removeItem('lastOpenedIndex');
+        }
+        return;
+      }
 
       localStorage.setItem('lastScrollPosition', scrollElement.scrollTop.toString());
     };
@@ -281,35 +286,6 @@ const CampaignView = () => {
   }, [mainRef]);
 
   useEffect(() => {
-    if (!isLoading && lastCampaignOpenId) {
-      const el = document.getElementById(`campaign-${lastCampaignOpenId}`);
-
-      if (!el) return;
-
-      el.scrollIntoView({
-        behavior: 'auto',
-        block: 'center',
-      });
-    } else if (scrollTop) {
-      const main = mainRef?.current;
-
-      if (!main) return;
-
-      main.scrollTo({
-        behavior: 'auto',
-        top: Number(scrollTop),
-      });
-    }
-  }, [mainRef, lastCampaignOpenId, setSize, isLoading, scrollTop]);
-
-  // useEffect(() => {
-  //   const scrollContainer = mainRef?.current;
-  //   window.addEventListener('beforeunload', (event) => {
-  //     localStorage.setItem('scrollTop', scrollContainer.scrollTop);
-  //   });
-  // }, [mainRef]);
-
-  useEffect(() => {
     if (hasRestoredRef.current) return;
     if (!dataFiltered.length) return;
 
@@ -319,12 +295,8 @@ const CampaignView = () => {
     requestAnimationFrame(() => {
       isRestoringScroll.current = true;
 
-      // Priority 1: Restore last scroll position (more recent user action)
-      if (!Number.isNaN(lastScrollPosition) && lastScrollPosition > 0 && mainRef.current) {
-        mainRef.current.scrollTop = lastScrollPosition;
-      }
-      // Priority 2: Scroll to last opened item if no scroll position
-      else if (
+      if (
+        lastOpenedIndex &&
         !Number.isNaN(lastOpenedIndex) &&
         lastOpenedIndex >= 0 &&
         lastOpenedIndex < dataFiltered.length
@@ -333,14 +305,33 @@ const CampaignView = () => {
         const cols = lgUp ? 3 : mdUp ? 2 : 1;
         const rowIndex = Math.floor(lastOpenedIndex / cols);
         rowVirtualizer.scrollToIndex(rowIndex, { align: 'start' });
+      } else if (!Number.isNaN(lastScrollPosition) && lastScrollPosition > 0 && mainRef.current) {
+        console.log('SADSADASDS');
+        mainRef.current.scrollTop = lastScrollPosition;
       }
+
+      // Priority 1: Restore last scroll position (more recent user action)
+      // if (!Number.isNaN(lastScrollPosition) && lastScrollPosition > 0 && mainRef.current) {
+      //   // mainRef.current.scrollTop = lastScrollPosition;
+      // }
+      // // Priority 2: Scroll to last opened item if no scroll position
+      // else if (
+      //   !Number.isNaN(lastOpenedIndex) &&
+      //   lastOpenedIndex >= 0 &&
+      //   lastOpenedIndex < dataFiltered.length
+      // ) {
+      //   // eslint-disable-next-line no-nested-ternary
+      //   const cols = lgUp ? 3 : mdUp ? 2 : 1;
+      //   const rowIndex = Math.floor(lastOpenedIndex / cols);
+      //   rowVirtualizer.scrollToIndex(rowIndex + 1, { align: 'start' });
+      // }
 
       // Allow scroll tracking after a short delay
       setTimeout(() => {
         isRestoringScroll.current = false;
-      }, 100);
+      }, 50);
     });
-  }, [dataFiltered, lgUp, mainRef, mdUp, rowVirtualizer]);
+  }, [dataFiltered, lastCampaignOpenId, lgUp, mainRef, mdUp, rowVirtualizer, scrollTop]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
