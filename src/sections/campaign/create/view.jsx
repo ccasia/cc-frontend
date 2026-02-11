@@ -5,7 +5,7 @@ import { paths } from 'src/routes/paths';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
-import CreateCampaignForm from './form';
+import CreateCampaignFormV2 from './form-v2';
 
 function CreateCampaign() {
   const settings = useSettingsContext();
@@ -19,7 +19,7 @@ function CreateCampaign() {
           { name: 'Create' },
         ]}
       />
-      <CreateCampaignForm />
+      <CreateCampaignFormV2 />
     </Container>
   );
 }
