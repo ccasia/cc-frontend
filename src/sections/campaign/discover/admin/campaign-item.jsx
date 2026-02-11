@@ -40,6 +40,7 @@ import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({
+  index,
   campaign,
   onView,
   onEdit,
@@ -69,6 +70,7 @@ export default function CampaignItem({
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [initialActivateDialogOpen, setInitialActivateDialogOpen] = useState(false);
+  const currentIndex = localStorage.getItem('lastOpenedIndex');
 
   // Handle menu open
   const handleClick = (event) => {
@@ -790,31 +792,19 @@ export default function CampaignItem({
   );
 
   return (
-    // <Card
-    //   component={RouterLink}
-    //   href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
-    //   sx={{
-    //     overflow: 'hidden',
-    //     textDecoration: 'none',
-    //     cursor: 'pointer',
-    //     transition: 'all 0.3s',
-    //     bgcolor: 'background.default',
-    //     borderRadius: '15px',
-    //     border: '1.2px solid',
-    //     borderColor: theme.palette.divider,
-    //     position: 'relative',
-    //     pb: 1.5,
-    //     mb: -0.5,
-    //     maxHeight: 370,
-    //     '&:hover': {
-    //       borderColor: '#1340ff',
-    //       transform: 'translateY(-2px)',
-    //     },
-    //   }}
-    // >
     <Card
       component={RouterLink}
       href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
+      onClick={() => {
+        // const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');
+
+        // if (lastCampaignOpenId || lastCampaignOpenId !== campaign.id) {
+        //   localStorage.setItem('lastCampaignOpenId', campaign?.id);
+        // }
+        localStorage.setItem('lastOpenedIndex', String(index));
+        localStorage.removeItem('lastScrollPosition');
+        router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
+      }}
       sx={{
         overflow: 'hidden',
         textDecoration: 'none',
@@ -823,7 +813,7 @@ export default function CampaignItem({
         bgcolor: 'background.default',
         borderRadius: '15px',
         border: '1.2px solid',
-        borderColor: theme.palette.divider,
+        borderColor: Number(currentIndex) === index ? '#1340ff' : theme.palette.divider,
         position: 'relative',
         pb: 1.5,
         mb: -0.5,
@@ -893,6 +883,7 @@ export default function CampaignItem({
 }
 
 CampaignItem.propTypes = {
+  index: PropTypes.number,
   onDelete: PropTypes.func,
   onEdit: PropTypes.func,
   onView: PropTypes.func,

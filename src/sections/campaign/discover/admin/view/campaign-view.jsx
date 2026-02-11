@@ -2,7 +2,7 @@ import useSWR from 'swr';
 import { debounce } from 'lodash';
 import useSWRInfinite from 'swr/infinite';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -66,6 +66,8 @@ const CampaignView = () => {
   const [showAllCampaigns, setShowAllCampaigns] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const hasRestoredRef = useRef(false);
+  const isRestoringScroll = useRef(null);
 
   // Fetch admins list for filter dropdown - only when in "All" tab
   // Using /api/user/alladmins endpoint which is accessible by all admins (not just superadmin)
@@ -260,10 +262,23 @@ const CampaignView = () => {
   };
 
   useEffect(() => {
-    if (pageSizing) {
-      setSize(Number(pageSizing));
-    }
-  }, [setSize, pageSizing]);
+    const scrollElement = mainRef.current;
+    if (!scrollElement) return;
+
+    const handleScroll = () => {
+      // Don't save scroll position while we're restoring it
+      if (isRestoringScroll.current) return;
+
+      localStorage.setItem('lastScrollPosition', scrollElement.scrollTop.toString());
+    };
+
+    scrollElement.addEventListener('scroll', handleScroll, { passive: true });
+
+    // eslint-disable-next-line consistent-return
+    return () => {
+      scrollElement.removeEventListener('scroll', handleScroll);
+    };
+  }, [mainRef]);
 
   useEffect(() => {
     if (!isLoading && lastCampaignOpenId) {
@@ -287,12 +302,45 @@ const CampaignView = () => {
     }
   }, [mainRef, lastCampaignOpenId, setSize, isLoading, scrollTop]);
 
+  // useEffect(() => {
+  //   const scrollContainer = mainRef?.current;
+  //   window.addEventListener('beforeunload', (event) => {
+  //     localStorage.setItem('scrollTop', scrollContainer.scrollTop);
+  //   });
+  // }, [mainRef]);
+
   useEffect(() => {
-    const scrollContainer = mainRef?.current;
-    window.addEventListener('beforeunload', (event) => {
-      localStorage.setItem('scrollTop', scrollContainer.scrollTop);
+    if (hasRestoredRef.current) return;
+    if (!dataFiltered.length) return;
+
+    const lastScrollPosition = Number(localStorage.getItem('lastScrollPosition'));
+    const lastOpenedIndex = Number(localStorage.getItem('lastOpenedIndex'));
+
+    requestAnimationFrame(() => {
+      isRestoringScroll.current = true;
+
+      // Priority 1: Restore last scroll position (more recent user action)
+      if (!Number.isNaN(lastScrollPosition) && lastScrollPosition > 0 && mainRef.current) {
+        mainRef.current.scrollTop = lastScrollPosition;
+      }
+      // Priority 2: Scroll to last opened item if no scroll position
+      else if (
+        !Number.isNaN(lastOpenedIndex) &&
+        lastOpenedIndex >= 0 &&
+        lastOpenedIndex < dataFiltered.length
+      ) {
+        // eslint-disable-next-line no-nested-ternary
+        const cols = lgUp ? 3 : mdUp ? 2 : 1;
+        const rowIndex = Math.floor(lastOpenedIndex / cols);
+        rowVirtualizer.scrollToIndex(rowIndex, { align: 'start' });
+      }
+
+      // Allow scroll tracking after a short delay
+      setTimeout(() => {
+        isRestoringScroll.current = false;
+      }, 100);
     });
-  }, [mainRef]);
+  }, [dataFiltered, lgUp, mainRef, mdUp, rowVirtualizer]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
@@ -869,8 +917,9 @@ const CampaignView = () => {
                 }
                 sx={{ mt: 2 }}
               >
-                {rowCampaigns?.map((a) => (
+                {rowCampaigns?.map((a, index) => (
                   <CampaignItem
+                    index={index + startIndex}
                     key={a?.id}
                     campaign={a}
                     status={a?.status}
@@ -895,39 +944,6 @@ const CampaignView = () => {
           />
         </Box>
       )}
-
-      {/* {!isLoading &&
-        (dataFiltered?.length > 0 ? (
-          <Box mt={2}>
-            <CampaignLists campaigns={dataFiltered} showAdmins={showAllCampaigns} />
-            {isValidating && (
-              <Box sx={{ textAlign: 'center', my: 2 }}>
-                <CircularProgress
-                  thickness={7}
-                  size={25}
-                  sx={{
-                    color: theme.palette.common.black,
-                    strokeLinecap: 'round',
-                  }}
-                />
-              </Box>
-            )}
-          </Box>
-        ) : (
-          <EmptyContent
-            title={
-              showAllCampaigns
-                ? 'No campaigns from other admins'
-                : `No ${(() => {
-                    if (filter === 'active') return 'active';
-                    if (filter === 'completed') return 'completed';
-                    if (filter === 'pending') return 'pending';
-                    if (filter === 'paused') return 'paused';
-                    return filter;
-                  })()} campaigns available`
-            }
-          />
-        ))} */}
 
       <Dialog
         fullWidth
