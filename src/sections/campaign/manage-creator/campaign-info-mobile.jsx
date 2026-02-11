@@ -397,13 +397,6 @@ const CampaignInfoMobile = ({ campaign }) => {
         </Box>
       )}
 
-      {(campaign?.campaignBrief?.postingStartDate || campaign?.campaignBrief?.postingEndDate) && (
-        <Box>
-          <Typography sx={SectionTitleStyle}>Posting Timeline</Typography>
-          <Typography sx={SectionBodyStyle}>{getPostingTimeline()}</Typography>
-        </Box>
-      )}
-
       {additionalDetails?.mainMessage && (
         <Box>
           <Typography sx={SectionTitleStyle}>Main Message/Theme</Typography>
@@ -646,6 +639,13 @@ const CampaignInfoMobile = ({ campaign }) => {
                 {campaign?.description || 'No campaign description available.'}
               </Typography>
             </Box>
+
+            {(campaign?.campaignBrief?.postingStartDate || campaign?.campaignBrief?.postingEndDate) && (
+              <Box>
+                <Typography sx={SectionTitleStyle}>Posting Timeline</Typography>
+                <Typography sx={SectionBodyStyle}>{getPostingTimeline()}</Typography>
+              </Box>
+            )}
           </Stack>
         </Box>
 
