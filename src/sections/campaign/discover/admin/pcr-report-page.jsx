@@ -131,8 +131,17 @@ SortableSection.propTypes = {
 // Formatted Text Field Component
 const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} }) => {
   const editorRef = useRef(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const applyFormat = (format) => {
+  // Initialize content only once
+  useEffect(() => {
+    if (editorRef.current && !isInitialized) {
+      editorRef.current.innerHTML = value || '';
+      setIsInitialized(true);
+    }
+  }, [value, isInitialized]);
+
+  const applyFormat = (formatType) => {
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
 
@@ -142,11 +151,11 @@ const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} })
     if (!selectedText) return;
 
     let formattedElement;
-    if (format === 'bold') {
+    if (formatType === 'bold') {
       formattedElement = document.createElement('strong');
-    } else if (format === 'italic') {
+    } else if (formatType === 'italic') {
       formattedElement = document.createElement('em');
-    } else if (format === 'underline') {
+    } else if (formatType === 'underline') {
       formattedElement = document.createElement('u');
     }
 
@@ -154,13 +163,17 @@ const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} })
     range.deleteContents();
     range.insertNode(formattedElement);
 
+    // Move cursor after the inserted element
+    const newRange = document.createRange();
+    newRange.setStartAfter(formattedElement);
+    newRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+
     // Update the value
     if (editorRef.current) {
       onChange({ target: { value: editorRef.current.innerHTML } });
     }
-
-    // Clear selection
-    selection.removeAllRanges();
   };
 
   const handleInput = (e) => {
@@ -212,7 +225,6 @@ const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} })
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}
-        dangerouslySetInnerHTML={{ __html: value || '' }}
         sx={{
           minHeight: `${rows * 24}px`,
           padding: '12px',
@@ -406,6 +418,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
   const reportRef = useRef(null);
   const cardsContainerRef = useRef(null);
   const displayCardsContainerRef = useRef(null);
+  const creatorTiersEditorRef = useRef(null);
   const [cardsHeight, setCardsHeight] = useState(280);
   const [displayCardsHeight, setDisplayCardsHeight] = useState(280);
   
@@ -656,6 +669,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode]);
+
+  // Initialize Creator Tiers editor content
+  useEffect(() => {
+    if (creatorTiersEditorRef.current && editableContent.creatorTiersDescription) {
+      creatorTiersEditorRef.current.innerHTML = editableContent.creatorTiersDescription;
+    }
+  }, [isEditMode, editableContent.creatorTiersDescription]);
 
   // Save to history when content changes (debounced)
   useEffect(() => {
@@ -944,59 +964,133 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
   const EngagementRateHeatmap = () => {
     const top5CreatorsPhases = useMemo(() => {
-      const creatorsWithEngagement = [];
+      // Get campaign posting period from Additional 1 fields
+      const postingStartDate = campaign?.campaignBrief?.postingStartDate;
+      const postingEndDate = campaign?.campaignBrief?.postingEndDate;
+      
+      if (!postingStartDate || !postingEndDate) {
+        console.log('No posting period dates available');
+        console.log('Campaign Brief:', campaign?.campaignBrief);
+        return [];
+      }
+
+      const campaignStart = new Date(postingStartDate);
+      const campaignEnd = new Date(postingEndDate);
+      const campaignDuration = (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24); 
+      
+      const firstWeekEnd = 7;
+      const midCampaignStart = 7;
+      const midCampaignEnd = Math.max(campaignDuration - 7, 7);
+      const finalWeekStart = Math.max(campaignDuration - 7, 7);
+      
+      console.log('=== Campaign Phase Boundaries ===');
+      console.log('Campaign Duration:', campaignDuration, 'days');
+      console.log('First Week: 0-7 days');
+      console.log('Mid Campaign:', midCampaignStart, '-', midCampaignEnd, 'days');
+      console.log('Final Week:', finalWeekStart, '-', campaignDuration, 'days');
+
+      // Group submissions by creator and calculate their ER for each phase
+      const creatorPhaseData = new Map();
       
       filteredInsightsData.forEach((insightData) => {
         const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
-        if (submission) {
-          const engagementRate = parseFloat(calculateEngagementRate(insightData.insight));
-          if (!Number.isNaN(engagementRate) && engagementRate > 0) {
-            creatorsWithEngagement.push({
-              submission,
-              insightData,
-              engagementRate,
-              platform: insightData.platform || 'Unknown'
-            });
-          }
+        if (!submission) return;
+
+        // Get post date
+        let postDate = null;
+        if (insightData.insight?.timestamp) {
+          postDate = new Date(insightData.insight.timestamp * 1000);
+        } else if (submission.createdAt) {
+          postDate = new Date(submission.createdAt);
+        }
+        
+        if (!postDate) return;
+
+        // Calculate days from campaign start
+        const daysFromStart = (postDate - campaignStart) / (1000 * 60 * 60 * 24);
+        
+        // Determine which phase this post belongs to
+        let phase = null;
+        if (daysFromStart >= 0 && daysFromStart <= firstWeekEnd) {
+          phase = 'firstWeek';
+        } else if (daysFromStart > midCampaignStart && daysFromStart <= midCampaignEnd) {
+          phase = 'midCampaign';
+        } else if (daysFromStart > finalWeekStart && daysFromStart <= campaignDuration) {
+          phase = 'finalWeek';
+        }
+        
+        if (!phase) return;
+
+        // Get creator identifier
+        const userId = typeof submission.user === 'string' ? submission.user : submission.user?.id;
+        const isManualEntry = userId === submission.id;
+        
+        if (!userId) return;
+
+        // Initialize creator data if not exists
+        if (!creatorPhaseData.has(userId)) {
+          creatorPhaseData.set(userId, {
+            userId,
+            name: submission.user?.name || 'Unknown',
+            isManualEntry,
+            creatorUsername: submission.platform === 'Instagram' 
+              ? submission.user?.creator?.instagram 
+              : submission.user?.creator?.tiktok,
+            firstWeek: [],
+            midCampaign: [],
+            finalWeek: [],
+            totalER: 0,
+            postCount: 0,
+          });
+        }
+
+        const creatorData = creatorPhaseData.get(userId);
+        const engagementRate = parseFloat(calculateEngagementRate(insightData.insight));
+        
+        if (!Number.isNaN(engagementRate) && engagementRate > 0) {
+          creatorData[phase].push(engagementRate);
+          creatorData.totalER += engagementRate;
+          creatorData.postCount += 1;
         }
       });
-      
-      const top5 = creatorsWithEngagement
-        .sort((a, b) => b.engagementRate - a.engagementRate)
-        .slice(0, 5);
 
-      return top5.map(creator => {
-        const creatorData = filteredSubmissions.find(sub => sub.id === creator.submission.id);
-        console.log('=== Building Creator Phase Data ===');
-        console.log('Submission ID:', creator.submission.id);
-        console.log('Found Creator Data:', creatorData);
-        console.log('Creator Data User:', creatorData?.user);
+      // Calculate average ER per phase for each creator
+      const creatorsWithAverages = Array.from(creatorPhaseData.values()).map(creator => {
+        const firstWeekAvg = creator.firstWeek.length > 0
+          ? creator.firstWeek.reduce((a, b) => a + b, 0) / creator.firstWeek.length
+          : null;
         
-        // For regular submissions, user is an object with id, name, and creator details
-        // For manual entries, user.id equals the submission.id and creator info is in the user object
-        const userId = typeof creatorData?.user === 'string' ? creatorData.user : creatorData?.user?.id;
-        const creatorName = creatorData?.user?.name || 'Unknown';
-      
-        // Manual entries have user.id === submission.id, regular ones don't
-        const isManualEntry = userId === creatorData?.id;
+        const midCampaignAvg = creator.midCampaign.length > 0
+          ? creator.midCampaign.reduce((a, b) => a + b, 0) / creator.midCampaign.length
+          : null;
         
-        console.log('User ID:', userId);
-        console.log('Submission ID:', creatorData?.id);
-        console.log('Is Manual Entry:', isManualEntry);
-        
-        const baseRate = creator.engagementRate;
+        const finalWeekAvg = creator.finalWeek.length > 0
+          ? creator.finalWeek.reduce((a, b) => a + b, 0) / creator.finalWeek.length
+          : null;
+
         return {
-          userId,
-          name: creatorName,
-          isManualEntry,
-          creatorUsername: creatorData?.platform === 'Instagram' 
-            ? creatorData?.user?.creator?.instagram 
-            : creatorData?.user?.creator?.tiktok,
-          firstWeek: baseRate * (0.8 + Math.random() * 0.4),
-          midCampaign: baseRate * (0.8 + Math.random() * 0.4),
-          finalWeek: baseRate * (0.8 + Math.random() * 0.4),
+          userId: creator.userId,
+          name: creator.name,
+          isManualEntry: creator.isManualEntry,
+          creatorUsername: creator.creatorUsername,
+          firstWeek: firstWeekAvg,
+          midCampaign: midCampaignAvg,
+          finalWeek: finalWeekAvg,
+          overallER: creator.postCount > 0 ? creator.totalER / creator.postCount : 0,
         };
       });
+
+      // Sort by overall ER and take top 5
+      const top5 = creatorsWithAverages
+        .filter(c => c.overallER > 0)
+        .sort((a, b) => b.overallER - a.overallER)
+        .slice(0, 5);
+
+      console.log('=== Top 5 Creators with Phase Data ===');
+      console.log(top5);
+
+      return top5;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Only fetch creator data for non-manual entries
@@ -1013,6 +1107,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         return acc + (Number.isNaN(rate) ? 0 : rate);
       }, 0);
       return sum / filteredInsightsData.length;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const getPhaseColor = (rate) => {
@@ -1126,7 +1221,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               sx={{ 
                       flex: 1,
                       height: '40px',
-                      backgroundColor: getPhaseColor(creator.firstWeek),
+                      backgroundColor: creator.firstWeek !== null ? getPhaseColor(creator.firstWeek) : '#E5E7EB',
                       borderRadius: '0px',
                 display: 'flex',
                 alignItems: 'center',
@@ -1138,10 +1233,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fontFamily: 'Aileron',
                         fontSize: '14px',
                         fontWeight: 600,
-                        color: '#FFFFFF'
+                        color: creator.firstWeek !== null ? '#FFFFFF' : '#9CA3AF'
               }}
             >
-                      {creator.firstWeek.toFixed(1)}%
+                      {creator.firstWeek !== null ? `${creator.firstWeek.toFixed(1)}%` : '-'}
                     </Typography>
             </Box>
 
@@ -1150,7 +1245,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               sx={{ 
                       flex: 1,
                       height: '40px',
-                      backgroundColor: getPhaseColor(creator.midCampaign),
+                      backgroundColor: creator.midCampaign !== null ? getPhaseColor(creator.midCampaign) : '#E5E7EB',
                       borderRadius: '0px',
                 display: 'flex',
                 alignItems: 'center',
@@ -1162,10 +1257,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fontFamily: 'Aileron',
                         fontSize: '14px',
                         fontWeight: 600,
-                        color: '#FFFFFF'
+                        color: creator.midCampaign !== null ? '#FFFFFF' : '#9CA3AF'
               }}
             >
-                      {creator.midCampaign.toFixed(1)}%
+                      {creator.midCampaign !== null ? `${creator.midCampaign.toFixed(1)}%` : '-'}
                     </Typography>
           </Box>
 
@@ -1174,7 +1269,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               sx={{ 
                       flex: 1,
                       height: '40px',
-                      backgroundColor: getPhaseColor(creator.finalWeek),
+                      backgroundColor: creator.finalWeek !== null ? getPhaseColor(creator.finalWeek) : '#E5E7EB',
                       borderRadius: '0px',
                       display: 'flex',
                       alignItems: 'center',
@@ -1186,10 +1281,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fontFamily: 'Aileron',
                         fontSize: '14px',
                 fontWeight: 600,
-                        color: '#FFFFFF'
+                        color: creator.finalWeek !== null ? '#FFFFFF' : '#9CA3AF'
               }}
             >
-                      {creator.finalWeek.toFixed(1)}%
+                      {creator.finalWeek !== null ? `${creator.finalWeek.toFixed(1)}%` : '-'}
           </Typography>
                   </Box>
                 </Box>
@@ -2656,6 +2751,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontSize: '16px',
             lineHeight: '20px',
             letterSpacing: '0%',
+            whiteSpace: 'nowrap',
             '&:hover': {
               background: '#F9FAFB',
               border: '1px solid #D1D5DB',
@@ -5067,9 +5163,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         strong.textContent = selectedText;
                         range.deleteContents();
                         range.insertNode(strong);
+                        // Move cursor after the inserted element
+                        const newRange = document.createRange();
+                        newRange.setStartAfter(strong);
+                        newRange.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(newRange);
                         const event = new Event('input', { bubbles: true });
                         document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
-                        selection.removeAllRanges();
                       }}
                       sx={{ width: 20, height: 20, color: '#636366' }}
                     >
@@ -5087,9 +5188,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         em.textContent = selectedText;
                         range.deleteContents();
                         range.insertNode(em);
+                        // Move cursor after the inserted element
+                        const newRange = document.createRange();
+                        newRange.setStartAfter(em);
+                        newRange.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(newRange);
                         const event = new Event('input', { bubbles: true });
                         document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
-                        selection.removeAllRanges();
                       }}
                       sx={{ width: 20, height: 20, color: '#636366' }}
                     >
@@ -5107,9 +5213,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         u.textContent = selectedText;
                         range.deleteContents();
                         range.insertNode(u);
+                        // Move cursor after the inserted element
+                        const newRange = document.createRange();
+                        newRange.setStartAfter(u);
+                        newRange.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(newRange);
                         const event = new Event('input', { bubbles: true });
                         document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
-                        selection.removeAllRanges();
                       }}
                       sx={{ width: 20, height: 20, color: '#636366' }}
                     >
@@ -5119,11 +5230,17 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
                   {/* Editable Content */}
                   <Box
+                    ref={creatorTiersEditorRef}
                     data-creator-tiers-editor
                     contentEditable
                     suppressContentEditableWarning
                     onInput={(e) => setEditableContent({ ...editableContent, creatorTiersDescription: e.currentTarget.innerHTML })}
-                    dangerouslySetInnerHTML={{ __html: editableContent.creatorTiersDescription || '' }}
+                    onFocus={(e) => {
+                      // Set initial content if empty
+                      if (!e.currentTarget.innerHTML) {
+                        e.currentTarget.innerHTML = editableContent.creatorTiersDescription || '';
+                      }
+                    }}
                     sx={{
                       minHeight: '72px',
                       padding: '8px',
@@ -8283,6 +8400,8 @@ PCRReportPage.propTypes = {
     campaignBrief: PropTypes.shape({
       startDate: PropTypes.string,
       endDate: PropTypes.string,
+      postingStartDate: PropTypes.string,
+      postingEndDate: PropTypes.string,
     }),
     submission: PropTypes.array,
   }),
