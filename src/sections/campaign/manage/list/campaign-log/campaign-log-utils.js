@@ -311,6 +311,149 @@ export function formatLogMessage(msg, performer) {
 }
 
 // ---------------------------------------------------------------------------
+// 5b. Performer-free summaries — companion to formatLogMessage (keep in sync)
+// Used in the detail panel hero so the admin name isn't duplicated with the
+// "Performed By" row below it.
+// ---------------------------------------------------------------------------
+
+export function formatLogSummary(msg, performer) {
+  let m;
+
+  // Outreach
+  m = msg.match(/Outreach status for (.+?) updated to (\w+)/i);
+  if (m) return `${qn(m[1])}'s outreach updated to [outreach:${m[2].toUpperCase()}]`;
+
+  // Draft approved
+  m = msg.match(/Draft approved by (?:admin|client) .+? from Creator (.+)$/i);
+  if (m) return `${qn(m[1])}'s draft has been ${a('approved')}`;
+
+  // Changes requested
+  m = msg.match(/Changes requested on (.+?) by (?:admin|client) .+? from Creator (.+)$/i);
+  if (m) return `${qn(m[2])}'s ${m[1].toLowerCase()} has been ${a('changes_requested')}`;
+
+  // Agreement approved
+  m = msg.match(/.+? approved the Agreement by (.+)$/i);
+  if (m) return `${qn(m[1])}'s agreement has been ${a('approved')}`;
+
+  // Agreement sent
+  m = msg.match(/Agreement has been sent to (.+)$/i);
+  if (m) return `Agreement sent to ${qn(m[1])}`;
+  m = msg.match(/sent the Agreement to (.+)$/i);
+  if (m) return `Agreement sent to ${qn(m[1])}`;
+
+  // Agreement rejected
+  if (/agreement has been rejected/i.test(msg)) return `Agreement has been ${a('rejected')}`;
+
+  // Resent agreement
+  m = msg.match(/resent the Agreement to (.+)$/i);
+  if (m) return `Agreement resent to ${qn(m[1])}`;
+
+  // Agreement submitted by creator (no change — no performer in original)
+  m = msg.match(/(.+?) submitted (?:the )?[Aa]greement$/i);
+  if (m) return `${qn(m[1])} submitted their agreement`;
+
+  // Pitch submitted (no change — creator action)
+  m = msg.match(/(.+?) submitted a pitch/i);
+  if (m) return `${qn(m[1])} submitted a pitch`;
+  m = msg.match(/(.+?) pitched for/i);
+  if (m) return `${qn(m[1])} submitted a pitch`;
+
+  // Pitch approved/rejected
+  m = msg.match(/(.+?)'?s? pitch has been approved/i);
+  if (m) return `${qn(m[1])}'s pitch has been ${a('approved')}`;
+  m = msg.match(/(.+?)'?s? pitch has been rejected/i);
+  if (m) return `${qn(m[1])}'s pitch has been ${a('rejected')}`;
+
+  // Profile approved/rejected
+  m = msg.match(/(.+?)'?s? profile has been approved/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('approved')}`;
+  m = msg.match(/(.+?)'?s? profile has been rejected/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('rejected')}`;
+
+  // Maybe
+  m = msg.match(/[Cc]hose maybe for (.+)$/i);
+  if (m) return `${qn(m[1])} has been marked as ${a('maybe')}`;
+
+  // Shortlisted
+  m = msg.match(/(.+?) has been shortlisted/i);
+  if (m) return `${qn(m[1])} has been ${a('shortlisted')}`;
+
+  // Withdrawn (no change — creator action)
+  m = msg.match(/(.+?) (?:has been )?withdrawn from the campaign/i);
+  if (m) return `${qn(m[1])} withdrew from campaign`;
+
+  // Removed
+  m = msg.match(/(.+?) (?:has been )?removed from the campaign/i);
+  if (m) return `${qn(m[1])} removed from campaign`;
+
+  // Draft submissions by creator (no change — creator action)
+  m = msg.match(/(.+?) submitted [Ff]irst [Dd]raft/i);
+  if (m) return `${qn(m[1])} submitted first draft`;
+  m = msg.match(/(.+?) submitted [Ff]inal [Dd]raft/i);
+  if (m) return `${qn(m[1])} submitted final draft`;
+  m = msg.match(/(.+?) submitted [Pp]osting [Ll]ink/i);
+  if (m) return `${qn(m[1])} submitted posting link`;
+
+  // Invoice generated
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+was generated/i);
+  if (m) return `Invoice ${m[1]} generated for ${qn(m[2])}`;
+  if (/invoice.*was generated/i.test(msg)) return `Invoice generated`;
+
+  // Invoice deleted
+  m = msg.match(/Deleted invoice\s+([\w-]+)\s+for\s+(?:creator\s+)?(.+)$/i);
+  if (m) return `Invoice ${m[1]} deleted for ${qn(m[2])}`;
+  if (/deleted invoice/i.test(msg)) return `Invoice deleted`;
+
+  // Invoice approved
+  m = msg.match(/Approved invoice\s+([\w-]+)\s+for\s+(.+)$/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('approved')}`;
+  if (/approved invoice/i.test(msg)) return `Invoice has been ${a('approved')}`;
+
+  // Amount change
+  m = msg.match(/changed the amount from (.+?) to (.+?) for (.+)$/i);
+  if (m) return `${qn(m[3])}'s amount changed from ${m[1]} to ${m[2]}`;
+  if (/changed the amount/i.test(msg)) return `Payment amount updated`;
+
+  // Campaign lifecycle
+  if (/^campaign created$/i.test(msg)) return `Campaign created`;
+  if (/^campaign activated$/i.test(msg)) return `Campaign activated`;
+  if (/^campaign details edited/i.test(msg)) return `Campaign details updated`;
+
+  // Login
+  if (/logs in|logged in/i.test(msg)) return `Logged in`;
+
+  // Analytics
+  if (/export campaign analytics/i.test(msg)) return `Campaign analytics exported`;
+
+  // V3 individual content review
+  m = msg.match(/^Admin .+? approved (first|final) draft (video|raw footage|photo) for creator (.+)$/i);
+  if (m) return `${qn(m[3])}'s ${m[1].toLowerCase()} draft ${m[2].toLowerCase()} has been ${a('approved')}`;
+
+  m = msg.match(/^Admin .+? requested changes to (first|final) draft (video|raw footage|photo) for creator (.+)$/i);
+  if (m) return `${qn(m[3])}'s ${m[1].toLowerCase()} draft ${m[2].toLowerCase()} has been ${a('changes_requested')}`;
+
+  // V3 overall submission approval
+  m = msg.match(/^.+? approved (.+?)(?:'s|'s) (First Draft|Final Draft)(.*)$/i);
+  if (m) return `${qn(m[1])}'s ${m[2].toLowerCase()} has been ${a('approved')}`;
+
+  m = msg.match(/^.+? requested changes on (.+?)(?:'s|'s) (First Draft|Final Draft)$/i);
+  if (m) return `${qn(m[1])}'s ${m[2].toLowerCase()} has been ${a('changes_requested')}`;
+
+  // Posting link approval
+  m = msg.match(/^.+? approved (.+?)(?:'s|'s) submission Posting Link$/i);
+  if (m) return `${qn(m[1])}'s posting link has been ${a('approved')}`;
+
+  m = msg.match(/^.+? requested changes on (.+?)(?:'s|'s) submission Posting Link$/i);
+  if (m) return `${qn(m[1])}'s posting link has been ${a('changes_requested')}`;
+
+  // V4 draft rejection
+  m = msg.match(/Draft rejected by (?:admin|client) .+? from Creator (.+)$/i);
+  if (m) return `${qn(m[1])}'s draft has been ${a('rejected')}`;
+
+  return msg;
+}
+
+// ---------------------------------------------------------------------------
 // 6. Deduplicate logs — keep richer entry when duplicates exist
 // ---------------------------------------------------------------------------
 
