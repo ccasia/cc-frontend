@@ -55,6 +55,8 @@ const UpdateGeneralInfoSchema = Yup.object().shape({
   brandAbout: Yup.string().nullable(),
   campaignStartDate: Yup.mixed().required('Start date is required'),
   campaignEndDate: Yup.mixed().required('End date is required'),
+  postingStartDate: Yup.mixed().nullable(),
+  postingEndDate: Yup.mixed().nullable(),
   productName: Yup.string().nullable(),
   websiteLink: Yup.string().nullable(),
   campaignIndustries: Yup.array(),
@@ -75,6 +77,12 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
       campaignEndDate: campaign?.campaignBrief?.endDate
         ? new Date(campaign.campaignBrief.endDate).toISOString()
         : '',
+      postingStartDate: campaign?.campaignBrief?.postingStartDate
+        ? new Date(campaign.campaignBrief.postingStartDate).toISOString()
+        : null,
+      postingEndDate: campaign?.campaignBrief?.postingEndDate
+        ? new Date(campaign.campaignBrief.postingEndDate).toISOString()
+        : null,
       productName: campaign?.productName || '',
       websiteLink: campaign?.websiteLink || '',
       campaignIndustries: (() => {
@@ -114,9 +122,13 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
 
   const startDate = watch('campaignStartDate');
   const endDate = watch('campaignEndDate');
+  const postingStartDate = watch('postingStartDate');
+  const postingEndDate = watch('postingEndDate');
 
   const startDateDayjs = startDate ? dayjs(startDate) : null;
   const endDateDayjs = endDate ? dayjs(endDate) : null;
+  const postingStartDateDayjs = postingStartDate ? dayjs(postingStartDate) : null;
+  const postingEndDateDayjs = postingEndDate ? dayjs(postingEndDate) : null;
 
   const onSubmit = useCallback(
     async (data) => {
@@ -133,6 +145,8 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
         formData.append('websiteLink', data.websiteLink || '');
         formData.append('campaignStartDate', data.campaignStartDate || null);
         formData.append('campaignEndDate', data.campaignEndDate || null);
+        formData.append('postingStartDate', data.postingStartDate || '');
+        formData.append('postingEndDate', data.postingEndDate || '');
 
         // Only append new image files
         if (data.campaignImages && data.campaignImages.length > 0) {
@@ -284,8 +298,86 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
               </Grid>
             </LocalizationProvider>
 
-            {/* Product/Service Name - Full width */}
+            {/* Posting start/end date - Two columns */}
             <Box sx={{ mt: 2 }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <FormField label="Posting Start Date">
+                      <DatePicker
+                        value={postingStartDateDayjs}
+                        format="DD/MM/YY"
+                        onChange={(newValue) => {
+                          setValue('postingStartDate', newValue ? newValue.toISOString() : null, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          });
+                          // Auto-set postingEndDate to +5 days if not manually set
+                          if (newValue) {
+                            const newEndDate = dayjs(newValue).add(7, 'day');
+                            // Only auto-set if postingEndDate is empty or was previously auto-set
+                            if (!postingEndDateDayjs || postingEndDateDayjs.isSame(dayjs(postingStartDate).add(7, 'day'))) {
+                              setValue('postingEndDate', newEndDate.toISOString(), {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+                            }
+                          }
+                        }}
+                        slots={{
+                          openPickerIcon: () => (
+                            <Iconify icon="meteor-icons:calendar" width={22} />
+                          ),
+                        }}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            placeholder: 'Start Date',
+                            error: false,
+                            size: 'small',
+                            sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
+                          },
+                        }}
+                      />
+                    </FormField>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <FormField label="Posting End Date">
+                      <DatePicker
+                        value={postingEndDateDayjs}
+                        format="DD/MM/YY"
+                        onChange={(newValue) => {
+                          setValue('postingEndDate', newValue ? newValue.toISOString() : null, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          });
+                        }}
+                        slots={{
+                          openPickerIcon: () => (
+                            <Iconify icon="meteor-icons:calendar" width={22} />
+                          ),
+                        }}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            placeholder: 'End Date',
+                            error: false,
+                            size: 'small',
+                            sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
+                          },
+                        }}
+                      />
+                    </FormField>
+                  </Grid>
+                </Grid>
+              </LocalizationProvider>
+            </Box>
+          </Grid>
+
+          {/* Column two */}
+          <Grid item xs={12} sm={6}>
+            {/* Product/Service Name - Full width */}
+            <Box mb={2}>
               <FormField label="Product/Service Name" required={false}>
                 <RHFTextField
                   name="productName"
@@ -295,10 +387,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
                 />
               </FormField>
             </Box>
-          </Grid>
 
-          {/* Column two */}
-          <Grid item xs={12} sm={6}>
             <Box mb={2}>
               <FormField label="Website Link" required={false}>
                 <RHFTextField
@@ -318,6 +407,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
                 <RHFUploadCover
                   name="campaignImages"
                   maxSize={10485760}
+                  height={200}
                   placeholderPrimaryTypographyProps={{ fontSize: 18, fontWeight: 600 }}
                   placeholderSecondaryTypographyProps={{ fontSize: 14, fontWeight: 400 }}
                 />
