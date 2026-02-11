@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { useFormContext } from 'react-hook-form';
 
-import { DatePicker } from '@mui/x-date-pickers';
 import { Box, Grid, Stack, FormLabel, Typography } from '@mui/material';
 
 import { RHFUpload } from 'src/components/hook-form/rhf-upload';
@@ -65,10 +64,6 @@ AdditionalDetails1.propTypes = {
 export default function AdditionalDetails1() {
   const { setValue, watch } = useFormContext();
 
-  // Watch date fields
-  const postingStartDate = watch('postingStartDate');
-  const postingEndDate = watch('postingEndDate');
-
   return (
     <Box sx={{ maxWidth: '816px', mx: 'auto', mb: 12, mt: 8 }}>
       <Grid container spacing={2} mb={4}>
@@ -95,47 +90,6 @@ export default function AdditionalDetails1() {
               options={CONTENT_FORMAT_OPTIONS}
             />
           </FormField>
-
-          {/* Campaign Posting Period */}
-          <Typography variant="subtitle2" fontWeight={600}>
-            Campaign Posting Period
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <FormField>
-                <DatePicker
-                  value={postingStartDate}
-                  onChange={(newValue) => {
-                    setValue('postingStartDate', newValue, { shouldValidate: true });
-                  }}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      placeholder: 'Start Date',
-                      error: false,
-                    },
-                  }}
-                />
-              </FormField>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormField>
-                <DatePicker
-                  value={postingEndDate}
-                  onChange={(newValue) => {
-                    setValue('postingEndDate', newValue, { shouldValidate: true });
-                  }}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      placeholder: 'End Date',
-                      error: false,
-                    },
-                  }}
-                />
-              </FormField>
-            </Grid>
-          </Grid>
 
           {/* Main Message/Theme */}
           <FormField label="Main Message/Theme - What's the core message?">

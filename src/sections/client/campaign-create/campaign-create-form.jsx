@@ -140,6 +140,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     brandAbout: Yup.string(),
     campaignStartDate: Yup.date().required('Campaign Start Date is required.'),
     campaignEndDate: Yup.date().required('Campaign End Date is required.'),
+    postingStartDate: Yup.date().required('Posting Start Date is required.'),
+    postingEndDate: Yup.date().required('Posting End Date is required.'),
     productName: Yup.string().required('Product/service name required.'),
     campaignIndustries: Yup.array()
       .min(1, 'At least one industry is required.')
@@ -284,6 +286,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     brandAbout: '',
     campaignStartDate: null,
     campaignEndDate: null,
+    postingStartDate: null,
+    postingEndDate: null,
     productName: '',
     campaignIndustries: [],
     campaignCredits: '',
@@ -325,8 +329,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     // Additional Details 1 fields
     socialMediaPlatform: [],
     contentFormat: [],
-    postingStartDate: null,
-    postingEndDate: null,
     mainMessage: '',
     keyPoints: '',
     toneAndStyle: '',
@@ -368,6 +370,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           'campaignImages',
           'campaignStartDate',
           'campaignEndDate',
+          'postingStartDate',
+          'postingEndDate',
           'productName',
         ];
       case 1: // Objective
@@ -532,6 +536,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         brandAbout: data.brandAbout || '',
         campaignStartDate: data.campaignStartDate || null,
         campaignEndDate: data.campaignEndDate || null,
+        postingStartDate: data.postingStartDate || null,
+        postingEndDate: data.postingEndDate || null,
         productName: data.productName || '',
         campaignIndustries: Array.isArray(data.campaignIndustries) ? data.campaignIndustries : [],
         campaignCredits: Number(data.campaignCredits) || 0,
@@ -579,8 +585,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           ? data.socialMediaPlatform
           : [],
         contentFormat: Array.isArray(data.contentFormat) ? data.contentFormat : [],
-        postingStartDate: data.postingStartDate || null,
-        postingEndDate: data.postingEndDate || null,
         mainMessage: data.mainMessage || '',
         keyPoints: data.keyPoints || '',
         toneAndStyle: data.toneAndStyle || '',
@@ -771,6 +775,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           values.campaignCredits &&
           values.campaignStartDate &&
           values.campaignEndDate &&
+          values.postingStartDate &&
+          values.postingEndDate &&
           values.campaignImages?.length > 0 &&
           values.productName
         );

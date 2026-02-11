@@ -150,6 +150,8 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     brandAbout: Yup.string(),
     campaignStartDate: Yup.date().required('Campaign Start Date is required.'),
     campaignEndDate: Yup.date().required('Campaign End Date is required.'),
+    postingStartDate: Yup.date().required('Posting Start Date is required.'),
+    postingEndDate: Yup.date().required('Posting End Date is required.'),
     productName: Yup.string().required('Product/service name required.'),
     campaignIndustries: Yup.array()
       .min(1, 'At least one industry is required')
@@ -317,6 +319,8 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     brandAbout: '',
     campaignStartDate: null,
     campaignEndDate: null,
+    postingStartDate: null,
+    postingEndDate: null,
     productName: '',
     campaignIndustries: [],
     websiteLink: '',
@@ -376,8 +380,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     // Additional Details 1 fields
     socialMediaPlatform: [],
     contentFormat: [],
-    postingStartDate: null,
-    postingEndDate: null,
     mainMessage: '',
     keyPoints: '',
     toneAndStyle: '',
@@ -427,6 +429,8 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           'campaignDescription',
           'campaignStartDate',
           'campaignEndDate',
+          'postingStartDate',
+          'postingEndDate',
           'productName',
           'campaignIndustries',
           'campaignImages',
@@ -907,6 +911,8 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
         const desc = formValues.campaignDescription;
         const startDate = formValues.campaignStartDate;
         const endDate = formValues.campaignEndDate;
+        const {postingStartDate} = formValues;
+        const {postingEndDate} = formValues;
         const { productName } = formValues;
         const industries = formValues.campaignIndustries;
         const images = formValues.campaignImages;
@@ -917,7 +923,9 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           industries?.length > 0 &&
           images?.length > 0 &&
           startDate &&
-          endDate
+          endDate &&
+          postingStartDate &&
+          postingEndDate
         );
       }
       case 1: {

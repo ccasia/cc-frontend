@@ -126,6 +126,26 @@ const CampaignInfo = ({ campaign }) => {
     }
   };
 
+  const getPostingTimeline = () => {
+    const start = campaign?.campaignBrief?.postingStartDate;
+    const end = campaign?.campaignBrief?.postingEndDate;
+    if (!start && !end) return 'Not specified';
+
+    const formatDate = (date) => {
+      if (!date) return '';
+      return new Date(date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    };
+
+    if (start && end) {
+      return `${formatDate(start)} - ${formatDate(end)}`;
+    }
+    return formatDate(start || end);
+  };
+
   // Render mobile version on smaller screens
   if (isMobile) {
     return <CampaignInfoMobile campaign={campaign} />;
@@ -213,6 +233,14 @@ const CampaignInfo = ({ campaign }) => {
                   {campaign?.description || 'No campaign description available.'}
                 </Typography>
               </Box>
+
+              {(campaign?.campaignBrief?.postingStartDate ||
+                campaign?.campaignBrief?.postingEndDate) && (
+                <Box>
+                  <Typography sx={SectionTitleStyle}>Posting Period</Typography>
+                  <Typography sx={SectionBodyStyle}>{getPostingTimeline()}</Typography>
+                </Box>
+              )}
             </Stack>
           </Box>
 
@@ -469,27 +497,6 @@ const CampaignInfo = ({ campaign }) => {
               return null;
             }
 
-            // Helper to format posting timeline
-            const getPostingTimeline = () => {
-              const start = campaign?.campaignBrief?.postingStartDate;
-              const end = campaign?.campaignBrief?.postingEndDate;
-              if (!start && !end) return 'Not specified';
-
-              const formatDate = (date) => {
-                if (!date) return '';
-                return new Date(date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                });
-              };
-
-              if (start && end) {
-                return `${formatDate(start)} - ${formatDate(end)}`;
-              }
-              return formatDate(start || end);
-            };
-
             const renderAdditionalDetails1 = () => (
               <Stack className="body" spacing={3}>
                 <Stack direction="row" spacing={2}>
@@ -518,13 +525,6 @@ const CampaignInfo = ({ campaign }) => {
                             <Chip key={idx} label={format} size="small" sx={ChipStyle} />
                           ))}
                         </Box>
-                      </Box>
-                    )}
-                    {(campaign?.campaignBrief?.postingStartDate ||
-                      campaign?.campaignBrief?.postingEndDate) && (
-                      <Box>
-                        <Typography sx={SectionTitleStyle}>Posting Timeline</Typography>
-                        <Typography sx={SectionBodyStyle}>{getPostingTimeline()}</Typography>
                       </Box>
                     )}
                     {additionalDetails?.mainMessage && (
