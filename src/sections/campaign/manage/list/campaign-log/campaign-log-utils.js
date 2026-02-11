@@ -274,6 +274,8 @@ export function formatLogMessage(msg, performer) {
   // Campaign lifecycle
   if (/^campaign created$/i.test(msg)) return `${p} created the campaign`;
   if (/^campaign activated$/i.test(msg)) return `${p} activated the campaign`;
+  m = msg.match(/^campaign details edited\s*-\s*\[(.+?)\]/i);
+  if (m) return `${p} updated ${m[1]}`;
   if (/^campaign details edited/i.test(msg)) return `${p} updated campaign details`;
 
   // Login
@@ -417,6 +419,8 @@ export function formatLogSummary(msg, performer) {
   // Campaign lifecycle
   if (/^campaign created$/i.test(msg)) return `Campaign created`;
   if (/^campaign activated$/i.test(msg)) return `Campaign activated`;
+  m = msg.match(/^campaign details edited\s*-\s*\[(.+?)\]/i);
+  if (m) return `${m[1]} updated`;
   if (/^campaign details edited/i.test(msg)) return `Campaign details updated`;
 
   // Login
@@ -472,6 +476,11 @@ export function deduplicateLogs(classifiedLogs) {
   const groups = new Map();
 
   classifiedLogs.forEach((log, index) => {
+    // Campaign Edit logs should never be deduplicated — each edit is a distinct action
+    if (log.category === 'Campaign Edit') {
+      groups.set(`edit_${log.id}`, [{ log, index }]);
+      return;
+    }
     // Round timestamp to nearest 60 seconds for grouping
     const ts = Math.floor(new Date(log.createdAt).getTime() / 60000);
     const creator = extractCreatorName(log.action);

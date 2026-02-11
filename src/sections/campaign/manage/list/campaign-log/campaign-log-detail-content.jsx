@@ -462,6 +462,70 @@ DetailCampaignSection.propTypes = { info: PropTypes.object.isRequired };
 
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Format a change value for display
+// ---------------------------------------------------------------------------
+
+function formatChangeValue(val) {
+  if (val === null || val === undefined) return '\u2014'; // em-dash
+  if (Array.isArray(val)) return val.join(', ') || '\u2014';
+  if (typeof val === 'boolean') return val ? 'Yes' : 'No';
+  return String(val);
+}
+
+// ---------------------------------------------------------------------------
+
+function DetailChangesSection({ changes, sectionName }) {
+  return (
+    <DetailCard icon="solar:pen-bold" iconColor="#1340FF" headerBg="#EBF0FF" label={sectionName || 'Changes'}>
+      {changes.map((change, idx) => (
+        <Box
+          key={idx}
+          sx={{
+            ...(idx < changes.length - 1 && {
+              mb: 1.25,
+              pb: 1.25,
+              borderBottom: '1px dashed #E7E7E7',
+            }),
+          }}
+        >
+          {/* Field name */}
+          <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#221F20', mb: 0.75 }}>
+            {change.label}
+          </Typography>
+
+          {/* Before row */}
+          <Box sx={{ display: 'flex', gap: 0.75, mb: 0.5 }}>
+            <Typography sx={{ fontSize: 11, color: '#AEAEB2', width: 40, flexShrink: 0, pt: '1px' }}>
+              From
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: '#FF5630', wordBreak: 'break-all', lineHeight: 1.5, flex: 1 }}>
+              {formatChangeValue(change.old)}
+            </Typography>
+          </Box>
+
+          {/* After row */}
+          <Box sx={{ display: 'flex', gap: 0.75 }}>
+            <Typography sx={{ fontSize: 11, color: '#AEAEB2', width: 40, flexShrink: 0, pt: '1px' }}>
+              To
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: '#22C55E', fontWeight: 600, wordBreak: 'break-all', lineHeight: 1.5, flex: 1 }}>
+              {formatChangeValue(change.new)}
+            </Typography>
+          </Box>
+        </Box>
+      ))}
+    </DetailCard>
+  );
+}
+
+DetailChangesSection.propTypes = {
+  changes: PropTypes.array.isRequired,
+  sectionName: PropTypes.string,
+};
+
+// ---------------------------------------------------------------------------
+
 function DetailAmountSection({ amountChange }) {
   return (
     <DetailCard icon="solar:tag-price-bold" iconColor="#FFAB00" headerBg="#FFF8E6" label="Amount Change">
@@ -536,7 +600,7 @@ export default function CampaignLogDetailContent({ log, allLogs, campaign, photo
   const journey = useCreatorJourney(log, allLogs, creatorName);
   const creatorPhoto = creatorName ? (photoMap?.get(creatorName) || context.creator?.photoURL) : null;
 
-  const hasDetailCards = context.campaignInfo || context.editSection || context.invoice || context.amountChange;
+  const hasDetailCards = context.campaignInfo || context.editSection || context.changes?.length > 0 || context.invoice || context.amountChange;
 
   return (
     <Box sx={{ height: '100%', overflow: 'auto' }}>
@@ -651,13 +715,15 @@ export default function CampaignLogDetailContent({ log, allLogs, campaign, photo
             <DetailCampaignSection info={context.campaignInfo} />
           )}
 
-          {context.editSection && (
+          {context.changes?.length > 0 ? (
+            <DetailChangesSection changes={context.changes} sectionName={context.editSection} />
+          ) : context.editSection ? (
             <DetailCard icon="solar:pen-bold" iconColor="#1340FF" headerBg="#EBF0FF" label="Section Edited">
               <Typography sx={{ fontSize: 13, color: '#221F20', fontWeight: 500 }}>
                 {context.editSection}
               </Typography>
             </DetailCard>
-          )}
+          ) : null}
 
           {context.invoice && (
             <DetailInvoiceSection invoice={context.invoice} invoices={invoices} invoicesLoading={invoicesLoading} />
