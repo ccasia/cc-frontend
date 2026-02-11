@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import React, { useRef, useMemo, useState, useCallback } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { pdf } from '@react-pdf/renderer';
 
 import {
   Box,
@@ -47,6 +48,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { getBankCode, getPaymentMode } from 'src/contants/bank-codes';
 
 import InvoiceItem from './invoice-item';
+import InvoicePDF from '../invoice/invoice-pdf';
 import InvoiceTableToolbar from './invoice-table-toolbar';
 import InvoiceNewEditForm from '../invoice/invoice-new-edit-form';
 import InvoiceTableFiltersResult from './invoice-table-filters-result';
@@ -649,9 +651,10 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     try {
       const selectedInvoices = dataFiltered.filter((row) => table.selected.includes(row.id));
 
-      const actionableIds = selectedInvoices
-        .filter((invoice) => invoice.status === 'pending' || invoice.status === 'draft')
-        .map((invoice) => invoice.id);
+      const actionableInvoices = selectedInvoices.filter(
+        (invoice) => invoice.status === 'pending' || invoice.status === 'draft'
+      );
+      const actionableIds = actionableInvoices.map((invoice) => invoice.id);
 
       if (actionableIds.length === 0) {
         enqueueSnackbar('No Pending or Draft invoices selected.', { variant: 'info' });
@@ -659,8 +662,23 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         return;
       }
 
-      const res = await axiosInstance.post(endpoints.invoice.bulkUpdateInvoices, {
-        invoiceIds: actionableIds,
+      const formData = new FormData();
+
+      formData.append('invoiceIds', JSON.stringify(actionableIds));
+
+      enqueueSnackbar(`Generating ${actionableInvoices.length} PDF(s)...`, { variant: 'info' });
+
+      await Promise.all(
+        actionableInvoices.map(async (inv) => {
+          const pdfBlob = await pdf(<InvoicePDF invoice={inv} />).toBlob();
+          formData.append(`file_${inv.id}`, pdfBlob, `Invoice-${inv.invoiceNumber}.pdf`);
+        })
+      );
+
+      const res = await axiosInstance.post(endpoints.invoice.bulkUpdateInvoices, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
       if (res.status === 200) {
