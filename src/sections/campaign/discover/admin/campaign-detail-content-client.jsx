@@ -573,7 +573,6 @@ const CampaignDetailContentClient = ({ campaign }) => {
             const hasAdditionalDetails1 =
               campaign?.campaignBrief?.socialMediaPlatform?.length > 0 ||
               additionalDetails?.contentFormat?.length > 0 ||
-              campaign?.campaignBrief?.postingStartDate ||
               additionalDetails?.mainMessage ||
               additionalDetails?.keyPoints ||
               additionalDetails?.toneAndStyle ||
