@@ -7442,7 +7442,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                 >
                                   {comicCount}
                                 </text>
-                                {/* Educator number */}
+                                {/* Educator */}
                                 <text
                                   x={educatorTextX}
                                   y={educatorTextY}
