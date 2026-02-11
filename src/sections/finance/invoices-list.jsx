@@ -1,30 +1,30 @@
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 
 import {
   Box,
-  Button,
   Card,
   Table,
-  Stack,
+  Button,
   Dialog,
   Checkbox,
-  TableBody,
   TableRow,
+  TableBody,
   TableCell,
   TableHead,
   DialogContent,
   TableContainer,
-  Typography,
   CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useGetAllInvoiceStats from 'src/hooks/use-get-all-invoice-stats';
+
+import { useGetAllInvoices } from 'src/api/invoices';
 
 import Scrollbar from 'src/components/scrollbar';
-import Iconify from 'src/components/iconify';
 import {
   useTable,
   emptyRows,
@@ -33,8 +33,6 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
-import { useGetAllInvoices } from 'src/api/invoices';
-import useGetAllInvoiceStats from 'src/hooks/use-get-all-invoice-stats';
 import InvoiceItem from './invoice-item';
 import InvoiceTableToolbar from './invoice-table-toolbar';
 import InvoiceNewEditForm from '../invoice/invoice-new-edit-form';
@@ -94,11 +92,11 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   // Use paginated data if available, otherwise fallback to prop
   // Wait for data to load - if invoicesData is undefined, we're still loading
   // Once loaded, invoicesData will be an array (empty or with items)
-  const invoices = invoicesData !== undefined 
-    ? invoicesData 
-    : (invoicesProp && invoicesProp.length > 0) 
-      ? invoicesProp 
-      : [];
+  const invoices = useMemo(() => {
+    if (invoicesData !== undefined) return invoicesData;
+    if (invoicesProp && invoicesProp.length > 0) return invoicesProp;
+    return [];
+  }, [invoicesData, invoicesProp]);
 
   const campaigns = useMemo(() => {
     const data = invoices?.map((invoice) => invoice?.campaign?.name);
@@ -162,7 +160,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
     // Check if stats are loaded and have counts
     if (invoiceStats && invoiceStats.counts) {
-      const counts = invoiceStats.counts;
+      const {counts} = invoiceStats;
       return [
         { value: 'all', label: 'All', count: counts.total ?? 0 },
         { value: 'paid', label: 'Paid', count: counts.paid ?? 0 },
@@ -184,7 +182,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       { value: 'draft', label: 'Draft', count: 0 },
       { value: 'rejected', label: 'Rejected', count: 0 },
     ];
-  }, [invoiceStats, statsLoading]);
+  }, [invoiceStats]);
 
   const openEditInvoice = useCallback(
     (id, data) => {

@@ -46,7 +46,10 @@ export default function useSubmissionSocket({
 
     const handleContentSubmitted = (data) => {
       if (data.submissionId === submission.id) {
-        if ((hasPhotos && data.hasPhotos) || (hasRawFootage && data.hasRawFootage)) {
+        if (data.hasVideo) {
+          onUpdate?.();
+          enqueueSnackbar('New video draft submitted', { variant: 'info' });
+        } else if ((hasPhotos && data.hasPhotos) || (hasRawFootage && data.hasRawFootage)) {
           onUpdate?.();
           const contentType = hasPhotos ? 'photos' : 'raw footage';
           enqueueSnackbar(`New ${contentType} submitted`, { variant: 'info' });
@@ -66,9 +69,15 @@ export default function useSubmissionSocket({
     };
 
     const handleContentProcessed = (data) => {
-      if (data.submissionId === submission.id && hasRawFootage && data.hasRawFootage) {
+      if (data.submissionId === submission.id) {
         onUpdate?.(undefined, { revalidate: true });
-        enqueueSnackbar('Raw footage is now ready for review', { variant: 'success' });
+        if (data.hasRawFootage) {
+          enqueueSnackbar('Raw footage is now ready for review', { variant: 'success' });
+        } else if (data.hasVideo) {
+          enqueueSnackbar('Video is now ready for review', { variant: 'success' });
+        } else if (data.hasPhotos) {
+          enqueueSnackbar('Photos are now ready for review', { variant: 'success' });
+        }
       }
     };
 
@@ -77,18 +86,13 @@ export default function useSubmissionSocket({
     socket.on('v4:submission:updated', handleSubmissionUpdate);
     socket.on('v4:content:submitted', handleContentSubmitted);
     socket.on('v4:posting:updated', handlePostingUpdated);
-
-    if (hasRawFootage) {
-      socket.on('v4:content:processed', handleContentProcessed);
-    }
+    socket.on('v4:content:processed', handleContentProcessed);
 
     return () => {
       socket.off('v4:submission:updated', handleSubmissionUpdate);
       socket.off('v4:content:submitted', handleContentSubmitted);
       socket.off('v4:posting:updated', handlePostingUpdated);
-      if (hasRawFootage) {
-        socket.off('v4:content:processed', handleContentProcessed);
-      }
+      socket.off('v4:content:processed', handleContentProcessed);
       socket.emit('leave-campaign', campaign.id);
     };
   }, [socket, submission?.id, campaign?.id, onUpdate, localActionInProgress, userId, hasPhotos, hasRawFootage]);

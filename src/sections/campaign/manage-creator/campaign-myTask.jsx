@@ -229,7 +229,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
     ) {
       console.log('Auto-selecting POSTING stage');
       setSelectedStage('POSTING');
-      return;
+      
     }
     
     // DO NOT auto-select Final Draft - let creator manually choose
@@ -289,50 +289,33 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
     // }
 
     // Show Final Draft ONLY if First Draft is in CHANGES_REQUIRED status
-    // OR if Final Draft already exists and is active
+    // OR if Final Draft already exists and is active (excluding NOT_STARTED)
     if (
-      (firstDraftSubmission?.status === 'CHANGES_REQUIRED' || 
-       (finalDraftSubmission && 
-      (finalDraftSubmission?.status === 'IN_PROGRESS' || 
-       finalDraftSubmission?.status === 'CHANGES_REQUIRED' ||
-       finalDraftSubmission?.status === 'PENDING_REVIEW' ||
-         finalDraftSubmission?.status === 'APPROVED'))) &&
+      (firstDraftSubmission?.status === 'CHANGES_REQUIRED' ||
+        (finalDraftSubmission &&
+          finalDraftSubmission?.status !== 'NOT_STARTED' &&
+          ['IN_PROGRESS', 'CHANGES_REQUIRED', 'PENDING_REVIEW', 'APPROVED'].includes(finalDraftSubmission?.status))) &&
       !addedStages.has('FINAL_DRAFT')
     ) {
-      stages.unshift({ ...defaultSubmission[3] });
+      stages.unshift({ ...defaultSubmission.find((s) => s.type === 'FINAL_DRAFT') });
       addedStages.add('FINAL_DRAFT');
     }
 
-    // Show Posting if either First Draft or Final Draft is APPROVED
-    // Only show posting when the previous stage is fully approved
+    // Show Posting if:
+    // - First Draft approved directly (no Final Draft needed), OR
+    // - Final Draft is approved, OR
+    // - Posting submission already has an active status
     if (
-      ((firstDraftSubmission?.status === 'APPROVED' && !finalDraftSubmission) ||
-       (finalDraftSubmission?.status === 'APPROVED')) &&
+      (
+        (firstDraftSubmission?.status === 'APPROVED' &&
+          (!finalDraftSubmission || finalDraftSubmission?.status === 'NOT_STARTED')) ||
+        finalDraftSubmission?.status === 'APPROVED' ||
+        (postingSubmission &&
+          ['IN_PROGRESS', 'PENDING_REVIEW', 'APPROVED'].includes(postingSubmission?.status))
+      ) &&
       !addedStages.has('POSTING')
     ) {
-      stages.unshift({ ...defaultSubmission[4] });
-      addedStages.add('POSTING');
-    }
-
-    // Show Posting if First Draft is approved without changes (skip Final Draft)
-    if (
-      firstDraftSubmission?.status === 'APPROVED' &&
-      (!finalDraftSubmission || finalDraftSubmission?.status === 'NOT_STARTED') &&
-      !addedStages.has('POSTING')
-    ) {
-      stages.unshift({ ...defaultSubmission[4] });
-      addedStages.add('POSTING');
-    }
-
-    // Show Posting if it's in progress, pending review, or approved
-    if (
-      postingSubmission && 
-      (postingSubmission?.status === 'IN_PROGRESS' || 
-       postingSubmission?.status === 'PENDING_REVIEW' ||
-       postingSubmission?.status === 'APPROVED') &&
-      !addedStages.has('POSTING')
-    ) {
-      stages.unshift({ ...defaultSubmission[4] });
+      stages.unshift({ ...defaultSubmission.find((s) => s.type === 'POSTING') });
       addedStages.add('POSTING');
     }
 

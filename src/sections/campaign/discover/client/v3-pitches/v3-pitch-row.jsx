@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import React, { useState } from 'react';
 
-import { Box, Link, Stack, Avatar, Tooltip, Popover, MenuItem, TableRow, TableCell, Typography, IconButton, CircularProgress } from '@mui/material';
+import { Box, Link, Stack, Avatar, Tooltip, Popover, TableRow, TableCell, Typography, IconButton, CircularProgress } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
