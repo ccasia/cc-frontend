@@ -17,7 +17,40 @@ const SUBTITLES = {
 
 // ---------------------------------------------------------------------------
 
-export default function CampaignLogEmptyState({ tab }) {
+export default function CampaignLogEmptyState({ tab, query }) {
+  if (query) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 10,
+          px: 3,
+        }}
+      >
+        <Iconify icon="eva:search-fill" width={56} sx={{ color: '#8e8e93', mb: 2 }} />
+
+        <Typography
+          sx={{
+            fontFamily: 'fontSecondaryFamily',
+            fontSize: 28,
+            fontWeight: 400,
+            color: '#636366',
+            mb: 0.5,
+          }}
+        >
+          No results found
+        </Typography>
+
+        <Typography variant="body1" sx={{ color: '#8e8e93' }}>
+          Try a different search term or filter
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box
       sx={{
@@ -56,4 +89,5 @@ export default function CampaignLogEmptyState({ tab }) {
 
 CampaignLogEmptyState.propTypes = {
   tab: PropTypes.string,
+  query: PropTypes.string,
 };

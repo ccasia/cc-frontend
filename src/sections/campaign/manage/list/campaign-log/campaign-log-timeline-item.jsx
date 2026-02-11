@@ -8,7 +8,7 @@ import { getOutreachStatusConfig } from 'src/contants/outreach';
 
 import Iconify from 'src/components/iconify';
 
-import { formatLogTime, getCategoryMeta, getPerformerBadge } from './campaign-log-utils';
+import { formatLogTime, getCategoryMeta } from './campaign-log-utils';
 
 // ---------------------------------------------------------------------------
 // Static sx constants — avoids recreating on every render
@@ -46,7 +46,6 @@ const CARD_SX = {
   py: 1.5,
   cursor: 'pointer',
   transition: 'background-color 0.15s',
-  '&:hover': { bgcolor: '#FAFAFA' },
 };
 
 const TOP_ROW_SX = { display: 'flex', alignItems: 'center' };
@@ -75,18 +74,6 @@ const ACTION_TEXT_BASE_SX = {
 
 const TIME_SX = { color: '#8e8e93', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0, ml: 2 };
 
-const EXPANDED_DETAILS_SX = {
-  display: 'flex',
-  alignItems: 'center',
-  flexWrap: 'wrap',
-  gap: 0.75,
-  mt: 1,
-  pt: 1,
-  ml: '58px',
-  borderTop: '1px solid #f0f0f0',
-};
-
-const DOT_SX = { color: '#d0d0d0' };
 
 const STATUS_CHIP_SX = {
   textTransform: 'uppercase',
@@ -239,21 +226,26 @@ function renderActionParts(formattedMessage, photoMap) {
 const CampaignLogTimelineItem = memo(({
   entry,
   photoMap,
-  isExpanded,
-  onToggle,
+  isSelected,
+  onSelect,
 }) => {
   const meta = getCategoryMeta(entry.category);
-  const badge = getPerformerBadge(entry.performerRole);
-
-  const fullDate = new Date(entry.createdAt).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
 
   return (
-    <Box onClick={onToggle} sx={{ ...CARD_SX, borderLeftColor: meta.color }}>
-      {/* Top row: icon + text + time + chevron */}
+    <Box
+      onClick={onSelect}
+      sx={{
+        ...CARD_SX,
+        borderLeftColor: meta.color,
+        ...(!isSelected && {
+          '&:hover': { bgcolor: '#FAFAFA' },
+        }),
+        ...(isSelected && {
+          bgcolor: '#EBF0FF',
+          boxShadow: 'inset 0 0 0 1px #1340FF',
+        }),
+      }}
+    >
       <Box sx={TOP_ROW_SX}>
         {/* Category icon */}
         <Box sx={{ ...ICON_CIRCLE_SX, bgcolor: meta.bg }}>
@@ -261,7 +253,7 @@ const CampaignLogTimelineItem = memo(({
         </Box>
 
         {/* Action text */}
-        <Box sx={{ ...ACTION_TEXT_BASE_SX, flexWrap: isExpanded ? 'wrap' : 'nowrap' }}>
+        <Box sx={{ ...ACTION_TEXT_BASE_SX, flexWrap: 'nowrap' }}>
           {renderActionParts(entry.formattedAction, photoMap)}
         </Box>
 
@@ -269,78 +261,7 @@ const CampaignLogTimelineItem = memo(({
         <Typography variant="caption" sx={TIME_SX}>
           {formatLogTime(entry.createdAt)}
         </Typography>
-
-        {/* Chevron */}
-        <Iconify
-          icon="eva:chevron-right-fill"
-          width={20}
-          sx={{
-            color: '#c7c7cc',
-            flexShrink: 0,
-            ml: 1,
-            transition: 'transform 0.2s',
-            transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-          }}
-        />
       </Box>
-
-      {/* Expanded details — conditionally rendered (no Collapse for react-window compat) */}
-      {isExpanded && (
-        <Box sx={EXPANDED_DETAILS_SX}>
-          <Typography variant="caption" sx={{ fontSize: 13, fontWeight: 600, color: '#636366' }}>
-            {entry.performedBy}
-          </Typography>
-          {badge && (
-            <Box
-              component="span"
-              sx={{
-                px: 0.75,
-                py: '2px',
-                borderRadius: 0.5,
-                bgcolor: badge.bg,
-                color: badge.color,
-                fontSize: 11,
-                fontWeight: 700,
-                lineHeight: 1.4,
-              }}
-            >
-              {badge.label}
-            </Box>
-          )}
-
-          <Typography variant="caption" sx={DOT_SX}>
-            ·
-          </Typography>
-
-          <Box
-            component="span"
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '3px',
-              px: 0.75,
-              py: '2px',
-              borderRadius: 0.5,
-              bgcolor: meta.bg,
-              color: meta.color,
-              fontSize: 12,
-              fontWeight: 600,
-              lineHeight: 1.4,
-            }}
-          >
-            <Iconify icon={meta.icon} width={13} />
-            {entry.category}
-          </Box>
-
-          <Typography variant="caption" sx={DOT_SX}>
-            ·
-          </Typography>
-
-          <Typography variant="caption" sx={{ fontSize: 13, color: '#8e8e93' }}>
-            {fullDate} at {formatLogTime(entry.createdAt)}
-          </Typography>
-        </Box>
-      )}
     </Box>
   );
 });
@@ -356,8 +277,8 @@ CampaignLogTimelineItem.propTypes = {
     createdAt: PropTypes.string,
   }).isRequired,
   photoMap: PropTypes.instanceOf(Map),
-  isExpanded: PropTypes.bool,
-  onToggle: PropTypes.func,
+  isSelected: PropTypes.bool,
+  onSelect: PropTypes.func,
 };
 
 export default CampaignLogTimelineItem;

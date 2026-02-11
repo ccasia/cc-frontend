@@ -56,6 +56,21 @@ const RULES = [
   { test: (m) => (m.includes('approved by client') || m.includes('draft approved by client')), category: 'Draft Approved', groups: ['client'] },
   { test: (m) => m.includes('changes requested on') && m.includes('by client'), category: 'Changes Requested', groups: ['client'] },
 
+  // V3 individual content review by admin (format: Admin "X" approved/requested...)
+  { test: (m) => /^admin ".+?" approved/.test(m), category: 'Draft Approved', groups: ['admin'] },
+  { test: (m) => /^admin ".+?" requested changes/.test(m), category: 'Changes Requested', groups: ['admin'] },
+
+  // V3 overall submission approval (format: X approved Y's Final Draft)
+  { test: (m) => /approved .+?('s|'s) (first draft|final draft)/i.test(m), category: 'Draft Approved', groups: ['admin'] },
+  { test: (m) => /requested changes on .+?('s|'s) (first draft|final draft)/i.test(m), category: 'Changes Requested', groups: ['admin'] },
+
+  // Posting link approval/rejection
+  { test: (m) => m.includes('approved') && m.includes('posting link'), category: 'Draft Approved', groups: ['admin'] },
+  { test: (m) => m.includes('requested changes') && m.includes('posting link'), category: 'Changes Requested', groups: ['admin'] },
+
+  // V4 draft rejection
+  { test: (m) => m.includes('draft rejected by'), category: 'Draft Rejected', groups: ['admin'] },
+
   // Invoice
   { test: (m) => m.includes('invoice') && m.includes('was generated'), category: 'Invoice', groups: ['invoice'] },
   { test: (m) => m.includes('deleted invoice'), category: 'Invoice', groups: ['invoice'] },
@@ -134,6 +149,7 @@ const CATEGORY_META = {
   Posting:            { color: '#2E7D32', bg: '#E8F5E9', icon: 'solar:share-bold' },
   'Draft Approved':   { color: '#22C55E', bg: '#E8FAF0', icon: 'solar:check-circle-bold' },
   'Changes Requested': { color: '#FFAB00', bg: '#FFF8E6', icon: 'solar:refresh-circle-bold' },
+  'Draft Rejected':   { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:close-circle-bold' },
   'Amount Changed':   { color: '#FFAB00', bg: '#FFF8E6', icon: 'solar:tag-price-bold' },
   Invoice:            { color: '#8E33FF', bg: '#F3E8FF', icon: 'solar:bill-list-bold' },
   Login:              { color: '#00B8D9', bg: '#E6F9FD', icon: 'solar:login-2-bold' },
@@ -266,11 +282,110 @@ export function formatLogMessage(msg, performer) {
   // Analytics
   if (/export campaign analytics/i.test(msg)) return `${p} exported campaign analytics`;
 
+  // V3 individual content review — Admin "X" approved/requested changes to Y draft Z for creator "W"
+  m = msg.match(/^Admin .+? approved (first|final) draft (video|raw footage|photo) for creator (.+)$/i);
+  if (m) return `${qn(m[3])}'s ${m[1].toLowerCase()} draft ${m[2].toLowerCase()} has been ${a('approved')} by ${p}`;
+
+  m = msg.match(/^Admin .+? requested changes to (first|final) draft (video|raw footage|photo) for creator (.+)$/i);
+  if (m) return `${qn(m[3])}'s ${m[1].toLowerCase()} draft ${m[2].toLowerCase()} has been ${a('changes_requested')} by ${p}`;
+
+  // V3 overall submission approval — X approved Y's First/Final Draft
+  m = msg.match(/^.+? approved (.+?)(?:'s|'s) (First Draft|Final Draft)(.*)$/i);
+  if (m) return `${qn(m[1])}'s ${m[2].toLowerCase()} has been ${a('approved')} by ${p}`;
+
+  m = msg.match(/^.+? requested changes on (.+?)(?:'s|'s) (First Draft|Final Draft)$/i);
+  if (m) return `${qn(m[1])}'s ${m[2].toLowerCase()} has been ${a('changes_requested')} by ${p}`;
+
+  // Posting link approval — X approved/requested changes on Y's submission Posting Link
+  m = msg.match(/^.+? approved (.+?)(?:'s|'s) submission Posting Link$/i);
+  if (m) return `${qn(m[1])}'s posting link has been ${a('approved')} by ${p}`;
+
+  m = msg.match(/^.+? requested changes on (.+?)(?:'s|'s) submission Posting Link$/i);
+  if (m) return `${qn(m[1])}'s posting link has been ${a('changes_requested')} by ${p}`;
+
+  // V4 draft rejection
+  m = msg.match(/Draft rejected by (?:admin|client) .+? from Creator (.+)$/i);
+  if (m) return `${qn(m[1])}'s draft has been ${a('rejected')} by ${p}`;
+
   return msg;
 }
 
 // ---------------------------------------------------------------------------
-// 6. Tab counts (renumbered from here onward) — single-pass count for all tabs
+// 6. Deduplicate logs — keep richer entry when duplicates exist
+// ---------------------------------------------------------------------------
+
+function extractCreatorName(msg) {
+  let m;
+  // Pattern: for creator "Willy Wong" or from Creator "Willy Wong"
+  m = msg.match(/(?:for |from )(?:c|C)reator "(.+?)"/);
+  if (m) return m[1];
+  // Pattern: X approved Willy Wong's Final Draft
+  m = msg.match(/(?:approved|requested changes on) (.+?)(?:'s|'s)/i);
+  if (m) return m[1].replace(/^"|"$/g, '').trim();
+  return '';
+}
+
+export function deduplicateLogs(classifiedLogs) {
+  const groups = new Map();
+
+  classifiedLogs.forEach((log, index) => {
+    // Round timestamp to nearest 60 seconds for grouping
+    const ts = Math.floor(new Date(log.createdAt).getTime() / 60000);
+    const creator = extractCreatorName(log.action);
+    const key = `${ts}|${log.category}|${log.performedBy}|${creator}`;
+
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key).push({ log, index });
+  });
+
+  const keepSet = new Set();
+
+  groups.forEach((entries) => {
+    if (entries.length === 1) {
+      keepSet.add(entries[0].index);
+      return;
+    }
+    // Prefer entry whose original message has quoted names (richer → has avatars)
+    const withQuotes = entries.find((e) => e.log.action.includes('"'));
+    if (withQuotes) {
+      keepSet.add(withQuotes.index);
+    } else {
+      // Keep the first one if none have quotes
+      keepSet.add(entries[0].index);
+    }
+  });
+
+  return classifiedLogs.filter((_, index) => keepSet.has(index));
+}
+
+// ---------------------------------------------------------------------------
+// 7. Tab counts — single-pass count for all tabs
+// ---------------------------------------------------------------------------
+
+export function filterLogsBySearch(logs, query, creatorName) {
+  let result = logs;
+
+  if (creatorName) {
+    result = result.filter((log) => log.formattedAction.includes(`"${creatorName}"`));
+  }
+
+  if (query) {
+    const q = query.toLowerCase();
+    result = result.filter(
+      (log) =>
+        log.formattedAction.toLowerCase().includes(q) ||
+        log.performedBy.toLowerCase().includes(q) ||
+        log.category.toLowerCase().includes(q)
+    );
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// 8. Tab counts — single-pass count for all tabs
 // ---------------------------------------------------------------------------
 
 export function getTabCounts(classifiedLogs) {
@@ -322,7 +437,12 @@ export function groupLogsByDate(logs) {
 // ---------------------------------------------------------------------------
 
 export function formatLogTime(createdAt) {
-  return dayjs(createdAt).format('h:mm A');
+  const d = dayjs(createdAt);
+  const time = d.format('h:mm A');
+
+  if (d.isToday()) return `Today at ${time}`;
+  if (d.isYesterday()) return `Yesterday at ${time}`;
+  return `${d.format('MMM D')} at ${time}`;
 }
 
 // ---------------------------------------------------------------------------
