@@ -49,9 +49,14 @@ const CampaignGeneralInfo = () => {
   const { data, isLoading, mutate } = useSWR(endpoints.campaign.total, fetcher);
   const { setValue, watch } = useFormContext();
 
-  // For date handling
+  // Campaign timeline
   const startDate = watch('campaignStartDate');
   const endDate = watch('campaignEndDate');
+
+  // Posting timeline
+  const postingStartDate = watch('postingStartDate');
+  const postingEndDate = watch('postingEndDate');
+
 
   useEffect(() => {
     if (socket) {
@@ -85,6 +90,16 @@ const CampaignGeneralInfo = () => {
       }
     }
   }, [startDate, setValue]);
+
+  useEffect(() => {
+    if (postingStartDate) {
+      const start = dayjs(postingStartDate);
+      if (start.isValid()) {
+        const newEndDate = start.add(7, 'day');
+        setValue('postingEndDate', newEndDate.toDate());
+      }
+    }
+  }, [postingStartDate, setValue]);
 
   return (
     <>
@@ -140,6 +155,7 @@ const CampaignGeneralInfo = () => {
                 />
               </FormField>
             </Box>
+
             {/* About Brand - Full width */}
             <Box mb={2}>
               <FormField label="About the Brand" required={false}>
@@ -153,8 +169,9 @@ const CampaignGeneralInfo = () => {
                 />
               </FormField>
             </Box>
+
             {/* Campaign start/end date - Two columns */}
-            <Grid container spacing={2}>
+            <Grid container spacing={2} mb={2}>
               <Grid item xs={6}>
                 <FormField label="Campaign Start Date">
                   <DatePicker
@@ -194,8 +211,48 @@ const CampaignGeneralInfo = () => {
                 </FormField>
               </Grid>
             </Grid>
+
+            {/* Campaign Posting Period */}
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <FormField label='Posting Period'>
+                  <Box display={'flex'} flexDirection={'row'} gap={2}>
+                    <DatePicker
+                      value={postingStartDate}
+                      onChange={(newValue) => {
+                        setValue('postingStartDate', newValue, { shouldValidate: true });
+                      }}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          placeholder: 'Start Date',
+                          error: false,
+                        },
+                      }}
+                    />
+                    <DatePicker
+                      value={postingEndDate}
+                      onChange={(newValue) => {
+                        setValue('postingEndDate', newValue, { shouldValidate: true });
+                      }}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          placeholder: 'End Date',
+                          error: false,
+                        },
+                      }}
+                    />
+                  </Box>
+                </FormField>
+              </Grid>
+            </Grid>
+          </Grid>
+
+          {/* Column two */}
+          <Grid item xs={12} sm={6}>
             {/* Product/Service Name - Full width */}
-            <Box sx={{ mt: 2 }}>
+            <Box mb={2}>
               <FormField label="Product/Service Name" required={false}>
                 <RHFTextField
                   name="productName"
@@ -205,9 +262,7 @@ const CampaignGeneralInfo = () => {
                 />
               </FormField>
             </Box>
-          </Grid>
-          {/* Column two */}
-          <Grid item xs={12} sm={6}>
+
             <Box mb={2}>
               <FormField label="Website Link" required={false}>
                 <RHFTextField
