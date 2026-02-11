@@ -315,7 +315,7 @@ const CampaignModal = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" scroll="body">
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" scroll="body">
       <DialogContent sx={{ p: 0 }}>
         {/* Campaign image */}
         <Box
