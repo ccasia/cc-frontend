@@ -126,6 +126,27 @@ const CampaignDetailContentClient = ({ campaign }) => {
     }
   };
 
+  // Helper to format posting timeline
+  const getPostingTimeline = () => {
+    const start = campaign?.campaignBrief?.postingStartDate;
+    const end = campaign?.campaignBrief?.postingEndDate;
+    if (!start && !end) return 'Not specified';
+
+    const formatDate = (date) => {
+      if (!date) return '';
+      return new Date(date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    };
+
+    if (start && end) {
+      return `${formatDate(start)} - ${formatDate(end)}`;
+    }
+    return formatDate(start || end);
+  };
+
   const requirement = campaign?.campaignRequirement;
 
   // Render mobile version on smaller screens
@@ -212,6 +233,14 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   {campaign?.description || 'No campaign description available.'}
                 </Typography>
               </Box>
+              
+              {(campaign?.campaignBrief?.postingStartDate ||
+                campaign?.campaignBrief?.postingEndDate) && (
+                <Box>
+                  <Typography sx={SectionTitleStyle}>Posting Period</Typography>
+                  <Typography sx={SectionBodyStyle}>{getPostingTimeline()}</Typography>
+                </Box>
+              )}
             </Stack>
           </Box>
 
@@ -544,7 +573,6 @@ const CampaignDetailContentClient = ({ campaign }) => {
             const hasAdditionalDetails1 =
               campaign?.campaignBrief?.socialMediaPlatform?.length > 0 ||
               additionalDetails?.contentFormat?.length > 0 ||
-              campaign?.campaignBrief?.postingStartDate ||
               additionalDetails?.mainMessage ||
               additionalDetails?.keyPoints ||
               additionalDetails?.toneAndStyle ||
@@ -569,27 +597,6 @@ const CampaignDetailContentClient = ({ campaign }) => {
             if (!hasAdditionalDetails1 && !hasAdditionalDetails2) {
               return null;
             }
-
-            // Helper to format posting timeline
-            const getPostingTimeline = () => {
-              const start = campaign?.campaignBrief?.postingStartDate;
-              const end = campaign?.campaignBrief?.postingEndDate;
-              if (!start && !end) return 'Not specified';
-
-              const formatDate = (date) => {
-                if (!date) return '';
-                return new Date(date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                });
-              };
-
-              if (start && end) {
-                return `${formatDate(start)} - ${formatDate(end)}`;
-              }
-              return formatDate(start || end);
-            };
 
             const renderAdditionalDetails1 = () => (
               <Stack className="body" spacing={3}>
@@ -619,13 +626,6 @@ const CampaignDetailContentClient = ({ campaign }) => {
                             <Chip key={idx} label={format} size="small" sx={ChipStyle} />
                           ))}
                         </Box>
-                      </Box>
-                    )}
-                    {(campaign?.campaignBrief?.postingStartDate ||
-                      campaign?.campaignBrief?.postingEndDate) && (
-                      <Box>
-                        <Typography sx={SectionTitleStyle}>Posting Timeline</Typography>
-                        <Typography sx={SectionBodyStyle}>{getPostingTimeline()}</Typography>
                       </Box>
                     )}
                     {additionalDetails?.mainMessage && (
@@ -1031,7 +1031,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
               </Typography>
             </Box>
 
-            <Box className="body" sx={{ display: 'flex', gap: 1 }}>
+            <Box className="body" sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               {[
                 { label: 'UGC Videos', value: true },
                 { label: 'Raw Footage', value: campaign?.rawFootage },
@@ -1044,20 +1044,16 @@ const CampaignDetailContentClient = ({ campaign }) => {
                     <Chip
                       key={deliverable.label}
                       label={deliverable.label}
-                      size="small"
+                      size="medium"
                       sx={{
                         bgcolor: '#F5F5F5',
                         borderRadius: 1,
                         color: '#231F20',
-                        height: '32px',
                         '& .MuiChip-label': {
                           fontWeight: 700,
-                          px: 1.5,
-                          height: '100%',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          marginTop: '-3px',
                         },
                         '&:hover': { bgcolor: '#F5F5F5' },
                       }}

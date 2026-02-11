@@ -12,18 +12,7 @@ import DialogContent from '@mui/material/DialogContent';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import {
-  Box,
-  Chip,
-  Grid,
-  Stack,
-  Paper,
-  Button,
-  Avatar,
-  Divider,
-  Typography,
-  IconButton,
-} from '@mui/material';
+import { Box, Chip, Stack, Button, Avatar, Divider, Typography, IconButton } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -43,16 +32,14 @@ const ChipStyle = {
   borderColor: '#EBEBEB',
   borderRadius: 0.8,
   color: '#636366',
-  height: '32px',
-  boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+  py: 2,
+  boxShadow: '0px -1.5px 0px 0px #E7E7E7 inset',
   '& .MuiChip-label': {
     fontWeight: 700,
-    px: 1,
-    height: '100%',
+    fontSize: 13,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: '-3px',
   },
   '&:hover': { bgcolor: '#FFF' },
 };
@@ -62,13 +49,19 @@ const SectionBoxStyles = {
   borderRadius: 1,
   px: 1,
   py: 0.8,
-  mb: 1.5,
+  mb: 1,
+  mt: 2.5,
 };
 
 // Reusable text styles for section titles
 const SectionTitleStyles = {
   fontSize: 14,
   fontWeight: 600,
+};
+
+const SubSectionBoxStyles = {
+  display: 'flex',
+  flexDirection: 'column',
 };
 
 const SubSectionTitleStyles = { color: '#8e8e93', mb: 0.5, fontWeight: 600 };
@@ -224,6 +217,8 @@ const CampaignModal = ({
   const getGeographicFocus = () => {
     if (!requirement?.geographic_focus) return 'Not specified';
     if (requirement.geographic_focus === 'SEAregion') return 'SEA Region';
+    if (requirement.geographic_focus === 'KualaLumpur') return 'Kuala Lumpur';
+    if (requirement.geographic_focus === 'EastMalaysia') return 'East Malaysia';
     if (requirement.geographic_focus === 'others') return requirement.geographicFocusOthers;
     return capitalizeFirstLetter(requirement.geographic_focus);
   };
@@ -235,43 +230,11 @@ const CampaignModal = ({
     return capitalizeFirstLetter(type);
   };
 
+  console.log(campaign.company)
+
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      fullWidth
-      maxWidth="md"
-      PaperProps={{
-        sx: {
-          borderRadius: 2,
-          display: 'flex',
-          flexDirection: 'column',
-          maxHeight: isSmallScreen ? '85vh' : '98vh',
-          position: 'relative',
-          width: isSmallScreen ? '95vw' : '100vh',
-        },
-      }}
-    >
-      <DialogContent
-        sx={{
-          p: 0,
-          overflow: { xs: 'auto', md: 'hidden' }, // Enable scrolling only on mobile
-          '&::-webkit-scrollbar': {
-            width: '8px',
-          },
-          '&::-webkit-scrollbar-track': {
-            background: '#f1f1f1',
-            borderRadius: '4px',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: '#888',
-            borderRadius: '4px',
-          },
-          '&::-webkit-scrollbar-thumb:hover': {
-            background: '#555',
-          },
-        }}
-      >
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" scroll="body">
+      <DialogContent sx={{ p: 0 }}>
         {/* Campaign image */}
         <Box
           sx={{
@@ -469,7 +432,7 @@ const CampaignModal = ({
                   fontWeight: 480,
                 }}
               >
-                {campaign?.company?.name}
+                {campaign?.company?.name || campaign?.brand?.name}
               </Typography>
             </Stack>
             <Stack
@@ -741,336 +704,202 @@ const CampaignModal = ({
             <CampaignModalMobile campaign={campaign} />
           ) : (
             <>
-              <Divider sx={{ my: 2, mb: 3, mt: 4 }} />
+              <Divider sx={{ mt: 4 }} />
 
-              {/* Campaign details grid */}
-              <Grid container spacing={2}>
+              {/* Campaign details */}
+              <Box display="flex" flexDirection="row">
                 {/* Left column */}
-                <Grid item xs={12} md={6}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      pr: { sm: 2.5 },
-                      maxHeight: {
-                        xs: 'auto',
-                        md: 'calc(100vh - 470px - min(80px, max(0px, var(--campaign-name-height, 0px))))',
-                      },
-                      overflow: {
-                        xs: 'visible',
-                        md: 'auto',
-                      },
-                      '&::-webkit-scrollbar': {
-                        width: '5px',
-                      },
-                      '&::-webkit-scrollbar-track': {
-                        background: '#f1f1f1',
-                        borderRadius: '4px',
-                      },
-                      '&::-webkit-scrollbar-thumb': {
-                        background: '#888',
-                        borderRadius: '4px',
-                      },
-                      '&::-webkit-scrollbar-thumb:hover': {
-                        background: '#555',
-                      },
-                      scrollbarWidth: 'thin',
-                    }}
-                  >
-                    <Stack spacing={2}>
-                      {/* Posting Period */}
-                      <Box>
-                        <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                          Posting Period
+                <Stack flex={1}>
+                  {/* Posting Period */}
+                  <Box sx={{ ...SubSectionBoxStyles, pt: 2 }}>
+                    <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                      Posting Period
+                    </Typography>
+                    <Typography variant="body2">{renderCampaignPostingPeriod()}</Typography>
+                  </Box>
+
+                  {/* Campaign General Info */}
+                  <Box>
+                    <Box
+                      sx={{
+                        ...SectionBoxStyles,
+                        border: '1px solid #0067D5',
+                        borderBottom: '3px solid #0067D5',
+                      }}
+                    >
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Iconify icon="material-symbols:info-outline" width={20} color="#0067D5" />
+                        <Typography
+                          sx={{
+                            ...SectionTitleStyles,
+                            color: '#0067D5',
+                          }}
+                        >
+                          GENERAL INFORMATION
                         </Typography>
-                        <Typography variant="body2">{renderCampaignPostingPeriod()}</Typography>
+                      </Stack>
+                    </Box>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box sx={{ ...SubSectionBoxStyles }}>
+                        <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                          Product / Service Name
+                        </Typography>
+                        <Typography variant="body2">
+                          {campaign?.productName || 'Not specified'}
+                        </Typography>
                       </Box>
+                      <Box sx={{ ...SubSectionBoxStyles }}>
+                        <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                          Campaign Info
+                        </Typography>
+                        <Typography variant="body2">{campaign?.description}</Typography>
+                      </Box>
+                    </Box>
+                  </Box>
 
-                      {/* Campaign General Info */}
-                      <Box sx={{ mb: 2 }}>
-                        <Box
+                  {/* Campaign Target Audience */}
+                  <Box>
+                    <Box
+                      sx={{
+                        ...SectionBoxStyles,
+                        border: '1px solid #FF3500',
+                        borderBottom: '3px solid #FF3500',
+                      }}
+                    >
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Iconify
+                          icon="material-symbols-light:groups-outline"
                           sx={{
-                            ...SectionBoxStyles,
-                            border: '1px solid #0067D5',
-                            borderBottom: '3px solid #0067D5',
+                            color: '#FF3500',
+                            width: 25,
+                            height: 25,
+                            mt: -0.5,
+                            ml: 0.5,
+                          }}
+                        />
+                        <Typography
+                          sx={{
+                            ...SectionTitleStyles,
+                            color: '#FF3500',
                           }}
                         >
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Iconify
-                              icon="material-symbols:info-outline"
-                              width={20}
-                              color="#0067D5"
-                            />
-                            <Typography
-                              sx={{
-                                ...SectionTitleStyles,
-                                color: '#0067D5',
-                              }}
-                            >
-                              GENERAL INFORMATION
-                            </Typography>
-                          </Stack>
-                        </Box>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          <Box>
+                          {hasSecondaryAudience ? 'PRIMARY AUDIENCE' : 'TARGET AUDIENCE'}
+                        </Typography>
+                      </Stack>
+                    </Box>
+                    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1 }}>
+                      <Box sx={{ ...SubSectionBoxStyles, flex: 1, gap: 1 }}>
+                        {[
+                          {
+                            label: 'Gender',
+                            data: campaign?.campaignRequirement?.gender?.map(capitalizeFirstLetter),
+                          },
+                          { label: 'Age', data: campaign?.campaignRequirement?.age },
+                          {
+                            label: 'Country',
+                            data: campaign?.campaignRequirement?.country
+                              ? [campaign.campaignRequirement.country]
+                              : [],
+                          },
+                          { label: 'Language', data: campaign?.campaignRequirement?.language },
+                        ].map((item, index) => (
+                          <Box sx={{ ...SubSectionBoxStyles }} key={index}>
                             <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                              Product / Service Name
+                              {item.label}
                             </Typography>
-                            <Typography variant="body2">
-                              {campaign?.productName || 'Not specified'}
-                            </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                              {item.data?.map((value, idx) => (
+                                <Chip key={idx} label={value} size="small" sx={ChipStyle} />
+                              ))}
+                            </Box>
                           </Box>
-                          <Box>
-                            <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                              Campaign Info
-                            </Typography>
-                            <Typography variant="body2">{campaign?.description}</Typography>
-                          </Box>
-                        </Box>
+                        ))}
                       </Box>
-
-                      {/* Campaign Target Audience */}
-                      <Box sx={{ mb: 2 }}>
-                        <Box
-                          sx={{
-                            ...SectionBoxStyles,
-                            border: '1px solid #FF3500',
-                            borderBottom: '3px solid #FF3500',
-                          }}
-                        >
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Iconify
-                              icon="material-symbols-light:groups-outline"
-                              sx={{
-                                color: '#FF3500',
-                                width: 25,
-                                height: 25,
-                                mt: -0.5,
-                                ml: 0.5,
-                              }}
-                            />
-                            <Typography
-                              sx={{
-                                ...SectionTitleStyles,
-                                color: '#FF3500',
-                              }}
-                            >
-                              {hasSecondaryAudience ? 'PRIMARY AUDIENCE' : 'TARGET AUDIENCE'}
-                            </Typography>
-                          </Stack>
-                        </Box>
-                        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
-                            {[
-                              {
-                                label: 'Gender',
-                                data: campaign?.campaignRequirement?.gender?.map(
-                                  capitalizeFirstLetter
-                                ),
-                              },
-                              { label: 'Age', data: campaign?.campaignRequirement?.age },
-                              {
-                                label: 'Country',
-                                data: campaign?.campaignRequirement?.country
-                                  ? [campaign.campaignRequirement.country]
-                                  : [],
-                              },
-                              { label: 'Language', data: campaign?.campaignRequirement?.language },
-                            ].map((item, index) => (
-                              <Box key={index}>
-                                <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                  {item.label}
-                                </Typography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
-                                  {item.data?.map((value, idx) => (
-                                    <Chip key={idx} label={value} size="small" sx={ChipStyle} />
-                                  ))}
-                                </Box>
-                              </Box>
+                      <Box sx={{ ...SubSectionBoxStyles, flex: 1, gap: 1 }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                          <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                            Creator&apos;s Interest
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                            {requirement?.creator_persona.map((value, idx) => (
+                              <Chip
+                                key={idx}
+                                label={getProperCase(value)}
+                                size="small"
+                                sx={ChipStyle}
+                              />
                             ))}
                           </Box>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
-                            <Box>
-                              <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                Creator&apos;s Interest
-                              </Typography>
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
-                                {requirement?.creator_persona.map((value, idx) => (
-                                  <Chip
-                                    key={idx}
-                                    label={getProperCase(value)}
-                                    size="small"
-                                    sx={ChipStyle}
-                                  />
-                                ))}
-                              </Box>
-                            </Box>
-                            <Box>
-                              <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                User Persona
-                              </Typography>
-                              <Typography variant="body2">{requirement?.user_persona}</Typography>
-                            </Box>
-                            <Box>
-                              <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                Geographic Focus
-                              </Typography>
-                              <Typography variant="body2">{getGeographicFocus()}</Typography>
-                            </Box>
-                          </Box>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                          <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                            User Persona
+                          </Typography>
+                          <Typography variant="body2">{requirement?.user_persona}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                          <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                            Geographic Focus
+                          </Typography>
+                          <Typography variant="body2">{getGeographicFocus()}</Typography>
                         </Box>
                       </Box>
-                    </Stack>
-                  </Paper>
-                </Grid>
+                    </Box>
+                  </Box>
+                </Stack>
 
                 {/* Vertical Divider */}
-                <Divider
-                  orientation="vertical"
-                  flexItem
-                  sx={{
-                    display: { xs: 'none', md: 'block' },
-                    mr: '-1px',
-                    mt: '-8px',
-                    height: {
-                      md: 'calc(98vh - 470px - min(80px, max(0px, var(--campaign-name-height, 0px))))',
-                    },
-                  }}
-                />
+                <Divider orientation="vertical" flexItem sx={{ mx: 3 }} />
 
                 {/* Right column */}
-                <Grid item xs={12} md={6}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      pl: { md: 1 },
-                      pr: { sm: 2 },
-                      maxHeight: {
-                        xs: 'auto',
-                        md: 'calc(98vh - 470px - min(80px, max(0px, var(--campaign-name-height, 0px))))',
-                      },
-                      overflow: {
-                        xs: 'visible',
-                        md: 'auto',
-                      },
-                      '&::-webkit-scrollbar': {
-                        width: '5px',
-                      },
-                      '&::-webkit-scrollbar-track': {
-                        background: '#f1f1f1',
-                        borderRadius: '4px',
-                      },
-                      '&::-webkit-scrollbar-thumb': {
-                        background: '#888',
-                        borderRadius: '4px',
-                      },
-                      '&::-webkit-scrollbar-thumb:hover': {
-                        background: '#555',
-                      },
-                      scrollbarWidth: 'thin',
-                    }}
-                  >
-                    <Stack spacing={1}>
-                      {/* Campaign Deliverables */}
-                      <Box sx={{ mb: 2 }}>
-                        <Box
+                <Stack flex={1}>
+                  {/* Campaign Deliverables */}
+                  <Box>
+                    <Box
+                      sx={{
+                        ...SectionBoxStyles,
+                        border: '1px solid #1340FF',
+                        borderBottom: '3px solid #1340FF',
+                      }}
+                    >
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Iconify
+                          icon="material-symbols:unarchive-outline"
                           sx={{
-                            ...SectionBoxStyles,
-                            border: '1px solid #1340FF',
-                            borderBottom: '3px solid #1340FF',
+                            color: '#203ff5',
+                            width: 20,
+                            height: 20,
+                          }}
+                        />
+                        <Typography
+                          sx={{
+                            ...SectionTitleStyles,
+                            color: '#1340FF',
                           }}
                         >
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Iconify
-                              icon="material-symbols:unarchive-outline"
-                              sx={{
-                                color: '#203ff5',
-                                width: 20,
-                                height: 20,
-                              }}
-                            />
-                            <Typography
-                              sx={{
-                                ...SectionTitleStyles,
-                                color: '#1340FF',
-                              }}
-                            >
-                              DELIVERABLES
-                            </Typography>
-                          </Stack>
-                        </Box>
-                        {[
-                          { label: 'UGC Videos', value: true },
-                          { label: 'Raw Footage', value: campaign?.rawFootage },
-                          { label: 'Photos', value: campaign?.photos },
-                          { label: 'Ads', value: campaign?.ads },
-                          { label: 'Cross Posting', value: campaign?.crossPosting },
-                        ].map(
-                          (deliverable) =>
-                            deliverable.value && (
-                              <Chip
-                                key={deliverable.label}
-                                label={deliverable.label}
-                                size="small"
-                                sx={{
-                                  bgcolor: '#F5F5F5',
-                                  borderRadius: 1,
-                                  color: '#231F20',
-                                  height: '32px',
-                                  '& .MuiChip-label': {
-                                    fontWeight: 700,
-                                    px: 1.5,
-                                    height: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginTop: '-3px',
-                                  },
-                                  '&:hover': { bgcolor: '#F5F5F5' },
-                                }}
-                              />
-                            )
-                        )}
-                      </Box>
-
-                      {/* Campaign Logistics */}
-                      {campaign?.logisticsType && (
-                        <Box sx={{ mb: 2 }}>
-                          <Box
-                            sx={{
-                              ...SectionBoxStyles,
-                              border: '1px solid #CFB5F6',
-                              borderBottom: '3px solid #CFB5F6',
-                            }}
-                          >
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              <Iconify
-                                icon="material-symbols:inventory-2-outline-sharp"
-                                sx={{
-                                  color: '#CFB5F6',
-                                  width: 20,
-                                  height: 20,
-                                }}
-                              />
-                              <Typography
-                                sx={{
-                                  ...SectionTitleStyles,
-                                  color: '#CFB5F6',
-                                }}
-                              >
-                                LOGISTICS
-                              </Typography>
-                            </Stack>
-                          </Box>
+                          DELIVERABLES
+                        </Typography>
+                      </Stack>
+                    </Box>
+                    {[
+                      { label: 'UGC Videos', value: true },
+                      { label: 'Raw Footage', value: campaign?.rawFootage },
+                      { label: 'Photos', value: campaign?.photos },
+                      { label: 'Ads', value: campaign?.ads },
+                      { label: 'Cross Posting', value: campaign?.crossPosting },
+                    ].map(
+                      (deliverable) =>
+                        deliverable.value && (
                           <Chip
-                            label={
-                              getlogisticsTypeLabel(campaign?.logisticsType) || 'Not specified'
-                            }
+                            key={deliverable.label}
+                            label={deliverable.label}
                             size="small"
                             sx={{
                               bgcolor: '#F5F5F5',
                               borderRadius: 1,
                               color: '#231F20',
                               height: '32px',
+                              mr: 1,
                               '& .MuiChip-label': {
                                 fontWeight: 700,
                                 px: 1.5,
@@ -1083,170 +912,219 @@ const CampaignModal = ({
                               '&:hover': { bgcolor: '#F5F5F5' },
                             }}
                           />
-                        </Box>
-                      )}
+                        )
+                    )}
+                  </Box>
 
-                      {/* Client Info */}
-                      <Box sx={{ mb: 2 }}>
-                        <Box
-                          sx={{
-                            ...SectionBoxStyles,
-                            border: '1px solid #FF9FBD',
-                            borderBottom: '3px solid #FF9FBD',
-                          }}
-                        >
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Iconify
-                              icon="material-symbols:loyalty-outline"
-                              sx={{
-                                color: '#FF9FBD',
-                                width: 18,
-                                height: 18,
-                              }}
-                            />
-                            <Typography
-                              sx={{
-                                ...SectionTitleStyles,
-                                color: '#FF9FBD',
-                              }}
-                            >
-                              CLIENT INFO
-                            </Typography>
-                          </Stack>
-                        </Box>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          <Box>
-                            <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                              Client
-                            </Typography>
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              <Avatar
-                                src={campaign?.company?.logo ?? campaign?.brand?.logo}
-                                alt={campaign?.company?.name ?? campaign?.brand?.name}
-                                sx={{
-                                  width: 36,
-                                  height: 36,
-                                  border: '2px solid',
-                                  borderColor: 'background.paper',
-                                }}
-                              />
-                              <Typography variant="body2">
-                                {(campaign?.company?.name ?? campaign?.brand?.name) ||
-                                  'Company Name'}
-                              </Typography>
-                            </Stack>
-                          </Box>
-                          {[
-                            {
-                              label: 'About',
-                              value:
-                                campaign?.brandAbout ||
-                                campaign?.brand?.company?.about ||
-                                campaign?.company?.about ||
-                                'None',
-                            },
-                            {
-                              label: 'Industry',
-                              value: (() => {
-                                // company.brand can be an array of brands, each with industries (array)
-                                const brands = campaign?.company?.brand || campaign?.brand;
-                                if (Array.isArray(brands)) {
-                                  // Flatten all industries from all brands, remove duplicates, and join
-                                  const allIndustries = brands
-                                    .flatMap((b) =>
-                                      Array.isArray(b.industries) ? b.industries : []
-                                    )
-                                    .filter(Boolean);
-                                  const uniqueIndustries = [...new Set(allIndustries)];
-                                  return uniqueIndustries.length > 0
-                                    ? uniqueIndustries.join(', ')
-                                    : 'Not specified';
-                                }
-                                return campaign?.campaignBrief.industries;
-                              })(),
-                            },
-                          ].map((item) => (
-                            <Box key={item.label}>
-                              <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                {item.label}
-                              </Typography>
-                              <Typography variant="body2">
-                                {item.value || 'Not specified'}
-                              </Typography>
-                            </Box>
-                          ))}
-                        </Box>
-                      </Box>
-
-                      {/* Campaign Secondary Audience */}
-                      {hasSecondaryAudience && (
-                        <Box sx={{ mb: 2 }}>
-                          <Box
+                  {/* Campaign Logistics */}
+                  {campaign?.logisticsType && (
+                    <Box>
+                      <Box
+                        sx={{
+                          ...SectionBoxStyles,
+                          border: '1px solid #CFB5F6',
+                          borderBottom: '3px solid #CFB5F6',
+                        }}
+                      >
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Iconify
+                            icon="material-symbols:inventory-2-outline-sharp"
                             sx={{
-                              ...SectionBoxStyles,
-                              border: '1px solid #FF3500',
-                              borderBottom: '3px solid #FF3500',
+                              color: '#CFB5F6',
+                              width: 20,
+                              height: 20,
+                            }}
+                          />
+                          <Typography
+                            sx={{
+                              ...SectionTitleStyles,
+                              color: '#CFB5F6',
                             }}
                           >
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              <Iconify
-                                icon="material-symbols-light:groups-outline"
-                                sx={{
-                                  color: '#FF3500',
-                                  width: 25,
-                                  height: 25,
-                                  mt: -0.5,
-                                  ml: 0.5,
-                                }}
-                              />
-                              <Typography
-                                sx={{
-                                  ...SectionTitleStyles,
-                                  color: '#FF3500',
-                                }}
-                              >
-                                SECONDARY AUDIENCE
-                              </Typography>
-                            </Stack>
-                          </Box>
-                          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
-                              {[
-                                {
-                                  label: 'Gender',
-                                  data: campaign?.campaignRequirement?.secondary_gender?.map(
-                                    capitalizeFirstLetter
-                                  ),
-                                },
-                                {
-                                  label: 'Age',
-                                  data: campaign?.campaignRequirement?.secondary_age,
-                                },
-                                {
-                                  label: 'Country',
-                                  data: campaign?.campaignRequirement?.secondary_country
-                                    ? [campaign.campaignRequirement.secondary_country]
-                                    : [],
-                                },
-                                {
-                                  label: 'Language',
-                                  data: campaign?.campaignRequirement?.secondary_language,
-                                },
-                              ].map((item, index) => (
-                                <Box key={index}>
-                                  <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                    {item.label}
-                                  </Typography>
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
-                                    {item.data?.map((value, idx) => (
-                                      <Chip key={idx} label={value} size="small" sx={ChipStyle} />
-                                    ))}
-                                  </Box>
+                            LOGISTICS
+                          </Typography>
+                        </Stack>
+                      </Box>
+                      <Chip
+                        label={getlogisticsTypeLabel(campaign?.logisticsType)}
+                        size="small"
+                        sx={{
+                          bgcolor: '#F5F5F5',
+                          borderRadius: 1,
+                          color: '#231F20',
+                          height: '32px',
+                          '& .MuiChip-label': {
+                            fontWeight: 700,
+                            px: 1.5,
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginTop: '-3px',
+                          },
+                          '&:hover': { bgcolor: '#F5F5F5' },
+                        }}
+                      />
+                    </Box>
+                  )}
+
+                  {/* Client Info */}
+                  <Box>
+                    <Box
+                      sx={{
+                        ...SectionBoxStyles,
+                        border: '1px solid #FF9FBD',
+                        borderBottom: '3px solid #FF9FBD',
+                      }}
+                    >
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Iconify
+                          icon="material-symbols:loyalty-outline"
+                          sx={{
+                            color: '#FF9FBD',
+                            width: 18,
+                            height: 18,
+                          }}
+                        />
+                        <Typography
+                          sx={{
+                            ...SectionTitleStyles,
+                            color: '#FF9FBD',
+                          }}
+                        >
+                          CLIENT INFO
+                        </Typography>
+                      </Stack>
+                    </Box>
+                    <Box sx={{ ...SubSectionBoxStyles, gap: 1.5 }}>
+                      <Box sx={{ ...SubSectionBoxStyles }}>
+                        <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                          Client
+                        </Typography>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Avatar
+                            src={campaign?.company?.logo ?? campaign?.brand?.logo}
+                            alt={campaign?.company?.name ?? campaign?.brand?.name}
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              border: '2px solid',
+                              borderColor: 'background.paper',
+                            }}
+                          />
+                          <Typography variant="body2">
+                            {(campaign?.company?.name ?? campaign?.brand?.name) || 'Company Name'}
+                          </Typography>
+                        </Stack>
+                      </Box>
+                      {[
+                        {
+                          label: 'About',
+                          value:
+                            campaign?.brandAbout ||
+                            campaign?.brand?.company?.about ||
+                            campaign?.company?.about ||
+                            'None',
+                        },
+                        {
+                          label: 'Industry',
+                          value: (() => {
+                            // company.brand can be an array of brands, each with industries (array)
+                            const brands = campaign?.company?.brand || campaign?.brand;
+                            if (Array.isArray(brands)) {
+                              // Flatten all industries from all brands, remove duplicates, and join
+                              const allIndustries = brands
+                                .flatMap((b) => (Array.isArray(b.industries) ? b.industries : []))
+                                .filter(Boolean);
+                              const uniqueIndustries = [...new Set(allIndustries)];
+                              return uniqueIndustries.length > 0
+                                ? uniqueIndustries.join(', ')
+                                : 'Not specified';
+                            }
+                            return campaign?.campaignBrief.industries;
+                          })(),
+                        },
+                      ].map((item) => (
+                        <Box sx={{ ...SubSectionBoxStyles }} key={item.label}>
+                          <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                            {item.label}
+                          </Typography>
+                          <Typography variant="body2">{item.value || 'Not specified'}</Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+
+                  {/* Campaign Secondary Audience */}
+                  {hasSecondaryAudience && (
+                    <Box>
+                      <Box
+                        sx={{
+                          ...SectionBoxStyles,
+                          border: '1px solid #FF3500',
+                          borderBottom: '3px solid #FF3500',
+                        }}
+                      >
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Iconify
+                            icon="material-symbols-light:groups-outline"
+                            sx={{
+                              color: '#FF3500',
+                              width: 25,
+                              height: 25,
+                              mt: -0.5,
+                              ml: 0.5,
+                            }}
+                          />
+                          <Typography
+                            sx={{
+                              ...SectionTitleStyles,
+                              color: '#FF3500',
+                            }}
+                          >
+                            SECONDARY AUDIENCE
+                          </Typography>
+                        </Stack>
+                      </Box>
+                      <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1 }}>
+                        <Box sx={{ ...SubSectionBoxStyles, flex: 1, gap: 1 }}>
+                          {[
+                            {
+                              label: 'Gender',
+                              data: campaign?.campaignRequirement?.secondary_gender?.map(
+                                capitalizeFirstLetter
+                              ),
+                            },
+                            { label: 'Age', data: campaign?.campaignRequirement?.secondary_age },
+                            {
+                              label: 'Country',
+                              data: campaign?.campaignRequirement?.secondary_country
+                                ? [campaign.campaignRequirement.secondary_country]
+                                : [],
+                            },
+                            {
+                              label: 'Language',
+                              data: campaign?.campaignRequirement?.secondary_language,
+                            },
+                          ]
+                            .filter((item) => item.data && item.data.length > 0)
+                            .map((item, index) => (
+                              <Box sx={{ ...SubSectionBoxStyles }} key={index}>
+                                <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                                  {item.label}
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                                  {item.data?.map((value, idx) => (
+                                    <Chip key={idx} label={value} size="small" sx={ChipStyle} />
+                                  ))}
                                 </Box>
-                              ))}
-                            </Box>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
-                              <Box>
+                              </Box>
+                            ))}
+                        </Box>
+                        <Box sx={{ ...SubSectionBoxStyles, flex: 1, gap: 1 }}>
+                          {requirement?.secondary_creator_persona &&
+                            requirement.secondary_creator_persona.length > 0 && (
+                              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                                 <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
                                   Creator&apos;s Interest
                                 </Typography>
@@ -1261,22 +1139,23 @@ const CampaignModal = ({
                                   ))}
                                 </Box>
                               </Box>
-                              <Box>
-                                <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                  User Persona
-                                </Typography>
-                                <Typography variant="body2">
-                                  {requirement?.secondary_user_persona}
-                                </Typography>
-                              </Box>
+                            )}
+                          {requirement?.secondary_user_persona && (
+                            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                              <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                                User Persona
+                              </Typography>
+                              <Typography variant="body2">
+                                {requirement?.secondary_user_persona}
+                              </Typography>
                             </Box>
-                          </Box>
+                          )}
                         </Box>
-                      )}
-                    </Stack>
-                  </Paper>
-                </Grid>
-              </Grid>
+                      </Box>
+                    </Box>
+                  )}
+                </Stack>
+              </Box>
             </>
           )}
 

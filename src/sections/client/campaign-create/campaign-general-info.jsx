@@ -52,9 +52,14 @@ const ClientCampaignGeneralInfo = () => {
   const { setValue, watch } = useFormContext();
   const { availableCredits, isLoading: isLoadingCredits } = useGetClientCredits();
 
-  // For date handling
+  // Campaign timeline
   const startDate = watch('campaignStartDate');
   const endDate = watch('campaignEndDate');
+
+  // Posting timeline
+  const postingStartDate = watch('postingStartDate');
+  const postingEndDate = watch('postingEndDate');
+
   const credits = watch('campaignCredits');
 
   // Persist available credits for parent validation
@@ -128,6 +133,16 @@ const ClientCampaignGeneralInfo = () => {
     }
   }, [startDate, setValue]);
 
+  useEffect(() => {
+    if (postingStartDate) {
+      const start = dayjs(postingStartDate);
+      if (start.isValid()) {
+        const newEndDate = start.add(7, 'day');
+        setValue('postingEndDate', newEndDate.toDate());
+      }
+    }
+  }, [postingStartDate, setValue]);
+
   return (
     <>
       {/* Container to limit width */}
@@ -182,6 +197,7 @@ const ClientCampaignGeneralInfo = () => {
                 />
               </FormField>
             </Box>
+
             {/* About Brand - Full width */}
             <Box mb={2}>
               <FormField label="About the Brand" required={false}>
@@ -195,8 +211,9 @@ const ClientCampaignGeneralInfo = () => {
                 />
               </FormField>
             </Box>
+
             {/* Campaign start/end date - Two columns */}
-            <Grid container spacing={2}>
+            <Grid container spacing={2} mb={2}>
               <Grid item xs={6}>
                 <FormField label="Campaign Start Date">
                   <DatePicker
@@ -236,8 +253,48 @@ const ClientCampaignGeneralInfo = () => {
                 </FormField>
               </Grid>
             </Grid>
+
+            {/* Campaign Posting Period */}
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <FormField label='Posting Period'>
+                  <Box display="flex" flexDirection="row" gap={2}>
+                    <DatePicker
+                      value={postingStartDate}
+                      onChange={(newValue) => {
+                        setValue('postingStartDate', newValue, { shouldValidate: true });
+                      }}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          placeholder: 'Start Date',
+                          error: false,
+                        },
+                      }}
+                    />
+                    <DatePicker
+                      value={postingEndDate}
+                      onChange={(newValue) => {
+                        setValue('postingEndDate', newValue, { shouldValidate: true });
+                      }}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          placeholder: 'End Date',
+                          error: false,
+                        },
+                      }}
+                    />
+                  </Box>
+                </FormField>
+              </Grid>
+            </Grid>
+          </Grid>
+
+          {/* Column two */}
+          <Grid item xs={12} sm={6}>
             {/* Product/Service Name - Full width */}
-            <Box sx={{ mt: 2 }}>
+            <Box mb={2}>
               <FormField label="Product/Service Name">
                 <RHFTextField
                   name="productName"
@@ -247,9 +304,7 @@ const ClientCampaignGeneralInfo = () => {
                 />
               </FormField>
             </Box>
-          </Grid>
-          {/* Column two */}
-          <Grid item xs={12} sm={6}>
+
             <Box mb={2}>
               <FormField label="Website Link" required={false}>
                 <RHFTextField
@@ -262,6 +317,7 @@ const ClientCampaignGeneralInfo = () => {
                 />
               </FormField>
             </Box>
+
             {/* Credits - Two columns */}
             <Grid container spacing={2}>
               <Grid item xs={6}>
@@ -304,6 +360,7 @@ const ClientCampaignGeneralInfo = () => {
                 <RHFUploadCover
                   name="campaignImages"
                   maxSize={10485760}
+                  height={135}
                   placeholderPrimaryTypographyProps={{ fontSize: 18, fontWeight: 600 }}
                   placeholderSecondaryTypographyProps={{ fontSize: 14, fontWeight: 400 }}
                 />
