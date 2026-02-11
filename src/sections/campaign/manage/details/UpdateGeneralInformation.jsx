@@ -302,8 +302,9 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
             <Box sx={{ mt: 2 }}>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <FormField label="Posting Start Date">
+                  <Grid item xs={12}>
+                    <FormField label="Posting Period">
+                      <Box display='flex' flexDirection='row' gap={2}>
                       <DatePicker
                         value={postingStartDateDayjs}
                         format="DD/MM/YY"
@@ -339,10 +340,6 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
                           },
                         }}
                       />
-                    </FormField>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <FormField label="Posting End Date">
                       <DatePicker
                         value={postingEndDateDayjs}
                         format="DD/MM/YY"
@@ -367,6 +364,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
                           },
                         }}
                       />
+                      </Box>
                     </FormField>
                   </Grid>
                 </Grid>
