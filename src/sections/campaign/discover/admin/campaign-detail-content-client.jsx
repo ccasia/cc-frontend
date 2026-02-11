@@ -1031,7 +1031,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
               </Typography>
             </Box>
 
-            <Box className="body" sx={{ display: 'flex', gap: 1 }}>
+            <Box className="body" sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               {[
                 { label: 'UGC Videos', value: true },
                 { label: 'Raw Footage', value: campaign?.rawFootage },
@@ -1044,20 +1044,16 @@ const CampaignDetailContentClient = ({ campaign }) => {
                     <Chip
                       key={deliverable.label}
                       label={deliverable.label}
-                      size="small"
+                      size="medium"
                       sx={{
                         bgcolor: '#F5F5F5',
                         borderRadius: 1,
                         color: '#231F20',
-                        height: '32px',
                         '& .MuiChip-label': {
                           fontWeight: 700,
-                          px: 1.5,
-                          height: '100%',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          marginTop: '-3px',
                         },
                         '&:hover': { bgcolor: '#F5F5F5' },
                       }}
