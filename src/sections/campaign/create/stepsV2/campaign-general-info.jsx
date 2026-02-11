@@ -216,7 +216,7 @@ const CampaignGeneralInfo = () => {
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <FormField label='Posting Period'>
-                  <Box display={'flex'} flexDirection={'row'} gap={2}>
+                  <Box display="flex" flexDirection="row" gap={2}>
                     <DatePicker
                       value={postingStartDate}
                       onChange={(newValue) => {
