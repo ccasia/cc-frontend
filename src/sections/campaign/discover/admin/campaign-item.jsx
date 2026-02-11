@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
-import { useState } from 'react';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
+import React, { useRef, useState } from 'react';
 
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
@@ -32,7 +32,6 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
-import { useSnackbar } from 'src/components/snackbar';
 
 import { CampaignLog } from '../../manage/list/CampaignLog';
 import ActivateCampaignDialog from './activate-campaign-dialog';
@@ -41,6 +40,7 @@ import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({
+  index,
   campaign,
   onView,
   onEdit,
@@ -59,7 +59,8 @@ export default function CampaignItem({
 
   const theme = useTheme();
   const { user } = useAuthContext();
-  const { enqueueSnackbar } = useSnackbar();
+  const ref = useRef(null);
+
   const router = useRouter();
   const isCopy = useBoolean();
 
@@ -69,6 +70,7 @@ export default function CampaignItem({
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [initialActivateDialogOpen, setInitialActivateDialogOpen] = useState(false);
+  const currentIndex = localStorage.getItem('lastOpenedIndex');
 
   // Handle menu open
   const handleClick = (event) => {
@@ -83,46 +85,23 @@ export default function CampaignItem({
     setAnchorEl(null);
   };
 
-  // Check if tab exists (for menu item text)
-  const checkTabExists = () => {
-    if (typeof window !== 'undefined') {
-      if (!window.campaignTabs) {
-        try {
-          const storedTabs = localStorage.getItem('campaignTabs');
-          window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
-        } catch (error) {
-          console.error('Error loading campaign tabs from localStorage:', error);
-          window.campaignTabs = [];
-        }
-      }
-      return window.campaignTabs?.some((tab) => tab.id === campaign.id) || false;
-    }
-    return false;
-  };
-
-  // Handle open in new tab / close tab
+  // Handle open in new tab
   const handleOpenInNewTab = (event) => {
     event.stopPropagation();
 
     const campaignName = campaign?.name || 'Campaign Details';
 
-    // Initialize window.campaignTabs if it doesn't exist
-    if (typeof window !== 'undefined') {
-      if (!window.campaignTabs) {
-        try {
-          const storedTabs = localStorage.getItem('campaignTabs');
-          window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
-        } catch (error) {
-          console.error('Error loading campaign tabs from localStorage:', error);
-          window.campaignTabs = [];
-        }
-      }
-    }
-
     // Check if this campaign is already in campaignTabs
-    const tabExists = window.campaignTabs?.some((tab) => tab.id === campaign.id) || false;
+    const tabExists = window.campaignTabs.some((tab) => tab.id === campaign.id);
 
     if (tabExists) {
+      // If tab already exists, update the name to ensure it's current
+      window.campaignTabs = window.campaignTabs.map((tab) => {
+        if (tab.id === campaign.id) {
+          return { ...tab, name: campaignName };
+        }
+        return tab;
+      });
       // If tab exists, close/remove it
       window.campaignTabs = window.campaignTabs.filter((tab) => tab.id !== campaign.id);
 
@@ -139,12 +118,10 @@ export default function CampaignItem({
       }
     } else {
       // If tab doesn't exist yet, add it to campaignTabs
-      if (window.campaignTabs) {
-        window.campaignTabs.push({
-          id: campaign.id,
-          name: campaignName,
-        });
-      }
+      window.campaignTabs.push({
+        id: campaign.id,
+        name: campaignName,
+      });
 
       // Update status tracking for tabs
       if (typeof window !== 'undefined') {
@@ -196,26 +173,6 @@ export default function CampaignItem({
   const isCSM =
     user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
 
-  // For debugging - log the actual user structure
-  console.log('User role structure:', {
-    userRole: user?.role,
-    adminRole: user?.admin?.role?.name,
-    adminMode: user?.admin?.mode,
-    isAdmin,
-    isCSM,
-  });
-
-  // Debug user details
-  console.log('User details:', {
-    userRole: user?.role,
-    adminMode: user?.admin?.mode,
-    adminRole: user?.admin?.role?.name,
-    isCSL,
-    isSuperAdmin,
-    isAdmin,
-    isCSM,
-  });
-
   // Check if user can perform initial activation (CSL or Superadmin)
   const canInitialActivate = isCSL || isSuperAdmin;
 
@@ -237,26 +194,11 @@ export default function CampaignItem({
 
     return adminIdMatch || adminUserIdMatch || adminUserMatch;
   });
+
   const canCompleteActivation =
     (isCSM || isAdmin) &&
     campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
     isUserAssignedToCampaign;
-
-  // Debug campaign admin assignment
-  console.log('Campaign admin check:', {
-    campaignId: campaign?.id,
-    campaignStatus: campaign?.status,
-    userId: user?.id,
-    campaignAdmins: campaign?.campaignAdmin?.map((admin) => ({
-      adminId: admin.adminId,
-      adminUserId: admin.admin?.userId,
-      adminUser: admin.admin?.user?.id,
-      role: admin.admin?.role?.name,
-      fullAdmin: admin.admin,
-    })),
-    isUserAssigned: isUserAssignedToCampaign,
-    canCompleteActivation,
-  });
 
   const isPendingReview =
     campaign?.status === 'PENDING_CSM_REVIEW' ||
@@ -330,7 +272,8 @@ export default function CampaignItem({
                       : campaign?.status
                   )}
                 </Typography>
-                {campaign?.campaignRequirement?.country && (
+                {(campaign?.campaignRequirement?.countries?.length > 0 ||
+                  campaign?.campaignRequirement?.country) && (
                   <>
                     <Divider
                       orientation="vertical"
@@ -338,45 +281,98 @@ export default function CampaignItem({
                       sx={{ bgcolor: 'black', height: 14 }}
                       variant="middle"
                     />
-                    <Tooltip
-                      title={
+                    {campaign?.campaignRequirement?.countries?.length > 0 ? (
+                      <Tooltip
+                        title={
+                          <Stack direction="column" spacing={0.5}>
+                            {campaign.campaignRequirement.countries.map((countryName, idx) => (
+                              <Stack key={idx} direction="row" spacing={1} alignItems="center">
+                                <Iconify
+                                  icon={`emojione:flag-for-${countryName?.toLowerCase()}`}
+                                  width={15}
+                                />
+                                <Typography variant="caption">{countryName}</Typography>
+                              </Stack>
+                            ))}
+                          </Stack>
+                        }
+                        followCursor
+                        slotProps={{
+                          tooltip: {
+                            sx: {
+                              borderRadius: 0.4,
+                            },
+                          },
+                        }}
+                      >
                         <Stack direction="row" spacing={1} alignItems="center">
-                          <Iconify
-                            icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
-                            width={15}
-                          />
-                          <Typography variant="caption">
+                          {campaign.campaignRequirement.countries.map((countryName, idx) => {
+                            const countryCode =
+                              countries.find((item) =>
+                                item.label.toLowerCase().includes(countryName?.toLowerCase())
+                              )?.code || countryName.substring(0, 2).toUpperCase();
+
+                            return (
+                              <React.Fragment key={idx}>
+                                {idx > 0 && (
+                                  <Divider
+                                    orientation="vertical"
+                                    flexItem
+                                    sx={{ bgcolor: 'black', height: 14 }}
+                                    variant="middle"
+                                  />
+                                )}
+                                <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
+                                  {countryCode}
+                                </Typography>
+                              </React.Fragment>
+                            );
+                          })}
+                        </Stack>
+                      </Tooltip>
+                    ) : (
+                      campaign?.campaignRequirement?.country && (
+                        <Tooltip
+                          title={
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Iconify
+                                icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
+                                width={15}
+                              />
+                              <Typography variant="caption">
+                                {
+                                  countries.find((item) =>
+                                    item.label
+                                      .toLowerCase()
+                                      .includes(
+                                        campaign?.campaignRequirement?.country?.toLowerCase()
+                                      )
+                                  ).label
+                                }
+                              </Typography>
+                            </Stack>
+                          }
+                          followCursor
+                          slotProps={{
+                            tooltip: {
+                              sx: {
+                                borderRadius: 0.4,
+                              },
+                            },
+                          }}
+                        >
+                          <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
                             {
                               countries.find((item) =>
                                 item.label
                                   .toLowerCase()
                                   .includes(campaign?.campaignRequirement?.country?.toLowerCase())
-                              ).label
+                              ).code
                             }
                           </Typography>
-                        </Stack>
-                      }
-                      followCursor
-                      slotProps={{
-                        tooltip: {
-                          sx: {
-                            // bgcolor: 'white',
-                            // color: 'black',
-                            borderRadius: 0.4,
-                          },
-                        },
-                      }}
-                    >
-                      <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
-                        {
-                          countries.find((item) =>
-                            item.label
-                              .toLowerCase()
-                              .includes(campaign?.campaignRequirement?.country?.toLowerCase())
-                          ).code
-                        }
-                      </Typography>
-                    </Tooltip>
+                        </Tooltip>
+                      )
+                    )}
                   </>
                 )}
               </Stack>
@@ -630,16 +626,16 @@ export default function CampaignItem({
             sx={{
               borderRadius: 1,
               backgroundColor: 'white',
-              color: checkTabExists() ? '#FF3B30' : 'black',
+              color: 'black',
               fontWeight: 600,
               fontSize: '0.95rem',
               p: 1.5,
               '&:hover': {
-                backgroundColor: checkTabExists() ? '#FFEBEE' : '#f5f5f5',
+                backgroundColor: '#f5f5f5',
               },
             }}
           >
-            {checkTabExists() ? 'Close Tab' : 'Open in New Tab'}
+            Open in New Tab
           </MenuItem>
 
           {/* Activate Campaign - Different behavior based on user role and campaign status */}
@@ -796,28 +792,6 @@ export default function CampaignItem({
   );
 
   return (
-    // <Card
-    //   component={RouterLink}
-    //   href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
-    //   sx={{
-    //     overflow: 'hidden',
-    //     textDecoration: 'none',
-    //     cursor: 'pointer',
-    //     transition: 'all 0.3s',
-    //     bgcolor: 'background.default',
-    //     borderRadius: '15px',
-    //     border: '1.2px solid',
-    //     borderColor: theme.palette.divider,
-    //     position: 'relative',
-    //     pb: 1.5,
-    //     mb: -0.5,
-    //     maxHeight: 370,
-    //     '&:hover': {
-    //       borderColor: '#1340ff',
-    //       transform: 'translateY(-2px)',
-    //     },
-    //   }}
-    // >
     <Card
       component={Box}
       id={`campaign-${campaign?.id}`}
@@ -825,9 +799,11 @@ export default function CampaignItem({
       href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
       onClick={() => {
         const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');
+
         if (lastCampaignOpenId || lastCampaignOpenId !== campaign.id) {
           localStorage.setItem('lastCampaignOpenId', campaign?.id);
         }
+        localStorage.setItem('lastOpenedIndex', String(index));
         localStorage.removeItem('scrollTop');
         router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
       }}
@@ -838,7 +814,7 @@ export default function CampaignItem({
         bgcolor: 'background.default',
         borderRadius: '15px',
         border: '1.2px solid',
-        borderColor: theme.palette.divider,
+        borderColor: Number(currentIndex) === index ? '#1340ff' : theme.palette.divider,
         position: 'relative',
         pb: 1.5,
         mb: -0.5,
@@ -849,24 +825,6 @@ export default function CampaignItem({
         },
       }}
     >
-      {/* <Box
-        sx={{
-          position: 'absolute',
-          top: 10,
-          right: 10,
-          zIndex: 1,
-          border: 0.5,
-          borderRadius: 20,
-          display: 'inline-flex',
-          borderColor: 'gray',
-          boxShadow: '0px 0px 5px 0px #5c5c5c',
-        }}
-      >
-        <Iconify
-          icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
-          width={40}
-        />
-      </Box> */}
       {false && (
         <Box
           mt={4}
@@ -926,6 +884,7 @@ export default function CampaignItem({
 }
 
 CampaignItem.propTypes = {
+  index: PropTypes.number,
   onDelete: PropTypes.func,
   onEdit: PropTypes.func,
   onView: PropTypes.func,
