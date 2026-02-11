@@ -26,6 +26,7 @@ import {
   deduplicateLogs,
   filterLogsByTab,
   formatLogMessage,
+  formatLogSummary,
   filterLogsBySearch,
 } from './campaign-log/campaign-log-utils';
 
@@ -98,6 +99,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
           createdAt: log.createdAt,
           action: log.message,
           formattedAction: formatLogMessage(log.message, performedBy),
+          formattedSummary: formatLogSummary(log.message, performedBy),
           performedBy,
           performerRole: log.admin?.role || '',
           category,
@@ -484,6 +486,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
         <Box sx={{ width: '30%', height: '100%', overflow: 'auto' }}>
           <CampaignLogDetailPanel
             log={selectedLog}
+            allLogs={classifiedLogs}
             campaign={campaign}
             photoMap={photoMap}
             invoices={invoices}

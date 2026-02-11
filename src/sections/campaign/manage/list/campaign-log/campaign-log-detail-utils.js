@@ -26,8 +26,13 @@ const CREATOR_NAME_PATTERNS = [
   // "Name" has been shortlisted
   /"([^"]+)"\s+has been shortlisted/i,
 
-  // "Name" withdrawn/removed from the campaign
-  /"([^"]+)"\s+(?:has been\s+)?(?:withdrawn|removed) from the campaign/i,
+  // "Name" has been withdrawn/removed from the campaign
+  /"([^"]+)"\s+has been\s+(?:withdrawn|removed) from the campaign/i,
+  // "Name" withdrawn/removed from the campaign (without "has been")
+  /"([^"]+)"\s+(?:withdrawn|removed) from the campaign/i,
+
+  // Active voice: X removed "Name" from the campaign
+  /removed\s+"([^"]+)"\s+from the campaign/i,
 
   // Agreement has been sent to "Name" / sent the Agreement to "Name" / resent the Agreement to "Name"
   /(?:Agreement has been sent to|sent the Agreement to|resent the Agreement to)\s+"([^"]+)"/i,
@@ -58,14 +63,22 @@ const CREATOR_NAME_PATTERNS = [
   /([A-Z][a-z]+(?: [A-Z][a-z]+)+)\s+has been shortlisted/,
   /([A-Z][a-z]+(?: [A-Z][a-z]+)+)(?:'s|'s)\s+pitch has been/,
   /([A-Z][a-z]+(?: [A-Z][a-z]+)+)\s+submitted\s+(?:the\s+)?(?:agreement|first draft|final draft|posting link)/i,
-  /([A-Z][a-z]+(?: [A-Z][a-z]+)+)\s+(?:has been\s+)?(?:withdrawn|removed) from the campaign/i,
+  // Split "has been" variant to prevent greedy capture of "has been" into name group with /i flag
+  /([A-Z][a-z]+(?: [A-Z][a-z]+)+)\s+has been\s+(?:withdrawn|removed) from the campaign/i,
+  /([A-Z][a-z]+(?: [A-Z][a-z]+)+)\s+(?:withdrawn|removed) from the campaign/i,
+
+  // Active voice without quotes: X removed Name from the campaign
+  /removed\s+([A-Z][a-z]+(?: [A-Z][a-z]+)+)\s+from the campaign/i,
 ];
 
 export function extractCreatorNameFromLog(rawMessage) {
   if (!rawMessage) return null;
   for (let i = 0; i < CREATOR_NAME_PATTERNS.length; i += 1) {
     const match = rawMessage.match(CREATOR_NAME_PATTERNS[i]);
-    if (match?.[1]) return match[1].trim();
+    if (match?.[1]) {
+      // Strip "Creator " / "Admin " prefix that sometimes leaks into the capture
+      return match[1].replace(/^(?:Creator|Admin)\s+/i, '').trim();
+    }
   }
   return null;
 }
