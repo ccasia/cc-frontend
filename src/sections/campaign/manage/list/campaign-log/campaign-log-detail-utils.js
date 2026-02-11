@@ -173,9 +173,9 @@ export function extractAmountChangeInfo(rawMessage) {
 
 export function extractEditSection(rawMessage) {
   if (!rawMessage) return null;
-  // "campaign details edited (General Info)" etc.
-  const m = rawMessage.match(/campaign details edited\s*\((.+?)\)/i);
-  return m ? m[1] : null;
+  // Handles both "- [Section Name]" (current backend) and "(Section Name)" (legacy)
+  const m = rawMessage.match(/campaign details edited\s*(?:-\s*\[(.+?)\]|\((.+?)\))/i);
+  return m ? (m[1] || m[2]) : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -206,6 +206,7 @@ export function extractLogContext(log, campaign) {
     invoice: null,
     amountChange: null,
     editSection: null,
+    changes: null,
   };
 
   if (!log) return ctx;
@@ -234,6 +235,7 @@ export function extractLogContext(log, campaign) {
 
     if (category === 'Campaign Edit') {
       ctx.editSection = extractEditSection(action);
+      ctx.changes = Array.isArray(log.metadata?.changes) ? log.metadata.changes : null;
     }
   }
 

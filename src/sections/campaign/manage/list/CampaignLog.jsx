@@ -100,6 +100,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
           action: log.message,
           formattedAction: formatLogMessage(log.message, performedBy),
           formattedSummary: formatLogSummary(log.message, performedBy),
+          metadata: log.metadata || null,
           performedBy,
           performerRole: log.admin?.role || '',
           category,
