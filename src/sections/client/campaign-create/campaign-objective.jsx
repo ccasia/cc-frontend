@@ -2,14 +2,7 @@ import PropTypes from 'prop-types';
 import { useFormContext } from 'react-hook-form';
 import React, { memo, useRef, useEffect } from 'react';
 
-import {
-  Box,
-  Stack,
-  MenuItem,
-  Collapse,
-  FormLabel,
-  Typography,
-} from '@mui/material';
+import { Box, Stack, MenuItem, Collapse, FormLabel, Typography } from '@mui/material';
 
 import {
   primaryKPIOptions,
@@ -47,16 +40,25 @@ FormField.propTypes = {
   required: PropTypes.bool,
 };
 
-
 const CampaignObjective = () => {
   const { watch, setValue } = useFormContext();
   const primaryObjective = watch('campaignObjectives');
   const secondaryOptions = secondaryObjectivesByPrimary[primaryObjective] || [];
   const prevPrimaryObjective = useRef(primaryObjective);
 
+  // Clear secondary objectives when primary objective changes
   useEffect(() => {
-    if (prevPrimaryObjective.current !== undefined && prevPrimaryObjective.current !== primaryObjective) {
-      setValue('secondaryObjectives', []);
+    if (
+      prevPrimaryObjective.current !== null &&
+      prevPrimaryObjective.current !== primaryObjective
+    ) {
+      setValue('secondaryObjectives', [], { shouldDirty: true });
+      // Clear fields if switching to Awareness
+      if (primaryObjective === 'Awareness') {
+        setValue('boostContent', '', { shouldDirty: true });
+        setValue('primaryKPI', '', { shouldDirty: true });
+        setValue('performanceBaseline', '', { shouldDirty: true });
+      }
     }
     prevPrimaryObjective.current = primaryObjective;
   }, [primaryObjective, setValue]);
@@ -115,52 +117,54 @@ const CampaignObjective = () => {
           </FormField>
         </Box>
 
-        {/* Boost/Promote Content */}
-        <Box sx={{ mt: 2 }}>
-          <FormField label="Boost/Promote Content">
-            <RHFSelectV2
-              name="boostContent"
-              placeholder="Select an option"
-              multiple={false}
-            >
-              {boostContentOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </RHFSelectV2>
-          </FormField>
-        </Box>
+        {/* Conditionally render these fields only for Performance */}
+        {primaryObjective === 'Performance' && (
+          <>
+            {/* Boost/Promote Content */}
+            <Box sx={{ mt: 2 }}>
+              <FormField label="Boost/Promote Content">
+                <RHFSelectV2 name="boostContent" placeholder="Select an option" multiple={false}>
+                  {boostContentOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </RHFSelectV2>
+              </FormField>
+            </Box>
 
-        {/* Primary KPI */}
-        <Box sx={{ mt: 2 }}>
-          <FormField label="Primary KPI">
-            <RHFSelectV2
-              name="primaryKPI"
-              placeholder="Select an option"
-              multiple={false}
-            >
-              {primaryKPIOptions.map((item) => (
-                <MenuItem key={item} value={item}>
-                  {item}
-                </MenuItem>
-              ))}
-            </RHFSelectV2>
-          </FormField>
-        </Box>
+            {/* Primary KPI */}
+            <Box sx={{ mt: 2 }}>
+              <FormField label="Primary KPI">
+                <RHFSelectV2 name="primaryKPI" placeholder="Select an option" multiple={false}>
+                  {primaryKPIOptions.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {item}
+                    </MenuItem>
+                  ))}
+                </RHFSelectV2>
+              </FormField>
+            </Box>
 
-        {/* Current Performance Baseline */}
-        <Box sx={{ mt: 2, mb: 4 }}>
-          <FormField label="Current Performance Baseline">
-            <Typography mt={-1} mb={0.5} variant='caption' color="#8E8E93">This helps us measure campaign impact and improvement. Enter your current performance baseline (e.g., &quot;2,000 website visits/day&quot; or &quot;500 clicks/post&quot; or &quot;200 leads/month&quot; or &quot;150 inquiries/month&quot;)</Typography>
-            <RHFTextField
-              name="performanceBaseline"
-              placeholder="Current Performance Baseline"
-              multiline
-              rows={1}
-            />
-          </FormField>
-        </Box>
+            {/* Current Performance Baseline */}
+            <Box sx={{ mt: 2, mb: 4 }}>
+              <FormField label="Current Performance Baseline">
+                <Typography mt={-1} mb={0.5} variant="caption" color="#8E8E93">
+                  This helps us measure campaign impact and improvement. Enter your current
+                  performance baseline (e.g., &quot;2,000 website visits/day&quot; or &quot;500
+                  clicks/post&quot; or &quot;200 leads/month&quot; or &quot;150
+                  inquiries/month&quot;)
+                </Typography>
+                <RHFTextField
+                  name="performanceBaseline"
+                  placeholder="Current Performance Baseline"
+                  multiline
+                  rows={1}
+                />
+              </FormField>
+            </Box>
+          </>
+        )}
       </Collapse>
     </Box>
   );

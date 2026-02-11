@@ -156,9 +156,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const objectiveSchema = Yup.object().shape({
     campaignObjectives: Yup.string().required('Campaign objective is required.'),
     secondaryObjectives: Yup.array().max(2, 'You can select up to 2 secondary objectives'),
-    boostContent: Yup.string().required('Boost content is required.'),
-    primaryKPI: Yup.string().required('Primary KPI is required.'),
-    performanceBaseline: Yup.string().required('Performance baseline is required.'),
+    boostContent: Yup.string(),
+    primaryKPI: Yup.string(),
+    performanceBaseline: Yup.string(),
   });
 
   const campaignRequirementSchema = Yup.object().shape({
@@ -374,9 +374,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         return [
           'campaignObjectives',
           'secondaryObjectives',
-          'boostContent',
-          'primaryKPI',
-          'performanceBaseline',
         ];
       case 2: // Audience
         return [
@@ -783,10 +780,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 1: // Objective
         return (
           values.campaignObjectives?.length > 0 &&
-          values.secondaryObjectives?.length > 0 &&
-          values.boostContent &&
-          values.primaryKPI &&
-          values.performanceBaseline
+          values.secondaryObjectives?.length > 0
         );
       case 2: // Audience
         return (
