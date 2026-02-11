@@ -14,6 +14,9 @@ import { CSS } from '@dnd-kit/utilities';
 
 import SendIcon from '@mui/icons-material/Send';
 import DeleteIcon from '@mui/icons-material/Delete';
+import FormatBoldIcon from '@mui/icons-material/FormatBold';
+import FormatItalicIcon from '@mui/icons-material/FormatItalic';
+import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
 import { Box, Grid, Link, Button, Avatar, Popover, TextField, Typography, IconButton, InputAdornment, CircularProgress, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 import { PieChart } from '@mui/x-charts';
 
@@ -83,6 +86,9 @@ const SortableSection = ({ id, children, isEditMode }) => {
       target.closest('input') ||
       target.closest('textarea') ||
       target.closest('a') ||
+      // Check for contentEditable elements (formatted text fields)
+      target.contentEditable === 'true' ||
+      target.closest('[contenteditable="true"]') ||
       // Check if element or parent has onClick handler (for emoji circles)
       target.onclick ||
       target.closest('[onclick]') ||
@@ -120,6 +126,154 @@ SortableSection.propTypes = {
   id: PropTypes.string.isRequired,
   children: PropTypes.node.isRequired,
   isEditMode: PropTypes.bool.isRequired,
+};
+
+// Formatted Text Field Component
+const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} }) => {
+  const editorRef = useRef(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Initialize content only once
+  useEffect(() => {
+    if (editorRef.current && !isInitialized) {
+      editorRef.current.innerHTML = value || '';
+      setIsInitialized(true);
+    }
+  }, [value, isInitialized]);
+
+  const applyFormat = (formatType) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const selectedText = range.toString();
+    
+    if (!selectedText) return;
+
+    let formattedElement;
+    if (formatType === 'bold') {
+      formattedElement = document.createElement('strong');
+    } else if (formatType === 'italic') {
+      formattedElement = document.createElement('em');
+    } else if (formatType === 'underline') {
+      formattedElement = document.createElement('u');
+    }
+
+    formattedElement.textContent = selectedText;
+    range.deleteContents();
+    range.insertNode(formattedElement);
+
+    // Move cursor after the inserted element
+    const newRange = document.createRange();
+    newRange.setStartAfter(formattedElement);
+    newRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+
+    // Update the value
+    if (editorRef.current) {
+      onChange({ target: { value: editorRef.current.innerHTML } });
+    }
+  };
+
+  const handleInput = (e) => {
+    onChange({ target: { value: e.currentTarget.innerHTML } });
+  };
+
+  return (
+    <Box sx={{ position: 'relative' }}>
+      {/* Formatting Toolbar */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          zIndex: 2,
+          display: 'flex',
+          gap: 0.5,
+          bgcolor: 'rgba(255, 255, 255, 0.9)',
+          borderRadius: '4px',
+          padding: '2px',
+        }}
+      >
+        <IconButton
+          size="small"
+          onClick={() => applyFormat('bold')}
+          sx={{ width: 24, height: 24, color: '#636366' }}
+        >
+          <FormatBoldIcon sx={{ fontSize: 16 }} />
+        </IconButton>
+        <IconButton
+          size="small"
+          onClick={() => applyFormat('italic')}
+          sx={{ width: 24, height: 24, color: '#636366' }}
+        >
+          <FormatItalicIcon sx={{ fontSize: 16 }} />
+        </IconButton>
+        <IconButton
+          size="small"
+          onClick={() => applyFormat('underline')}
+          sx={{ width: 24, height: 24, color: '#636366' }}
+        >
+          <FormatUnderlinedIcon sx={{ fontSize: 16 }}  />
+        </IconButton>
+      </Box>
+
+      {/* Editable Content */}
+      <Box
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={handleInput}
+        sx={{
+          minHeight: `${rows * 24}px`,
+          padding: '12px',
+          paddingTop: '40px',
+          paddingRight: '100px',
+          borderRadius: '8px',
+          border: '1px solid #E5E7EB',
+          outline: 'none',
+          fontFamily: 'Aileron',
+          fontWeight: 400,
+          fontSize: '20px',
+          lineHeight: '24px',
+          color: '#231F20',
+          bgcolor: '#F3F4F6',
+          whiteSpace: 'pre-wrap',
+          wordWrap: 'break-word',
+          overflowWrap: 'break-word',
+          '&:focus': {
+            borderColor: '#1340FF',
+          },
+          '&:empty:before': {
+            content: `"${placeholder}"`,
+            color: '#9CA3AF',
+          },
+          '& strong': {
+            fontWeight: 700,
+            fontFamily: 'Aileron',
+          },
+          '& em': {
+            fontStyle: 'italic',
+            fontFamily: 'Aileron',
+          },
+          '& u': {
+            textDecoration: 'underline',
+            fontFamily: 'Aileron',
+          },
+          ...sx,
+        }}
+      />
+    </Box>
+  );
+};
+
+FormattedTextField.propTypes = {
+  value: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+  placeholder: PropTypes.string,
+  rows: PropTypes.number,
+  sx: PropTypes.object,
 };
 
 const PCRReportPage = ({ campaign, onBack }) => {
@@ -264,6 +418,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
   const reportRef = useRef(null);
   const cardsContainerRef = useRef(null);
   const displayCardsContainerRef = useRef(null);
+  const creatorTiersEditorRef = useRef(null);
   const [cardsHeight, setCardsHeight] = useState(280);
   const [displayCardsHeight, setDisplayCardsHeight] = useState(280);
   
@@ -514,6 +669,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode]);
+
+  // Initialize Creator Tiers editor content
+  useEffect(() => {
+    if (creatorTiersEditorRef.current && editableContent.creatorTiersDescription) {
+      creatorTiersEditorRef.current.innerHTML = editableContent.creatorTiersDescription;
+    }
+  }, [isEditMode, editableContent.creatorTiersDescription]);
 
   // Save to history when content changes (debounced)
   useEffect(() => {
@@ -802,59 +964,133 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
   const EngagementRateHeatmap = () => {
     const top5CreatorsPhases = useMemo(() => {
-      const creatorsWithEngagement = [];
+      // Get campaign posting period from Additional 1 fields
+      const postingStartDate = campaign?.campaignBrief?.postingStartDate;
+      const postingEndDate = campaign?.campaignBrief?.postingEndDate;
+      
+      if (!postingStartDate || !postingEndDate) {
+        console.log('No posting period dates available');
+        console.log('Campaign Brief:', campaign?.campaignBrief);
+        return [];
+      }
+
+      const campaignStart = new Date(postingStartDate);
+      const campaignEnd = new Date(postingEndDate);
+      const campaignDuration = (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24); 
+      
+      const firstWeekEnd = 7;
+      const midCampaignStart = 7;
+      const midCampaignEnd = Math.max(campaignDuration - 7, 7);
+      const finalWeekStart = Math.max(campaignDuration - 7, 7);
+      
+      console.log('=== Campaign Phase Boundaries ===');
+      console.log('Campaign Duration:', campaignDuration, 'days');
+      console.log('First Week: 0-7 days');
+      console.log('Mid Campaign:', midCampaignStart, '-', midCampaignEnd, 'days');
+      console.log('Final Week:', finalWeekStart, '-', campaignDuration, 'days');
+
+      // Group submissions by creator and calculate their ER for each phase
+      const creatorPhaseData = new Map();
       
       filteredInsightsData.forEach((insightData) => {
         const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
-        if (submission) {
-          const engagementRate = parseFloat(calculateEngagementRate(insightData.insight));
-          if (!Number.isNaN(engagementRate) && engagementRate > 0) {
-            creatorsWithEngagement.push({
-              submission,
-              insightData,
-              engagementRate,
-              platform: insightData.platform || 'Unknown'
-            });
-          }
+        if (!submission) return;
+
+        // Get post date
+        let postDate = null;
+        if (insightData.insight?.timestamp) {
+          postDate = new Date(insightData.insight.timestamp * 1000);
+        } else if (submission.createdAt) {
+          postDate = new Date(submission.createdAt);
+        }
+        
+        if (!postDate) return;
+
+        // Calculate days from campaign start
+        const daysFromStart = (postDate - campaignStart) / (1000 * 60 * 60 * 24);
+        
+        // Determine which phase this post belongs to
+        let phase = null;
+        if (daysFromStart >= 0 && daysFromStart <= firstWeekEnd) {
+          phase = 'firstWeek';
+        } else if (daysFromStart > midCampaignStart && daysFromStart <= midCampaignEnd) {
+          phase = 'midCampaign';
+        } else if (daysFromStart > finalWeekStart && daysFromStart <= campaignDuration) {
+          phase = 'finalWeek';
+        }
+        
+        if (!phase) return;
+
+        // Get creator identifier
+        const userId = typeof submission.user === 'string' ? submission.user : submission.user?.id;
+        const isManualEntry = userId === submission.id;
+        
+        if (!userId) return;
+
+        // Initialize creator data if not exists
+        if (!creatorPhaseData.has(userId)) {
+          creatorPhaseData.set(userId, {
+            userId,
+            name: submission.user?.name || 'Unknown',
+            isManualEntry,
+            creatorUsername: submission.platform === 'Instagram' 
+              ? submission.user?.creator?.instagram 
+              : submission.user?.creator?.tiktok,
+            firstWeek: [],
+            midCampaign: [],
+            finalWeek: [],
+            totalER: 0,
+            postCount: 0,
+          });
+        }
+
+        const creatorData = creatorPhaseData.get(userId);
+        const engagementRate = parseFloat(calculateEngagementRate(insightData.insight));
+        
+        if (!Number.isNaN(engagementRate) && engagementRate > 0) {
+          creatorData[phase].push(engagementRate);
+          creatorData.totalER += engagementRate;
+          creatorData.postCount += 1;
         }
       });
-      
-      const top5 = creatorsWithEngagement
-        .sort((a, b) => b.engagementRate - a.engagementRate)
-        .slice(0, 5);
-      
-      return top5.map(creator => {
-        const creatorData = filteredSubmissions.find(sub => sub.id === creator.submission.id);
-        console.log('=== Building Creator Phase Data ===');
-        console.log('Submission ID:', creator.submission.id);
-        console.log('Found Creator Data:', creatorData);
-        console.log('Creator Data User:', creatorData?.user);
+
+      // Calculate average ER per phase for each creator
+      const creatorsWithAverages = Array.from(creatorPhaseData.values()).map(creator => {
+        const firstWeekAvg = creator.firstWeek.length > 0
+          ? creator.firstWeek.reduce((a, b) => a + b, 0) / creator.firstWeek.length
+          : null;
         
-        // For regular submissions, user is an object with id, name, and creator details
-        // For manual entries, user.id equals the submission.id and creator info is in the user object
-        const userId = typeof creatorData?.user === 'string' ? creatorData.user : creatorData?.user?.id;
-        const creatorName = creatorData?.user?.name || 'Unknown';
+        const midCampaignAvg = creator.midCampaign.length > 0
+          ? creator.midCampaign.reduce((a, b) => a + b, 0) / creator.midCampaign.length
+          : null;
         
-        // Manual entries have user.id === submission.id, regular ones don't
-        const isManualEntry = userId === creatorData?.id;
-        
-        console.log('User ID:', userId);
-        console.log('Submission ID:', creatorData?.id);
-        console.log('Is Manual Entry:', isManualEntry);
-        
-        const baseRate = creator.engagementRate;
+        const finalWeekAvg = creator.finalWeek.length > 0
+          ? creator.finalWeek.reduce((a, b) => a + b, 0) / creator.finalWeek.length
+          : null;
+
         return {
-          userId,
-          name: creatorName,
-          isManualEntry,
-          creatorUsername: creatorData?.platform === 'Instagram' 
-            ? creatorData?.user?.creator?.instagram 
-            : creatorData?.user?.creator?.tiktok,
-          firstWeek: baseRate * (0.8 + Math.random() * 0.4),
-          midCampaign: baseRate * (0.8 + Math.random() * 0.4),
-          finalWeek: baseRate * (0.8 + Math.random() * 0.4),
+          userId: creator.userId,
+          name: creator.name,
+          isManualEntry: creator.isManualEntry,
+          creatorUsername: creator.creatorUsername,
+          firstWeek: firstWeekAvg,
+          midCampaign: midCampaignAvg,
+          finalWeek: finalWeekAvg,
+          overallER: creator.postCount > 0 ? creator.totalER / creator.postCount : 0,
         };
       });
+
+      // Sort by overall ER and take top 5
+      const top5 = creatorsWithAverages
+        .filter(c => c.overallER > 0)
+        .sort((a, b) => b.overallER - a.overallER)
+        .slice(0, 5);
+
+      console.log('=== Top 5 Creators with Phase Data ===');
+      console.log(top5);
+
+      return top5;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Only fetch creator data for non-manual entries
@@ -871,6 +1107,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         return acc + (Number.isNaN(rate) ? 0 : rate);
       }, 0);
       return sum / filteredInsightsData.length;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const getPhaseColor = (rate) => {
@@ -900,8 +1137,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontWeight: 600,
               fontSize: '20px',
               color: '#231F20'
-            }}
-          >
+          }}
+        >
             Top 5 Creator ER Across Campaign Phases
         </Typography>
           <Typography sx={{ mt: 2, color: '#64748B' }}>
@@ -922,8 +1159,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
           display: 'flex',
           flexDirection: 'column',
           gap: '16px'
-        }}
-      >
+                }}
+              >
         <Typography 
                     sx={{
             fontFamily: 'Aileron',
@@ -972,8 +1209,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   color: '#231F20',
                     minWidth: '80px',
                     textAlign: 'left'
-                  }}
-                >
+                }}
+              >
                   {displayName}
                 </Typography>
 
@@ -984,22 +1221,22 @@ const PCRReportPage = ({ campaign, onBack }) => {
               sx={{ 
                       flex: 1,
                       height: '40px',
-                      backgroundColor: getPhaseColor(creator.firstWeek),
+                      backgroundColor: creator.firstWeek !== null ? getPhaseColor(creator.firstWeek) : '#E5E7EB',
                       borderRadius: '0px',
                 display: 'flex',
                 alignItems: 'center',
                       justifyContent: 'center'
-                    }}
-                  >
+              }}
+            >
                     <Typography
               sx={{ 
                         fontFamily: 'Aileron',
                         fontSize: '14px',
                         fontWeight: 600,
-                        color: '#FFFFFF'
-                      }}
-                    >
-                      {creator.firstWeek.toFixed(1)}%
+                        color: creator.firstWeek !== null ? '#FFFFFF' : '#9CA3AF'
+              }}
+            >
+                      {creator.firstWeek !== null ? `${creator.firstWeek.toFixed(1)}%` : '-'}
                     </Typography>
             </Box>
 
@@ -1008,22 +1245,22 @@ const PCRReportPage = ({ campaign, onBack }) => {
               sx={{ 
                       flex: 1,
                       height: '40px',
-                      backgroundColor: getPhaseColor(creator.midCampaign),
+                      backgroundColor: creator.midCampaign !== null ? getPhaseColor(creator.midCampaign) : '#E5E7EB',
                       borderRadius: '0px',
                 display: 'flex',
                 alignItems: 'center',
                       justifyContent: 'center'
-                    }}
-                  >
+              }}
+            >
                     <Typography
               sx={{ 
                         fontFamily: 'Aileron',
                         fontSize: '14px',
                         fontWeight: 600,
-                        color: '#FFFFFF'
-                      }}
-                    >
-                      {creator.midCampaign.toFixed(1)}%
+                        color: creator.midCampaign !== null ? '#FFFFFF' : '#9CA3AF'
+              }}
+            >
+                      {creator.midCampaign !== null ? `${creator.midCampaign.toFixed(1)}%` : '-'}
                     </Typography>
           </Box>
 
@@ -1032,7 +1269,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               sx={{ 
                       flex: 1,
                       height: '40px',
-                      backgroundColor: getPhaseColor(creator.finalWeek),
+                      backgroundColor: creator.finalWeek !== null ? getPhaseColor(creator.finalWeek) : '#E5E7EB',
                       borderRadius: '0px',
                       display: 'flex',
                       alignItems: 'center',
@@ -1044,10 +1281,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fontFamily: 'Aileron',
                         fontSize: '14px',
                 fontWeight: 600,
-                        color: '#FFFFFF'
+                        color: creator.finalWeek !== null ? '#FFFFFF' : '#9CA3AF'
               }}
             >
-                      {creator.finalWeek.toFixed(1)}%
+                      {creator.finalWeek !== null ? `${creator.finalWeek.toFixed(1)}%` : '-'}
           </Typography>
                   </Box>
                 </Box>
@@ -1303,8 +1540,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '14px',
                       lineHeight: '16px',
                       color: '#231F20',
-                    }}
-                  >
+                  }}
+                >
                     Instagram ({formatNumber(platformData.instagram)})
                 </Typography>
                 </Box>
@@ -1329,8 +1566,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fontSize: '14px',
                         lineHeight: '16px',
                         color: '#231F20',
-                      }}
-                    >
+                  }}
+                >
                       TikTok ({formatNumber(platformData.tiktok)})
                 </Typography>
               </Box>
@@ -2135,7 +2372,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             lineHeight: '24px',
             color: '#231F20'
           }}
-        >
+          >
           Top 5 Creator Engagement Rate
           </Typography>
 
@@ -2187,7 +2424,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontWeight: 400,
                       color: '#636366'
                     }}
-                  >
+              >
                     {username || 'Unknown'}
               </Typography>
         </Box>
@@ -2203,8 +2440,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         position: 'relative',
                         width: `${barWidth}%`,
                         minWidth: '60px'
-                      }}
-                    />
+              }}
+            />
                   </Box>
                   <Typography
                     sx={{
@@ -2514,6 +2751,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontSize: '16px',
             lineHeight: '20px',
             letterSpacing: '0%',
+            whiteSpace: 'nowrap',
             '&:hover': {
               background: '#F9FAFB',
               border: '1px solid #D1D5DB',
@@ -2765,28 +3003,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
               Editable
             </Typography>
           </Box>
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
+          <FormattedTextField
             value={editableContent.campaignDescription}
             onChange={(e) => setEditableContent({ ...editableContent, campaignDescription: e.target.value })}
             placeholder="type here"
-            sx={{
-              '& .MuiInputBase-root': {
-                fontFamily: 'Inter Display',
-                fontSize: '20px',
-                lineHeight: '24px',
-                color: '#231F20',
-                bgcolor: '#F3F4F6',
-                borderRadius: '8px',
-                padding: '12px',
-                paddingTop: '40px',
-              },
-              '& .MuiOutlinedInput-notchedOutline': {
-                border: '1px solid #E5E7EB',
-              },
-            }}
+            rows={3}
           />
         </Box>
           );
@@ -2794,24 +3015,25 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         if (editableContent.campaignDescription) {
           return (
-      <Typography 
-        variant="body1" 
-        sx={{ 
+      <Box 
+            sx={{
           fontFamily: 'Aileron',
           fontWeight: 400,
           fontStyle: 'normal',
-          fontSize: '20px',
-          lineHeight: '24px',
+                fontSize: '20px',
+                lineHeight: '24px',
           letterSpacing: '0%',
-          color: '#231F20',
+                color: '#231F20',
           wordWrap: 'break-word',
           overflowWrap: 'break-word',
           wordBreak: 'break-word',
-          whiteSpace: 'pre-line'
+          whiteSpace: 'pre-wrap',
+          '& strong': { fontWeight: 700 },
+          '& em': { fontStyle: 'italic' },
+          '& u': { textDecoration: 'underline' },
         }}
-      >
-              {editableContent.campaignDescription}
-      </Typography>
+        dangerouslySetInnerHTML={{ __html: editableContent.campaignDescription }}
+      />
           );
         }
         
@@ -2819,23 +3041,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <Box
             sx={{
               bgcolor: '#E5E7EB',
-              borderRadius: '8px',
-              padding: '12px',
+                borderRadius: '8px',
+                padding: '12px',
             }}
           >
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                fontFamily: 'Aileron',
-                fontWeight: 400,
-                fontSize: '20px',
-                lineHeight: '24px',
-                letterSpacing: '0%',
+      <Typography 
+        variant="body1" 
+        sx={{ 
+          fontFamily: 'Aileron',
+          fontWeight: 400,
+          fontSize: '20px',
+          lineHeight: '24px',
+          letterSpacing: '0%',
                 color: '#9CA3AF',
               }}
             >
               Click Edit Report to edit Campaign Description
-            </Typography>
+      </Typography>
           </Box>
         );
       })()}
@@ -3143,9 +3365,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -3155,7 +3377,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+              <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -3163,9 +3385,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Engagement section removed', { variant: 'info' });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -3175,7 +3397,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
           </Box>
         )}
@@ -3186,9 +3408,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 setSectionEditStates({ ...sectionEditStates, engagement: false });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -3198,7 +3420,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+              <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -3206,9 +3428,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Engagement section removed', { variant: 'info' });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -3218,7 +3440,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
           </Box>
         )}
@@ -3243,28 +3465,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
               Editable
             </Typography>
           </Box>
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
+          <FormattedTextField
             value={editableContent.engagementDescription}
             onChange={(e) => setEditableContent({ ...editableContent, engagementDescription: e.target.value })}
             placeholder="type here"
-            sx={{
-              '& .MuiInputBase-root': {
-                fontFamily: 'Inter Display',
-                fontSize: '20px',
-                lineHeight: '24px',
-                color: '#231F20',
-                bgcolor: '#F3F4F6',
-                borderRadius: '8px',
-                padding: '12px',
-                paddingTop: '40px',
-              },
-              '& .MuiOutlinedInput-notchedOutline': {
-                border: '1px solid #E5E7EB',
-              },
-            }}
+            rows={4}
           />
         </Box>
           );
@@ -3272,8 +3477,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         if (editableContent.engagementDescription) {
           return (
-      <Typography 
-        variant="body1" 
+      <Box 
         sx={{ 
           fontFamily: 'Aileron',
           fontWeight: 400,
@@ -3286,6 +3490,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           wordWrap: 'break-word',
           overflowWrap: 'break-word',
           wordBreak: 'break-word',
+          whiteSpace: 'pre-wrap',
           '& strong': {
             fontFamily: 'Inter Display, sans-serif',
             fontWeight: 700,
@@ -3294,11 +3499,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
             lineHeight: '24px',
             letterSpacing: '0%',
             color: '#231F20'
-          }
+          },
+          '& em': { fontStyle: 'italic' },
+          '& u': { textDecoration: 'underline' },
         }}
-      >
-              {editableContent.engagementDescription}
-      </Typography>
+        dangerouslySetInnerHTML={{ __html: editableContent.engagementDescription }}
+      />
           );
         }
         
@@ -3323,7 +3529,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               }}
             >
               Click Edit Report to edit Engagement
-            </Typography>
+      </Typography>
           </Box>
         );
       })()}
@@ -3403,9 +3609,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -3415,7 +3621,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+              <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -3423,9 +3629,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Platform Breakdown section removed', { variant: 'info' });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -3435,7 +3641,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
           </Box>
         )}
@@ -3447,9 +3653,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 setSectionEditStates({ ...sectionEditStates, platformBreakdown: false });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -3459,7 +3665,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+              <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -3467,9 +3673,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Platform Breakdown section removed', { variant: 'info' });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -3479,7 +3685,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
           </Box>
         )}
@@ -3504,28 +3710,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
               Editable
       </Typography>
           </Box>
-          <TextField
-            fullWidth
-            multiline
-            rows={2}
-                value={editableContent.platformBreakdownDescription || ''}
-                onChange={(e) => setEditableContent({ ...editableContent, platformBreakdownDescription: e.target.value })}
+          <FormattedTextField
+            value={editableContent.platformBreakdownDescription || ''}
+            onChange={(e) => setEditableContent({ ...editableContent, platformBreakdownDescription: e.target.value })}
             placeholder="type here"
-              sx={{
-              '& .MuiInputBase-root': {
-                fontFamily: 'Inter Display',
-                fontSize: '20px',
-                lineHeight: '24px',
-                color: '#231F20',
-                bgcolor: '#F3F4F6',
-                borderRadius: '8px',
-                padding: '12px',
-                paddingTop: '40px',
-              },
-              '& .MuiOutlinedInput-notchedOutline': {
-                border: '1px solid #E5E7EB',
-              },
-            }}
+            rows={2}
           />
         </Box>
           );
@@ -3533,24 +3722,26 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         if (editableContent.platformBreakdownDescription) {
           return (
-        <Typography 
-          variant="body1" 
-          sx={{ 
+        <Box 
+              sx={{
             fontFamily: 'Aileron',
             fontWeight: 400,
             fontStyle: 'normal',
-            fontSize: '20px',
-            lineHeight: '24px',
+                fontSize: '20px',
+                lineHeight: '24px',
             letterSpacing: '0%',
-            color: '#231F20',
+                color: '#231F20',
             mb: 3,
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
-            wordBreak: 'break-word'
+            wordBreak: 'break-word',
+            whiteSpace: 'pre-wrap',
+            '& strong': { fontWeight: 700 },
+            '& em': { fontStyle: 'italic' },
+            '& u': { textDecoration: 'underline' },
           }}
-        >
-              {editableContent.platformBreakdownDescription}
-        </Typography>
+          dangerouslySetInnerHTML={{ __html: editableContent.platformBreakdownDescription }}
+        />
           );
         }
         
@@ -3558,28 +3749,28 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <Box
             sx={{
               bgcolor: '#E5E7EB',
-              borderRadius: '8px',
-              padding: '12px',
+                borderRadius: '8px',
+                padding: '12px',
               mb: 3,
             }}
           >
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                fontFamily: 'Aileron',
-                fontWeight: 400,
-                fontSize: '20px',
-                lineHeight: '24px',
-                letterSpacing: '0%',
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            fontFamily: 'Aileron',
+            fontWeight: 400,
+            fontSize: '20px',
+            lineHeight: '24px',
+            letterSpacing: '0%',
                 color: '#9CA3AF',
               }}
             >
               Click Edit Report to edit Platform Breakdown
-            </Typography>
+        </Typography>
           </Box>
         );
       })()}
-
+      
       {/* Platform Breakdown Grid */}
       <Grid container spacing={3}>
         {/* Platform Interactions Chart - Left */}
@@ -3614,7 +3805,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       flexDirection: 'column',
                       justifyContent: 'center',
                       marginLeft: 'auto',
-                  }}>
+              }}>
                     {/* Most Likes Badge */}
                   <Box sx={{
                     position: 'absolute',
@@ -3755,7 +3946,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               const likes = mostSharesCreator ? getMetricValue(mostSharesCreator.insightData.insight, 'likes') : 0;
               const maxShares = mostSharesCreator ? mostSharesCreator.shares : 0;
               const engagementRate = mostSharesCreator ? calculateEngagementRate(mostSharesCreator.insightData.insight) : 0;
-              
+          
               return mostSharesCreator && (
                 <Grid item xs={12} md={12}>
               <Box sx={{ 
@@ -3772,7 +3963,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       flexDirection: 'column',
                       justifyContent: 'center',
                       marginLeft: 'auto',
-                  }}>
+              }}>
                     {/* Most Shares Badge */}
                 <Box sx={{
                   position: 'absolute',
@@ -3971,9 +4162,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -3983,7 +4174,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+              <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -3991,9 +4182,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Views section removed', { variant: 'info' });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -4003,7 +4194,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
           </Box>
         )}
@@ -4014,9 +4205,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 setSectionEditStates({ ...sectionEditStates, views: false });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -4026,7 +4217,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+              <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -4034,9 +4225,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Views section removed', { variant: 'info' });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -4046,7 +4237,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
           </Box>
         )}
@@ -4071,28 +4262,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
               Editable
             </Typography>
           </Box>
-          <TextField
-            fullWidth
-            multiline
-                rows={3}
-                value={editableContent.viewsDescription || ''}
+          <FormattedTextField
+            value={editableContent.viewsDescription || ''}
             onChange={(e) => setEditableContent({ ...editableContent, viewsDescription: e.target.value })}
             placeholder="type here"
-            sx={{
-              '& .MuiInputBase-root': {
-                    fontFamily: 'Inter Display',
-                    fontSize: '20px',
-                lineHeight: '24px',
-                    color: '#231F20',
-                bgcolor: '#F3F4F6',
-                borderRadius: '8px',
-                padding: '12px',
-                paddingTop: '40px',
-              },
-              '& .MuiOutlinedInput-notchedOutline': {
-                border: '1px solid #E5E7EB',
-              },
-            }}
+            rows={3}
           />
         </Box>
           );
@@ -4100,8 +4274,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         if (editableContent.viewsDescription) {
           return (
-        <Typography 
-              variant="body1" 
+        <Box 
           sx={{ 
             fontFamily: 'Aileron',
             fontWeight: 400,
@@ -4113,14 +4286,17 @@ const PCRReportPage = ({ campaign, onBack }) => {
             mb: 3,
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
-            wordBreak: 'break-word'
+            wordBreak: 'break-word',
+            whiteSpace: 'pre-wrap',
+            '& strong': { fontWeight: 700 },
+            '& em': { fontStyle: 'italic' },
+            '& u': { textDecoration: 'underline' },
           }}
-        >
-              {editableContent.viewsDescription}
-        </Typography>
+          dangerouslySetInnerHTML={{ __html: editableContent.viewsDescription }}
+        />
           );
         }
-        
+      
         return (
           <Box
             sx={{
@@ -4222,9 +4398,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
           sx={{ 
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -4234,7 +4410,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+              <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -4242,9 +4418,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Audience Sentiment section removed', { variant: 'info' });
               }}
           sx={{ 
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -4254,7 +4430,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
       </Box>
         )}
@@ -4265,9 +4441,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 setSectionEditStates({ ...sectionEditStates, audienceSentiment: false });
               }}
       sx={{ 
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -4277,7 +4453,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+              <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -4285,9 +4461,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Audience Sentiment section removed', { variant: 'info' });
               }}
         sx={{ 
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -4297,7 +4473,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
           </Box>
         )}
@@ -4322,28 +4498,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
               Editable
       </Typography>
           </Box>
-          <TextField
-            fullWidth
-            multiline
-                rows={3}
+          <FormattedTextField
             value={editableContent.audienceSentimentDescription}
             onChange={(e) => setEditableContent({ ...editableContent, audienceSentimentDescription: e.target.value })}
             placeholder="type here"
-            sx={{
-              '& .MuiInputBase-root': {
-                    fontFamily: 'Inter Display',
-                    fontSize: '20px',
-                lineHeight: '24px',
-                    color: '#231F20',
-                bgcolor: '#F3F4F6',
-                borderRadius: '8px',
-                padding: '12px',
-                paddingTop: '40px',
-              },
-              '& .MuiOutlinedInput-notchedOutline': {
-                border: '1px solid #E5E7EB',
-              },
-            }}
+            rows={3}
           />
         </Box>
           );
@@ -4351,24 +4510,26 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         if (editableContent.audienceSentimentDescription) {
           return (
-        <Typography 
-              variant="body1"
-          sx={{ 
-            fontFamily: 'Aileron',
+        <Box 
+            sx={{
+                fontFamily: 'Aileron',
             fontWeight: 400,
                 fontStyle: 'normal',
                 fontSize: '20px',
-            lineHeight: '24px',
+                lineHeight: '24px',
                 letterSpacing: '0%',
                 color: '#231F20',
                 mb: 3,
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
-            wordBreak: 'break-word'
+            wordBreak: 'break-word',
+            whiteSpace: 'pre-wrap',
+            '& strong': { fontWeight: 700 },
+            '& em': { fontStyle: 'italic' },
+            '& u': { textDecoration: 'underline' },
           }}
-        >
-              {editableContent.audienceSentimentDescription}
-        </Typography>
+          dangerouslySetInnerHTML={{ __html: editableContent.audienceSentimentDescription }}
+        />
           );
         }
         
@@ -4376,24 +4537,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <Box 
             sx={{ 
               bgcolor: '#E5E7EB',
-              borderRadius: '8px',
-              padding: '12px',
+                borderRadius: '8px',
+                padding: '12px',
               mb: 3,
             }}
           >
-            <Typography 
+        <Typography 
               variant="body1" 
-              sx={{ 
-                fontFamily: 'Aileron',
-                fontWeight: 400,
+          sx={{ 
+            fontFamily: 'Aileron',
+            fontWeight: 400,
                 fontSize: '20px',
-                lineHeight: '24px',
+            lineHeight: '24px',
                 letterSpacing: '0%',
                 color: '#9CA3AF',
               }}
             >
               Click Edit Report to edit Audience Sentiment
-            </Typography>
+        </Typography>
           </Box>
         );
       })()}
@@ -4436,8 +4597,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <>
               <Grid container spacing={2}>
                 {editableContent.positiveComments.map((comment, index) => (
-                  <Grid item xs={12} sm={6} md={3} key={index}>
-                    <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px', position: 'relative' }}>
+                  <Grid item xs={12} sm={6} md={4} key={index}>
+                    <Box sx={{ p: 1.5, bgcolor: '#F3F4F6', borderRadius: '8px', position: 'relative' }}>
                       <IconButton
                         size="small"
                         onClick={() => {
@@ -4448,10 +4609,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
-                      <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
+                      <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 0.5, pr: 3 }}>
                         {comment.username}
                       </Typography>
-                      <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
+                      <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151', lineHeight: 1.4 }}>
                         {comment.comment}
                       </Typography>
     </Box>
@@ -4876,9 +5037,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -4888,7 +5049,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+              <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -4896,9 +5057,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Creator Tiers section removed', { variant: 'info' });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -4908,7 +5069,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
           </Box>
         )}
@@ -4919,9 +5080,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 setSectionEditStates({ ...sectionEditStates, creatorTiers: false });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -4931,7 +5092,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+              <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -4939,9 +5100,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Creator Tiers section removed', { variant: 'info' });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -4951,7 +5112,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
           </Box>
           )}
@@ -4975,49 +5136,167 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     Editable
                   </Typography>
       </Box>
-                <TextField
-                  value={editableContent.creatorTiersDescription}
-                  onChange={(e) => setEditableContent({ ...editableContent, creatorTiersDescription: e.target.value })}
-                  fullWidth
-                  multiline
-                  rows={3}
-                  placeholder="type here"
-                  sx={{
-                    bgcolor: '#E5E7EB',
-                    borderRadius: '8px',
-                    '& .MuiInputBase-root': {
-                      fontFamily: 'Inter Display, sans-serif',
-                      fontWeight: 400,
-                      fontSize: '14px',
-                      lineHeight: '18px',
-                      color: '#000000',
+                <Box sx={{ position: 'relative' }}>
+                  {/* Formatting Toolbar */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      zIndex: 2,
+                      display: 'flex',
+                      gap: 0.5,
+                      bgcolor: 'rgba(255, 255, 255, 0.9)',
+                      borderRadius: '4px',
+                      padding: '2px',
+                    }}
+                  >
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const selection = window.getSelection();
+                        if (!selection.rangeCount) return;
+                        const range = selection.getRangeAt(0);
+                        const selectedText = range.toString();
+                        if (!selectedText) return;
+                        const strong = document.createElement('strong');
+                        strong.textContent = selectedText;
+                        range.deleteContents();
+                        range.insertNode(strong);
+                        // Move cursor after the inserted element
+                        const newRange = document.createRange();
+                        newRange.setStartAfter(strong);
+                        newRange.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(newRange);
+                        const event = new Event('input', { bubbles: true });
+                        document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
+                      }}
+                      sx={{ width: 20, height: 20, color: '#636366' }}
+                    >
+                      <FormatBoldIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const selection = window.getSelection();
+                        if (!selection.rangeCount) return;
+                        const range = selection.getRangeAt(0);
+                        const selectedText = range.toString();
+                        if (!selectedText) return;
+                        const em = document.createElement('em');
+                        em.textContent = selectedText;
+                        range.deleteContents();
+                        range.insertNode(em);
+                        // Move cursor after the inserted element
+                        const newRange = document.createRange();
+                        newRange.setStartAfter(em);
+                        newRange.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(newRange);
+                        const event = new Event('input', { bubbles: true });
+                        document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
+                      }}
+                      sx={{ width: 20, height: 20, color: '#636366' }}
+                    >
+                      <FormatItalicIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const selection = window.getSelection();
+                        if (!selection.rangeCount) return;
+                        const range = selection.getRangeAt(0);
+                        const selectedText = range.toString();
+                        if (!selectedText) return;
+                        const u = document.createElement('u');
+                        u.textContent = selectedText;
+                        range.deleteContents();
+                        range.insertNode(u);
+                        // Move cursor after the inserted element
+                        const newRange = document.createRange();
+                        newRange.setStartAfter(u);
+                        newRange.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(newRange);
+                        const event = new Event('input', { bubbles: true });
+                        document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
+                      }}
+                      sx={{ width: 20, height: 20, color: '#636366' }}
+                    >
+                      <FormatUnderlinedIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+    </Box>
+
+                  {/* Editable Content */}
+                  <Box
+                    ref={creatorTiersEditorRef}
+                    data-creator-tiers-editor
+                    contentEditable
+                    suppressContentEditableWarning
+                    onInput={(e) => setEditableContent({ ...editableContent, creatorTiersDescription: e.currentTarget.innerHTML })}
+                    onFocus={(e) => {
+                      // Set initial content if empty
+                      if (!e.currentTarget.innerHTML) {
+                        e.currentTarget.innerHTML = editableContent.creatorTiersDescription || '';
+                      }
+                    }}
+                    sx={{
+                      minHeight: '72px',
                       padding: '8px',
                       paddingTop: '26px',
-                    },
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      border: 'none',
-                    },
-                  }}
-                />
+                      paddingRight: '80px',
+                      borderRadius: '8px',
+                      bgcolor: '#E5E7EB',
+                      outline: 'none',
+                      fontFamily: 'Aileron',
+                      fontWeight: 400,
+                      fontSize: '20px',
+                      lineHeight: '24px',
+                      color: '#231F20',
+                      whiteSpace: 'pre-wrap',
+                      wordWrap: 'break-word',
+                      overflowWrap: 'break-word',
+                      '&:focus': {
+                        outline: '2px solid #1340FF',
+                      },
+                      '&:empty:before': {
+                        content: '"type here"',
+                        color: '#9CA3AF',
+                      },
+                      '& strong': {
+                        fontWeight: 700,
+                      },
+                      '& em': {
+                        fontStyle: 'italic',
+                      },
+                      '& u': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  />
+                </Box>
     </Box>
             );
           }
 
           if (editableContent.creatorTiersDescription) {
             return (
-      <Typography 
+      <Box 
         sx={{ 
-                  fontFamily: 'Inter Display, sans-serif',
+                  fontFamily: 'Aileron',
           fontWeight: 400,
-                  fontSize: '16px',
+                  fontSize: '20px',
                   lineHeight: '24px',
           color: '#231F20',
                   mb: 4,
                   whiteSpace: 'pre-wrap',
+                  '& strong': { fontWeight: 700 },
+                  '& em': { fontStyle: 'italic' },
+                  '& u': { textDecoration: 'underline' },
                 }}
-              >
-                {editableContent.creatorTiersDescription}
-              </Typography>
+                dangerouslySetInnerHTML={{ __html: editableContent.creatorTiersDescription }}
+              />
             );
           }
           
@@ -5030,10 +5309,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 mb: 4,
               }}
             >
-              <Typography 
-                sx={{ 
+      <Typography 
+        sx={{ 
                   fontFamily: 'Aileron',
-                  fontWeight: 400,
+          fontWeight: 400,
                   fontSize: '20px',
                   lineHeight: '24px',
                   color: '#9CA3AF',
@@ -5169,7 +5448,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           fontFamily: 'Inter Display, sans-serif',
                           fontSize: '14px',
                           fontWeight: 400,
-                          color: '#231F20',
+          color: '#231F20',
                           borderRight: '1px solid #000000',
                           textAlign: 'center',
                         }}
@@ -5212,8 +5491,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
         borderRadius: '12px',
         padding: '24px',
         boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
-      }}
-    >
+        }}
+      >
     <Box sx={{ mb: 6 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
       <Typography 
@@ -5259,9 +5538,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -5271,7 +5550,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+              <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -5279,9 +5558,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Strategies Utilised section removed', { variant: 'info' });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -5291,7 +5570,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
           </Box>
         )}
@@ -5302,9 +5581,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 setSectionEditStates({ ...sectionEditStates, strategies: false });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -5314,7 +5593,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+              <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -5322,9 +5601,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Strategies Utilised section removed', { variant: 'info' });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -5334,7 +5613,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
           </Box>
         )}
@@ -5362,26 +5641,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
               Editable
             </Typography>
           </Box>
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
+          <FormattedTextField
             value={editableContent.bestPerformingPersonasDescription}
             onChange={(e) => setEditableContent({ ...editableContent, bestPerformingPersonasDescription: e.target.value })}
+            placeholder="type here"
+            rows={3}
             sx={{
-              bgcolor: '#F3F4F6',
-              borderRadius: '8px',
-              '& .MuiInputBase-root': {
-                fontFamily: 'Inter Display',
-                fontSize: '20px',
-                lineHeight: '24px',
-                color: '#231F20',
-                padding: '12px',
-                paddingTop: '40px',
-              },
-              '& .MuiOutlinedInput-notchedOutline': {
                 border: 'none',
-              },
             }}
           />
         </Box>
@@ -5390,21 +5656,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         if (editableContent.bestPerformingPersonasDescription) {
           return (
-        <Typography 
+        <Box 
           sx={{ 
             fontFamily: 'Aileron',
             fontWeight: 400,
-            fontSize: '16px',
+            fontSize: '20px',
             lineHeight: '24px',
             color: '#374151',
             mb: 4,
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
-            wordBreak: 'break-word'
+            wordBreak: 'break-word',
+            whiteSpace: 'pre-wrap',
+            '& strong': { fontWeight: 700 },
+            '& em': { fontStyle: 'italic' },
+            '& u': { textDecoration: 'underline' },
           }}
-        >
-              {editableContent.bestPerformingPersonasDescription}
-        </Typography>
+          dangerouslySetInnerHTML={{ __html: editableContent.bestPerformingPersonasDescription }}
+        />
           );
         }
         
@@ -5658,8 +5927,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontWeight: 600, 
                       color: '#636366',
                       mb: 1
-                }}
-              >
+                  }}
+                >
                     Number of Creators
                 </Typography>
                 <TextField
@@ -5866,8 +6135,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   mb: 1.5,
                   textAlign: 'center',
                   ml: -3,
-                }}
-              >
+                  }}
+                >
                 {editableContent.educatorTitle}
                 </Typography>
               )}
@@ -5884,8 +6153,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 alignItems: 'center',
                       gap: 0.5,
                       zIndex: 1,
-                    }}
-                  >
+              }}
+            >
                     <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                       Editable
                     </Typography>
@@ -5910,8 +6179,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       },
                       '& .MuiOutlinedInput-notchedOutline': {
                         border: 'none',
-                    },
-                  }}
+              },
+            }}
                 />
                 </Box>
 
@@ -6275,8 +6544,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         '&:hover': {
                           opacity: 0.7,
                         },
-                      }}
-                    >
+                  }}
+                >
                       <img src="/assets/delete.svg" alt="Delete" style={{ width: '20px', height: '20px' }} />
                     </IconButton>
                   </Box>
@@ -6346,8 +6615,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 color: '#231F20',
                 textAlign: 'left',
                 mb: 2,
-              }}
-            >
+                }}
+              >
               Creator Strategy Breakdown
               </Typography>
 
@@ -6632,8 +6901,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     fontSize: '14px',
                     lineHeight: '18px',
                         color: '#231F20',
-                      }}
-                    >
+                  }}
+                >
                       {editableContent.educatorTitle} ({editableContent.educatorCreatorCount || '1'})
                 </Typography>
         </Box>
@@ -6656,12 +6925,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fontSize: '14px',
                         lineHeight: '18px',
                         color: '#231F20',
-                      }}
-                    >
+                }}
+              >
                       {editableContent.thirdTitle} ({editableContent.thirdCreatorCount || '1'})
               </Typography>
                 </Box>
-                )}
+            )}
               </Box>
           </Box>
           </Box>
@@ -6759,6 +7028,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       lineHeight: '22px',
                         color: '#000000',
                       textAlign: 'left',
+                      whiteSpace: 'pre-wrap'
                       }}
                     >
                       {editableContent.comicContentStyle}
@@ -6848,6 +7118,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       lineHeight: '22px',
                       color: '#000000',
                       textAlign: 'left',
+                      whiteSpace: 'pre-wrap'
                     }}
                   >
                     {editableContent.comicContentStyle}
@@ -6892,8 +7163,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 transform: 'translateY(-50%)',
                 zIndex: 1,
                 boxShadow: '-4px 4px 4px 0px #8E8E9340',
-              }}
-            >
+                    }}
+                  >
               {/* Inner gradient circle */}
               <Box
                     sx={{
@@ -6905,8 +7176,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   alignItems: 'center',
                   justifyContent: 'center',
                     fontSize: '48px',
-                }}
-              >
+                    }}
+                  >
                 {editableContent.educatorEmoji}
                 </Box>
                 </Box>
@@ -6931,8 +7202,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   color: '#0067D5',
                   mb: 1.5,
                     textAlign: 'left',
-                }}
-              >
+                    }}
+                  >
                 {editableContent.educatorTitle}
                   </Typography>
               
@@ -6946,6 +7217,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     textAlign: 'left',
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
+                    whiteSpace: 'pre-wrap'
                     }}
                   >
                   {editableContent.educatorContentStyle}
@@ -6953,7 +7225,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </Box>
               </Box>
             </Box>
-          )}
+            )}
 
           {/* The Third Card - Only show if showThirdCard is true */}
           {showThirdCard && (
@@ -7043,6 +7315,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       textAlign: 'left',
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
+                    whiteSpace: 'pre-wrap'
                   }}
                 >
                     {editableContent.thirdContentStyle}
@@ -7313,8 +7586,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                               color: '#FFFFFF',
                               textAlign: 'center',
                               textShadow: '0.5px 0.5px 1px #231F20',
-                            }}
-                          >
+                  }}
+                >
                             {editableContent.creatorStrategyCount || '1'}
                 </Typography>
                         </Box>
@@ -7365,8 +7638,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     fontSize: '14px',
                     lineHeight: '18px',
                             color: '#231F20',
-                          }}
-                        >
+                  }}
+                >
                           {editableContent.educatorTitle} ({editableContent.educatorCreatorCount || '1'})
                 </Typography>
               </Box>
@@ -7465,9 +7738,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -7477,7 +7750,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:check-fill" width={28} sx={{ color: '#10B981' }} />
+              <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -7485,9 +7758,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Recommendations section removed', { variant: 'info' });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -7497,7 +7770,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
           </Box>
         )}
@@ -7508,9 +7781,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 setSectionEditStates({ ...sectionEditStates, recommendations: false });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -7520,7 +7793,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:edit-line" width={28} sx={{ color: '#3B82F6' }} />
+              <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
             </IconButton>
             <IconButton
               onClick={() => {
@@ -7528,9 +7801,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 enqueueSnackbar('Recommendations section removed', { variant: 'info' });
               }}
               sx={{
-                width: '44px',
-                height: '44px',
-                padding: '11px 16.5px 15.13px 16.5px',
+                width: '46px',
+                height: '46px',
+                padding: '8px',
                 borderRadius: '11px',
                 border: '1.38px solid #E7E7E7',
                 backgroundColor: '#FFFFFF',
@@ -7540,7 +7813,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 }
               }}
             >
-              <Iconify icon="mingcute:delete-2-fill" width={28} sx={{ color: '#EF4444' }} />
+              <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
             </IconButton>
         </Box>
       )}
@@ -7604,7 +7877,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 key={index}
         sx={{
                   bgcolor: getImprovedInsightBgColor(index),
-                  p: 1, 
+                  p: 1.5, 
                   color: 'white', 
                   height: '120px', 
                   display: 'flex', 
@@ -7618,22 +7891,18 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Box sx={{ 
                     bgcolor: '#E5E7EB', 
           borderRadius: '12px',
-                    p: 2.5,
-                    px: 1,
+                    p: 2,
                     flex: 1,
                     display: 'flex',
                     gap: 0.5,
                   }}>
-                    <Box sx={{ position: 'relative', flex: 1 }}>
+                    <Box sx={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
                       <Box
                         sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
                           display: 'flex',
                           alignItems: 'center',
                           gap: 0.5,
-                          zIndex: 1,
+                          mb: 0.5,
                         }}
                       >
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
@@ -7651,10 +7920,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         multiline
                         rows={2}
                         inputProps={{
-                          maxLength: 120,
+                          maxLength: 200,
                         }}
                         sx={{
-                          mt: 1.5,
                           '& .MuiInputBase-root': {
                             fontFamily: 'Aileron',
                             fontSize: '12px',
@@ -7827,7 +8095,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         multiline
                         rows={2}
                         inputProps={{
-                          maxLength: 120,
+                          maxLength: 200,
                         }}
                         sx={{
                           mt: 1.5,
@@ -8001,7 +8269,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         multiline
                         rows={2}
                         inputProps={{
-                          maxLength: 120,
+                          maxLength: 200,
                         }}
                         sx={{
                           mt: 1.5,
@@ -8132,6 +8400,8 @@ PCRReportPage.propTypes = {
     campaignBrief: PropTypes.shape({
       startDate: PropTypes.string,
       endDate: PropTypes.string,
+      postingStartDate: PropTypes.string,
+      postingEndDate: PropTypes.string,
     }),
     submission: PropTypes.array,
   }),
