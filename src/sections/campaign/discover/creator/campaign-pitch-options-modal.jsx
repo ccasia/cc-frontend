@@ -51,7 +51,6 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video, m
       'cm7oe0q15005bms010ujmjb3r',
       'cm44lei3t00si132zq87a5lan',
       'cm9kzqz1u00ziqe01q2tsdptg',
-      'cmfb25m4r003vqn01zoe9atng',
       'cmj9pz1n40a3hs40154b31l90',
       'cm8mh5ic5032sph011r87rw4e',
       'cm40womsf001k54qg4epuacmu',
