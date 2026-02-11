@@ -229,7 +229,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
     ) {
       console.log('Auto-selecting POSTING stage');
       setSelectedStage('POSTING');
-      return;
+      
     }
     
     // DO NOT auto-select Final Draft - let creator manually choose

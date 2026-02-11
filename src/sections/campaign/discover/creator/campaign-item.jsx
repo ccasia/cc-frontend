@@ -1,8 +1,8 @@
 /* eslint-disable no-nested-ternary */
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router';
 import { enqueueSnackbar } from 'notistack';
-import { useState } from 'react';
 
 import { alpha, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';

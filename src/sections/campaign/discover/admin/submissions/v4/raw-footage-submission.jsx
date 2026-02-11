@@ -6,11 +6,11 @@ import {
   Box,
   Card,
   Chip,
-  CircularProgress,
   Stack,
   TextField,
   Typography,
-  IconButton
+  IconButton,
+  CircularProgress
 } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';

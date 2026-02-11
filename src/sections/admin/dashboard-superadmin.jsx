@@ -325,7 +325,7 @@
 import useSWR from 'swr';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import React, { useMemo, useState, useEffect, useCallback, memo } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import { LineChart } from '@mui/x-charts';
@@ -400,7 +400,10 @@ const DashboardSuperadmin = () => {
   );
   
   // Extract campaigns from response (backend returns array directly)
-  const campaigns = Array.isArray(campaignsData) ? campaignsData : campaignsData?.data || [];
+  const campaigns = useMemo(
+    () => (Array.isArray(campaignsData) ? campaignsData : campaignsData?.data || []),
+    [campaignsData]
+  );
   
   // OPTIMIZATION: Use dashboard stats endpoint (aggregated data from backend)
   const { data: dashboardStats, isLoading: statsLoading } = useSWR(
@@ -460,9 +463,7 @@ const DashboardSuperadmin = () => {
   );
 
   // OPTIMIZATION: Use backend stats only - no client-side calculation needed
-  const totalPitches = useMemo(() => {
-    return dashboardStats?.data?.totalPitches || 0;
-  }, [dashboardStats]);
+  const totalPitches = useMemo(() => dashboardStats?.data?.totalPitches || 0, [dashboardStats]);
 
   // OPTIMIZATION: Pending pitches are already filtered and limited by backend
   const pendingPitches = useMemo(() => {
@@ -505,23 +506,15 @@ const DashboardSuperadmin = () => {
   const totalClients = dashboardStats?.data?.totalClients || clientData || 0;
 
   // OPTIMIZATION: Use backend stats only - no client-side calculation needed
-  const totalApprovedPitches = useMemo(() => {
-    return dashboardStats?.data?.approvedPitches || 0;
-  }, [dashboardStats]);
+  const totalApprovedPitches = useMemo(() => dashboardStats?.data?.approvedPitches || 0, [dashboardStats]);
 
-  const totalRejectedPitches = useMemo(() => {
-    return dashboardStats?.data?.rejectedPitches || 0;
-  }, [dashboardStats]);
+  const totalRejectedPitches = useMemo(() => dashboardStats?.data?.rejectedPitches || 0, [dashboardStats]);
 
   // OPTIMIZATION: Use backend stats only - no client-side calculation needed
-  const totalCreatorsWithMediaKit = useMemo(() => {
-    return dashboardStats?.data?.creatorsWithMediaKit || 0;
-  }, [dashboardStats]);
+  const totalCreatorsWithMediaKit = useMemo(() => dashboardStats?.data?.creatorsWithMediaKit || 0, [dashboardStats]);
 
   // OPTIMIZATION: Use backend stats only - no client-side calculation needed
-  const totalCreatorsInAtLeastOneCampaign = useMemo(() => {
-    return dashboardStats?.data?.creatorsInCampaigns || 0;
-  }, [dashboardStats]);
+  const totalCreatorsInAtLeastOneCampaign = useMemo(() => dashboardStats?.data?.creatorsInCampaigns || 0, [dashboardStats]);
 
   // Generate last 6 months data based on actual metrics
   const monthlyData = useMemo(() => {

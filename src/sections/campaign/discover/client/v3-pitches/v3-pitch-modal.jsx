@@ -27,13 +27,13 @@ import {
   DialogActions,
 } from '@mui/material';
 
-import Markdown from 'src/components/markdown';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllCreators } from 'src/api/creator';
 
 import Iconify from 'src/components/iconify';
+import Markdown from 'src/components/markdown';
 
 
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = false }) => {

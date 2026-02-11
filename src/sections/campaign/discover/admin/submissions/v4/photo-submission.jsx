@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useRef, useMemo, useState, useCallback } from 'react';
 
-import { Box, Card, Chip, CircularProgress, Stack, TextField, Typography } from '@mui/material';
+import { Box, Card, Chip, Stack, TextField, Typography, CircularProgress } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
 

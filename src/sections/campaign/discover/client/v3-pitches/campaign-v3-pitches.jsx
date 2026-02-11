@@ -6,7 +6,6 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
-import { alpha } from '@mui/material/styles';
 import {
   Box,
   Chip,
@@ -18,9 +17,7 @@ import {
   Avatar,
   Divider,
   Tooltip,
-  Checkbox,
   TableRow,
-  MenuItem,
   TableBody,
   TextField,
   TableCell,
@@ -34,7 +31,6 @@ import {
   TableContainer,
   InputAdornment,
   CircularProgress,
-  FormControlLabel,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -44,8 +40,8 @@ import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllCreators } from 'src/api/creator';
-import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { OUTREACH_STATUS_OPTIONS } from 'src/contants/outreach';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import SortableHeader from 'src/components/table/sortable-header';

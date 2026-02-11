@@ -1,6 +1,5 @@
-import sumBy from 'lodash/sumBy';
 import PropTypes from 'prop-types';
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
