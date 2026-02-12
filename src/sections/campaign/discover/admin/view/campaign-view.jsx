@@ -305,26 +305,13 @@ const CampaignView = () => {
         const cols = lgUp ? 3 : mdUp ? 2 : 1;
         const rowIndex = Math.floor(lastOpenedIndex / cols);
         rowVirtualizer.scrollToIndex(rowIndex, { align: 'start' });
+        localStorage.setItem('lastScrollPosition', mainRef?.current.scrollTop.toString());
       } else if (!Number.isNaN(lastScrollPosition) && lastScrollPosition > 0 && mainRef.current) {
-        console.log('SADSADASDS');
-        mainRef.current.scrollTop = lastScrollPosition;
+        mainRef.current.scrollTo({
+          top: lastScrollPosition,
+          behavior: 'auto',
+        });
       }
-
-      // Priority 1: Restore last scroll position (more recent user action)
-      // if (!Number.isNaN(lastScrollPosition) && lastScrollPosition > 0 && mainRef.current) {
-      //   // mainRef.current.scrollTop = lastScrollPosition;
-      // }
-      // // Priority 2: Scroll to last opened item if no scroll position
-      // else if (
-      //   !Number.isNaN(lastOpenedIndex) &&
-      //   lastOpenedIndex >= 0 &&
-      //   lastOpenedIndex < dataFiltered.length
-      // ) {
-      //   // eslint-disable-next-line no-nested-ternary
-      //   const cols = lgUp ? 3 : mdUp ? 2 : 1;
-      //   const rowIndex = Math.floor(lastOpenedIndex / cols);
-      //   rowVirtualizer.scrollToIndex(rowIndex + 1, { align: 'start' });
-      // }
 
       // Allow scroll tracking after a short delay
       setTimeout(() => {
