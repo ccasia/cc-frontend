@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useRef, useMemo, useState, useCallback } from 'react';
+import React, { useRef, useMemo, useState, useCallback, useEffect, useContext } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { pdf } from '@react-pdf/renderer';
@@ -79,6 +79,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [filters, setFilters] = useState(defaultFilters);
   const [datePresetLabel, setDatePresetLabel] = useState(null);
+  const [invoices, setInvoices] = useState([]);
 
   const editDialog = useBoolean();
   const exportPreview = useBoolean();
@@ -146,14 +147,12 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     console.error('Error fetching invoices:', invoicesError);
   }
 
-  const invoices = useMemo(() => {
+  useEffect(() => {
     if (invoicesData !== undefined) {
-      return invoicesData;
+      setInvoices(invoicesData);
+    } else if (invoicesProp && invoicesProp.length > 0) {
+      setInvoices(invoicesProp);
     }
-    if (invoicesProp && invoicesProp.length > 0) {
-      return invoicesProp;
-    }
-    return [];
   }, [invoicesData, invoicesProp]);
 
   const campaignOptions = useMemo(() => {
@@ -213,6 +212,12 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const canReset = !isEqual(defaultFilters, filters) || dateRange.selected;
 
   const notFound = !invoicesLoading && !dataFiltered?.length;
+
+  const {
+    stats: invoiceStats,
+    isLoading: statsLoading,
+    mutate: mutateStats,
+  } = useGetAllInvoiceStats();
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -576,11 +581,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   const changeInvoiceStatus = useCallback(() => {}, []);
 
-  const {
-    stats: invoiceStats,
-    isLoading: statsLoading,
-    mutate: mutateStats,
-  } = useGetAllInvoiceStats();
 
   const TABS = useMemo(() => {
     // Check if stats are loaded and have counts
@@ -594,6 +594,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         { value: 'overdue', label: 'Overdue', count: counts.overdue ?? 0 },
         { value: 'draft', label: 'Draft', count: counts.draft ?? 0 },
         { value: 'rejected', label: 'Rejected', count: counts.rejected ?? 0 },
+        { value: 'failed', label: 'Failed', count: counts.failed ?? 0 },
       ];
     }
 
@@ -605,6 +606,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       { value: 'overdue', label: 'Overdue', count: 0 },
       { value: 'draft', label: 'Draft', count: 0 },
       { value: 'rejected', label: 'Rejected', count: 0 },
+      { value: 'failed', label: 'Failed', count: 0 },
     ];
   }, [invoiceStats]);
 
@@ -645,7 +647,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     }
   }, [xeroLoading, enqueueSnackbar]);
 
-  const handleBulkUpdate = async () => {
+  const handleBulkUpdate = useCallback(async () => {
     setBulkLoading(true);
 
     try {
@@ -675,6 +677,12 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         })
       );
 
+      setInvoices((prevInvoices) =>
+        prevInvoices.map((invoice) =>
+          actionableIds.includes(invoice.id) ? { ...invoice, status: 'processing' } : invoice
+        )
+      );
+
       const res = await axiosInstance.post(endpoints.invoice.bulkUpdateInvoices, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -682,10 +690,57 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       });
 
       if (res.status === 200) {
-        enqueueSnackbar(res.data.message, { variant: 'success' });
-        if (mutateInvoices) mutateInvoices();
-        if (mutateStats) mutateStats();
+        enqueueSnackbar('Invoices queued for processing.', { variant: 'success' });
+
+        if (typeof mutateStats === 'function') {
+          mutateStats();
+        }
+        if (typeof mutateInvoices === 'function') {
+          mutateInvoices();
+        }
+
         table.onSelectAllRows(false, []);
+        
+        const pollInterval = setInterval(async () => {
+          try {
+            const queryParams = new URLSearchParams();
+            queryParams.append('limit', '10000');
+            const res = await axiosInstance.get(
+              `${endpoints.invoice.getAll}?${queryParams.toString()}`
+            );
+            const updatedInvoices = res.data?.data || [];
+
+            setInvoices(updatedInvoices);
+
+            const allProcessingDone = !updatedInvoices.some(
+              (inv) => actionableIds.includes(inv.id) && inv.status === 'processing'
+            );
+            const failedInvoices = updatedInvoices.filter(
+              (inv) => actionableIds.includes(inv.id) && inv.status === 'failed'
+            );
+            const approvedInvoices = updatedInvoices.filter(
+              (inv) => actionableIds.includes(inv.id) && inv.status === 'approved'
+            );
+
+            if (allProcessingDone) {
+              clearInterval(pollInterval);
+
+              if (typeof mutateStats === 'function') {
+                mutateStats();
+              }
+              if (typeof mutateInvoices === 'function') {
+                mutateInvoices();
+              }
+              enqueueSnackbar(
+                `All invoices processed. ${approvedInvoices.length} approved, ${failedInvoices.length} failed`
+              );
+            }
+          } catch (err) {
+            console.error('Error polling invoice status:', err);
+          }
+        }, 5000);
+
+        setTimeout(() => clearInterval(pollInterval), 5 * 60 * 1000);
       }
     } catch (error) {
       console.error(error);
@@ -703,7 +758,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     } finally {
       setBulkLoading(false);
     }
-  };
+  }, [dataFiltered, table, enqueueSnackbar, mutateStats, mutateInvoices, xeroDialog]);
 
   return (
     <Box>
@@ -730,6 +785,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
             gap: 0.5,
             flexGrow: 1,
             mr: 1,
+            overflow: 'hidden',
           }}
         >
           {TABS.map((tab) => (

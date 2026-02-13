@@ -12,6 +12,7 @@ import {
   TableCell,
   Typography,
   Tooltip,
+  CircularProgress,
 } from '@mui/material';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
@@ -27,6 +28,8 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
   useEffect(() => {
     setValue(invoice?.status);
   }, [setValue, invoice]);
+
+  const isProcessing = invoice?.status === 'processing';
 
   return (
     <TableRow
@@ -51,7 +54,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       }}
     >
       <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
-        <Checkbox checked={selected} onClick={onSelectRow} />
+        <Checkbox checked={selected} onClick={onSelectRow} disabled={isProcessing} />
       </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
@@ -105,10 +108,12 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       <TableCell>
         <Typography
           variant="body2"
+          flexDirection="row"
           sx={{
             textTransform: 'uppercase',
             fontWeight: 700,
-            display: 'inline-block',
+            display: 'inline-flex',
+            gap: 0.75,
             px: 1.5,
             py: 0.5,
             fontSize: '0.75rem',
@@ -120,6 +125,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
             borderColor: STATUS_COLORS[invoice?.status] || '#637381',
           }}
         >
+          {isProcessing && <CircularProgress size={16} sx={{ color: '#8A5AFE' }} />}
           {invoice?.status || 'pending'}
         </Typography>
       </TableCell>
