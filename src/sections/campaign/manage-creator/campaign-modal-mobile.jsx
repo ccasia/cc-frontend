@@ -11,6 +11,7 @@ import {
   Typography,
   AccordionSummary,
   AccordionDetails,
+  Link
 } from '@mui/material';
 
 import { fDate } from 'src/utils/format-time';
@@ -215,6 +216,8 @@ const CampaignModalMobile = ({ campaign }) => {
     requirement?.secondary_language?.length > 0 ||
     requirement?.secondary_creator_persona?.length > 0 ||
     requirement?.secondary_user_persona;
+  
+  const additionalDetails = campaign?.campaignAdditionalDetails;
 
   return (
     <Stack spacing={2}>
@@ -245,6 +248,46 @@ const CampaignModalMobile = ({ campaign }) => {
             {renderCampaignPostingPeriod()}
           </Typography>
         </Box>
+
+        {/* Brand Guidelines url */}
+        {additionalDetails?.brandGuidelinesUrl &&
+          (() => {
+            const urls = additionalDetails.brandGuidelinesUrl
+              .split(',')
+              .map((u) => u.trim())
+              .filter(Boolean);
+            return (
+              <Box>
+                <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                  Brand Guidelines Document{urls.length > 1 ? 's' : ''}
+                </Typography>
+                <Stack spacing={0.5}>
+                  {urls.map((url, idx) => {
+                    let filename = url.split('/').pop().split('?')[0];
+                    filename = filename.replace(/_v=.*$/, '');
+                    return (
+                      <Link
+                        key={url}
+                        href={url}
+                        target="_blank"
+                        sx={{
+                          fontSize: 14,
+                          color: '#0062CD',
+                          textDecoration: 'none',
+                          overflowWrap: 'anywhere',
+                          whiteSpace: 'normal',
+                          '&:hover': { textDecoration: 'underline' },
+                        }}
+                      >
+                        {filename}
+                      </Link>
+                    );
+                  })}
+                </Stack>
+              </Box>
+            );
+          })()}
+
         <Box>
           <Typography variant="body2" sx={{ color: '#8e8e93', mb: 1, fontWeight: 600 }}>
             Industry
