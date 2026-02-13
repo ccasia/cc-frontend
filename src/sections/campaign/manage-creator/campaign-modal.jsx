@@ -1,6 +1,5 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
 import 'react-quill/dist/quill.snow.css';
 import React, { useRef, useState, useEffect } from 'react';
 
@@ -12,7 +11,17 @@ import DialogContent from '@mui/material/DialogContent';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import { Box, Chip, Stack, Button, Avatar, Divider, Typography, IconButton } from '@mui/material';
+import {
+  Box,
+  Chip,
+  Link,
+  Stack,
+  Button,
+  Avatar,
+  Divider,
+  Typography,
+  IconButton,
+} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -24,7 +33,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
-import CampaignModalMobile from 'src/sections/campaign/discover/creator/campaign-modal-mobile';
+import CampaignModalMobile from './campaign-modal-mobile';
 
 const ChipStyle = {
   bgcolor: '#FFF',
@@ -86,14 +95,7 @@ const getProperCase = (value) => {
     .join(' ');
 };
 
-const CampaignModal = ({
-  open,
-  handleClose,
-  campaign,
-  bookMark,
-  onSaveCampaign,
-  onUnsaveCampaign,
-}) => {
+const CampaignModal = ({ open, handleClose, campaign }) => {
   const [fullImageOpen, setFullImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -213,6 +215,8 @@ const CampaignModal = ({
     requirement?.secondary_creator_persona?.length > 0 ||
     requirement?.secondary_user_persona;
 
+  const additionalDetails = campaign?.campaignAdditionalDetails;
+
   // Helper to render Geographic Focus without nested ternary
   const getGeographicFocus = () => {
     if (!requirement?.geographic_focus) return 'Not specified';
@@ -229,8 +233,6 @@ const CampaignModal = ({
     if (type === 'RESERVATION') return 'Reservation';
     return capitalizeFirstLetter(type);
   };
-
-  console.log(campaign.company)
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" scroll="body">
@@ -883,6 +885,45 @@ const CampaignModal = ({
 
                 {/* Right column */}
                 <Stack flex={1}>
+                  {/* Brand Guidelines url */}
+                  {additionalDetails?.brandGuidelinesUrl &&
+                    (() => {
+                      const urls = additionalDetails.brandGuidelinesUrl
+                        .split(',')
+                        .map((u) => u.trim())
+                        .filter(Boolean);
+                      return (
+                        <Box mt={2}>
+                          <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                            Brand Guidelines Document{urls.length > 1 ? 's' : ''}
+                          </Typography>
+                          <Stack spacing={0.5}>
+                            {urls.map((url, idx) => {
+                              let filename = url.split('/').pop().split('?')[0];
+                              filename = filename.replace(/_v=.*$/, '');
+                              return (
+                                <Link
+                                  key={url}
+                                  href={url}
+                                  target="_blank"
+                                  sx={{
+                                    fontSize: 14,
+                                    color: '#0062CD',
+                                    textDecoration: 'none',
+                                    overflowWrap: 'anywhere',
+                                    whiteSpace: 'normal',
+                                    '&:hover': { textDecoration: 'underline' },
+                                  }}
+                                >
+                                  {filename}
+                                </Link>
+                              );
+                            })}
+                          </Stack>
+                        </Box>
+                      );
+                    })()}
+
                   {/* Campaign Deliverables */}
                   <Box>
                     <Box
@@ -1322,9 +1363,6 @@ CampaignModal.propTypes = {
   open: PropTypes.bool,
   handleClose: PropTypes.func,
   campaign: PropTypes.object,
-  bookMark: PropTypes.bool,
-  onSaveCampaign: PropTypes.func,
-  onUnsaveCampaign: PropTypes.func,
   // openForm: PropTypes.func,
   // dialog: PropTypes.object,
 };
