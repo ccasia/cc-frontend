@@ -715,6 +715,12 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
             const allProcessingDone = !updatedInvoices.some(
               (inv) => actionableIds.includes(inv.id) && inv.status === 'processing'
             );
+            const failedInvoices = updatedInvoices.filter(
+              (inv) => actionableIds.includes(inv.id) && inv.status === 'failed'
+            );
+            const approvedInvoices = updatedInvoices.filter(
+              (inv) => actionableIds.includes(inv.id) && inv.status === 'approved'
+            );
 
             if (allProcessingDone) {
               clearInterval(pollInterval);
@@ -725,6 +731,9 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
               if (typeof mutateInvoices === 'function') {
                 mutateInvoices();
               }
+              enqueueSnackbar(
+                `All invoices processed. ${approvedInvoices.length} approved, ${failedInvoices.length} failed`
+              );
             }
           } catch (err) {
             console.error('Error polling invoice status:', err);

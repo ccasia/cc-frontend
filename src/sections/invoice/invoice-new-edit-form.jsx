@@ -122,7 +122,7 @@ const NewInvoiceSchema = Yup.object().shape({
   }),
 });
 
-export default function InvoiceNewEditForm({ id, creators, onClose, mutateInvoices }) {
+export default function InvoiceNewEditForm({ id, creators, onClose, mutateInvoices, mutateStats }) {
   const { isLoading, invoice, mutate } = useGetInvoiceById(id);
   const { user } = useAuthContext();
   const dialog = useBoolean();
@@ -309,6 +309,28 @@ export default function InvoiceNewEditForm({ id, creators, onClose, mutateInvoic
       enqueueSnackbar('Invoice updated', { variant: 'success' });
 
       if (mutateInvoices) mutateInvoices();
+      if (mutateStats) mutateStats();
+
+      if (data.status === 'approved' || data.status === 'processing') {
+        const pollInterval = setInterval(async () => {
+          try {
+            const res = await axiosInstance.get(`${endpoints.invoice.getAll}?limit=10000`);
+            const updatedInvoices = res.data?.data || [];
+            const updatedInvoice = updatedInvoices.find((inv) => inv.id === id);
+
+            if (updatedInvoice && updatedInvoice.status !== 'processing') {
+              clearInterval(pollInterval);
+
+              if (mutateInvoices) mutateInvoices();
+              if (mutateStats) mutateStats();
+            }
+          } catch (err) {
+            console.error('Error polling invoice status:', err);
+          }
+        }, 5000);
+
+        setTimeout(() => clearInterval(pollInterval), 5 * 60 * 1000);
+      }
     } catch (error) {
       enqueueSnackbar('Failed to update invoice', { variant: 'error' });
       loadingSend.onFalse();
@@ -686,4 +708,5 @@ InvoiceNewEditForm.propTypes = {
   creators: PropTypes.object,
   onClose: PropTypes.func,
   mutateInvoices: PropTypes.func,
+  mutateStats: PropTypes.func,
 };
