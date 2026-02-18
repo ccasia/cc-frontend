@@ -22,6 +22,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { useAuthContext } from 'src/auth/hooks';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -1885,6 +1886,7 @@ ManualCreatorCard.propTypes = {
 const getReportStorageKey = (id) => `campaign-report-generated-${id}`;
 
 const CampaignAnalytics = ({ campaign, isDisabled = false }) => {
+  const { user } = useAuthContext();
   const campaignId = campaign?.id;
   const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
   const [selectedPlatform, setSelectedPlatform] = useState('ALL');
@@ -1901,6 +1903,9 @@ const CampaignAnalytics = ({ campaign, isDisabled = false }) => {
   const lgUp = useResponsive('up', 'lg');
   const { socket } = useSocketContext();
   const { enqueueSnackbar } = useSnackbar();
+  
+  // Check if user is a client
+  const isClient = user?.role?.includes('client');
 
   // Fetch manual creator entries
   const { entries: manualEntries, mutate: mutateManualEntries } = useGetManualCreatorEntries(campaignId);
@@ -3115,7 +3120,8 @@ const CampaignAnalytics = ({ campaign, isDisabled = false }) => {
         Performance Summary
       </Typography>
         
-        {/* Generate Report Button */}
+        {/* Generate Report Button - Hidden for clients */}
+        {!isClient && (
         <Button
           disabled={reportState === 'loading'}
           sx={{
@@ -3176,6 +3182,7 @@ const CampaignAnalytics = ({ campaign, isDisabled = false }) => {
           {reportState === 'loading' && 'Generating...'}
           {reportState === 'view' && 'View Report'}
         </Button>
+        )}
       </Box>
 
       {/* Error Alert - always show if error */}
