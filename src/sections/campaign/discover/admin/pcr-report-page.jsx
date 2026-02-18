@@ -406,6 +406,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Loading and saving states
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingPCR, setIsLoadingPCR] = useState(true);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
   
   // Emoji picker state
   const [emojiPickerAnchor, setEmojiPickerAnchor] = useState(null);
@@ -880,6 +881,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
     if (!reportRef.current) return;
 
     try {
+      setIsExportingPDF(true);
       enqueueSnackbar('Generating PDF...', { 
         variant: 'info',
         anchorOrigin: { vertical: 'top', horizontal: 'center' }
@@ -894,6 +896,46 @@ const PCRReportPage = ({ campaign, onBack }) => {
         el.style.display = 'none';
       });
 
+      // eslint-disable-next-line new-cap
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const pageWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const margin = 10; // margin in mm
+      const contentWidth = pageWidth - (2 * margin);
+      
+      // Add gradient background to first page
+      const addGradientBackground = () => {
+        // Create gradient from #1340FF to #8A5AFE
+        pdf.setFillColor(19, 64, 255); // Top color #1340FF
+        pdf.rect(0, 0, pageWidth, pageHeight / 2, 'F');
+        pdf.setFillColor(138, 90, 254); // Bottom color #8A5AFE
+        pdf.rect(0, pageHeight / 2, pageWidth, pageHeight / 2, 'F');
+        
+        // Create a smoother gradient effect by adding intermediate colors
+        const steps = 20;
+        const stepHeight = pageHeight / steps;
+        for (let i = 0; i < steps; i += 1) {
+          const ratio = i / steps;
+          const r = Math.round(19 + (138 - 19) * ratio);
+          const g = Math.round(64 + (90 - 64) * ratio);
+          const b = Math.round(255 + (254 - 255) * ratio);
+          pdf.setFillColor(r, g, b);
+          pdf.rect(0, i * stepHeight, pageWidth, stepHeight, 'F');
+        }
+      };
+      
+      // Get all sections
+      const sections = pdfContainer.querySelectorAll('.pcr-section');
+      
+      if (sections.length === 0) {
+        // Fallback to old method if no sections found
+        addGradientBackground();
+
       const canvas = await html2canvas(pdfContainer, {
         scale: 2,
         useCORS: true,
@@ -902,34 +944,55 @@ const PCRReportPage = ({ campaign, onBack }) => {
         windowWidth: 1078,
       });
 
+      const imgData = canvas.toDataURL('image/png', 1.0);
+        const imgWidth = contentWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+      } else {
+        // Add gradient to first page
+        addGradientBackground();
+        
+        // Capture each section separately
+        let currentY = margin;
+        let isFirstSection = true;
+
+        for (let i = 0; i < sections.length; i += 1) {
+          const section = sections[i];
+          
+          // Capture this section
+          const canvas = await html2canvas(section, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#FFFFFF',
+            windowWidth: 1078,
+          });
+
+          const imgData = canvas.toDataURL('image/png', 1.0);
+          const imgWidth = contentWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          
+          // Check if section fits on current page
+          if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
+            // Section doesn't fit, add new page with gradient
+        pdf.addPage();
+            addGradientBackground();
+            currentY = margin;
+          }
+          
+          // Add section to PDF
+          pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
+          currentY += imgHeight + 5; // 5mm gap between sections
+          
+          isFirstSection = false;
+        }
+      }
+
       // Show buttons again after capturing
       buttonsToHide.forEach(el => {
         el.style.display = '';
       });
-
-      const imgData = canvas.toDataURL('image/png', 1.0);
-      // eslint-disable-next-line new-cap
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-
-      const imgWidth = 210; 
-      const pageHeight = 297; 
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
 
       const fileName = `PCR_${campaign?.name || 'Report'}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
       pdf.save(fileName);
@@ -944,6 +1007,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
         variant: 'error',
         anchorOrigin: { vertical: 'top', horizontal: 'center' }
       });
+    } finally {
+      setIsExportingPDF(false);
     }
   };
   
@@ -2465,11 +2530,58 @@ const PCRReportPage = ({ campaign, onBack }) => {
   };
 
   return (
+    <>
+      {/* Print-specific CSS */}
+      <style>
+        {`
+          @media print {
+            @page {
+              size: A4;
+              margin: 15mm;
+            }
+            
+            body {
+              margin: 0;
+              padding: 0;
+            }
+            
+            /* Prevent sections from breaking across pages */
+            .pcr-section {
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
+            
+            /* Allow break before sections if needed */
+            .pcr-section {
+              page-break-before: auto;
+            }
+            
+            /* Prevent breaks inside cards and grids */
+            .MuiGrid-item,
+            .MuiBox-root[class*="card"] {
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
+            
+            /* Hide elements that shouldn't print */
+            .hide-in-pdf {
+              display: none !important;
+            }
+            
+            /* Ensure proper sizing */
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          }
+        `}
+      </style>
+      
   <Box
     sx={{
       width: '1078px',
-      padding: '16px',
-      paddingBottom: '32px',
+       padding: '16px',
+       paddingBottom: '32px',
       gap: '10px',
       background: 'linear-gradient(180deg, #1340FF 0%, #8A5AFE 100%)',
       margin: '0 auto',
@@ -2768,13 +2880,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Button>
         <Button
           onClick={handleExportPDF}
+          disabled={isExportingPDF}
           sx={{
-            width: '79px',
+            width: isExportingPDF ? '120px' : '79px',
             height: '44px',
             borderRadius: '8px',
             gap: '6px',
             padding: '10px 16px 13px 16px',
-            background: '#1340FF',
+            background: isExportingPDF ? '#6B7280' : '#1340FF',
             boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
             color: '#FFFFFF',
             textTransform: 'none',
@@ -2784,17 +2897,29 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontSize: '16px',
             lineHeight: '20px',
             letterSpacing: '0%',
+            transition: 'width 0.3s ease, background 0.3s ease',
             '&:hover': {
-              background: '#0F35E6',
+              background: isExportingPDF ? '#6B7280' : '#0F35E6',
               boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
             },
             '&:active': {
               boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
               transform: 'translateY(1px)',
+            },
+            '&.Mui-disabled': {
+              color: '#FFFFFF',
+              background: '#6B7280',
             }
           }}
         >
-          Share
+          {isExportingPDF ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CircularProgress size={16} thickness={4} sx={{ color: '#FFFFFF' }} />
+              <span>Loading</span>
+            </Box>
+          ) : (
+            'Share'
+          )}
         </Button>
           </>
         )}
@@ -2923,6 +3048,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     {/* Report Header */}
     <Box 
+      className="pcr-section"
       sx={{ 
         mb: 2,
         background: '#FFFFFF',
@@ -3307,19 +3433,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
           if (!sectionVisibility[sectionId]) return null;
 
           switch (sectionId) {
-            case 'engagement':
-              return (
-                <SortableSection key="engagement" id="engagement" isEditMode={isEditMode}>
+              case 'engagement':
+                return (
+                 <SortableSection key="engagement" id="engagement" isEditMode={isEditMode}>
     {/* Engagement & Interactions Section */}
-    <Box 
-      sx={{ 
-        mb: 2,
-        background: '#FFFFFF',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
-      }}
-    >
+     <Box 
+       className="pcr-section"
+       sx={{ 
+         mb: 2,
+         background: '#FFFFFF',
+         borderRadius: '12px',
+         padding: '24px',
+         boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+       }}
+     >
     <Box sx={{ mb: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
       <Typography 
@@ -3551,19 +3678,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </SortableSection>
               );
 
-            case 'platformBreakdown':
-              return (
-                <SortableSection key="platformBreakdown" id="platformBreakdown" isEditMode={isEditMode}>
-    {/* Platform Breakdown Section */}
-    <Box 
-      sx={{ 
-        mb: 2,
-        background: '#FFFFFF',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
-      }}
-    >
+              case 'platformBreakdown':
+                return (
+                 <SortableSection key="platformBreakdown" id="platformBreakdown" isEditMode={isEditMode}>
+     {/* Platform Breakdown Section */}
+     <Box 
+       className="pcr-section"
+       sx={{ 
+         mb: 2,
+         background: '#FFFFFF',
+         borderRadius: '12px',
+         padding: '24px',
+         boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+       }}
+     >
     <Box sx={{ mb: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
         <Typography 
@@ -4104,19 +4232,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </SortableSection>
               );
 
-            case 'views':
-              return (
-                <SortableSection key="views" id="views" isEditMode={isEditMode}>
+              case 'views':
+                return (
+                 <SortableSection key="views" id="views" isEditMode={isEditMode}>
     {/* Views Section */}
-    <Box 
-      sx={{ 
-        mb: 2,
-        background: '#FFFFFF',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
-      }}
-    >
+     <Box 
+       className="pcr-section"
+       sx={{ 
+         mb: 2,
+         background: '#FFFFFF',
+         borderRadius: '12px',
+         padding: '24px',
+         boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+       }}
+     >
     <Box sx={{ mb: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
       <Typography 
@@ -4340,19 +4469,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </SortableSection>
           );
 
-            case 'audienceSentiment':
-              return (
-                <SortableSection key="audienceSentiment" id="audienceSentiment" isEditMode={isEditMode}>
+              case 'audienceSentiment':
+                return (
+                 <SortableSection key="audienceSentiment" id="audienceSentiment" isEditMode={isEditMode}>
     {/* Audience Sentiment */}
-    <Box 
-      sx={{ 
-        mb: 2,
-        background: '#FFFFFF',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
-      }}
-    >
+     <Box 
+       className="pcr-section"
+       sx={{ 
+         mb: 2,
+         background: '#FFFFFF',
+         borderRadius: '12px',
+         padding: '24px',
+         boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+       }}
+     >
     <Box sx={{ mb: 6, mt: 0 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
       <Typography 
@@ -4979,19 +5109,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </SortableSection>
               );
 
-            case 'creatorTiers':
-              return (
-                <SortableSection key="creatorTiers" id="creatorTiers" isEditMode={isEditMode}>
-                  {/* Creator Tiers */}
-                  <Box 
-      sx={{ 
-        mb: 2,
-        background: '#FFFFFF',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
-      }}
-    >
+              case 'creatorTiers':
+                return (
+                 <SortableSection key="creatorTiers" id="creatorTiers" isEditMode={isEditMode}>
+                   {/* Creator Tiers */}
+                   <Box 
+       className="pcr-section"
+       sx={{ 
+         mb: 2,
+         background: '#FFFFFF',
+         borderRadius: '12px',
+         padding: '24px',
+         boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+       }}
+     >
     <Box sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
       <Typography 
@@ -5480,19 +5611,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </SortableSection>
               );
 
-            case 'strategies':
-              return (
-                <SortableSection key="strategies" id="strategies" isEditMode={isEditMode}>
-                  {/* Strategies Utilised */}
-    <Box 
-      sx={{ 
+              case 'strategies':
+                return (
+                 <SortableSection key="strategies" id="strategies" isEditMode={isEditMode}>
+                   {/* Strategies Utilised */}
+     <Box 
+       className="pcr-section"
+       sx={{ 
           mb: 2,
-        background: '#FFFFFF',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
-        }}
-      >
+         background: '#FFFFFF',
+         borderRadius: '12px',
+         padding: '24px',
+         boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+         }}
+       >
     <Box sx={{ mb: 6 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
       <Typography 
@@ -7680,19 +7812,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </SortableSection>
               );
 
-            case 'recommendations':
-              return (
-                <SortableSection key="recommendations" id="recommendations" isEditMode={isEditMode}>
-                  {/* Recommendations Section */}
-    <Box 
-      sx={{ 
-        mb: 2,
-        background: '#FFFFFF',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
-      }}
-    >
+              case 'recommendations':
+                return (
+                 <SortableSection key="recommendations" id="recommendations" isEditMode={isEditMode}>
+                   {/* Recommendations Section */}
+     <Box 
+       className="pcr-section"
+       sx={{ 
+         mb: 2,
+         background: '#FFFFFF',
+         borderRadius: '12px',
+         padding: '24px',
+         boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+       }}
+     >
     <Box sx={{ mb: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                 <Typography
@@ -8385,8 +8518,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
       />
     </Popover>
 
-    </Box>
-  </Box>
+        </Box>
+      </Box>
+  </>
   );
 };
 
