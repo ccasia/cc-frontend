@@ -17,7 +17,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
-import { Box, Grid, Link, Button, Avatar, Popover, TextField, Typography, IconButton, InputAdornment, CircularProgress, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
+import { Box, Grid, Link, Button, Avatar, Popover, TextField, Typography, IconButton, InputAdornment, CircularProgress, Table, TableBody, TableCell, TableHead, TableRow, Modal, Dialog, DialogContent, DialogTitle } from '@mui/material';
 import { PieChart } from '@mui/x-charts';
 
 import Iconify from 'src/components/iconify';
@@ -68,7 +68,6 @@ const SortableSection = ({ id, children, isEditMode }) => {
     transition,
     opacity: isDragging ? 0.8 : 1,
     zIndex: isDragging ? 1000 : 'auto',
-    cursor: isEditMode ? 'grab' : 'default',
   };
 
   // Custom pointer down handler to prevent dragging from interactive elements
@@ -112,9 +111,18 @@ const SortableSection = ({ id, children, isEditMode }) => {
       {...attributes}
       onPointerDown={isEditMode ? handlePointerDown : undefined}
       sx={{ 
-        '& button, & input, & textarea, & a': {
-          cursor: 'default',
-        }
+        // Only show grab cursor in edit mode and not on interactive elements
+        cursor: isEditMode ? 'grab' : 'default',
+        '&:active': {
+          cursor: isEditMode ? 'grabbing' : 'default',
+        },
+        // Reset cursor for interactive elements
+        '& button, & input, & textarea, & a, & [contenteditable="true"]': {
+          cursor: 'pointer !important',
+        },
+        '& input, & textarea': {
+          cursor: 'text !important',
+        },
       }}
     >
       {children}
@@ -416,6 +424,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   
+  // Preview modal state
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewImages, setPreviewImages] = useState([]);
+  
   const reportRef = useRef(null);
   const cardsContainerRef = useRef(null);
   const displayCardsContainerRef = useRef(null);
@@ -645,6 +657,154 @@ const PCRReportPage = ({ campaign, onBack }) => {
       setSectionOrder(JSON.parse(JSON.stringify(state.sectionOrder)));
       setShowEducatorCard(state.showEducatorCard);
       setShowThirdCard(state.showThirdCard);
+    }
+  };
+  
+  // Generate preview - simulates PDF export view with page breaks
+  const handleGeneratePreview = async () => {
+    try {
+      // First, temporarily exit edit mode and hide all edit controls
+      const wasInEditMode = isEditMode;
+      if (wasInEditMode) {
+        setIsEditMode(false);
+      }
+      
+      // Wait for React to re-render
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const reportContainer = document.getElementById('pcr-report-main');
+      if (!reportContainer) {
+        console.error('Report container not found');
+        if (wasInEditMode) setIsEditMode(true);
+        return;
+      }
+
+      // Hide buttons before capturing
+      const buttonsToHide = reportContainer.querySelectorAll('.hide-in-pdf');
+      buttonsToHide.forEach(el => {
+        el.style.display = 'none';
+      });
+
+      // Get all sections
+      const sections = reportContainer.querySelectorAll('.pcr-section');
+      
+      if (sections.length === 0) {
+        // Fallback: capture entire report as one page
+        const canvas = await html2canvas(reportContainer, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#FFFFFF',
+          windowWidth: 1078,
+        });
+        
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        setPreviewImages([imgData]);
+      } else {
+        // Capture each section separately and organize into pages
+        const pageHeight = 297; // A4 height in mm
+        const pageWidth = 210; // A4 width in mm
+        const margin = 10;
+        const contentWidth = pageWidth - (2 * margin);
+        const maxPageHeight = pageHeight - (2 * margin);
+        
+        const pages = [];
+        let currentPage = [];
+        let currentPageHeight = 0;
+        
+        for (let i = 0; i < sections.length; i += 1) {
+          const section = sections[i];
+          
+          // Capture this section
+          const canvas = await html2canvas(section, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#FFFFFF',
+            windowWidth: 1078,
+          });
+          
+          const imgWidth = contentWidth;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          
+          // Check if section fits on current page
+          if (currentPageHeight + imgHeight > maxPageHeight && currentPage.length > 0) {
+            // Section doesn't fit, save current page and start new one
+            pages.push(currentPage);
+            currentPage = [];
+            currentPageHeight = 0;
+          }
+          
+          // Add section to current page
+          currentPage.push({
+            canvas,
+            height: imgHeight,
+            width: imgWidth
+          });
+          currentPageHeight += imgHeight + 5; // 5mm gap between sections
+        }
+        
+        // Add last page if it has content
+        if (currentPage.length > 0) {
+          pages.push(currentPage);
+        }
+        
+        // Create page images with gradient background
+        const pageImages = [];
+        for (const page of pages) {
+          // Create a canvas for this page
+          const pageCanvas = document.createElement('canvas');
+          const dpi = 96;
+          pageCanvas.width = (pageWidth * dpi) / 25.4;
+          pageCanvas.height = (pageHeight * dpi) / 25.4;
+          const ctx = pageCanvas.getContext('2d');
+          
+          // Draw gradient background
+          const gradient = ctx.createLinearGradient(0, 0, 0, pageCanvas.height);
+          gradient.addColorStop(0, '#1340FF');
+          gradient.addColorStop(1, '#8A5AFE');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          
+          // Draw sections on this page
+          let yOffset = (margin * dpi) / 25.4;
+          for (const section of page) {
+            const xOffset = (margin * dpi) / 25.4;
+            const sectionWidth = (section.width * dpi) / 25.4;
+            const sectionHeight = (section.height * dpi) / 25.4;
+            
+            ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
+            yOffset += sectionHeight + ((5 * dpi) / 25.4); // 5mm gap
+          }
+          
+          pageImages.push(pageCanvas.toDataURL('image/png', 1.0));
+        }
+        
+        setPreviewImages(pageImages);
+      }
+
+      // Show buttons again
+      buttonsToHide.forEach(el => {
+        el.style.display = '';
+      });
+      
+      // Restore edit mode if it was active
+      if (wasInEditMode) {
+        setIsEditMode(true);
+      }
+
+      setIsPreviewOpen(true);
+    } catch (error) {
+      console.error('Error generating preview:', error);
+      enqueueSnackbar('Failed to generate preview', { 
+        variant: 'error',
+        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+      });
+      
+      // Restore edit mode on error
+      if (isEditMode === false) {
+        setIsEditMode(true);
+      }
     }
   };
 
@@ -1028,6 +1188,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
   };
 
   const EngagementRateHeatmap = () => {
+
     const top5CreatorsPhases = useMemo(() => {
       // Get campaign posting period from Additional 1 fields
       const postingStartDate = campaign?.campaignBrief?.postingStartDate;
@@ -1041,18 +1202,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
       const campaignStart = new Date(postingStartDate);
       const campaignEnd = new Date(postingEndDate);
-      const campaignDuration = (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24); 
+      const campaignDuration = (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24);
       
-      const firstWeekEnd = 7;
-      const midCampaignStart = 7;
-      const midCampaignEnd = Math.max(campaignDuration - 7, 7);
-      const finalWeekStart = Math.max(campaignDuration - 7, 7);
+      // Define periods according to requirements:
+      // First Week of Post: Day 2 to Day 9 (7 days after start)
+      // Mid Posting Period: Day 13 to end date
+      // 1 Week After Posting Period: end date to 7 days after end date
+      const firstWeekStart = 1; // Day 2 (1 day after start)
+      const firstWeekEnd = 8; // Day 9 (8 days after start)
+      const midCampaignStart = 12; // Day 13 (12 days after start)
+      const midCampaignEnd = campaignDuration; // Until end date
+      const afterPeriodStart = campaignDuration; // From end date
+      const afterPeriodEnd = campaignDuration + 7; // 7 days after end date
       
-      console.log('=== Campaign Phase Boundaries ===');
+      console.log('=== Campaign Phase Boundaries (Updated Logic) ===');
       console.log('Campaign Duration:', campaignDuration, 'days');
-      console.log('First Week: 0-7 days');
-      console.log('Mid Campaign:', midCampaignStart, '-', midCampaignEnd, 'days');
-      console.log('Final Week:', finalWeekStart, '-', campaignDuration, 'days');
+      console.log('First Week of Post: Day', firstWeekStart + 1, 'to Day', firstWeekEnd + 1);
+      console.log('Mid Posting Period: Day', midCampaignStart + 1, 'to Day', midCampaignEnd);
+      console.log('1 Week After Posting Period: Day', afterPeriodStart, 'to Day', afterPeriodEnd);
 
       // Group submissions by creator and calculate their ER for each phase
       const creatorPhaseData = new Map();
@@ -1076,12 +1243,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         // Determine which phase this post belongs to
         let phase = null;
-        if (daysFromStart >= 0 && daysFromStart <= firstWeekEnd) {
+        if (daysFromStart >= firstWeekStart && daysFromStart <= firstWeekEnd) {
           phase = 'firstWeek';
-        } else if (daysFromStart > midCampaignStart && daysFromStart <= midCampaignEnd) {
+        } else if (daysFromStart >= midCampaignStart && daysFromStart <= midCampaignEnd) {
           phase = 'midCampaign';
-        } else if (daysFromStart > finalWeekStart && daysFromStart <= campaignDuration) {
-          phase = 'finalWeek';
+        } else if (daysFromStart >= afterPeriodStart && daysFromStart <= afterPeriodEnd) {
+          phase = 'afterPeriod';
         }
         
         if (!phase) return;
@@ -1103,9 +1270,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
               : submission.user?.creator?.tiktok,
             firstWeek: [],
             midCampaign: [],
-            finalWeek: [],
+            afterPeriod: [],
             totalER: 0,
             postCount: 0,
+            firstPostPhase: null, // Track when creator started posting
           });
         }
 
@@ -1116,10 +1284,15 @@ const PCRReportPage = ({ campaign, onBack }) => {
           creatorData[phase].push(engagementRate);
           creatorData.totalER += engagementRate;
           creatorData.postCount += 1;
+          
+          // Track first post phase
+          if (!creatorData.firstPostPhase) {
+            creatorData.firstPostPhase = phase;
+          }
         }
       });
 
-      // Calculate average ER per phase for each creator
+      // Calculate average ER per phase for each creator and determine which boxes to show
       const creatorsWithAverages = Array.from(creatorPhaseData.values()).map(creator => {
         const firstWeekAvg = creator.firstWeek.length > 0
           ? creator.firstWeek.reduce((a, b) => a + b, 0) / creator.firstWeek.length
@@ -1129,18 +1302,37 @@ const PCRReportPage = ({ campaign, onBack }) => {
           ? creator.midCampaign.reduce((a, b) => a + b, 0) / creator.midCampaign.length
           : null;
         
-        const finalWeekAvg = creator.finalWeek.length > 0
-          ? creator.finalWeek.reduce((a, b) => a + b, 0) / creator.finalWeek.length
+        const afterPeriodAvg = creator.afterPeriod.length > 0
+          ? creator.afterPeriod.reduce((a, b) => a + b, 0) / creator.afterPeriod.length
           : null;
+
+        // Determine which boxes to show based on posting pattern
+        // If creator started posting in mid campaign, don't show first week
+        // If creator only posted after period, only show after period
+        let showFirstWeek = firstWeekAvg !== null;
+        let showMidCampaign = midCampaignAvg !== null;
+        let showAfterPeriod = afterPeriodAvg !== null;
+        
+        // Apply the rules from requirements:
+        // If first post was in mid campaign, don't show mid campaign box
+        if (creator.firstPostPhase === 'midCampaign') {
+          showMidCampaign = false;
+        }
+        
+        // If first post was in after period, only show after period
+        if (creator.firstPostPhase === 'afterPeriod') {
+          showFirstWeek = false;
+          showMidCampaign = false;
+        }
 
         return {
           userId: creator.userId,
           name: creator.name,
           isManualEntry: creator.isManualEntry,
           creatorUsername: creator.creatorUsername,
-          firstWeek: firstWeekAvg,
-          midCampaign: midCampaignAvg,
-          finalWeek: finalWeekAvg,
+          firstWeek: showFirstWeek ? firstWeekAvg : null,
+          midCampaign: showMidCampaign ? midCampaignAvg : null,
+          afterPeriod: showAfterPeriod ? afterPeriodAvg : null,
           overallER: creator.postCount > 0 ? creator.totalER / creator.postCount : 0,
         };
       });
@@ -1166,235 +1358,252 @@ const PCRReportPage = ({ campaign, onBack }) => {
     const creatorDataList = creatorIdsToFetch.map(id => useGetCreatorById(id));
 
     const campaignAvg = useMemo(() => {
-      if (filteredInsightsData.length === 0) return 4.5;
-      const sum = filteredInsightsData.reduce((acc, insightData) => {
-        const rate = parseFloat(calculateEngagementRate(insightData.insight));
-        return acc + (Number.isNaN(rate) ? 0 : rate);
-      }, 0);
-      return sum / filteredInsightsData.length;
+      if (top5CreatorsPhases.length === 0) {
+        // Use 4.5 as baseline for mock data to show color variation
+        return 4.5;
+      }
+      
+      // Calculate campaign average as sum of all creator ERs / number of creators
+      // Group all creators (not just top 5) to get true campaign average
+      const allCreatorERs = new Map();
+      
+      filteredInsightsData.forEach((insightData) => {
+        const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+        if (!submission) return;
+        
+        const userId = typeof submission.user === 'string' ? submission.user : submission.user?.id;
+        if (!userId) return;
+        
+        const engagementRate = parseFloat(calculateEngagementRate(insightData.insight));
+        if (Number.isNaN(engagementRate) || engagementRate <= 0) return;
+        
+        if (!allCreatorERs.has(userId)) {
+          allCreatorERs.set(userId, { totalER: 0, postCount: 0 });
+        }
+        
+        const creatorData = allCreatorERs.get(userId);
+        creatorData.totalER += engagementRate;
+        creatorData.postCount += 1;
+      });
+      
+      // Calculate average ER for each creator, then get campaign average
+      const creatorAverages = Array.from(allCreatorERs.values()).map(creator => 
+        creator.postCount > 0 ? creator.totalER / creator.postCount : 0
+      ).filter(avg => avg > 0);
+      
+      if (creatorAverages.length === 0) return 4.5;
+      
+      const sumOfCreatorERs = creatorAverages.reduce((sum, avg) => sum + avg, 0);
+      const campaignAverage = sumOfCreatorERs / creatorAverages.length;
+      
+      console.log('=== Campaign Average ER Calculation ===');
+      console.log('Number of creators:', creatorAverages.length);
+      console.log('Sum of creator ERs:', sumOfCreatorERs.toFixed(2));
+      console.log('Campaign Average ER:', campaignAverage.toFixed(2));
+      
+      return campaignAverage;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [top5CreatorsPhases]);
 
     const getPhaseColor = (rate) => {
-      if (rate >= campaignAvg * 1.1) return '#01197B'; 
-      if (rate >= campaignAvg * 0.9) return '#1340FF'; 
-      return '#98BBFF'; 
+      if (rate === null) return '#E5E7EB';
+      if (rate >= campaignAvg * 1.1) return '#01197B'; // Above average - Dark blue
+      if (rate >= campaignAvg * 0.9) return '#1340FF'; // Campaign average - Blue
+      return '#98BBFF'; // Below average - Light blue
     };
 
-    if (top5CreatorsPhases.length === 0) {
+    // Use real data only
+    const displayData = top5CreatorsPhases;
+
     return (
       <Box
         sx={{
-            width: '471px',
-            height: '400px',
-            backgroundColor: '#F5F5F5',
-            padding: '24px',
-            borderRadius: '12px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center'
+          width: '100%',
+          height: '376px',
+          backgroundColor: '#F5F5F5',
+          padding: '24px',
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         <Typography
           sx={{
             fontFamily: 'Aileron',
             fontWeight: 600,
-              fontSize: '20px',
-              color: '#231F20'
-          }}
-        >
-            Top 5 Creator ER Across Campaign Phases
-        </Typography>
-          <Typography sx={{ mt: 2, color: '#64748B' }}>
-            No data available
-          </Typography>
-        </Box>
-      );
-    }
-
-    return (
-              <Box
-                sx={{
-          width: '471px',
-          height: '400px',
-          backgroundColor: '#F5F5F5',
-          padding: '24px',
-          borderRadius: '12px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px'
-                }}
-              >
-        <Typography 
-                    sx={{
-            fontFamily: 'Aileron',
-            fontWeight: 600,
             fontSize: '20px',
             lineHeight: '24px',
-            color: '#231F20'
+            color: '#231F20',
+            mb: 3
           }}
         >
-          Top 5 Creator ER Across Campaign Phases
+          Top 5 Creator ER Across Posting Period
         </Typography>
 
-        {/* Creator rows */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px', mt: 1 }}>
-          {top5CreatorsPhases.map((creator, index) => {
-            console.log('=== Creator Phase Display ===');
-            console.log('Creator:', creator);
-            console.log('Is Manual Entry:', creator.isManualEntry);
-            console.log('User ID:', creator.userId);
-            console.log('Creator Username:', creator.creatorUsername);
-            console.log('Creator Name:', creator.name);
-            
-            // For manual entries, use the stored name and username
-            // For regular creators, fetch from creatorDataList
-            let displayName;
-            if (creator.isManualEntry) {
-              displayName = creator.name?.split(' ')[0] || creator.creatorUsername || 'Unknown';
-              console.log('Manual Entry Display Name:', displayName);
-            } else {
-              const creatorDataIndex = creatorIdsToFetch.indexOf(creator.userId);
-              console.log('Fetching index:', creatorDataIndex);
-              const creatorData = creatorDataIndex >= 0 ? creatorDataList[creatorDataIndex]?.data : null;
-              console.log('Fetched Creator Data:', creatorData);
-              displayName = creatorData?.user?.name?.split(' ')[0] || creator.name?.split(' ')[0] || 'Unknown';
-              console.log('Regular Creator Display Name:', displayName);
-            }
+        {displayData.length === 0 ? (
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            flex: 1,
+            color: '#9CA3AF'
+          }}>
+            <Typography sx={{ fontFamily: 'Aileron', fontSize: '16px' }}>
+              No posting data available
+            </Typography>
+          </Box>
+        ) : (
+          /* Creator rows */
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {displayData.map((creator, index) => {
+            // Use creator.name directly for display (works for both real and mock data)
+            const displayName = creator.name?.split(' ')[0] || creator.creatorUsername || 'Unknown';
 
-            return (
-              <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                return (
+              <Box key={index} sx={{ display: 'flex', alignItems: 'stretch', gap: '0px' }}>
                 {/* Creator name */}
-                <Typography
+                <Box sx={{ 
+                  width: '90px', 
+                      display: 'flex',
+                      alignItems: 'center',
+                  pr: 1.5
+                }}>
+                  <Typography
                 sx={{
-                    fontFamily: 'Aileron',
-                  fontSize: '14px',
-                    fontWeight: 400,
-                  color: '#231F20',
-                    minWidth: '80px',
-                    textAlign: 'left'
-                }}
-              >
-                  {displayName}
-                </Typography>
+                      fontFamily: 'Aileron',
+                      fontSize: '14px',
+                      fontWeight: 400,
+                      color: '#000000',
+                    }}
+                  >
+                    {displayName}
+                  </Typography>
+        </Box>
 
                 {/* Phase boxes */}
                 <Box sx={{ display: 'flex', gap: '8px', flex: 1 }}>
-                  {/* First Week */}
-            <Box 
-              sx={{ 
-                      flex: 1,
-                      height: '40px',
-                      backgroundColor: creator.firstWeek !== null ? getPhaseColor(creator.firstWeek) : '#E5E7EB',
-                      borderRadius: '0px',
-                display: 'flex',
-                alignItems: 'center',
-                      justifyContent: 'center'
-              }}
-            >
-                    <Typography
-              sx={{ 
-                        fontFamily: 'Aileron',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        color: creator.firstWeek !== null ? '#FFFFFF' : '#9CA3AF'
-              }}
-            >
-                      {creator.firstWeek !== null ? `${creator.firstWeek.toFixed(1)}%` : '-'}
-                    </Typography>
-            </Box>
+                  {/* First Week of Post - only show if has data */}
+                  {creator.firstWeek !== null && (
+                    <Box 
+                      sx={{ 
+                        flex: 1,
+                        height: '40px',
+                        backgroundColor: getPhaseColor(creator.firstWeek),
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Typography
+                        sx={{ 
+                          fontFamily: 'Aileron',
+                          fontSize: '16px',
+                          fontWeight: 600,
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        {creator.firstWeek.toFixed(1)}%
+                      </Typography>
+                    </Box>
+                  )}
 
-                  {/* Mid Campaign */}
-            <Box 
-              sx={{ 
-                      flex: 1,
-                      height: '40px',
-                      backgroundColor: creator.midCampaign !== null ? getPhaseColor(creator.midCampaign) : '#E5E7EB',
-                      borderRadius: '0px',
-                display: 'flex',
-                alignItems: 'center',
-                      justifyContent: 'center'
-              }}
-            >
-                    <Typography
-              sx={{ 
-                        fontFamily: 'Aileron',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        color: creator.midCampaign !== null ? '#FFFFFF' : '#9CA3AF'
-              }}
-            >
-                      {creator.midCampaign !== null ? `${creator.midCampaign.toFixed(1)}%` : '-'}
-                    </Typography>
-          </Box>
+                  {/* Mid Posting Period - only show if has data */}
+                  {creator.midCampaign !== null && (
+                    <Box 
+                      sx={{ 
+                        flex: 1,
+                        height: '40px',
+                        backgroundColor: getPhaseColor(creator.midCampaign),
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Typography
+                        sx={{ 
+                          fontFamily: 'Aileron',
+                          fontSize: '16px',
+                          fontWeight: 600,
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        {creator.midCampaign.toFixed(1)}%
+                      </Typography>
+                    </Box>
+                  )}
 
-                  {/* Final Week */}
-                  <Box
-              sx={{ 
-                      flex: 1,
-                      height: '40px',
-                      backgroundColor: creator.finalWeek !== null ? getPhaseColor(creator.finalWeek) : '#E5E7EB',
-                      borderRadius: '0px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-            <Typography 
-              sx={{ 
-                        fontFamily: 'Aileron',
-                        fontSize: '14px',
-                fontWeight: 600,
-                        color: creator.finalWeek !== null ? '#FFFFFF' : '#9CA3AF'
-              }}
-            >
-                      {creator.finalWeek !== null ? `${creator.finalWeek.toFixed(1)}%` : '-'}
-          </Typography>
-                  </Box>
+                  {/* 1 Week After Posting Period - only show if has data */}
+                  {creator.afterPeriod !== null && (
+                    <Box
+                      sx={{ 
+                        flex: 1,
+                        height: '40px',
+                        backgroundColor: getPhaseColor(creator.afterPeriod),
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Typography 
+                        sx={{ 
+                          fontFamily: 'Aileron',
+                          fontSize: '16px',
+                          fontWeight: 600,
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        {creator.afterPeriod.toFixed(1)}%
+                      </Typography>
+                    </Box>
+                  )}
                 </Box>
               </Box>
             );
           })}
         </Box>
+        )}
 
-        {/* Phase labels */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px', mt: 'auto' }}>
-          <Box sx={{ minWidth: '80px' }} /> 
-          <Box sx={{ display: 'flex', gap: '8px', flex: 1 }}>
-            <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
-              First Week after Posting
-            </Typography>
-            <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
-              Mid Campaign
-            </Typography>
-            <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
-              Final Week
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Legend */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px', mt: 1 }}>
-          <Box sx={{ minWidth: '80px' }} />
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: '0px', flex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#98BBFF', borderRadius: '0px', px: 1.2, py: 0.5 }}>
-              <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap' }}>
-              Below Campaign Avg
-            </Typography>
-          </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#1340FF', borderRadius: '0px', px: 1.2, py: 0.5 }}>
-              <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap' }}>
-              Campaign Average
-            </Typography>
-          </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#01197B', borderRadius: '0px', px: 1.2, py: 0.5 }}>
-              <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap' }}>
-              Above Campaign Avg
-            </Typography>
+        {/* Phase labels and legend - only show if there's data */}
+        {displayData.length > 0 && (
+        <>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px', mt: 'auto' }}>
+            <Box sx={{ minWidth: '80px' }} /> 
+            <Box sx={{ display: 'flex', gap: '8px', flex: 1 }}>
+              <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
+                First Week of Post
+              </Typography>
+              <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
+                Mid Posting Period
+              </Typography>
+              <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
+                1 Week After Posting Period
+              </Typography>
             </Box>
-        </Box>
-        </Box>
+          </Box>
+
+          {/* Legend */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px', mt: 1 }}>
+            <Box sx={{ minWidth: '80px' }} />
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: '0px', flex: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#98BBFF', borderRadius: '0px', px: 1.2, py: 0.5 }}>
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap' }}>
+                Below Campaign Avg
+              </Typography>
+            </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#1340FF', borderRadius: '0px', px: 1.2, py: 0.5 }}>
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap' }}>
+                Campaign Average
+              </Typography>
+            </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#01197B', borderRadius: '0px', px: 1.2, py: 0.5 }}>
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap' }}>
+                Above Campaign Avg
+              </Typography>
+              </Box>
+          </Box>
+          </Box>
+        </>
+        )}
       </Box>
     );
   };
@@ -2388,45 +2597,19 @@ const PCRReportPage = ({ campaign, onBack }) => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const creatorDataList = creatorIds.map(id => useGetCreatorById(id));
 
-    if (top5Creators.length === 0) {
-      return (
-        <Box
-          sx={{
-            height: '400px',
-            width: '100%',
-            backgroundColor: '#F5F5F5',
-            p: 3,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '12px'
-          }}
-        >
-          <Typography variant="h6" fontWeight={600} fontFamily="Aileron" color="#231F20" sx={{ mb: 2 }}>
-            Top 5 Creator Engagement Rate
-          </Typography>
-          <Typography variant="body2" color="#64748B">
-            No engagement data available
-          </Typography>
-        </Box>
-      );
-    }
-
     // Find max engagement rate for bar width calculation
-    const maxEngagementRate = Math.max(...top5Creators.map(c => c.engagementRate));
+    const maxEngagementRate = top5Creators.length > 0 ? Math.max(...top5Creators.map(c => c.engagementRate)) : 0;
 
     return (
       <Box
         sx={{
-          width: '471px',
-          minHeight: '400px',
+          width: '100%',
+          height: '376px',
           backgroundColor: '#F5F5F5',
           padding: '24px',
           borderRadius: '12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '20px'
         }}
       >
           <Typography
@@ -2435,14 +2618,28 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontWeight: 600,
             fontSize: '20px',
             lineHeight: '24px',
-            color: '#231F20'
+            color: '#231F20',
+            mb: 1.5
           }}
           >
           Top 5 Creator Engagement Rate
           </Typography>
 
-        {/* Creator bars */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', mt: 1 }}>
+        {top5Creators.length === 0 ? (
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            flex: 1,
+            color: '#9CA3AF'
+          }}>
+            <Typography sx={{ fontFamily: 'Aileron', fontSize: '16px' }}>
+              No engagement data available
+            </Typography>
+          </Box>
+        ) : (
+        /* Creator bars */
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'space-around', py: 1 }}>
           {top5Creators.map((creator, index) => {
             // Check if this is a manual entry (user.id matches submission.id)
             const isManualEntry = creator.submission.user?.id === creator.submission.id;
@@ -2460,22 +2657,26 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 ? creatorData?.user?.creator?.instagram 
                 : creatorData?.user?.creator?.tiktok;
             }
-            const barWidth = (creator.engagementRate / maxEngagementRate) * 100;
+            
+            const platform = creator.platform;
+            const engagementRate = creator.engagementRate;
+
+            const barWidth = (engagementRate / maxEngagementRate) * 100;
             
             // Bar colors based on rank
             const barColors = ['#8E8E93', '#636366', '#48484A', '#3A3A3C', '#1C1C1E'];
             const barColor = barColors[index] || '#1C1C1E';
 
             return (
-              <Box key={index} sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <Box key={index} sx={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {/* Username and platform icon */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Box 
                     component="img"
-                    src={creator.platform === 'Instagram' 
+                    src={platform === 'Instagram' 
                       ? '/assets/Icon copy.svg' 
                       : '/assets/Icon.svg'}
-                    alt={creator.platform === 'Instagram' ? 'Instagram' : 'TikTok'}
+                    alt={platform === 'Instagram' ? 'Instagram' : 'TikTok'}
               sx={{
                       width: '11px',
                       height: '12px',
@@ -2485,9 +2686,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Typography
               sx={{
                       fontFamily: 'Aileron',
-                      fontSize: '16px',
+                      fontSize: '14px',
                       fontWeight: 400,
-                      color: '#636366'
+                      color: '#636366',
+                      lineHeight: '16px'
                     }}
               >
                     {username || 'Unknown'}
@@ -2495,36 +2697,37 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Box>
 
                 {/* Progress bar */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <Box sx={{ flex: 1, maxWidth: '360px' }}>
                     <Box 
               sx={{
-                        height: '32px',
+                        height: '24px',
                         backgroundColor: barColor,
-                        borderRadius: '16px',
+                        borderRadius: '12px',
                         position: 'relative',
                         width: `${barWidth}%`,
-                        minWidth: '60px'
+                        minWidth: '50px'
               }}
             />
                   </Box>
                   <Typography
                     sx={{
                       fontFamily: 'Aileron',
-                      fontSize: '16px',
+                      fontSize: '14px',
                       fontWeight: 600,
                       color: '#1340FF',
-                      minWidth: '50px',
+                      minWidth: '45px',
                       textAlign: 'right'
                     }}
                   >
-                    {creator.engagementRate}%
+                    {engagementRate}%
                   </Typography>
                 </Box>
               </Box>
             );
           })}
         </Box>
+        )}
       </Box>
     );
   };
@@ -2578,6 +2781,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       </style>
       
   <Box
+    id="pcr-report-main"
     sx={{
       width: '1078px',
        padding: '16px',
@@ -2845,6 +3049,39 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </>
         ) : (
           <>
+        <Button
+          sx={{
+            width: '100px',
+            height: '44px',
+            borderRadius: '8px',
+            gap: '6px',
+            padding: '10px 16px 13px 16px',
+            background: '#FFFFFF',
+            border: '1px solid #E7E7E7',
+            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            color: '#374151',
+            textTransform: 'none',
+            fontFamily: 'Inter Display, sans-serif',
+            fontWeight: 600,
+            fontStyle: 'normal',
+            fontSize: '16px',
+            lineHeight: '20px',
+            letterSpacing: '0%',
+            whiteSpace: 'nowrap',
+            '&:hover': {
+              background: '#F9FAFB',
+              border: '1px solid #D1D5DB',
+              boxShadow: '0px -3px 0px 0px #D1D5DB inset',
+            },
+            '&:active': {
+              boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+              transform: 'translateY(1px)',
+            }
+          }}
+              onClick={handleGeneratePreview}
+        >
+              Preview
+        </Button>
         <Button
           sx={{
             width: '117px',
@@ -3165,6 +3402,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         return (
           <Box
+            className="hide-in-pdf"
             sx={{
               bgcolor: '#E5E7EB',
                 borderRadius: '8px',
@@ -3637,6 +3875,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         return (
           <Box
+            className="hide-in-pdf"
             sx={{
               bgcolor: '#E5E7EB',
               borderRadius: '8px',
@@ -3875,6 +4114,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         return (
           <Box
+            className="hide-in-pdf"
             sx={{
               bgcolor: '#E5E7EB',
                 borderRadius: '8px',
@@ -4428,8 +4668,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
       
         return (
           <Box
+            className="hide-in-pdf"
             sx={{
-              bgcolor: '#E5E7EB',
+              bgcolor: '#E5E7EB', 
               borderRadius: '8px', 
               padding: '12px',
               mb: 3,
@@ -4664,8 +4905,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
         }
         
         return (
-          <Box 
-            sx={{ 
+          <Box
+            className="hide-in-pdf"
+            sx={{
               bgcolor: '#E5E7EB',
                 borderRadius: '8px',
                 padding: '12px',
@@ -4727,7 +4969,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <>
               <Grid container spacing={2}>
                 {editableContent.positiveComments.map((comment, index) => (
-                  <Grid item xs={12} sm={6} md={4} key={index}>
+                  <Grid item xs={12} sm={6} md={3} key={index}>
                     <Box sx={{ p: 1.5, bgcolor: '#F3F4F6', borderRadius: '8px', position: 'relative' }}>
                       <IconButton
                         size="small"
@@ -5433,6 +5675,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           
           return (
             <Box
+              className="hide-in-pdf"
               sx={{
                 bgcolor: '#E5E7EB',
                 borderRadius: '8px',
@@ -5811,6 +6054,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         return (
           <Box
+            className="hide-in-pdf"
             sx={{
               bgcolor: '#E5E7EB',
               borderRadius: '8px',
@@ -7990,7 +8234,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           {/* Content Boxes */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             {editableContent.improvedInsights.length === 0 && !isEditMode && (
-              <Box sx={{ 
+              <Box className="hide-in-pdf" sx={{ 
                 bgcolor: '#1340FFD9', 
                 p: 3, 
                 color: 'white', 
@@ -8159,7 +8403,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           {/* Content Boxes */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             {editableContent.workedWellInsights.length === 0 && !isEditMode && (
-              <Box sx={{ 
+              <Box className="hide-in-pdf" sx={{ 
                 background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
                 opacity: 0.85,
                 p: 3, 
@@ -8335,7 +8579,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           {/* Content Boxes */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             {editableContent.nextStepsInsights.length === 0 && !isEditMode && (
-              <Box sx={{ 
+              <Box className="hide-in-pdf" sx={{ 
                 bgcolor: '#026D54D9',
                 p: 3, 
                 color: 'white', 
@@ -8517,6 +8761,95 @@ const PCRReportPage = ({ campaign, onBack }) => {
         }}
       />
     </Popover>
+
+    {/* Preview Modal */}
+    <Dialog
+      open={isPreviewOpen}
+      onClose={() => setIsPreviewOpen(false)}
+      maxWidth="lg"
+      fullWidth
+      PaperProps={{
+        sx: {
+          maxHeight: '90vh',
+          borderRadius: '12px',
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        borderBottom: '1px solid #E7E7E7',
+        pb: 2
+      }}>
+        <Typography variant="h5" sx={{ fontFamily: 'Aileron', fontWeight: 600 }}>
+          Report Preview
+        </Typography>
+        <IconButton onClick={() => setIsPreviewOpen(false)}>
+          <Iconify icon="mingcute:close-line" width={24} />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent sx={{ p: 0, overflow: 'auto', bgcolor: '#F5F5F5' }}>
+        {previewImages.length > 0 ? (
+          <Box sx={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 3,
+            p: 3,
+            minHeight: '500px'
+          }}>
+            {previewImages.map((imgData, index) => (
+              <Box key={index} sx={{ 
+                position: 'relative',
+                width: '100%',
+                maxWidth: '800px'
+              }}>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    position: 'absolute',
+                    top: -24,
+                    left: 0,
+                    color: '#6B7280',
+                    fontWeight: 600
+                  }}
+                >
+                  Page {index + 1} of {previewImages.length}
+                </Typography>
+                <Box
+                  component="img"
+                  src={imgData}
+                  alt={`Report Preview - Page ${index + 1}`}
+                  sx={{
+                    width: '100%',
+                    height: 'auto',
+                    borderRadius: '8px',
+                    boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.15)',
+                    border: '1px solid #E5E7EB'
+                  }}
+                />
+              </Box>
+            ))}
+          </Box>
+        ) : (
+          <Box sx={{ 
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '500px',
+            p: 4
+          }}>
+            <Box sx={{ textAlign: 'center' }}>
+              <CircularProgress sx={{ mb: 2 }} />
+              <Typography variant="body1" color="text.secondary">
+                Generating preview with page breaks...
+              </Typography>
+            </Box>
+          </Box>
+        )}
+      </DialogContent>
+    </Dialog>
 
         </Box>
       </Box>
