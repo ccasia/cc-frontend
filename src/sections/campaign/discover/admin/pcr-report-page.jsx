@@ -1604,6 +1604,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
   const EngagementRateHeatmap = () => {
 
+
     const top5CreatorsPhases = useMemo(() => {
       // Get campaign posting period from Additional 1 fields
       const postingStartDate = campaign?.campaignBrief?.postingStartDate;
@@ -1804,6 +1805,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         // Determine which phase this post belongs to
         let phase = null;
         if (daysFromStart >= firstWeekStart && daysFromStart <= firstWeekEnd) {
+        if (daysFromStart >= firstWeekStart && daysFromStart <= firstWeekEnd) {
           phase = 'firstWeek';
         } else if (daysFromStart > firstWeekEnd && daysFromStart < finalWeekStart) {
           phase = 'midPeriod';
@@ -1890,6 +1892,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
       });
 
       // Calculate average ER per phase for each creator and determine which boxes to show
+      // Calculate average ER per phase for each creator and determine which boxes to show
       const creatorsWithAverages = Array.from(creatorPhaseData.values()).map(creator => {
         const firstWeekAvg = creator.firstWeek.length > 0
           ? creator.firstWeek.reduce((a, b) => a + b, 0) / creator.firstWeek.length
@@ -1899,8 +1902,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
           ? creator.midPeriod.reduce((a, b) => a + b, 0) / creator.midPeriod.length
           : null;
         
-        const finalWeekAvg = creator.finalWeek.length > 0
-          ? creator.finalWeek.reduce((a, b) => a + b, 0) / creator.finalWeek.length
+        const afterPeriodAvg = creator.afterPeriod.length > 0
+          ? creator.afterPeriod.reduce((a, b) => a + b, 0) / creator.afterPeriod.length
           : null;
 
         // Determine which bars to show based on when they first posted
@@ -2038,9 +2041,19 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     // Use real data only
     const displayData = top5CreatorsPhases;
 
+    // Use real data only
+    const displayData = top5CreatorsPhases;
+
     return (
       <Box
         sx={{
+          width: '100%',
+          height: '376px',
+          backgroundColor: '#F5F5F5',
+          padding: '24px',
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
           width: '100%',
           height: '376px',
           backgroundColor: '#F5F5F5',
@@ -2058,8 +2071,13 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             lineHeight: '24px',
             color: '#231F20',
             mb: 3
+            fontSize: '20px',
+            lineHeight: '24px',
+            color: '#231F20',
+            mb: 3
           }}
         >
+          Top 5 Creator ER Across Posting Period
           Top 5 Creator ER Across Posting Period
         </Typography>
 
@@ -2098,7 +2116,16 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
                 return (
               <Box key={index} sx={{ display: 'flex', alignItems: 'stretch', gap: '0px' }}>
+                return (
+              <Box key={index} sx={{ display: 'flex', alignItems: 'stretch', gap: '0px' }}>
                 {/* Creator name */}
+                <Box sx={{ 
+                  width: '90px', 
+                      display: 'flex',
+                      alignItems: 'center',
+                  pr: 1.5
+                }}>
+                  <Typography
                 <Box sx={{ 
                   width: '90px', 
                       display: 'flex',
@@ -2198,6 +2225,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             );
           })}
         </Box>
+        )}
         )}
 
         {/* Phase labels and legend - only show if there's data */}
@@ -3311,6 +3339,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
     // Find max engagement rate for bar width calculation
     const maxEngagementRate = top5Creators.length > 0 ? Math.max(...top5Creators.map(c => c.engagementRate)) : 0;
+    const maxEngagementRate = top5Creators.length > 0 ? Math.max(...top5Creators.map(c => c.engagementRate)) : 0;
 
     return (
             <Box
@@ -3330,6 +3359,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             fontWeight: 600,
             fontSize: '20px',
             lineHeight: '24px',
+            color: '#231F20',
+            mb: 1.5
             color: '#231F20',
             mb: 1.5
           }}
@@ -3384,10 +3415,13 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
             return (
               <Box key={index} sx={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <Box key={index} sx={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {/* Username and platform icon */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Box 
                     component="img"
+                    src={platform === 'Instagram' 
                     src={platform === 'Instagram' 
                       ? '/assets/Icon copy.svg' 
                       : '/assets/Icon.svg'}
@@ -3429,14 +3463,18 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
                 {/* Progress bar */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <Box sx={{ flex: 1, maxWidth: '360px' }}>
                     <Box 
               sx={{
                         height: '24px',
+                        height: '24px',
                         backgroundColor: barColor,
+                        borderRadius: '12px',
                         borderRadius: '12px',
                         position: 'relative',
                         width: `${barWidth}%`,
+                        minWidth: '50px'
                         minWidth: '50px'
               }}
             />
@@ -3445,12 +3483,15 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                     sx={{
                       fontFamily: 'Aileron',
                       fontSize: '14px',
+                      fontSize: '14px',
                       fontWeight: 600,
                       color: '#1340FF',
+                      minWidth: '45px',
                       minWidth: '45px',
                       textAlign: 'right'
                     }}
                   >
+                    {engagementRate}%
                     {engagementRate}%
                   </Typography>
                 </Box>
@@ -3458,6 +3499,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             );
           })}
         </Box>
+        )}
         )}
       </Box>
     );
@@ -4226,6 +4268,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         return (
           <Box
             className="hide-in-pdf"
+            className="hide-in-pdf"
             sx={{
               bgcolor: '#E5E7EB',
                 borderRadius: '8px',
@@ -4708,6 +4751,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         return (
           <Box
             className="hide-in-pdf"
+            className="hide-in-pdf"
             sx={{
               bgcolor: '#E5E7EB',
               borderRadius: '8px',
@@ -4946,6 +4990,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         
         return (
           <Box
+            className="hide-in-pdf"
             className="hide-in-pdf"
             sx={{
               bgcolor: '#E5E7EB',
@@ -5539,7 +5584,9 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         return (
           <Box
             className="hide-in-pdf"
+            className="hide-in-pdf"
             sx={{
+              bgcolor: '#E5E7EB', 
               bgcolor: '#E5E7EB', 
               borderRadius: '8px', 
               padding: '12px',
@@ -5778,6 +5825,9 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
           <Box
             className="hide-in-pdf"
             sx={{
+          <Box
+            className="hide-in-pdf"
+            sx={{
               bgcolor: '#E5E7EB',
                 borderRadius: '8px',
                 padding: '12px',
@@ -5840,6 +5890,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             <>
               <Grid container spacing={2}>
                 {editableContent.positiveComments.map((comment, index) => (
+                  <Grid item xs={12} sm={6} md={3} key={index}>
                   <Grid item xs={12} sm={6} md={3} key={index}>
                     <Box sx={{ p: 1.5, bgcolor: '#F3F4F6', borderRadius: '8px', position: 'relative' }}>
                       <IconButton
@@ -6610,6 +6661,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
           return (
             <Box
               className="hide-in-pdf"
+              className="hide-in-pdf"
               sx={{
                 bgcolor: '#E5E7EB',
                 borderRadius: '8px',
@@ -7004,6 +7056,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         
         return (
           <Box
+            className="hide-in-pdf"
             className="hide-in-pdf"
             sx={{
               bgcolor: '#E5E7EB',
