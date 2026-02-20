@@ -647,6 +647,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Generate preview - simulates PDF export view with page breaks
   const handleGeneratePreview = async () => {
     try {
+      setIsExportingPDF(true);
+      enqueueSnackbar('Generating preview...', { 
+        variant: 'info',
+        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+      });
+
       // First, temporarily exit edit mode and hide all edit controls
       const wasInEditMode = isEditMode;
       if (wasInEditMode) {
@@ -654,12 +660,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
       }
       
       // Wait for React to re-render
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => { setTimeout(resolve, 50); });
       
       const reportContainer = document.getElementById('pcr-report-main');
       if (!reportContainer) {
         console.error('Report container not found');
         if (wasInEditMode) setIsEditMode(true);
+        setIsExportingPDF(false);
         return;
       }
 
@@ -675,14 +682,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
       if (sections.length === 0) {
         // Fallback: capture entire report as one page
         const canvas = await html2canvas(reportContainer, {
-          scale: 2,
+          scale: 1.5,
           useCORS: true,
           logging: false,
           backgroundColor: '#FFFFFF',
           windowWidth: 1078,
         });
         
-        const imgData = canvas.toDataURL('image/png', 1.0);
+        const imgData = canvas.toDataURL('image/jpeg', 0.85);
         setPreviewImages([imgData]);
       } else {
         // Capture each section separately and organize into pages
@@ -696,16 +703,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
         let currentPage = [];
         let currentPageHeight = 0;
         
+        // Batch process sections with yield to UI thread
         for (let i = 0; i < sections.length; i += 1) {
           const section = sections[i];
           
-          // Capture this section
+          // Yield to UI thread every 2 sections
+          if (i % 2 === 0 && i > 0) {
+            await new Promise(resolve => { setTimeout(resolve, 0); });
+          }
+          
+          // Capture this section with optimized settings
           const canvas = await html2canvas(section, {
-            scale: 2,
+            scale: 1.5, // Reduced from 2 for better performance
             useCORS: true,
             logging: false,
             backgroundColor: '#FFFFFF',
             windowWidth: 1078,
+            imageTimeout: 0,
+            removeContainer: true,
           });
           
           const imgWidth = contentWidth;
@@ -713,35 +728,37 @@ const PCRReportPage = ({ campaign, onBack }) => {
           
           // Check if section fits on current page
           if (currentPageHeight + imgHeight > maxPageHeight && currentPage.length > 0) {
-            // Section doesn't fit, save current page and start new one
             pages.push(currentPage);
             currentPage = [];
             currentPageHeight = 0;
           }
           
-          // Add section to current page
           currentPage.push({
             canvas,
             height: imgHeight,
             width: imgWidth
           });
-          currentPageHeight += imgHeight + 5; // 5mm gap between sections
+          currentPageHeight += imgHeight + 5;
         }
         
-        // Add last page if it has content
         if (currentPage.length > 0) {
           pages.push(currentPage);
         }
         
         // Create page images with gradient background
         const pageImages = [];
+        const dpi = 96;
+        const pageCanvasWidth = (pageWidth * dpi) / 25.4;
+        const pageCanvasHeight = (pageHeight * dpi) / 25.4;
+        
         for (const page of pages) {
-          // Create a canvas for this page
+          // Yield to UI thread
+          await new Promise(resolve => { setTimeout(resolve, 0); });
+          
           const pageCanvas = document.createElement('canvas');
-          const dpi = 96;
-          pageCanvas.width = (pageWidth * dpi) / 25.4;
-          pageCanvas.height = (pageHeight * dpi) / 25.4;
-          const ctx = pageCanvas.getContext('2d');
+          pageCanvas.width = pageCanvasWidth;
+          pageCanvas.height = pageCanvasHeight;
+          const ctx = pageCanvas.getContext('2d', { alpha: false });
           
           // Draw gradient background
           const gradient = ctx.createLinearGradient(0, 0, 0, pageCanvas.height);
@@ -758,10 +775,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
             const sectionHeight = (section.height * dpi) / 25.4;
             
             ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
-            yOffset += sectionHeight + ((5 * dpi) / 25.4); // 5mm gap
+            yOffset += sectionHeight + ((5 * dpi) / 25.4);
           }
           
-          pageImages.push(pageCanvas.toDataURL('image/png', 1.0));
+          // Use JPEG with compression for smaller file size
+          pageImages.push(pageCanvas.toDataURL('image/jpeg', 0.85));
         }
         
         setPreviewImages(pageImages);
@@ -778,6 +796,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
       }
 
       setIsPreviewOpen(true);
+      enqueueSnackbar('Preview generated!', { 
+        variant: 'success',
+        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+      });
     } catch (error) {
       console.error('Error generating preview:', error);
       enqueueSnackbar('Failed to generate preview', { 
@@ -785,10 +807,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
         anchorOrigin: { vertical: 'top', horizontal: 'center' }
       });
       
-      // Restore edit mode on error
       if (isEditMode === false) {
         setIsEditMode(true);
       }
+    } finally {
+      setIsExportingPDF(false);
     }
   };
 
@@ -1040,6 +1063,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
+        compress: true, // Enable compression
       });
 
       const pageWidth = 210; 
@@ -1048,11 +1072,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const contentWidth = pageWidth - (2 * margin);
       
       const addGradientBackground = () => {
-        pdf.setFillColor(19, 64, 255); 
-        pdf.rect(0, 0, pageWidth, pageHeight / 2, 'F');
-        pdf.setFillColor(138, 90, 254); 
-        pdf.rect(0, pageHeight / 2, pageWidth, pageHeight / 2, 'F');
-        
         const steps = 20;
         const stepHeight = pageHeight / steps;
         for (let i = 0; i < steps; i += 1) {
@@ -1071,19 +1090,21 @@ const PCRReportPage = ({ campaign, onBack }) => {
       if (sections.length === 0) {
         addGradientBackground();
 
-      const canvas = await html2canvas(pdfContainer, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: null,
-        windowWidth: 1078,
-      });
+        const canvas = await html2canvas(pdfContainer, {
+          scale: 1.5, // Reduced from 2
+          useCORS: true,
+          logging: false,
+          backgroundColor: null,
+          windowWidth: 1078,
+          imageTimeout: 0,
+          removeContainer: true,
+        });
 
-      const imgData = canvas.toDataURL('image/png', 1.0);
+        const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
         const imgWidth = contentWidth;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
-        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight, undefined, 'FAST');
       } else {
         // Add gradient to first page
         addGradientBackground();
@@ -1095,29 +1116,35 @@ const PCRReportPage = ({ campaign, onBack }) => {
         for (let i = 0; i < sections.length; i += 1) {
           const section = sections[i];
           
-          // Capture this section
+          // Yield to UI thread every 2 sections
+          if (i % 2 === 0 && i > 0) {
+            await new Promise(resolve => { setTimeout(resolve, 0); });
+          }
+          
+          // Capture this section with optimized settings
           const canvas = await html2canvas(section, {
-            scale: 2,
+            scale: 1.5, // Reduced from 2 for better performance
             useCORS: true,
             logging: false,
             backgroundColor: '#FFFFFF',
             windowWidth: 1078,
+            imageTimeout: 0,
+            removeContainer: true,
           });
 
-          const imgData = canvas.toDataURL('image/png', 1.0);
+          const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
           const imgWidth = contentWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
           
           // Check if section fits on current page
           if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
-            // Section doesn't fit, add new page with gradient
-        pdf.addPage();
+            pdf.addPage();
             addGradientBackground();
             currentY = margin;
           }
           
-          // Add section to PDF
-          pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
+          // Add section to PDF with FAST compression
+          pdf.addImage(imgData, 'JPEG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
           currentY += imgHeight + 5; 
           
           isFirstSection = false;
@@ -3020,6 +3047,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         ) : (
           <>
         <Button
+          disabled={isExportingPDF}
           sx={{
             width: '100px',
             height: '44px',
@@ -3046,6 +3074,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
             '&:active': {
               boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
               transform: 'translateY(1px)',
+            },
+            '&:disabled': {
+              background: '#F3F4F6',
+              color: '#9CA3AF',
+              border: '1px solid #E5E7EB',
             }
           }}
               onClick={handleGeneratePreview}
