@@ -23,7 +23,11 @@ export default function NavUnified({ openNav, onCloseNav }) {
   const settings = useSettingsContext();
   const lgUp = useResponsive('up', 'lg');
   const navData = useNavData();
-  const isMini = settings.themeLayout === 'mini';
+  const isNavOpen = localStorage.getItem('isNavOpen');
+
+  const isMini = isNavOpen === 'false';
+
+  // settings.themeLayout === 'mini' ||
 
   const logo = (
     <Box
@@ -82,6 +86,7 @@ export default function NavUnified({ openNav, onCloseNav }) {
               marginBottom: '-4px',
             }}
             onClick={() => {
+              localStorage.setItem('isNavOpen', true);
               settings.onUpdate(
                 'themeLayout',
                 settings.themeLayout === 'vertical' ? 'mini' : 'vertical'
@@ -127,6 +132,7 @@ export default function NavUnified({ openNav, onCloseNav }) {
               transition: 'all 0.3s ease',
             }}
             onClick={() => {
+              localStorage.setItem('isNavOpen', false);
               settings.onUpdate(
                 'themeLayout',
                 settings.themeLayout === 'vertical' ? 'mini' : 'vertical'

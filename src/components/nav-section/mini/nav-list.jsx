@@ -40,20 +40,6 @@ export default function NavList({ data, depth, slotProps }) {
 
   return (
     <Box>
-      {/* {active && (
-        <Box
-          sx={{
-            width: 8,
-            height: 24,
-            bgcolor: 'blue',
-            position: 'absolute',
-            left: -12,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            borderRadius: 2,
-          }}
-        />
-      )} */}
       <NavItem
         ref={navRef}
         open={openMenu}

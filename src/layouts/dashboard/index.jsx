@@ -182,13 +182,15 @@ export default function DashboardLayout({ children }) {
 
   const nav = useBoolean();
 
-  // const isMini = settings.themeLayout === 'mini';
-
-  // const renderNavMini = <NavMini />;
-
-  // const renderNavVertical = <NavVertical openNav={nav.value} onCloseNav={nav.onFalse} />;
-
-  const renderNav = <Nav openNav={nav.value} onCloseNav={nav.onFalse} />;
+  const renderNav = (
+    <Nav
+      openNav={nav.value}
+      onCloseNav={() => {
+        localStorage.setItem('isNavOpen', false);
+        nav.onFalse();
+      }}
+    />
+  );
 
   const onDrop = useCallback(
     (e) => {
@@ -514,7 +516,13 @@ export default function DashboardLayout({ children }) {
           bgcolor: (theme) => theme.palette.background.paper,
         }}
       >
-        <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
+        <Header
+          onOpenNav={() => {
+            localStorage.setItem('isNavOpen', true);
+            nav.onTrue();
+          }}
+          isOnline={isOnline}
+        />
         <Main>{children}</Main>
 
         {feedbackButton}
