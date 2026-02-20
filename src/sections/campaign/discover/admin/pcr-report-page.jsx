@@ -695,7 +695,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         // Capture each section separately and organize into pages
         const pageHeight = 297; // A4 height in mm
         const pageWidth = 210; // A4 width in mm
-        const margin = 10;
+        const margin = 5; // Reduced margin for wider sections
         const contentWidth = pageWidth - (2 * margin);
         const maxPageHeight = pageHeight - (2 * margin);
         
@@ -755,7 +755,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             height: imgHeight,
             width: imgWidth
           });
-          currentPageHeight += imgHeight + 5;
+          currentPageHeight += imgHeight + 4; // 4mm gap between sections
         });
         
         if (currentPage.length > 0) {
@@ -799,7 +799,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               const sectionHeight = (section.height * dpi) / 25.4;
               
               ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
-              yOffset += sectionHeight + ((5 * dpi) / 25.4);
+              yOffset += sectionHeight + ((4 * dpi) / 25.4); // 4mm gap between sections
             });
             
             // Use PNG for preview to maintain quality
@@ -1086,11 +1086,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
         el.style.display = 'none';
       });
 
-      // Remove margins and border-radius from sections to prevent white lines
+      // Remove margins from sections (keep border-radius for curved edges)
       const allSections = pdfContainer.querySelectorAll('.pcr-section');
       allSections.forEach(el => {
         el.style.marginBottom = '0';
-        el.style.borderRadius = '0';
+        // Keep borderRadius for curved edges in PDF
       });
 
       // eslint-disable-next-line new-cap
@@ -1103,11 +1103,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
       const pageWidth = 210; 
       const pageHeight = 297; 
-      const margin = 10; 
+      const margin = 5; // Reduced margin for wider sections
       const contentWidth = pageWidth - (2 * margin);
       
       const addGradientBackground = async () => {
-        // Create gradient as a canvas image for smooth rendering
         const gradientCanvas = document.createElement('canvas');
         const dpi = 96;
         gradientCanvas.width = (pageWidth * dpi) / 25.4;
@@ -1121,12 +1120,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, gradientCanvas.width, gradientCanvas.height);
         
-        // Add gradient as image to PDF
         const gradientData = gradientCanvas.toDataURL('image/jpeg', 0.95);
         pdf.addImage(gradientData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
       };
       
-      // Get all sections
       const sections = pdfContainer.querySelectorAll('.pcr-section');
       
       if (sections.length === 0) {
@@ -1191,9 +1188,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
               currentY = margin;
             }
             
-            // Add section to PDF with FAST compression - slight overlap to prevent white lines
+            // Add section to PDF with FAST compression
             pdf.addImage(imgData, 'JPEG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
-            currentY += imgHeight - 0.5; // Slight overlap (0.5mm) to prevent white lines 
+            currentY += imgHeight + 4; // Add 4mm gap between sections
             
             isFirstSection = false;
           }
@@ -1202,13 +1199,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
         await processPdfSections();
       }
 
-      // Restore buttons, margins, and border-radius
+      // Restore buttons and margins
       buttonsToHide.forEach(el => {
         el.style.display = '';
       });
       allSections.forEach(el => {
         el.style.marginBottom = '';
-        el.style.borderRadius = '';
       });
 
       const fileName = `PCR_${campaign?.name || 'Report'}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
@@ -2585,6 +2581,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 : creatorData?.user?.creator?.tiktok;
             }
             
+            // Calculate opacity: 1st = 100%, 2nd = 90%, 3rd = 80%, 4th = 70%, 5th = 60%
+            const opacity = 1 - (index * 0.1);
+            
             return (
               <Box key={index} sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {/* Platform Icon and Username on top */}
@@ -2617,6 +2616,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <Box sx={{
                       height: '32px',
                       backgroundColor: '#1340FF',
+                      opacity,
                       borderRadius: '16px',
                       position: 'relative',
                       width: `${(creator.views / maxViews) * 100}%`,
@@ -2769,17 +2769,33 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       display: 'inline-block'
                     }}
                   />
-                  <Typography
-              sx={{
-                      fontFamily: 'Aileron',
-                      fontSize: '14px',
-                      fontWeight: 400,
-                      color: '#636366',
-                      lineHeight: '16px'
+                  <Link
+                    href={creator.submission.postingLink || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline'
+                      }
                     }}
-              >
-                    {username || 'Unknown'}
-              </Typography>
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: 'Aileron',
+                        fontSize: '14px',
+                        fontWeight: 400,
+                        color: '#636366',
+                        lineHeight: '16px',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          color: '#1340FF'
+                        }
+                      }}
+                    >
+                      {username || 'Unknown'}
+                    </Typography>
+                  </Link>
         </Box>
 
                 {/* Progress bar */}
@@ -3106,7 +3122,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 height: '44px',
                 borderRadius: '8px',
                 padding: '10px 16px 13px 16px',
-                background: '#1340FF',
+                background: '#3A3A3C',
                 boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
                 color: '#FFFFFF',
                 textTransform: 'none',
@@ -3117,7 +3133,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 lineHeight: '20px',
                 letterSpacing: '0%',
                 '&:hover': {
-                  background: '#0F35E6',
+                  background: '#2A2A2C',
                   boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
                 },
                 '&:active': {
@@ -3215,7 +3231,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             borderRadius: '8px',
             gap: '6px',
             padding: '10px 16px 13px 16px',
-            background: '#1340FF',
+            background: '#3A3A3C',
             boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
             color: '#FFFFFF',
             textTransform: 'none',
@@ -3226,7 +3242,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             lineHeight: '20px',
             letterSpacing: '0%',
             '&:hover': {
-              background: '#0F35E6',
+              background: '#2A2A2C',
               boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
             },
             '&:active': {
@@ -3248,112 +3264,123 @@ const PCRReportPage = ({ campaign, onBack }) => {
           {!sectionVisibility.engagement && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, engagement: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px',
+                '& .MuiButton-startIcon': {
+                  marginRight: 0,
+                  marginLeft: 0
+                }
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Engagements
             </Button>
           )}
           {!sectionVisibility.platformBreakdown && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, platformBreakdown: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px'
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Platform Breakdown
             </Button>
           )}
           {!sectionVisibility.views && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, views: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px'
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Views
             </Button>
           )}
           {!sectionVisibility.audienceSentiment && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, audienceSentiment: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px'
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Audience Sentiment
             </Button>
           )}
           {!sectionVisibility.creatorTiers && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, creatorTiers: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px'
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Creator Tiers
             </Button>
           )}
           {!sectionVisibility.strategies && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, strategies: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px'
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Strategies
             </Button>
           )}
           {!sectionVisibility.recommendations && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, recommendations: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px'
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Recommendations
             </Button>
           )}
@@ -5151,7 +5178,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     const comment = document.getElementById('positive-comment-input').value;
                     
                     if (username && username !== '@' && comment) {
-                      const newComments = [...editableContent.positiveComments, { username, comment }];
+                      const newComments = [...editableContent.positiveComments, { username, comment, postlink }];
                       setEditableContent({ ...editableContent, positiveComments: newComments });
                       document.getElementById('positive-username-input').value = '@';
                       document.getElementById('positive-postlink-input').value = '';
@@ -5202,9 +5229,31 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   {editableContent.positiveComments.map((comment, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>
                       <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px' }}>
-                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
-                          {comment.username}
-      </Typography>
+                        <Link
+                          href={comment.postlink || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            textDecoration: 'none',
+                            '&:hover': {
+                              textDecoration: 'underline'
+                            }
+                          }}
+                        >
+                          <Typography sx={{ 
+                            fontFamily: 'Aileron', 
+                            fontSize: '12px', 
+                            fontWeight: 600, 
+                            color: '#6B7280', 
+                            mb: 1,
+                            cursor: 'pointer',
+                            '&:hover': {
+                              color: '#1340FF'
+                            }
+                          }}>
+                            {comment.username}
+                          </Typography>
+                        </Link>
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
                           {comment.comment}
       </Typography>
@@ -5359,7 +5408,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     const comment = document.getElementById('neutral-comment-input').value;
                     
                     if (username && username !== '@' && comment) {
-                      const newComments = [...editableContent.neutralComments, { username, comment }];
+                      const newComments = [...editableContent.neutralComments, { username, comment, postlink }];
                       setEditableContent({ ...editableContent, neutralComments: newComments });
                       document.getElementById('neutral-username-input').value = '@';
                       document.getElementById('neutral-postlink-input').value = '';
@@ -5410,9 +5459,31 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   {editableContent.neutralComments.map((comment, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>
                       <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px' }}>
-                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
-                          {comment.username}
-                        </Typography>
+                        <Link
+                          href={comment.postlink || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            textDecoration: 'none',
+                            '&:hover': {
+                              textDecoration: 'underline'
+                            }
+                          }}
+                        >
+                          <Typography sx={{ 
+                            fontFamily: 'Aileron', 
+                            fontSize: '12px', 
+                            fontWeight: 600, 
+                            color: '#6B7280', 
+                            mb: 1,
+                            cursor: 'pointer',
+                            '&:hover': {
+                              color: '#1340FF'
+                            }
+                          }}>
+                            {comment.username}
+                          </Typography>
+                        </Link>
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
                           {comment.comment}
                         </Typography>
@@ -7802,7 +7873,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   // Calculate height based on number of visible cards
                   const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0);
                   if (visibleCards === 1) return '220px';
-                  if (visibleCards === 2) return '340px';
+                  if (visibleCards === 2) return '465px';
                   return '460px'; // 3 cards
                 })(),
                 display: 'flex',
