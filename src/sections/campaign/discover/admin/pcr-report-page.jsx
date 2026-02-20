@@ -839,25 +839,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   // Generate preview - simulates PDF export view with page breaks
   const handleGeneratePreview = async () => {
     try {
-      // Check if content has changed since last preview
-      const currentContentHash = JSON.stringify({
-        content: editableContent,
-        visibility: sectionVisibility,
-        order: sectionOrder
-      });
-      
-      // If preview is cached and content hasn't changed, just open the modal
-      if (isPreviewCached && lastPreviewContent === currentContentHash && previewImages.length > 0) {
-        setIsPreviewOpen(true);
-        return;
-      }
-      
-      setIsExportingPDF(true);
-      enqueueSnackbar('Generating preview...', { 
-        variant: 'info',
-        anchorOrigin: { vertical: 'top', horizontal: 'center' }
-      });
-
       // First, temporarily exit edit mode and hide all edit controls
       const wasInEditMode = isEditMode;
       if (wasInEditMode) {
@@ -908,44 +889,21 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         let currentPage = [];
         let currentPageHeight = 0;
         
-        // Batch process sections with yield to UI thread
-        const processSections = async () => {
-          const results = [];
-
-          for (let i = 0; i < sections.length; i += 1) {
-            const section = sections[i];
-            
-            // Yield to UI thread every 2 sections
-            if (i % 2 === 0 && i > 0) {
-              // eslint-disable-next-line no-await-in-loop
-              await new Promise(resolve => { setTimeout(resolve, 0); });
-            }
-            
-            // Capture this section with high quality for preview
-            // eslint-disable-next-line no-await-in-loop
-            const canvas = await html2canvas(section, {
-              scale: 2, 
-              useCORS: true,
-              logging: false,
-              backgroundColor: '#FFFFFF',
-              windowWidth: 1078,
-              imageTimeout: 0,
-              removeContainer: true,
-            });
-            
-            const imgWidth = contentWidth;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
-            results.push({ canvas, imgWidth, imgHeight });
-          }
+        for (let i = 0; i < sections.length; i += 1) {
+          const section = sections[i];
           
-          return results;
-        };
-        
-        const sectionResults = await processSections();
-        
-        // Organize sections into pages
-        sectionResults.forEach(({ canvas, imgWidth, imgHeight }) => {
+          // Capture this section
+          const canvas = await html2canvas(section, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#FFFFFF',
+            windowWidth: 1078,
+          });
+          
+          const imgWidth = contentWidth;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          
           // Check if section fits on current page
           if (currentPageHeight + imgHeight > maxPageHeight && currentPage.length > 0) {
             pages.push(currentPage);
@@ -958,60 +916,44 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             height: imgHeight,
             width: imgWidth
           });
-          currentPageHeight += imgHeight + 4; 
-        });
+          currentPageHeight += imgHeight + 5; // 5mm gap between sections
+        }
         
         if (currentPage.length > 0) {
           pages.push(currentPage);
         }
         
-        // Create page images with gradient background at higher DPI for preview
-        const dpi = 150;
-        const pageCanvasWidth = (pageWidth * dpi) / 25.4;
-        const pageCanvasHeight = (pageHeight * dpi) / 25.4;
-        
-        const renderPages = async () => {
-          const pageImages = [];
+        // Create page images with gradient background
+        const pageImages = [];
+        for (const page of pages) {
+          // Create a canvas for this page
+          const pageCanvas = document.createElement('canvas');
+          const dpi = 96;
+          pageCanvas.width = (pageWidth * dpi) / 25.4;
+          pageCanvas.height = (pageHeight * dpi) / 25.4;
+          const ctx = pageCanvas.getContext('2d');
           
-          // Process pages sequentially
-          // eslint-disable-next-line no-restricted-syntax
-          for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
-            const page = pages[pageIndex];
+          // Draw gradient background
+          const gradient = ctx.createLinearGradient(0, 0, 0, pageCanvas.height);
+          gradient.addColorStop(0, '#1340FF');
+          gradient.addColorStop(1, '#8A5AFE');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          
+          // Draw sections on this page
+          let yOffset = (margin * dpi) / 25.4;
+          for (const section of page) {
+            const xOffset = (margin * dpi) / 25.4;
+            const sectionWidth = (section.width * dpi) / 25.4;
+            const sectionHeight = (section.height * dpi) / 25.4;
             
-            // Yield to UI thread
-            // eslint-disable-next-line no-await-in-loop
-            await new Promise(resolve => { setTimeout(resolve, 0); });
-            
-            const pageCanvas = document.createElement('canvas');
-            pageCanvas.width = pageCanvasWidth;
-            pageCanvas.height = pageCanvasHeight;
-            const ctx = pageCanvas.getContext('2d', { alpha: false });
-            
-            // Draw gradient background
-            const gradient = ctx.createLinearGradient(0, 0, 0, pageCanvas.height);
-            gradient.addColorStop(0, '#1340FF');
-            gradient.addColorStop(1, '#8A5AFE');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-            
-            // Draw sections on this page
-            let yOffset = (margin * dpi) / 25.4;
-            page.forEach(section => {
-              const xOffset = (margin * dpi) / 25.4;
-              const sectionWidth = (section.width * dpi) / 25.4;
-              const sectionHeight = (section.height * dpi) / 25.4;
-              
-              ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
-              yOffset += sectionHeight + ((4 * dpi) / 25.4); 
-            });
-            
-            pageImages.push(pageCanvas.toDataURL('image/png', 1.0));
+            ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
+            yOffset += sectionHeight + ((5 * dpi) / 25.4); // 5mm gap
           }
           
-          return pageImages;
-        };
+          pageImages.push(pageCanvas.toDataURL('image/png', 1.0));
+        }
         
-        const pageImages = await renderPages();
         setPreviewImages(pageImages);
       }
 
@@ -1336,7 +1278,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
-        compress: false, // Disable compression for HD quality
       });
 
       const pageWidth = 210; 
@@ -1365,11 +1306,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
       const contentWidth = pageWidth - (2 * margin);
       
       const addGradientBackground = () => {
-        pdf.setFillColor(19, 64, 255); 
-        pdf.rect(0, 0, pageWidth, pageHeight / 2, 'F');
-        pdf.setFillColor(138, 90, 254); 
-        pdf.rect(0, pageHeight / 2, pageWidth, pageHeight / 2, 'F');
-        
         const steps = 20;
         const stepHeight = pageHeight / steps;
         for (let i = 0; i < steps; i += 1) {
@@ -1393,74 +1329,18 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 >>>>>>> 5eca3f63 (PCR Update)
 
       const canvas = await html2canvas(pdfContainer, {
-          scale: 3, // Higher scale for better quality
+        scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: null,
         windowWidth: 1078,
-          windowHeight: pdfContainer.scrollHeight,
-          imageTimeout: 0,
-          removeContainer: true,
-          allowTaint: true,
-          foreignObjectRendering: false,
-          onclone: (clonedDoc) => {
-            // Fix all elements to match original styling
-            const allElements = clonedDoc.querySelectorAll('*');
-            allElements.forEach((el) => {
-              try {
-                const original = pdfContainer.querySelector(`[data-cursor-element-id="${el.dataset.cursorElementId}"]`) || el;
-                const computedStyle = window.getComputedStyle(original);
-                
-                // Preserve all visual styles
-                if (computedStyle.background && computedStyle.background !== 'none') {
-                  el.style.background = computedStyle.background;
-                }
-                if (computedStyle.boxShadow && computedStyle.boxShadow !== 'none') {
-                  el.style.boxShadow = computedStyle.boxShadow;
-                }
-                if (computedStyle.borderRadius && computedStyle.borderRadius !== '0px') {
-                  el.style.borderRadius = computedStyle.borderRadius;
-                }
-                if (computedStyle.filter && computedStyle.filter !== 'none') {
-                  el.style.filter = computedStyle.filter;
-                }
-                if (computedStyle.opacity && computedStyle.opacity !== '1') {
-                  el.style.opacity = computedStyle.opacity;
-                }
-                
-                // Font rendering
-                el.style.webkitFontSmoothing = 'antialiased';
-                el.style.mozOsxFontSmoothing = 'grayscale';
-                el.style.textRendering = 'optimizeLegibility';
-              } catch (e) {
-                // Skip if element not found
-              }
-            });
-            
-            // Fix images - prevent stretching
-            const allImages = clonedDoc.querySelectorAll('img');
-            allImages.forEach((img) => {
-              img.style.objectFit = 'contain';
-              img.style.maxWidth = '100%';
-              img.style.height = 'auto';
-              img.style.display = 'block';
-            });
-            
-            // Fix SVG charts
-            const allSvgs = clonedDoc.querySelectorAll('svg');
-            allSvgs.forEach((svg) => {
-              svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-              svg.style.display = 'block';
-              svg.style.visibility = 'visible';
-            });
-          },
-        });
+      });
 
-        const imgData = canvas.toDataURL('image/png'); // PNG for lossless quality
+      const imgData = canvas.toDataURL('image/png', 1.0);
         const imgWidth = contentWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
-        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight, undefined, 'SLOW');
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
       } else {
         // Add gradient to first page
         await addGradientBackground();
@@ -1469,109 +1349,32 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         let currentY = margin;
         let isFirstSection = true;
 
-        const processPdfSections = async () => {
-          for (let i = 0; i < sections.length; i += 1) {
-            const section = sections[i];
-            
-            // Yield to UI thread every 2 sections
-            if (i % 2 === 0 && i > 0) {
-              // eslint-disable-next-line no-await-in-loop
-              await new Promise(resolve => { setTimeout(resolve, 0); });
-            }
-
-            // Sequential processing is required for PDF generation
-            // eslint-disable-next-line no-await-in-loop
-            const canvas = await html2canvas(section, {
-              scale: 3, // Higher scale for better quality
-              useCORS: true,
-              logging: false,
-              backgroundColor: '#FFFFFF',
-              windowWidth: 1078,
-              windowHeight: section.scrollHeight,
-              imageTimeout: 0,
-              removeContainer: true,
-              allowTaint: true,
-              foreignObjectRendering: false,
-              onclone: (clonedDoc) => {
-                // Fix all elements to match original styling
-                const allElements = clonedDoc.querySelectorAll('*');
-                allElements.forEach((el) => {
-                  try {
-                    const original = section.querySelector(`[data-cursor-element-id="${el.dataset.cursorElementId}"]`) || el;
-                    const computedStyle = window.getComputedStyle(original);
-                    
-                    // Preserve all visual styles
-                    if (computedStyle.background && computedStyle.background !== 'none') {
-                      el.style.background = computedStyle.background;
-                    }
-                    if (computedStyle.boxShadow && computedStyle.boxShadow !== 'none') {
-                      el.style.boxShadow = computedStyle.boxShadow;
-                    }
-                    if (computedStyle.borderRadius && computedStyle.borderRadius !== '0px') {
-                      el.style.borderRadius = computedStyle.borderRadius;
-                    }
-                    if (computedStyle.filter && computedStyle.filter !== 'none') {
-                      el.style.filter = computedStyle.filter;
-                    }
-                    if (computedStyle.opacity && computedStyle.opacity !== '1') {
-                      el.style.opacity = computedStyle.opacity;
-                    }
-                    
-                    // Font rendering
-                    el.style.webkitFontSmoothing = 'antialiased';
-                    el.style.mozOsxFontSmoothing = 'grayscale';
-                    el.style.textRendering = 'optimizeLegibility';
-                  } catch (e) {
-                    // Skip if element not found
-                  }
-                });
-                
-                // Fix images - prevent stretching
-                const allImages = clonedDoc.querySelectorAll('img');
-                allImages.forEach((img) => {
-                  img.style.objectFit = 'contain';
-                  img.style.maxWidth = '100%';
-                  img.style.height = 'auto';
-                  img.style.display = 'block';
-                });
-                
-                // Fix SVG charts
-                const allSvgs = clonedDoc.querySelectorAll('svg');
-                allSvgs.forEach((svg) => {
-                  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-                  svg.style.display = 'block';
-                  svg.style.visibility = 'visible';
-                });
-              },
-            });
-
-            const imgData = canvas.toDataURL('image/png'); // PNG for lossless quality
-            const imgWidth = contentWidth;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-            if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
-        pdf.addPage();
-              // eslint-disable-next-line no-await-in-loop
-              await addGradientBackground();
-              currentY = margin;
-            }
-            
-            pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight, undefined, 'SLOW');
-            currentY += imgHeight + 4; 
-            
-            isFirstSection = false;
-          }
-<<<<<<< HEAD
-        };
-        
-        await processPdfSections();
-      }
-
-      // Restore buttons and margins
-=======
+        for (let i = 0; i < sections.length; i += 1) {
+          const section = sections[i];
           
-          // Add section to PDF
-          pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
+          // Capture this section
+          const canvas = await html2canvas(section, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#FFFFFF',
+            windowWidth: 1078,
+          });
+
+          const imgData = canvas.toDataURL('image/png', 1.0);
+          const imgWidth = contentWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          
+          // Check if section fits on current page
+          if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
+            // Section doesn't fit, add new page with gradient
+        pdf.addPage();
+            addGradientBackground();
+            currentY = margin;
+          }
+          
+          // Add section to PDF with FAST compression
+          pdf.addImage(imgData, 'JPEG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
           currentY += imgHeight + 5; 
           
           isFirstSection = false;
