@@ -32,26 +32,33 @@ import {
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
 
+<<<<<<< HEAD
 import Iconify from 'src/components/iconify';
 
+=======
+>>>>>>> 5eca3f63 (PCR Update)
 const getImprovedInsightBgColor = (index) => {
   if (index === 0) return '#1340FFD9';
   if (index === 1) return '#1340FFBF';
   return '#1340FFA6';
 };
 
+<<<<<<< HEAD
 const getWorkedWellInsightBgColor = (index) => {
   if (index === 0) return 'linear-gradient(0deg, #8A5AFE, #8A5AFE)';
   if (index === 1) return 'linear-gradient(0deg, #8A5AFE, #8A5AFE)';
   return 'linear-gradient(0deg, #8A5AFE, #8A5AFE)';
 };
 
+=======
+>>>>>>> 5eca3f63 (PCR Update)
 const getWorkedWellOpacity = (index) => {
   if (index === 0) return 0.85;
   if (index === 1) return 0.75;
   return 0.65;
 };
 
+<<<<<<< HEAD
 // Utility function to handle paste events and strip formatting
 const handlePlainTextPaste = (e) => {
   e.preventDefault();
@@ -81,6 +88,8 @@ const handlePlainTextPaste = (e) => {
   }
 };
 
+=======
+>>>>>>> 5eca3f63 (PCR Update)
 const SortableSection = ({ id, children, isEditMode }) => {
   const {
     attributes,
@@ -576,6 +585,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     isLoading: loadingInsights 
   } = useSocialInsights(postingSubmissions, campaignId);
 
+<<<<<<< HEAD
   // Fetch post engagement snapshots (Day 7, 15, 30 ER tracking)
   const {
     snapshots: postSnapshots,
@@ -583,6 +593,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     error: snapshotsError
   } = usePostEngagementSnapshots(campaignId);
 
+=======
+>>>>>>> 5eca3f63 (PCR Update)
   const manualInsightsData = useMemo(() => {
     const transformed = manualEntries.map((entry) => ({
       id: entry.id,
@@ -1329,6 +1341,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
       const pageWidth = 210; 
       const pageHeight = 297; 
+<<<<<<< HEAD
       const margin = 5; 
       const contentWidth = pageWidth - (2 * margin);
       
@@ -1347,12 +1360,37 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         
         const gradientData = gradientCanvas.toDataURL('image/png'); // PNG for lossless quality
         pdf.addImage(gradientData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'SLOW');
+=======
+      const margin = 10; 
+      const contentWidth = pageWidth - (2 * margin);
+      
+      const addGradientBackground = () => {
+        pdf.setFillColor(19, 64, 255); 
+        pdf.rect(0, 0, pageWidth, pageHeight / 2, 'F');
+        pdf.setFillColor(138, 90, 254); 
+        pdf.rect(0, pageHeight / 2, pageWidth, pageHeight / 2, 'F');
+        
+        const steps = 20;
+        const stepHeight = pageHeight / steps;
+        for (let i = 0; i < steps; i += 1) {
+          const ratio = i / steps;
+          const r = Math.round(19 + (138 - 19) * ratio);
+          const g = Math.round(64 + (90 - 64) * ratio);
+          const b = Math.round(255 + (254 - 255) * ratio);
+          pdf.setFillColor(r, g, b);
+          pdf.rect(0, i * stepHeight, pageWidth, stepHeight, 'F');
+        }
+>>>>>>> 5eca3f63 (PCR Update)
       };
       
       const sections = pdfContainer.querySelectorAll('.pcr-section');
       
       if (sections.length === 0) {
+<<<<<<< HEAD
         await addGradientBackground();
+=======
+        addGradientBackground();
+>>>>>>> 5eca3f63 (PCR Update)
 
       const canvas = await html2canvas(pdfContainer, {
           scale: 3, // Higher scale for better quality
@@ -1523,12 +1561,24 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             
             isFirstSection = false;
           }
+<<<<<<< HEAD
         };
         
         await processPdfSections();
       }
 
       // Restore buttons and margins
+=======
+          
+          // Add section to PDF
+          pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
+          currentY += imgHeight + 5; 
+          
+          isFirstSection = false;
+        }
+      }
+
+>>>>>>> 5eca3f63 (PCR Update)
       buttonsToHide.forEach(el => {
         el.style.display = '';
       });
@@ -1617,6 +1667,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
       const campaignStart = new Date(postingStartDate);
       const campaignEnd = new Date(postingEndDate);
       const campaignDuration = (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24);
+<<<<<<< HEAD
 
       // Phase definitions (Day 7, 15, 30 from campaign start)
       const firstWeekStart = 0; // Day 0
@@ -1626,6 +1677,22 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
       const finalWeekEnd = 30; // Day 30
 
       const creatorPhaseData = new Map();
+=======
+      
+
+      const firstWeekStart = 1; 
+      const firstWeekEnd = 8; 
+      const midCampaignStart = 12; 
+      const midCampaignEnd = campaignDuration; 
+      const afterPeriodStart = campaignDuration; 
+      const afterPeriodEnd = campaignDuration + 7;
+
+      const creatorPhaseData = new Map();
+      
+      filteredInsightsData.forEach((insightData, idx) => {
+        const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+        if (!submission) return;
+>>>>>>> 5eca3f63 (PCR Update)
 
       // Use snapshot data if available
       if (postSnapshots && postSnapshots.length > 0) {
@@ -1856,7 +1923,10 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             totalER: 0,
             postCount: 0,
             firstPostPhase: null,
+<<<<<<< HEAD
             firstPostDay: null, // Track when they first posted
+=======
+>>>>>>> 5eca3f63 (PCR Update)
           });
         }
 
@@ -1906,6 +1976,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
           ? creator.afterPeriod.reduce((a, b) => a + b, 0) / creator.afterPeriod.length
           : null;
 
+<<<<<<< HEAD
         // Determine which bars to show based on when they first posted
         let showFirstWeek = false;
         let showMidPeriod = false;
@@ -1923,6 +1994,20 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         } else if (creator.firstPostPhase === 'finalWeek') {
           // Posted in final week → show only final week
           showFinalWeek = true;
+=======
+        let showFirstWeek = firstWeekAvg !== null;
+        let showMidCampaign = midCampaignAvg !== null;
+        let showAfterPeriod = afterPeriodAvg !== null;
+        
+        if (creator.firstPostPhase === 'midCampaign') {
+          showMidCampaign = false;
+        }
+        
+        // If first post was in after period, only show after period
+        if (creator.firstPostPhase === 'afterPeriod') {
+          showFirstWeek = false;
+          showMidCampaign = false;
+>>>>>>> 5eca3f63 (PCR Update)
         }
 
         return {
@@ -1945,6 +2030,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         .sort((a, b) => b.overallER - a.overallER)
         .slice(0, 5);
 
+<<<<<<< HEAD
       console.log('🏆 Top 5 creators with phase data:', top5.length);
       top5.forEach((c, i) => {
         console.log(`${i + 1}. ${c.name}: Overall ER ${c.overallER.toFixed(2)}% (First posted in: ${c.firstPostPhase})`);
@@ -1977,10 +2063,16 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
       return top5;
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filteredInsightsData, filteredSubmissions, campaign, postSnapshots]);
+=======
+      return top5;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filteredInsightsData, filteredSubmissions, campaign]);
+>>>>>>> 5eca3f63 (PCR Update)
 
     const creatorIdsToFetch = top5CreatorsPhases
       .filter(c => !c.isManualEntry && c.userId)
       .map(c => c.userId);
+<<<<<<< HEAD
     
     const creator0Data = useGetCreatorById(creatorIdsToFetch[0] || null);
     const creator1Data = useGetCreatorById(creatorIdsToFetch[1] || null);
@@ -1990,6 +2082,9 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     
     const creatorDataList = [creator0Data, creator1Data, creator2Data, creator3Data, creator4Data]
       .slice(0, creatorIdsToFetch.length);
+=======
+    const creatorDataList = creatorIdsToFetch.map(id => useGetCreatorById(id));
+>>>>>>> 5eca3f63 (PCR Update)
 
     const campaignAvg = useMemo(() => {
       if (top5CreatorsPhases.length === 0) {
@@ -2152,7 +2247,11 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
               sx={{ 
                         flex: 1,
                         height: '40px',
+<<<<<<< HEAD
                         backgroundColor: creator.firstWeek ? getPhaseColor(creator.firstWeek) : '#E5E7EB',
+=======
+                        backgroundColor: getPhaseColor(creator.firstWeek),
+>>>>>>> 5eca3f63 (PCR Update)
                 display: 'flex',
                 alignItems: 'center',
                         justifyContent: 'center'
@@ -2171,13 +2270,22 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             </Box>
                   )}
 
+<<<<<<< HEAD
                   {/* Mid Period - show if creator posted in first week or mid period */}
                   {creator.midPeriod !== null && (
+=======
+                  {/* Mid Posting Period - only show if has data */}
+                  {creator.midCampaign !== null && (
+>>>>>>> 5eca3f63 (PCR Update)
             <Box 
               sx={{ 
                         flex: 1,
                         height: '40px',
+<<<<<<< HEAD
                         backgroundColor: creator.midPeriod ? getPhaseColor(creator.midPeriod) : '#E5E7EB',
+=======
+                        backgroundColor: getPhaseColor(creator.midCampaign),
+>>>>>>> 5eca3f63 (PCR Update)
                 display: 'flex',
                 alignItems: 'center',
                         justifyContent: 'center'
@@ -2213,10 +2321,17 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                           fontFamily: 'Aileron',
                           fontSize: '16px',
                 fontWeight: 600,
+<<<<<<< HEAD
                           color: creator.finalWeek ? '#FFFFFF' : '#9CA3AF'
               }}
             >
                         {creator.finalWeek ? `${creator.finalWeek.toFixed(1)}%` : '-'}
+=======
+                          color: '#FFFFFF'
+              }}
+            >
+                        {creator.afterPeriod.toFixed(1)}%
+>>>>>>> 5eca3f63 (PCR Update)
           </Typography>
         </Box>
                   )}
@@ -3057,6 +3172,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                       display: 'inline-block'
                     }}
                   />
+<<<<<<< HEAD
                   <Link
                     href={creator.submission.postingLink || '#'}
                     target="_blank"
@@ -3081,6 +3197,16 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                       {username || 'Unknown'}
         </Typography>
                   </Link>
+=======
+                  <Typography sx={{
+                    fontFamily: 'Aileron',
+                    fontSize: '16px',
+                    fontWeight: 400,
+                    color: '#636366'
+                  }}>
+                    {username || 'Unknown'}
+        </Typography>
+>>>>>>> 5eca3f63 (PCR Update)
                 </Box>
 
                 {/* Progress bar and value on bottom */}
