@@ -7034,7 +7034,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
               borderRadius: '16px',
               p: 2,
               width: '400px',
-              height: `${cardsHeight}px`,
+              height: (() => {
+                // Calculate height based on number of visible cards
+                const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0);
+                if (visibleCards === 1) return '220px';
+                if (visibleCards === 2) return '580px';
+                if (visibleCards === 3) return '580px';
+                return '460px'; // 3 cards
+              })(),
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'flex-start',
@@ -7056,9 +7063,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Typography>
 
             {/* Circle and Legend Layout */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flex: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? 3 : 2, flex: 1 }}>
               {/* Full Circle Chart or Pie Chart */}
-              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: (showEducatorCard || showThirdCard) ? 1 : 'none' }}>
                 {(() => {
                   // Render different chart based on number of personas
                   if (showThirdCard) {
@@ -7771,7 +7778,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 borderRadius: '16px',
                 p: 2,
                 width: '400px',
-                height: `${displayCardsHeight}px`,
+                height: (() => {
+                  // Calculate height based on number of visible cards
+                  const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0);
+                  if (visibleCards === 1) return '220px';
+                  if (visibleCards === 2) return '340px';
+                  return '460px'; // 3 cards
+                })(),
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'flex-start',
