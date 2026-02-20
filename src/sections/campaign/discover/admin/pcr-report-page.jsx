@@ -33,21 +33,18 @@ import {
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
 
-// Helper function to get background color based on index
 const getImprovedInsightBgColor = (index) => {
   if (index === 0) return '#1340FFD9';
   if (index === 1) return '#1340FFBF';
   return '#1340FFA6';
 };
 
-// Helper function to get opacity based on index
 const getWorkedWellOpacity = (index) => {
   if (index === 0) return 0.85;
   if (index === 1) return 0.75;
   return 0.65;
 };
 
-// Sortable Section Component  
 const SortableSection = ({ id, children, isEditMode }) => {
   const {
     attributes,
@@ -70,12 +67,9 @@ const SortableSection = ({ id, children, isEditMode }) => {
     zIndex: isDragging ? 1000 : 'auto',
   };
 
-  // Custom pointer down handler to prevent dragging from interactive elements
   const handlePointerDown = (e) => {
     const target = e.target;
     const tagName = target.tagName.toLowerCase();
-    
-    // Check if clicking on interactive elements or elements with click handlers
     if (
       tagName === 'button' ||
       tagName === 'input' ||
@@ -85,13 +79,10 @@ const SortableSection = ({ id, children, isEditMode }) => {
       target.closest('input') ||
       target.closest('textarea') ||
       target.closest('a') ||
-      // Check for contentEditable elements (formatted text fields)
       target.contentEditable === 'true' ||
       target.closest('[contenteditable="true"]') ||
-      // Check if element or parent has onClick handler (for emoji circles)
       target.onclick ||
       target.closest('[onclick]') ||
-      // Check if element has pointer cursor (indicates it's clickable)
       window.getComputedStyle(target).cursor === 'pointer'
     ) {
       e.stopPropagation();
@@ -111,12 +102,10 @@ const SortableSection = ({ id, children, isEditMode }) => {
       {...attributes}
       onPointerDown={isEditMode ? handlePointerDown : undefined}
       sx={{ 
-        // Only show grab cursor in edit mode and not on interactive elements
         cursor: isEditMode ? 'grab' : 'default',
         '&:active': {
           cursor: isEditMode ? 'grabbing' : 'default',
         },
-        // Reset cursor for interactive elements
         '& button, & input, & textarea, & a, & [contenteditable="true"]': {
           cursor: 'pointer !important',
         },
@@ -328,7 +317,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
     recommendations: true,
   });
 
-  // Section order state for drag and drop (excluding first section which is campaign description)
   const [sectionOrder, setSectionOrder] = useState([
     'engagement',
     'platformBreakdown',
@@ -378,7 +366,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
     }
   ]);
   
-  // Editable content state - Initialize with empty/default values
   const [editableContent, setEditableContent] = useState({
     campaignDescription: '',
     engagementDescription: '',
@@ -463,7 +450,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
     isLoading: loadingInsights 
   } = useSocialInsights(postingSubmissions, campaignId);
 
-  // Transform manual entries to match insights data structure
   const manualInsightsData = useMemo(() => {
     const transformed = manualEntries.map((entry) => ({
       id: entry.id,
@@ -483,7 +469,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return transformed;
   }, [manualEntries]);
 
-  // Transform manual entries to match submission structure
   const manualSubmissions = useMemo(() => {
     const transformed = manualEntries.map((entry) => ({
       id: entry.id,
@@ -559,13 +544,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
     console.log('PCR Report - Summary Stats:', summaryStats);
   }, [campaignId, postingSubmissions, insightsData, loadingInsights, summaryStats]);
 
-  // Fetch engagement heatmap data from backend API
   const { data: heatmapApiData, isLoading: heatmapLoading, error: heatmapError } = useSWR(
     campaign?.id ? `/api/campaign/${campaign.id}/trends/engagement-heatmap?platform=All&weeks=6` : null,
     async (url) => {
-      console.log('🔍 Fetching heatmap from:', url);
+      console.log('Fetching heatmap from:', url);
       const response = await axios.get(url);
-      console.log('✅ Heatmap API response:', response.data);
+      console.log('Heatmap API response:', response.data);
       return response.data.data;
     },
     {
@@ -884,10 +868,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
       }
     };
 
-    // Update on mount and when content changes
     updateCardsHeight();
 
-    // Add resize observer to update when card content changes
     const resizeObserver = new ResizeObserver(updateCardsHeight);
     if (cardsContainerRef.current) {
       resizeObserver.observe(cardsContainerRef.current);
@@ -898,7 +880,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
     };
   }, [showEducatorCard, showThirdCard, editableContent.comicContentStyle, editableContent.educatorContentStyle, editableContent.thirdContentStyle]);
 
-  // Measure cards height and update chart height (Display Mode)
   useEffect(() => {
     const updateDisplayCardsHeight = () => {
       if (displayCardsContainerRef.current && showEducatorCard) {
@@ -909,7 +890,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         if (comicCard && educatorCard) {
           const comicHeight = comicCard.offsetHeight;
           const educatorHeight = educatorCard.offsetHeight;
-          const gap = 24; // gap: 3 = 24px
+          const gap = 24; 
           const totalHeight = comicHeight + gap + educatorHeight;
           setDisplayCardsHeight(totalHeight);
         }
@@ -948,13 +929,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
       });
       
       if (response.data.success) {
-        console.log('✅ PCR data saved successfully');
+        console.log('PCR data saved successfully');
         enqueueSnackbar('PCR saved successfully', { variant: 'success' });
         setIsEditMode(false);
-        // Clear history after successful save
         setHistory([]);
         setHistoryIndex(-1);
-        // Reset all section edit states
         setSectionEditStates({
           campaignDescription: false,
           engagement: false,
@@ -1022,11 +1001,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }, 100);
           }
         } catch (loadError) {
-          console.error('❌ Error reloading PCR data after save:', loadError);
+          console.error('Error reloading PCR data after save:', loadError);
         }
       }
     } catch (error) {
-      console.error('❌ Error saving PCR data:', error);
+      console.error('Error saving PCR data:', error);
       enqueueSnackbar(`Failed to save PCR: ${error.response?.data?.message || error.message}`, { 
         variant: 'error',
         anchorOrigin: { vertical: 'top', horizontal: 'center' }
@@ -1063,20 +1042,17 @@ const PCRReportPage = ({ campaign, onBack }) => {
         format: 'a4',
       });
 
-      const pageWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const margin = 10; // margin in mm
+      const pageWidth = 210; 
+      const pageHeight = 297; 
+      const margin = 10; 
       const contentWidth = pageWidth - (2 * margin);
       
-      // Add gradient background to first page
       const addGradientBackground = () => {
-        // Create gradient from #1340FF to #8A5AFE
-        pdf.setFillColor(19, 64, 255); // Top color #1340FF
+        pdf.setFillColor(19, 64, 255); 
         pdf.rect(0, 0, pageWidth, pageHeight / 2, 'F');
-        pdf.setFillColor(138, 90, 254); // Bottom color #8A5AFE
+        pdf.setFillColor(138, 90, 254); 
         pdf.rect(0, pageHeight / 2, pageWidth, pageHeight / 2, 'F');
         
-        // Create a smoother gradient effect by adding intermediate colors
         const steps = 20;
         const stepHeight = pageHeight / steps;
         for (let i = 0; i < steps; i += 1) {
@@ -1093,7 +1069,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const sections = pdfContainer.querySelectorAll('.pcr-section');
       
       if (sections.length === 0) {
-        // Fallback to old method if no sections found
         addGradientBackground();
 
       const canvas = await html2canvas(pdfContainer, {
@@ -1143,13 +1118,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
           
           // Add section to PDF
           pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
-          currentY += imgHeight + 5; // 5mm gap between sections
+          currentY += imgHeight + 5; 
           
           isFirstSection = false;
         }
       }
 
-      // Show buttons again after capturing
       buttonsToHide.forEach(el => {
         el.style.display = '';
       });
@@ -1175,14 +1149,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Manual refresh function for insights
   const handleRefreshInsights = async () => {
     try {
-      console.log('🔄 Triggering manual insights refresh...');
+      console.log('Triggering manual insights refresh...');
       const response = await axios.post(`/api/campaign/${campaign.id}/trends/refresh`);
-      console.log('✅ Refresh response:', response.data);
+      console.log('Refresh response:', response.data);
       alert('Insights refreshed! Please wait a moment and refresh the page.');
       // Revalidate the heatmap data
       window.location.reload();
     } catch (error) {
-      console.error('❌ Error refreshing insights:', error);
+      console.error('Error refreshing insights:', error);
       alert(`Failed to refresh insights: ${error.response?.data?.message || error.message}`);
     }
   };
@@ -1204,27 +1178,17 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const campaignEnd = new Date(postingEndDate);
       const campaignDuration = (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24);
       
-      // Define periods according to requirements:
-      // First Week of Post: Day 2 to Day 9 (7 days after start)
-      // Mid Posting Period: Day 13 to end date
-      // 1 Week After Posting Period: end date to 7 days after end date
-      const firstWeekStart = 1; // Day 2 (1 day after start)
-      const firstWeekEnd = 8; // Day 9 (8 days after start)
-      const midCampaignStart = 12; // Day 13 (12 days after start)
-      const midCampaignEnd = campaignDuration; // Until end date
-      const afterPeriodStart = campaignDuration; // From end date
-      const afterPeriodEnd = campaignDuration + 7; // 7 days after end date
-      
-      console.log('=== Campaign Phase Boundaries (Updated Logic) ===');
-      console.log('Campaign Duration:', campaignDuration, 'days');
-      console.log('First Week of Post: Day', firstWeekStart + 1, 'to Day', firstWeekEnd + 1);
-      console.log('Mid Posting Period: Day', midCampaignStart + 1, 'to Day', midCampaignEnd);
-      console.log('1 Week After Posting Period: Day', afterPeriodStart, 'to Day', afterPeriodEnd);
 
-      // Group submissions by creator and calculate their ER for each phase
+      const firstWeekStart = 1; 
+      const firstWeekEnd = 8; 
+      const midCampaignStart = 12; 
+      const midCampaignEnd = campaignDuration; 
+      const afterPeriodStart = campaignDuration; 
+      const afterPeriodEnd = campaignDuration + 7;
+
       const creatorPhaseData = new Map();
       
-      filteredInsightsData.forEach((insightData) => {
+      filteredInsightsData.forEach((insightData, idx) => {
         const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
         if (!submission) return;
 
@@ -1259,21 +1223,31 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         if (!userId) return;
 
-        // Initialize creator data if not exists
         if (!creatorPhaseData.has(userId)) {
+          const instagramHandle = submission.user?.creator?.instagram;
+          const tiktokHandle = submission.user?.creator?.tiktok;
+          const username = submission.user?.username;
+          const email = submission.user?.email;
+          const name = submission.user?.name;
+          const creatorName = submission.user?.creator?.name;
+          
+          const platformUsername = submission.platform === 'Instagram' 
+            ? instagramHandle
+            : tiktokHandle;
+          
+          const displayName = username || name || creatorName || platformUsername || email?.split('@')[0] || 'Unknown';
+          
           creatorPhaseData.set(userId, {
             userId,
-            name: submission.user?.name || 'Unknown',
+            name: displayName,
             isManualEntry,
-            creatorUsername: submission.platform === 'Instagram' 
-              ? submission.user?.creator?.instagram 
-              : submission.user?.creator?.tiktok,
+            creatorUsername: platformUsername,
             firstWeek: [],
             midCampaign: [],
             afterPeriod: [],
             totalER: 0,
             postCount: 0,
-            firstPostPhase: null, // Track when creator started posting
+            firstPostPhase: null,
           });
         }
 
@@ -1306,15 +1280,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
           ? creator.afterPeriod.reduce((a, b) => a + b, 0) / creator.afterPeriod.length
           : null;
 
-        // Determine which boxes to show based on posting pattern
-        // If creator started posting in mid campaign, don't show first week
-        // If creator only posted after period, only show after period
         let showFirstWeek = firstWeekAvg !== null;
         let showMidCampaign = midCampaignAvg !== null;
         let showAfterPeriod = afterPeriodAvg !== null;
         
-        // Apply the rules from requirements:
-        // If first post was in mid campaign, don't show mid campaign box
         if (creator.firstPostPhase === 'midCampaign') {
           showMidCampaign = false;
         }
@@ -1343,28 +1312,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
         .sort((a, b) => b.overallER - a.overallER)
         .slice(0, 5);
 
-      console.log('=== Top 5 Creators with Phase Data ===');
-      console.log(top5);
-
       return top5;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [filteredInsightsData, filteredSubmissions, campaign]);
 
-    // Only fetch creator data for non-manual entries
     const creatorIdsToFetch = top5CreatorsPhases
       .filter(c => !c.isManualEntry && c.userId)
       .map(c => c.userId);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     const creatorDataList = creatorIdsToFetch.map(id => useGetCreatorById(id));
 
     const campaignAvg = useMemo(() => {
       if (top5CreatorsPhases.length === 0) {
-        // Use 4.5 as baseline for mock data to show color variation
         return 4.5;
       }
       
-      // Calculate campaign average as sum of all creator ERs / number of creators
-      // Group all creators (not just top 5) to get true campaign average
       const allCreatorERs = new Map();
       
       filteredInsightsData.forEach((insightData) => {
@@ -1396,20 +1357,15 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const sumOfCreatorERs = creatorAverages.reduce((sum, avg) => sum + avg, 0);
       const campaignAverage = sumOfCreatorERs / creatorAverages.length;
       
-      console.log('=== Campaign Average ER Calculation ===');
-      console.log('Number of creators:', creatorAverages.length);
-      console.log('Sum of creator ERs:', sumOfCreatorERs.toFixed(2));
-      console.log('Campaign Average ER:', campaignAverage.toFixed(2));
-      
       return campaignAverage;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [top5CreatorsPhases]);
+    }, [filteredInsightsData, filteredSubmissions]);
 
     const getPhaseColor = (rate) => {
       if (rate === null) return '#E5E7EB';
-      if (rate >= campaignAvg * 1.1) return '#01197B'; // Above average - Dark blue
-      if (rate >= campaignAvg * 0.9) return '#1340FF'; // Campaign average - Blue
-      return '#98BBFF'; // Below average - Light blue
+      if (rate >= campaignAvg * 1.1) return '#01197B'; 
+      if (rate >= campaignAvg * 0.9) return '#1340FF'; 
+      return '#98BBFF'; 
     };
 
     // Use real data only
@@ -1442,22 +1398,36 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
         {displayData.length === 0 ? (
           <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
             flex: 1,
             color: '#9CA3AF'
           }}>
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '16px' }}>
               No posting data available
             </Typography>
-          </Box>
+            </Box>
         ) : (
           /* Creator rows */
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {displayData.map((creator, index) => {
-            // Use creator.name directly for display (works for both real and mock data)
-            const displayName = creator.name?.split(' ')[0] || creator.creatorUsername || 'Unknown';
+            // Get fetched creator data
+            const fetchedCreatorData = creatorDataList[index]?.data;
+            
+            // Try to get username from fetched data
+            let displayName = 'Unknown';
+            if (fetchedCreatorData?.user) {
+              // Try username field first
+              displayName = fetchedCreatorData.user.username || 
+                           fetchedCreatorData.user.name || 
+                           fetchedCreatorData.user.email?.split('@')[0] ||
+                           'Unknown';
+            } else if (creator.creatorUsername) {
+              displayName = creator.creatorUsername;
+            } else if (creator.name && creator.name !== 'Unknown') {
+              displayName = creator.name;
+            }
 
                 return (
               <Box key={index} sx={{ display: 'flex', alignItems: 'stretch', gap: '0px' }}>
@@ -1471,7 +1441,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Typography
                 sx={{
                       fontFamily: 'Aileron',
-                      fontSize: '14px',
+                  fontSize: '14px',
                       fontWeight: 400,
                       color: '#000000',
                     }}
@@ -1484,18 +1454,18 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 <Box sx={{ display: 'flex', gap: '8px', flex: 1 }}>
                   {/* First Week of Post - only show if has data */}
                   {creator.firstWeek !== null && (
-                    <Box 
-                      sx={{ 
+            <Box 
+              sx={{ 
                         flex: 1,
                         height: '40px',
                         backgroundColor: getPhaseColor(creator.firstWeek),
-                        display: 'flex',
-                        alignItems: 'center',
+                display: 'flex',
+                alignItems: 'center',
                         justifyContent: 'center'
                       }}
                     >
                       <Typography
-                        sx={{ 
+              sx={{ 
                           fontFamily: 'Aileron',
                           fontSize: '16px',
                           fontWeight: 600,
@@ -1504,23 +1474,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       >
                         {creator.firstWeek.toFixed(1)}%
                       </Typography>
-                    </Box>
+            </Box>
                   )}
 
                   {/* Mid Posting Period - only show if has data */}
                   {creator.midCampaign !== null && (
-                    <Box 
-                      sx={{ 
+            <Box 
+              sx={{ 
                         flex: 1,
                         height: '40px',
                         backgroundColor: getPhaseColor(creator.midCampaign),
-                        display: 'flex',
-                        alignItems: 'center',
+                display: 'flex',
+                alignItems: 'center',
                         justifyContent: 'center'
                       }}
                     >
                       <Typography
-                        sx={{ 
+              sx={{ 
                           fontFamily: 'Aileron',
                           fontSize: '16px',
                           fontWeight: 600,
@@ -1529,13 +1499,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       >
                         {creator.midCampaign.toFixed(1)}%
                       </Typography>
-                    </Box>
+            </Box>
                   )}
 
                   {/* 1 Week After Posting Period - only show if has data */}
                   {creator.afterPeriod !== null && (
                     <Box
-                      sx={{ 
+              sx={{ 
                         flex: 1,
                         height: '40px',
                         backgroundColor: getPhaseColor(creator.afterPeriod),
@@ -1544,19 +1514,19 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         justifyContent: 'center'
                       }}
                     >
-                      <Typography 
-                        sx={{ 
+            <Typography 
+              sx={{ 
                           fontFamily: 'Aileron',
                           fontSize: '16px',
-                          fontWeight: 600,
+                fontWeight: 600,
                           color: '#FFFFFF'
-                        }}
-                      >
+              }}
+            >
                         {creator.afterPeriod.toFixed(1)}%
-                      </Typography>
-                    </Box>
+          </Typography>
+        </Box>
                   )}
-                </Box>
+        </Box>
               </Box>
             );
           })}
@@ -2293,8 +2263,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
           bgcolor: '#F5F5F7', 
           borderRadius: '12px',
           height: '100%',
-          display: 'flex',
-          alignItems: 'center',
+            display: 'flex',
+            alignItems: 'center',
           justifyContent: 'center'
         }}>
           <Typography sx={{ 
@@ -2364,7 +2334,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       ? '/assets/Icon copy.svg' 
                       : '/assets/Icon.svg'}
                     alt={creator.platform === 'Instagram' ? 'Instagram' : 'TikTok'}
-                    sx={{
+        sx={{
                       width: '11px',
                       height: '12px',
                       display: 'inline-block'
@@ -2377,7 +2347,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     color: '#636366'
                   }}>
                     {username || 'Unknown'}
-                  </Typography>
+        </Typography>
                 </Box>
 
                 {/* Progress bar and value on bottom */}
@@ -2402,7 +2372,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     textAlign: 'right'
                   }}>
                     {creator.views >= 1000 ? `${(creator.views / 1000).toFixed(0)}K` : creator.views}
-                  </Typography>
+          </Typography>
                 </Box>
               </Box>
             );
@@ -2517,7 +2487,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       ? '/assets/Icon copy.svg' 
                       : '/assets/Icon.svg'}
                     alt={creator.platform === 'Instagram' ? 'Instagram' : 'TikTok'}
-                    sx={{
+              sx={{
                       width: '11px',
                       height: '12px',
                       display: 'inline-block'
@@ -2601,18 +2571,18 @@ const PCRReportPage = ({ campaign, onBack }) => {
     const maxEngagementRate = top5Creators.length > 0 ? Math.max(...top5Creators.map(c => c.engagementRate)) : 0;
 
     return (
-      <Box
-        sx={{
+            <Box
+              sx={{
           width: '100%',
           height: '376px',
           backgroundColor: '#F5F5F5',
           padding: '24px',
           borderRadius: '12px',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-          <Typography
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Typography
           sx={{
             fontFamily: 'Aileron',
             fontWeight: 600,
@@ -2623,7 +2593,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           }}
           >
           Top 5 Creator Engagement Rate
-          </Typography>
+              </Typography>
 
         {top5Creators.length === 0 ? (
           <Box sx={{ 
@@ -2635,8 +2605,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
           }}>
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '16px' }}>
               No engagement data available
-            </Typography>
-          </Box>
+              </Typography>
+            </Box>
         ) : (
         /* Creator bars */
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'space-around', py: 1 }}>
@@ -2677,7 +2647,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       ? '/assets/Icon copy.svg' 
                       : '/assets/Icon.svg'}
                     alt={platform === 'Instagram' ? 'Instagram' : 'TikTok'}
-              sx={{
+            sx={{
                       width: '11px',
                       height: '12px',
                       display: 'inline-block'
@@ -2709,7 +2679,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         minWidth: '50px'
               }}
             />
-                  </Box>
+        </Box>
                   <Typography
                     sx={{
                       fontFamily: 'Aileron',
@@ -8776,9 +8746,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
       }}
     >
       <DialogTitle sx={{ 
-        display: 'flex', 
+          display: 'flex',
         justifyContent: 'space-between', 
-        alignItems: 'center',
+          alignItems: 'center',
         borderBottom: '1px solid #E7E7E7',
         pb: 2
       }}>
@@ -8816,7 +8786,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   }}
                 >
                   Page {index + 1} of {previewImages.length}
-                </Typography>
+          </Typography>
                 <Box
                   component="img"
                   src={imgData}
@@ -8844,15 +8814,15 @@ const PCRReportPage = ({ campaign, onBack }) => {
               <CircularProgress sx={{ mb: 2 }} />
               <Typography variant="body1" color="text.secondary">
                 Generating preview with page breaks...
-              </Typography>
-            </Box>
-          </Box>
+          </Typography>
+        </Box>
+      </Box>
         )}
       </DialogContent>
     </Dialog>
 
-        </Box>
-      </Box>
+    </Box>
+  </Box>
   </>
   );
 };
