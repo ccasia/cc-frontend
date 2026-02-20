@@ -1037,6 +1037,7 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
 
   return (
     <Card
+      onClick={() => onViewPitch(pitch)}
       sx={{
         mb: 1.5,
         borderRadius: 2,
