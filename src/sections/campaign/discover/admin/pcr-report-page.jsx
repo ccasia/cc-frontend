@@ -704,28 +704,45 @@ const PCRReportPage = ({ campaign, onBack }) => {
         let currentPageHeight = 0;
         
         // Batch process sections with yield to UI thread
-        for (let i = 0; i < sections.length; i += 1) {
-          const section = sections[i];
+        const processSections = async () => {
+          const results = [];
           
-          // Yield to UI thread every 2 sections
-          if (i % 2 === 0 && i > 0) {
-            await new Promise(resolve => { setTimeout(resolve, 0); });
+          // Process sections sequentially to maintain order
+          // eslint-disable-next-line no-restricted-syntax
+          for (let i = 0; i < sections.length; i += 1) {
+            const section = sections[i];
+            
+            // Yield to UI thread every 2 sections
+            if (i % 2 === 0 && i > 0) {
+              // eslint-disable-next-line no-await-in-loop
+              await new Promise(resolve => { setTimeout(resolve, 0); });
+            }
+            
+            // Capture this section with high quality for preview
+            // eslint-disable-next-line no-await-in-loop
+            const canvas = await html2canvas(section, {
+              scale: 2, // Higher quality for preview
+              useCORS: true,
+              logging: false,
+              backgroundColor: '#FFFFFF',
+              windowWidth: 1078,
+              imageTimeout: 0,
+              removeContainer: true,
+            });
+            
+            const imgWidth = contentWidth;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            results.push({ canvas, imgWidth, imgHeight });
           }
           
-          // Capture this section with optimized settings
-          const canvas = await html2canvas(section, {
-            scale: 1.5, // Reduced from 2 for better performance
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#FFFFFF',
-            windowWidth: 1078,
-            imageTimeout: 0,
-            removeContainer: true,
-          });
-          
-          const imgWidth = contentWidth;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          
+          return results;
+        };
+        
+        const sectionResults = await processSections();
+        
+        // Organize sections into pages
+        sectionResults.forEach(({ canvas, imgWidth, imgHeight }) => {
           // Check if section fits on current page
           if (currentPageHeight + imgHeight > maxPageHeight && currentPage.length > 0) {
             pages.push(currentPage);
@@ -739,49 +756,60 @@ const PCRReportPage = ({ campaign, onBack }) => {
             width: imgWidth
           });
           currentPageHeight += imgHeight + 5;
-        }
+        });
         
         if (currentPage.length > 0) {
           pages.push(currentPage);
         }
         
-        // Create page images with gradient background
-        const pageImages = [];
-        const dpi = 96;
+        // Create page images with gradient background at higher DPI for preview
+        const dpi = 150; // Increased DPI for better quality
         const pageCanvasWidth = (pageWidth * dpi) / 25.4;
         const pageCanvasHeight = (pageHeight * dpi) / 25.4;
         
-        for (const page of pages) {
-          // Yield to UI thread
-          await new Promise(resolve => { setTimeout(resolve, 0); });
+        const renderPages = async () => {
+          const pageImages = [];
           
-          const pageCanvas = document.createElement('canvas');
-          pageCanvas.width = pageCanvasWidth;
-          pageCanvas.height = pageCanvasHeight;
-          const ctx = pageCanvas.getContext('2d', { alpha: false });
-          
-          // Draw gradient background
-          const gradient = ctx.createLinearGradient(0, 0, 0, pageCanvas.height);
-          gradient.addColorStop(0, '#1340FF');
-          gradient.addColorStop(1, '#8A5AFE');
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-          
-          // Draw sections on this page
-          let yOffset = (margin * dpi) / 25.4;
-          for (const section of page) {
-            const xOffset = (margin * dpi) / 25.4;
-            const sectionWidth = (section.width * dpi) / 25.4;
-            const sectionHeight = (section.height * dpi) / 25.4;
+          // Process pages sequentially
+          // eslint-disable-next-line no-restricted-syntax
+          for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
+            const page = pages[pageIndex];
             
-            ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
-            yOffset += sectionHeight + ((5 * dpi) / 25.4);
+            // Yield to UI thread
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise(resolve => { setTimeout(resolve, 0); });
+            
+            const pageCanvas = document.createElement('canvas');
+            pageCanvas.width = pageCanvasWidth;
+            pageCanvas.height = pageCanvasHeight;
+            const ctx = pageCanvas.getContext('2d', { alpha: false });
+            
+            // Draw gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, pageCanvas.height);
+            gradient.addColorStop(0, '#1340FF');
+            gradient.addColorStop(1, '#8A5AFE');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+            
+            // Draw sections on this page
+            let yOffset = (margin * dpi) / 25.4;
+            page.forEach(section => {
+              const xOffset = (margin * dpi) / 25.4;
+              const sectionWidth = (section.width * dpi) / 25.4;
+              const sectionHeight = (section.height * dpi) / 25.4;
+              
+              ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
+              yOffset += sectionHeight + ((5 * dpi) / 25.4);
+            });
+            
+            // Use PNG for preview to maintain quality
+            pageImages.push(pageCanvas.toDataURL('image/png', 1.0));
           }
           
-          // Use JPEG with compression for smaller file size
-          pageImages.push(pageCanvas.toDataURL('image/jpeg', 0.85));
-        }
+          return pageImages;
+        };
         
+        const pageImages = await renderPages();
         setPreviewImages(pageImages);
       }
 
@@ -1113,42 +1141,50 @@ const PCRReportPage = ({ campaign, onBack }) => {
         let currentY = margin;
         let isFirstSection = true;
 
-        for (let i = 0; i < sections.length; i += 1) {
-          const section = sections[i];
-          
-          // Yield to UI thread every 2 sections
-          if (i % 2 === 0 && i > 0) {
-            await new Promise(resolve => { setTimeout(resolve, 0); });
-          }
-          
-          // Capture this section with optimized settings
-          const canvas = await html2canvas(section, {
-            scale: 1.5, // Reduced from 2 for better performance
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#FFFFFF',
-            windowWidth: 1078,
-            imageTimeout: 0,
-            removeContainer: true,
-          });
+        const processPdfSections = async () => {
+          // Process sections sequentially to maintain order and add to PDF
+          // eslint-disable-next-line no-restricted-syntax
+          for (let i = 0; i < sections.length; i += 1) {
+            const section = sections[i];
+            
+            // Yield to UI thread every 2 sections
+            if (i % 2 === 0 && i > 0) {
+              // eslint-disable-next-line no-await-in-loop
+              await new Promise(resolve => { setTimeout(resolve, 0); });
+            }
+            
+            // Capture this section with optimized settings
+            // eslint-disable-next-line no-await-in-loop
+            const canvas = await html2canvas(section, {
+              scale: 1.5, // Reduced from 2 for better performance
+              useCORS: true,
+              logging: false,
+              backgroundColor: '#FFFFFF',
+              windowWidth: 1078,
+              imageTimeout: 0,
+              removeContainer: true,
+            });
 
-          const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
-          const imgWidth = contentWidth;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          
-          // Check if section fits on current page
-          if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
-            pdf.addPage();
-            addGradientBackground();
-            currentY = margin;
+            const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
+            const imgWidth = contentWidth;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            // Check if section fits on current page
+            if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
+              pdf.addPage();
+              addGradientBackground();
+              currentY = margin;
+            }
+            
+            // Add section to PDF with FAST compression
+            pdf.addImage(imgData, 'JPEG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
+            currentY += imgHeight + 5; 
+            
+            isFirstSection = false;
           }
-          
-          // Add section to PDF with FAST compression
-          pdf.addImage(imgData, 'JPEG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
-          currentY += imgHeight + 5; 
-          
-          isFirstSection = false;
-        }
+        };
+        
+        await processPdfSections();
       }
 
       buttonsToHide.forEach(el => {
@@ -1309,7 +1345,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
         let showFirstWeek = firstWeekAvg !== null;
         let showMidCampaign = midCampaignAvg !== null;
-        let showAfterPeriod = afterPeriodAvg !== null;
+        const showAfterPeriod = afterPeriodAvg !== null;
         
         if (creator.firstPostPhase === 'midCampaign') {
           showMidCampaign = false;
@@ -1346,7 +1382,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
     const creatorIdsToFetch = top5CreatorsPhases
       .filter(c => !c.isManualEntry && c.userId)
       .map(c => c.userId);
-    const creatorDataList = creatorIdsToFetch.map(id => useGetCreatorById(id));
+    
+    // Call hooks for each creator ID (up to 5 creators)
+    const creator0Data = useGetCreatorById(creatorIdsToFetch[0] || null);
+    const creator1Data = useGetCreatorById(creatorIdsToFetch[1] || null);
+    const creator2Data = useGetCreatorById(creatorIdsToFetch[2] || null);
+    const creator3Data = useGetCreatorById(creatorIdsToFetch[3] || null);
+    const creator4Data = useGetCreatorById(creatorIdsToFetch[4] || null);
+    
+    const creatorDataList = [creator0Data, creator1Data, creator2Data, creator3Data, creator4Data]
+      .slice(0, creatorIdsToFetch.length);
 
     const campaignAvg = useMemo(() => {
       if (top5CreatorsPhases.length === 0) {
@@ -2280,8 +2325,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     // Get creator data for top 5
     const creatorIds = top5Creators.map(c => c.submission.user);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const creatorDataList = creatorIds.map(id => useGetCreatorById(id));
+    
+    // Call hooks for each creator ID (up to 5 creators)
+    const viewsCreator0Data = useGetCreatorById(creatorIds[0] || null);
+    const viewsCreator1Data = useGetCreatorById(creatorIds[1] || null);
+    const viewsCreator2Data = useGetCreatorById(creatorIds[2] || null);
+    const viewsCreator3Data = useGetCreatorById(creatorIds[3] || null);
+    const viewsCreator4Data = useGetCreatorById(creatorIds[4] || null);
+    
+    const creatorDataList = [viewsCreator0Data, viewsCreator1Data, viewsCreator2Data, viewsCreator3Data, viewsCreator4Data]
+      .slice(0, creatorIds.length);
 
     if (top5Creators.length === 0) {
       return (
@@ -2437,8 +2490,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     // Get creator data for top 5
     const creatorIds = top5Creators.map(c => c.submission.user);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const creatorDataList = creatorIds.map(id => useGetCreatorById(id));
+    
+    // Call hooks for each creator ID (up to 5 creators)
+    const views48hCreator0Data = useGetCreatorById(creatorIds[0] || null);
+    const views48hCreator1Data = useGetCreatorById(creatorIds[1] || null);
+    const views48hCreator2Data = useGetCreatorById(creatorIds[2] || null);
+    const views48hCreator3Data = useGetCreatorById(creatorIds[3] || null);
+    const views48hCreator4Data = useGetCreatorById(creatorIds[4] || null);
+    
+    const creatorDataList = [views48hCreator0Data, views48hCreator1Data, views48hCreator2Data, views48hCreator3Data, views48hCreator4Data]
+      .slice(0, creatorIds.length);
 
     if (top5Creators.length === 0) {
       return (
@@ -2591,8 +2652,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     // Get creator data for top 5
     const creatorIds = top5Creators.map(c => c.submission.user);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const creatorDataList = creatorIds.map(id => useGetCreatorById(id));
+    
+    // Call hooks for each creator ID (up to 5 creators)
+    const engagementCreator0Data = useGetCreatorById(creatorIds[0] || null);
+    const engagementCreator1Data = useGetCreatorById(creatorIds[1] || null);
+    const engagementCreator2Data = useGetCreatorById(creatorIds[2] || null);
+    const engagementCreator3Data = useGetCreatorById(creatorIds[3] || null);
+    const engagementCreator4Data = useGetCreatorById(creatorIds[4] || null);
+    
+    const creatorDataList = [engagementCreator0Data, engagementCreator1Data, engagementCreator2Data, engagementCreator3Data, engagementCreator4Data]
+      .slice(0, creatorIds.length);
 
     // Find max engagement rate for bar width calculation
     const maxEngagementRate = top5Creators.length > 0 ? Math.max(...top5Creators.map(c => c.engagementRate)) : 0;
@@ -3120,14 +3189,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Button>
         <Button
           onClick={handleExportPDF}
-          disabled={isExportingPDF}
           sx={{
-            width: isExportingPDF ? '120px' : '79px',
+            width: '79px',
             height: '44px',
             borderRadius: '8px',
             gap: '6px',
             padding: '10px 16px 13px 16px',
-            background: isExportingPDF ? '#6B7280' : '#1340FF',
+            background: '#1340FF',
             boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
             color: '#FFFFFF',
             textTransform: 'none',
@@ -3137,29 +3205,17 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontSize: '16px',
             lineHeight: '20px',
             letterSpacing: '0%',
-            transition: 'width 0.3s ease, background 0.3s ease',
             '&:hover': {
-              background: isExportingPDF ? '#6B7280' : '#0F35E6',
+              background: '#0F35E6',
               boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
             },
             '&:active': {
               boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
               transform: 'translateY(1px)',
-            },
-            '&.Mui-disabled': {
-              color: '#FFFFFF',
-              background: '#6B7280',
             }
           }}
         >
-          {isExportingPDF ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CircularProgress size={16} thickness={4} sx={{ color: '#FFFFFF' }} />
-              <span>Loading</span>
-            </Box>
-          ) : (
-            'Share'
-          )}
+          Share
         </Button>
           </>
         )}
