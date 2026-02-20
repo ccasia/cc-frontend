@@ -1086,6 +1086,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
         el.style.display = 'none';
       });
 
+      // Remove margins and border-radius from sections to prevent white lines
+      const allSections = pdfContainer.querySelectorAll('.pcr-section');
+      allSections.forEach(el => {
+        el.style.marginBottom = '0';
+        el.style.borderRadius = '0';
+      });
+
       // eslint-disable-next-line new-cap
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -1099,27 +1106,34 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const margin = 10; 
       const contentWidth = pageWidth - (2 * margin);
       
-      const addGradientBackground = () => {
-        const steps = 20;
-        const stepHeight = pageHeight / steps;
-        for (let i = 0; i < steps; i += 1) {
-          const ratio = i / steps;
-          const r = Math.round(19 + (138 - 19) * ratio);
-          const g = Math.round(64 + (90 - 64) * ratio);
-          const b = Math.round(255 + (254 - 255) * ratio);
-          pdf.setFillColor(r, g, b);
-          pdf.rect(0, i * stepHeight, pageWidth, stepHeight, 'F');
-        }
+      const addGradientBackground = async () => {
+        // Create gradient as a canvas image for smooth rendering
+        const gradientCanvas = document.createElement('canvas');
+        const dpi = 96;
+        gradientCanvas.width = (pageWidth * dpi) / 25.4;
+        gradientCanvas.height = (pageHeight * dpi) / 25.4;
+        const ctx = gradientCanvas.getContext('2d');
+        
+        // Create smooth gradient
+        const gradient = ctx.createLinearGradient(0, 0, 0, gradientCanvas.height);
+        gradient.addColorStop(0, '#1340FF');
+        gradient.addColorStop(1, '#8A5AFE');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, gradientCanvas.width, gradientCanvas.height);
+        
+        // Add gradient as image to PDF
+        const gradientData = gradientCanvas.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(gradientData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
       };
       
       // Get all sections
       const sections = pdfContainer.querySelectorAll('.pcr-section');
       
       if (sections.length === 0) {
-        addGradientBackground();
+        await addGradientBackground();
 
         const canvas = await html2canvas(pdfContainer, {
-          scale: 1.5, // Reduced from 2
+          scale: 1.5, 
           useCORS: true,
           logging: false,
           backgroundColor: null,
@@ -1135,7 +1149,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight, undefined, 'FAST');
       } else {
         // Add gradient to first page
-        addGradientBackground();
+        await addGradientBackground();
         
         // Capture each section separately
         let currentY = margin;
@@ -1172,13 +1186,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
             // Check if section fits on current page
             if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
               pdf.addPage();
-              addGradientBackground();
+              // eslint-disable-next-line no-await-in-loop
+              await addGradientBackground();
               currentY = margin;
             }
             
-            // Add section to PDF with FAST compression
+            // Add section to PDF with FAST compression - slight overlap to prevent white lines
             pdf.addImage(imgData, 'JPEG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
-            currentY += imgHeight + 5; 
+            currentY += imgHeight - 0.5; // Slight overlap (0.5mm) to prevent white lines 
             
             isFirstSection = false;
           }
@@ -1187,8 +1202,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
         await processPdfSections();
       }
 
+      // Restore buttons, margins, and border-radius
       buttonsToHide.forEach(el => {
         el.style.display = '';
+      });
+      allSections.forEach(el => {
+        el.style.marginBottom = '';
+        el.style.borderRadius = '';
       });
 
       const fileName = `PCR_${campaign?.name || 'Report'}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
