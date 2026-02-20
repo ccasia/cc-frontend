@@ -839,6 +839,12 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   // Generate preview - simulates PDF export view with page breaks
   const handleGeneratePreview = async () => {
     try {
+      setIsExportingPDF(true);
+      enqueueSnackbar('Generating preview...', { 
+        variant: 'info',
+        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+      });
+
       // First, temporarily exit edit mode and hide all edit controls
       const wasInEditMode = isEditMode;
       if (wasInEditMode) {
@@ -889,16 +895,24 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         let currentPage = [];
         let currentPageHeight = 0;
         
+        // Batch process sections with yield to UI thread
         for (let i = 0; i < sections.length; i += 1) {
           const section = sections[i];
           
-          // Capture this section
+          // Yield to UI thread every 2 sections
+          if (i % 2 === 0 && i > 0) {
+            await new Promise(resolve => { setTimeout(resolve, 0); });
+          }
+          
+          // Capture this section with optimized settings
           const canvas = await html2canvas(section, {
-            scale: 2,
+            scale: 1.5, // Reduced from 2 for better performance
             useCORS: true,
             logging: false,
             backgroundColor: '#FFFFFF',
             windowWidth: 1078,
+            imageTimeout: 0,
+            removeContainer: true,
           });
           
           const imgWidth = contentWidth;
@@ -916,7 +930,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             height: imgHeight,
             width: imgWidth
           });
-          currentPageHeight += imgHeight + 5; // 5mm gap between sections
+          currentPageHeight += imgHeight + 5;
         }
         
         if (currentPage.length > 0) {
@@ -925,13 +939,18 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         
         // Create page images with gradient background
         const pageImages = [];
+        const dpi = 96;
+        const pageCanvasWidth = (pageWidth * dpi) / 25.4;
+        const pageCanvasHeight = (pageHeight * dpi) / 25.4;
+        
         for (const page of pages) {
-          // Create a canvas for this page
+          // Yield to UI thread
+          await new Promise(resolve => { setTimeout(resolve, 0); });
+          
           const pageCanvas = document.createElement('canvas');
-          const dpi = 96;
-          pageCanvas.width = (pageWidth * dpi) / 25.4;
-          pageCanvas.height = (pageHeight * dpi) / 25.4;
-          const ctx = pageCanvas.getContext('2d');
+          pageCanvas.width = pageCanvasWidth;
+          pageCanvas.height = pageCanvasHeight;
+          const ctx = pageCanvas.getContext('2d', { alpha: false });
           
           // Draw gradient background
           const gradient = ctx.createLinearGradient(0, 0, 0, pageCanvas.height);
@@ -948,10 +967,11 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             const sectionHeight = (section.height * dpi) / 25.4;
             
             ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
-            yOffset += sectionHeight + ((5 * dpi) / 25.4); // 5mm gap
+            yOffset += sectionHeight + ((5 * dpi) / 25.4);
           }
           
-          pageImages.push(pageCanvas.toDataURL('image/png', 1.0));
+          // Use JPEG with compression for smaller file size
+          pageImages.push(pageCanvas.toDataURL('image/jpeg', 0.85));
         }
         
         setPreviewImages(pageImages);
@@ -1278,6 +1298,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
+        compress: true, // Enable compression
       });
 
       const pageWidth = 210; 
@@ -1328,19 +1349,21 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         addGradientBackground();
 >>>>>>> 5eca3f63 (PCR Update)
 
-      const canvas = await html2canvas(pdfContainer, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: null,
-        windowWidth: 1078,
-      });
+        const canvas = await html2canvas(pdfContainer, {
+          scale: 1.5, // Reduced from 2
+          useCORS: true,
+          logging: false,
+          backgroundColor: null,
+          windowWidth: 1078,
+          imageTimeout: 0,
+          removeContainer: true,
+        });
 
-      const imgData = canvas.toDataURL('image/png', 1.0);
+        const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
         const imgWidth = contentWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
-        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight, undefined, 'FAST');
       } else {
         // Add gradient to first page
         await addGradientBackground();
@@ -1352,23 +1375,29 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         for (let i = 0; i < sections.length; i += 1) {
           const section = sections[i];
           
-          // Capture this section
+          // Yield to UI thread every 2 sections
+          if (i % 2 === 0 && i > 0) {
+            await new Promise(resolve => { setTimeout(resolve, 0); });
+          }
+          
+          // Capture this section with optimized settings
           const canvas = await html2canvas(section, {
-            scale: 2,
+            scale: 1.5, // Reduced from 2 for better performance
             useCORS: true,
             logging: false,
             backgroundColor: '#FFFFFF',
             windowWidth: 1078,
+            imageTimeout: 0,
+            removeContainer: true,
           });
 
-          const imgData = canvas.toDataURL('image/png', 1.0);
+          const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
           const imgWidth = contentWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
           
           // Check if section fits on current page
           if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
-            // Section doesn't fit, add new page with gradient
-        pdf.addPage();
+            pdf.addPage();
             addGradientBackground();
             currentY = margin;
           }
