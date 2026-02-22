@@ -33,21 +33,18 @@ import {
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
 
-// Helper function to get background color based on index
 const getImprovedInsightBgColor = (index) => {
   if (index === 0) return '#1340FFD9';
   if (index === 1) return '#1340FFBF';
   return '#1340FFA6';
 };
 
-// Helper function to get opacity based on index
 const getWorkedWellOpacity = (index) => {
   if (index === 0) return 0.85;
   if (index === 1) return 0.75;
   return 0.65;
 };
 
-// Sortable Section Component  
 const SortableSection = ({ id, children, isEditMode }) => {
   const {
     attributes,
@@ -70,12 +67,9 @@ const SortableSection = ({ id, children, isEditMode }) => {
     zIndex: isDragging ? 1000 : 'auto',
   };
 
-  // Custom pointer down handler to prevent dragging from interactive elements
   const handlePointerDown = (e) => {
     const target = e.target;
     const tagName = target.tagName.toLowerCase();
-    
-    // Check if clicking on interactive elements or elements with click handlers
     if (
       tagName === 'button' ||
       tagName === 'input' ||
@@ -85,13 +79,10 @@ const SortableSection = ({ id, children, isEditMode }) => {
       target.closest('input') ||
       target.closest('textarea') ||
       target.closest('a') ||
-      // Check for contentEditable elements (formatted text fields)
       target.contentEditable === 'true' ||
       target.closest('[contenteditable="true"]') ||
-      // Check if element or parent has onClick handler (for emoji circles)
       target.onclick ||
       target.closest('[onclick]') ||
-      // Check if element has pointer cursor (indicates it's clickable)
       window.getComputedStyle(target).cursor === 'pointer'
     ) {
       e.stopPropagation();
@@ -111,12 +102,10 @@ const SortableSection = ({ id, children, isEditMode }) => {
       {...attributes}
       onPointerDown={isEditMode ? handlePointerDown : undefined}
       sx={{ 
-        // Only show grab cursor in edit mode and not on interactive elements
         cursor: isEditMode ? 'grab' : 'default',
         '&:active': {
           cursor: isEditMode ? 'grabbing' : 'default',
         },
-        // Reset cursor for interactive elements
         '& button, & input, & textarea, & a, & [contenteditable="true"]': {
           cursor: 'pointer !important',
         },
@@ -328,7 +317,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
     recommendations: true,
   });
 
-  // Section order state for drag and drop (excluding first section which is campaign description)
   const [sectionOrder, setSectionOrder] = useState([
     'engagement',
     'platformBreakdown',
@@ -378,7 +366,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
     }
   ]);
   
-  // Editable content state - Initialize with empty/default values
   const [editableContent, setEditableContent] = useState({
     campaignDescription: '',
     engagementDescription: '',
@@ -463,7 +450,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
     isLoading: loadingInsights 
   } = useSocialInsights(postingSubmissions, campaignId);
 
-  // Transform manual entries to match insights data structure
   const manualInsightsData = useMemo(() => {
     const transformed = manualEntries.map((entry) => ({
       id: entry.id,
@@ -483,7 +469,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return transformed;
   }, [manualEntries]);
 
-  // Transform manual entries to match submission structure
   const manualSubmissions = useMemo(() => {
     const transformed = manualEntries.map((entry) => ({
       id: entry.id,
@@ -559,13 +544,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
     console.log('PCR Report - Summary Stats:', summaryStats);
   }, [campaignId, postingSubmissions, insightsData, loadingInsights, summaryStats]);
 
-  // Fetch engagement heatmap data from backend API
   const { data: heatmapApiData, isLoading: heatmapLoading, error: heatmapError } = useSWR(
     campaign?.id ? `/api/campaign/${campaign.id}/trends/engagement-heatmap?platform=All&weeks=6` : null,
     async (url) => {
-      console.log('🔍 Fetching heatmap from:', url);
+      console.log('Fetching heatmap from:', url);
       const response = await axios.get(url);
-      console.log('✅ Heatmap API response:', response.data);
+      console.log('Heatmap API response:', response.data);
       return response.data.data;
     },
     {
@@ -663,6 +647,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Generate preview - simulates PDF export view with page breaks
   const handleGeneratePreview = async () => {
     try {
+      setIsExportingPDF(true);
+      enqueueSnackbar('Generating preview...', { 
+        variant: 'info',
+        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+      });
+
       // First, temporarily exit edit mode and hide all edit controls
       const wasInEditMode = isEditMode;
       if (wasInEditMode) {
@@ -670,12 +660,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
       }
       
       // Wait for React to re-render
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => { setTimeout(resolve, 50); });
       
       const reportContainer = document.getElementById('pcr-report-main');
       if (!reportContainer) {
         console.error('Report container not found');
         if (wasInEditMode) setIsEditMode(true);
+        setIsExportingPDF(false);
         return;
       }
 
@@ -691,20 +682,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
       if (sections.length === 0) {
         // Fallback: capture entire report as one page
         const canvas = await html2canvas(reportContainer, {
-          scale: 2,
+          scale: 1.5,
           useCORS: true,
           logging: false,
           backgroundColor: '#FFFFFF',
           windowWidth: 1078,
         });
         
-        const imgData = canvas.toDataURL('image/png', 1.0);
+        const imgData = canvas.toDataURL('image/jpeg', 0.85);
         setPreviewImages([imgData]);
       } else {
         // Capture each section separately and organize into pages
         const pageHeight = 297; // A4 height in mm
         const pageWidth = 210; // A4 width in mm
-        const margin = 10;
+        const margin = 5; // Reduced margin for wider sections
         const contentWidth = pageWidth - (2 * margin);
         const maxPageHeight = pageHeight - (2 * margin);
         
@@ -712,74 +703,113 @@ const PCRReportPage = ({ campaign, onBack }) => {
         let currentPage = [];
         let currentPageHeight = 0;
         
-        for (let i = 0; i < sections.length; i += 1) {
-          const section = sections[i];
+        // Batch process sections with yield to UI thread
+        const processSections = async () => {
+          const results = [];
           
-          // Capture this section
-          const canvas = await html2canvas(section, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#FFFFFF',
-            windowWidth: 1078,
-          });
+          // Process sections sequentially to maintain order
+          // eslint-disable-next-line no-restricted-syntax
+          for (let i = 0; i < sections.length; i += 1) {
+            const section = sections[i];
+            
+            // Yield to UI thread every 2 sections
+            if (i % 2 === 0 && i > 0) {
+              // eslint-disable-next-line no-await-in-loop
+              await new Promise(resolve => { setTimeout(resolve, 0); });
+            }
+            
+            // Capture this section with high quality for preview
+            // eslint-disable-next-line no-await-in-loop
+            const canvas = await html2canvas(section, {
+              scale: 2, // Higher quality for preview
+              useCORS: true,
+              logging: false,
+              backgroundColor: '#FFFFFF',
+              windowWidth: 1078,
+              imageTimeout: 0,
+              removeContainer: true,
+            });
+            
+            const imgWidth = contentWidth;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            results.push({ canvas, imgWidth, imgHeight });
+          }
           
-          const imgWidth = contentWidth;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          
+          return results;
+        };
+        
+        const sectionResults = await processSections();
+        
+        // Organize sections into pages
+        sectionResults.forEach(({ canvas, imgWidth, imgHeight }) => {
           // Check if section fits on current page
           if (currentPageHeight + imgHeight > maxPageHeight && currentPage.length > 0) {
-            // Section doesn't fit, save current page and start new one
             pages.push(currentPage);
             currentPage = [];
             currentPageHeight = 0;
           }
           
-          // Add section to current page
           currentPage.push({
             canvas,
             height: imgHeight,
             width: imgWidth
           });
-          currentPageHeight += imgHeight + 5; // 5mm gap between sections
-        }
+          currentPageHeight += imgHeight + 4; // 4mm gap between sections
+        });
         
-        // Add last page if it has content
         if (currentPage.length > 0) {
           pages.push(currentPage);
         }
         
-        // Create page images with gradient background
-        const pageImages = [];
-        for (const page of pages) {
-          // Create a canvas for this page
-          const pageCanvas = document.createElement('canvas');
-          const dpi = 96;
-          pageCanvas.width = (pageWidth * dpi) / 25.4;
-          pageCanvas.height = (pageHeight * dpi) / 25.4;
-          const ctx = pageCanvas.getContext('2d');
+        // Create page images with gradient background at higher DPI for preview
+        const dpi = 150; // Increased DPI for better quality
+        const pageCanvasWidth = (pageWidth * dpi) / 25.4;
+        const pageCanvasHeight = (pageHeight * dpi) / 25.4;
+        
+        const renderPages = async () => {
+          const pageImages = [];
           
-          // Draw gradient background
-          const gradient = ctx.createLinearGradient(0, 0, 0, pageCanvas.height);
-          gradient.addColorStop(0, '#1340FF');
-          gradient.addColorStop(1, '#8A5AFE');
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-          
-          // Draw sections on this page
-          let yOffset = (margin * dpi) / 25.4;
-          for (const section of page) {
-            const xOffset = (margin * dpi) / 25.4;
-            const sectionWidth = (section.width * dpi) / 25.4;
-            const sectionHeight = (section.height * dpi) / 25.4;
+          // Process pages sequentially
+          // eslint-disable-next-line no-restricted-syntax
+          for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
+            const page = pages[pageIndex];
             
-            ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
-            yOffset += sectionHeight + ((5 * dpi) / 25.4); // 5mm gap
+            // Yield to UI thread
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise(resolve => { setTimeout(resolve, 0); });
+            
+            const pageCanvas = document.createElement('canvas');
+            pageCanvas.width = pageCanvasWidth;
+            pageCanvas.height = pageCanvasHeight;
+            const ctx = pageCanvas.getContext('2d', { alpha: false });
+            
+            // Draw gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, pageCanvas.height);
+            gradient.addColorStop(0, '#1340FF');
+            gradient.addColorStop(1, '#8A5AFE');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+            
+            // Draw sections on this page
+            let yOffset = (margin * dpi) / 25.4;
+            page.forEach(section => {
+              const xOffset = (margin * dpi) / 25.4;
+              const sectionWidth = (section.width * dpi) / 25.4;
+              const sectionHeight = (section.height * dpi) / 25.4;
+              
+              ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
+              yOffset += sectionHeight + ((4 * dpi) / 25.4); // 4mm gap between sections
+            });
+            
+            // Use PNG for preview to maintain quality
+            pageImages.push(pageCanvas.toDataURL('image/png', 1.0));
           }
           
-          pageImages.push(pageCanvas.toDataURL('image/png', 1.0));
-        }
+          return pageImages;
+        };
         
+        const pageImages = await renderPages();
         setPreviewImages(pageImages);
       }
 
@@ -794,6 +824,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
       }
 
       setIsPreviewOpen(true);
+      enqueueSnackbar('Preview generated!', { 
+        variant: 'success',
+        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+      });
     } catch (error) {
       console.error('Error generating preview:', error);
       enqueueSnackbar('Failed to generate preview', { 
@@ -801,10 +835,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
         anchorOrigin: { vertical: 'top', horizontal: 'center' }
       });
       
-      // Restore edit mode on error
       if (isEditMode === false) {
         setIsEditMode(true);
       }
+    } finally {
+      setIsExportingPDF(false);
     }
   };
 
@@ -884,10 +919,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
       }
     };
 
-    // Update on mount and when content changes
     updateCardsHeight();
 
-    // Add resize observer to update when card content changes
     const resizeObserver = new ResizeObserver(updateCardsHeight);
     if (cardsContainerRef.current) {
       resizeObserver.observe(cardsContainerRef.current);
@@ -898,7 +931,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
     };
   }, [showEducatorCard, showThirdCard, editableContent.comicContentStyle, editableContent.educatorContentStyle, editableContent.thirdContentStyle]);
 
-  // Measure cards height and update chart height (Display Mode)
   useEffect(() => {
     const updateDisplayCardsHeight = () => {
       if (displayCardsContainerRef.current && showEducatorCard) {
@@ -909,7 +941,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         if (comicCard && educatorCard) {
           const comicHeight = comicCard.offsetHeight;
           const educatorHeight = educatorCard.offsetHeight;
-          const gap = 24; // gap: 3 = 24px
+          const gap = 24; 
           const totalHeight = comicHeight + gap + educatorHeight;
           setDisplayCardsHeight(totalHeight);
         }
@@ -948,13 +980,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
       });
       
       if (response.data.success) {
-        console.log('✅ PCR data saved successfully');
+        console.log('PCR data saved successfully');
         enqueueSnackbar('PCR saved successfully', { variant: 'success' });
         setIsEditMode(false);
-        // Clear history after successful save
         setHistory([]);
         setHistoryIndex(-1);
-        // Reset all section edit states
         setSectionEditStates({
           campaignDescription: false,
           engagement: false,
@@ -1022,11 +1052,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }, 100);
           }
         } catch (loadError) {
-          console.error('❌ Error reloading PCR data after save:', loadError);
+          console.error('Error reloading PCR data after save:', loadError);
         }
       }
     } catch (error) {
-      console.error('❌ Error saving PCR data:', error);
+      console.error('Error saving PCR data:', error);
       enqueueSnackbar(`Failed to save PCR: ${error.response?.data?.message || error.message}`, { 
         variant: 'error',
         anchorOrigin: { vertical: 'top', horizontal: 'center' }
@@ -1056,102 +1086,125 @@ const PCRReportPage = ({ campaign, onBack }) => {
         el.style.display = 'none';
       });
 
+      // Remove margins from sections (keep border-radius for curved edges)
+      const allSections = pdfContainer.querySelectorAll('.pcr-section');
+      allSections.forEach(el => {
+        el.style.marginBottom = '0';
+        // Keep borderRadius for curved edges in PDF
+      });
+
       // eslint-disable-next-line new-cap
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
+        compress: true, // Enable compression
       });
 
-      const pageWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const margin = 10; // margin in mm
+      const pageWidth = 210; 
+      const pageHeight = 297; 
+      const margin = 5; // Reduced margin for wider sections
       const contentWidth = pageWidth - (2 * margin);
       
-      // Add gradient background to first page
-      const addGradientBackground = () => {
-        // Create gradient from #1340FF to #8A5AFE
-        pdf.setFillColor(19, 64, 255); // Top color #1340FF
-        pdf.rect(0, 0, pageWidth, pageHeight / 2, 'F');
-        pdf.setFillColor(138, 90, 254); // Bottom color #8A5AFE
-        pdf.rect(0, pageHeight / 2, pageWidth, pageHeight / 2, 'F');
+      const addGradientBackground = async () => {
+        const gradientCanvas = document.createElement('canvas');
+        const dpi = 96;
+        gradientCanvas.width = (pageWidth * dpi) / 25.4;
+        gradientCanvas.height = (pageHeight * dpi) / 25.4;
+        const ctx = gradientCanvas.getContext('2d');
         
-        // Create a smoother gradient effect by adding intermediate colors
-        const steps = 20;
-        const stepHeight = pageHeight / steps;
-        for (let i = 0; i < steps; i += 1) {
-          const ratio = i / steps;
-          const r = Math.round(19 + (138 - 19) * ratio);
-          const g = Math.round(64 + (90 - 64) * ratio);
-          const b = Math.round(255 + (254 - 255) * ratio);
-          pdf.setFillColor(r, g, b);
-          pdf.rect(0, i * stepHeight, pageWidth, stepHeight, 'F');
-        }
+        // Create smooth gradient
+        const gradient = ctx.createLinearGradient(0, 0, 0, gradientCanvas.height);
+        gradient.addColorStop(0, '#1340FF');
+        gradient.addColorStop(1, '#8A5AFE');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, gradientCanvas.width, gradientCanvas.height);
+        
+        const gradientData = gradientCanvas.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(gradientData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
       };
       
-      // Get all sections
       const sections = pdfContainer.querySelectorAll('.pcr-section');
       
       if (sections.length === 0) {
-        // Fallback to old method if no sections found
-        addGradientBackground();
+        await addGradientBackground();
 
-      const canvas = await html2canvas(pdfContainer, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: null,
-        windowWidth: 1078,
-      });
+        const canvas = await html2canvas(pdfContainer, {
+          scale: 1.5, 
+          useCORS: true,
+          logging: false,
+          backgroundColor: null,
+          windowWidth: 1078,
+          imageTimeout: 0,
+          removeContainer: true,
+        });
 
-      const imgData = canvas.toDataURL('image/png', 1.0);
+        const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
         const imgWidth = contentWidth;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
-        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight, undefined, 'FAST');
       } else {
         // Add gradient to first page
-        addGradientBackground();
+        await addGradientBackground();
         
         // Capture each section separately
         let currentY = margin;
         let isFirstSection = true;
 
-        for (let i = 0; i < sections.length; i += 1) {
-          const section = sections[i];
-          
-          // Capture this section
-          const canvas = await html2canvas(section, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#FFFFFF',
-            windowWidth: 1078,
-          });
+        const processPdfSections = async () => {
+          // Process sections sequentially to maintain order and add to PDF
+          // eslint-disable-next-line no-restricted-syntax
+          for (let i = 0; i < sections.length; i += 1) {
+            const section = sections[i];
+            
+            // Yield to UI thread every 2 sections
+            if (i % 2 === 0 && i > 0) {
+              // eslint-disable-next-line no-await-in-loop
+              await new Promise(resolve => { setTimeout(resolve, 0); });
+            }
+            
+            // Capture this section with optimized settings
+            // eslint-disable-next-line no-await-in-loop
+            const canvas = await html2canvas(section, {
+              scale: 1.5, // Reduced from 2 for better performance
+              useCORS: true,
+              logging: false,
+              backgroundColor: '#FFFFFF',
+              windowWidth: 1078,
+              imageTimeout: 0,
+              removeContainer: true,
+            });
 
-          const imgData = canvas.toDataURL('image/png', 1.0);
-          const imgWidth = contentWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          
-          // Check if section fits on current page
-          if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
-            // Section doesn't fit, add new page with gradient
-        pdf.addPage();
-            addGradientBackground();
-            currentY = margin;
+            const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
+            const imgWidth = contentWidth;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            // Check if section fits on current page
+            if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
+              pdf.addPage();
+              // eslint-disable-next-line no-await-in-loop
+              await addGradientBackground();
+              currentY = margin;
+            }
+            
+            // Add section to PDF with FAST compression
+            pdf.addImage(imgData, 'JPEG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
+            currentY += imgHeight + 4; // Add 4mm gap between sections
+            
+            isFirstSection = false;
           }
-          
-          // Add section to PDF
-          pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
-          currentY += imgHeight + 5; // 5mm gap between sections
-          
-          isFirstSection = false;
-        }
+        };
+        
+        await processPdfSections();
       }
 
-      // Show buttons again after capturing
+      // Restore buttons and margins
       buttonsToHide.forEach(el => {
         el.style.display = '';
+      });
+      allSections.forEach(el => {
+        el.style.marginBottom = '';
       });
 
       const fileName = `PCR_${campaign?.name || 'Report'}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
@@ -1175,14 +1228,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Manual refresh function for insights
   const handleRefreshInsights = async () => {
     try {
-      console.log('🔄 Triggering manual insights refresh...');
+      console.log('Triggering manual insights refresh...');
       const response = await axios.post(`/api/campaign/${campaign.id}/trends/refresh`);
-      console.log('✅ Refresh response:', response.data);
+      console.log('Refresh response:', response.data);
       alert('Insights refreshed! Please wait a moment and refresh the page.');
       // Revalidate the heatmap data
       window.location.reload();
     } catch (error) {
-      console.error('❌ Error refreshing insights:', error);
+      console.error('Error refreshing insights:', error);
       alert(`Failed to refresh insights: ${error.response?.data?.message || error.message}`);
     }
   };
@@ -1204,27 +1257,17 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const campaignEnd = new Date(postingEndDate);
       const campaignDuration = (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24);
       
-      // Define periods according to requirements:
-      // First Week of Post: Day 2 to Day 9 (7 days after start)
-      // Mid Posting Period: Day 13 to end date
-      // 1 Week After Posting Period: end date to 7 days after end date
-      const firstWeekStart = 1; // Day 2 (1 day after start)
-      const firstWeekEnd = 8; // Day 9 (8 days after start)
-      const midCampaignStart = 12; // Day 13 (12 days after start)
-      const midCampaignEnd = campaignDuration; // Until end date
-      const afterPeriodStart = campaignDuration; // From end date
-      const afterPeriodEnd = campaignDuration + 7; // 7 days after end date
-      
-      console.log('=== Campaign Phase Boundaries (Updated Logic) ===');
-      console.log('Campaign Duration:', campaignDuration, 'days');
-      console.log('First Week of Post: Day', firstWeekStart + 1, 'to Day', firstWeekEnd + 1);
-      console.log('Mid Posting Period: Day', midCampaignStart + 1, 'to Day', midCampaignEnd);
-      console.log('1 Week After Posting Period: Day', afterPeriodStart, 'to Day', afterPeriodEnd);
 
-      // Group submissions by creator and calculate their ER for each phase
+      const firstWeekStart = 1; 
+      const firstWeekEnd = 8; 
+      const midCampaignStart = 12; 
+      const midCampaignEnd = campaignDuration; 
+      const afterPeriodStart = campaignDuration; 
+      const afterPeriodEnd = campaignDuration + 7;
+
       const creatorPhaseData = new Map();
       
-      filteredInsightsData.forEach((insightData) => {
+      filteredInsightsData.forEach((insightData, idx) => {
         const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
         if (!submission) return;
 
@@ -1259,21 +1302,31 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         if (!userId) return;
 
-        // Initialize creator data if not exists
         if (!creatorPhaseData.has(userId)) {
+          const instagramHandle = submission.user?.creator?.instagram;
+          const tiktokHandle = submission.user?.creator?.tiktok;
+          const username = submission.user?.username;
+          const email = submission.user?.email;
+          const name = submission.user?.name;
+          const creatorName = submission.user?.creator?.name;
+          
+          const platformUsername = submission.platform === 'Instagram' 
+            ? instagramHandle
+            : tiktokHandle;
+          
+          const displayName = username || name || creatorName || platformUsername || email?.split('@')[0] || 'Unknown';
+          
           creatorPhaseData.set(userId, {
             userId,
-            name: submission.user?.name || 'Unknown',
+            name: displayName,
             isManualEntry,
-            creatorUsername: submission.platform === 'Instagram' 
-              ? submission.user?.creator?.instagram 
-              : submission.user?.creator?.tiktok,
+            creatorUsername: platformUsername,
             firstWeek: [],
             midCampaign: [],
             afterPeriod: [],
             totalER: 0,
             postCount: 0,
-            firstPostPhase: null, // Track when creator started posting
+            firstPostPhase: null,
           });
         }
 
@@ -1306,15 +1359,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
           ? creator.afterPeriod.reduce((a, b) => a + b, 0) / creator.afterPeriod.length
           : null;
 
-        // Determine which boxes to show based on posting pattern
-        // If creator started posting in mid campaign, don't show first week
-        // If creator only posted after period, only show after period
         let showFirstWeek = firstWeekAvg !== null;
         let showMidCampaign = midCampaignAvg !== null;
-        let showAfterPeriod = afterPeriodAvg !== null;
+        const showAfterPeriod = afterPeriodAvg !== null;
         
-        // Apply the rules from requirements:
-        // If first post was in mid campaign, don't show mid campaign box
         if (creator.firstPostPhase === 'midCampaign') {
           showMidCampaign = false;
         }
@@ -1343,28 +1391,29 @@ const PCRReportPage = ({ campaign, onBack }) => {
         .sort((a, b) => b.overallER - a.overallER)
         .slice(0, 5);
 
-      console.log('=== Top 5 Creators with Phase Data ===');
-      console.log(top5);
-
       return top5;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [filteredInsightsData, filteredSubmissions, campaign]);
 
-    // Only fetch creator data for non-manual entries
     const creatorIdsToFetch = top5CreatorsPhases
       .filter(c => !c.isManualEntry && c.userId)
       .map(c => c.userId);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const creatorDataList = creatorIdsToFetch.map(id => useGetCreatorById(id));
+    
+    // Call hooks for each creator ID (up to 5 creators)
+    const creator0Data = useGetCreatorById(creatorIdsToFetch[0] || null);
+    const creator1Data = useGetCreatorById(creatorIdsToFetch[1] || null);
+    const creator2Data = useGetCreatorById(creatorIdsToFetch[2] || null);
+    const creator3Data = useGetCreatorById(creatorIdsToFetch[3] || null);
+    const creator4Data = useGetCreatorById(creatorIdsToFetch[4] || null);
+    
+    const creatorDataList = [creator0Data, creator1Data, creator2Data, creator3Data, creator4Data]
+      .slice(0, creatorIdsToFetch.length);
 
     const campaignAvg = useMemo(() => {
       if (top5CreatorsPhases.length === 0) {
-        // Use 4.5 as baseline for mock data to show color variation
         return 4.5;
       }
       
-      // Calculate campaign average as sum of all creator ERs / number of creators
-      // Group all creators (not just top 5) to get true campaign average
       const allCreatorERs = new Map();
       
       filteredInsightsData.forEach((insightData) => {
@@ -1396,20 +1445,15 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const sumOfCreatorERs = creatorAverages.reduce((sum, avg) => sum + avg, 0);
       const campaignAverage = sumOfCreatorERs / creatorAverages.length;
       
-      console.log('=== Campaign Average ER Calculation ===');
-      console.log('Number of creators:', creatorAverages.length);
-      console.log('Sum of creator ERs:', sumOfCreatorERs.toFixed(2));
-      console.log('Campaign Average ER:', campaignAverage.toFixed(2));
-      
       return campaignAverage;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [top5CreatorsPhases]);
+    }, [filteredInsightsData, filteredSubmissions]);
 
     const getPhaseColor = (rate) => {
       if (rate === null) return '#E5E7EB';
-      if (rate >= campaignAvg * 1.1) return '#01197B'; // Above average - Dark blue
-      if (rate >= campaignAvg * 0.9) return '#1340FF'; // Campaign average - Blue
-      return '#98BBFF'; // Below average - Light blue
+      if (rate >= campaignAvg * 1.1) return '#01197B'; 
+      if (rate >= campaignAvg * 0.9) return '#1340FF'; 
+      return '#98BBFF'; 
     };
 
     // Use real data only
@@ -1442,22 +1486,36 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
         {displayData.length === 0 ? (
           <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
             flex: 1,
             color: '#9CA3AF'
           }}>
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '16px' }}>
               No posting data available
             </Typography>
-          </Box>
+            </Box>
         ) : (
           /* Creator rows */
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {displayData.map((creator, index) => {
-            // Use creator.name directly for display (works for both real and mock data)
-            const displayName = creator.name?.split(' ')[0] || creator.creatorUsername || 'Unknown';
+            // Get fetched creator data
+            const fetchedCreatorData = creatorDataList[index]?.data;
+            
+            // Try to get username from fetched data
+            let displayName = 'Unknown';
+            if (fetchedCreatorData?.user) {
+              // Try username field first
+              displayName = fetchedCreatorData.user.username || 
+                           fetchedCreatorData.user.name || 
+                           fetchedCreatorData.user.email?.split('@')[0] ||
+                           'Unknown';
+            } else if (creator.creatorUsername) {
+              displayName = creator.creatorUsername;
+            } else if (creator.name && creator.name !== 'Unknown') {
+              displayName = creator.name;
+            }
 
                 return (
               <Box key={index} sx={{ display: 'flex', alignItems: 'stretch', gap: '0px' }}>
@@ -1471,7 +1529,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Typography
                 sx={{
                       fontFamily: 'Aileron',
-                      fontSize: '14px',
+                  fontSize: '14px',
                       fontWeight: 400,
                       color: '#000000',
                     }}
@@ -1484,18 +1542,18 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 <Box sx={{ display: 'flex', gap: '8px', flex: 1 }}>
                   {/* First Week of Post - only show if has data */}
                   {creator.firstWeek !== null && (
-                    <Box 
-                      sx={{ 
+            <Box 
+              sx={{ 
                         flex: 1,
                         height: '40px',
                         backgroundColor: getPhaseColor(creator.firstWeek),
-                        display: 'flex',
-                        alignItems: 'center',
+                display: 'flex',
+                alignItems: 'center',
                         justifyContent: 'center'
                       }}
                     >
                       <Typography
-                        sx={{ 
+              sx={{ 
                           fontFamily: 'Aileron',
                           fontSize: '16px',
                           fontWeight: 600,
@@ -1504,23 +1562,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       >
                         {creator.firstWeek.toFixed(1)}%
                       </Typography>
-                    </Box>
+            </Box>
                   )}
 
                   {/* Mid Posting Period - only show if has data */}
                   {creator.midCampaign !== null && (
-                    <Box 
-                      sx={{ 
+            <Box 
+              sx={{ 
                         flex: 1,
                         height: '40px',
                         backgroundColor: getPhaseColor(creator.midCampaign),
-                        display: 'flex',
-                        alignItems: 'center',
+                display: 'flex',
+                alignItems: 'center',
                         justifyContent: 'center'
                       }}
                     >
                       <Typography
-                        sx={{ 
+              sx={{ 
                           fontFamily: 'Aileron',
                           fontSize: '16px',
                           fontWeight: 600,
@@ -1529,13 +1587,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       >
                         {creator.midCampaign.toFixed(1)}%
                       </Typography>
-                    </Box>
+            </Box>
                   )}
 
                   {/* 1 Week After Posting Period - only show if has data */}
                   {creator.afterPeriod !== null && (
                     <Box
-                      sx={{ 
+              sx={{ 
                         flex: 1,
                         height: '40px',
                         backgroundColor: getPhaseColor(creator.afterPeriod),
@@ -1544,19 +1602,19 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         justifyContent: 'center'
                       }}
                     >
-                      <Typography 
-                        sx={{ 
+            <Typography 
+              sx={{ 
                           fontFamily: 'Aileron',
                           fontSize: '16px',
-                          fontWeight: 600,
+                fontWeight: 600,
                           color: '#FFFFFF'
-                        }}
-                      >
+              }}
+            >
                         {creator.afterPeriod.toFixed(1)}%
-                      </Typography>
-                    </Box>
+          </Typography>
+        </Box>
                   )}
-                </Box>
+        </Box>
               </Box>
             );
           })}
@@ -2283,8 +2341,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     // Get creator data for top 5
     const creatorIds = top5Creators.map(c => c.submission.user);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const creatorDataList = creatorIds.map(id => useGetCreatorById(id));
+    
+    // Call hooks for each creator ID (up to 5 creators)
+    const viewsCreator0Data = useGetCreatorById(creatorIds[0] || null);
+    const viewsCreator1Data = useGetCreatorById(creatorIds[1] || null);
+    const viewsCreator2Data = useGetCreatorById(creatorIds[2] || null);
+    const viewsCreator3Data = useGetCreatorById(creatorIds[3] || null);
+    const viewsCreator4Data = useGetCreatorById(creatorIds[4] || null);
+    
+    const creatorDataList = [viewsCreator0Data, viewsCreator1Data, viewsCreator2Data, viewsCreator3Data, viewsCreator4Data]
+      .slice(0, creatorIds.length);
 
     if (top5Creators.length === 0) {
       return (
@@ -2293,8 +2359,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
           bgcolor: '#F5F5F7', 
           borderRadius: '12px',
           height: '100%',
-          display: 'flex',
-          alignItems: 'center',
+            display: 'flex',
+            alignItems: 'center',
           justifyContent: 'center'
         }}>
           <Typography sx={{ 
@@ -2364,7 +2430,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       ? '/assets/Icon copy.svg' 
                       : '/assets/Icon.svg'}
                     alt={creator.platform === 'Instagram' ? 'Instagram' : 'TikTok'}
-                    sx={{
+        sx={{
                       width: '11px',
                       height: '12px',
                       display: 'inline-block'
@@ -2377,7 +2443,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     color: '#636366'
                   }}>
                     {username || 'Unknown'}
-                  </Typography>
+        </Typography>
                 </Box>
 
                 {/* Progress bar and value on bottom */}
@@ -2402,7 +2468,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     textAlign: 'right'
                   }}>
                     {creator.views >= 1000 ? `${(creator.views / 1000).toFixed(0)}K` : creator.views}
-                  </Typography>
+          </Typography>
                 </Box>
               </Box>
             );
@@ -2440,8 +2506,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     // Get creator data for top 5
     const creatorIds = top5Creators.map(c => c.submission.user);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const creatorDataList = creatorIds.map(id => useGetCreatorById(id));
+    
+    // Call hooks for each creator ID (up to 5 creators)
+    const views48hCreator0Data = useGetCreatorById(creatorIds[0] || null);
+    const views48hCreator1Data = useGetCreatorById(creatorIds[1] || null);
+    const views48hCreator2Data = useGetCreatorById(creatorIds[2] || null);
+    const views48hCreator3Data = useGetCreatorById(creatorIds[3] || null);
+    const views48hCreator4Data = useGetCreatorById(creatorIds[4] || null);
+    
+    const creatorDataList = [views48hCreator0Data, views48hCreator1Data, views48hCreator2Data, views48hCreator3Data, views48hCreator4Data]
+      .slice(0, creatorIds.length);
 
     if (top5Creators.length === 0) {
       return (
@@ -2507,6 +2581,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 : creatorData?.user?.creator?.tiktok;
             }
             
+            // Calculate opacity: 1st = 100%, 2nd = 90%, 3rd = 80%, 4th = 70%, 5th = 60%
+            const opacity = 1 - (index * 0.1);
+            
             return (
               <Box key={index} sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {/* Platform Icon and Username on top */}
@@ -2517,7 +2594,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       ? '/assets/Icon copy.svg' 
                       : '/assets/Icon.svg'}
                     alt={creator.platform === 'Instagram' ? 'Instagram' : 'TikTok'}
-                    sx={{
+              sx={{
                       width: '11px',
                       height: '12px',
                       display: 'inline-block'
@@ -2539,6 +2616,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <Box sx={{
                       height: '32px',
                       backgroundColor: '#1340FF',
+                      opacity,
                       borderRadius: '16px',
                       position: 'relative',
                       width: `${(creator.views / maxViews) * 100}%`,
@@ -2594,25 +2672,33 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     // Get creator data for top 5
     const creatorIds = top5Creators.map(c => c.submission.user);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const creatorDataList = creatorIds.map(id => useGetCreatorById(id));
+    
+    // Call hooks for each creator ID (up to 5 creators)
+    const engagementCreator0Data = useGetCreatorById(creatorIds[0] || null);
+    const engagementCreator1Data = useGetCreatorById(creatorIds[1] || null);
+    const engagementCreator2Data = useGetCreatorById(creatorIds[2] || null);
+    const engagementCreator3Data = useGetCreatorById(creatorIds[3] || null);
+    const engagementCreator4Data = useGetCreatorById(creatorIds[4] || null);
+    
+    const creatorDataList = [engagementCreator0Data, engagementCreator1Data, engagementCreator2Data, engagementCreator3Data, engagementCreator4Data]
+      .slice(0, creatorIds.length);
 
     // Find max engagement rate for bar width calculation
     const maxEngagementRate = top5Creators.length > 0 ? Math.max(...top5Creators.map(c => c.engagementRate)) : 0;
 
     return (
-      <Box
-        sx={{
+            <Box
+              sx={{
           width: '100%',
           height: '376px',
           backgroundColor: '#F5F5F5',
           padding: '24px',
           borderRadius: '12px',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-          <Typography
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Typography
           sx={{
             fontFamily: 'Aileron',
             fontWeight: 600,
@@ -2623,7 +2709,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           }}
           >
           Top 5 Creator Engagement Rate
-          </Typography>
+              </Typography>
 
         {top5Creators.length === 0 ? (
           <Box sx={{ 
@@ -2635,8 +2721,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
           }}>
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '16px' }}>
               No engagement data available
-            </Typography>
-          </Box>
+              </Typography>
+            </Box>
         ) : (
         /* Creator bars */
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'space-around', py: 1 }}>
@@ -2677,23 +2763,39 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       ? '/assets/Icon copy.svg' 
                       : '/assets/Icon.svg'}
                     alt={platform === 'Instagram' ? 'Instagram' : 'TikTok'}
-              sx={{
+            sx={{
                       width: '11px',
                       height: '12px',
                       display: 'inline-block'
                     }}
                   />
-                  <Typography
-              sx={{
-                      fontFamily: 'Aileron',
-                      fontSize: '14px',
-                      fontWeight: 400,
-                      color: '#636366',
-                      lineHeight: '16px'
+                  <Link
+                    href={creator.submission.postingLink || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline'
+                      }
                     }}
-              >
-                    {username || 'Unknown'}
-              </Typography>
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: 'Aileron',
+                        fontSize: '14px',
+                        fontWeight: 400,
+                        color: '#636366',
+                        lineHeight: '16px',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          color: '#1340FF'
+                        }
+                      }}
+                    >
+                      {username || 'Unknown'}
+                    </Typography>
+                  </Link>
         </Box>
 
                 {/* Progress bar */}
@@ -2709,7 +2811,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         minWidth: '50px'
               }}
             />
-                  </Box>
+        </Box>
                   <Typography
                     sx={{
                       fontFamily: 'Aileron',
@@ -3020,7 +3122,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 height: '44px',
                 borderRadius: '8px',
                 padding: '10px 16px 13px 16px',
-                background: '#1340FF',
+                background: '#3A3A3C',
                 boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
                 color: '#FFFFFF',
                 textTransform: 'none',
@@ -3031,7 +3133,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 lineHeight: '20px',
                 letterSpacing: '0%',
                 '&:hover': {
-                  background: '#0F35E6',
+                  background: '#2A2A2C',
                   boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
                 },
                 '&:active': {
@@ -3050,6 +3152,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         ) : (
           <>
         <Button
+          disabled={isExportingPDF}
           sx={{
             width: '100px',
             height: '44px',
@@ -3076,6 +3179,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
             '&:active': {
               boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
               transform: 'translateY(1px)',
+            },
+            '&:disabled': {
+              background: '#F3F4F6',
+              color: '#9CA3AF',
+              border: '1px solid #E5E7EB',
             }
           }}
               onClick={handleGeneratePreview}
@@ -3117,14 +3225,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Button>
         <Button
           onClick={handleExportPDF}
-          disabled={isExportingPDF}
           sx={{
-            width: isExportingPDF ? '120px' : '79px',
+            width: '79px',
             height: '44px',
             borderRadius: '8px',
             gap: '6px',
             padding: '10px 16px 13px 16px',
-            background: isExportingPDF ? '#6B7280' : '#1340FF',
+            background: '#3A3A3C',
             boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
             color: '#FFFFFF',
             textTransform: 'none',
@@ -3134,29 +3241,17 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontSize: '16px',
             lineHeight: '20px',
             letterSpacing: '0%',
-            transition: 'width 0.3s ease, background 0.3s ease',
             '&:hover': {
-              background: isExportingPDF ? '#6B7280' : '#0F35E6',
+              background: '#2A2A2C',
               boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
             },
             '&:active': {
               boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
               transform: 'translateY(1px)',
-            },
-            '&.Mui-disabled': {
-              color: '#FFFFFF',
-              background: '#6B7280',
             }
           }}
         >
-          {isExportingPDF ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CircularProgress size={16} thickness={4} sx={{ color: '#FFFFFF' }} />
-              <span>Loading</span>
-            </Box>
-          ) : (
-            'Share'
-          )}
+          Share
         </Button>
           </>
         )}
@@ -3169,112 +3264,123 @@ const PCRReportPage = ({ campaign, onBack }) => {
           {!sectionVisibility.engagement && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, engagement: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px',
+                '& .MuiButton-startIcon': {
+                  marginRight: 0,
+                  marginLeft: 0
+                }
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Engagements
             </Button>
           )}
           {!sectionVisibility.platformBreakdown && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, platformBreakdown: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px'
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Platform Breakdown
             </Button>
           )}
           {!sectionVisibility.views && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, views: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px'
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Views
             </Button>
           )}
           {!sectionVisibility.audienceSentiment && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, audienceSentiment: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px'
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Audience Sentiment
             </Button>
           )}
           {!sectionVisibility.creatorTiers && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, creatorTiers: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px'
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Creator Tiers
             </Button>
           )}
           {!sectionVisibility.strategies && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, strategies: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px'
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Strategies
             </Button>
           )}
           {!sectionVisibility.recommendations && (
             <Button
               size="small"
-              startIcon={<Typography>+</Typography>}
               onClick={() => setSectionVisibility({ ...sectionVisibility, recommendations: true })}
               sx={{
                 textTransform: 'none',
                 bgcolor: '#FFFFFF',
                 border: '1px solid #E7E7E7',
                 color: '#374151',
-                '&:hover': { bgcolor: '#F9FAFB' }
+                '&:hover': { bgcolor: '#F9FAFB' },
+                gap: '4px'
               }}
             >
+              <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
               Recommendations
             </Button>
           )}
@@ -5072,7 +5178,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     const comment = document.getElementById('positive-comment-input').value;
                     
                     if (username && username !== '@' && comment) {
-                      const newComments = [...editableContent.positiveComments, { username, comment }];
+                      const newComments = [...editableContent.positiveComments, { username, comment, postlink }];
                       setEditableContent({ ...editableContent, positiveComments: newComments });
                       document.getElementById('positive-username-input').value = '@';
                       document.getElementById('positive-postlink-input').value = '';
@@ -5123,9 +5229,31 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   {editableContent.positiveComments.map((comment, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>
                       <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px' }}>
-                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
-                          {comment.username}
-      </Typography>
+                        <Link
+                          href={comment.postlink || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            textDecoration: 'none',
+                            '&:hover': {
+                              textDecoration: 'underline'
+                            }
+                          }}
+                        >
+                          <Typography sx={{ 
+                            fontFamily: 'Aileron', 
+                            fontSize: '12px', 
+                            fontWeight: 600, 
+                            color: '#6B7280', 
+                            mb: 1,
+                            cursor: 'pointer',
+                            '&:hover': {
+                              color: '#1340FF'
+                            }
+                          }}>
+                            {comment.username}
+                          </Typography>
+                        </Link>
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
                           {comment.comment}
       </Typography>
@@ -5280,7 +5408,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     const comment = document.getElementById('neutral-comment-input').value;
                     
                     if (username && username !== '@' && comment) {
-                      const newComments = [...editableContent.neutralComments, { username, comment }];
+                      const newComments = [...editableContent.neutralComments, { username, comment, postlink }];
                       setEditableContent({ ...editableContent, neutralComments: newComments });
                       document.getElementById('neutral-username-input').value = '@';
                       document.getElementById('neutral-postlink-input').value = '';
@@ -5331,9 +5459,31 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   {editableContent.neutralComments.map((comment, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>
                       <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px' }}>
-                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
-                          {comment.username}
-                        </Typography>
+                        <Link
+                          href={comment.postlink || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            textDecoration: 'none',
+                            '&:hover': {
+                              textDecoration: 'underline'
+                            }
+                          }}
+                        >
+                          <Typography sx={{ 
+                            fontFamily: 'Aileron', 
+                            fontSize: '12px', 
+                            fontWeight: 600, 
+                            color: '#6B7280', 
+                            mb: 1,
+                            cursor: 'pointer',
+                            '&:hover': {
+                              color: '#1340FF'
+                            }
+                          }}>
+                            {comment.username}
+                          </Typography>
+                        </Link>
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
                           {comment.comment}
                         </Typography>
@@ -6975,7 +7125,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
               borderRadius: '16px',
               p: 2,
               width: '400px',
-              height: `${cardsHeight}px`,
+              height: (() => {
+                // Calculate height based on number of visible cards
+                const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0);
+                if (visibleCards === 1) return '220px';
+                if (visibleCards === 2) return '580px';
+                if (visibleCards === 3) return '580px';
+                return '460px'; // 3 cards
+              })(),
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'flex-start',
@@ -6997,9 +7154,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Typography>
 
             {/* Circle and Legend Layout */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flex: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? 3 : 2, flex: 1 }}>
               {/* Full Circle Chart or Pie Chart */}
-              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: (showEducatorCard || showThirdCard) ? 1 : 'none' }}>
                 {(() => {
                   // Render different chart based on number of personas
                   if (showThirdCard) {
@@ -7712,7 +7869,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 borderRadius: '16px',
                 p: 2,
                 width: '400px',
-                height: `${displayCardsHeight}px`,
+                height: (() => {
+                  // Calculate height based on number of visible cards
+                  const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0);
+                  if (visibleCards === 1) return '220px';
+                  if (visibleCards === 2) return '465px';
+                  return '460px'; // 3 cards
+                })(),
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'flex-start',
@@ -8776,9 +8939,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
       }}
     >
       <DialogTitle sx={{ 
-        display: 'flex', 
+          display: 'flex',
         justifyContent: 'space-between', 
-        alignItems: 'center',
+          alignItems: 'center',
         borderBottom: '1px solid #E7E7E7',
         pb: 2
       }}>
@@ -8816,7 +8979,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   }}
                 >
                   Page {index + 1} of {previewImages.length}
-                </Typography>
+          </Typography>
                 <Box
                   component="img"
                   src={imgData}
@@ -8844,15 +9007,15 @@ const PCRReportPage = ({ campaign, onBack }) => {
               <CircularProgress sx={{ mb: 2 }} />
               <Typography variant="body1" color="text.secondary">
                 Generating preview with page breaks...
-              </Typography>
-            </Box>
-          </Box>
+          </Typography>
+        </Box>
+      </Box>
         )}
       </DialogContent>
     </Dialog>
 
-        </Box>
-      </Box>
+    </Box>
+  </Box>
   </>
   );
 };

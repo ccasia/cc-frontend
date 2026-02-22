@@ -118,40 +118,15 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
   return (
     <>
       <Stack direction="row" spacing={1}>
-        <Button
-          onClick={() => onViewPitch(pitch)}
-          sx={{
-            bgcolor: '#FFFFFF',
-            border: '1.5px solid #e7e7e7',
-            borderBottom: '3px solid #e7e7e7',
-            borderRadius: 1,
-            color: '#1340FF',
-            height: 36,
-            px: 2,
-            py: 1.5,
-            fontWeight: 600,
-            fontSize: '0.85rem',
-            textTransform: 'none',
-            whiteSpace: 'nowrap',
-            minWidth: '90px',
-            display: 'flex',
-            alignItems: 'center',
-            '&:hover': {
-              bgcolor: 'rgba(19, 64, 255, 0.08)',
-              border: '1.5px solid #1340FF',
-              borderBottom: '3px solid #1340FF',
-              color: '#1340FF',
-            },
-          }}
-        >
-          View
-        </Button>
         {isApproved ? (
           // Withdraw button for approved creators (red/danger style)
           <Button
             variant="outlined"
             size="small"
-            onClick={() => setConfirmDialogOpen(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmDialogOpen(true);
+            }}
             disabled={isDisabled}
             sx={{
               cursor: isDisabled ? 'not-allowed' : 'pointer',
@@ -192,7 +167,10 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
           <Button
             variant="outlined"
             size="small"
-            onClick={() => setConfirmDialogOpen(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmDialogOpen(true);
+            }}
             disabled={isDisabled}
             sx={{
               cursor: isDisabled ? 'not-allowed' : 'pointer',
@@ -234,7 +212,11 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
       {/* Custom Styled Confirmation Dialog */}
       <Dialog
         open={confirmDialogOpen}
-        onClose={() => setConfirmDialogOpen(false)}
+        onClose={(e) => {
+          if (e && e.stopPropagation) e.stopPropagation();
+          setConfirmDialogOpen(false);
+        }}
+        onClick={(e) => e.stopPropagation()}
         maxWidth="xs"
         fullWidth
         PaperProps={{
@@ -299,7 +281,10 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
               fullWidth
               variant="contained"
               loading={loading}
-              onClick={isApproved ? handleWithdrawCreator : handleRemoveCreator}
+              onClick={(e) => {
+                e.stopPropagation();
+                isApproved ? handleWithdrawCreator() : handleRemoveCreator();
+              }}
               sx={{
                 bgcolor: isApproved ? '#D4321C' : '#3A3A3C',
                 borderBottom: isApproved ? '3px solid #b71c1c' : '3px solid #00000073',
@@ -318,7 +303,10 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
             </LoadingButton>
             <Button
               fullWidth
-              onClick={() => setConfirmDialogOpen(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmDialogOpen(false);
+              }}
               disabled={loading}
               sx={{
                 color: '#3A3A3C',

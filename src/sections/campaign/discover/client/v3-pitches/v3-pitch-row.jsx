@@ -171,9 +171,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
   const displayData = getDisplayData();
 
   return (
-    <TableRow
-    // hover
-    >
+    <TableRow hover onClick={() => onViewPitch(pitch)} sx={{ cursor: 'pointer' }}>
       <TableCell
         sx={{
           py: { xs: 0.5, sm: 1 },
@@ -348,7 +346,11 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
         <Popover
           open={outreachPopoverOpen}
           anchorEl={outreachAnchorEl}
-          onClose={handleOutreachClose}
+          onClose={(e) => {
+            if (e && e.stopPropagation) e.stopPropagation();
+            handleOutreachClose();
+          }}
+          onClick={(e) => e.stopPropagation()}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
           slotProps={{
@@ -369,7 +371,10 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           {OUTREACH_STATUS_OPTIONS.map((option) => (
             <Box
               key={option.value}
-              onClick={() => handleOutreachSelect(option.value)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOutreachSelect(option.value);
+              }}
               sx={{
                 textTransform: 'uppercase',
                 fontWeight: 700,
@@ -497,6 +502,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
             whiteSpace: 'nowrap',
             color: statusInfo.color,
             borderColor: statusInfo.borderColor,
+            cursor: 'default',
           }}
         >
           {getStatusText(displayStatus, pitch, campaign)}
@@ -516,7 +522,12 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
         {smUp ? (
           <V3PitchActions pitch={pitch} onViewPitch={onViewPitch} campaignId={campaign?.id} onRemoved={onRemoved} isDisabled={isDisabled} />
         ) : (
-          <IconButton onClick={() => onViewPitch(pitch)}>
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewPitch(pitch);
+            }}
+          >
             <Iconify icon="hugeicons:view" />
           </IconButton>
         )}
