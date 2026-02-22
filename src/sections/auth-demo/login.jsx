@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { Page, pdfjs, Document } from 'react-pdf';
@@ -19,6 +19,7 @@ import {
   useMediaQuery,
   DialogActions,
   InputAdornment,
+  LinearProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -101,6 +102,7 @@ const Login = () => {
   const password = useBoolean();
   const [openTermsModal, setOpenTermsModal] = useState(false);
   const [openPrivacyModal, setOpenPrivacyModal] = useState(false);
+
   // const [play] = useSound(error, {
   //   interrupt: true,
   // });

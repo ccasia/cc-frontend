@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable prefer-promise-reject-errors */
 /* eslint-disable jsx-a11y/media-has-caption */
 import dayjs from 'dayjs';
@@ -5,7 +6,7 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 
 // import Accordion from '@mui/material/Accordion';
 // import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -33,6 +34,7 @@ import {
   ListItemText,
   DialogContent,
   DialogActions,
+  LinearProgress,
   CircularProgress,
 } from '@mui/material';
 
@@ -80,7 +82,6 @@ const LoadingDots = () => {
 
 const CampaignFirstDraft = ({
   campaign,
-  timeline,
   submission,
   getDependency,
   fullSubmission,
@@ -89,14 +90,14 @@ const CampaignFirstDraft = ({
 }) => {
   // eslint-disable-next-line no-unused-vars
   const [preview, setPreview] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [setIsProcessing] = useState(false);
   // const [loading, setLoading] = useState(false);
   const dependency = getDependency(submission?.id);
-  const { socket } = useSocketContext();
-  const [progress, setProgress] = useState(0);
+  const { socket, tah: isProcessing } = useSocketContext();
+  const [count, setCount] = useState(0);
 
   const display = useBoolean();
-  const { user, dispatch } = useAuthContext();
+  const { user } = useAuthContext();
 
   const [submitStatus, setSubmitStatus] = useState('');
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
@@ -127,7 +128,6 @@ const CampaignFirstDraft = ({
 
   const methods = useForm({
     defaultValues: {
-      // draft: '',
       caption: savedCaption || '',
       draftVideo: [],
       rawFootage: [],
@@ -150,18 +150,7 @@ const CampaignFirstDraft = ({
     },
   });
 
-  const {
-    handleSubmit,
-    setValue,
-    reset,
-    formState: { isSubmitting, isDirty },
-    watch,
-  } = methods;
-
-  const logistics = useMemo(
-    () => campaign?.logistic?.filter((item) => item?.userId === user?.id),
-    [campaign, user]
-  );
+  const { reset } = methods;
 
   const previousSubmission = useMemo(
     () => fullSubmission?.find((item) => item?.id === dependency?.dependentSubmissionId),
@@ -180,25 +169,28 @@ const CampaignFirstDraft = ({
     // Sort by date and remove duplicates
     const uniqueFeedbacks = allFeedbacks
       .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))
-      .filter((feedback, index, self) => 
-        index === self.findIndex((f) => f.id === feedback.id)
-      );
+      .filter((feedback, index, self) => index === self.findIndex((f) => f.id === feedback.id));
 
     // Keep both client feedback and admin feedback for change requests (creators need to see admin feedback when changes are requested)
-    const relevantFeedbacks = uniqueFeedbacks.filter(f => {
-      const isClient = (f?.admin?.role === 'client') || (f?.role === 'client');
-      const isAdmin = (f?.admin?.role === 'admin') || (f?.role === 'admin');
-      const isChangeRequest = f?.type === 'REQUEST' || f?.videosToUpdate?.length > 0 || f?.photosToUpdate?.length > 0 || f?.rawFootageToUpdate?.length > 0;
-      
+    const relevantFeedbacks = uniqueFeedbacks.filter((f) => {
+      const isClient = f?.admin?.role === 'client' || f?.role === 'client';
+      const isAdmin = f?.admin?.role === 'admin' || f?.role === 'admin';
+      const isChangeRequest =
+        f?.type === 'REQUEST' ||
+        f?.videosToUpdate?.length > 0 ||
+        f?.photosToUpdate?.length > 0 ||
+        f?.rawFootageToUpdate?.length > 0;
+
       // Show client feedback always, and admin feedback when it's a change request
       return isClient || (isAdmin && isChangeRequest);
     });
 
     // Show feedback that has content or media updates (less restrictive filtering)
     const result = relevantFeedbacks
-      .filter(item => {
-        const hasMediaUpdates = item?.photosToUpdate?.length > 0 || 
-          item?.videosToUpdate?.length > 0 || 
+      .filter((item) => {
+        const hasMediaUpdates =
+          item?.photosToUpdate?.length > 0 ||
+          item?.videosToUpdate?.length > 0 ||
           item?.rawFootageToUpdate?.length > 0;
         const hasContent = item?.content && item.content.trim() !== '';
         const hasReasons = item?.reasons && item.reasons.length > 0;
@@ -260,60 +252,45 @@ const CampaignFirstDraft = ({
       });
 
     // Debug logging
-    console.log('🔍 CREATOR FIRST DRAFT - FEEDBACK PROCESSING:', {
-      submissionId: submission?.id,
-      submissionStatus: submission?.status,
-      allFeedbacksCount: allFeedbacks.length,
-      uniqueFeedbacksCount: uniqueFeedbacks.length,
-      relevantFeedbacksCount: relevantFeedbacks.length,
-      finalResultCount: result.length,
-      allFeedbacks: allFeedbacks.map(f => ({
-        id: f.id,
-        type: f.type,
-        adminRole: f.admin?.role,
-        role: f.role,
-        content: f.content,
-        videosToUpdate: f.videosToUpdate?.length || 0,
-        photosToUpdate: f.photosToUpdate?.length || 0,
-        rawFootageToUpdate: f.rawFootageToUpdate?.length || 0,
-        createdAt: f.createdAt
-      })),
-      result
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 CREATOR FIRST DRAFT - FEEDBACK PROCESSING:', {
+        submissionId: submission?.id,
+        submissionStatus: submission?.status,
+        allFeedbacksCount: allFeedbacks.length,
+        uniqueFeedbacksCount: uniqueFeedbacks.length,
+        relevantFeedbacksCount: relevantFeedbacks.length,
+        finalResultCount: result.length,
+        allFeedbacks: allFeedbacks.map((f) => ({
+          id: f.id,
+          type: f.type,
+          adminRole: f.admin?.role,
+          role: f.role,
+          content: f.content,
+          videosToUpdate: f.videosToUpdate?.length || 0,
+          photosToUpdate: f.photosToUpdate?.length || 0,
+          rawFootageToUpdate: f.rawFootageToUpdate?.length || 0,
+          createdAt: f.createdAt,
+        })),
+        result,
+      });
+    }
 
     return result;
   }, [submission, previousSubmission]);
 
-  // Debug logging for feedbacksTesting
   useEffect(() => {
-    if (feedbacksTesting && feedbacksTesting.length > 0) {
-      console.log('🔍 CREATOR FIRST DRAFT - FEEDBACKS TESTING:', {
-        submissionId: submission?.id,
-        submissionStatus: submission?.status,
-        feedbacksTestingCount: feedbacksTesting.length,
-        feedbacksTesting: feedbacksTesting.map(f => ({
-          id: f.id,
-          adminName: f.adminName,
-          role: f.role,
-          content: f.content,
-          changes: f.changes,
-          reasons: f.reasons,
-          createdAt: f.createdAt,
-        }))
-      });
-    }
-  }, [feedbacksTesting, submission]);
-
-  useEffect(() => {
-    if (!socket) return; // Early return if socket is not available
+    if (!socket) {
+      return;
+    } // Early return if socket is not available
 
     const handleProgress = (data) => {
-      if (submission?.id !== data.submissionId) return; // Check if submissionId matches
-      // inQueue.onFalse();
-      // setProgress(Math.ceil(data.progress));
+      if (submission?.id !== data.submissionId || !data) {
+        return;
+      } // Check if submissionId matches
 
       // Mark processing as soon as progress events start
-      setIsProcessing(true);
+
+      // setIsProcessing(true);
 
       setUploadProgress((prev) => {
         const exists = prev.some((item) => item.fileName === data.fileName);
@@ -326,7 +303,12 @@ const CampaignFirstDraft = ({
             if (serverP >= 100) {
               return { ...item, ...data, serverProgress: 100, progressShown: 100 };
             }
-            return { ...item, ...data, serverProgress: serverP, progressShown: Math.max(1, item.progressShown || 1) };
+            return {
+              ...item,
+              ...data,
+              serverProgress: serverP,
+              progressShown: Math.max(1, item.progressShown || 1),
+            };
           });
         }
 
@@ -354,11 +336,14 @@ const CampaignFirstDraft = ({
   }, [submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
   const checkProgress = useCallback(() => {
-    if (uploadProgress?.length && uploadProgress?.every((x) => Number(x?.serverProgress || 0) >= 100)) {
+    if (
+      uploadProgress?.length &&
+      uploadProgress?.every((x) => Number(x?.serverProgress || 0) >= 100)
+    ) {
       // Immediately refresh submissions to reflect new status
-      if (socket) {
-        mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
-      }
+      // if (socket) {
+      //   mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+      // }
 
       // Short polling for faster status flip to review states
       if (!pollingSubmissions) {
@@ -366,7 +351,9 @@ const CampaignFirstDraft = ({
         let attempts = 0;
         const poll = async () => {
           attempts += 1;
-          await mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+          // await mutate(
+          //   `${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`
+          // );
           const currentStatus = latestSubmissionRef.current?.status;
           if (
             currentStatus === 'PENDING_REVIEW' ||
@@ -444,19 +431,6 @@ const CampaignFirstDraft = ({
     setUploadTypeModalOpen(false);
   };
 
-  const handleUploadClick = () => {
-    if (submission?.status === 'PENDING_REVIEW') {
-      enqueueSnackbar('Cannot upload while submission is under review', { variant: 'warning' });
-      return;
-    }
-    setUploadTypeModalOpen(true);
-  };
-
-  const handleImageClick = (index) => {
-    setCurrentImageIndex(index);
-    setFullImageOpen(true);
-  };
-
   const handleFullImageClose = () => {
     setFullImageOpen(false);
   };
@@ -483,7 +457,9 @@ const CampaignFirstDraft = ({
 
   // Check if creator has uploaded all required deliverables
   const areDeliverablesComplete = useMemo(() => {
-    const hasVideo = Array.isArray(submission?.video) ? submission.video.length > 0 : !!submission?.content;
+    const hasVideo = Array.isArray(submission?.video)
+      ? submission.video.length > 0
+      : !!submission?.content;
     const needsRaw = !!campaign?.rawFootage;
     const needsPhotos = !!campaign?.photos;
     const hasRaw = Array.isArray(submission?.rawFootages) && submission.rawFootages.length > 0;
@@ -568,6 +544,7 @@ const CampaignFirstDraft = ({
   return (
     previousSubmission?.status === 'APPROVED' && (
       <Box p={1.5} sx={{ pb: 0 }}>
+        {/* TITLE */}
         <Box
           sx={{
             display: 'flex',
@@ -588,6 +565,7 @@ const CampaignFirstDraft = ({
           </Typography>
         </Box>
 
+        {/* GAPS */}
         <Box
           sx={{
             borderBottom: '1px solid',
@@ -597,9 +575,9 @@ const CampaignFirstDraft = ({
           }}
         />
 
+        {/* CONTENT */}
         <Box>
-          {(submission?.status === 'PENDING_REVIEW' ||
-            submission?.status === 'SENT_TO_CLIENT') && (
+          {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && (
             <Stack justifyContent="center" alignItems="center" spacing={2}>
               <Box
                 sx={{
@@ -716,10 +694,7 @@ const CampaignFirstDraft = ({
                         zIndex: 1,
                       }}
                     >
-                      <Iconify
-                        icon="eva:checkmark-fill"
-                        sx={{ color: 'white', width: 20 }}
-                      />
+                      <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
                     </Box>
                   )}
 
@@ -801,10 +776,7 @@ const CampaignFirstDraft = ({
                           zIndex: 1,
                         }}
                       >
-                        <Iconify
-                          icon="eva:checkmark-fill"
-                          sx={{ color: 'white', width: 20 }}
-                        />
+                        <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
                       </Box>
                     )}
 
@@ -887,10 +859,7 @@ const CampaignFirstDraft = ({
                           zIndex: 1,
                         }}
                       >
-                        <Iconify
-                          icon="eva:checkmark-fill"
-                          sx={{ color: 'white', width: 20 }}
-                        />
+                        <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
                       </Box>
                     )}
 
@@ -942,230 +911,62 @@ const CampaignFirstDraft = ({
               feedbacksTesting &&
               feedbacksTesting.length > 0)) && (
             <>
-              {uploadProgress.length ? (
-                <Stack spacing={1}>
-                  {uploadProgress.length &&
-                    uploadProgress.map((currentFile) => (
-                      <Box
-                        sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}
-                        key={currentFile.fileName}
-                      >
-                        <Stack spacing={2}>
-                          <Stack direction="row" spacing={2} alignItems="center">
-                            {currentFile?.type?.startsWith('video') ? (
-                              <Box
-                                sx={{
-                                  width: 120,
-                                  height: 68,
-                                  borderRadius: 1,
-                                  overflow: 'hidden',
-                                  position: 'relative',
-                                  bgcolor: 'background.paper',
-                                  boxShadow: (theme) => theme.customShadows.z8,
-                                }}
-                              >
-                                {currentFile.preview ? (
-                                  <Box
-                                    component="img"
-                                    src={currentFile.preview}
-                                    sx={{
-                                      width: '100%',
-                                      height: '100%',
-                                      objectFit: 'cover',
-                                    }}
-                                  />
-                                ) : (
-                                  <Box
-                                    sx={{
-                                      width: '100%',
-                                      height: '100%',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      bgcolor: 'background.neutral',
-                                    }}
-                                  >
-                                    <Iconify
-                                      icon="solar:video-library-bold"
-                                      width={24}
-                                      sx={{ color: 'text.secondary' }}
-                                    />
-                                  </Box>
-                                )}
-                              </Box>
-                            ) : (
-                              <Box
-                                component="img"
-                                src="/assets/icons/files/ic_img.svg"
-                                sx={{ width: 40, height: 40 }}
-                              />
-                            )}
+              <Stack gap={2}>
+                <Box>
+                  <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
+                    {(() => {
+                      if (submission?.status === 'CHANGES_REQUIRED') {
+                        return 'Please review the feedback below and resubmit your first draft with the requested changes.';
+                      }
+                      if (
+                        submission?.status === 'NOT_STARTED' &&
+                        feedbacksTesting &&
+                        feedbacksTesting.length > 0
+                      ) {
+                        return 'Please review the feedback below and submit your first draft with the requested changes.';
+                      }
+                      return "It's time to submit your first draft for this campaign!";
+                    })()}
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
+                    {(() => {
+                      if (submission?.status === 'CHANGES_REQUIRED') {
+                        return 'Make sure to address all the feedback points mentioned in the review.';
+                      }
+                      if (
+                        submission?.status === 'NOT_STARTED' &&
+                        feedbacksTesting &&
+                        feedbacksTesting.length > 0
+                      ) {
+                        return 'Make sure to address all the feedback points mentioned in the review.';
+                      }
+                      return "Do ensure to read through the brief, and the do's and dont's for the creatives over at the";
+                    })()}
+                    {submission?.status !== 'CHANGES_REQUIRED' &&
+                      submission?.status !== 'NOT_STARTED' && (
+                        <>
+                          {' '}
+                          <Box
+                            component="span"
+                            onClick={() => setCurrentTab('info')}
+                            sx={{
+                              color: '#203ff5',
+                              cursor: 'pointer',
+                              fontWeight: 650,
+                              '&:hover': {
+                                opacity: 0.8,
+                              },
+                            }}
+                          >
+                            Campaign Details
+                          </Box>{' '}
+                          page.
+                        </>
+                      )}
+                  </Typography>
 
-                            <Stack spacing={1} flexGrow={1}>
-                              <Typography fontSize={{ xs: 12, md: 14}} noWrap>
-                                {truncateText(currentFile?.fileName, 25) || 'Uploading file...'}
-                              </Typography>
-                              <Stack direction="row" spacing={2} alignItems="center">
-                                <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                                  {(() => {
-                                    const server = Number(currentFile?.serverProgress || 0);
-                                    const shown = Number(currentFile?.progressShown || 0);
-                                    let progressValue = 0;
-                                    if (server >= 100) {
-                                      progressValue = 100;
-                                    } else {
-                                      // map server 0-90 to shown 1-90
-                                      const mapped = Math.max(1, Math.min(90, server));
-                                      // ease towards mapped
-                                      const step = Math.max(0.5, (mapped - shown) * 0.2);
-                                      const next = Math.min(mapped, shown + step);
-                                      currentFile.progressShown = next;
-                                      progressValue = next;
-                                    }
-                                    const isComplete = Number(currentFile?.serverProgress || 0) >= 100;
-                                    return (
-                                      <>
-                                        <CircularProgress
-                                          variant="determinate"
-                                          value={100}
-                                          size={56}
-                                          thickness={4}
-                                          sx={{
-                                            color: 'grey.200',
-                                            position: 'absolute',
-                                          }}
-                                        />
-                                        <CircularProgress
-                                          variant="determinate"
-                                          value={progressValue}
-                                          size={56}
-                                          thickness={4}
-                                          sx={{
-                                            color: isComplete ? 'success.main' : 'primary.main',
-                                            strokeLinecap: 'round',
-                                            transition: 'stroke-dashoffset 0.3s ease 0s',
-                                          }}
-                                        />
-                                        <Box
-                                          sx={{
-                                            top: 0,
-                                            left: 0,
-                                            bottom: 0,
-                                            right: 0,
-                                            position: 'absolute',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                          }}
-                                        >
-                                          <Typography
-                                            variant="caption"
-                                            component="div"
-                                            sx={{
-                                              fontSize: '0.75rem',
-                                              fontWeight: 600,
-                                              color: isComplete ? 'success.main' : 'text.primary',
-                                            }}
-                                          >
-                                            {`${Math.round(progressValue)}%`}
-                                          </Typography>
-                                        </Box>
-                                      </>
-                                    );
-                                  })()}
-                                </Box>
-                                <Stack spacing={0.5} flexGrow={1}>
-                                  <Stack
-                                    direction="row"
-                                    justifyContent="space-between"
-                                    alignItems="center"
-                                  >
-                                    <Typography fontSize={{ xs: 11, md: 12 }} sx={{ color: 'text.secondary' }}>
-                                      {Number(currentFile?.serverProgress || 0) >= 100 ? (
-                                        <Box
-                                          component="span"
-                                          sx={{ color: 'success.main', fontWeight: 600 }}
-                                        >
-                                          Upload Complete
-                                        </Box>
-                                      ) : (
-                                        `${currentFile?.name || 'Uploading'}...`
-                                      )}
-                                    </Typography>
-                                    <Typography fontSize={{ xs: 11, md: 12 }} sx={{ color: 'text.secondary' }}>
-                                      {formatFileSize(currentFile?.fileSize || 0)}
-                                    </Typography>
-                                  </Stack>
-                                </Stack>
-                              </Stack>
-                            </Stack>
-                          </Stack>
-                        </Stack>
-                      </Box>
-                    ))}
-                </Stack>
-              ) : (
-                <Stack gap={2}>
-                  <Box>
-                    <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                      {(() => {
-                        if (submission?.status === 'CHANGES_REQUIRED') {
-                          return 'Please review the feedback below and resubmit your first draft with the requested changes.';
-                        }
-                        if (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0) {
-                          return 'Please review the feedback below and submit your first draft with the requested changes.';
-                        }
-                        return "It's time to submit your first draft for this campaign!";
-                      })()}
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                      {(() => {
-                        if (submission?.status === 'CHANGES_REQUIRED') {
-                          return 'Make sure to address all the feedback points mentioned in the review.';
-                        }
-                        if (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0) {
-                          return 'Make sure to address all the feedback points mentioned in the review.';
-                        }
-                        return "Do ensure to read through the brief, and the do's and dont's for the creatives over at the";
-                      })()}
-                      {submission?.status !== 'CHANGES_REQUIRED' &&
-                        submission?.status !== 'NOT_STARTED' && (
-                          <>
-                            {' '}
-                            <Box
-                              component="span"
-                              onClick={() => setCurrentTab('info')}
-                              sx={{
-                                color: '#203ff5',
-                                cursor: 'pointer',
-                                fontWeight: 650,
-                                '&:hover': {
-                                  opacity: 0.8,
-                                },
-                              }}
-                            >
-                              Campaign Details
-                            </Box>{' '}
-                            page.
-                          </>
-                        )}
-                    </Typography>
-
-                    {/* {totalUGCVideos && (
-                      <ListItemText
-                        primary="Notes:"
-                        secondary={`1. 🎥 Upload ${totalUGCVideos} UGC Videos`}
-                        sx={{ color: '#221f20', mb: 2, ml: -1 }}
-                        primaryTypographyProps={{
-                          variant: 'subtitle1',
-                        }}
-                        secondaryTypographyProps={{
-                          variant: 'subtitle2',
-                        }}
-                      />
-                    )} */}
-
-                    {/* Deliverables incomplete message */}
+                  {/* Deliverables incomplete message */}
+                  <>
                     {(!submission?.video?.length ||
                       (campaign.rawFootage && !submission?.rawFootages?.length) ||
                       (campaign.photos && !submission?.photos?.length)) && (
@@ -1185,31 +986,191 @@ const CampaignFirstDraft = ({
                         </Typography>
                       </Box>
                     )}
+                  </>
 
-                    <Stack
-                      direction={{ xs: 'column', sm: 'row' }}
-                      // justifyContent="space-between"
-                      alignItems={{ xs: 'stretch', sm: 'center' }}
-                      gap={2}
-                      pb={3}
-                      mt={1}
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    alignItems={{ xs: 'stretch', sm: 'center' }}
+                    gap={2}
+                    pb={3}
+                    mt={1}
+                  >
+                    {/* Draft Video Button */}
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        border: 1,
+                        p: 2,
+                        borderRadius: 2,
+                        borderColor: submission?.video?.length > 0 ? '#5abc6f' : grey[100],
+                        transition: 'all .2s ease',
+                        width: { xs: '100%', sm: '32%' },
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        pointerEvents: isProcessing && 'none',
+
+                        opacity:
+                          isProcessing ||
+                          submission?.video?.length > 0 ||
+                          (submission?.status === 'PENDING_REVIEW' &&
+                            !(
+                              submission?.status === 'NOT_STARTED' &&
+                              feedbacksTesting &&
+                              feedbacksTesting.length > 0
+                            ))
+                            ? 0.5
+                            : 1,
+
+                        cursor:
+                          submission?.video?.length > 0 ||
+                          (submission?.status === 'PENDING_REVIEW' &&
+                            !(
+                              submission?.status === 'NOT_STARTED' &&
+                              feedbacksTesting &&
+                              feedbacksTesting.length > 0
+                            ))
+                            ? 'not-allowed'
+                            : 'pointer',
+                        '&:hover': {
+                          borderColor:
+                            submission?.video?.length > 0 || submission?.status === 'PENDING_REVIEW'
+                              ? grey[700]
+                              : grey[700],
+                          transform:
+                            submission?.video?.length > 0 || submission?.status === 'PENDING_REVIEW'
+                              ? 'none'
+                              : 'scale(1.02)',
+                        },
+                      }}
+                      onClick={() => {
+                        if (isProcessing) return;
+                        if (
+                          !submission?.video?.length &&
+                          (submission?.status !== 'PENDING_REVIEW' ||
+                            (submission?.status === 'NOT_STARTED' &&
+                              feedbacksTesting &&
+                              feedbacksTesting.length > 0))
+                        ) {
+                          setDraftVideoModalOpen(true);
+                        }
+                      }}
                     >
-                      {/* Draft Video Button */}
+                      {isProcessing && (
+                        <Box sx={{ position: 'absolute', right: 20 }}>
+                          <CircularProgress
+                            size={20}
+                            thickness={8}
+                            sx={{
+                              '& .MuiCircularProgress-circle': {
+                                color: 'black',
+                                borderRadius: 20,
+                                strokeLinecap: 'round',
+                              },
+                            }}
+                          />
+                        </Box>
+                      )}
+
+                      {submission?.video?.length > 0 && (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: -10,
+                            right: -10,
+                            bgcolor: '#5abc6f',
+                            borderRadius: '50%',
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            zIndex: 1,
+                          }}
+                        >
+                          <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
+                        </Box>
+                      )}
+                      {submission?.status === 'PENDING_REVIEW' && (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: -10,
+                            right: -10,
+                            bgcolor: grey[500],
+                            borderRadius: '50%',
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            zIndex: 1,
+                          }}
+                        >
+                          <Iconify icon="eva:lock-fill" sx={{ color: 'white', width: 20 }} />
+                        </Box>
+                      )}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                        <Avatar
+                          sx={{
+                            bgcolor: submission?.video?.length > 0 ? '#5abc6f' : '#203ff5',
+                            mb: 2,
+                          }}
+                        >
+                          <Iconify icon="solar:video-library-bold" />
+                        </Avatar>
+
+                        <ListItemText
+                          sx={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                          }}
+                          primary="Draft Video"
+                          secondary={getButtonSecondaryText(
+                            submission?.status,
+                            submission?.video?.length > 0,
+                            'Upload your main draft video for the campaign'
+                          )}
+                          primaryTypographyProps={{
+                            variant: 'body1',
+                            fontWeight: 'bold',
+                            gutterBottom: true,
+                            sx: { mb: 1 },
+                          }}
+                          secondaryTypographyProps={{
+                            color: 'text.secondary',
+                            lineHeight: 1.2,
+                            sx: {
+                              minHeight: '2.4em',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            },
+                          }}
+                        />
+                      </Box>
+                    </Box>
+
+                    {/* Raw Footage Button */}
+                    {campaign.rawFootage && (
                       <Box
                         sx={{
                           position: 'relative',
-
                           border: 1,
                           p: 2,
                           borderRadius: 2,
-                          borderColor: submission?.video?.length > 0 ? '#5abc6f' : grey[100],
+                          borderColor: submission?.rawFootages?.length > 0 ? '#5abc6f' : grey[100],
                           transition: 'all .2s ease',
                           width: { xs: '100%', sm: '32%' },
                           height: '100%',
                           display: 'flex',
                           flexDirection: 'column',
                           opacity:
-                            submission?.video?.length > 0 ||
+                            submission?.rawFootages?.length > 0 ||
                             (submission?.status === 'PENDING_REVIEW' &&
                               !(
                                 submission?.status === 'NOT_STARTED' &&
@@ -1219,7 +1180,7 @@ const CampaignFirstDraft = ({
                               ? 0.5
                               : 1,
                           cursor:
-                            submission?.video?.length > 0 ||
+                            submission?.rawFootages?.length > 0 ||
                             (submission?.status === 'PENDING_REVIEW' &&
                               !(
                                 submission?.status === 'NOT_STARTED' &&
@@ -1230,12 +1191,12 @@ const CampaignFirstDraft = ({
                               : 'pointer',
                           '&:hover': {
                             borderColor:
-                              submission?.video?.length > 0 ||
+                              submission?.rawFootages?.length > 0 ||
                               submission?.status === 'PENDING_REVIEW'
                                 ? grey[700]
                                 : grey[700],
                             transform:
-                              submission?.video?.length > 0 ||
+                              submission?.rawFootages?.length > 0 ||
                               submission?.status === 'PENDING_REVIEW'
                                 ? 'none'
                                 : 'scale(1.02)',
@@ -1243,17 +1204,17 @@ const CampaignFirstDraft = ({
                         }}
                         onClick={() => {
                           if (
-                            !submission?.video?.length &&
+                            !submission?.rawFootages?.length &&
                             (submission?.status !== 'PENDING_REVIEW' ||
                               (submission?.status === 'NOT_STARTED' &&
                                 feedbacksTesting &&
                                 feedbacksTesting.length > 0))
                           ) {
-                            setDraftVideoModalOpen(true);
+                            setRawFootageModalOpen(true);
                           }
                         }}
                       >
-                        {submission?.video?.length > 0 && (
+                        {submission?.rawFootages?.length > 0 && (
                           <Box
                             sx={{
                               position: 'absolute',
@@ -1270,10 +1231,7 @@ const CampaignFirstDraft = ({
                               zIndex: 1,
                             }}
                           >
-                            <Iconify
-                              icon="eva:checkmark-fill"
-                              sx={{ color: 'white', width: 20 }}
-                            />
+                            <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
                           </Box>
                         )}
 
@@ -1301,11 +1259,11 @@ const CampaignFirstDraft = ({
                         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                           <Avatar
                             sx={{
-                              bgcolor: submission?.video?.length > 0 ? '#5abc6f' : '#203ff5',
+                              bgcolor: submission?.rawFootages?.length > 0 ? '#5abc6f' : '#203ff5',
                               mb: 2,
                             }}
                           >
-                            <Iconify icon="solar:video-library-bold" />
+                            <Iconify icon="solar:camera-bold" />
                           </Avatar>
 
                           <ListItemText
@@ -1314,11 +1272,11 @@ const CampaignFirstDraft = ({
                               display: 'flex',
                               flexDirection: 'column',
                             }}
-                            primary="Draft Video"
+                            primary="Raw Footage"
                             secondary={getButtonSecondaryText(
                               submission?.status,
-                              submission?.video?.length > 0,
-                              'Upload your main draft video for the campaign'
+                              submission?.rawFootages?.length > 0,
+                              'Upload raw, unedited footage from your shoot'
                             )}
                             primaryTypographyProps={{
                               variant: 'body1',
@@ -1340,330 +1298,179 @@ const CampaignFirstDraft = ({
                           />
                         </Box>
                       </Box>
+                    )}
 
-                      {/* Raw Footage Button */}
-                      {campaign.rawFootage && (
-                        <Box
-                          sx={{
-                            position: 'relative',
-                            border: 1,
-                            p: 2,
-                            borderRadius: 2,
+                    {/* Photos Button */}
+                    {campaign.photos && (
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          border: 1,
+                          p: 2,
+                          borderRadius: 2,
+                          borderColor: submission?.photos?.length > 0 ? '#5abc6f' : grey[100],
+                          transition: 'all .2s ease',
+                          width: { xs: '100%', sm: '32%' },
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          opacity:
+                            submission?.photos?.length > 0 ||
+                            (submission?.status === 'PENDING_REVIEW' &&
+                              !(
+                                submission?.status === 'NOT_STARTED' &&
+                                feedbacksTesting &&
+                                feedbacksTesting.length > 0
+                              ))
+                              ? 0.5
+                              : 1,
+                          cursor:
+                            submission?.photos?.length > 0 ||
+                            (submission?.status === 'PENDING_REVIEW' &&
+                              !(
+                                submission?.status === 'NOT_STARTED' &&
+                                feedbacksTesting &&
+                                feedbacksTesting.length > 0
+                              ))
+                              ? 'not-allowed'
+                              : 'pointer',
+                          '&:hover': {
                             borderColor:
-                              submission?.rawFootages?.length > 0 ? '#5abc6f' : grey[100],
-                            transition: 'all .2s ease',
-                            width: { xs: '100%', sm: '32%' },
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            opacity:
-                              submission?.rawFootages?.length > 0 ||
-                              (submission?.status === 'PENDING_REVIEW' &&
-                                !(
-                                  submission?.status === 'NOT_STARTED' &&
-                                  feedbacksTesting &&
-                                  feedbacksTesting.length > 0
-                                ))
-                                ? 0.5
-                                : 1,
-                            cursor:
-                              submission?.rawFootages?.length > 0 ||
-                              (submission?.status === 'PENDING_REVIEW' &&
-                                !(
-                                  submission?.status === 'NOT_STARTED' &&
-                                  feedbacksTesting &&
-                                  feedbacksTesting.length > 0
-                                ))
-                                ? 'not-allowed'
-                                : 'pointer',
-                            '&:hover': {
-                              borderColor:
-                                submission?.rawFootages?.length > 0 ||
-                                submission?.status === 'PENDING_REVIEW'
-                                  ? grey[700]
-                                  : grey[700],
-                              transform:
-                                submission?.rawFootages?.length > 0 ||
-                                submission?.status === 'PENDING_REVIEW'
-                                  ? 'none'
-                                  : 'scale(1.02)',
-                            },
-                          }}
-                          onClick={() => {
-                            if (
-                              !submission?.rawFootages?.length &&
-                              (submission?.status !== 'PENDING_REVIEW' ||
-                                (submission?.status === 'NOT_STARTED' &&
-                                  feedbacksTesting &&
-                                  feedbacksTesting.length > 0))
-                            ) {
-                              setRawFootageModalOpen(true);
-                            }
-                          }}
-                        >
-                          {submission?.rawFootages?.length > 0 && (
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                top: -10,
-                                right: -10,
-                                bgcolor: '#5abc6f',
-                                borderRadius: '50%',
-                                width: 28,
-                                height: 28,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                zIndex: 1,
-                              }}
-                            >
-                              <Iconify
-                                icon="eva:checkmark-fill"
-                                sx={{ color: 'white', width: 20 }}
-                              />
-                            </Box>
-                          )}
-
-                          {submission?.status === 'PENDING_REVIEW' && (
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                top: -10,
-                                right: -10,
-                                bgcolor: grey[500],
-                                borderRadius: '50%',
-                                width: 28,
-                                height: 28,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                zIndex: 1,
-                              }}
-                            >
-                              <Iconify icon="eva:lock-fill" sx={{ color: 'white', width: 20 }} />
-                            </Box>
-                          )}
-
-                          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                            <Avatar
-                              sx={{
-                                bgcolor:
-                                  submission?.rawFootages?.length > 0 ? '#5abc6f' : '#203ff5',
-                                mb: 2,
-                              }}
-                            >
-                              <Iconify icon="solar:camera-bold" />
-                            </Avatar>
-
-                            <ListItemText
-                              sx={{
-                                flex: 1,
-                                display: 'flex',
-                                flexDirection: 'column',
-                              }}
-                              primary="Raw Footage"
-                              secondary={getButtonSecondaryText(
-                                submission?.status,
-                                submission?.rawFootages?.length > 0,
-                                'Upload raw, unedited footage from your shoot'
-                              )}
-                              primaryTypographyProps={{
-                                variant: 'body1',
-                                fontWeight: 'bold',
-                                gutterBottom: true,
-                                sx: { mb: 1 },
-                              }}
-                              secondaryTypographyProps={{
-                                color: 'text.secondary',
-                                lineHeight: 1.2,
-                                sx: {
-                                  minHeight: '2.4em',
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden',
-                                },
-                              }}
-                            />
-                          </Box>
-                        </Box>
-                      )}
-
-                      {/* Photos Button */}
-                      {campaign.photos && (
-                        <Box
-                          sx={{
-                            position: 'relative',
-                            border: 1,
-                            p: 2,
-                            borderRadius: 2,
-                            borderColor: submission?.photos?.length > 0 ? '#5abc6f' : grey[100],
-                            transition: 'all .2s ease',
-                            width: { xs: '100%', sm: '32%' },
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            opacity:
                               submission?.photos?.length > 0 ||
-                              (submission?.status === 'PENDING_REVIEW' &&
-                                !(
-                                  submission?.status === 'NOT_STARTED' &&
-                                  feedbacksTesting &&
-                                  feedbacksTesting.length > 0
-                                ))
-                                ? 0.5
-                                : 1,
-                            cursor:
+                              submission?.status === 'PENDING_REVIEW'
+                                ? grey[700]
+                                : grey[700],
+                            transform:
                               submission?.photos?.length > 0 ||
-                              (submission?.status === 'PENDING_REVIEW' &&
-                                !(
-                                  submission?.status === 'NOT_STARTED' &&
-                                  feedbacksTesting &&
-                                  feedbacksTesting.length > 0
-                                ))
-                                ? 'not-allowed'
-                                : 'pointer',
-                            '&:hover': {
-                              borderColor:
-                                submission?.photos?.length > 0 ||
-                                submission?.status === 'PENDING_REVIEW'
-                                  ? grey[700]
-                                  : grey[700],
-                              transform:
-                                submission?.photos?.length > 0 ||
-                                submission?.status === 'PENDING_REVIEW'
-                                  ? 'none'
-                                  : 'scale(1.02)',
-                            },
-                          }}
-                          onClick={() => {
-                            if (
-                              !submission?.photos?.length &&
-                              (submission?.status !== 'PENDING_REVIEW' ||
-                                (submission?.status === 'NOT_STARTED' &&
-                                  feedbacksTesting &&
-                                  feedbacksTesting.length > 0))
-                            ) {
-                              setPhotosModalOpen(true);
-                            }
-                          }}
-                        >
-                          {submission?.photos?.length > 0 && (
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                top: -10,
-                                right: -10,
-                                bgcolor: '#5abc6f',
-                                borderRadius: '50%',
-                                width: 28,
-                                height: 28,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                zIndex: 1,
-                              }}
-                            >
-                              <Iconify
-                                icon="eva:checkmark-fill"
-                                sx={{ color: 'white', width: 20 }}
-                              />
-                            </Box>
-                          )}
-
-                          {submission?.status === 'PENDING_REVIEW' && (
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                top: -10,
-                                right: -10,
-                                bgcolor: grey[500],
-                                borderRadius: '50%',
-                                width: 28,
-                                height: 28,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                zIndex: 1,
-                              }}
-                            >
-                              <Iconify icon="eva:lock-fill" sx={{ color: 'white', width: 20 }} />
-                            </Box>
-                          )}
-
-                          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                            <Avatar
-                              sx={{
-                                bgcolor: submission?.photos?.length > 0 ? '#5abc6f' : '#203ff5',
-                                mb: 2,
-                              }}
-                            >
-                              <Iconify icon="solar:gallery-wide-bold" />
-                            </Avatar>
-
-                            <ListItemText
-                              sx={{
-                                flex: 1,
-                                display: 'flex',
-                                flexDirection: 'column',
-                              }}
-                              primary="Photos"
-                              secondary={getButtonSecondaryText(
-                                submission?.status,
-                                submission?.photos?.length > 0,
-                                'Upload photos from your campaign shoot'
-                              )}
-                              primaryTypographyProps={{
-                                variant: 'body1',
-                                fontWeight: 'bold',
-                                gutterBottom: true,
-                                sx: { mb: 1 },
-                              }}
-                              secondaryTypographyProps={{
-                                color: 'text.secondary',
-                                lineHeight: 1.2,
-                                sx: {
-                                  minHeight: '2.4em',
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden',
-                                },
-                              }}
-                            />
+                              submission?.status === 'PENDING_REVIEW'
+                                ? 'none'
+                                : 'scale(1.02)',
+                          },
+                        }}
+                        onClick={() => {
+                          if (
+                            !submission?.photos?.length &&
+                            (submission?.status !== 'PENDING_REVIEW' ||
+                              (submission?.status === 'NOT_STARTED' &&
+                                feedbacksTesting &&
+                                feedbacksTesting.length > 0))
+                          ) {
+                            setPhotosModalOpen(true);
+                          }
+                        }}
+                      >
+                        {submission?.photos?.length > 0 && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: -10,
+                              right: -10,
+                              bgcolor: '#5abc6f',
+                              borderRadius: '50%',
+                              width: 28,
+                              height: 28,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                              zIndex: 1,
+                            }}
+                          >
+                            <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
                           </Box>
-                        </Box>
-                      )}
-                    </Stack>
-                  </Box>
-                </Stack>
-              )}
+                        )}
 
-              {submission?.status === 'IN_PROGRESS' && areDeliverablesComplete && !uploadProgress.length && (
-                <Stack alignItems="center" sx={{ mt: 2 }}>
-                  <Button
-                    variant="contained"
-                    onClick={handleForceSubmitForReview}
-                    startIcon={<Iconify icon="solar:upload-square-bold" width={22} />}
-                    sx={{
-                      bgcolor: '#203ff5',
-                      color: 'white',
-                      borderBottom: 3.5,
-                      borderBottomColor: '#112286',
-                      borderRadius: 1.5,
-                      px: 2.5,
-                      py: 1,
-                      '&:hover': { bgcolor: '#203ff5', opacity: 0.9 },
-                    }}
-                  >
-                    Submit for Review
-                  </Button>
-                </Stack>
-              )}
+                        {submission?.status === 'PENDING_REVIEW' && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: -10,
+                              right: -10,
+                              bgcolor: grey[500],
+                              borderRadius: '50%',
+                              width: 28,
+                              height: 28,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                              zIndex: 1,
+                            }}
+                          >
+                            <Iconify icon="eva:lock-fill" sx={{ color: 'white', width: 20 }} />
+                          </Box>
+                        )}
+
+                        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                          <Avatar
+                            sx={{
+                              bgcolor: submission?.photos?.length > 0 ? '#5abc6f' : '#203ff5',
+                              mb: 2,
+                            }}
+                          >
+                            <Iconify icon="solar:gallery-wide-bold" />
+                          </Avatar>
+
+                          <ListItemText
+                            sx={{
+                              flex: 1,
+                              display: 'flex',
+                              flexDirection: 'column',
+                            }}
+                            primary="Photos"
+                            secondary={getButtonSecondaryText(
+                              submission?.status,
+                              submission?.photos?.length > 0,
+                              'Upload photos from your campaign shoot'
+                            )}
+                            primaryTypographyProps={{
+                              variant: 'body1',
+                              fontWeight: 'bold',
+                              gutterBottom: true,
+                              sx: { mb: 1 },
+                            }}
+                            secondaryTypographyProps={{
+                              color: 'text.secondary',
+                              lineHeight: 1.2,
+                              sx: {
+                                minHeight: '2.4em',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              },
+                            }}
+                          />
+                        </Box>
+                      </Box>
+                    )}
+                  </Stack>
+                </Box>
+              </Stack>
+
+              {submission?.status === 'IN_PROGRESS' &&
+                areDeliverablesComplete &&
+                !uploadProgress.length && (
+                  <Stack alignItems="center" sx={{ mt: 2 }}>
+                    <Button
+                      variant="contained"
+                      onClick={handleForceSubmitForReview}
+                      startIcon={<Iconify icon="solar:upload-square-bold" width={22} />}
+                      sx={{
+                        bgcolor: '#203ff5',
+                        color: 'white',
+                        borderBottom: 3.5,
+                        borderBottomColor: '#112286',
+                        borderRadius: 1.5,
+                        px: 2.5,
+                        py: 1,
+                        '&:hover': { bgcolor: '#203ff5', opacity: 0.9 },
+                      }}
+                    >
+                      Submit for Review
+                    </Button>
+                  </Stack>
+                )}
             </>
           )}
 
@@ -1731,22 +1538,31 @@ const CampaignFirstDraft = ({
               </Stack>
 
               {/* Detailed Feedback Display - Disabled: feedback is shown in 2nd Draft tab instead */}
-              {false && ((submission?.feedback && submission.feedback.length > 0) ||
-                (submission?.status === 'NOT_STARTED' &&
-                  feedbacksTesting &&
-                  feedbacksTesting.length > 0)) && (
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                    Content Requiring Changes
-                  </Typography>
+              {false &&
+                ((submission?.feedback && submission.feedback.length > 0) ||
+                  (submission?.status === 'NOT_STARTED' &&
+                    feedbacksTesting &&
+                    feedbacksTesting.length > 0)) && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                      Content Requiring Changes
+                    </Typography>
 
-                  {(
-                    (submission?.status === 'NOT_STARTED' && feedbacksTesting?.length > 0 ? feedbacksTesting : (submission.feedback || []))
+                    {(submission?.status === 'NOT_STARTED' && feedbacksTesting?.length > 0
+                      ? feedbacksTesting
+                      : submission.feedback || []
+                    )
                       .filter((feedback) => {
-                        const isClient = (feedback.admin?.role === 'client') || (feedback.role === 'client');
-                        const isAdmin = (feedback.admin?.role === 'admin') || (feedback.role === 'admin');
-                        const isChangeRequest = feedback.type === 'REQUEST' || feedback.videosToUpdate?.length > 0 || feedback.photosToUpdate?.length > 0 || feedback.rawFootageToUpdate?.length > 0;
-                        
+                        const isClient =
+                          feedback.admin?.role === 'client' || feedback.role === 'client';
+                        const isAdmin =
+                          feedback.admin?.role === 'admin' || feedback.role === 'admin';
+                        const isChangeRequest =
+                          feedback.type === 'REQUEST' ||
+                          feedback.videosToUpdate?.length > 0 ||
+                          feedback.photosToUpdate?.length > 0 ||
+                          feedback.rawFootageToUpdate?.length > 0;
+
                         // Show client feedback always, and admin feedback when it's a change request
                         return isClient || (isAdmin && isChangeRequest);
                       })
@@ -1763,7 +1579,7 @@ const CampaignFirstDraft = ({
                         return isValidType && (hasMediaUpdates || hasContent);
                       })
                       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                  ).map((feedback, feedbackIndex) => (
+                      .map((feedback, feedbackIndex) => (
                         <Box
                           key={feedback.id || feedbackIndex}
                           mb={2}
@@ -1787,13 +1603,11 @@ const CampaignFirstDraft = ({
                               <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
                                 Feedback:
                               </Typography>
-                              {feedback.content
-                                .split('\n')
-                                .map((line, i) => (
-                                  <Typography key={i} variant="body2" sx={{ mb: 0.5 }}>
-                                    {line}
-                                  </Typography>
-                                ))}
+                              {feedback.content.split('\n').map((line, i) => (
+                                <Typography key={i} variant="body2" sx={{ mb: 0.5 }}>
+                                  {line}
+                                </Typography>
+                              ))}
                             </Box>
                           )}
 
@@ -1846,12 +1660,10 @@ const CampaignFirstDraft = ({
                           )}
                         </Box>
                       ))}
-                </Box>
-              )}
+                  </Box>
+                )}
             </Box>
           )}
-
-  
 
           {(submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED') && (
             <Stack justifyContent="center" alignItems="center" spacing={2}>
@@ -1879,9 +1691,7 @@ const CampaignFirstDraft = ({
                     fontWeight: 550,
                   }}
                 >
-                  {submission?.status === 'CLIENT_APPROVED'
-                    ? 'Submission Approved!'
-                    : 'Approved!'}
+                  {submission?.status === 'CLIENT_APPROVED' ? 'Submission Approved!' : 'Approved!'}
                 </Typography>
                 <Typography
                   variant="body1"
@@ -2201,8 +2011,7 @@ const CampaignFirstDraft = ({
                         iconPosition="start"
                         sx={{
                           opacity: 1,
-                          color:
-                            tabIndex === getTabIndex('caption') ? '#1340FF' : 'text.secondary',
+                          color: tabIndex === getTabIndex('caption') ? '#1340FF' : 'text.secondary',
                           '&.Mui-selected': { color: '#1340FF' },
                         }}
                       />
@@ -2781,6 +2590,7 @@ export default CampaignFirstDraft;
 
 CampaignFirstDraft.propTypes = {
   campaign: PropTypes.object,
+  // eslint-disable-next-line react/no-unused-prop-types
   timeline: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
   submission: PropTypes.object,
   getDependency: PropTypes.func,
@@ -2788,3 +2598,97 @@ CampaignFirstDraft.propTypes = {
   setCurrentTab: PropTypes.func,
   deliverablesData: PropTypes.object,
 };
+
+export function useSmoothedProgress(serverProgress) {
+  const [displayed, setDisplayed] = useState(0);
+  const rafRef = useRef(null);
+  const displayedRef = useRef(0);
+
+  const lastTimeRef = useRef(0);
+  const FPS = 20;
+  const FRAME_TIME = 1000 / FPS; // 50ms
+
+  useEffect(() => {
+    const server = Number(serverProgress || 0);
+    const target = server >= 100 ? 100 : Math.max(1, Math.min(90, server));
+
+    const animate = (time) => {
+      if (time - lastTimeRef.current < FRAME_TIME) {
+        rafRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      lastTimeRef.current = time;
+
+      const current = displayedRef.current;
+
+      if (server >= 100) {
+        displayedRef.current = 100;
+        setDisplayed(100);
+        return;
+      }
+
+      if (Math.abs(target - current) < 0.2) {
+        displayedRef.current = target;
+        setDisplayed(target);
+        return;
+      }
+
+      const step = Math.max(0.3, (target - current) * 0.08);
+      const next = Math.min(target, current + step);
+      displayedRef.current = next;
+      setDisplayed(next);
+
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [FRAME_TIME, serverProgress]); // re-trigger whenever server value changes
+
+  return displayed;
+}
+
+function FileProgress({ currentFile }) {
+  const progressValue = useSmoothedProgress(currentFile?.serverProgress);
+
+  const isComplete = Number(currentFile?.serverProgress || 0) >= 100;
+
+  return (
+    <Box sx={{ width: 1 }}>
+      <Stack gap={1.5}>
+        <Stack direction="row" alignItems="center" gap={1}>
+          {isComplete && <Iconify icon="lets-icons:check-fill" width={18} />}
+
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: (theme) => (isComplete ? theme.palette.grey[900] : theme.palette.grey[600]),
+            }}
+          >
+            {!isComplete && `${currentFile?.name} For`} {currentFile?.originalFileName}
+          </Typography>
+        </Stack>
+
+        {!isComplete && (
+          <>
+            <LinearProgress
+              value={progressValue}
+              variant="determinate"
+              sx={{
+                bgcolor: (theme) => theme.palette.grey[300],
+                height: 7,
+                '& .MuiLinearProgress-bar': { bgcolor: 'black' },
+              }}
+            />
+            <Typography variant="overline" sx={{ color: (theme) => theme.palette.grey[600] }}>
+              {`${Math.round(progressValue)}%`}
+            </Typography>
+          </>
+        )}
+      </Stack>
+    </Box>
+  );
+}

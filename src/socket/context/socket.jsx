@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { io } from 'socket.io-client';
-import { useMemo, useState, useEffect, createContext } from 'react';
+import { useMemo, useState, useEffect, createContext, useRef } from 'react';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -11,6 +11,7 @@ const SocketProvider = ({ children }) => {
   const [online, setOnline] = useState();
   // const [onlineUsers, setOnlineUsers] = useState(null);
   const { user } = useAuthContext();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const socketConnection = io({
@@ -33,6 +34,7 @@ const SocketProvider = ({ children }) => {
     socketConnection.joinCampaign = (campaignId) => {
       if (campaignId) socketConnection.emit('join-campaign', campaignId);
     };
+
     socketConnection.leaveCampaign = (campaignId) => {
       if (campaignId) socketConnection.emit('leave-campaign', campaignId);
     };
@@ -56,12 +58,28 @@ const SocketProvider = ({ children }) => {
     };
   }, [user]);
 
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('progress', (data) => {
+      console.log(data);
+      if (!data) {
+        setIsProcessing(false);
+        return;
+      }
+      setIsProcessing(true);
+    });
+
+    return () => socket.off('progress');
+  }, [socket]);
+
   const memoizedValue = useMemo(
     () => ({
       isOnline: online,
       socket,
+      tah: isProcessing,
     }),
-    [online, socket]
+    [isProcessing, online, socket]
   );
 
   return <SocketContext.Provider value={memoizedValue}>{children}</SocketContext.Provider>;
