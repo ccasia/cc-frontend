@@ -258,6 +258,11 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           fullWidth
           popupIcon={<Iconify icon="line-md:chevron-down" width={21} height={21} color="#231F20" />}
           renderInput={(params) => <TextField {...params} placeholder="Creator Country" />}
+          ListboxProps={{
+            style: {
+              maxHeight: 500
+            }
+          }}
         />
 
         {/* City */}
@@ -334,7 +339,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           }}
         >
           {CREDIT_TIERS.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>
+            <MenuItem key={opt.value} value={opt.value} sx={{ height: 50 }}>
               {opt.label}
             </MenuItem>
           ))}

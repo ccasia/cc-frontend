@@ -102,12 +102,6 @@ const CreatorList = ({ creators, isLoading, isError, pagination, selectedIds, on
 
   return (
     <Box sx={{ mt: 3 }}>
-      {/* Result count */}
-      <Typography sx={{ mb: 2, fontSize: 14, color: 'text.secondary' }}>
-        Showing {creators.length}
-        {pagination ? ` of ${pagination.total} creator${creators.length !== 1 ? 's' : ''}`  : ''}
-      </Typography>
-
       {/* Creator rows */}
       <Box
         sx={{

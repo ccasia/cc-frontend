@@ -223,7 +223,7 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
           inset: 0,
           background: 'linear-gradient(90deg, #1340FF 0%, #FFFFFF 22%)',
           opacity: selected ? 1 : 0,
-          transition: 'opacity 240ms ease',
+          transition: 'opacity 150ms ease',
           pointerEvents: 'none',
           zIndex: 0,
         },
