@@ -414,6 +414,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Preview modal state
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
+  const [isPreviewCached, setIsPreviewCached] = useState(false);
+  const [lastPreviewContent, setLastPreviewContent] = useState(null);
   
   const reportRef = useRef(null);
   const cardsContainerRef = useRef(null);
@@ -615,8 +617,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
     loadPCRData();
   }, [campaign?.id]);
   
-  // Save PCR data to backend
-  // Save content to history for undo/redo
+  // Helper function to invalidate preview cache
+  const invalidatePreviewCache = () => {
+    setIsPreviewCached(false);
+  };
+  
   const saveToHistory = (content, visibility, order, showEducator, showThird) => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(JSON.parse(JSON.stringify({
@@ -628,6 +633,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
     })));
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
+    
+    // Invalidate preview cache when content changes
+    invalidatePreviewCache();
   };
 
   // Undo function
@@ -641,12 +649,28 @@ const PCRReportPage = ({ campaign, onBack }) => {
       setSectionOrder(JSON.parse(JSON.stringify(state.sectionOrder)));
       setShowEducatorCard(state.showEducatorCard);
       setShowThirdCard(state.showThirdCard);
+      
+      // Invalidate preview cache when undoing
+      invalidatePreviewCache();
     }
   };
   
   // Generate preview - simulates PDF export view with page breaks
   const handleGeneratePreview = async () => {
     try {
+      // Check if content has changed since last preview
+      const currentContentHash = JSON.stringify({
+        content: editableContent,
+        visibility: sectionVisibility,
+        order: sectionOrder
+      });
+      
+      // If preview is cached and content hasn't changed, just open the modal
+      if (isPreviewCached && lastPreviewContent === currentContentHash && previewImages.length > 0) {
+        setIsPreviewOpen(true);
+        return;
+      }
+      
       setIsExportingPDF(true);
       enqueueSnackbar('Generating preview...', { 
         variant: 'info',
@@ -693,9 +717,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
         setPreviewImages([imgData]);
       } else {
         // Capture each section separately and organize into pages
-        const pageHeight = 297; // A4 height in mm
-        const pageWidth = 210; // A4 width in mm
-        const margin = 5; // Reduced margin for wider sections
+        const pageHeight = 297; 
+        const pageWidth = 210;
+        const margin = 5; 
         const contentWidth = pageWidth - (2 * margin);
         const maxPageHeight = pageHeight - (2 * margin);
         
@@ -706,9 +730,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         // Batch process sections with yield to UI thread
         const processSections = async () => {
           const results = [];
-          
-          // Process sections sequentially to maintain order
-          // eslint-disable-next-line no-restricted-syntax
+
           for (let i = 0; i < sections.length; i += 1) {
             const section = sections[i];
             
@@ -721,7 +743,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             // Capture this section with high quality for preview
             // eslint-disable-next-line no-await-in-loop
             const canvas = await html2canvas(section, {
-              scale: 2, // Higher quality for preview
+              scale: 2, 
               useCORS: true,
               logging: false,
               backgroundColor: '#FFFFFF',
@@ -755,7 +777,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             height: imgHeight,
             width: imgWidth
           });
-          currentPageHeight += imgHeight + 4; // 4mm gap between sections
+          currentPageHeight += imgHeight + 4; 
         });
         
         if (currentPage.length > 0) {
@@ -763,7 +785,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         }
         
         // Create page images with gradient background at higher DPI for preview
-        const dpi = 150; // Increased DPI for better quality
+        const dpi = 150;
         const pageCanvasWidth = (pageWidth * dpi) / 25.4;
         const pageCanvasHeight = (pageHeight * dpi) / 25.4;
         
@@ -799,10 +821,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
               const sectionHeight = (section.height * dpi) / 25.4;
               
               ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
-              yOffset += sectionHeight + ((4 * dpi) / 25.4); // 4mm gap between sections
+              yOffset += sectionHeight + ((4 * dpi) / 25.4); 
             });
             
-            // Use PNG for preview to maintain quality
             pageImages.push(pageCanvas.toDataURL('image/png', 1.0));
           }
           
@@ -813,16 +834,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
         setPreviewImages(pageImages);
       }
 
-      // Show buttons again
       buttonsToHide.forEach(el => {
         el.style.display = '';
       });
-      
-      // Restore edit mode if it was active
       if (wasInEditMode) {
         setIsEditMode(true);
       }
 
+      setLastPreviewContent(currentContentHash);
+      setIsPreviewCached(true);
+      
       setIsPreviewOpen(true);
       enqueueSnackbar('Preview generated!', { 
         variant: 'success',
@@ -860,27 +881,22 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Track changes for undo/redo
   useEffect(() => {
     if (isEditMode && history.length === 0) {
-      // Initialize history when entering edit mode
       saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode]);
 
-  // Initialize Creator Tiers editor content
   useEffect(() => {
     if (creatorTiersEditorRef.current && editableContent.creatorTiersDescription) {
       creatorTiersEditorRef.current.innerHTML = editableContent.creatorTiersDescription;
     }
   }, [isEditMode, editableContent.creatorTiersDescription]);
 
-  // Save to history when content changes (debounced)
   useEffect(() => {
     if (!isEditMode || history.length === 0) {
       return undefined;
     }
 
     const timeoutId = setTimeout(() => {
-      // Only save if state actually changed
       const lastState = history[historyIndex];
       const currentState = {
         content: editableContent,
@@ -893,7 +909,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       if (JSON.stringify(lastState) !== JSON.stringify(currentState)) {
         saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard);
       }
-    }, 500); // Debounce for 500ms
+    }, 500); 
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -910,7 +926,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         if (comicCard && educatorCard) {
           const comicHeight = comicCard.offsetHeight;
           const educatorHeight = educatorCard.offsetHeight;
-          const gap = 24; // gap: 3 = 24px
+          const gap = 24; 
           const totalHeight = comicHeight + gap + educatorHeight;
           setCardsHeight(totalHeight);
         }
@@ -969,7 +985,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
     
     try {
       setIsSaving(true);
-      console.log('💾 Saving PCR data for campaign:', campaign.id);
+      console.log('Saving PCR data for campaign:', campaign.id);
       
       const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
         content: {
@@ -1098,12 +1114,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
-        compress: true, // Enable compression
+        compress: true, 
       });
 
       const pageWidth = 210; 
       const pageHeight = 297; 
-      const margin = 5; // Reduced margin for wider sections
+      const margin = 5; 
       const contentWidth = pageWidth - (2 * margin);
       
       const addGradientBackground = async () => {
@@ -1113,7 +1129,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
         gradientCanvas.height = (pageHeight * dpi) / 25.4;
         const ctx = gradientCanvas.getContext('2d');
         
-        // Create smooth gradient
         const gradient = ctx.createLinearGradient(0, 0, 0, gradientCanvas.height);
         gradient.addColorStop(0, '#1340FF');
         gradient.addColorStop(1, '#8A5AFE');
@@ -1153,8 +1168,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
         let isFirstSection = true;
 
         const processPdfSections = async () => {
-          // Process sections sequentially to maintain order and add to PDF
-          // eslint-disable-next-line no-restricted-syntax
           for (let i = 0; i < sections.length; i += 1) {
             const section = sections[i];
             
@@ -1163,24 +1176,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
               // eslint-disable-next-line no-await-in-loop
               await new Promise(resolve => { setTimeout(resolve, 0); });
             }
-            
-            // Capture this section with optimized settings
-            // eslint-disable-next-line no-await-in-loop
+
             const canvas = await html2canvas(section, {
-              scale: 1.5, // Reduced from 2 for better performance
+              scale: 1.5, 
               useCORS: true,
               logging: false,
               backgroundColor: '#FFFFFF',
               windowWidth: 1078,
               imageTimeout: 0,
               removeContainer: true,
+              allowTaint: true,
+              foreignObjectRendering: false, 
             });
 
-            const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
+            const imgData = canvas.toDataURL('image/jpeg', 0.9); 
             const imgWidth = contentWidth;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
-            // Check if section fits on current page
+
             if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
               pdf.addPage();
               // eslint-disable-next-line no-await-in-loop
@@ -1188,9 +1200,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
               currentY = margin;
             }
             
-            // Add section to PDF with FAST compression
             pdf.addImage(imgData, 'JPEG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
-            currentY += imgHeight + 4; // Add 4mm gap between sections
+            currentY += imgHeight + 4; 
             
             isFirstSection = false;
           }
@@ -1232,7 +1243,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const response = await axios.post(`/api/campaign/${campaign.id}/trends/refresh`);
       console.log('Refresh response:', response.data);
       alert('Insights refreshed! Please wait a moment and refresh the page.');
-      // Revalidate the heatmap data
       window.location.reload();
     } catch (error) {
       console.error('Error refreshing insights:', error);
@@ -1281,10 +1291,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         if (!postDate) return;
 
-        // Calculate days from campaign start
         const daysFromStart = (postDate - campaignStart) / (1000 * 60 * 60 * 24);
         
-        // Determine which phase this post belongs to
         let phase = null;
         if (daysFromStart >= firstWeekStart && daysFromStart <= firstWeekEnd) {
           phase = 'firstWeek';
@@ -1399,7 +1407,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
       .filter(c => !c.isManualEntry && c.userId)
       .map(c => c.userId);
     
-    // Call hooks for each creator ID (up to 5 creators)
     const creator0Data = useGetCreatorById(creatorIdsToFetch[0] || null);
     const creator1Data = useGetCreatorById(creatorIdsToFetch[1] || null);
     const creator2Data = useGetCreatorById(creatorIdsToFetch[2] || null);
@@ -2285,8 +2292,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return result;
   }, [filteredInsightsData, filteredSubmissions]);
 
-  // Get creator data for all cards
-  // For manual entries, submission.user is an object; for regular ones, it's a string ID
   const mostViewsUserId = typeof mostViewsCreator?.submission?.user === 'string' 
     ? mostViewsCreator?.submission?.user 
     : mostViewsCreator?.submission?.user?.id;
@@ -2436,14 +2441,30 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       display: 'inline-block'
                     }}
                   />
-                  <Typography sx={{
-                    fontFamily: 'Aileron',
-                    fontSize: '16px',
-                    fontWeight: 400,
-                    color: '#636366'
-                  }}>
-                    {username || 'Unknown'}
-        </Typography>
+                  <Link
+                    href={creator.submission.postingLink || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline'
+                      }
+                    }}
+                  >
+                    <Typography sx={{
+                      fontFamily: 'Aileron',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#636366',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        color: '#1340FF'
+                      }
+                    }}>
+                      {username || 'Unknown'}
+                    </Typography>
+                  </Link>
                 </Box>
 
                 {/* Progress bar and value on bottom */}
@@ -2581,7 +2602,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 : creatorData?.user?.creator?.tiktok;
             }
             
-            // Calculate opacity: 1st = 100%, 2nd = 90%, 3rd = 80%, 4th = 70%, 5th = 60%
             const opacity = 1 - (index * 0.1);
             
             return (
@@ -2600,14 +2620,30 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       display: 'inline-block'
                     }}
                   />
-                  <Typography sx={{
-                    fontFamily: 'Aileron',
-                    fontSize: '16px',
-                    fontWeight: 400,
-                    color: '#636366'
-                  }}>
-                    {username || 'Unknown'}
-                  </Typography>
+                  <Link
+                    href={creator.submission.postingLink || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline'
+                      }
+                    }}
+                  >
+                    <Typography sx={{
+                      fontFamily: 'Aileron',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#636366',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        color: '#1340FF'
+                      }
+                    }}>
+                      {username || 'Unknown'}
+                    </Typography>
+                  </Link>
                 </Box>
 
                 {/* Progress bar and value on bottom */}
@@ -2645,7 +2681,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
   // TopEngagementCard component - Top 5 Creator Engagement Rate
   const TopEngagementCard = () => {
-    // Calculate top 5 creators by engagement rate
     const top5Creators = useMemo(() => {
       const creatorsWithEngagement = [];
       
@@ -3021,6 +3056,44 @@ const PCRReportPage = ({ campaign, onBack }) => {
       <Box sx={{ display: 'flex', gap: 2 }}>
         {isEditMode ? (
           <>
+            <Button
+              sx={{
+                width: '90px',
+                height: '44px',
+                borderRadius: '8px',
+                gap: '6px',
+                padding: '10px 16px 13px 16px',
+                background: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                color: '#374151',
+                textTransform: 'none',
+                fontFamily: 'Inter Display, sans-serif',
+                fontWeight: 600,
+                fontStyle: 'normal',
+                fontSize: '16px',
+                lineHeight: '20px',
+                letterSpacing: '0%',
+                whiteSpace: 'nowrap',
+                '&:hover': {
+                  background: '#F9FAFB',
+                  border: '1px solid #D1D5DB',
+                  boxShadow: '0px -3px 0px 0px #D1D5DB inset',
+                },
+                '&:active': {
+                  boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                  transform: 'translateY(1px)',
+                },
+                '&:disabled': {
+                  background: '#F3F4F6',
+                  color: '#9CA3AF',
+                  border: '1px solid #E5E7EB',
+                }
+              }}
+              onClick={handleGeneratePreview}
+            >
+              Preview
+            </Button>
             <Button
               onClick={handleUndo}
               disabled={historyIndex <= 0}
