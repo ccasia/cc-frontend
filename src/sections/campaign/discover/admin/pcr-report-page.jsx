@@ -1394,6 +1394,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
           const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
           const imgWidth = contentWidth;
           const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
           
           // Check if section fits on current page
           if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
@@ -1407,7 +1408,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
           currentY += imgHeight + 5; 
           
           isFirstSection = false;
-        }
+        });
       }
 
 >>>>>>> 5eca3f63 (PCR Update)
