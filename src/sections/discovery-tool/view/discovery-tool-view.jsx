@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Container, Typography } from '@mui/material';
 
 import useGetDiscoveryCreators from 'src/hooks/use-get-discovery-creators';
+// import useGetMockDiscoveryCreators from 'src/hooks/use-get-mock-discovery-creators';
 
 import { DiscoveryFilterBar } from '../components';
 
@@ -12,6 +13,7 @@ const DiscoveryToolView = () => {
 	const [filters, setFilters] = useState({
 		platform: 'all',
 		debouncedKeyword: '',
+		debouncedHashtag: '',
 		ageRange: '',
 		country: null,
 		city: null,
@@ -30,6 +32,9 @@ const DiscoveryToolView = () => {
 		creditTier: filters.creditTier || undefined,
 		interests: filters.interests?.length ? filters.interests : undefined,
 		keyword: filters.debouncedKeyword || undefined,
+		hashtag: filters.debouncedHashtag || undefined,
+		page: 1,
+		limit: 50,
 	});
 
 	// Stable callback for the filter bar
@@ -39,7 +44,8 @@ const DiscoveryToolView = () => {
 
 	// Log results only when they actually change
 	useEffect(() => {
-		console.log(`Discovery creators (${creators.length}${pagination ? ` of ${pagination.total}` : ''}):`, creators);
+		console.log(`Discovery creators (${creators.length}${pagination ? ` of ${pagination.total}` : ''})`);
+		console.log('Creators array: ', creators)
 	}, [creators, pagination]);
 
 	return (

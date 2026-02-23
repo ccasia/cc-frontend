@@ -13,6 +13,7 @@ import { fetcher, endpoints } from 'src/utils/axios';
  * @param {string} [filters.creditTier]
  * @param {string[]} [filters.interests]
  * @param {string} [filters.keyword]
+ * @param {string} [filters.hashtag]
  */
 const useGetDiscoveryCreators = (filters = {}) => {
   const url = useMemo(() => {
@@ -28,6 +29,7 @@ const useGetDiscoveryCreators = (filters = {}) => {
     if (filters.city) params.set('city', filters.city);
     if (filters.creditTier) params.set('creditTier', filters.creditTier);
     if (filters.keyword) params.set('keyword', filters.keyword);
+    if (filters.hashtag) params.set('hashtag', filters.hashtag);
     if (filters.interests?.length) params.set('interests', JSON.stringify(filters.interests));
 
     return `${endpoints.discovery.creators}?${params.toString()}`;

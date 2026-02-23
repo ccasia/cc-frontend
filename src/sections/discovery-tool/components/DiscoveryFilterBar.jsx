@@ -41,11 +41,20 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
     return () => clearTimeout(timer);
   }, [state.keyword]);
 
+  // Debounce hashtag → debouncedHashtag
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      dispatch({ type: 'SET_DEBOUNCED_HASHTAG', payload: state.hashtag });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [state.hashtag]);
+
   // Notify parent whenever relevant filter state changes
   useEffect(() => {
     onFiltersChange({
       platform: state.platform,
       debouncedKeyword: state.debouncedKeyword,
+      debouncedHashtag: state.debouncedHashtag,
       ageRange: state.ageRange,
       country: state.country,
       city: state.city,
@@ -56,6 +65,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
   }, [
     state.platform,
     state.debouncedKeyword,
+    state.debouncedHashtag,
     state.ageRange,
     state.country,
     state.city,
@@ -77,6 +87,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
     () =>
       state.platform !== 'all' ||
       state.keyword !== '' ||
+      state.hashtag !== '' ||
       state.ageRange !== '' ||
       state.country !== null ||
       state.city !== null ||
@@ -94,6 +105,10 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
 
   const handleKeyword = useCallback((e) => {
     dispatch({ type: 'SET_KEYWORD', payload: e.target.value });
+  }, []);
+
+  const handleHashtag = useCallback((e) => {
+    dispatch({ type: 'SET_HASHTAG', payload: e.target.value });
   }, []);
 
   const handleAgeRange = useCallback((e) => {
@@ -130,6 +145,21 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
     <Box sx={{ mt: 3 }}>
       {/* Row 1: Search + Platform */}
       <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" sx={{ mb: 2 }}>
+        {/* Platform */}
+        <Select
+          value={state.platform}
+          onChange={handlePlatform}
+          size="small"
+          displayEmpty
+          sx={selectSx}
+        >
+          {PLATFORMS.map((opt) => (
+            <MenuItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </MenuItem>
+          ))}
+        </Select>
+
         {/* Keyword search */}
         <Box
           sx={{
@@ -156,24 +186,32 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
           />
         </Box>
 
-        {/* Platform */}
-        <Select
-          value={state.platform}
-          onChange={handlePlatform}
-          size="small"
-          displayEmpty
-          sx={selectSx}
+        {/* Hashtag search */}
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 250,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+            display: 'flex',
+            alignItems: 'center',
+            px: 1.5,
+            py: 0.5,
+          }}
         >
-          {PLATFORMS.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </Stack>
+          <InputAdornment position="start">
+            <Iconify icon="mdi:tag-outline" sx={{ color: 'text.disabled', mr: 1 }} />
+          </InputAdornment>
+          <InputBase
+            fullWidth
+            value={state.hashtag}
+            onChange={handleHashtag}
+            placeholder="Search hashtags (e.g. #sport #fun)..."
+            sx={{ fontSize: 14 }}
+          />
+        </Box>
 
-      {/* Row 2: All other filters */}
-      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
         {/* Gender */}
         <Select
           value={state.gender}
@@ -186,9 +224,6 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
             return selected;
           }}
         >
-          <MenuItem value="">
-            <em>All Genders</em>
-          </MenuItem>
           {GENDERS.map((opt) => (
             <MenuItem key={opt.value} value={opt.value}>
               {opt.label}
@@ -208,16 +243,16 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
             return selected;
           }}
         >
-          <MenuItem value="">
-            <em>All Ages</em>
-          </MenuItem>
           {AGE_RANGES.map((opt) => (
             <MenuItem key={opt.value} value={opt.value}>
               {opt.label}
             </MenuItem>
           ))}
         </Select>
+      </Stack>
 
+      {/* Row 2: All other filters */}
+      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
         {/* Credit Tier */}
         <Select
           value={state.creditTier}
@@ -232,9 +267,6 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
             return tier ? tier.label : selected;
           }}
         >
-          <MenuItem value="">
-            <em>All Tiers</em>
-          </MenuItem>
           {CREDIT_TIERS.map((opt) => (
             <MenuItem key={opt.value} value={opt.value}>
               {opt.label}
