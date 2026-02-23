@@ -24,6 +24,7 @@ import Iconify from 'src/components/iconify';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
+import { usePostEngagementSnapshots } from 'src/hooks/use-post-engagement-snapshots';
 
 import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
 import {
@@ -451,6 +452,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
     data: insightsData, 
     isLoading: loadingInsights 
   } = useSocialInsights(postingSubmissions, campaignId);
+
+  // Fetch post engagement snapshots (Day 7, 15, 30 ER tracking)
+  const {
+    snapshots: postSnapshots,
+    loading: loadingSnapshots,
+    error: snapshotsError
+  } = usePostEngagementSnapshots(campaignId);
 
   const manualInsightsData = useMemo(() => {
     const transformed = manualEntries.map((entry) => ({
@@ -883,6 +891,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
     if (isEditMode && history.length === 0) {
       saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode]);
 
   useEffect(() => {
@@ -1177,6 +1186,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
               await new Promise(resolve => { setTimeout(resolve, 0); });
             }
 
+            // Sequential processing is required for PDF generation
+            // eslint-disable-next-line no-await-in-loop
             const canvas = await html2canvas(section, {
               scale: 1.5, 
               useCORS: true,
@@ -1258,51 +1269,218 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const postingEndDate = campaign?.campaignBrief?.postingEndDate;
       
       if (!postingStartDate || !postingEndDate) {
-        console.log('No posting period dates available');
-        console.log('Campaign Brief:', campaign?.campaignBrief);
         return [];
       }
 
       const campaignStart = new Date(postingStartDate);
       const campaignEnd = new Date(postingEndDate);
       const campaignDuration = (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24);
-      
 
-      const firstWeekStart = 1; 
-      const firstWeekEnd = 8; 
-      const midCampaignStart = 12; 
-      const midCampaignEnd = campaignDuration; 
-      const afterPeriodStart = campaignDuration; 
-      const afterPeriodEnd = campaignDuration + 7;
+      // Phase definitions (Day 7, 15, 30 from campaign start)
+      const firstWeekStart = 0; // Day 0
+      const firstWeekEnd = 7; // Day 7
+      const midPeriodDay = 15; // Day 15
+      const finalWeekStart = 25; // Day 25
+      const finalWeekEnd = 30; // Day 30
 
       const creatorPhaseData = new Map();
+
+      // Use snapshot data if available
+      if (postSnapshots && postSnapshots.length > 0) {
+        console.log('📸 Using snapshot data for heatmap:', postSnapshots.length, 'posts');
+        
+        postSnapshots.forEach((snapshot) => {
+          const userId = snapshot.userId;
+          
+          if (!creatorPhaseData.has(userId)) {
+            // Find the submission to get creator info
+            const submission = filteredSubmissions.find(
+              (sub) => sub.id === snapshot.submissionId
+            );
+            
+            const username = submission?.user?.username;
+            const name = submission?.user?.name;
+            const creatorName = submission?.user?.creator?.name;
+            const displayName = username || name || creatorName || 'Unknown';
+            
+            creatorPhaseData.set(userId, {
+              userId,
+              name: displayName,
+              isManualEntry: false,
+              day7: null,
+              day15: null,
+              day30: null,
+              overallER: 0,
+              snapshotCount: 0,
+            });
+          }
+
+          const creatorData = creatorPhaseData.get(userId);
+          
+          // Map snapshot days to phase data
+          if (snapshot.snapshots.day7) {
+            creatorData.day7 = snapshot.snapshots.day7.er;
+            creatorData.overallER += snapshot.snapshots.day7.er;
+            creatorData.snapshotCount += 1;
+          }
+          if (snapshot.snapshots.day15) {
+            creatorData.day15 = snapshot.snapshots.day15.er;
+            creatorData.overallER += snapshot.snapshots.day15.er;
+            creatorData.snapshotCount += 1;
+          }
+          if (snapshot.snapshots.day30) {
+            creatorData.day30 = snapshot.snapshots.day30.er;
+            creatorData.overallER += snapshot.snapshots.day30.er;
+            creatorData.snapshotCount += 1;
+          }
+        });
+
+        // Calculate average ER
+        const creatorsWithAverages = Array.from(creatorPhaseData.values()).map(creator => {
+          const avgER = creator.snapshotCount > 0 
+            ? creator.overallER / creator.snapshotCount 
+            : 0;
+
+          return {
+            userId: creator.userId,
+            name: creator.name,
+            isManualEntry: creator.isManualEntry,
+            firstWeek: creator.day7,
+            midPeriod: creator.day15,
+            finalWeek: creator.day30,
+            overallER: avgER,
+            firstPostPhase: 'firstWeek', // All posts have snapshots from day 7
+          };
+        });
+
+        // Sort by overall ER and take top 5
+        const top5 = creatorsWithAverages
+          .filter(c => c.overallER > 0)
+          .sort((a, b) => b.overallER - a.overallER)
+          .slice(0, 5);
+
+        console.log('🏆 Top 5 creators from snapshots:', top5.length);
+        return top5;
+      }
+
+      // Fallback to old logic if no snapshots available
+      console.log('⚠️ No snapshot data available, using current insights');
+      creatorPhaseData.clear(); // Clear the map for fallback logic
+      
+      console.log('📊 Processing insights:', filteredInsightsData.length);
+      console.log('📊 Processing submissions:', filteredSubmissions.length);
       
       filteredInsightsData.forEach((insightData, idx) => {
         const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
-        if (!submission) return;
+        if (!submission) {
+          console.log(`⚠️ No submission found for insight ${idx}`);
+          return;
+        }
 
-        // Get post date
+        // Get post date - prioritize actual post date from Instagram/TikTok
         let postDate = null;
-        if (insightData.insight?.timestamp) {
-          postDate = new Date(insightData.insight.timestamp * 1000);
-        } else if (submission.createdAt) {
-          postDate = new Date(submission.createdAt);
+        
+        console.log(`\n🔍 Post ${idx} - Looking for date:`);
+        console.log('  video object:', insightData.video);
+        console.log('  video.taken_at:', insightData.video?.taken_at);
+        console.log('  video.timestamp:', insightData.video?.timestamp);
+        
+        // For Instagram: check video.taken_at field
+        if (insightData.video?.taken_at) {
+          const takenAt = insightData.video.taken_at;
+          console.log('  Trying taken_at:', takenAt, 'type:', typeof takenAt);
+          
+          // Check if it's already a valid date string or needs conversion
+          if (typeof takenAt === 'string') {
+            postDate = new Date(takenAt);
+          } else if (typeof takenAt === 'number') {
+            postDate = new Date(takenAt * 1000);
+          }
+          
+          if (postDate && !Number.isNaN(postDate.getTime())) {
+            console.log(`📸 Using Instagram video.taken_at: ${postDate.toISOString()}`);
+          } else {
+            postDate = null;
+          }
         }
         
-        if (!postDate) return;
+        // For Instagram: check video.timestamp field
+        if (!postDate && insightData.video?.timestamp) {
+          const timestamp = insightData.video.timestamp;
+          console.log('  Trying timestamp:', timestamp, 'type:', typeof timestamp);
+          
+          if (typeof timestamp === 'string') {
+            postDate = new Date(timestamp);
+          } else if (typeof timestamp === 'number') {
+            postDate = new Date(timestamp * 1000);
+          }
+          
+          if (postDate && !Number.isNaN(postDate.getTime())) {
+            console.log(`📸 Using Instagram video.timestamp: ${postDate.toISOString()}`);
+          } else {
+            postDate = null;
+          }
+        }
+        
+        // For TikTok: use video.create_time field
+        if (!postDate && insightData.video?.create_time) {
+          const createTime = insightData.video.create_time;
+          console.log('  Trying create_time:', createTime, 'type:', typeof createTime);
+          
+          if (typeof createTime === 'string') {
+            postDate = new Date(createTime);
+          } else if (typeof createTime === 'number') {
+            postDate = new Date(createTime * 1000);
+          }
+          
+          if (postDate && !Number.isNaN(postDate.getTime())) {
+            console.log(`📸 Using TikTok video.create_time: ${postDate.toISOString()}`);
+          } else {
+            postDate = null;
+          }
+        }
+        
+        // Fallback to submission created date
+        if (!postDate && submission.createdAt) {
+          postDate = new Date(submission.createdAt);
+          if (postDate && !Number.isNaN(postDate.getTime())) {
+            console.log(`📝 Using submission createdAt: ${postDate.toISOString()}`);
+            console.log(`⚠️ Warning: Using submission date instead of actual post date!`);
+          } else {
+            postDate = null;
+          }
+        }
+        
+        if (!postDate || Number.isNaN(postDate.getTime())) {
+          console.log(`⚠️ No valid post date for submission ${idx}`);
+          return;
+        }
 
         const daysFromStart = (postDate - campaignStart) / (1000 * 60 * 60 * 24);
+        console.log(`📅 Post ${idx}: ${daysFromStart.toFixed(1)} days from start (${postDate.toISOString()})`);
+        console.log(`   Campaign: ${campaignStart.toISOString()} to ${campaignEnd.toISOString()}`);
         
+        // Determine which phase this post belongs to
         let phase = null;
         if (daysFromStart >= firstWeekStart && daysFromStart <= firstWeekEnd) {
           phase = 'firstWeek';
-        } else if (daysFromStart >= midCampaignStart && daysFromStart <= midCampaignEnd) {
-          phase = 'midCampaign';
-        } else if (daysFromStart >= afterPeriodStart && daysFromStart <= afterPeriodEnd) {
-          phase = 'afterPeriod';
+        } else if (daysFromStart > firstWeekEnd && daysFromStart < finalWeekStart) {
+          phase = 'midPeriod';
+        } else if (daysFromStart >= finalWeekStart && daysFromStart <= finalWeekEnd) {
+          phase = 'finalWeek';
         }
         
-        if (!phase) return;
+        // Skip posts outside campaign period
+        if (!phase || daysFromStart < 0 || daysFromStart > campaignDuration) {
+          if (daysFromStart < 0) {
+            console.log(`⚠️ Post ${idx} is BEFORE campaign start (${Math.abs(daysFromStart).toFixed(1)} days before)`);
+          } else {
+            console.log(`⚠️ Post ${idx} is AFTER campaign end (${(daysFromStart - campaignDuration).toFixed(1)} days after)`);
+          }
+          return;
+        }
+        
+        console.log(`✅ Post ${idx} assigned to ${phase}`);
 
         // Get creator identifier
         const userId = typeof submission.user === 'string' ? submission.user : submission.user?.id;
@@ -1330,11 +1508,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
             isManualEntry,
             creatorUsername: platformUsername,
             firstWeek: [],
-            midCampaign: [],
-            afterPeriod: [],
+            midPeriod: [],
+            finalWeek: [],
             totalER: 0,
             postCount: 0,
             firstPostPhase: null,
+            firstPostDay: null, // Track when they first posted
           });
         }
 
@@ -1342,13 +1521,29 @@ const PCRReportPage = ({ campaign, onBack }) => {
         const engagementRate = parseFloat(calculateEngagementRate(insightData.insight));
         
         if (!Number.isNaN(engagementRate) && engagementRate > 0) {
+          // Add the ER to the phase where the post was made
           creatorData[phase].push(engagementRate);
+          
+          // Also add the same ER to all future phases (same post tracked over time)
+          if (phase === 'firstWeek') {
+            // If posted in first week, also track in mid period and final week
+            creatorData.midPeriod.push(engagementRate);
+            creatorData.finalWeek.push(engagementRate);
+          } else if (phase === 'midPeriod') {
+            // If posted in mid period, also track in final week
+            creatorData.finalWeek.push(engagementRate);
+          }
+          // If posted in finalWeek, only track there
+          
           creatorData.totalER += engagementRate;
           creatorData.postCount += 1;
           
-          // Track first post phase
+          // Track first post phase and day
           if (!creatorData.firstPostPhase) {
             creatorData.firstPostPhase = phase;
+            creatorData.firstPostDay = daysFromStart;
+            console.log(`🎯 Creator's first post: Day ${daysFromStart.toFixed(1)} in ${phase}`);
+            console.log(`   → Will track this post's ER (${engagementRate.toFixed(2)}%) across all future periods`);
           }
         }
       });
@@ -1359,26 +1554,31 @@ const PCRReportPage = ({ campaign, onBack }) => {
           ? creator.firstWeek.reduce((a, b) => a + b, 0) / creator.firstWeek.length
           : null;
         
-        const midCampaignAvg = creator.midCampaign.length > 0
-          ? creator.midCampaign.reduce((a, b) => a + b, 0) / creator.midCampaign.length
+        const midPeriodAvg = creator.midPeriod.length > 0
+          ? creator.midPeriod.reduce((a, b) => a + b, 0) / creator.midPeriod.length
           : null;
         
-        const afterPeriodAvg = creator.afterPeriod.length > 0
-          ? creator.afterPeriod.reduce((a, b) => a + b, 0) / creator.afterPeriod.length
+        const finalWeekAvg = creator.finalWeek.length > 0
+          ? creator.finalWeek.reduce((a, b) => a + b, 0) / creator.finalWeek.length
           : null;
 
-        let showFirstWeek = firstWeekAvg !== null;
-        let showMidCampaign = midCampaignAvg !== null;
-        const showAfterPeriod = afterPeriodAvg !== null;
+        // Determine which bars to show based on when they first posted
+        let showFirstWeek = false;
+        let showMidPeriod = false;
+        let showFinalWeek = false;
         
-        if (creator.firstPostPhase === 'midCampaign') {
-          showMidCampaign = false;
-        }
-        
-        // If first post was in after period, only show after period
-        if (creator.firstPostPhase === 'afterPeriod') {
-          showFirstWeek = false;
-          showMidCampaign = false;
+        if (creator.firstPostPhase === 'firstWeek') {
+          // Posted in first week → show all 3 bars
+          showFirstWeek = true;
+          showMidPeriod = true;
+          showFinalWeek = true;
+        } else if (creator.firstPostPhase === 'midPeriod') {
+          // Posted in mid period → show mid period and final week
+          showMidPeriod = true;
+          showFinalWeek = true;
+        } else if (creator.firstPostPhase === 'finalWeek') {
+          // Posted in final week → show only final week
+          showFinalWeek = true;
         }
 
         return {
@@ -1386,10 +1586,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
           name: creator.name,
           isManualEntry: creator.isManualEntry,
           creatorUsername: creator.creatorUsername,
-          firstWeek: showFirstWeek ? firstWeekAvg : null,
-          midCampaign: showMidCampaign ? midCampaignAvg : null,
-          afterPeriod: showAfterPeriod ? afterPeriodAvg : null,
+          // Show bars based on when they first posted, use 0 if no data yet
+          firstWeek: showFirstWeek ? (firstWeekAvg || 0) : null,
+          midPeriod: showMidPeriod ? (midPeriodAvg || 0) : null,
+          finalWeek: showFinalWeek ? (finalWeekAvg || 0) : null,
           overallER: creator.postCount > 0 ? creator.totalER / creator.postCount : 0,
+          firstPostPhase: creator.firstPostPhase,
         };
       });
 
@@ -1399,9 +1601,38 @@ const PCRReportPage = ({ campaign, onBack }) => {
         .sort((a, b) => b.overallER - a.overallER)
         .slice(0, 5);
 
+      console.log('🏆 Top 5 creators with phase data:', top5.length);
+      top5.forEach((c, i) => {
+        console.log(`${i + 1}. ${c.name}: Overall ER ${c.overallER.toFixed(2)}% (First posted in: ${c.firstPostPhase})`);
+        
+        // Format First Week
+        let firstWeekDisplay = 'hidden';
+        if (c.firstWeek !== null) {
+          firstWeekDisplay = c.firstWeek ? `${c.firstWeek.toFixed(2)}%` : '0% (no data)';
+        }
+        console.log(`   First Week: ${firstWeekDisplay}`);
+        
+        // Format Mid Period
+        let midPeriodDisplay = 'hidden';
+        if (c.midPeriod !== null) {
+          midPeriodDisplay = c.midPeriod ? `${c.midPeriod.toFixed(2)}%` : '0% (no data)';
+        }
+        console.log(`   Mid Period: ${midPeriodDisplay}`);
+        
+        // Format Final Week
+        let finalWeekDisplay = 'hidden';
+        if (c.finalWeek !== null) {
+          finalWeekDisplay = c.finalWeek ? `${c.finalWeek.toFixed(2)}%` : '0% (no data)';
+        }
+        console.log(`   Final Week: ${finalWeekDisplay}`);
+        
+        const boxCount = [c.firstWeek, c.midPeriod, c.finalWeek].filter(v => v !== null).length;
+        console.log(`   → Will show ${boxCount} bar(s)`);
+      });
+
       return top5;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filteredInsightsData, filteredSubmissions, campaign]);
+    }, [filteredInsightsData, filteredSubmissions, campaign, postSnapshots]);
 
     const creatorIdsToFetch = top5CreatorsPhases
       .filter(c => !c.isManualEntry && c.userId)
@@ -1547,13 +1778,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
                 {/* Phase boxes */}
                 <Box sx={{ display: 'flex', gap: '8px', flex: 1 }}>
-                  {/* First Week of Post - only show if has data */}
+                  {/* First Week - show if creator posted in first week */}
                   {creator.firstWeek !== null && (
             <Box 
               sx={{ 
                         flex: 1,
                         height: '40px',
-                        backgroundColor: getPhaseColor(creator.firstWeek),
+                        backgroundColor: creator.firstWeek ? getPhaseColor(creator.firstWeek) : '#E5E7EB',
                 display: 'flex',
                 alignItems: 'center',
                         justifyContent: 'center'
@@ -1564,21 +1795,21 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           fontFamily: 'Aileron',
                           fontSize: '16px',
                           fontWeight: 600,
-                          color: '#FFFFFF'
+                          color: creator.firstWeek ? '#FFFFFF' : '#9CA3AF'
                         }}
                       >
-                        {creator.firstWeek.toFixed(1)}%
+                        {creator.firstWeek ? `${creator.firstWeek.toFixed(1)}%` : '-'}
                       </Typography>
             </Box>
                   )}
 
-                  {/* Mid Posting Period - only show if has data */}
-                  {creator.midCampaign !== null && (
+                  {/* Mid Period - show if creator posted in first week or mid period */}
+                  {creator.midPeriod !== null && (
             <Box 
               sx={{ 
                         flex: 1,
                         height: '40px',
-                        backgroundColor: getPhaseColor(creator.midCampaign),
+                        backgroundColor: creator.midPeriod ? getPhaseColor(creator.midPeriod) : '#E5E7EB',
                 display: 'flex',
                 alignItems: 'center',
                         justifyContent: 'center'
@@ -1589,39 +1820,39 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           fontFamily: 'Aileron',
                           fontSize: '16px',
                           fontWeight: 600,
-                          color: '#FFFFFF'
+                          color: creator.midPeriod ? '#FFFFFF' : '#9CA3AF'
                         }}
                       >
-                        {creator.midCampaign.toFixed(1)}%
+                        {creator.midPeriod ? `${creator.midPeriod.toFixed(1)}%` : '-'}
                       </Typography>
             </Box>
                   )}
 
-                  {/* 1 Week After Posting Period - only show if has data */}
-                  {creator.afterPeriod !== null && (
+                  {/* Final Week - always show (all creators should have this) */}
+                  {creator.finalWeek !== null && (
                     <Box
               sx={{ 
                         flex: 1,
                         height: '40px',
-                        backgroundColor: getPhaseColor(creator.afterPeriod),
-                        display: 'flex',
-                        alignItems: 'center',
+                        backgroundColor: creator.finalWeek ? getPhaseColor(creator.finalWeek) : '#E5E7EB',
+                display: 'flex',
+                alignItems: 'center',
                         justifyContent: 'center'
                       }}
                     >
-            <Typography 
+                      <Typography
               sx={{ 
                           fontFamily: 'Aileron',
                           fontSize: '16px',
-                fontWeight: 600,
-                          color: '#FFFFFF'
-              }}
-            >
-                        {creator.afterPeriod.toFixed(1)}%
-          </Typography>
-        </Box>
+                          fontWeight: 600,
+                          color: creator.finalWeek ? '#FFFFFF' : '#9CA3AF'
+                        }}
+                      >
+                        {creator.finalWeek ? `${creator.finalWeek.toFixed(1)}%` : '-'}
+                      </Typography>
+                    </Box>
                   )}
-        </Box>
+                </Box>
               </Box>
             );
           })}
@@ -1629,20 +1860,32 @@ const PCRReportPage = ({ campaign, onBack }) => {
         )}
 
         {/* Phase labels and legend - only show if there's data */}
-        {displayData.length > 0 && (
+        {displayData.length > 0 && (() => {
+          // Determine which phases have data across all creators
+          const hasFirstWeek = displayData.some(c => c.firstWeek !== null);
+          const hasMidPeriod = displayData.some(c => c.midPeriod !== null);
+          const hasFinalWeek = displayData.some(c => c.finalWeek !== null);
+          
+          return (
         <>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px', mt: 'auto' }}>
             <Box sx={{ minWidth: '80px' }} /> 
             <Box sx={{ display: 'flex', gap: '8px', flex: 1 }}>
-              <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
-                First Week of Post
-              </Typography>
-              <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
-                Mid Posting Period
-              </Typography>
-              <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
-                1 Week After Posting Period
-              </Typography>
+              {hasFirstWeek && (
+                <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
+                  First Week of Post
+                </Typography>
+              )}
+              {hasMidPeriod && (
+                <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
+                  Mid Posting Period
+                </Typography>
+              )}
+              {hasFinalWeek && (
+                <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
+                  1 Week After Posting Period
+                </Typography>
+              )}
             </Box>
           </Box>
 
@@ -1668,7 +1911,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Box>
           </Box>
         </>
-        )}
+          );
+        })()}
       </Box>
     );
   };
