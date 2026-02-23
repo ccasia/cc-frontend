@@ -38,7 +38,7 @@ const useGetDiscoveryCreators = (filters = {}) => {
   const { data, isLoading, mutate, error } = useSWR(url, fetcher, {
     revalidateOnFocus: false,
     revalidateOnMount: true,
-    keepPreviousData: true,
+    keepPreviousData: false,
   });
 
   const memoizedValue = useMemo(
