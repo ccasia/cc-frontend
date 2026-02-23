@@ -6,6 +6,7 @@ import { Box, Fade, Grid, Stack, Rating, Button, Container } from '@mui/material
 
 import DateFilterSelect from 'src/sections/feedback/components/date-filter-select';
 import useGetCreatorGrowth from 'src/hooks/use-get-creator-growth';
+import useGetActivationRate from 'src/hooks/use-get-activation-rate';
 
 import KpiCard from './v2/components/kpi-card';
 import { CHART_COLORS } from './v2/chart-config';
@@ -31,7 +32,6 @@ import {
   MOCK_NPS,
   MOCK_NPS_TREND,
   MOCK_RETENTION,
-  MOCK_ACTIVATION_RATE,
 } from './v2/mock-data';
 
 const TABS = [
@@ -52,12 +52,14 @@ function KpiCards() {
   }, [isDaily, startDate, endDate]);
 
   const { creatorGrowth, periodComparison } = useGetCreatorGrowth(hookOptions);
+  const { activationRate, periodComparison: activationPeriodComparison } = useGetActivationRate(hookOptions);
 
   // Always call hooks unconditionally — use monthly filtered only when not daily
   const monthlyFiltered = useFilteredData(creatorGrowth);
   const filteredGrowth = isDaily ? creatorGrowth : monthlyFiltered;
 
-  const filteredActivation = useFilteredData(MOCK_ACTIVATION_RATE);
+  const monthlyFilteredActivation = useFilteredData(activationRate);
+  const filteredActivation = isDaily ? activationRate : monthlyFilteredActivation;
   const filteredRetention = useFilteredData(MOCK_RETENTION);
   const filteredNpsTrend = useFilteredData(MOCK_NPS_TREND);
 
@@ -96,7 +98,11 @@ function KpiCards() {
         <KpiCard
           title="Activation Rate"
           value={latestActivation.rate != null ? `${latestActivation.rate}%` : '—'}
-          trend={prevActivation ? Math.round((latestActivation.rate - prevActivation.rate) * 10) / 10 : 0}
+          trend={(() => {
+            if (isDaily && activationPeriodComparison) return activationPeriodComparison.percentChange;
+            if (prevActivation) return Math.round((latestActivation.rate - prevActivation.rate) * 10) / 10;
+            return 0;
+          })()}
           trendLabel={trendLabel}
           subtitle="Payment form completed"
           sparklineData={filteredActivation.map((d) => d.rate)}

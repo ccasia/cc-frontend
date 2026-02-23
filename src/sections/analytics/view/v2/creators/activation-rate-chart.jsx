@@ -8,20 +8,35 @@ import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 import useChartZoom from 'src/hooks/use-chart-zoom';
+import useGetActivationRate from 'src/hooks/use-get-activation-rate';
 
 import ChartCard from '../components/chart-card';
-import { MOCK_ACTIVATION_RATE } from '../mock-data';
-import { useFilteredData, useFilterLabel } from '../date-filter-context';
+import { useDateFilter, useFilteredData, useFilterLabel, useIsDaily } from '../date-filter-context';
 import ZoomableChart from '../components/zoomable-chart';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
 import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, TICK_LABEL_STYLE, getTrendProps } from '../chart-config';
 
 export default function ActivationRateChart() {
-  const filtered = useFilteredData(MOCK_ACTIVATION_RATE);
+  const { startDate, endDate } = useDateFilter();
+  const isDaily = useIsDaily();
   const chipLabel = useFilterLabel();
+
+  const hookOptions = useMemo(() => {
+    if (isDaily && startDate && endDate) {
+      return { granularity: 'daily', startDate, endDate };
+    }
+    return {};
+  }, [isDaily, startDate, endDate]);
+
+  const { activationRate, periodComparison } = useGetActivationRate(hookOptions);
+
+  // For monthly, filter to visible range; for daily, backend already returns the range
+  const monthlyFiltered = useFilteredData(activationRate);
+  const filtered = isDaily ? activationRate : monthlyFiltered;
+
   const rates = useMemo(() => filtered.map((d) => d.rate), [filtered]);
-  const months = useMemo(() => filtered.map((d) => d.month), [filtered]);
-  const indices = useMemo(() => months.map((_, i) => i), [months]);
+  const labels = useMemo(() => filtered.map((d) => d.date || d.month), [filtered]);
+  const indices = useMemo(() => labels.map((_, i) => i), [labels]);
 
   const { xAxis: xDomain, yDomain, isZoomed, resetZoom, containerProps, setYSources } = useChartZoom(filtered.length);
 
@@ -29,7 +44,15 @@ export default function ActivationRateChart() {
 
   const latest = rates[rates.length - 1];
   const prev = rates.length >= 2 ? rates[rates.length - 2] : undefined;
-  const change = prev != null ? Math.round((latest - prev) * 10) / 10 : null;
+
+  // For daily mode, use periodComparison; for monthly, use rate delta
+  let change = null;
+  if (isDaily && periodComparison) {
+    change = periodComparison.percentChange;
+  } else if (prev != null) {
+    change = Math.round((latest - prev) * 10) / 10;
+  }
+
   const isNeutral = change == null || change === 0;
   const isUp = !isNeutral && change > 0;
   const trend = getTrendProps(isNeutral, isUp);
@@ -44,17 +67,17 @@ export default function ActivationRateChart() {
     max: xMax,
     valueFormatter: (v) => {
       const i = Math.round(v);
-      return i >= 0 && i < months.length ? months[i] : '';
+      return i >= 0 && i < labels.length ? labels[i] : '';
     },
     tickMinStep: 1,
     tickLabelStyle: TICK_LABEL_STYLE,
-  }], [xMin, xMax, months, indices]);
+  }], [xMin, xMax, labels, indices]);
 
   const headerRight = (
     <Stack direction="row" alignItems="center" spacing={1.5}>
       <Chip label={chipLabel} size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: 11, height: 22, color: '#919EAB', borderColor: '#E8ECEE' }} />
       <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, lineHeight: 1 }}>
-        {latest}%
+        {latest != null ? `${latest}%` : '—'}
       </Typography>
       <Stack
         direction="row"
@@ -70,10 +93,10 @@ export default function ActivationRateChart() {
   );
 
   return (
-    <ChartCard title="Activation Rate" icon={BoltIcon} subtitle="Users who completed payment form / total users" headerRight={headerRight}>
+    <ChartCard title="Activation Rate" icon={BoltIcon} subtitle="Users who completed payment form divided by total users" headerRight={headerRight}>
       <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
         <LineChart
-          series={[{ data: rates, label: 'Activation Rate', color: CHART_COLORS.primary, curve: 'linear', area: true, valueFormatter: (val) => `${val}%` }]}
+          series={[{ data: rates, label: 'Activation Rate', color: CHART_COLORS.success, curve: 'linear', area: true, valueFormatter: (val) => `${val}%` }]}
           xAxis={xAxisConfig}
           yAxis={[{ ...yDomain, valueFormatter: (val) => `${val}%`, tickLabelStyle: TICK_LABEL_STYLE }]}
           height={CHART_HEIGHT}

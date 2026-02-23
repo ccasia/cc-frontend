@@ -104,7 +104,7 @@ export function filterByDateRange(data, startDate, endDate) {
 
 // ---------------------------------------------------------------------------
 // Hook: convenience wrapper — filters data using current context values.
-// Usage:  const filtered = useFilteredData(MOCK_ACTIVATION_RATE);
+// Usage:  const filtered = useFilteredData(dataArray);
 // ---------------------------------------------------------------------------
 
 export function useFilteredData(data) {

@@ -34,18 +34,6 @@ export const MOCK_CREATOR_GROWTH = GROWTH_MONTHS.map((month, i) => {
   };
 });
 
-// 2. Activation Rate (general uptrend with seasonal dips — summer slump, Dec holiday spike)
-export const MOCK_ACTIVATION_RATE = MONTHS.map((month, i) => ({
-  month,
-  rate: [32.5, 36.8, 34.2, 38.5, 41.0, 37.6, 39.8, 43.1, 45.7, 42.3, 48.9, 52.3][i],
-}));
-
-// 3. Time to Activation (generally improving but with spikes from onboarding bottlenecks)
-export const MOCK_TIME_TO_ACTIVATION = MONTHS.map((month, i) => ({
-  month,
-  avgDays: [14.2, 11.8, 13.1, 10.5, 9.8, 11.2, 8.7, 7.9, 9.4, 7.5, 6.3, 6.8][i],
-}));
-
 // 4. Media Kit Activation (platform breakdown - static snapshot)
 export const MOCK_MEDIA_KIT = [
   { platform: 'TikTok', rate: 62.4, connected: 1896, total: 3040 },

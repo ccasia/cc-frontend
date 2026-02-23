@@ -39,6 +39,9 @@ export const endpoints = {
   },
   analytics: {
     creatorGrowth: '/api/analytics/v2/creator-growth',
+    activationRate: '/api/analytics/v2/activation-rate',
+    timeToActivation: '/api/analytics/v2/time-to-activation',
+    timeToActivationCreators: '/api/analytics/v2/time-to-activation/creators',
   },
   overview: {
     root: (userId) => `/api/user/overview/${userId}`,
