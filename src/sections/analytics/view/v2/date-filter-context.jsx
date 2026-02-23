@@ -31,13 +31,32 @@ export function useDateFilter() {
 }
 
 // ---------------------------------------------------------------------------
+// Hook: returns true when the active filter implies daily granularity.
+// ---------------------------------------------------------------------------
+
+const MS_PER_DAY = 86400000;
+const DAILY_THRESHOLD_DAYS = 62; // custom ranges up to ~2 months use daily
+
+export function useIsDaily() {
+  const { dateFilter, startDate, endDate } = useDateFilter();
+  if (dateFilter === 'week' || dateFilter === 'month') return true;
+  if (dateFilter === 'custom' && startDate && endDate) {
+    const spanDays = Math.round((endDate - startDate) / MS_PER_DAY);
+    return spanDays <= DAILY_THRESHOLD_DAYS;
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
 // Hook: returns the comparison label for KPI trend based on active date filter.
 // "week" → "vs last week", "month" → "vs last month", "year" → "vs last year"
 // ---------------------------------------------------------------------------
 
 export function useTrendLabel() {
   const { dateFilter } = useDateFilter();
+  const isDaily = useIsDaily();
   const labels = { week: 'vs last week', month: 'vs last month', year: 'vs last year' };
+  if (dateFilter === 'custom' && isDaily) return 'vs prev period';
   return labels[dateFilter] || 'vs last month';
 }
 
@@ -65,6 +84,9 @@ export function filterByDateRange(data, startDate, endDate) {
   if (!startDate && !endDate) return data;
 
   return data.filter((item) => {
+    // Daily data (has isoDate or date but no month) is already server-filtered — include all
+    if (!item.month) return true;
+
     const d = parseMonthStr(item.month);
     const dm = d.getFullYear() * 12 + d.getMonth();
 

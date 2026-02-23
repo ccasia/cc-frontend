@@ -1,14 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 
 import { Helmet } from 'react-helmet-async';
 
 import { Box, Fade, Grid, Stack, Rating, Button, Container } from '@mui/material';
 
 import DateFilterSelect from 'src/sections/feedback/components/date-filter-select';
+import useGetCreatorGrowth from 'src/hooks/use-get-creator-growth';
 
 import KpiCard from './v2/components/kpi-card';
 import { CHART_COLORS } from './v2/chart-config';
-import { DateFilterProvider, useFilteredData, useTrendLabel } from './v2/date-filter-context';
+import { DateFilterProvider, useDateFilter, useFilteredData, useIsDaily, useTrendLabel } from './v2/date-filter-context';
 import RejectionRateCard from './v2/admins/rejection-rate-card';
 import CreditsPerCSChart from './v2/admins/credits-per-cs-chart';
 import RequireChangesChart from './v2/admins/require-changes-chart';
@@ -30,7 +31,6 @@ import {
   MOCK_NPS,
   MOCK_NPS_TREND,
   MOCK_RETENTION,
-  MOCK_CREATOR_GROWTH,
   MOCK_ACTIVATION_RATE,
 } from './v2/mock-data';
 
@@ -41,13 +41,34 @@ const TABS = [
 
 function KpiCards() {
   const trendLabel = useTrendLabel();
-  const filteredGrowth = useFilteredData(MOCK_CREATOR_GROWTH);
+  const { startDate, endDate } = useDateFilter();
+  const isDaily = useIsDaily();
+
+  const hookOptions = useMemo(() => {
+    if (isDaily && startDate && endDate) {
+      return { granularity: 'daily', startDate, endDate };
+    }
+    return {};
+  }, [isDaily, startDate, endDate]);
+
+  const { creatorGrowth, periodComparison } = useGetCreatorGrowth(hookOptions);
+
+  // Always call hooks unconditionally — use monthly filtered only when not daily
+  const monthlyFiltered = useFilteredData(creatorGrowth);
+  const filteredGrowth = isDaily ? creatorGrowth : monthlyFiltered;
+
   const filteredActivation = useFilteredData(MOCK_ACTIVATION_RATE);
   const filteredRetention = useFilteredData(MOCK_RETENTION);
   const filteredNpsTrend = useFilteredData(MOCK_NPS_TREND);
 
   const latestCreators = filteredGrowth[filteredGrowth.length - 1] || {};
   const prevCreators = filteredGrowth[filteredGrowth.length - 2];
+
+  // For daily mode, use period comparison from backend; for monthly, use growthRate
+  const creatorTrend = isDaily && periodComparison
+    ? periodComparison.percentChange
+    : (latestCreators.growthRate ?? 0);
+
   const latestActivation = filteredActivation[filteredActivation.length - 1] || {};
   const prevActivation = filteredActivation[filteredActivation.length - 2];
   const latestRetention = filteredRetention[filteredRetention.length - 1] || {};
@@ -64,10 +85,10 @@ function KpiCards() {
         <KpiCard
           title="Total Creators"
           value={latestCreators.total ? latestCreators.total.toLocaleString() : '—'}
-          trend={latestCreators.growthRate ?? 0}
+          trend={creatorTrend}
           trendLabel={trendLabel}
           subtitle="All registered creators"
-          sparklineData={filteredGrowth.map((d) => d.total)}
+          sparklineData={filteredGrowth.map((d) => isDaily ? d.newSignups : d.total)}
           sparklineColor={CHART_COLORS.primary}
         />
       </Grid>

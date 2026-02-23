@@ -144,7 +144,7 @@ export default function RejectionRateCard() {
 
   return (
     <ChartCard
-      title="Rejection Rate (V4)" icon={BlockIcon}
+      title="Client Rejection Rate (V4)" icon={BlockIcon}
       subtitle="Average rejection rate across V4 campaigns"
       headerRight={filterButton}
     >

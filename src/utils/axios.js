@@ -37,6 +37,9 @@ export const endpoints = {
     stats: '/api/dashboard/stats',
     campaigns: '/api/dashboard/campaigns',
   },
+  analytics: {
+    creatorGrowth: '/api/analytics/v2/creator-growth',
+  },
   overview: {
     root: (userId) => `/api/user/overview/${userId}`,
   },

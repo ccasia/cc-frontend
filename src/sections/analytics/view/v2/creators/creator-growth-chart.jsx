@@ -1,5 +1,6 @@
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useContext, createContext } from 'react';
+import PropTypes from 'prop-types';
 
 import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
@@ -15,21 +16,24 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { Box, Card, Chip, Stack, Paper, Divider, Tooltip, Typography, useTheme, useMediaQuery } from '@mui/material';
 
 import useChartZoom from 'src/hooks/use-chart-zoom';
+import useGetCreatorGrowth from 'src/hooks/use-get-creator-growth';
 
 import ChartItemTooltip from '../components/chart-item-tooltip';
 import ZoomableChart from '../components/zoomable-chart';
-import { useFilteredData, useFilterLabel } from '../date-filter-context';
-import { MOCK_CREATOR_GROWTH, MOCK_CREATOR_DEMOGRAPHICS } from '../mock-data';
+import { useDateFilter, useFilteredData, useFilterLabel, useIsDaily } from '../date-filter-context';
 import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, TICK_LABEL_STYLE, getTrendProps } from '../chart-config';
+
+const GrowthDataContext = createContext([]);
 
 function GrowthTooltip() {
   const tooltipData = useAxisTooltip();
+  const growthData = useContext(GrowthDataContext);
 
   if (!tooltipData) return null;
 
   const { axisFormattedValue, axisValue, seriesItems } = tooltipData;
   const dataIndex = Math.round(axisValue);
-  const item = dataIndex >= 0 && dataIndex < MOCK_CREATOR_GROWTH.length ? MOCK_CREATOR_GROWTH[dataIndex] : null;
+  const item = dataIndex >= 0 && dataIndex < growthData.length ? growthData[dataIndex] : null;
 
   if (!item) return null;
 
@@ -64,13 +68,13 @@ function GrowthTooltip() {
 }
 
 // Demographics panel — gender donut + age group bars
-function DemographicsPanel({ chipLabel, total, growthRate, trend, TrendIcon, isNeutral }) { // eslint-disable-line react/prop-types
+function DemographicsPanel({ chipLabel, total, growthRate, trend, TrendIcon, isNeutral, demographics }) {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
   const donutSize = isSmall ? 160 : 180;
 
-  const { gender, ageGroups } = MOCK_CREATOR_DEMOGRAPHICS;
-  const genderTotal = gender.reduce((sum, d) => sum + d.value, 0);
+  const { gender, ageGroups } = demographics;
+  const genderTotal = gender.reduce((sum, d) => sum + d.value, 0) || 1;
 
   const pieData = gender.map((d, i) => ({
     id: i,
@@ -203,12 +207,50 @@ function DemographicsPanel({ chipLabel, total, growthRate, trend, TrendIcon, isN
   );
 }
 
+DemographicsPanel.propTypes = {
+  chipLabel: PropTypes.string,
+  total: PropTypes.number,
+  growthRate: PropTypes.number,
+  trend: PropTypes.object,
+  TrendIcon: PropTypes.elementType,
+  isNeutral: PropTypes.bool,
+  demographics: PropTypes.shape({
+    gender: PropTypes.arrayOf(PropTypes.shape({
+      label: PropTypes.string,
+      value: PropTypes.number,
+      color: PropTypes.string,
+    })),
+    ageGroups: PropTypes.arrayOf(PropTypes.shape({
+      label: PropTypes.string,
+      value: PropTypes.number,
+      color: PropTypes.string,
+    })),
+  }),
+};
+
 export default function CreatorGrowthChart() {
-  const filtered = useFilteredData(MOCK_CREATOR_GROWTH);
+  const { startDate, endDate } = useDateFilter();
+  const isDaily = useIsDaily();
+
+  const hookOptions = useMemo(() => {
+    if (isDaily && startDate && endDate) {
+      return { granularity: 'daily', startDate, endDate };
+    }
+    return {};
+  }, [isDaily, startDate, endDate]);
+
+  const { creatorGrowth, demographics } = useGetCreatorGrowth(hookOptions);
+
+  // Always call useFilteredData (hooks can't be conditional) — only used for monthly
+  const monthlyFiltered = useFilteredData(creatorGrowth);
+  const filtered = isDaily ? creatorGrowth : monthlyFiltered;
+
   const chipLabel = useFilterLabel('All time');
+  const tooltipText = isDaily ? 'New creator sign-ups per day' : 'New creator sign-ups per month';
+
   const signups = useMemo(() => filtered.map((d) => d.newSignups), [filtered]);
-  const months = useMemo(() => filtered.map((d) => d.month), [filtered]);
-  const indices = useMemo(() => months.map((_, i) => i), [months]);
+  const labels = useMemo(() => filtered.map((d) => d.date || d.month), [filtered]);
+  const indices = useMemo(() => labels.map((_, i) => i), [labels]);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -216,7 +258,7 @@ export default function CreatorGrowthChart() {
   const latest = filtered[filtered.length - 1] || { total: 0, growthRate: 0, newSignups: 0 };
   const prev = filtered.length >= 2 ? filtered[filtered.length - 2] : null;
   const isNeutral = !prev || latest.growthRate === 0;
-  const isUp = !isNeutral && latest.total > prev.total;
+  const isUp = !isNeutral && latest.newSignups > prev.newSignups;
   const trend = getTrendProps(isNeutral, isUp);
   let TrendIcon = RemoveIcon;
   if (!isNeutral) TrendIcon = isUp ? ArrowDropUpIcon : ArrowDropDownIcon;
@@ -233,13 +275,14 @@ export default function CreatorGrowthChart() {
     max: xMax,
     valueFormatter: (v) => {
       const i = Math.round(v);
-      return i >= 0 && i < months.length ? months[i] : '';
+      return i >= 0 && i < labels.length ? labels[i] : '';
     },
     tickMinStep: 1,
     tickLabelStyle: TICK_LABEL_STYLE,
-  }], [xMin, xMax, months, indices]);
+  }], [xMin, xMax, labels, indices]);
 
   return (
+    <GrowthDataContext.Provider value={filtered}>
     <Card
       sx={{
         border: '1px solid #E8ECEE',
@@ -266,7 +309,7 @@ export default function CreatorGrowthChart() {
                 Creator Growth
               </Typography>
               <Tooltip
-                title="New creator sign-ups per month"
+                title={tooltipText}
                 arrow
                 placement="top"
                 slotProps={{
@@ -357,9 +400,11 @@ export default function CreatorGrowthChart() {
             trend={trend}
             TrendIcon={TrendIcon}
             isNeutral={isNeutral}
+            demographics={demographics}
           />
         </Stack>
       </Stack>
     </Card>
+    </GrowthDataContext.Provider>
   );
 }
