@@ -1,10 +1,14 @@
+import { useMemo } from 'react';
+
 import { PieChart } from '@mui/x-charts/PieChart';
 import DevicesIcon from '@mui/icons-material/Devices';
-import { Box, Chip, Stack, SvgIcon, Typography, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Chip, Stack, SvgIcon, useTheme, Typography, useMediaQuery, CircularProgress } from '@mui/material';
 
-import { MOCK_MEDIA_KIT } from '../mock-data';
-import ChartCard from '../components/chart-card';
+import useGetMediaKitActivation from 'src/hooks/use-get-media-kit-activation';
+
 import { CHART_COLORS } from '../chart-config';
+import ChartCard from '../components/chart-card';
+import { useDateFilter, useFilterLabel } from '../date-filter-context';
 
 function TikTokIcon(props) {
   return (
@@ -34,10 +38,6 @@ const PLATFORM_ICONS = {
   Instagram: <InstagramIcon sx={{ fontSize: 28, color: IG_COLOR }} />,
 };
 
-const totalConnected = MOCK_MEDIA_KIT.reduce((sum, d) => sum + d.connected, 0);
-const totalUsers = MOCK_MEDIA_KIT.reduce((sum, d) => sum + d.total, 0);
-const overallRate = Math.round((totalConnected / totalUsers) * 1000) / 10;
-
 export default function MediaKitActivationChart() {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
@@ -45,74 +45,107 @@ export default function MediaKitActivationChart() {
   const innerR = isSmall ? 30 : 40;
   const outerR = isSmall ? 55 : 70;
 
+  const { startDate, endDate } = useDateFilter();
+  const chipLabel = useFilterLabel();
+
+  const hookOptions = useMemo(() => {
+    if (startDate && endDate) return { startDate, endDate };
+    return {};
+  }, [startDate, endDate]);
+
+  const { platforms, uniqueConnected, isLoading } = useGetMediaKitActivation(hookOptions);
+
+  const { totalConnected, totalUsers, overallRate } = useMemo(() => {
+    const tc = uniqueConnected;
+    const tu = platforms.length > 0 ? platforms[0].total : 0;
+    const rate = tu > 0 ? Math.round((tc / tu) * 1000) / 10 : 0;
+    return { totalConnected: tc, totalUsers: tu, overallRate: rate };
+  }, [platforms, uniqueConnected]);
+
   const headerRight = (
     <Stack direction="row" alignItems="center" spacing={1.5}>
-      <Chip label="Current" size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: 11, height: 22, color: '#919EAB', borderColor: '#E8ECEE' }} />
-      <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, lineHeight: 1 }}>
-        {overallRate}%
-      </Typography>
-      <Typography variant="caption" sx={{ color: '#919EAB', fontWeight: 500 }}>
-        {totalConnected.toLocaleString()} / {totalUsers.toLocaleString()}
-      </Typography>
+      <Chip label={chipLabel} size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: 11, height: 22, color: '#919EAB', borderColor: '#E8ECEE' }} />
+      {!isLoading && (
+        <>
+          <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, lineHeight: 1 }}>
+            {overallRate}%
+          </Typography>
+          <Typography variant="caption" sx={{ color: '#919EAB', fontWeight: 500 }}>
+            {totalConnected.toLocaleString()} / {totalUsers.toLocaleString()}
+          </Typography>
+        </>
+      )}
     </Stack>
   );
 
   return (
-    <ChartCard title="Media Kit Activation" icon={DevicesIcon} subtitle="Users who connected media kit / total active users" headerRight={headerRight}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="center" alignItems="center" spacing={4} sx={{ flex: 1, mt: 1 }}>
-        {MOCK_MEDIA_KIT.map((d) => {
-          const colors = PLATFORM_COLORS[d.platform] || { connected: CHART_COLORS.primary, notConnected: '#eee' };
-          const notConnected = d.total - d.connected;
+    <ChartCard title="Media Kit Activation" icon={DevicesIcon} subtitle="Users who connected media kit divided by total active users" headerRight={headerRight}>
+      {isLoading ? (
+        <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, minHeight: 200 }}>
+          <CircularProgress size={32} />
+        </Stack>
+      ) : (
+        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="center" alignItems="center" spacing={4} sx={{ flex: 1, mt: 1 }}>
+          {platforms.map((d) => {
+            const colors = PLATFORM_COLORS[d.platform] || { connected: CHART_COLORS.primary, notConnected: '#eee' };
+            const notConnected = d.total - d.connected;
 
-          return (
-            <Box key={d.platform} sx={{ textAlign: 'center' }}>
-              <Box sx={{ position: 'relative', display: 'inline-block' }}>
-                <PieChart
-                  series={[{
-                    data: [
-                      { id: 'connected', value: d.connected, label: 'Connected', color: colors.connected },
-                      { id: 'not-connected', value: notConnected, label: 'Not Connected', color: colors.notConnected },
-                    ],
-                    innerRadius: innerR,
-                    outerRadius: outerR,
-                    paddingAngle: 2,
-                    cornerRadius: 3,
-                    valueFormatter: (item) => `${item.value.toLocaleString()} users`,
-                  }]}
-                  width={donutSize}
-                  height={donutSize}
-                  margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  hideLegend
-                />
-                {/* Center icon */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    pointerEvents: 'none',
-                  }}
-                >
-                  {PLATFORM_ICONS[d.platform]}
+            // Ensure the connected slice is always visible (min 5% of visual)
+            const MIN_VISUAL = 0.05;
+            const realRatio = d.total > 0 ? d.connected / d.total : 0;
+            const visualConnected = d.connected > 0 && realRatio < MIN_VISUAL ? d.total * MIN_VISUAL : d.connected;
+            const visualNotConnected = d.total > 0 ? d.total - visualConnected : 0;
+
+            return (
+              <Box key={d.platform} sx={{ textAlign: 'center' }}>
+                <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                  <PieChart
+                    series={[{
+                      data: [
+                        { id: 'connected', value: visualConnected, label: 'Connected', color: colors.connected, realValue: d.connected },
+                        { id: 'not-connected', value: visualNotConnected, label: 'Not Connected', color: colors.notConnected, realValue: notConnected },
+                      ],
+                      innerRadius: innerR,
+                      outerRadius: outerR,
+                      paddingAngle: 2,
+                      cornerRadius: 3,
+                      valueFormatter: (item) => `${item.realValue.toLocaleString()} users`,
+                    }]}
+                    width={donutSize}
+                    height={donutSize}
+                    margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    hideLegend
+                  />
+                  {/* Center icon */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {PLATFORM_ICONS[d.platform]}
+                  </Box>
                 </Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mt: 0.5, color: colors.connected }}>
+                  {d.platform}
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: colors.connected }}>
+                  {d.rate}%
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#919EAB' }}>
+                  {d.connected.toLocaleString()} / {d.total.toLocaleString()}
+                </Typography>
               </Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mt: 0.5, color: colors.connected }}>
-                {d.platform}
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: colors.connected }}>
-                {d.rate}%
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#919EAB' }}>
-                {d.connected.toLocaleString()} / {d.total.toLocaleString()}
-              </Typography>
-            </Box>
-          );
-        })}
-      </Stack>
+            );
+          })}
+        </Stack>
+      )}
     </ChartCard>
   );
 }

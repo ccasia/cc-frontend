@@ -42,6 +42,7 @@ export const endpoints = {
     activationRate: '/api/analytics/v2/activation-rate',
     timeToActivation: '/api/analytics/v2/time-to-activation',
     timeToActivationCreators: '/api/analytics/v2/time-to-activation/creators',
+    mediaKitActivation: '/api/analytics/v2/media-kit-activation',
   },
   overview: {
     root: (userId) => `/api/user/overview/${userId}`,
