@@ -90,17 +90,3 @@ export const filterReducer = (state, action) => {
       return state;
   }
 };
-
-// ─── Shared select styles ─────────────────────────────────────────────────────
-
-export const selectSx = {
-  minWidth: 160,
-  '& .MuiInputBase-input': {
-    py: 1,
-    px: 1.5,
-    fontSize: 14,
-  },
-  border: '1px solid',
-  borderColor: 'divider',
-  borderRadius: 1,
-};
