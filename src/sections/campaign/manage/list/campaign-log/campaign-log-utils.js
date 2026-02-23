@@ -1,0 +1,621 @@
+import dayjs from 'dayjs';
+import isToday from 'dayjs/plugin/isToday';
+import isYesterday from 'dayjs/plugin/isYesterday';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(isToday);
+dayjs.extend(isYesterday);
+dayjs.extend(relativeTime);
+
+// ---------------------------------------------------------------------------
+// 1. Classification rules — checked in order, first match wins
+// ---------------------------------------------------------------------------
+
+const RULES = [
+  // Campaign lifecycle
+  { test: (m) => m === 'campaign created', category: 'Campaign', groups: ['campaign'] },
+  { test: (m) => m === 'campaign activated', category: 'Campaign', groups: ['campaign'] },
+  { test: (m) => m.startsWith('campaign details edited'), category: 'Campaign Edit', groups: ['campaign'] },
+
+  // Outreach (fixes UNKNOWN bug)
+  { test: (m) => m.startsWith('outreach status for'), category: 'Outreach', groups: ['admin'] },
+
+  // Pitch — creator
+  { test: (m) => m.includes('submitted a pitch'), category: 'Pitch', groups: ['creator'] },
+  { test: (m) => m.includes('pitched for'), category: 'Pitch', groups: ['creator'] },
+
+  // Pitch — admin
+  { test: (m) => m.includes('pitch has been approved'), category: 'Pitch Approved', groups: ['admin'] },
+  { test: (m) => m.includes('pitch has been rejected'), category: 'Pitch Rejected', groups: ['admin'] },
+
+  // Pitch — client
+  { test: (m) => m.includes('profile has been approved'), category: 'Pitch Approved', groups: ['client'] },
+  { test: (m) => m.includes('profile has been rejected'), category: 'Pitch Rejected', groups: ['client'] },
+  { test: (m) => m.includes('chose maybe for'), category: 'Pitch Maybe', groups: ['client'] },
+
+  // Shortlist / withdrawal / removal
+  { test: (m) => m.includes('has been shortlisted'), category: 'Shortlisted', groups: ['admin'] },
+  { test: (m) => m.includes('withdrawn from the campaign'), category: 'Withdrawal', groups: ['admin'] },
+  { test: (m) => m.includes('removed from the campaign'), category: 'Removal', groups: ['admin'] },
+
+  // Agreement
+  { test: (m) => m.includes('agreement has been sent') || m.includes('sent the agreement'), category: 'Agreement Sent', groups: ['admin'] },
+  { test: (m) => m.includes('submitted agreement') || m.includes('submitted the agreement'), category: 'Agreement', groups: ['creator'] },
+  { test: (m) => m.includes('agreement has been approved') || m.includes('approved the agreement'), category: 'Agreement Approved', groups: ['admin'] },
+  { test: (m) => m.includes('agreement has been rejected'), category: 'Agreement Rejected', groups: ['admin'] },
+  { test: (m) => m.includes('resent the agreement'), category: 'Agreement Sent', groups: ['admin'] },
+
+  // Drafts — creator
+  { test: (m) => m.includes('submitted first draft'), category: 'First Draft', groups: ['creator'] },
+  { test: (m) => m.includes('submitted final draft'), category: 'Final Draft', groups: ['creator'] },
+  { test: (m) => m.includes('submitted posting link'), category: 'Posting', groups: ['creator'] },
+
+  // Drafts — admin approval / changes
+  { test: (m) => (m.includes('approved by admin') || m.includes('draft approved by admin')), category: 'Draft Approved', groups: ['admin'] },
+  { test: (m) => m.includes('changes requested on') && m.includes('by admin'), category: 'Changes Requested', groups: ['admin'] },
+
+  // Drafts — client approval / changes
+  { test: (m) => (m.includes('approved by client') || m.includes('draft approved by client')), category: 'Draft Approved', groups: ['client'] },
+  { test: (m) => m.includes('changes requested on') && m.includes('by client'), category: 'Changes Requested', groups: ['client'] },
+
+  // V3 individual content review by admin (format: Admin "X" approved/requested...)
+  { test: (m) => /^admin ".+?" approved/.test(m), category: 'Draft Approved', groups: ['admin'] },
+  { test: (m) => /^admin ".+?" requested changes/.test(m), category: 'Changes Requested', groups: ['admin'] },
+
+  // V3 overall submission approval (format: X approved Y's Final Draft)
+  { test: (m) => /approved .+?('s|'s) (first draft|final draft)/i.test(m), category: 'Draft Approved', groups: ['admin'] },
+  { test: (m) => /requested changes on .+?('s|'s) (first draft|final draft)/i.test(m), category: 'Changes Requested', groups: ['admin'] },
+
+  // Posting link approval/rejection
+  { test: (m) => m.includes('approved') && m.includes('posting link'), category: 'Draft Approved', groups: ['admin'] },
+  { test: (m) => m.includes('requested changes') && m.includes('posting link'), category: 'Changes Requested', groups: ['admin'] },
+
+  // V4 draft rejection
+  { test: (m) => m.includes('draft rejected by'), category: 'Draft Rejected', groups: ['admin'] },
+
+  // Invoice
+  { test: (m) => m.includes('invoice') && m.includes('was generated'), category: 'Invoice', groups: ['invoice'] },
+  { test: (m) => m.includes('deleted invoice'), category: 'Invoice', groups: ['invoice'] },
+  { test: (m) => m.includes('approved invoice'), category: 'Invoice', groups: ['invoice'] },
+
+  // Amount change
+  { test: (m) => m.includes('changed the amount'), category: 'Amount Changed', groups: ['admin'] },
+
+  // Client misc
+  { test: (m) => m.includes('export campaign analytics'), category: 'Analytics', groups: ['client'] },
+  { test: (m) => m.includes('logs in') || m.includes('logged in'), category: 'Login', groups: ['client'] },
+];
+
+// ---------------------------------------------------------------------------
+// 2. Classify a single log message
+// ---------------------------------------------------------------------------
+
+export function classifyLog(message) {
+  const lower = message.toLowerCase();
+  for (let i = 0; i < RULES.length; i += 1) {
+    if (RULES[i].test(lower)) {
+      return { category: RULES[i].category, groups: RULES[i].groups };
+    }
+  }
+  return { category: 'Activity', groups: ['other'] };
+}
+
+// ---------------------------------------------------------------------------
+// 3. Filter classified logs by tab
+// ---------------------------------------------------------------------------
+
+export function filterLogsByTab(logs, tab) {
+  if (tab === 'all') return logs;
+
+  return logs.filter((log) => {
+    switch (tab) {
+      case 'admin':
+        return (
+          log.groups.includes('admin') ||
+          log.groups.includes('campaign') ||
+          (log.performerRole !== 'client' && log.performerRole !== 'creator')
+        );
+      case 'creator':
+        return log.groups.includes('creator');
+      case 'client':
+        return log.groups.includes('client') || log.performerRole === 'client';
+      case 'invoice':
+        return log.groups.includes('invoice');
+      default:
+        return true;
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 4. Color map — category → { dot, bg }
+// ---------------------------------------------------------------------------
+
+const CATEGORY_META = {
+  Campaign:           { color: '#1340FF', bg: '#EBF0FF', icon: 'solar:flag-bold' },
+  'Campaign Edit':    { color: '#1340FF', bg: '#EBF0FF', icon: 'solar:pen-bold' },
+  Outreach:           { color: '#00B8D9', bg: '#E6F9FD', icon: 'solar:letter-bold' },
+  Pitch:              { color: '#F59E0B', bg: '#FFF8E6', icon: 'solar:hand-stars-bold' },
+  'Pitch Maybe':      { color: '#F59E0B', bg: '#FFF8E6', icon: 'solar:question-circle-bold' },
+  'Pitch Approved':   { color: '#22C55E', bg: '#E8FAF0', icon: 'solar:check-circle-bold' },
+  'Pitch Rejected':   { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:close-circle-bold' },
+  Shortlisted:        { color: '#8E33FF', bg: '#F3E8FF', icon: 'solar:star-bold' },
+  Withdrawal:         { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:logout-2-bold' },
+  Removal:            { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:trash-bin-minimalistic-bold' },
+  'Agreement Sent':   { color: '#1340FF', bg: '#EBF0FF', icon: 'solar:document-add-bold' },
+  Agreement:          { color: '#1340FF', bg: '#EBF0FF', icon: 'solar:document-bold' },
+  'Agreement Approved': { color: '#22C55E', bg: '#E8FAF0', icon: 'solar:check-circle-bold' },
+  'Agreement Rejected': { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:close-circle-bold' },
+  'First Draft':      { color: '#ED6C02', bg: '#FFF3E6', icon: 'solar:file-text-bold' },
+  'Final Draft':      { color: '#9C27B0', bg: '#F9E8FF', icon: 'solar:file-check-bold' },
+  Posting:            { color: '#2E7D32', bg: '#E8F5E9', icon: 'solar:share-bold' },
+  'Draft Approved':   { color: '#22C55E', bg: '#E8FAF0', icon: 'solar:check-circle-bold' },
+  'Changes Requested': { color: '#FFAB00', bg: '#FFF8E6', icon: 'solar:refresh-circle-bold' },
+  'Draft Rejected':   { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:close-circle-bold' },
+  'Amount Changed':   { color: '#FFAB00', bg: '#FFF8E6', icon: 'solar:tag-price-bold' },
+  Invoice:            { color: '#8E33FF', bg: '#F3E8FF', icon: 'solar:bill-list-bold' },
+  Login:              { color: '#00B8D9', bg: '#E6F9FD', icon: 'solar:login-2-bold' },
+  Analytics:          { color: '#00B8D9', bg: '#E6F9FD', icon: 'solar:chart-bold' },
+  Activity:           { color: '#8E8E93', bg: '#F4F4F5', icon: 'solar:info-circle-bold' },
+};
+
+export function getCategoryMeta(category) {
+  return CATEGORY_META[category] || CATEGORY_META.Activity;
+}
+
+// ---------------------------------------------------------------------------
+// 5. Format log messages — cleaner, concise copies
+// ---------------------------------------------------------------------------
+
+// Strip "Creator " / "Admin " prefix and ensure name is in quotes
+function qn(raw) {
+  const clean = raw.replace(/^(?:Creator|Admin)\s+/i, '').replace(/^"|"$/g, '').trim();
+  return `"${clean}"`;
+}
+
+// Shorthand: wrap a status outcome for chip rendering
+// [action:KEY] renders as a miniature colored chip in the timeline
+function a(key) { return `[action:${key}]`; }
+
+// performer = the admin/client name who performed the action (from log.admin.name)
+export function formatLogMessage(msg, performer) {
+  const p = performer ? `"${performer.replace(/^"|"$/g, '')}"` : '';
+  let m;
+
+  // Outreach: "Outreach status for X updated to STATUS by Y"
+  m = msg.match(/Outreach status for (.+?) updated to (\w+)/i);
+  if (m) return `${p} updated ${qn(m[1])}'s outreach to [outreach:${m[2].toUpperCase()}]`;
+
+  // Draft approved: "Draft approved by admin X from Creator Y"
+  m = msg.match(/Draft approved by (?:admin|client) .+? from Creator (.+)$/i);
+  if (m) return `${qn(m[1])}'s draft has been ${a('approved')} by ${p}`;
+
+  // Changes requested: "Changes requested on Z by admin X from Creator Y"
+  m = msg.match(/Changes requested on (.+?) by (?:admin|client) .+? from Creator (.+)$/i);
+  if (m) return `${qn(m[2])}'s ${m[1].toLowerCase()} has been ${a('changes_requested')} by ${p}`;
+
+  // "X approved the Agreement by Y"
+  m = msg.match(/.+? approved the Agreement by (.+)$/i);
+  if (m) return `${qn(m[1])}'s agreement has been ${a('approved')} by ${p}`;
+
+  // Agreement sent
+  m = msg.match(/Agreement has been sent to (.+)$/i);
+  if (m) return `${p} sent agreement to ${qn(m[1])}`;
+  m = msg.match(/sent the Agreement to (.+)$/i);
+  if (m) return `${p} sent agreement to ${qn(m[1])}`;
+
+  // Agreement rejected
+  if (/agreement has been rejected/i.test(msg)) return `Agreement has been ${a('rejected')} by ${p}`;
+
+  // Resent agreement
+  m = msg.match(/resent the Agreement to (.+)$/i);
+  if (m) return `${p} resent agreement to ${qn(m[1])}`;
+
+  // Agreement submitted by creator
+  m = msg.match(/(.+?) submitted (?:the )?[Aa]greement$/i);
+  if (m) return `${qn(m[1])} submitted their agreement`;
+
+  // Pitch submitted (creator action)
+  m = msg.match(/(.+?) submitted a pitch/i);
+  if (m) return `${qn(m[1])} submitted a pitch`;
+  m = msg.match(/(.+?) pitched for/i);
+  if (m) return `${qn(m[1])} submitted a pitch`;
+
+  // Pitch approved/rejected
+  m = msg.match(/(.+?)'?s? pitch has been approved/i);
+  if (m) return `${qn(m[1])}'s pitch has been ${a('approved')} by ${p}`;
+  m = msg.match(/(.+?)'?s? pitch has been rejected/i);
+  if (m) return `${qn(m[1])}'s pitch has been ${a('rejected')} by ${p}`;
+
+  // Profile approved/rejected (client)
+  m = msg.match(/(.+?)'?s? profile has been approved/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('approved')} by ${p}`;
+  m = msg.match(/(.+?)'?s? profile has been rejected/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('rejected')} by ${p}`;
+
+  // Maybe
+  m = msg.match(/[Cc]hose maybe for (.+)$/i);
+  if (m) return `${qn(m[1])} has been marked as ${a('maybe')} by ${p}`;
+
+  // Shortlisted
+  m = msg.match(/(.+?) has been shortlisted/i);
+  if (m) return `${qn(m[1])} has been ${a('shortlisted')} by ${p}`;
+
+  // Withdrawn / removed
+  m = msg.match(/(.+?) (?:has been )?withdrawn from the campaign/i);
+  if (m) return `${qn(m[1])} withdrew from campaign`;
+  m = msg.match(/(.+?) (?:has been )?removed from the campaign/i);
+  if (m) return `${p} removed ${qn(m[1])} from campaign`;
+
+  // Draft submissions by creator
+  m = msg.match(/(.+?) submitted [Ff]irst [Dd]raft/i);
+  if (m) return `${qn(m[1])} submitted first draft`;
+  m = msg.match(/(.+?) submitted [Ff]inal [Dd]raft/i);
+  if (m) return `${qn(m[1])} submitted final draft`;
+  m = msg.match(/(.+?) submitted [Pp]osting [Ll]ink/i);
+  if (m) return `${qn(m[1])} submitted posting link`;
+
+  // Invoice — preserve invoice number when available
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+was generated/i);
+  if (m) return `${p} generated invoice ${m[1]} for ${qn(m[2])}`;
+  if (/invoice.*was generated/i.test(msg)) return `${p} generated an invoice`;
+
+  m = msg.match(/Deleted invoice\s+([\w-]+)\s+for\s+(?:creator\s+)?(.+)$/i);
+  if (m) return `${p} deleted invoice ${m[1]} for ${qn(m[2])}`;
+  if (/deleted invoice/i.test(msg)) return `${p} deleted an invoice`;
+
+  m = msg.match(/Approved invoice\s+([\w-]+)\s+for\s+(.+)$/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('approved')} by ${p}`;
+  if (/approved invoice/i.test(msg)) return `Invoice has been ${a('approved')} by ${p}`;
+
+  // Amount change
+  m = msg.match(/changed the amount from (.+?) to (.+?) for (.+)$/i);
+  if (m) return `${p} changed ${qn(m[3])}'s amount from ${m[1]} to ${m[2]}`;
+  if (/changed the amount/i.test(msg)) return `${p} updated payment amount`;
+
+  // Campaign lifecycle
+  if (/^campaign created$/i.test(msg)) return `${p} created the campaign`;
+  if (/^campaign activated$/i.test(msg)) return `${p} activated the campaign`;
+  m = msg.match(/^campaign details edited\s*-\s*\[(.+?)\]/i);
+  if (m) return `${p} updated ${m[1]}`;
+  if (/^campaign details edited/i.test(msg)) return `${p} updated campaign details`;
+
+  // Login
+  if (/logs in|logged in/i.test(msg)) return `${p} logged in`;
+
+  // Analytics
+  if (/export campaign analytics/i.test(msg)) return `${p} exported campaign analytics`;
+
+  // V3 individual content review — Admin "X" approved/requested changes to Y draft Z for creator "W"
+  m = msg.match(/^Admin .+? approved (first|final) draft (video|raw footage|photo) for creator (.+)$/i);
+  if (m) return `${qn(m[3])}'s ${m[1].toLowerCase()} draft ${m[2].toLowerCase()} has been ${a('approved')} by ${p}`;
+
+  m = msg.match(/^Admin .+? requested changes to (first|final) draft (video|raw footage|photo) for creator (.+)$/i);
+  if (m) return `${qn(m[3])}'s ${m[1].toLowerCase()} draft ${m[2].toLowerCase()} has been ${a('changes_requested')} by ${p}`;
+
+  // V3 overall submission approval — X approved Y's First/Final Draft
+  m = msg.match(/^.+? approved (.+?)(?:'s|'s) (First Draft|Final Draft)(.*)$/i);
+  if (m) return `${qn(m[1])}'s ${m[2].toLowerCase()} has been ${a('approved')} by ${p}`;
+
+  m = msg.match(/^.+? requested changes on (.+?)(?:'s|'s) (First Draft|Final Draft)$/i);
+  if (m) return `${qn(m[1])}'s ${m[2].toLowerCase()} has been ${a('changes_requested')} by ${p}`;
+
+  // Posting link approval — X approved/requested changes on Y's submission Posting Link
+  m = msg.match(/^.+? approved (.+?)(?:'s|'s) submission Posting Link$/i);
+  if (m) return `${qn(m[1])}'s posting link has been ${a('approved')} by ${p}`;
+
+  m = msg.match(/^.+? requested changes on (.+?)(?:'s|'s) submission Posting Link$/i);
+  if (m) return `${qn(m[1])}'s posting link has been ${a('changes_requested')} by ${p}`;
+
+  // V4 draft rejection
+  m = msg.match(/Draft rejected by (?:admin|client) .+? from Creator (.+)$/i);
+  if (m) return `${qn(m[1])}'s draft has been ${a('rejected')} by ${p}`;
+
+  return msg;
+}
+
+// ---------------------------------------------------------------------------
+// 5b. Performer-free summaries — companion to formatLogMessage (keep in sync)
+// Used in the detail panel hero so the admin name isn't duplicated with the
+// "Performed By" row below it.
+// ---------------------------------------------------------------------------
+
+export function formatLogSummary(msg, performer) {
+  let m;
+
+  // Outreach
+  m = msg.match(/Outreach status for (.+?) updated to (\w+)/i);
+  if (m) return `${qn(m[1])}'s outreach updated to [outreach:${m[2].toUpperCase()}]`;
+
+  // Draft approved
+  m = msg.match(/Draft approved by (?:admin|client) .+? from Creator (.+)$/i);
+  if (m) return `${qn(m[1])}'s draft has been ${a('approved')}`;
+
+  // Changes requested
+  m = msg.match(/Changes requested on (.+?) by (?:admin|client) .+? from Creator (.+)$/i);
+  if (m) return `${qn(m[2])}'s ${m[1].toLowerCase()} has been ${a('changes_requested')}`;
+
+  // Agreement approved
+  m = msg.match(/.+? approved the Agreement by (.+)$/i);
+  if (m) return `${qn(m[1])}'s agreement has been ${a('approved')}`;
+
+  // Agreement sent
+  m = msg.match(/Agreement has been sent to (.+)$/i);
+  if (m) return `Agreement sent to ${qn(m[1])}`;
+  m = msg.match(/sent the Agreement to (.+)$/i);
+  if (m) return `Agreement sent to ${qn(m[1])}`;
+
+  // Agreement rejected
+  if (/agreement has been rejected/i.test(msg)) return `Agreement has been ${a('rejected')}`;
+
+  // Resent agreement
+  m = msg.match(/resent the Agreement to (.+)$/i);
+  if (m) return `Agreement resent to ${qn(m[1])}`;
+
+  // Agreement submitted by creator (no change — no performer in original)
+  m = msg.match(/(.+?) submitted (?:the )?[Aa]greement$/i);
+  if (m) return `${qn(m[1])} submitted their agreement`;
+
+  // Pitch submitted (no change — creator action)
+  m = msg.match(/(.+?) submitted a pitch/i);
+  if (m) return `${qn(m[1])} submitted a pitch`;
+  m = msg.match(/(.+?) pitched for/i);
+  if (m) return `${qn(m[1])} submitted a pitch`;
+
+  // Pitch approved/rejected
+  m = msg.match(/(.+?)'?s? pitch has been approved/i);
+  if (m) return `${qn(m[1])}'s pitch has been ${a('approved')}`;
+  m = msg.match(/(.+?)'?s? pitch has been rejected/i);
+  if (m) return `${qn(m[1])}'s pitch has been ${a('rejected')}`;
+
+  // Profile approved/rejected
+  m = msg.match(/(.+?)'?s? profile has been approved/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('approved')}`;
+  m = msg.match(/(.+?)'?s? profile has been rejected/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('rejected')}`;
+
+  // Maybe
+  m = msg.match(/[Cc]hose maybe for (.+)$/i);
+  if (m) return `${qn(m[1])} has been marked as ${a('maybe')}`;
+
+  // Shortlisted
+  m = msg.match(/(.+?) has been shortlisted/i);
+  if (m) return `${qn(m[1])} has been ${a('shortlisted')}`;
+
+  // Withdrawn (no change — creator action)
+  m = msg.match(/(.+?) (?:has been )?withdrawn from the campaign/i);
+  if (m) return `${qn(m[1])} withdrew from campaign`;
+
+  // Removed
+  m = msg.match(/(.+?) (?:has been )?removed from the campaign/i);
+  if (m) return `${qn(m[1])} removed from campaign`;
+
+  // Draft submissions by creator (no change — creator action)
+  m = msg.match(/(.+?) submitted [Ff]irst [Dd]raft/i);
+  if (m) return `${qn(m[1])} submitted first draft`;
+  m = msg.match(/(.+?) submitted [Ff]inal [Dd]raft/i);
+  if (m) return `${qn(m[1])} submitted final draft`;
+  m = msg.match(/(.+?) submitted [Pp]osting [Ll]ink/i);
+  if (m) return `${qn(m[1])} submitted posting link`;
+
+  // Invoice generated
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+was generated/i);
+  if (m) return `Invoice ${m[1]} generated for ${qn(m[2])}`;
+  if (/invoice.*was generated/i.test(msg)) return `Invoice generated`;
+
+  // Invoice deleted
+  m = msg.match(/Deleted invoice\s+([\w-]+)\s+for\s+(?:creator\s+)?(.+)$/i);
+  if (m) return `Invoice ${m[1]} deleted for ${qn(m[2])}`;
+  if (/deleted invoice/i.test(msg)) return `Invoice deleted`;
+
+  // Invoice approved
+  m = msg.match(/Approved invoice\s+([\w-]+)\s+for\s+(.+)$/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('approved')}`;
+  if (/approved invoice/i.test(msg)) return `Invoice has been ${a('approved')}`;
+
+  // Amount change
+  m = msg.match(/changed the amount from (.+?) to (.+?) for (.+)$/i);
+  if (m) return `${qn(m[3])}'s amount changed from ${m[1]} to ${m[2]}`;
+  if (/changed the amount/i.test(msg)) return `Payment amount updated`;
+
+  // Campaign lifecycle
+  if (/^campaign created$/i.test(msg)) return `Campaign created`;
+  if (/^campaign activated$/i.test(msg)) return `Campaign activated`;
+  m = msg.match(/^campaign details edited\s*-\s*\[(.+?)\]/i);
+  if (m) return `${m[1]} updated`;
+  if (/^campaign details edited/i.test(msg)) return `Campaign details updated`;
+
+  // Login
+  if (/logs in|logged in/i.test(msg)) return `Logged in`;
+
+  // Analytics
+  if (/export campaign analytics/i.test(msg)) return `Campaign analytics exported`;
+
+  // V3 individual content review
+  m = msg.match(/^Admin .+? approved (first|final) draft (video|raw footage|photo) for creator (.+)$/i);
+  if (m) return `${qn(m[3])}'s ${m[1].toLowerCase()} draft ${m[2].toLowerCase()} has been ${a('approved')}`;
+
+  m = msg.match(/^Admin .+? requested changes to (first|final) draft (video|raw footage|photo) for creator (.+)$/i);
+  if (m) return `${qn(m[3])}'s ${m[1].toLowerCase()} draft ${m[2].toLowerCase()} has been ${a('changes_requested')}`;
+
+  // V3 overall submission approval
+  m = msg.match(/^.+? approved (.+?)(?:'s|'s) (First Draft|Final Draft)(.*)$/i);
+  if (m) return `${qn(m[1])}'s ${m[2].toLowerCase()} has been ${a('approved')}`;
+
+  m = msg.match(/^.+? requested changes on (.+?)(?:'s|'s) (First Draft|Final Draft)$/i);
+  if (m) return `${qn(m[1])}'s ${m[2].toLowerCase()} has been ${a('changes_requested')}`;
+
+  // Posting link approval
+  m = msg.match(/^.+? approved (.+?)(?:'s|'s) submission Posting Link$/i);
+  if (m) return `${qn(m[1])}'s posting link has been ${a('approved')}`;
+
+  m = msg.match(/^.+? requested changes on (.+?)(?:'s|'s) submission Posting Link$/i);
+  if (m) return `${qn(m[1])}'s posting link has been ${a('changes_requested')}`;
+
+  // V4 draft rejection
+  m = msg.match(/Draft rejected by (?:admin|client) .+? from Creator (.+)$/i);
+  if (m) return `${qn(m[1])}'s draft has been ${a('rejected')}`;
+
+  return msg;
+}
+
+// ---------------------------------------------------------------------------
+// 6. Deduplicate logs — keep richer entry when duplicates exist
+// ---------------------------------------------------------------------------
+
+function extractCreatorName(msg) {
+  let m;
+  // Pattern: for creator "Willy Wong" or from Creator "Willy Wong"
+  m = msg.match(/(?:for |from )(?:c|C)reator "(.+?)"/);
+  if (m) return m[1];
+  // Pattern: X approved Willy Wong's Final Draft
+  m = msg.match(/(?:approved|requested changes on) (.+?)(?:'s|'s)/i);
+  if (m) return m[1].replace(/^"|"$/g, '').trim();
+  return '';
+}
+
+export function deduplicateLogs(classifiedLogs) {
+  const groups = new Map();
+
+  classifiedLogs.forEach((log, index) => {
+    // Campaign Edit logs should never be deduplicated — each edit is a distinct action
+    if (log.category === 'Campaign Edit') {
+      groups.set(`edit_${log.id}`, [{ log, index }]);
+      return;
+    }
+    // Round timestamp to nearest 60 seconds for grouping
+    const ts = Math.floor(new Date(log.createdAt).getTime() / 60000);
+    const creator = extractCreatorName(log.action);
+    const key = `${ts}|${log.category}|${log.performedBy}|${creator}`;
+
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key).push({ log, index });
+  });
+
+  const keepSet = new Set();
+
+  groups.forEach((entries) => {
+    if (entries.length === 1) {
+      keepSet.add(entries[0].index);
+      return;
+    }
+    // Prefer entry whose original message has quoted names (richer → has avatars)
+    const withQuotes = entries.find((e) => e.log.action.includes('"'));
+    if (withQuotes) {
+      keepSet.add(withQuotes.index);
+    } else {
+      // Keep the first one if none have quotes
+      keepSet.add(entries[0].index);
+    }
+  });
+
+  return classifiedLogs.filter((_, index) => keepSet.has(index));
+}
+
+// ---------------------------------------------------------------------------
+// 7. Tab counts — single-pass count for all tabs
+// ---------------------------------------------------------------------------
+
+export function filterLogsBySearch(logs, query, creatorName) {
+  let result = logs;
+
+  if (creatorName) {
+    result = result.filter((log) => log.formattedAction.includes(`"${creatorName}"`));
+  }
+
+  if (query) {
+    const q = query.toLowerCase();
+    result = result.filter(
+      (log) =>
+        log.formattedAction.toLowerCase().includes(q) ||
+        log.performedBy.toLowerCase().includes(q) ||
+        log.category.toLowerCase().includes(q)
+    );
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// 8. Tab counts — single-pass count for all tabs
+// ---------------------------------------------------------------------------
+
+export function getTabCounts(classifiedLogs) {
+  const counts = { all: classifiedLogs.length, admin: 0, creator: 0, client: 0, invoice: 0 };
+  classifiedLogs.forEach((log) => {
+    if (
+      log.groups.includes('admin') ||
+      log.groups.includes('campaign') ||
+      (log.performerRole !== 'client' && log.performerRole !== 'creator')
+    )
+      counts.admin += 1;
+    if (log.groups.includes('creator')) counts.creator += 1;
+    if (log.groups.includes('client') || log.performerRole === 'client') counts.client += 1;
+    if (log.groups.includes('invoice')) counts.invoice += 1;
+  });
+  return counts;
+}
+
+// ---------------------------------------------------------------------------
+// 7. Group logs by date
+// ---------------------------------------------------------------------------
+
+export function groupLogsByDate(logs) {
+  const groups = [];
+  const map = new Map();
+
+  logs.forEach((log) => {
+    const d = dayjs(log.createdAt);
+    const key = d.format('YYYY-MM-DD');
+
+    if (!map.has(key)) {
+      let label;
+      if (d.isToday()) label = 'Today';
+      else if (d.isYesterday()) label = 'Yesterday';
+      else label = d.format('MMM D, YYYY').toUpperCase();
+
+      const group = { label, items: [] };
+      map.set(key, group);
+      groups.push(group);
+    }
+    map.get(key).items.push(log);
+  });
+
+  return groups;
+}
+
+// ---------------------------------------------------------------------------
+// 6. Format time
+// ---------------------------------------------------------------------------
+
+export function formatLogTime(createdAt, { relative = false, detailed = false } = {}) {
+  const d = dayjs(createdAt);
+  const time = d.format('h:mm A');
+
+  let base;
+  if (d.isToday()) base = `Today at ${time}`;
+  else if (d.isYesterday()) base = `Yesterday at ${time}`;
+  else base = `${d.format('MMM D')} at ${time}`;
+
+  // Detailed: always show "Today at 2:35 PM · 5 minutes ago"
+  if (detailed) return `${base} · ${d.fromNow()}`;
+
+  // Relative: within 1 hour show only "5 minutes ago", otherwise normal
+  if (relative && dayjs().diff(d, 'minute') < 60) return d.fromNow();
+
+  return base;
+}
+
+// ---------------------------------------------------------------------------
+// 7. Performer badge config
+// ---------------------------------------------------------------------------
+
+export function getPerformerBadge(role) {
+  if (!role) return null;
+  const r = role.toLowerCase();
+  if (r === 'client') return { label: 'Client', color: '#F59E0B', bg: '#FFF8E6' };
+  if (r !== 'creator') return { label: 'Admin', color: '#1340FF', bg: '#EBF0FF' };
+  return null;
+}
