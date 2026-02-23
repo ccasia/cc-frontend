@@ -70,7 +70,7 @@ export default function CreatorRetentionChart() {
   );
 
   return (
-    <ChartCard title="Creator Retention" icon={AutorenewIcon} subtitle="Creators in 2+ campaigns within rolling window" headerRight={headerRight}>
+    <ChartCard title="Creator Retention" icon={AutorenewIcon} subtitle="Creators in 2+ campaigns within rolling window (30 days)" headerRight={headerRight}>
       <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
         <LineChart
           series={[{ data: rates, label: 'Retention Rate', color: CHART_COLORS.success, area: true, curve: 'linear', valueFormatter: (val) => `${val}%` }]}
