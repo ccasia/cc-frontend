@@ -150,7 +150,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           }
         >
           {PLATFORMS.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>
+            <MenuItem key={opt.value} value={opt.value} sx={{ height: 50 }}>
               {opt.label}
             </MenuItem>
           ))}
@@ -217,7 +217,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           }}
         >
           {GENDERS.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>
+            <MenuItem key={opt.value} value={opt.value} sx={{ height: 50 }}>
               {opt.label}
             </MenuItem>
           ))}
@@ -240,7 +240,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           }}
         >
           {AGE_RANGES.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>
+            <MenuItem key={opt.value} value={opt.value} sx={{ height: 50 }}>
               {opt.label}
             </MenuItem>
           ))}
@@ -292,6 +292,11 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
               whiteSpace: 'nowrap',
             },
           }}
+          MenuProps={{
+            style: {
+              maxHeight: 500
+            }
+          }}  
           IconComponent={() => null}
           endAdornment={
             <Iconify icon="line-md:chevron-down" width={30} height={30} color="#231F20" />
@@ -304,7 +309,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           }}
         >
           {interestsLists.map((interest) => (
-            <MenuItem key={interest} value={interest}>
+            <MenuItem key={interest} value={interest} sx={{ height: 50 }}>
               {interest}
             </MenuItem>
           ))}
