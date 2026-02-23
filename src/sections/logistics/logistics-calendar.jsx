@@ -66,7 +66,7 @@ function ServerDay(props) {
       }
     }
     return true;
-  }, [isReservation, reservationConfig, dateString, campaignBrief, day, outsideCurrentMonth]);
+  }, [isReservation, reservationConfig, dateString, campaignBrief, day]);
 
   const dayLogistics = logistics.filter((logistic) => {
     if (isReservation) {

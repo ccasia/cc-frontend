@@ -953,30 +953,31 @@ const PCRReportPage = ({ campaign, onBack }) => {
         // Add gradient to first page
         addGradientBackground();
         
-        // Capture each section separately
-        let currentY = margin;
-        let isFirstSection = true;
-
-        for (let i = 0; i < sections.length; i += 1) {
-          const section = sections[i];
-          
-          // Capture this section
-          const canvas = await html2canvas(section, {
+        // Capture all sections in parallel first
+        const canvasPromises = Array.from(sections).map((section) =>
+          html2canvas(section, {
             scale: 2,
             useCORS: true,
             logging: false,
             backgroundColor: '#FFFFFF',
             windowWidth: 1078,
-          });
+          })
+        );
+        const canvases = await Promise.all(canvasPromises);
+        
+        // Process captured canvases sequentially for PDF generation
+        let currentY = margin;
+        let isFirstSection = true;
 
+        canvases.forEach((canvas) => {
           const imgData = canvas.toDataURL('image/png', 1.0);
           const imgWidth = contentWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
           
           // Check if section fits on current page
           if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
             // Section doesn't fit, add new page with gradient
-        pdf.addPage();
+            pdf.addPage();
             addGradientBackground();
             currentY = margin;
           }
@@ -986,7 +987,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           currentY += imgHeight + 5; // 5mm gap between sections
           
           isFirstSection = false;
-        }
+        });
       }
 
       // Show buttons again after capturing
