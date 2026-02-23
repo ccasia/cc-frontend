@@ -11,7 +11,6 @@ import {
   TextField,
   Typography,
   Autocomplete,
-  InputAdornment,
 } from '@mui/material';
 
 import { interestsLists } from 'src/contants/interestLists';
@@ -20,7 +19,6 @@ import Iconify from 'src/components/iconify';
 
 import {
   GENDERS,
-  selectSx,
   PLATFORMS,
   AGE_RANGES,
   CREDIT_TIERS,
@@ -28,9 +26,11 @@ import {
   FILTER_INITIAL_STATE,
 } from '../constants';
 
+import FilterPills from './FilterPills';
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
-const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) => {
+const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, resultCount, isCountLoading, onShowResults, showButton }) => {
   const [state, dispatch] = useReducer(filterReducer, FILTER_INITIAL_STATE);
 
   // Debounce keyword → debouncedKeyword
@@ -82,21 +82,6 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
     [state.country, availableLocations]
   );
 
-  // Check if any filter is active (for showing Clear All)
-  const hasActiveFilters = useMemo(
-    () =>
-      state.platform !== 'all' ||
-      state.keyword !== '' ||
-      state.hashtag !== '' ||
-      state.ageRange !== '' ||
-      state.country !== null ||
-      state.city !== null ||
-      state.gender !== '' ||
-      state.creditTier !== '' ||
-      state.interests.length > 0,
-    [state]
-  );
-
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
   const handlePlatform = useCallback((e) => {
@@ -135,23 +120,34 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
     dispatch({ type: 'SET_INTERESTS', payload: value });
   }, []);
 
-  const handleClearAll = useCallback(() => {
-    dispatch({ type: 'CLEAR_ALL' });
-  }, []);
+  const handleRemoveFilter = useCallback(
+    (type, value) => {
+      if (type === 'REMOVE_INTEREST') {
+        dispatch({ type: 'SET_INTERESTS', payload: state.interests.filter((i) => i !== value) });
+      } else {
+        dispatch({ type, payload: value });
+      }
+    },
+    [state.interests]
+  );
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <Box sx={{ mt: 3 }}>
       {/* Row 1: Search + Platform */}
-      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" sx={{ mb: 2 }}>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
         {/* Platform */}
         <Select
           value={state.platform}
           onChange={handlePlatform}
-          size="small"
+          size="medium"
           displayEmpty
-          sx={selectSx}
+          sx={{ minWidth: 180 }}
+          IconComponent={() => null}
+          endAdornment={
+            <Iconify icon='line-md:chevron-down' width={40} height={40} color='#231F20' />
+          }
         >
           {PLATFORMS.map((opt) => (
             <MenuItem key={opt.value} value={opt.value}>
@@ -164,24 +160,20 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
         <Box
           sx={{
             flex: 1,
-            minWidth: 250,
             border: '1px solid',
             borderColor: 'divider',
             borderRadius: 1,
             display: 'flex',
             alignItems: 'center',
             px: 1.5,
-            py: 0.5,
+            py: 1.5,
           }}
         >
-          <InputAdornment position="start">
-            <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />
-          </InputAdornment>
           <InputBase
             fullWidth
             value={state.keyword}
             onChange={handleKeyword}
-            placeholder="Search by caption keyword..."
+            placeholder="Keywords"
             sx={{ fontSize: 14 }}
           />
         </Box>
@@ -190,24 +182,20 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
         <Box
           sx={{
             flex: 1,
-            minWidth: 250,
             border: '1px solid',
             borderColor: 'divider',
             borderRadius: 1,
             display: 'flex',
             alignItems: 'center',
             px: 1.5,
-            py: 0.5,
+            py: 1.5,
           }}
         >
-          <InputAdornment position="start">
-            <Iconify icon="mdi:tag-outline" sx={{ color: 'text.disabled', mr: 1 }} />
-          </InputAdornment>
           <InputBase
             fullWidth
             value={state.hashtag}
             onChange={handleHashtag}
-            placeholder="Search hashtags (e.g. #sport #fun)..."
+            placeholder="Hashtags"
             sx={{ fontSize: 14 }}
           />
         </Box>
@@ -216,9 +204,13 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
         <Select
           value={state.gender}
           onChange={handleGender}
-          size="small"
+          size="medium"
           displayEmpty
-          sx={selectSx}
+          sx={{ minWidth: 170 }}
+          IconComponent={() => null}
+          endAdornment={
+            <Iconify icon='line-md:chevron-down' width={40} height={40} color='#231F20' />
+          }
           renderValue={(selected) => {
             if (!selected) return <Typography sx={{ color: 'text.disabled', fontSize: 14 }}>Gender</Typography>;
             return selected;
@@ -235,9 +227,13 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
         <Select
           value={state.ageRange}
           onChange={handleAgeRange}
-          size="small"
+          size="medium"
           displayEmpty
-          sx={selectSx}
+          sx={{ minWidth: 170 }}
+          IconComponent={() => null}
+          endAdornment={
+            <Iconify icon='line-md:chevron-down' width={40} height={40} color='#231F20' />
+          }
           renderValue={(selected) => {
             if (!selected) return <Typography sx={{ color: 'text.disabled', fontSize: 14 }}>Age Range</Typography>;
             return selected;
@@ -252,14 +248,79 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
       </Stack>
 
       {/* Row 2: All other filters */}
-      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
+      <Stack direction="row" spacing={1} alignItems="start" sx={{ mb: 1 }}>
+        {/* Country */}
+        <Autocomplete
+          value={state.country}
+          onChange={handleCountry}
+          options={countryOptions}
+          size="medium"
+          fullWidth
+          popupIcon={<Iconify icon="line-md:chevron-down" width={21} height={21} color="#231F20" />}
+          renderInput={(params) => <TextField {...params} placeholder="Creator Country" />}
+        />
+
+        {/* City */}
+        <Autocomplete
+          value={state.city}
+          onChange={handleCity}
+          options={cityOptions}
+          size="medium"
+          disabled={!state.country}
+          fullWidth
+          popupIcon={<Iconify icon="line-md:chevron-down" width={21} height={21} color="#231F20" />}
+          renderInput={(params) => (
+            <TextField {...params} placeholder={state.country ? 'City' : 'Creator City - Select Country'} />
+          )}
+        />
+
+        {/* Interests (multi-select) */}
+        <Select
+          multiple
+          value={state.interests}
+          onChange={(e) => handleInterests(null, e.target.value)}
+          size="medium"
+          displayEmpty
+          fullWidth
+          sx={{
+            minWidth: 240,
+            flex: 1,
+            maxHeight: 53.5,
+            '& .MuiSelect-select': {
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            },
+          }}
+          IconComponent={() => null}
+          endAdornment={
+            <Iconify icon="line-md:chevron-down" width={30} height={30} color="#231F20" />
+          }
+          renderValue={(selected) => {
+            if (!selected || selected.length === 0) {
+              return <Typography sx={{ color: 'text.disabled', fontSize: 14 }}>Interests</Typography>;
+            }
+            return selected.join(', ');
+          }}
+        >
+          {interestsLists.map((interest) => (
+            <MenuItem key={interest} value={interest}>
+              {interest}
+            </MenuItem>
+          ))}
+        </Select>
+
         {/* Credit Tier */}
         <Select
           value={state.creditTier}
           onChange={handleCreditTier}
-          size="small"
+          size="medium"
           displayEmpty
-          sx={selectSx}
+          sx={{ minWidth: 170 }}
+          IconComponent={() => null}
+          endAdornment={
+            <Iconify icon='line-md:chevron-down' width={40} height={40} color='#231F20' />
+          }
           renderValue={(selected) => {
             if (!selected)
               return <Typography sx={{ color: 'text.disabled', fontSize: 14 }}>Credit Tier</Typography>;
@@ -274,55 +335,35 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations }) 
           ))}
         </Select>
 
-        {/* Country */}
-        <Autocomplete
-          value={state.country}
-          onChange={handleCountry}
-          options={countryOptions}
-          size="small"
-          sx={{ minWidth: 180 }}
-          renderInput={(params) => <TextField {...params} placeholder="Country" />}
-        />
-
-        {/* City */}
-        <Autocomplete
-          value={state.city}
-          onChange={handleCity}
-          options={cityOptions}
-          size="small"
-          disabled={!state.country}
-          sx={{ minWidth: 180 }}
-          renderInput={(params) => (
-            <TextField {...params} placeholder={state.country ? 'City' : 'Select country first'} />
-          )}
-        />
-
-        {/* Interests (multi-select) */}
-        <Autocomplete
-          multiple
-          value={state.interests}
-          onChange={handleInterests}
-          options={interestsLists}
-          size="small"
-          limitTags={2}
-          sx={{ minWidth: 250 }}
-          renderInput={(params) => <TextField {...params} placeholder="Interests" />}
-        />
-
-        {/* Clear All */}
-        {hasActiveFilters && (
+        {/* Show Results Button */}
+        {showButton && (
           <Button
-            variant="outlined"
-            color="inherit"
-            size="small"
-            onClick={handleClearAll}
-            startIcon={<Iconify icon="solar:trash-bin-minimalistic-bold" />}
-            sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+            variant="contained"
+            onClick={onShowResults}
+            disabled={isCountLoading}
+            sx={{
+              minWidth: 170,
+              bgcolor: '#1340FF',
+              '&:hover': { bgcolor: '#0F30D4' },
+              textTransform: 'none',
+              borderRadius: 1,
+              fontSize: 14,
+              fontWeight: 600,
+              minHeight: 53.5,
+              boxShadow: '0px -3px 0px 0px #00000073 inset'
+            }}
           >
-            Clear All
+            {isCountLoading
+              ? 'Searching creators...'
+              : resultCount != null
+              ? `Show ${resultCount} Creator${resultCount !== 1 ? 's' : ''}`
+              : 'Show Results'}
           </Button>
         )}
       </Stack>
+
+      {/* Active Filter Pills */}
+      <FilterPills filters={state} onRemoveFilter={handleRemoveFilter} />
     </Box>
   );
 });
@@ -332,6 +373,10 @@ DiscoveryFilterBar.displayName = 'DiscoveryFilterBar';
 DiscoveryFilterBar.propTypes = {
   onFiltersChange: PropTypes.func.isRequired,
   availableLocations: PropTypes.object,
+  resultCount: PropTypes.number,
+  isCountLoading: PropTypes.bool,
+  onShowResults: PropTypes.func,
+  showButton: PropTypes.bool,
 };
 
 export default DiscoveryFilterBar;

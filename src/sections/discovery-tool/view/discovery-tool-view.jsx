@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useMemo, useEffect, useCallback } from 'react';
 
 import { Container, Typography } from '@mui/material';
 
 import useGetDiscoveryCreators from 'src/hooks/use-get-discovery-creators';
-// import useGetMockDiscoveryCreators from 'src/hooks/use-get-mock-discovery-creators';
 
-import { DiscoveryFilterBar } from '../components';
+import { DiscoveryFilterBar, CreatorList } from '../components';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -22,6 +21,10 @@ const DiscoveryToolView = () => {
 		interests: [],
 	});
 
+	// Track whether the current filter results should be displayed
+	const [showResults, setShowResults] = useState(true);
+	const isInitialMount = useRef(true);
+
 	// All filters are now server-side — pass them all to the SWR hook
 	const { creators, pagination, availableLocations, isLoading, isError } = useGetDiscoveryCreators({
 		platform: filters.platform,
@@ -37,15 +40,58 @@ const DiscoveryToolView = () => {
 		limit: 50,
 	});
 
+	// Check if any filter is active (non-default)
+	const hasActiveFilters = useMemo(
+		() =>
+			filters.platform !== 'all' ||
+			filters.debouncedKeyword !== '' ||
+			filters.debouncedHashtag !== '' ||
+			filters.ageRange !== '' ||
+			filters.country !== null ||
+			filters.city !== null ||
+			filters.gender !== '' ||
+			filters.creditTier !== '' ||
+			filters.interests.length > 0,
+		[filters]
+	);
+
+	// Show results if explicitly applied OR no filters are active (default view)
+	const shouldShowResults = showResults || !hasActiveFilters;
+
+	// Result count for the "Show X Creators" button
+	const resultCount = isLoading ? null : pagination?.total ?? null;
+
 	// Stable callback for the filter bar
 	const handleFiltersChange = useCallback((newFilters) => {
 		setFilters(newFilters);
 	}, []);
 
+	// When filters change (after initial mount), hide results so the user must click "Show Results"
+	useEffect(() => {
+		if (isInitialMount.current) {
+			isInitialMount.current = false;
+			return;
+		}
+		setShowResults(false);
+	}, [filters]);
+
+	const handleShowResults = useCallback(() => {
+		setShowResults(true);
+	}, []);
+
+	// Creator selection for comparison
+	const [selectedCreatorIds, setSelectedCreatorIds] = useState([]);
+
+	const handleSelectCreator = useCallback((rowId) => {
+		setSelectedCreatorIds((prev) =>
+			prev.includes(rowId) ? prev.filter((id) => id !== rowId) : [...prev, rowId]
+		);
+	}, []);
+
 	// Log results only when they actually change
 	useEffect(() => {
 		console.log(`Discovery creators (${creators.length}${pagination ? ` of ${pagination.total}` : ''})`);
-		console.log('Creators array: ', creators)
+		console.log('Creators array: ', creators);
 	}, [creators, pagination]);
 
 	return (
@@ -60,21 +106,24 @@ const DiscoveryToolView = () => {
 				Creator Discovery Tool
 			</Typography>
 
-			<DiscoveryFilterBar onFiltersChange={handleFiltersChange} availableLocations={availableLocations} />
+			<DiscoveryFilterBar
+				onFiltersChange={handleFiltersChange}
+				availableLocations={availableLocations}
+				resultCount={resultCount}
+				isCountLoading={isLoading}
+				onShowResults={handleShowResults}
+				showButton={hasActiveFilters && !showResults}
+			/>
 
-			{isLoading && <Typography sx={{ mt: 3 }}>Loading creators...</Typography>}
-			{isError && (
-				<Typography sx={{ mt: 3, color: 'error.main' }}>
-					Failed to fetch creators
-				</Typography>
-			)}
-
-			{!isLoading && !isError && (
-				<Typography sx={{ mt: 3, color: 'text.secondary' }}>
-					{creators.length} creator{creators.length !== 1 ? 's' : ''} found
-					{pagination ? ` (${pagination.total} total)` : ''}
-					{' — check console for detailed results'}
-				</Typography>
+			{shouldShowResults && (
+				<CreatorList
+					creators={creators}
+					isLoading={isLoading}
+					isError={isError}
+					pagination={pagination}
+					selectedIds={selectedCreatorIds}
+					onSelect={handleSelectCreator}
+				/>
 			)}
 		</Container>
 	);
