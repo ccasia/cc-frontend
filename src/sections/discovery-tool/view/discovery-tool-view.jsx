@@ -1,10 +1,10 @@
-import { useRef, useState, useMemo, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { Box, Container, Pagination, Typography } from '@mui/material';
 
 import useGetDiscoveryCreators from 'src/hooks/use-get-discovery-creators';
 
-import { DiscoveryFilterBar, CreatorList } from '../components';
+import { CreatorList, DiscoveryFilterBar } from '../components';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 

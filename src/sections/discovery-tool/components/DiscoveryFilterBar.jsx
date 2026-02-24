@@ -17,6 +17,7 @@ import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
 
+import FilterPills from './FilterPills';
 import {
   GENDERS,
   PLATFORMS,
@@ -25,8 +26,6 @@ import {
   filterReducer,
   FILTER_INITIAL_STATE,
 } from '../constants';
-
-import FilterPills from './FilterPills';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -363,11 +362,15 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
               boxShadow: '0px -3px 0px 0px #00000073 inset'
             }}
           >
-            {isCountLoading
-              ? 'Searching creators...'
-              : resultCount != null
-              ? `Show ${resultCount} Creator${resultCount !== 1 ? 's' : ''}`
-              : 'Show Results'}
+            {(() => {
+              if (isCountLoading) {
+                return 'Searching creators...';
+              }
+              if (resultCount != null) {
+                return `Show ${resultCount} Creator${resultCount !== 1 ? 's' : ''}`;
+              }
+              return 'Show Results';
+            })()}
           </Button>
         )}
       </Stack>

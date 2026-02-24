@@ -1,10 +1,11 @@
-import PropTypes from 'prop-types';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 
-import { Box, Chip, Stack, Avatar, Checkbox, Typography, Icon } from '@mui/material';
+import { Box, Chip, Stack, Avatar, Checkbox, Typography } from '@mui/material';
+
+import { formatNumber } from 'src/utils/socialMetricsCalculator';
 
 import Iconify from 'src/components/iconify';
-import { formatNumber } from 'src/utils/socialMetricsCalculator';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -340,7 +341,7 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
         }}
       >
         {/* Stats row */}
-        <Stack direction="row" justifyContent={'space-between'} sx={{ mb: 2 }}>
+        <Stack direction="row" justifyContent="space-between" sx={{ mb: 2 }}>
           <StatItem label="Followers" value={formatNumber(followers)} />
           <StatItem label="Engagement Rate" value={formatEngagementRate(engagementRate)} />
           <StatItem label="Avg Likes" value={formatNumber(avgLikes)} />

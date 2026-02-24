@@ -30,7 +30,7 @@ const CreatorCardSkeleton = () => (
 
     {/* Middle */}
     <Box sx={{ flex: 1 }}>
-      <Stack direction="row" justifyContent={'space-between'} sx={{ mb: 2 }}>
+      <Stack direction="row" justifyContent="space-between" sx={{ mb: 2 }}>
         {[1, 2, 3, 4, 5].map((i) => (
           <Box key={i} sx={{ textAlign: 'center' }}>
             <Skeleton width={60} height={12} />
