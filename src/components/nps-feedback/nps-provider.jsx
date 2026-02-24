@@ -10,9 +10,13 @@ export const useNps = () => useContext(NpsContext);
 const NpsProvider = ({ children }) => {
   const [open, setOpen] = useState(false);
   const onMutateRef = useRef(null);
+  const hasShownRef = useRef(false);
 
   const showNpsModal = useCallback(() => {
-    setOpen(true);
+    if (!hasShownRef.current) {
+      hasShownRef.current = true;
+      setOpen(true);
+    }
   }, []);
 
   const hideNpsModal = useCallback(() => {
