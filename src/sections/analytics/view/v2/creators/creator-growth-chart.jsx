@@ -1,5 +1,5 @@
 
-import { useMemo, useEffect, useContext, createContext } from 'react';
+import { useRef, useMemo, useState, useEffect, useContext, useCallback, createContext } from 'react';
 import PropTypes from 'prop-types';
 
 import { BarChart } from '@mui/x-charts/BarChart';
@@ -17,13 +17,76 @@ import { Box, Card, Chip, Stack, Paper, Divider, Tooltip, Typography, useTheme, 
 
 import useChartZoom from 'src/hooks/use-chart-zoom';
 import useGetCreatorGrowth from 'src/hooks/use-get-creator-growth';
+import useGetCreatorGrowthCreators from 'src/hooks/use-get-creator-growth-creators';
 
 import ChartItemTooltip from '../components/chart-item-tooltip';
 import ZoomableChart from '../components/zoomable-chart';
+import CreatorDrilldownDrawer from './creator-drilldown-drawer';
 import { useDateFilter, useFilteredData, useFilterLabel, useIsDaily } from '../date-filter-context';
 import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, TICK_LABEL_STYLE, getTrendProps } from '../chart-config';
 
 const GrowthDataContext = createContext([]);
+
+const GENDER_COLORS = { male: '#1340FF', female: '#E45DBF', nonBinary: '#919EAB' };
+
+function GrowthHeroStats({ genderBreakdown, count }) {
+  const total = count || 0;
+  const items = [
+    { label: 'Total', value: total, color: '#1A1A2E' },
+    { label: 'Female', value: genderBreakdown?.female || 0, color: GENDER_COLORS.female },
+    { label: 'Male', value: genderBreakdown?.male || 0, color: GENDER_COLORS.male },
+    { label: 'Other', value: genderBreakdown?.nonBinary || 0, color: GENDER_COLORS.nonBinary },
+  ];
+
+  return (
+    <Stack
+      direction="row"
+      spacing={0}
+      sx={{
+        mt: 1.5,
+        mx: 2.5,
+        mb: 2,
+        borderRadius: '10px',
+        border: '1px solid #E8ECEE',
+        overflow: 'hidden',
+      }}
+    >
+      {items.map((item, idx) => (
+        <Box key={item.label} sx={{ display: 'contents' }}>
+          {idx > 0 && <Box sx={{ width: '1px', bgcolor: '#E8ECEE', my: 1 }} />}
+          <Stack alignItems="center" sx={{ flex: 1, py: 1.5 }}>
+            <Typography sx={{ fontSize: '1.375rem', fontWeight: 700, color: item.color, lineHeight: 1, letterSpacing: '-0.02em' }}>
+              {item.value}
+            </Typography>
+            <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: '#919EAB', textTransform: 'uppercase', letterSpacing: '0.05em', mt: 0.5 }}>
+              {item.label}
+            </Typography>
+          </Stack>
+        </Box>
+      ))}
+    </Stack>
+  );
+}
+
+GrowthHeroStats.propTypes = {
+  genderBreakdown: PropTypes.object,
+  count: PropTypes.number,
+};
+
+const GROWTH_DRAWER_CONFIG = {
+  useCreatorsHook: useGetCreatorGrowthCreators,
+  variant: 'simple',
+  subtitle: (
+    <>
+      Creators who <Typography component="span" sx={{ fontWeight: 700, color: '#637381', fontSize: 'inherit' }}>signed up</Typography> in this period
+    </>
+  ),
+  renderHeroStats: (hookData) => (
+    <GrowthHeroStats genderBreakdown={hookData.genderBreakdown} count={hookData.count} />
+  ),
+  emptyTitle: 'No new sign-ups',
+  emptySubtitle: 'No creators registered in this period',
+};
 
 function GrowthTooltip() {
   const tooltipData = useAxisTooltip();
@@ -252,6 +315,20 @@ export default function CreatorGrowthChart() {
   const labels = useMemo(() => filtered.map((d) => d.date || d.month), [filtered]);
   const indices = useMemo(() => labels.map((_, i) => i), [labels]);
 
+  const [selectedPoint, setSelectedPoint] = useState(null);
+  const clickStartRef = useRef(null);
+
+  const handleAxisClick = useCallback((event, d) => {
+    if (!d || d.dataIndex == null) return;
+    if (clickStartRef.current) {
+      const dx = event.clientX - clickStartRef.current.x;
+      const dy = event.clientY - clickStartRef.current.y;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) return;
+    }
+    const label = labels[d.dataIndex];
+    if (label) setSelectedPoint(label);
+  }, [labels]);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -360,7 +437,17 @@ export default function CreatorGrowthChart() {
           </Stack>
           {/* Chart content */}
           <Box sx={{ px: 1, pb: 1, flex: 1 }}>
-            <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
+            <ZoomableChart
+              containerProps={{
+                ...containerProps,
+                onMouseDown: (e) => {
+                  clickStartRef.current = { x: e.clientX, y: e.clientY };
+                  containerProps.onMouseDown(e);
+                },
+              }}
+              isZoomed={isZoomed}
+              resetZoom={resetZoom}
+            >
               <LineChart
                 series={[{
                   data: signups,
@@ -376,9 +463,13 @@ export default function CreatorGrowthChart() {
                 grid={CHART_GRID}
                 tooltip={{ trigger: 'axis' }}
                 slots={{ axisContent: GrowthTooltip }}
+                onAxisClick={handleAxisClick}
                 skipAnimation={isZoomed}
                 hideLegend
-                sx={CHART_SX}
+                sx={{
+                  ...CHART_SX,
+                  cursor: 'pointer',
+                }}
               />
             </ZoomableChart>
           </Box>
@@ -405,6 +496,15 @@ export default function CreatorGrowthChart() {
         </Stack>
       </Stack>
     </Card>
+    <CreatorDrilldownDrawer
+      selectedPoint={selectedPoint}
+      points={labels}
+      data={filtered}
+      isDaily={isDaily}
+      onClose={() => setSelectedPoint(null)}
+      onNavigate={setSelectedPoint}
+      config={GROWTH_DRAWER_CONFIG}
+    />
     </GrowthDataContext.Provider>
   );
 }

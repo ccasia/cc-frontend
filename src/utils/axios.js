@@ -39,6 +39,7 @@ export const endpoints = {
   },
   analytics: {
     creatorGrowth: '/api/analytics/v2/creator-growth',
+    creatorGrowthCreators: '/api/analytics/v2/creator-growth/creators',
     activationRate: '/api/analytics/v2/activation-rate',
     timeToActivation: '/api/analytics/v2/time-to-activation',
     timeToActivationCreators: '/api/analytics/v2/time-to-activation/creators',
@@ -47,6 +48,12 @@ export const endpoints = {
     mediaKitActivation: '/api/analytics/v2/media-kit-activation',
     creatorSatisfaction: '/api/analytics/v2/creator-satisfaction',
     creatorEarnings: '/api/analytics/v2/creator-earnings',
+    avgAgreementResponse: '/api/analytics/v2/avg-agreement-response',
+    avgAgreementResponseDetails: '/api/analytics/v2/avg-agreement-response/details',
+    avgFirstCampaign: '/api/analytics/v2/avg-first-campaign',
+    avgFirstCampaignDetails: '/api/analytics/v2/avg-first-campaign/details',
+    avgSubmissionResponse: '/api/analytics/v2/avg-submission-response',
+    avgSubmissionResponseDetails: '/api/analytics/v2/avg-submission-response/details',
   },
   overview: {
     root: (userId) => `/api/user/overview/${userId}`,
