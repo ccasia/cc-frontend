@@ -66,15 +66,30 @@ const DEFAULT_CONFIG = {
   daysField: 'daysToActivation',
   emptyTitle: 'No creators activated',
   emptySubtitle: 'No form completions recorded in this period',
+  variant: 'days', // 'days' (default) | 'simple'
+  renderHeroStats: null, // (hookData) => ReactNode — overrides default hero stats
 };
 
 // ---------------------------------------------------------------------------
 // CreatorRow
 // ---------------------------------------------------------------------------
 
+const PRONOUNCE_STYLES = {
+  'she/her': { label: 'she/her', color: '#E45DBF', bg: '#E45DBF14' },
+  'he/him': { label: 'he/him', color: '#1340FF', bg: '#1340FF14' },
+};
+
+const getPronounceStyle = (pronounce) => {
+  const key = (pronounce || '').toLowerCase();
+  return PRONOUNCE_STYLES[key] || { label: pronounce || 'other', color: '#919EAB', bg: '#919EAB14' };
+};
+
 function CreatorRow({ creator, avgDays, config }) {
-  const days = creator[config.daysField];
-  const { color: speedColor, label: speedLabel } = getSpeedInfo(days, avgDays);
+  const isSimple = config.variant === 'simple';
+  const days = isSimple ? null : creator[config.daysField];
+  const { color: speedColor, label: speedLabel } = isSimple ? { color: '', label: '' } : getSpeedInfo(days, avgDays);
+
+  const pronounceStyle = isSimple && creator.pronounce ? getPronounceStyle(creator.pronounce) : null;
 
   return (
     <Box sx={{ px: 2.5, py: 0.75 }}>
@@ -123,7 +138,7 @@ function CreatorRow({ creator, avgDays, config }) {
               </Typography>
             </Stack>
 
-            {/* Dates */}
+            {/* Info row */}
             <Stack direction="row" spacing={2.5} sx={{ mt: 1.25, pl: 0.5 }}>
               <Stack spacing={0.25}>
                 <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: '#919EAB', textTransform: 'uppercase', letterSpacing: '0.03em', lineHeight: 1 }}>
@@ -134,56 +149,69 @@ function CreatorRow({ creator, avgDays, config }) {
                 </Typography>
               </Stack>
 
-              <Stack spacing={0.25}>
-                <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: config.dateColor, textTransform: 'uppercase', letterSpacing: '0.03em', lineHeight: 1 }}>
-                  {config.dateLabel}
+              {pronounceStyle && (
+                <Stack spacing={0.25}>
+                  <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: '#919EAB', textTransform: 'uppercase', letterSpacing: '0.03em', lineHeight: 1 }}>
+                    Gender
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: pronounceStyle.color, lineHeight: 1.3 }}>
+                    {pronounceStyle.label}
+                  </Typography>
+                </Stack>
+              )}
+
+              {!isSimple && (
+                <Stack spacing={0.25}>
+                  <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: config.dateColor, textTransform: 'uppercase', letterSpacing: '0.03em', lineHeight: 1 }}>
+                    {config.dateLabel}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.8125rem', fontWeight: 500, color: '#333', lineHeight: 1.3 }}>
+                    {formatDate(creator[config.dateField])}
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          </Stack>
+
+          {/* Right: days badge (hidden in simple variant) */}
+          {!isSimple && (
+            <Stack
+              alignItems="center"
+              justifyContent="center"
+              spacing={0.75}
+              sx={{
+                width: 84,
+                flexShrink: 0,
+                borderLeft: '1px solid #F4F6F8',
+                py: 1.5,
+              }}
+            >
+              <Stack alignItems="center">
+                <Typography sx={{ fontSize: '1.5rem', fontWeight: 700, color: '#1A1A2E', lineHeight: 1, letterSpacing: '-0.03em' }}>
+                  {days}
                 </Typography>
-                <Typography sx={{ fontSize: '0.8125rem', fontWeight: 500, color: '#333', lineHeight: 1.3 }}>
-                  {formatDate(creator[config.dateField])}
+                <Typography sx={{ fontSize: '0.625rem', fontWeight: 500, color: '#919EAB', lineHeight: 1, mt: 0.25 }}>
+                  days
                 </Typography>
               </Stack>
-            </Stack>
-          </Stack>
 
-          {/* Right: days badge */}
-          <Stack
-            alignItems="center"
-            justifyContent="center"
-            spacing={0.75}
-            sx={{
-              width: 84,
-              flexShrink: 0,
-              borderLeft: '1px solid #F4F6F8',
-              py: 1.5,
-            }}
-          >
-            {/* Number + unit stacked tightly */}
-            <Stack alignItems="center">
-              <Typography sx={{ fontSize: '1.5rem', fontWeight: 700, color: '#1A1A2E', lineHeight: 1, letterSpacing: '-0.03em' }}>
-                {days}
-              </Typography>
-              <Typography sx={{ fontSize: '0.625rem', fontWeight: 500, color: '#919EAB', lineHeight: 1, mt: 0.25 }}>
-                days
-              </Typography>
+              {speedLabel && (
+                <Box
+                  sx={{
+                    px: 1,
+                    py: 0.375,
+                    borderRadius: '6px',
+                    bgcolor: `${speedColor}14`,
+                    border: `1px solid ${speedColor}25`,
+                  }}
+                >
+                  <Typography sx={{ fontSize: '0.5625rem', fontWeight: 700, color: speedColor, textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>
+                    {speedLabel}
+                  </Typography>
+                </Box>
+              )}
             </Stack>
-
-            {/* Speed chip — separate visual element */}
-            {speedLabel && (
-              <Box
-                sx={{
-                  px: 1,
-                  py: 0.375,
-                  borderRadius: '6px',
-                  bgcolor: `${speedColor}14`,
-                  border: `1px solid ${speedColor}25`,
-                }}
-              >
-                <Typography sx={{ fontSize: '0.5625rem', fontWeight: 700, color: speedColor, textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>
-                  {speedLabel}
-                </Typography>
-              </Box>
-            )}
-          </Stack>
+          )}
         </Stack>
       </Box>
     </Box>
@@ -233,18 +261,21 @@ export default function CreatorDrilldownDrawer({
     return { startDate: start, endDate: end, displayTitle: formatFullMonth(selectedPoint) };
   }, [selectedPoint, isDaily, points, data]);
 
-  const { creators, avgDays, count, isLoading } = config.useCreatorsHook(
+  const hookData = config.useCreatorsHook(
     startDate && endDate ? { startDate, endDate } : {}
   );
+  const { creators, avgDays, count, isLoading } = hookData;
 
-  // Find fastest / slowest
+  const isSimple = config.variant === 'simple';
+
+  // Find fastest / slowest (only for days variant)
   const fastest = useMemo(
-    () => (creators.length > 0 ? creators.reduce((a, b) => (a[config.daysField] <= b[config.daysField] ? a : b)) : null),
-    [creators, config.daysField]
+    () => (!isSimple && creators.length > 0 ? creators.reduce((a, b) => (a[config.daysField] <= b[config.daysField] ? a : b)) : null),
+    [creators, config.daysField, isSimple]
   );
   const slowest = useMemo(
-    () => (creators.length > 0 ? creators.reduce((a, b) => (a[config.daysField] >= b[config.daysField] ? a : b)) : null),
-    [creators, config.daysField]
+    () => (!isSimple && creators.length > 0 ? creators.reduce((a, b) => (a[config.daysField] >= b[config.daysField] ? a : b)) : null),
+    [creators, config.daysField, isSimple]
   );
 
   // Navigation
@@ -314,7 +345,8 @@ export default function CreatorDrilldownDrawer({
         </Stack>
 
         {/* Hero stats row -- only when we have data */}
-        {hasData && (
+        {hasData && config.renderHeroStats && config.renderHeroStats(hookData)}
+        {hasData && !config.renderHeroStats && (
           <Stack
             direction="row"
             spacing={0}
