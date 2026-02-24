@@ -32,8 +32,6 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useCheckCreatorNps } from 'src/hooks/use-get-nps-feedback';
-
 import { fetcher, endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -42,7 +40,6 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import PDFEditorV2 from 'src/components/pdf/pdf-editor-v2';
-import { useNps } from 'src/components/nps-feedback/nps-provider';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFSelect, RHFTextField } from 'src/components/hook-form';
 
@@ -1041,28 +1038,12 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic }) => {
   const [uploadingSubmissions, setUploadingSubmissions] = useState({}); // Track which submissions are uploading
   const updateTimerRef = React.useRef(null); // Store timer for debouncing updates
   const isFirstUpdateRef = React.useRef(true); // Track if this is the first update
-  const npsTriggeredRef = React.useRef(false);
 
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
   // Socket integration for real-time updates
   const { socket } = useSocketContext();
   const { user } = useAuthContext();
-
-  // NPS feedback check for creators
-  const { showNpsModal, setOnMutate } = useNps();
-  const { shouldShowNps, mutate: mutateNps } = useCheckCreatorNps(user?.role === 'creator');
-
-  useEffect(() => {
-    if (mutateNps) setOnMutate(() => mutateNps);
-  }, [mutateNps, setOnMutate]);
-
-  useEffect(() => {
-    if (shouldShowNps && !npsTriggeredRef.current) {
-      npsTriggeredRef.current = true;
-      showNpsModal();
-    }
-  }, [shouldShowNps, showNpsModal]);
 
   // Fetch logistics data
   const isLogisticsCompleted = !!logistic;
