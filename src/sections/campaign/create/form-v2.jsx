@@ -152,7 +152,9 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     campaignEndDate: Yup.date().required('Campaign End Date is required.'),
     postingStartDate: Yup.date().required('Posting Start Date is required.'),
     postingEndDate: Yup.date().required('Posting End Date is required.'),
-    productName: Yup.string().required('Product/service name required.'),
+    // productName: Yup.string().required('Product/service name required.'),
+
+    productName: Yup.string().optional(),
     campaignIndustries: Yup.array()
       .min(1, 'At least one industry is required')
       .required('Campaign industry is required.'),
@@ -436,10 +438,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           'campaignImages',
         ];
       case 1: // Objective
-        return [
-          'campaignObjectives',
-          'secondaryObjectives',
-        ];
+        return ['campaignObjectives', 'secondaryObjectives'];
       case 2: // Audience
         return [
           'country',
@@ -911,15 +910,15 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
         const desc = formValues.campaignDescription;
         const startDate = formValues.campaignStartDate;
         const endDate = formValues.campaignEndDate;
-        const {postingStartDate} = formValues;
-        const {postingEndDate} = formValues;
-        const { productName } = formValues;
+        const { postingStartDate } = formValues;
+        const { postingEndDate } = formValues;
+        // const { productName } = formValues;
         const industries = formValues.campaignIndustries;
         const images = formValues.campaignImages;
         return (
           title &&
           desc &&
-          productName &&
+          // productName &&
           industries?.length > 0 &&
           images?.length > 0 &&
           startDate &&
@@ -931,7 +930,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       case 1: {
         const objectives = formValues.campaignObjectives;
         const secObjectives = formValues.secondaryObjectives;
-        return objectives && secObjectives
+        return objectives && secObjectives;
       }
       case 2: {
         const { country } = formValues;
