@@ -3952,7 +3952,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               mb: 0.5
             }}
           >
-            {summaryStats.averageEngagementRate ? `${summaryStats.averageEngagementRate.toFixed(2)}%` : '0%'}
+            {summaryStats.avgEngagementRate ? `${summaryStats.avgEngagementRate}%` : '0%'}
           </Typography>
           <Typography 
             variant="body2" 
@@ -4647,7 +4647,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       <Grid container spacing={3}>
         {/* Platform Interactions Chart - Left */}
             <Grid item xs={12} md={4}>
-          {useMemo(() => <PlatformInteractionsChart />, [filteredInsightsData, filteredSubmissions])}
+          <PlatformInteractionsChart />
         </Grid>
 
         {/* Right side cards */}
