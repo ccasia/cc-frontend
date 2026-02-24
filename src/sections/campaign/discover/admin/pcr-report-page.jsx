@@ -964,7 +964,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
   useEffect(() => {
     if (creatorTiersEditorRef.current && editableContent.creatorTiersDescription) {
-      creatorTiersEditorRef.current.innerHTML = editableContent.creatorTiersDescription;
+      const isEditorFocused = document.activeElement === creatorTiersEditorRef.current;
+      
+      if (!isEditorFocused) {
+        creatorTiersEditorRef.current.innerHTML = editableContent.creatorTiersDescription;
+      }
     }
   }, [isEditMode, editableContent.creatorTiersDescription]);
 
@@ -2042,10 +2046,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
     
     const startAngle = -135; 
     
-    const chartData = [
+    const chartData = useMemo(() => [
       { id: 0, value: platformData.tiktok, label: 'TikTok', color: '#000000' },
       { id: 1, value: platformData.instagram, label: 'Instagram', color: '#C13584' },
-    ].filter((item) => item.value > 0);
+    ].filter((item) => item.value > 0), [platformData.tiktok, platformData.instagram]);
 
     return (
       <Box
@@ -4634,7 +4638,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       <Grid container spacing={3}>
         {/* Platform Interactions Chart - Left */}
             <Grid item xs={12} md={4}>
-          <PlatformInteractionsChart />
+          {useMemo(() => <PlatformInteractionsChart />, [filteredInsightsData, filteredSubmissions])}
         </Grid>
 
         {/* Right side cards */}
