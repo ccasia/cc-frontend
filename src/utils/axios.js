@@ -46,6 +46,7 @@ export const endpoints = {
     pitchRateCreators: '/api/analytics/v2/pitch-rate/creators',
     mediaKitActivation: '/api/analytics/v2/media-kit-activation',
     creatorSatisfaction: '/api/analytics/v2/creator-satisfaction',
+    creatorEarnings: '/api/analytics/v2/creator-earnings',
   },
   overview: {
     root: (userId) => `/api/user/overview/${userId}`,
