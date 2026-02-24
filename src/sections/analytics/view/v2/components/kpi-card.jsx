@@ -15,7 +15,7 @@ const colors = {
   background: '#FFFFFF',
 };
 
-export default function KpiCard({ title, value, subtitle, trend, trendLabel, color, tooltipKey, sparklineData, sparklineColor, headerExtra }) {
+export default function KpiCard({ title, value, subtitle, trend, trendLabel, trendSuffix, color, tooltipKey, sparklineData, sparklineColor, headerExtra, valueRef, onValueMouseEnter, onValueMouseLeave, valueStyles }) {
   const trendColor = trend >= 0 ? colors.success : colors.error;
   const trendBg = trend >= 0 ? '#ECFDF5' : '#FEF2F2';
   const TrendIcon = trend >= 0 ? ArrowDropUpIcon : ArrowDropDownIcon;
@@ -38,17 +38,24 @@ export default function KpiCard({ title, value, subtitle, trend, trendLabel, col
 
       {/* Value + sparkline row */}
       <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography
-          variant="h3"
-          sx={{
-            fontWeight: 700,
-            color: color || 'text.primary',
-            lineHeight: 1.2,
-            fontSize: { xs: '1.75rem', sm: '2rem' },
-          }}
+        <Box
+          ref={valueRef}
+          onMouseEnter={onValueMouseEnter}
+          onMouseLeave={onValueMouseLeave}
+          sx={valueStyles}
         >
-          {value}
-        </Typography>
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 700,
+              color: color || 'text.primary',
+              lineHeight: 1.2,
+              fontSize: { xs: '1.75rem', sm: '2rem' },
+            }}
+          >
+            {value}
+          </Typography>
+        </Box>
 
         {sparklineData && sparklineData.length > 1 && (
           <Box sx={{ width: 80, height: 36, flexShrink: 0 }}>
@@ -78,7 +85,7 @@ export default function KpiCard({ title, value, subtitle, trend, trendLabel, col
           >
             <TrendIcon sx={{ fontSize: 18, color: trendColor, ml: -0.25 }} />
             <Typography variant="caption" sx={{ fontWeight: 600, color: trendColor, fontSize: '0.7rem', mr: 0.25 }}>
-              {trend > 0 ? '+' : ''}{trend}%
+              {trend > 0 ? '+' : ''}{trend}{trendSuffix ?? '%'}
             </Typography>
           </Stack>
           <Typography variant="caption" sx={{ color: '#919EAB', fontSize: '0.7rem' }}>
@@ -118,7 +125,12 @@ KpiCard.propTypes = {
   color: PropTypes.string,
   tooltipKey: PropTypes.string,
   trendLabel: PropTypes.string,
+  trendSuffix: PropTypes.string,
   sparklineData: PropTypes.arrayOf(PropTypes.number),
   sparklineColor: PropTypes.string,
   headerExtra: PropTypes.node,
+  valueRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
+  onValueMouseEnter: PropTypes.func,
+  onValueMouseLeave: PropTypes.func,
+  valueStyles: PropTypes.object,
 };

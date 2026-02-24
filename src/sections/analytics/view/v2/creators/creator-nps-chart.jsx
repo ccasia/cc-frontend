@@ -13,8 +13,8 @@ import { paths } from 'src/routes/paths';
 
 import Iconify from 'src/components/iconify';
 import useChartZoom from 'src/hooks/use-chart-zoom';
+import useGetCreatorSatisfaction from 'src/hooks/use-get-creator-satisfaction';
 
-import { MOCK_NPS, MOCK_NPS_TREND } from '../mock-data';
 import { useFilteredData, useFilterLabel } from '../date-filter-context';
 import ChartCard from '../components/chart-card';
 import ZoomableChart from '../components/zoomable-chart';
@@ -25,21 +25,31 @@ const AMBER = '#FFAB00';
 const BAR_BG = '#F4F6F8';
 
 export default function CreatorNpsChart() {
-  const { averageRating, totalResponses, distribution } = MOCK_NPS;
-  const filtered = useFilteredData(MOCK_NPS_TREND);
+  const { trend: trendData, overall } = useGetCreatorSatisfaction();
+  const { averageRating, totalResponses, distribution } = overall;
+  const filtered = useFilteredData(trendData);
   const chipLabel = useFilterLabel();
 
-  const ratings = useMemo(() => filtered.map((d) => d.rating), [filtered]);
-  const months = useMemo(() => filtered.map((d) => d.month), [filtered]);
+  // Trim trailing null months so the line doesn't trail into future
+  const trimmed = useMemo(() => {
+    let lastIdx = filtered.length - 1;
+    while (lastIdx >= 0 && filtered[lastIdx].avgRating == null) lastIdx -= 1;
+    return filtered.slice(0, lastIdx + 1);
+  }, [filtered]);
+
+  const ratings = useMemo(() => trimmed.map((d) => d.avgRating != null ? Number(d.avgRating) : null), [trimmed]);
+  const months = useMemo(() => trimmed.map((d) => d.month), [trimmed]);
   const indices = useMemo(() => months.map((_, i) => i), [months]);
 
-  const { xAxis: xDomain, yDomain, isZoomed, resetZoom, containerProps, setYSources } = useChartZoom(filtered.length);
+  const { xAxis: xDomain, yDomain, isZoomed, resetZoom, containerProps, setYSources } = useChartZoom(trimmed.length);
 
   useEffect(() => { setYSources([ratings]); }, [setYSources, ratings]);
 
-  const latest = ratings[ratings.length - 1];
-  const prev = ratings.length >= 2 ? ratings[ratings.length - 2] : undefined;
-  const change = prev != null ? Math.round((latest - prev) * 10) / 10 : null;
+  // Get latest and previous non-null values for trend arrow
+  const nonNullRatings = useMemo(() => ratings.filter((r) => r != null), [ratings]);
+  const latest = nonNullRatings.length > 0 ? nonNullRatings[nonNullRatings.length - 1] : undefined;
+  const prev = nonNullRatings.length >= 2 ? nonNullRatings[nonNullRatings.length - 2] : undefined;
+  const change = prev != null && latest != null ? Math.round((latest - prev) * 10) / 10 : null;
   const isNeutral = change == null || change === 0;
   const isUp = !isNeutral && change > 0;
   const trend = getTrendProps(isNeutral, isUp);
@@ -125,7 +135,7 @@ export default function CreatorNpsChart() {
           }}
         >
           <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, lineHeight: 1 }}>
-            {latest}
+            {latest != null ? Number(latest).toFixed(1) : '—'}
           </Typography>
           <Typography sx={{ fontSize: '0.8rem', fontWeight: 500, color: '#999', lineHeight: 1, ml: 0.3 }}>
             /5
@@ -223,7 +233,7 @@ export default function CreatorNpsChart() {
       {/* Line chart */}
       <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
         <LineChart
-          series={[{ data: ratings, label: 'Avg Rating', color: AMBER, area: true, curve: 'linear', valueFormatter: (val) => `${val} / 5` }]}
+          series={[{ data: ratings, label: 'Avg Rating', color: AMBER, area: true, curve: 'linear', connectNulls: true, valueFormatter: (val) => val != null ? `${val} / 5` : 'No data' }]}
           xAxis={xAxisConfig}
           yAxis={[{ ...yDomain, valueFormatter: (val) => `${val}`, tickLabelStyle: TICK_LABEL_STYLE }]}
           height={CHART_HEIGHT}
