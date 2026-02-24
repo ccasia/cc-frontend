@@ -126,6 +126,8 @@ export const endpoints = {
     },
     updatePreference: (id) => `/api/creator/updatePreference/${id}`,
     exportCreators: '/api/creator/exportCreators',
+    markMediaKitMandatory: '/api/creator/markMediaKitMandatory',
+    unmarkMediaKitMandatory: '/api/creator/unmarkMediaKitMandatory',
   },
   users: {
     newAdmin: '/api/user/admins',
