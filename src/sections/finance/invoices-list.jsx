@@ -47,6 +47,9 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { getBankCode, getPaymentMode } from 'src/contants/bank-codes';
 
+// Add useAuthContext import
+import { useAuthContext } from 'src/auth/hooks';
+
 import InvoiceItem from './invoice-item';
 import InvoicePDF from '../invoice/invoice-pdf';
 import InvoiceTableToolbar from './invoice-table-toolbar';
@@ -77,6 +80,7 @@ const TABLE_HEAD = [
 
 const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuthContext(); // Get user from auth context
   const [filters, setFilters] = useState(defaultFilters);
   const [datePresetLabel, setDatePresetLabel] = useState(null);
   const [invoices, setInvoices] = useState([]);
@@ -751,7 +755,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   const changeInvoiceStatus = useCallback(() => {}, []);
 
-
   // Create TABS array using backend stats - always use backend stats for accuracy
   const TABS = useMemo(() => {
     // Check if stats are loaded and have counts
@@ -819,6 +822,14 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   }, [xeroLoading, enqueueSnackbar]);
 
   const handleBulkUpdate = useCallback(async () => {
+    if (!user?.admin?.xeroTokenSet) {
+      enqueueSnackbar(`You're not connected to Xero`, {
+        variant: 'error',
+      });
+      xeroDialog.onTrue();
+      return;
+    }
+
     setBulkLoading(true);
 
     try {
@@ -871,7 +882,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         }
 
         table.onSelectAllRows(false, []);
-        
+
         const pollInterval = setInterval(async () => {
           try {
             const queryParams = new URLSearchParams();
@@ -929,7 +940,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     } finally {
       setBulkLoading(false);
     }
-  }, [dataFiltered, table, enqueueSnackbar, mutateStats, mutateInvoices, xeroDialog]);
+  }, [dataFiltered, table, enqueueSnackbar, mutateStats, mutateInvoices, xeroDialog, user]);
 
   return (
     <Box>
