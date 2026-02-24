@@ -62,7 +62,7 @@ const TABLE_HEAD = [
   { id: 'status', label: 'Status', width: 100 },
   // { id: 'mediaKit', label: 'Media Kit', width: 180 },
   { id: 'paymentFormStatus', label: 'Payment Form Status', width: 180 },
-  { id: 'mkm', label: 'MKM', width: 80 },
+  { id: 'mediaKit', label: 'Media Kit', width: 100 },
   { id: '', label: '', width: 88 },
 ];
 
@@ -148,10 +148,30 @@ function CreatorTableView() {
       return;
     }
 
+    // Check if any selected creators are already marked
+    const selectedCreators = tableData.filter((creator) => table.selected.includes(creator.id));
+    const alreadyMarked = selectedCreators.filter((creator) => creator.mediaKitMandatory);
+    const notMarked = selectedCreators.filter((creator) => !creator.mediaKitMandatory);
+
+    if (alreadyMarked.length === selectedCreators.length) {
+      enqueueSnackbar(
+        `All selected creator(s) are already marked as Media Kit Mandatory`,
+        { variant: 'info' }
+      );
+      return;
+    }
+
+    if (alreadyMarked.length > 0) {
+      enqueueSnackbar(
+        `${alreadyMarked.length} creator(s) are already marked and will be skipped`,
+        { variant: 'info' }
+      );
+    }
+
     try {
       setIsMarkingMKM(true);
       const response = await axiosInstance.post(endpoints.creators.markMediaKitMandatory, {
-        userIds: table.selected,
+        userIds: notMarked.map((c) => c.id),
       });
 
       if (response.data?.count) {
@@ -178,10 +198,30 @@ function CreatorTableView() {
       return;
     }
 
+    // Check if any selected creators are already unmarked
+    const selectedCreators = tableData.filter((creator) => table.selected.includes(creator.id));
+    const alreadyUnmarked = selectedCreators.filter((creator) => !creator.mediaKitMandatory);
+    const marked = selectedCreators.filter((creator) => creator.mediaKitMandatory);
+
+    if (alreadyUnmarked.length === selectedCreators.length) {
+      enqueueSnackbar(
+        `All selected creator(s) are already unmarked from Media Kit Mandatory`,
+        { variant: 'info' }
+      );
+      return;
+    }
+
+    if (alreadyUnmarked.length > 0) {
+      enqueueSnackbar(
+        `${alreadyUnmarked.length} creator(s) are already unmarked and will be skipped`,
+        { variant: 'info' }
+      );
+    }
+
     try {
       setIsUnmarkingMKM(true);
       const response = await axiosInstance.post(endpoints.creators.unmarkMediaKitMandatory, {
-        userIds: table.selected,
+        userIds: marked.map((c) => c.id),
       });
 
       if (response.data?.count) {
@@ -337,7 +377,7 @@ function CreatorTableView() {
                       boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
                     }}
                   >
-                    {isMarkingMKM ? 'Marking...' : 'Mark as MKM'}
+                    {isMarkingMKM ? 'Marking...' : 'Media Kit'}
                   </Button>
                   <Button
                     variant="outlined"
@@ -362,7 +402,7 @@ function CreatorTableView() {
                       boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
                     }}
                   >
-                    {isUnmarkingMKM ? 'Unmarking...' : 'Unmark MKM'}
+                    {isUnmarkingMKM ? 'Unmarking...' : 'Media Kit'}
                   </Button>
                 </>
               )}

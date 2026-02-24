@@ -130,12 +130,16 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
             color={
               creator?.isTiktokConnected || creator?.isFacebookConnected
                 ? 'success'
-                : 'error'
+                : mediaKitMandatory
+                  ? 'warning'
+                  : 'default'
             }
           >
             {creator?.isTiktokConnected || creator?.isFacebookConnected
-              ? 'Yes'
-              : 'No'}
+              ? 'Connected'
+              : mediaKitMandatory
+                ? 'Marked'
+                : 'Unmarked'}
           </Label>
         </TableCell>
 
