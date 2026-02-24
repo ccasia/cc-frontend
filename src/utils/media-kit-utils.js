@@ -393,15 +393,15 @@ export const getCaptionStyles = (contentLength, isMobile) => {
 /**
  * Checks if a user should see the media kit popup
  * @param {Object} user - The user object from auth context
- * @param {Array} targetUserIds - Array of user IDs that should see the popup
  * @returns {boolean} - Whether the user should see the popup
  */
-export const shouldShowMediaKitPopup = (user, targetUserIds = []) => {
+export const shouldShowMediaKitPopup = (user) => {
   if (!user || user.role !== 'creator') {
     return false;
   }
 
-  if (targetUserIds.length > 0 && !targetUserIds.includes(user.id)) {
+  // Only show for users marked as Media Kit Mandatory
+  if (!user.mediaKitMandatory) {
     return false;
   }
 
