@@ -274,6 +274,9 @@ export default function AnalyticViewV2() {
               <Grid item xs={12}>
                 <ResponseTimeCharts />
               </Grid>
+              <Grid item xs={12}>
+                <CreatorEarningsChart />
+              </Grid>
             </Grid>
           </Fade>
 
@@ -290,9 +293,6 @@ export default function AnalyticViewV2() {
               </Grid>
               <Grid item xs={12} md={6}>
                 <CreditsPerCSChart />
-              </Grid>
-              <Grid item xs={12}>
-                <CreatorEarningsChart />
               </Grid>
               <Grid item xs={12}>
                 <TopShortlistedCreatorsChart />
