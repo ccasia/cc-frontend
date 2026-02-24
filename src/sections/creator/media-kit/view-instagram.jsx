@@ -41,8 +41,10 @@ export const formatNumber = (num) => {
 const TopContentGrid = ({ topContents, mobileCarousel }) => {
   const { isMobile, theme } = useMediaKitResponsive();
 
+  console.log(topContents)
+
   const displayContent = (topContents || [])
-    .sort((a, b) => a?.like_count > b?.like_count)
+    .sort((a, b) => b?.like_count > a?.like_count)
     .slice(0, 3);
 
   if (isMobile) {
