@@ -148,34 +148,101 @@ const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} })
     
     if (!selectedText) return;
 
-    let formattedElement;
-    if (formatType === 'bold') {
-      formattedElement = document.createElement('strong');
-    } else if (formatType === 'italic') {
-      formattedElement = document.createElement('em');
-    } else if (formatType === 'underline') {
-      formattedElement = document.createElement('u');
-    }
+    // Save the current selection
+    const startContainer = range.startContainer;
+    const startOffset = range.startOffset;
+    const endContainer = range.endContainer;
+    const endOffset = range.endOffset;
 
-    formattedElement.textContent = selectedText;
-    range.deleteContents();
-    range.insertNode(formattedElement);
+    try {
+      // Use execCommand for better browser compatibility
+      // Even though deprecated, it still works reliably across browsers
+      let command;
+      if (formatType === 'bold') {
+        command = 'bold';
+      } else if (formatType === 'italic') {
+        command = 'italic';
+      } else if (formatType === 'underline') {
+        command = 'underline';
+      }
 
-    // Move cursor after the inserted element
-    const newRange = document.createRange();
-    newRange.setStartAfter(formattedElement);
-    newRange.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(newRange);
+      // Focus the editor first
+      if (editorRef.current) {
+        editorRef.current.focus();
+      }
 
-    // Update the value
-    if (editorRef.current) {
-      onChange({ target: { value: editorRef.current.innerHTML } });
+      // Restore selection
+      const newRange = document.createRange();
+      newRange.setStart(startContainer, startOffset);
+      newRange.setEnd(endContainer, endOffset);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+
+      // Apply formatting
+      document.execCommand(command, false, null);
+
+      // Update the value
+      if (editorRef.current) {
+        onChange({ target: { value: editorRef.current.innerHTML } });
+      }
+
+      // Keep selection for potential additional formatting
+      setTimeout(() => {
+        if (editorRef.current) {
+          editorRef.current.focus();
+        }
+      }, 0);
+    } catch (error) {
+      console.error('Error applying format:', error);
+      
+      // Fallback to manual DOM manipulation
+      let formattedElement;
+      if (formatType === 'bold') {
+        formattedElement = document.createElement('strong');
+      } else if (formatType === 'italic') {
+        formattedElement = document.createElement('em');
+      } else if (formatType === 'underline') {
+        formattedElement = document.createElement('u');
+      }
+
+      formattedElement.textContent = selectedText;
+      range.deleteContents();
+      range.insertNode(formattedElement);
+
+      // Move cursor after the inserted element
+      const newRange = document.createRange();
+      newRange.setStartAfter(formattedElement);
+      newRange.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+
+      // Update the value
+      if (editorRef.current) {
+        onChange({ target: { value: editorRef.current.innerHTML } });
+      }
     }
   };
 
   const handleInput = (e) => {
     onChange({ target: { value: e.currentTarget.innerHTML } });
+  };
+
+  const handleKeyDown = (e) => {
+    // Check for Cmd (Mac) or Ctrl (Windows/Linux)
+    const isMod = e.metaKey || e.ctrlKey;
+    
+    if (isMod) {
+      if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        applyFormat('bold');
+      } else if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        applyFormat('italic');
+      } else if (e.key === 'u' || e.key === 'U') {
+        e.preventDefault();
+        applyFormat('underline');
+      }
+    }
   };
 
   return (
@@ -223,6 +290,7 @@ const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} })
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}
+        onKeyDown={handleKeyDown}
         sx={{
           minHeight: `${rows * 24}px`,
           padding: '12px',
@@ -5999,18 +6067,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         const range = selection.getRangeAt(0);
                         const selectedText = range.toString();
                         if (!selectedText) return;
-                        const strong = document.createElement('strong');
-                        strong.textContent = selectedText;
-                        range.deleteContents();
-                        range.insertNode(strong);
-                        // Move cursor after the inserted element
-                        const newRange = document.createRange();
-                        newRange.setStartAfter(strong);
-                        newRange.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(newRange);
-                        const event = new Event('input', { bubbles: true });
-                        document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
+                        
+                        const editor = document.querySelector('[data-creator-tiers-editor]');
+                        if (editor) {
+                          editor.focus();
+                          document.execCommand('bold', false, null);
+                          const event = new Event('input', { bubbles: true });
+                          editor.dispatchEvent(event);
+                        }
                       }}
                       sx={{ width: 20, height: 20, color: '#636366' }}
                     >
@@ -6024,18 +6088,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         const range = selection.getRangeAt(0);
                         const selectedText = range.toString();
                         if (!selectedText) return;
-                        const em = document.createElement('em');
-                        em.textContent = selectedText;
-                        range.deleteContents();
-                        range.insertNode(em);
-                        // Move cursor after the inserted element
-                        const newRange = document.createRange();
-                        newRange.setStartAfter(em);
-                        newRange.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(newRange);
-                        const event = new Event('input', { bubbles: true });
-                        document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
+                        
+                        const editor = document.querySelector('[data-creator-tiers-editor]');
+                        if (editor) {
+                          editor.focus();
+                          document.execCommand('italic', false, null);
+                          const event = new Event('input', { bubbles: true });
+                          editor.dispatchEvent(event);
+                        }
                       }}
                       sx={{ width: 20, height: 20, color: '#636366' }}
                     >
@@ -6049,18 +6109,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         const range = selection.getRangeAt(0);
                         const selectedText = range.toString();
                         if (!selectedText) return;
-                        const u = document.createElement('u');
-                        u.textContent = selectedText;
-                        range.deleteContents();
-                        range.insertNode(u);
-                        // Move cursor after the inserted element
-                        const newRange = document.createRange();
-                        newRange.setStartAfter(u);
-                        newRange.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(newRange);
-                        const event = new Event('input', { bubbles: true });
-                        document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
+                        
+                        const editor = document.querySelector('[data-creator-tiers-editor]');
+                        if (editor) {
+                          editor.focus();
+                          document.execCommand('underline', false, null);
+                          const event = new Event('input', { bubbles: true });
+                          editor.dispatchEvent(event);
+                        }
                       }}
                       sx={{ width: 20, height: 20, color: '#636366' }}
                     >
@@ -6075,6 +6131,34 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     contentEditable
                     suppressContentEditableWarning
                     onInput={(e) => setEditableContent({ ...editableContent, creatorTiersDescription: e.currentTarget.innerHTML })}
+                    onKeyDown={(e) => {
+                      const isMod = e.metaKey || e.ctrlKey;
+                      if (isMod) {
+                        const editor = document.querySelector('[data-creator-tiers-editor]');
+                        if (e.key === 'b' || e.key === 'B') {
+                          e.preventDefault();
+                          document.execCommand('bold', false, null);
+                          if (editor) {
+                            const event = new Event('input', { bubbles: true });
+                            editor.dispatchEvent(event);
+                          }
+                        } else if (e.key === 'i' || e.key === 'I') {
+                          e.preventDefault();
+                          document.execCommand('italic', false, null);
+                          if (editor) {
+                            const event = new Event('input', { bubbles: true });
+                            editor.dispatchEvent(event);
+                          }
+                        } else if (e.key === 'u' || e.key === 'U') {
+                          e.preventDefault();
+                          document.execCommand('underline', false, null);
+                          if (editor) {
+                            const event = new Event('input', { bubbles: true });
+                            editor.dispatchEvent(event);
+                          }
+                        }
+                      }
+                    }}
                     onFocus={(e) => {
                       // Set initial content if empty
                       if (!e.currentTarget.innerHTML) {
