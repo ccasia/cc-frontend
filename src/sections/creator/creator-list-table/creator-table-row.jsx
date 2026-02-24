@@ -37,7 +37,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
     setOpenMediaKit(false);
   };
 
-  const { name, creator, country, status, photoURL } = row;
+  const { name, creator, country, status, photoURL, mediaKitMandatory } = row;
 
   const confirm = useBoolean();
 
@@ -122,6 +122,24 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Label color={creator?.isFormCompleted ? 'success' : 'warning'}>
             {creator?.isFormCompleted ? 'Done' : 'Pending'}
+          </Label>
+        </TableCell>
+
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          <Label
+            color={
+              creator?.isTiktokConnected || creator?.isFacebookConnected
+                ? 'success'
+                : mediaKitMandatory
+                  ? 'warning'
+                  : 'default'
+            }
+          >
+            {creator?.isTiktokConnected || creator?.isFacebookConnected
+              ? 'Connected'
+              : mediaKitMandatory
+                ? 'Marked'
+                : 'Unmarked'}
           </Label>
         </TableCell>
 

@@ -8,6 +8,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
@@ -61,6 +62,7 @@ const TABLE_HEAD = [
   { id: 'status', label: 'Status', width: 100 },
   // { id: 'mediaKit', label: 'Media Kit', width: 180 },
   { id: 'paymentFormStatus', label: 'Payment Form Status', width: 180 },
+  { id: 'mediaKit', label: 'Media Kit', width: 100 },
   { id: '', label: '', width: 88 },
 ];
 
@@ -81,6 +83,8 @@ function CreatorTableView() {
   const [ageRange, setAgeRange] = useState(defaultFilters.ageRange);
   const { user: admin } = useAuthContext();
   const [isExporting, setIsExporting] = useState(false);
+  const [isMarkingMKM, setIsMarkingMKM] = useState(false);
+  const [isUnmarkingMKM, setIsUnmarkingMKM] = useState(false);
 
   const handleAgeRangeChange = (newValue) => {
     setAgeRange(newValue);
@@ -135,6 +139,106 @@ function CreatorTableView() {
       enqueueSnackbar('Failed to export creators to spreadsheet', { variant: 'error' });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleMarkMediaKitMandatory = async () => {
+    if (table.selected.length === 0) {
+      enqueueSnackbar('Please select at least one creator', { variant: 'warning' });
+      return;
+    }
+
+    // Check if any selected creators are already marked
+    const selectedCreators = tableData.filter((creator) => table.selected.includes(creator.id));
+    const alreadyMarked = selectedCreators.filter((creator) => creator.mediaKitMandatory);
+    const notMarked = selectedCreators.filter((creator) => !creator.mediaKitMandatory);
+
+    if (alreadyMarked.length === selectedCreators.length) {
+      enqueueSnackbar(
+        `All selected creator(s) are already marked as Media Kit Mandatory`,
+        { variant: 'info' }
+      );
+      return;
+    }
+
+    if (alreadyMarked.length > 0) {
+      enqueueSnackbar(
+        `${alreadyMarked.length} creator(s) are already marked and will be skipped`,
+        { variant: 'info' }
+      );
+    }
+
+    try {
+      setIsMarkingMKM(true);
+      const response = await axiosInstance.post(endpoints.creators.markMediaKitMandatory, {
+        userIds: notMarked.map((c) => c.id),
+      });
+
+      if (response.data?.count) {
+        enqueueSnackbar(
+          `Successfully marked ${response.data.count} creator(s) as Media Kit Mandatory`,
+          { variant: 'success' }
+        );
+        // Refresh the creator list
+        mutate(endpoints.creators.getCreators);
+        // Clear selection
+        table.onSelectAllRows(false, []);
+      }
+    } catch (error) {
+      console.error('Error marking creators as Media Kit Mandatory:', error);
+      enqueueSnackbar('Failed to mark creators as Media Kit Mandatory', { variant: 'error' });
+    } finally {
+      setIsMarkingMKM(false);
+    }
+  };
+
+  const handleUnmarkMediaKitMandatory = async () => {
+    if (table.selected.length === 0) {
+      enqueueSnackbar('Please select at least one creator', { variant: 'warning' });
+      return;
+    }
+
+    // Check if any selected creators are already unmarked
+    const selectedCreators = tableData.filter((creator) => table.selected.includes(creator.id));
+    const alreadyUnmarked = selectedCreators.filter((creator) => !creator.mediaKitMandatory);
+    const marked = selectedCreators.filter((creator) => creator.mediaKitMandatory);
+
+    if (alreadyUnmarked.length === selectedCreators.length) {
+      enqueueSnackbar(
+        `All selected creator(s) are already unmarked from Media Kit Mandatory`,
+        { variant: 'info' }
+      );
+      return;
+    }
+
+    if (alreadyUnmarked.length > 0) {
+      enqueueSnackbar(
+        `${alreadyUnmarked.length} creator(s) are already unmarked and will be skipped`,
+        { variant: 'info' }
+      );
+    }
+
+    try {
+      setIsUnmarkingMKM(true);
+      const response = await axiosInstance.post(endpoints.creators.unmarkMediaKitMandatory, {
+        userIds: marked.map((c) => c.id),
+      });
+
+      if (response.data?.count) {
+        enqueueSnackbar(
+          `Successfully unmarked ${response.data.count} creator(s) from Media Kit Mandatory`,
+          { variant: 'success' }
+        );
+        // Refresh the creator list
+        mutate(endpoints.creators.getCreators);
+        // Clear selection
+        table.onSelectAllRows(false, []);
+      }
+    } catch (error) {
+      console.error('Error unmarking creators from Media Kit Mandatory:', error);
+      enqueueSnackbar('Failed to unmark creators from Media Kit Mandatory', { variant: 'error' });
+    } finally {
+      setIsUnmarkingMKM(false);
     }
   };
 
@@ -247,31 +351,87 @@ function CreatorTableView() {
             { name: 'List' },
           ]}
           action={
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Iconify icon="tabler:external-link" width={16} />}
-              onClick={handleExportToSpreadsheet}
-              disabled={isExporting}
-              sx={{
-                height: 32,
-                borderRadius: 1,
-                color: '#221f20',
-                border: '1px solid #e7e7e7',
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                px: 1.5,
-                whiteSpace: 'nowrap',
-                '&:hover': {
+            <Stack direction="row" spacing={1.5}>
+              {admin?.role === 'superadmin' && (
+                <>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Iconify icon="mdi:check-circle" width={16} />}
+                    onClick={handleMarkMediaKitMandatory}
+                    disabled={isMarkingMKM || table.selected.length === 0}
+                    sx={{
+                      height: 32,
+                      borderRadius: 1,
+                      color: '#221f20',
+                      border: '1px solid #e7e7e7',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      px: 1.5,
+                      whiteSpace: 'nowrap',
+                      '&:hover': {
+                        border: '1px solid #e7e7e7',
+                        backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                      },
+                      boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
+                    }}
+                  >
+                    {isMarkingMKM ? 'Marking...' : 'Media Kit'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Iconify icon="mdi:close-circle" width={16} />}
+                    onClick={handleUnmarkMediaKitMandatory}
+                    disabled={isUnmarkingMKM || table.selected.length === 0}
+                    sx={{
+                      height: 32,
+                      borderRadius: 1,
+                      color: '#d32f2f',
+                      border: '1px solid #e7e7e7',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      px: 1.5,
+                      whiteSpace: 'nowrap',
+                      '&:hover': {
+                        border: '1px solid #d32f2f',
+                        backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                      },
+                      boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
+                    }}
+                  >
+                    {isUnmarkingMKM ? 'Unmarking...' : 'Media Kit'}
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Iconify icon="tabler:external-link" width={16} />}
+                onClick={handleExportToSpreadsheet}
+                disabled={isExporting}
+                sx={{
+                  height: 32,
+                  borderRadius: 1,
+                  color: '#221f20',
                   border: '1px solid #e7e7e7',
-                  backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                },
-                boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
-              }}
-            >
-              {isExporting ? 'Exporting...' : 'Google Spreadsheet'}
-            </Button>
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  px: 1.5,
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    border: '1px solid #e7e7e7',
+                    backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                  },
+                  boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
+                }}
+              >
+                {isExporting ? 'Exporting...' : 'Google Spreadsheet'}
+              </Button>
+            </Stack>
           }
           sx={{
             mb: { xs: 3, md: 5 },

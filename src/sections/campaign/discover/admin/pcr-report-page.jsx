@@ -148,34 +148,101 @@ const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} })
     
     if (!selectedText) return;
 
-    let formattedElement;
-    if (formatType === 'bold') {
-      formattedElement = document.createElement('strong');
-    } else if (formatType === 'italic') {
-      formattedElement = document.createElement('em');
-    } else if (formatType === 'underline') {
-      formattedElement = document.createElement('u');
-    }
+    // Save the current selection
+    const startContainer = range.startContainer;
+    const startOffset = range.startOffset;
+    const endContainer = range.endContainer;
+    const endOffset = range.endOffset;
 
-    formattedElement.textContent = selectedText;
-    range.deleteContents();
-    range.insertNode(formattedElement);
+    try {
+      // Use execCommand for better browser compatibility
+      // Even though deprecated, it still works reliably across browsers
+      let command;
+      if (formatType === 'bold') {
+        command = 'bold';
+      } else if (formatType === 'italic') {
+        command = 'italic';
+      } else if (formatType === 'underline') {
+        command = 'underline';
+      }
 
-    // Move cursor after the inserted element
-    const newRange = document.createRange();
-    newRange.setStartAfter(formattedElement);
-    newRange.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(newRange);
+      // Focus the editor first
+      if (editorRef.current) {
+        editorRef.current.focus();
+      }
 
-    // Update the value
-    if (editorRef.current) {
-      onChange({ target: { value: editorRef.current.innerHTML } });
+      // Restore selection
+      const newRange = document.createRange();
+      newRange.setStart(startContainer, startOffset);
+      newRange.setEnd(endContainer, endOffset);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+
+      // Apply formatting
+      document.execCommand(command, false, null);
+
+      // Update the value
+      if (editorRef.current) {
+        onChange({ target: { value: editorRef.current.innerHTML } });
+      }
+
+      // Keep selection for potential additional formatting
+      setTimeout(() => {
+        if (editorRef.current) {
+          editorRef.current.focus();
+        }
+      }, 0);
+    } catch (error) {
+      console.error('Error applying format:', error);
+      
+      // Fallback to manual DOM manipulation
+      let formattedElement;
+      if (formatType === 'bold') {
+        formattedElement = document.createElement('strong');
+      } else if (formatType === 'italic') {
+        formattedElement = document.createElement('em');
+      } else if (formatType === 'underline') {
+        formattedElement = document.createElement('u');
+      }
+
+      formattedElement.textContent = selectedText;
+      range.deleteContents();
+      range.insertNode(formattedElement);
+
+      // Move cursor after the inserted element
+      const newRange = document.createRange();
+      newRange.setStartAfter(formattedElement);
+      newRange.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+
+      // Update the value
+      if (editorRef.current) {
+        onChange({ target: { value: editorRef.current.innerHTML } });
+      }
     }
   };
 
   const handleInput = (e) => {
     onChange({ target: { value: e.currentTarget.innerHTML } });
+  };
+
+  const handleKeyDown = (e) => {
+    // Check for Cmd (Mac) or Ctrl (Windows/Linux)
+    const isMod = e.metaKey || e.ctrlKey;
+    
+    if (isMod) {
+      if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        applyFormat('bold');
+      } else if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        applyFormat('italic');
+      } else if (e.key === 'u' || e.key === 'U') {
+        e.preventDefault();
+        applyFormat('underline');
+      }
+    }
   };
 
   return (
@@ -223,6 +290,7 @@ const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} })
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}
+        onKeyDown={handleKeyDown}
         sx={{
           minHeight: `${rows * 24}px`,
           padding: '12px',
@@ -896,7 +964,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
   useEffect(() => {
     if (creatorTiersEditorRef.current && editableContent.creatorTiersDescription) {
-      creatorTiersEditorRef.current.innerHTML = editableContent.creatorTiersDescription;
+      const isEditorFocused = document.activeElement === creatorTiersEditorRef.current;
+      
+      if (!isEditorFocused) {
+        creatorTiersEditorRef.current.innerHTML = editableContent.creatorTiersDescription;
+      }
     }
   }, [isEditMode, editableContent.creatorTiersDescription]);
 
@@ -1974,10 +2046,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
     
     const startAngle = -135; 
     
-    const chartData = [
+    const chartData = useMemo(() => [
       { id: 0, value: platformData.tiktok, label: 'TikTok', color: '#000000' },
       { id: 1, value: platformData.instagram, label: 'Instagram', color: '#C13584' },
-    ].filter((item) => item.value > 0);
+    ].filter((item) => item.value > 0), [platformData.tiktok, platformData.instagram]);
 
     return (
       <Box
@@ -3852,10 +3924,105 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     {/* Metrics Cards */}
     <Grid container spacing={2} sx={{ mb: 4 }}>
+      {/* Engagement Card */}
       <Grid item xs={6} md={2.4}>
         <Box
           sx={{
             background: 'linear-gradient(0deg, #026D54 0%, rgba(2, 109, 84, 0) 107.14%)',
+            borderRadius: '12px',
+            p: 3,
+            color: 'white',
+            height: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-start'
+          }}
+        >
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 500,
+              fontStyle: 'normal',
+              fontSize: '46px !important',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              color: '#FFFFFF',
+              mb: 0.5
+            }}
+          >
+            {summaryStats.avgEngagementRate ? `${summaryStats.avgEngagementRate}%` : '0%'}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '16px',
+              letterSpacing: '0%',
+              color: '#FFFFFF'
+            }}
+          >
+            Engagement
+          </Typography>
+        </Box>
+      </Grid>
+      
+      {/* Total Creators Card */}
+      <Grid item xs={6} md={2.4}>
+        <Box
+          sx={{
+            background: 'linear-gradient(359.86deg, #8A5AFE 0.13%, rgba(138, 90, 254, 0) 109.62%)',
+            borderRadius: '12px',
+            p: 3,
+            color: 'white',
+            height: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-start'
+          }}
+        >
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 500,
+              fontStyle: 'normal',
+              fontSize: '46px !important',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              color: '#FFFFFF',
+              mb: 0.5
+            }}
+          >
+            {formatNumber(filteredSubmissions?.length || 0)}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '16px',
+              letterSpacing: '0%',
+              color: '#FFFFFF'
+            }}
+          >
+            Total Creators
+          </Typography>
+        </Box>
+      </Grid>
+      
+      {/* Total Views Card */}
+      <Grid item xs={6} md={2.4}>
+        <Box
+          sx={{
+            background: 'linear-gradient(180deg, rgba(255, 53, 0, 0) -9.77%, #FF3500 100%)',
             borderRadius: '12px',
             p: 3,
             color: 'white',
@@ -3897,96 +4064,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Typography>
         </Box>
       </Grid>
-      <Grid item xs={6} md={2.4}>
-        <Box
-          sx={{
-            background: 'linear-gradient(359.86deg, #8A5AFE 0.13%, rgba(138, 90, 254, 0) 109.62%)',
-            borderRadius: '12px',
-            p: 3,
-            color: 'white',
-            height: '120px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            alignItems: 'flex-start'
-          }}
-        >
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 500,
-              fontStyle: 'normal',
-              fontSize: '46px !important',
-              lineHeight: '100%',
-              letterSpacing: '0%',
-              color: '#FFFFFF',
-              mb: 0.5
-            }}
-          >
-            {formatNumber(summaryStats.totalLikes) || '0'}
-          </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 400,
-              fontStyle: 'normal',
-              fontSize: '12px',
-              lineHeight: '16px',
-              letterSpacing: '0%',
-              color: '#FFFFFF'
-            }}
-          >
-            Total Likes
-          </Typography>
-        </Box>
-      </Grid>
-      <Grid item xs={6} md={2.4}>
-        <Box
-          sx={{
-            background: 'linear-gradient(180deg, rgba(255, 53, 0, 0) -9.77%, #FF3500 100%)',
-            borderRadius: '12px',
-            p: 3,
-            color: 'white',
-            height: '120px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            alignItems: 'flex-start'
-          }}
-        >
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 500,
-              fontStyle: 'normal',
-              fontSize: '46px !important',
-              lineHeight: '100%',
-              letterSpacing: '0%',
-              color: '#FFFFFF',
-              mb: 0.5
-            }}
-          >
-            {formatNumber(summaryStats.totalComments) || '0'}
-          </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 400,
-              fontStyle: 'normal',
-              fontSize: '12px',
-              lineHeight: '16px',
-              letterSpacing: '0%',
-              color: '#FFFFFF'
-            }}
-          >
-            Total Comments
-          </Typography>
-        </Box>
-      </Grid>
+      
+      {/* Total Interactions Card */}
       <Grid item xs={6} md={2.4}>
         <Box
           sx={{
@@ -4014,7 +4093,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               mb: 0.5
             }}
           >
-            {formatNumber(summaryStats.totalSaved) || '0'}
+            {formatNumber((summaryStats.totalLikes || 0) + (summaryStats.totalComments || 0) + (summaryStats.totalShares || 0) + (summaryStats.totalSaved || 0))}
           </Typography>
           <Typography 
             variant="body2" 
@@ -4028,10 +4107,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
               color: '#FFFFFF'
             }}
           >
-            Total Saved
+            Total Interactions
           </Typography>
         </Box>
       </Grid>
+      
+      {/* Total Shares Card */}
       <Grid item xs={6} md={2.4}>
         <Box
           sx={{
@@ -5999,18 +6080,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         const range = selection.getRangeAt(0);
                         const selectedText = range.toString();
                         if (!selectedText) return;
-                        const strong = document.createElement('strong');
-                        strong.textContent = selectedText;
-                        range.deleteContents();
-                        range.insertNode(strong);
-                        // Move cursor after the inserted element
-                        const newRange = document.createRange();
-                        newRange.setStartAfter(strong);
-                        newRange.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(newRange);
-                        const event = new Event('input', { bubbles: true });
-                        document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
+                        
+                        const editor = document.querySelector('[data-creator-tiers-editor]');
+                        if (editor) {
+                          editor.focus();
+                          document.execCommand('bold', false, null);
+                          const event = new Event('input', { bubbles: true });
+                          editor.dispatchEvent(event);
+                        }
                       }}
                       sx={{ width: 20, height: 20, color: '#636366' }}
                     >
@@ -6024,18 +6101,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         const range = selection.getRangeAt(0);
                         const selectedText = range.toString();
                         if (!selectedText) return;
-                        const em = document.createElement('em');
-                        em.textContent = selectedText;
-                        range.deleteContents();
-                        range.insertNode(em);
-                        // Move cursor after the inserted element
-                        const newRange = document.createRange();
-                        newRange.setStartAfter(em);
-                        newRange.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(newRange);
-                        const event = new Event('input', { bubbles: true });
-                        document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
+                        
+                        const editor = document.querySelector('[data-creator-tiers-editor]');
+                        if (editor) {
+                          editor.focus();
+                          document.execCommand('italic', false, null);
+                          const event = new Event('input', { bubbles: true });
+                          editor.dispatchEvent(event);
+                        }
                       }}
                       sx={{ width: 20, height: 20, color: '#636366' }}
                     >
@@ -6049,18 +6122,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         const range = selection.getRangeAt(0);
                         const selectedText = range.toString();
                         if (!selectedText) return;
-                        const u = document.createElement('u');
-                        u.textContent = selectedText;
-                        range.deleteContents();
-                        range.insertNode(u);
-                        // Move cursor after the inserted element
-                        const newRange = document.createRange();
-                        newRange.setStartAfter(u);
-                        newRange.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(newRange);
-                        const event = new Event('input', { bubbles: true });
-                        document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
+                        
+                        const editor = document.querySelector('[data-creator-tiers-editor]');
+                        if (editor) {
+                          editor.focus();
+                          document.execCommand('underline', false, null);
+                          const event = new Event('input', { bubbles: true });
+                          editor.dispatchEvent(event);
+                        }
                       }}
                       sx={{ width: 20, height: 20, color: '#636366' }}
                     >
@@ -6075,6 +6144,34 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     contentEditable
                     suppressContentEditableWarning
                     onInput={(e) => setEditableContent({ ...editableContent, creatorTiersDescription: e.currentTarget.innerHTML })}
+                    onKeyDown={(e) => {
+                      const isMod = e.metaKey || e.ctrlKey;
+                      if (isMod) {
+                        const editor = document.querySelector('[data-creator-tiers-editor]');
+                        if (e.key === 'b' || e.key === 'B') {
+                          e.preventDefault();
+                          document.execCommand('bold', false, null);
+                          if (editor) {
+                            const event = new Event('input', { bubbles: true });
+                            editor.dispatchEvent(event);
+                          }
+                        } else if (e.key === 'i' || e.key === 'I') {
+                          e.preventDefault();
+                          document.execCommand('italic', false, null);
+                          if (editor) {
+                            const event = new Event('input', { bubbles: true });
+                            editor.dispatchEvent(event);
+                          }
+                        } else if (e.key === 'u' || e.key === 'U') {
+                          e.preventDefault();
+                          document.execCommand('underline', false, null);
+                          if (editor) {
+                            const event = new Event('input', { bubbles: true });
+                            editor.dispatchEvent(event);
+                          }
+                        }
+                      }
+                    }}
                     onFocus={(e) => {
                       // Set initial content if empty
                       if (!e.currentTarget.innerHTML) {
