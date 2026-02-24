@@ -128,14 +128,12 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Label
             color={
-              mediaKitMandatory &&
-              (creator?.isTiktokConnected || creator?.isFacebookConnected)
+              creator?.isTiktokConnected || creator?.isFacebookConnected
                 ? 'success'
                 : 'error'
             }
           >
-            {mediaKitMandatory &&
-            (creator?.isTiktokConnected || creator?.isFacebookConnected)
+            {creator?.isTiktokConnected || creator?.isFacebookConnected
               ? 'Yes'
               : 'No'}
           </Label>
