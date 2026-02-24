@@ -3924,10 +3924,105 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     {/* Metrics Cards */}
     <Grid container spacing={2} sx={{ mb: 4 }}>
+      {/* Engagement Card */}
       <Grid item xs={6} md={2.4}>
         <Box
           sx={{
             background: 'linear-gradient(0deg, #026D54 0%, rgba(2, 109, 84, 0) 107.14%)',
+            borderRadius: '12px',
+            p: 3,
+            color: 'white',
+            height: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-start'
+          }}
+        >
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 500,
+              fontStyle: 'normal',
+              fontSize: '46px !important',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              color: '#FFFFFF',
+              mb: 0.5
+            }}
+          >
+            {summaryStats.averageEngagementRate ? `${summaryStats.averageEngagementRate.toFixed(2)}%` : '0%'}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '16px',
+              letterSpacing: '0%',
+              color: '#FFFFFF'
+            }}
+          >
+            Engagement
+          </Typography>
+        </Box>
+      </Grid>
+      
+      {/* Total Creators Card */}
+      <Grid item xs={6} md={2.4}>
+        <Box
+          sx={{
+            background: 'linear-gradient(359.86deg, #8A5AFE 0.13%, rgba(138, 90, 254, 0) 109.62%)',
+            borderRadius: '12px',
+            p: 3,
+            color: 'white',
+            height: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-start'
+          }}
+        >
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 500,
+              fontStyle: 'normal',
+              fontSize: '46px !important',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              color: '#FFFFFF',
+              mb: 0.5
+            }}
+          >
+            {formatNumber(filteredSubmissions?.length || 0)}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '16px',
+              letterSpacing: '0%',
+              color: '#FFFFFF'
+            }}
+          >
+            Total Creators
+          </Typography>
+        </Box>
+      </Grid>
+      
+      {/* Total Views Card */}
+      <Grid item xs={6} md={2.4}>
+        <Box
+          sx={{
+            background: 'linear-gradient(180deg, rgba(255, 53, 0, 0) -9.77%, #FF3500 100%)',
             borderRadius: '12px',
             p: 3,
             color: 'white',
@@ -3969,96 +4064,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Typography>
         </Box>
       </Grid>
-      <Grid item xs={6} md={2.4}>
-        <Box
-          sx={{
-            background: 'linear-gradient(359.86deg, #8A5AFE 0.13%, rgba(138, 90, 254, 0) 109.62%)',
-            borderRadius: '12px',
-            p: 3,
-            color: 'white',
-            height: '120px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            alignItems: 'flex-start'
-          }}
-        >
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 500,
-              fontStyle: 'normal',
-              fontSize: '46px !important',
-              lineHeight: '100%',
-              letterSpacing: '0%',
-              color: '#FFFFFF',
-              mb: 0.5
-            }}
-          >
-            {formatNumber(summaryStats.totalLikes) || '0'}
-          </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 400,
-              fontStyle: 'normal',
-              fontSize: '12px',
-              lineHeight: '16px',
-              letterSpacing: '0%',
-              color: '#FFFFFF'
-            }}
-          >
-            Total Likes
-          </Typography>
-        </Box>
-      </Grid>
-      <Grid item xs={6} md={2.4}>
-        <Box
-          sx={{
-            background: 'linear-gradient(180deg, rgba(255, 53, 0, 0) -9.77%, #FF3500 100%)',
-            borderRadius: '12px',
-            p: 3,
-            color: 'white',
-            height: '120px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            alignItems: 'flex-start'
-          }}
-        >
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 500,
-              fontStyle: 'normal',
-              fontSize: '46px !important',
-              lineHeight: '100%',
-              letterSpacing: '0%',
-              color: '#FFFFFF',
-              mb: 0.5
-            }}
-          >
-            {formatNumber(summaryStats.totalComments) || '0'}
-          </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 400,
-              fontStyle: 'normal',
-              fontSize: '12px',
-              lineHeight: '16px',
-              letterSpacing: '0%',
-              color: '#FFFFFF'
-            }}
-          >
-            Total Comments
-          </Typography>
-        </Box>
-      </Grid>
+      
+      {/* Total Interactions Card */}
       <Grid item xs={6} md={2.4}>
         <Box
           sx={{
@@ -4086,7 +4093,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               mb: 0.5
             }}
           >
-            {formatNumber(summaryStats.totalSaved) || '0'}
+            {formatNumber((summaryStats.totalLikes || 0) + (summaryStats.totalComments || 0) + (summaryStats.totalShares || 0) + (summaryStats.totalSaved || 0))}
           </Typography>
           <Typography 
             variant="body2" 
@@ -4100,10 +4107,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
               color: '#FFFFFF'
             }}
           >
-            Total Saved
+            Total Interactions
           </Typography>
         </Box>
       </Grid>
+      
+      {/* Total Shares Card */}
       <Grid item xs={6} md={2.4}>
         <Box
           sx={{
