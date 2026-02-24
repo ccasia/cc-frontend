@@ -44,7 +44,7 @@ const formatDailyLabel = (label, isoDate) => {
 
 const formatDate = (d) => dayjs(d).format('MMM D, YYYY');
 
-// Color + label based on how this creator's activation time compares to average
+// Color + label based on how this creator's days compare to average
 const getSpeedInfo = (days, avg) => {
   if (avg == null || avg === 0) return { color: '#919EAB', label: '' };
   const ratio = days / avg;
@@ -53,13 +53,27 @@ const getSpeedInfo = (days, avg) => {
   return { color: CHART_COLORS.error, label: 'Slow' };
 };
 
+// ---------------------------------------------------------------------------
+// Default config (Time-to-Activation behaviour)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_CONFIG = {
+  useCreatorsHook: useGetTimeToActivationCreators,
+  subtitle: null, // rendered inline below
+  dateLabel: 'Activated',
+  dateColor: CHART_COLORS.success,
+  dateField: 'formCompletedAt',
+  daysField: 'daysToActivation',
+  emptyTitle: 'No creators activated',
+  emptySubtitle: 'No form completions recorded in this period',
+};
 
 // ---------------------------------------------------------------------------
 // CreatorRow
 // ---------------------------------------------------------------------------
 
-function CreatorRow({ creator, avgDays }) {
-  const days = creator.daysToActivation;
+function CreatorRow({ creator, avgDays, config }) {
+  const days = creator[config.daysField];
   const { color: speedColor, label: speedLabel } = getSpeedInfo(days, avgDays);
 
   return (
@@ -121,11 +135,11 @@ function CreatorRow({ creator, avgDays }) {
               </Stack>
 
               <Stack spacing={0.25}>
-                <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: CHART_COLORS.success, textTransform: 'uppercase', letterSpacing: '0.03em', lineHeight: 1 }}>
-                  Activated
+                <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: config.dateColor, textTransform: 'uppercase', letterSpacing: '0.03em', lineHeight: 1 }}>
+                  {config.dateLabel}
                 </Typography>
                 <Typography sx={{ fontSize: '0.8125rem', fontWeight: 500, color: '#333', lineHeight: 1.3 }}>
-                  {formatDate(creator.formCompletedAt)}
+                  {formatDate(creator[config.dateField])}
                 </Typography>
               </Stack>
             </Stack>
@@ -179,20 +193,24 @@ function CreatorRow({ creator, avgDays }) {
 CreatorRow.propTypes = {
   creator: PropTypes.object.isRequired,
   avgDays: PropTypes.number,
+  config: PropTypes.object.isRequired,
 };
 
 // ---------------------------------------------------------------------------
 // Main Drawer
 // ---------------------------------------------------------------------------
 
-export default function TimeToActivationDrawer({
+export default function CreatorDrilldownDrawer({
   selectedPoint,
   points,
   data,
   isDaily,
   onClose,
   onNavigate,
+  config: configProp,
 }) {
+  const config = { ...DEFAULT_CONFIG, ...configProp };
+
   const { startDate, endDate, displayTitle } = useMemo(() => {
     if (!selectedPoint) return { startDate: null, endDate: null, displayTitle: '' };
 
@@ -215,18 +233,18 @@ export default function TimeToActivationDrawer({
     return { startDate: start, endDate: end, displayTitle: formatFullMonth(selectedPoint) };
   }, [selectedPoint, isDaily, points, data]);
 
-  const { creators, avgDays, count, isLoading } = useGetTimeToActivationCreators(
+  const { creators, avgDays, count, isLoading } = config.useCreatorsHook(
     startDate && endDate ? { startDate, endDate } : {}
   );
 
   // Find fastest / slowest
   const fastest = useMemo(
-    () => (creators.length > 0 ? creators.reduce((a, b) => (a.daysToActivation <= b.daysToActivation ? a : b)) : null),
-    [creators]
+    () => (creators.length > 0 ? creators.reduce((a, b) => (a[config.daysField] <= b[config.daysField] ? a : b)) : null),
+    [creators, config.daysField]
   );
   const slowest = useMemo(
-    () => (creators.length > 0 ? creators.reduce((a, b) => (a.daysToActivation >= b.daysToActivation ? a : b)) : null),
-    [creators]
+    () => (creators.length > 0 ? creators.reduce((a, b) => (a[config.daysField] >= b[config.daysField] ? a : b)) : null),
+    [creators, config.daysField]
   );
 
   // Navigation
@@ -246,6 +264,13 @@ export default function TimeToActivationDrawer({
 
   const hasData = !isLoading && creators.length > 0;
 
+  // Subtitle: use config.subtitle if provided, otherwise default TTA text
+  const subtitleContent = config.subtitle || (
+    <>
+      Avg days from <Typography component="span" sx={{ fontWeight: 700, color: '#637381', fontSize: 'inherit' }}>account creation</Typography> to <Typography component="span" sx={{ fontWeight: 700, color: '#637381', fontSize: 'inherit' }}>payment form completion</Typography>
+    </>
+  );
+
   return (
     <Drawer
       open={!!selectedPoint}
@@ -264,7 +289,7 @@ export default function TimeToActivationDrawer({
         },
       }}
     >
-      {/* ── Sticky Header ── */}
+      {/* -- Sticky Header -- */}
       <Box
         sx={{
           position: 'sticky',
@@ -280,7 +305,7 @@ export default function TimeToActivationDrawer({
           <Stack>
             <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{displayTitle}</Typography>
             <Typography sx={{ fontSize: '0.8rem', color: '#919EAB', mt: 0.5, lineHeight: 1.5 }}>
-              Avg days from <Typography component="span" sx={{ fontWeight: 700, color: '#637381', fontSize: 'inherit' }}>account creation</Typography> to <Typography component="span" sx={{ fontWeight: 700, color: '#637381', fontSize: 'inherit' }}>payment form completion</Typography>
+              {subtitleContent}
             </Typography>
           </Stack>
           <IconButton onClick={onClose} sx={{ mt: -1 }}>
@@ -288,7 +313,7 @@ export default function TimeToActivationDrawer({
           </IconButton>
         </Stack>
 
-        {/* Hero stats row — only when we have data */}
+        {/* Hero stats row -- only when we have data */}
         {hasData && (
           <Stack
             direction="row"
@@ -317,7 +342,7 @@ export default function TimeToActivationDrawer({
             {/* Average */}
             <Stack alignItems="center" sx={{ flex: 1, py: 1.5 }}>
               <Typography sx={{ fontSize: '1.375rem', fontWeight: 700, color: '#1A1A2E', lineHeight: 1, letterSpacing: '-0.02em' }}>
-                {avgDays != null ? avgDays : '—'}
+                {avgDays != null ? avgDays : '\u2014'}
                 <Typography component="span" sx={{ fontSize: '0.6875rem', fontWeight: 500, color: '#919EAB', ml: 0.25 }}>days</Typography>
               </Typography>
               <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: '#919EAB', textTransform: 'uppercase', letterSpacing: '0.05em', mt: 0.5 }}>
@@ -330,7 +355,7 @@ export default function TimeToActivationDrawer({
             {/* Fastest */}
             <Stack alignItems="center" sx={{ flex: 1, py: 1.5 }}>
               <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: CHART_COLORS.success, lineHeight: 1, letterSpacing: '-0.02em' }}>
-                {fastest ? fastest.daysToActivation : '—'}
+                {fastest ? fastest[config.daysField] : '\u2014'}
                 <Typography component="span" sx={{ fontSize: '0.6875rem', fontWeight: 500, color: '#919EAB', ml: 0.25 }}>days</Typography>
               </Typography>
               <Stack direction="row" alignItems="center" spacing={0.375} sx={{ mt: 0.5 }}>
@@ -346,7 +371,7 @@ export default function TimeToActivationDrawer({
             {/* Slowest */}
             <Stack alignItems="center" sx={{ flex: 1, py: 1.5 }}>
               <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: CHART_COLORS.error, lineHeight: 1, letterSpacing: '-0.02em' }}>
-                {slowest ? slowest.daysToActivation : '—'}
+                {slowest ? slowest[config.daysField] : '\u2014'}
                 <Typography component="span" sx={{ fontSize: '0.6875rem', fontWeight: 500, color: '#919EAB', ml: 0.25 }}>days</Typography>
               </Typography>
               <Stack direction="row" alignItems="center" spacing={0.375} sx={{ mt: 0.5 }}>
@@ -389,7 +414,7 @@ export default function TimeToActivationDrawer({
         )}
       </Box>
 
-      {/* ── Scrollable Content ── */}
+      {/* -- Scrollable Content -- */}
       <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#F4F4F4' }}>
         {isLoading && (
           <Stack alignItems="center" justifyContent="center" sx={{ py: 10 }}>
@@ -414,10 +439,10 @@ export default function TimeToActivationDrawer({
               <Iconify icon="solar:user-cross-rounded-linear" width={24} sx={{ color: '#C4CDD5' }} />
             </Box>
             <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#637381' }}>
-              No creators activated
+              {config.emptyTitle}
             </Typography>
             <Typography sx={{ fontSize: '0.75rem', color: '#919EAB', mt: 0.25 }}>
-              No form completions recorded in this period
+              {config.emptySubtitle}
             </Typography>
           </Stack>
         )}
@@ -436,13 +461,14 @@ export default function TimeToActivationDrawer({
                 key={creator.userId}
                 creator={creator}
                 avgDays={avgDays}
+                config={config}
               />
             ))}
           </Box>
         )}
       </Box>
 
-      {/* ── Sticky Footer — prev/next navigation ── */}
+      {/* -- Sticky Footer -- prev/next navigation -- */}
       <Box
         sx={{
           flexShrink: 0,
@@ -485,11 +511,12 @@ export default function TimeToActivationDrawer({
   );
 }
 
-TimeToActivationDrawer.propTypes = {
+CreatorDrilldownDrawer.propTypes = {
   selectedPoint: PropTypes.string,
   points: PropTypes.array.isRequired,
   data: PropTypes.array.isRequired,
   isDaily: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onNavigate: PropTypes.func.isRequired,
+  config: PropTypes.object,
 };

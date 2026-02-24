@@ -42,6 +42,8 @@ export const endpoints = {
     activationRate: '/api/analytics/v2/activation-rate',
     timeToActivation: '/api/analytics/v2/time-to-activation',
     timeToActivationCreators: '/api/analytics/v2/time-to-activation/creators',
+    pitchRate: '/api/analytics/v2/pitch-rate',
+    pitchRateCreators: '/api/analytics/v2/pitch-rate/creators',
     mediaKitActivation: '/api/analytics/v2/media-kit-activation',
   },
   overview: {

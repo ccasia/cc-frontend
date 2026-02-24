@@ -13,7 +13,7 @@ import useGetTimeToActivation from 'src/hooks/use-get-time-to-activation';
 import ChartCard from '../components/chart-card';
 import ZoomableChart from '../components/zoomable-chart';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
-import TimeToActivationDrawer from './time-to-activation-drawer';
+import CreatorDrilldownDrawer from './creator-drilldown-drawer';
 import { useIsDaily, useDateFilter, useFilterLabel, useFilteredData } from '../date-filter-context';
 import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, getTrendProps, TICK_LABEL_STYLE } from '../chart-config';
 
@@ -149,7 +149,7 @@ export default function TimeToActivationChart() {
           }}
         />
       </ZoomableChart>
-      <TimeToActivationDrawer
+      <CreatorDrilldownDrawer
         selectedPoint={selectedPoint}
         points={labels}
         data={trimmed}
