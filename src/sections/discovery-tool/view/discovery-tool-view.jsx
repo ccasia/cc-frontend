@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo, useEffect, useCallback } from 'react';
 
-import { Container, Typography } from '@mui/material';
+import { Box, Container, Pagination, Typography } from '@mui/material';
 
 import useGetDiscoveryCreators from 'src/hooks/use-get-discovery-creators';
 
@@ -24,9 +24,10 @@ const DiscoveryToolView = () => {
 	// Track whether the current filter results should be displayed
 	const [showResults, setShowResults] = useState(true);
 	const isInitialMount = useRef(true);
+	const [currentPage, setCurrentPage] = useState(1);
 
 	// All filters are now server-side — pass them all to the SWR hook
-	const { creators, pagination, availableLocations, isLoading, isError } = useGetDiscoveryCreators({
+	const { creators, pagination, availableLocations, isLoading, isError, pageSize } = useGetDiscoveryCreators({
 		platform: filters.platform,
 		gender: filters.gender || undefined,
 		ageRange: filters.ageRange || undefined,
@@ -36,8 +37,8 @@ const DiscoveryToolView = () => {
 		interests: filters.interests?.length ? filters.interests : undefined,
 		keyword: filters.debouncedKeyword || undefined,
 		hashtag: filters.debouncedHashtag || undefined,
-		page: 1,
-		limit: 50,
+		page: currentPage,
+		limit: 20,
 	});
 
 	// Check if any filter is active (non-default)
@@ -73,10 +74,26 @@ const DiscoveryToolView = () => {
 			return;
 		}
 		setShowResults(false);
+		setCurrentPage(1);
 	}, [filters]);
 
 	const handleShowResults = useCallback(() => {
 		setShowResults(true);
+	}, []);
+
+	const totalPages = useMemo(() => {
+		if (!pagination?.total || !pagination?.limit) return 1;
+		return Math.max(1, Math.ceil(pagination.total / pagination.limit));
+	}, [pagination]);
+
+	const viewedCount = useMemo(() => {
+		const total = pagination?.total ?? creators.length;
+		if (!total) return 0;
+		return Math.min(currentPage * pageSize, total);
+	}, [pagination?.total, creators.length, currentPage, pageSize]);
+
+	const handlePageChange = useCallback((_event, nextPage) => {
+		setCurrentPage(nextPage);
 	}, []);
 
 	// Creator selection for comparison
@@ -114,6 +131,35 @@ const DiscoveryToolView = () => {
 				onShowResults={handleShowResults}
 				showButton={hasActiveFilters && !showResults}
 			/>
+
+			{shouldShowResults && (
+				<Box
+					sx={{
+						mt: 3,
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'space-between',
+						gap: 2,
+						flexWrap: 'wrap',
+					}}
+				>
+					<Typography sx={{ fontSize: 14, color: 'text.secondary' }}>
+						{isLoading
+							? 'Loading creators…'
+							: `Showing ${viewedCount} of ${pagination?.total ?? creators.length} creator${(pagination?.total ?? creators.length) === 1 ? '' : 's'}`}
+					</Typography>
+
+					{!isLoading && totalPages > 1 && (
+						<Pagination
+							count={totalPages}
+							page={currentPage}
+							onChange={handlePageChange}
+							size="small"
+							variant='outlined'
+						/>
+					)}
+				</Box>
+			)}
 
 			{shouldShowResults && (
 				<CreatorList

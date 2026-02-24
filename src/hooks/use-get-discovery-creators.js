@@ -16,11 +16,14 @@ import { fetcher, endpoints } from 'src/utils/axios';
  * @param {string} [filters.hashtag]
  */
 const useGetDiscoveryCreators = (filters = {}) => {
+  const page = filters.page || 1;
+  const limit = filters.limit || 20;
+
   const url = useMemo(() => {
     const params = new URLSearchParams();
     params.set('platform', filters.platform || 'all');
-    params.set('page', '1');
-    params.set('limit', '50');
+    params.set('page', String(page));
+    params.set('limit', String(limit));
     params.set('hydrateMissing', 'true');
 
     if (filters.gender) params.set('gender', filters.gender);
@@ -33,12 +36,12 @@ const useGetDiscoveryCreators = (filters = {}) => {
     if (filters.interests?.length) params.set('interests', JSON.stringify(filters.interests));
 
     return `${endpoints.discovery.creators}?${params.toString()}`;
-  }, [filters]);
+  }, [filters, page, limit]);
 
   const { data, isLoading, mutate, error } = useSWR(url, fetcher, {
     revalidateOnFocus: false,
     revalidateOnMount: true,
-    keepPreviousData: false,
+    keepPreviousData: true,
   });
 
   const memoizedValue = useMemo(
@@ -47,10 +50,11 @@ const useGetDiscoveryCreators = (filters = {}) => {
       pagination: data?.pagination || null,
       availableLocations: data?.availableLocations || {},
       isLoading,
+      pageSize: limit,
       mutate,
       isError: error,
     }),
-    [data, isLoading, mutate, error]
+    [data, isLoading, limit, mutate, error]
   );
 
   return memoizedValue;

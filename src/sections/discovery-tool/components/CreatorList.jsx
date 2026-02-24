@@ -101,7 +101,7 @@ const CreatorList = ({ creators, isLoading, isError, pagination, selectedIds, on
   }
 
   return (
-    <Box sx={{ mt: 3 }}>
+    <Box sx={{ mt: 2 }}>
       {/* Creator rows */}
       <Box
         sx={{

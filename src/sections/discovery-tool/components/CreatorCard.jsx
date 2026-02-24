@@ -104,10 +104,9 @@ const VideoThumbnail = ({ video, platform, tiktokHandle }) => {
       rel={permalink ? 'noopener noreferrer' : undefined}
       sx={{
         position: 'relative',
-        width: 120,
+        width: '100%',
         height: 200,
         overflow: 'hidden',
-        flexShrink: 0,
         cursor: permalink ? 'pointer' : 'default',
         textDecoration: 'none',
         '&:hover .thumbnail-overlay': {
@@ -164,13 +163,13 @@ const VideoThumbnail = ({ video, platform, tiktokHandle }) => {
         }}
       >
         <Stack direction="row" alignItems="center" spacing={0.5}>
-          <Iconify icon="mdi:heart-outline" width={14} color="#fff" />
+          <Iconify icon="mdi:heart-outline" width={20} color="#fff" />
           <Typography sx={{ color: '#fff', fontSize: 11, fontWeight: 600 }}>
             {formatNumber(likes || 0)}
           </Typography>
         </Stack>
         <Stack direction="row" alignItems="center" spacing={0.5}>
-          <Iconify icon="mdi:comment-outline" width={14} color="#fff" />
+          <Iconify icon="tabler:message-circle" width={20} color="#fff" />
           <Typography sx={{ color: '#fff', fontSize: 11, fontWeight: 600 }}>
             {formatNumber(comments || 0)}
           </Typography>
@@ -194,11 +193,14 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
   const handle = getPlatformHandle(creator, platform);
   const platformIcon = getPlatformIcon(platform);
 
-  const profilePicture = creator.instagram?.profilePictureUrl || null;
+  const profilePicture = 
+    platform === 'instagram' 
+    ? creator.instagram?.profilePictureUrl || null
+    : creator.tiktok?.profilePictureUrl || null;
   const bio =
     platform === 'tiktok'
-      ? creator.tiktok?.biography || creator.instagram?.biography || creator.about || null
-      : creator.instagram?.biography || creator.tiktok?.biography || creator.about || null;
+      ? creator.tiktok?.biography || creator.about || null
+      : creator.instagram?.biography || creator.about || null;
 
   const followers = platformData.followers || 0;
   const engagementRate = platformData.engagementRate || 0;
@@ -243,6 +245,7 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
           minWidth: 200,
           p: 2,
           display: 'flex',
+          flex: 0.5,
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
@@ -358,7 +361,7 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
       </Box>
 
       {/* ─── Right: Top Videos ────────────────────────────────────────────────── */}
-      <Stack direction="row" spacing={1}>
+      <Stack direction="row" spacing={1} flex={1}>
         {topVideos.length > 0 ? (
           topVideos.map((video, idx) => (
             <VideoThumbnail
