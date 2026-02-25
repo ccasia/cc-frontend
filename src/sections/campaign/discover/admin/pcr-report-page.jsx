@@ -52,6 +52,35 @@ const getWorkedWellOpacity = (index) => {
   return 0.65;
 };
 
+// Utility function to handle paste events and strip formatting
+const handlePlainTextPaste = (e) => {
+  e.preventDefault();
+  const text = e.clipboardData.getData('text/plain');
+  
+  // For contentEditable elements
+  if (e.target.contentEditable === 'true') {
+    document.execCommand('insertText', false, text);
+  } else {
+    // For regular input/textarea elements
+    const target = e.target;
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    const value = target.value;
+    
+    // Insert plain text at cursor position
+    const newValue = value.substring(0, start) + text + value.substring(end);
+    target.value = newValue;
+    
+    // Set cursor position after pasted text
+    const newCursorPos = start + text.length;
+    target.setSelectionRange(newCursorPos, newCursorPos);
+    
+    // Trigger change event
+    const event = new Event('input', { bubbles: true });
+    target.dispatchEvent(event);
+  }
+};
+
 const SortableSection = ({ id, children, isEditMode }) => {
   const {
     attributes,
@@ -1035,6 +1064,29 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, showFourthCard, showFifthCard, isEditMode]);
+
+  // Global paste event listener to strip formatting from all pasted content
+  useEffect(() => {
+    const handleGlobalPaste = (e) => {
+      // Only apply to inputs, textareas, and contentEditable elements within the report
+      const target = e.target;
+      const isInReport = reportRef.current?.contains(target);
+      
+      if (isInReport && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.contentEditable === 'true'
+      )) {
+        handlePlainTextPaste(e);
+      }
+    };
+
+    document.addEventListener('paste', handleGlobalPaste);
+    
+    return () => {
+      document.removeEventListener('paste', handleGlobalPaste);
+    };
+  }, []);
 
   // Measure cards height and update chart height (Edit Mode)
   useEffect(() => {
@@ -2110,7 +2162,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               )}
               {hasFinalWeek && (
                 <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
-                  1 Week After Posting Period
+                  1 Week after P.Period
                 </Typography>
               )}
             </Box>
@@ -5633,6 +5685,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       })()}
       
       {/* Positive Comments */}
+      {(isEditMode || editableContent.positiveComments.length > 0) && (
       <Box sx={{ mb: 3, position: 'relative', mt: 3 }}>
       <Box
         sx={{
@@ -5861,8 +5914,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
           )}
       </Box>
     </Box>
+      )}
 
       {/* Neutral Comments */}
+      {(isEditMode || editableContent.neutralComments.length > 0) && (
       <Box sx={{ mb: 3, position: 'relative', mt: 3 }}>
       <Box
         sx={{
@@ -6091,6 +6146,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           )}
         </Box>
         </Box>
+      )}
       </Box>
     </Box>
                 </SortableSection>
@@ -6461,17 +6517,34 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
         {/* Tier Table */}
         {(() => {
-          // Calculate tier data from submissions
+          // Calculate tier data from shortlisted creators (for credit tier campaigns)
           const tierDataMap = new Map();
           
-          if (campaign?.isCreditTier && submissions?.length > 0) {
-            submissions.forEach((submission) => {
-              const tier = submission?.user?.creator?.creditTier;
+          if (campaign?.isCreditTier && campaign?.shortlisted?.length > 0) {
+            campaign.shortlisted.forEach((shortlisted) => {
+              // Get tier from shortlisted record (tier at assignment time)
+              const tier = shortlisted?.creditTier;
               if (tier) {
                 const tierName = tier.name || 'Unknown';
-                const engagementRate = submission?.insightData?.insight?.engagementRate || 
-                                      submission?.engagementRate || 
-                                      null;
+                
+                // Get engagement rates from all submissions/insights for this creator
+                const userSubmissions = submissions.filter(sub => sub.userId === shortlisted.userId);
+                const engagementRates = [];
+                
+                // Get ER from insights data
+                userSubmissions.forEach(submission => {
+                  const insightData = filteredInsightsData.find(
+                    insight => insight.submissionId === submission.id
+                  );
+                  
+                  if (insightData?.insight) {
+                    const er = calculateEngagementRate(insightData.insight);
+                    const erValue = parseFloat(er);
+                    if (!Number.isNaN(erValue) && erValue > 0) {
+                      engagementRates.push(erValue);
+                    }
+                  }
+                });
                 
                 if (!tierDataMap.has(tierName)) {
                   tierDataMap.set(tierName, {
@@ -6480,9 +6553,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   });
                 }
                 
-                if (engagementRate !== null && engagementRate !== undefined) {
-                  tierDataMap.get(tierName).engagementRates.push(parseFloat(engagementRate));
-                }
+                // Add all engagement rates for this creator to their tier
+                tierDataMap.get(tierName).engagementRates.push(...engagementRates);
               }
             });
           }
