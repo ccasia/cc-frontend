@@ -8,9 +8,9 @@ import { fetcher, endpoints } from 'src/utils/axios';
  * Used for finance dashboard tab counts
  */
 const useGetAllInvoiceStats = () => {
-  const { data, isLoading, error } = useSWR(endpoints.invoice.getStats, fetcher, {
+  const { data, isLoading, error, mutate } = useSWR(endpoints.invoice.getStats, fetcher, {
     revalidateOnFocus: false,
-    dedupingInterval: 30000, // Cache for 30 seconds
+    dedupingInterval: 5000, // Cache for 5 seconds
   });
 
   const memoizedValue = useMemo(() => {
@@ -30,8 +30,9 @@ const useGetAllInvoiceStats = () => {
       stats,
       isLoading,
       error,
+      mutate,
     };
-  }, [data, isLoading, error]);
+  }, [data, isLoading, error, mutate]);
 
   return memoizedValue;
 };

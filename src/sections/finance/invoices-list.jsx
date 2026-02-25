@@ -1,9 +1,10 @@
 import dayjs from 'dayjs';
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useRef, useMemo, useState, useCallback } from 'react';
+import React, { useRef, useMemo, useState, useCallback, useEffect, useContext } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { pdf } from '@react-pdf/renderer';
 
 import {
   Box,
@@ -46,7 +47,11 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { getBankCode, getPaymentMode } from 'src/contants/bank-codes';
 
+// Add useAuthContext import
+import { useAuthContext } from 'src/auth/hooks';
+
 import InvoiceItem from './invoice-item';
+import InvoicePDF from '../invoice/invoice-pdf';
 import InvoiceTableToolbar from './invoice-table-toolbar';
 import InvoiceNewEditForm from '../invoice/invoice-new-edit-form';
 import InvoiceTableFiltersResult from './invoice-table-filters-result';
@@ -63,22 +68,28 @@ const defaultFilters = {
 };
 
 const TABLE_HEAD = [
-  { id: 'invoiceNumber', label: 'Invoice ID', width: 180, hideSortIcon: false },
+  { id: 'checkbox', label: '', width: 48, hideSortIcon: true },
+  { id: 'invoiceNumber', label: 'Invoice ID', width: 150, hideSortIcon: false },
   { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true },
-  { id: 'creatorName', label: 'Creator Name', width: 180, hideSortIcon: true },
+  { id: 'creatorName', label: 'Recipient', width: 180, hideSortIcon: true },
   { id: 'createdAt', label: 'Invoice Date', width: 120, hideSortIcon: true },
   { id: 'dueDate', label: 'Due Date', width: 120, hideSortIcon: false },
   { id: 'amount', label: 'Amount', width: 120, hideSortIcon: true },
   { id: 'status', label: 'Status', width: 120, hideSortIcon: true },
-  { id: 'action', label: '', width: 100, hideSortIcon: true },
 ];
 
 const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
+  const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuthContext(); // Get user from auth context
   const [filters, setFilters] = useState(defaultFilters);
   const [datePresetLabel, setDatePresetLabel] = useState(null);
+  const [invoices, setInvoices] = useState([]);
 
   const editDialog = useBoolean();
   const exportPreview = useBoolean();
+  const xeroDialog = useBoolean();
+  const xeroLoading = useBoolean();
+
   const [selectedId, setSelectedId] = useState('');
   const [selectedData, setSelectedData] = useState();
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -89,9 +100,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const [addStatusAnchor, setAddStatusAnchor] = useState(null);
   const [exportingCSV, setExportingCSV] = useState(false);
   const [exportFormatAnchor, setExportFormatAnchor] = useState(null);
-
-  const xeroLoading = useBoolean();
-  const xeroDialog = useBoolean();
 
   const smUp = useResponsive('up', 'sm');
   const { mainRef } = useMainContext();
@@ -144,13 +152,12 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     console.error('Error fetching invoices:', invoicesError);
   }
 
-  // Use paginated data if available, otherwise fallback to prop
-  // Wait for data to load - if invoicesData is undefined, we're still loading
-  // Once loaded, invoicesData will be an array (empty or with items)
-  const invoices = useMemo(() => {
-    if (invoicesData !== undefined) return invoicesData;
-    if (invoicesProp && invoicesProp.length > 0) return invoicesProp;
-    return [];
+  useEffect(() => {
+    if (invoicesData !== undefined) {
+      setInvoices(invoicesData);
+    } else if (invoicesProp && invoicesProp.length > 0) {
+      setInvoices(invoicesProp);
+    }
   }, [invoicesData, invoicesProp]);
 
   const campaignOptions = useMemo(() => {
@@ -210,10 +217,13 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   const canReset = !isEqual(defaultFilters, filters) || dateRange.selected;
 
-  // Show "No Data" if:
-  // 1. Not loading AND no filtered data AND filters are reset (no active filters)
-  // 2. Not loading AND no filtered data (even with filters)
   const notFound = !invoicesLoading && !dataFiltered?.length;
+
+  const {
+    stats: invoiceStats,
+    isLoading: statsLoading,
+    mutate: mutateStats,
+  } = useGetAllInvoiceStats();
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -745,8 +755,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   const changeInvoiceStatus = useCallback(() => {}, []);
 
-  const { stats: invoiceStats, isLoading: statsLoading } = useGetAllInvoiceStats();
-
   // Create TABS array using backend stats - always use backend stats for accuracy
   const TABS = useMemo(() => {
     // Check if stats are loaded and have counts
@@ -760,6 +768,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         { value: 'overdue', label: 'Overdue', count: counts.overdue ?? 0 },
         { value: 'draft', label: 'Draft', count: counts.draft ?? 0 },
         { value: 'rejected', label: 'Rejected', count: counts.rejected ?? 0 },
+        { value: 'failed', label: 'Failed', count: counts.failed ?? 0 },
       ];
     }
 
@@ -771,6 +780,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       { value: 'overdue', label: 'Overdue', count: 0 },
       { value: 'draft', label: 'Draft', count: 0 },
       { value: 'rejected', label: 'Rejected', count: 0 },
+      { value: 'failed', label: 'Failed', count: 0 },
     ];
   }, [invoiceStats]);
 
@@ -809,17 +819,26 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       enqueueSnackbar('Failed to initiate Xero connection', { variant: 'error' });
       xeroLoading.onFalse();
     }
-  }, [xeroLoading]);
+  }, [xeroLoading, enqueueSnackbar]);
 
-  const handleBulkUpdate = async () => {
+  const handleBulkUpdate = useCallback(async () => {
+    if (!user?.admin?.xeroTokenSet) {
+      enqueueSnackbar(`You're not connected to Xero`, {
+        variant: 'error',
+      });
+      xeroDialog.onTrue();
+      return;
+    }
+
     setBulkLoading(true);
 
     try {
       const selectedInvoices = dataFiltered.filter((row) => table.selected.includes(row.id));
 
-      const actionableIds = selectedInvoices
-        .filter((invoice) => invoice.status === 'pending' || invoice.status === 'draft')
-        .map((invoice) => invoice.id);
+      const actionableInvoices = selectedInvoices.filter(
+        (invoice) => invoice.status === 'pending' || invoice.status === 'draft'
+      );
+      const actionableIds = actionableInvoices.map((invoice) => invoice.id);
 
       if (actionableIds.length === 0) {
         enqueueSnackbar('No Pending or Draft invoices selected.', { variant: 'info' });
@@ -827,14 +846,83 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         return;
       }
 
-      const res = await axiosInstance.post(endpoints.invoice.bulkUpdateInvoices, {
-        invoiceIds: actionableIds,
+      const formData = new FormData();
+
+      formData.append('invoiceIds', JSON.stringify(actionableIds));
+
+      enqueueSnackbar(`Generating ${actionableInvoices.length} PDF(s)...`, { variant: 'info' });
+
+      await Promise.all(
+        actionableInvoices.map(async (inv) => {
+          const pdfBlob = await pdf(<InvoicePDF invoice={inv} />).toBlob();
+          formData.append(`file_${inv.id}`, pdfBlob, `Invoice-${inv.invoiceNumber}.pdf`);
+        })
+      );
+
+      setInvoices((prevInvoices) =>
+        prevInvoices.map((invoice) =>
+          actionableIds.includes(invoice.id) ? { ...invoice, status: 'processing' } : invoice
+        )
+      );
+
+      const res = await axiosInstance.post(endpoints.invoice.bulkUpdateInvoices, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
       if (res.status === 200) {
-        enqueueSnackbar(res.data.message, { variant: 'success' });
-        if (mutateInvoices) mutateInvoices();
+        enqueueSnackbar('Invoices queued for processing.', { variant: 'success' });
+
+        if (typeof mutateStats === 'function') {
+          mutateStats();
+        }
+        if (typeof mutateInvoices === 'function') {
+          mutateInvoices();
+        }
+
         table.onSelectAllRows(false, []);
+
+        const pollInterval = setInterval(async () => {
+          try {
+            const queryParams = new URLSearchParams();
+            queryParams.append('limit', '10000');
+            const res = await axiosInstance.get(
+              `${endpoints.invoice.getAll}?${queryParams.toString()}`
+            );
+            const updatedInvoices = res.data?.data || [];
+
+            setInvoices(updatedInvoices);
+
+            const allProcessingDone = !updatedInvoices.some(
+              (inv) => actionableIds.includes(inv.id) && inv.status === 'processing'
+            );
+            const failedInvoices = updatedInvoices.filter(
+              (inv) => actionableIds.includes(inv.id) && inv.status === 'failed'
+            );
+            const approvedInvoices = updatedInvoices.filter(
+              (inv) => actionableIds.includes(inv.id) && inv.status === 'approved'
+            );
+
+            if (allProcessingDone) {
+              clearInterval(pollInterval);
+
+              if (typeof mutateStats === 'function') {
+                mutateStats();
+              }
+              if (typeof mutateInvoices === 'function') {
+                mutateInvoices();
+              }
+              enqueueSnackbar(
+                `All invoices processed. ${approvedInvoices.length} approved, ${failedInvoices.length} failed`
+              );
+            }
+          } catch (err) {
+            console.error('Error polling invoice status:', err);
+          }
+        }, 5000);
+
+        setTimeout(() => clearInterval(pollInterval), 5 * 60 * 1000);
       }
     } catch (error) {
       console.error(error);
@@ -852,7 +940,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     } finally {
       setBulkLoading(false);
     }
-  };
+  }, [dataFiltered, table, enqueueSnackbar, mutateStats, mutateInvoices, xeroDialog, user]);
 
   return (
     <Box>
@@ -861,7 +949,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           mb: 2,
           width: '100%',
           display: 'flex',
-          flexDirection: 'row',
+          flexDirection: { xs: 'column', md: 'row' },
           justifyContent: 'space-between',
           alignItems: 'center',
           px: 2.5,
@@ -874,11 +962,12 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         <Box
           sx={{
             display: 'flex',
-            flexDirection: 'row',
+            flexDirection: { xs: 'column', md: 'row' },
             flexWrap: 'wrap',
             gap: 0.5,
             flexGrow: 1,
             mr: 1,
+            overflow: 'hidden',
           }}
         >
           {TABS.map((tab) => (
@@ -916,6 +1005,41 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
             </Button>
           ))}
         </Box>
+        <Button
+          variant="contained"
+          color="success"
+          onClick={handleBulkUpdate}
+          disabled={bulkLoading || table.selected.length === 0}
+          startIcon={
+            bulkLoading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <Iconify icon="eva:checkmark-circle-2-fill" />
+            )
+          }
+          sx={{
+            width: 'fit-content',
+            height: 40,
+            padding: { xs: '4px 8px', sm: '6px 10px' },
+            borderRadius: '8px',
+            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            backgroundColor: '#1340FF',
+            color: '#FFFFFF',
+            fontSize: { xs: 12, md: 14 },
+            fontWeight: 600,
+            textTransform: 'none',
+            '&:hover': {
+              backgroundColor: '#133effd3',
+              boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            },
+            '&:active': {
+              boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+              transform: 'translateY(1px)',
+            },
+          }}
+        >
+          Approve & Send ({table.selected.length})
+        </Button>
       </Box>
 
       <InvoiceTableToolbar
@@ -970,51 +1094,73 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
             >
               <TableHead>
                 <TableRow>
-                  {TABLE_HEAD.map((headCell, index) => (
-                    <TableCell
-                      key={headCell.id}
-                      padding="normal"
-                      sortDirection={table.orderBy === headCell.id ? table.order : false}
-                      sx={{
-                        py: 1,
-                        color: '#221f20',
-                        fontWeight: 600,
-                        width: headCell.width,
-                        ...(index === 0 && {
-                          borderRadius: '10px 0 0 10px',
-                        }),
-                        ...(index === TABLE_HEAD.length - 1 && {
-                          borderRadius: '0 10px 10px 0',
-                        }),
-                        bgcolor: '#f5f5f5',
-                        whiteSpace: 'nowrap',
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                      }}
-                    >
-                      {headCell.id === 'dueDate' ? (
-                        <TableSortLabel
-                          active
-                          direction={table.orderBy === 'dueDate' ? table.order : 'asc'}
-                          onClick={() => table.onSort('dueDate')}
-                          sx={{
-                            color: 'inherit !important',
-                            '& .MuiTableSortLabel-icon': {
-                              opacity: 1,
-                              color:
-                                table.orderBy === 'dueDate'
-                                  ? '#1340ff !important'
-                                  : '#c4cdd5 !important',
-                            },
-                          }}
-                        >
-                          {headCell.label}
-                        </TableSortLabel>
-                      ) : (
-                        headCell.label
-                      )}
-                    </TableCell>
-                  ))}
+                  {TABLE_HEAD.map((headCell, index) => {
+                    const isSorted = table.orderBy === headCell.id;
+                    const reversedOrder = table.order === 'asc' ? 'desc' : 'asc';
+                    return (
+                      <TableCell
+                        key={headCell.id}
+                        padding={headCell.id === 'checkbox' ? 'checkbox' : 'normal'}
+                        sortDirection={isSorted ? reversedOrder : false}
+                        sx={{
+                          py: 1,
+                          color: '#221f20',
+                          fontWeight: 600,
+                          width: headCell.width,
+                          ...(index === 0 && {
+                            borderRadius: '10px 0 0 10px',
+                          }),
+                          ...(index === TABLE_HEAD.length - 1 && {
+                            borderRadius: '0 10px 10px 0',
+                          }),
+                          bgcolor: '#f5f5f5',
+                          whiteSpace: 'nowrap',
+                          borderBottom: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        {headCell.id === 'checkbox' && (
+                          <Checkbox
+                            indeterminate={
+                              table.selected.length > 0 &&
+                              table.selected.length < dataFiltered.length
+                            }
+                            checked={
+                              dataFiltered.length > 0 &&
+                              table.selected.length === dataFiltered.length
+                            }
+                            onChange={(event) =>
+                              table.onSelectAllRows(
+                                event.target.checked,
+                                dataFiltered.map((row) => row.id)
+                              )
+                            }
+                          />
+                        )}
+                        {headCell.id === 'dueDate' ? (
+                          <TableSortLabel
+                            active
+                            direction={isSorted ? reversedOrder : 'desc'}
+                            onClick={() => table.onSort('dueDate')}
+                            sx={{
+                              color: 'inherit !important',
+                              '& .MuiTableSortLabel-icon': {
+                                opacity: 1,
+                                color:
+                                  table.orderBy === 'dueDate'
+                                    ? '#1340ff !important'
+                                    : '#c4cdd5 !important',
+                              },
+                            }}
+                          >
+                            {headCell.label}
+                          </TableSortLabel>
+                        ) : (
+                          headCell.label
+                        )}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               </TableHead>
 
@@ -1078,7 +1224,13 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         }}
       >
         <DialogContent sx={{ p: 2, overflow: 'hidden' }}>
-          <InvoiceNewEditForm id={selectedId} creators={selectedData} />
+          <InvoiceNewEditForm
+            id={selectedId}
+            creators={selectedData}
+            onClose={closeEditInvoice}
+            mutateInvoices={mutateInvoices}
+            mutateStats={mutateStats}
+          />
         </DialogContent>
       </Dialog>
 
@@ -1505,6 +1657,35 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
             </Menu>
           </Box>
         </Box>
+      </Dialog>
+
+      {/* connect to xero */}
+      <Dialog open={xeroDialog.value} onClose={xeroDialog.onFalse}>
+        <DialogTitle>Connect to Xero</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            You need to be connected to Xero to approve these invoices. Please connect your account
+            to proceed.
+          </DialogContentText>
+
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <LoadingButton
+              variant="contained"
+              size="large"
+              loading={xeroLoading.value}
+              onClick={handleActivateXero}
+              startIcon={<Iconify icon="logos:xero" width={24} />}
+              sx={{ bgcolor: '#13B5EA', '&:hover': { bgcolor: '#0e9bc7' } }} // Xero Blue
+            >
+              Connect to Xero
+            </LoadingButton>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={xeroDialog.onFalse} color="inherit">
+            Cancel
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* connect to xero */}

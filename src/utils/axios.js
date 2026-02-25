@@ -348,6 +348,7 @@ export const endpoints = {
     getAll: '/api/invoice/',
     getCampaignById: (id) => `/api/campaign/getCampaignByIdInvoice/${id}`,
     updateInvoice: '/api/invoice/update',
+    bulkUpdateInvoices: '/api/invoice/bulk-update',
     create: '/api/invoice/create',
     getInvoicesByCampaignId: (id) => `/api/invoice/getInvoicesByCampaignId/${id}`,
     getStats: '/api/invoice/stats', // Stats for all invoices

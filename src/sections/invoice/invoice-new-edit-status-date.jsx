@@ -17,7 +17,7 @@ export default function InvoiceNewEditStatusDate() {
     <Stack
       spacing={2}
       direction={{ xs: 'column', sm: 'row' }}
-      sx={{ p: 3, bgcolor: 'background.neutral' }}
+      sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: '10px' }}
     >
       <RHFTextField
         disabled
@@ -56,10 +56,16 @@ export default function InvoiceNewEditStatusDate() {
             disabled
             label="Invoice Date"
             value={field.value}
+            format="dd/MM/yyyy"
             onChange={(newValue) => {
               field.onChange(newValue);
             }}
             slotProps={{
+              openPickerButton: {
+                sx: {
+                  color: '#1340FF',
+                },
+              },
               textField: {
                 fullWidth: true,
                 error: !!error,
@@ -77,10 +83,16 @@ export default function InvoiceNewEditStatusDate() {
           <DatePicker
             label="Due date"
             value={field.value}
+            format="dd/MM/yyyy"
             onChange={(newValue) => {
               field.onChange(newValue);
             }}
             slotProps={{
+              openPickerButton: {
+                sx: {
+                  color: '#1340FF',
+                },
+              },
               textField: {
                 fullWidth: true,
                 error: !!error,
