@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { Box, Chip, Stack, Avatar, Checkbox, Typography } from '@mui/material';
 
 import { formatNumber } from 'src/utils/socialMetricsCalculator';
+import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
 
@@ -306,7 +307,27 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
         {handle && (
           <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
             {platformIcon && <Iconify icon={platformIcon} width={14} color="text.secondary" />}
-            <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{handle}</Typography>
+            <a
+              href={createSocialProfileUrl(handle, platform)}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: 'none', color: 'inherit' }}
+            >
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  color: 'text.secondary',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  transition: 'text-decoration 0.15s',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                {handle}
+              </Typography>
+            </a>
           </Stack>
         )}
 
