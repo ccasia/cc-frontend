@@ -34,7 +34,7 @@ export const usePostEngagementSnapshots = (campaignId) => {
         throw new Error(response.data.message || 'Failed to fetch snapshots');
       }
     } catch (err) {
-      console.error('Error fetching post engagement snapshots:', err);
+      console.warn('Post engagement snapshots not available:', err.message);
       setError(err.message || 'Failed to fetch snapshots');
       setSnapshots([]);
     } finally {
