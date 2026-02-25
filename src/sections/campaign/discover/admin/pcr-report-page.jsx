@@ -40,6 +40,12 @@ const getImprovedInsightBgColor = (index) => {
   return '#1340FFA6';
 };
 
+const getWorkedWellInsightBgColor = (index) => {
+  if (index === 0) return 'linear-gradient(0deg, #8A5AFE, #8A5AFE)';
+  if (index === 1) return 'linear-gradient(0deg, #8A5AFE, #8A5AFE)';
+  return 'linear-gradient(0deg, #8A5AFE, #8A5AFE)';
+};
+
 const getWorkedWellOpacity = (index) => {
   if (index === 0) return 0.85;
   if (index === 1) return 0.75;
@@ -423,6 +429,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Show third persona card state
   const [showThirdCard, setShowThirdCard] = useState(false);
   
+  // Show fourth persona card state
+  const [showFourthCard, setShowFourthCard] = useState(false);
+  
+  // Show fifth persona card state
+  const [showFifthCard, setShowFifthCard] = useState(false);
+  
   // Persona cards array state
   const [personaCards, setPersonaCards] = useState([
     {
@@ -460,6 +472,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
     thirdContentStyle: '',
     thirdWhyWork: '',
     thirdCreatorCount: '',
+    fourthTitle: '',
+    fourthEmoji: '',
+    fourthContentStyle: '',
+    fourthWhyWork: '',
+    fourthCreatorCount: '',
+    fifthTitle: '',
+    fifthEmoji: '',
+    fifthContentStyle: '',
+    fifthWhyWork: '',
+    fifthCreatorCount: '',
     personaCards: [],
     improvedInsights: [],
     workedWellInsights: [],
@@ -674,11 +696,21 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                     (loadedContent.educatorContentStyle && loadedContent.educatorContentStyle.trim() !== '');
           const hasThirdContent = (loadedContent.thirdTitle && loadedContent.thirdTitle.trim() !== '') ||
                                  (loadedContent.thirdContentStyle && loadedContent.thirdContentStyle.trim() !== '');
+          const hasFourthContent = (loadedContent.fourthTitle && loadedContent.fourthTitle.trim() !== '') ||
+                                  (loadedContent.fourthContentStyle && loadedContent.fourthContentStyle.trim() !== '');
+          const hasFifthContent = (loadedContent.fifthTitle && loadedContent.fifthTitle.trim() !== '') ||
+                                 (loadedContent.fifthContentStyle && loadedContent.fifthContentStyle.trim() !== '');
           if (hasEducatorContent) {
             setShowEducatorCard(true);
           }
           if (hasThirdContent) {
             setShowThirdCard(true);
+          }
+          if (hasFourthContent) {
+            setShowFourthCard(true);
+          }
+          if (hasFifthContent) {
+            setShowFifthCard(true);
           }
         } else {
           console.log('ℹ️ No PCR data found, using defaults');
@@ -698,7 +730,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
     setIsPreviewCached(false);
   };
   
-  const saveToHistory = (content, visibility, order, showEducator, showThird) => {
+  const saveToHistory = (content, visibility, order, showEducator, showThird, showFourth, showFifth) => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(JSON.parse(JSON.stringify({
       content,
@@ -706,6 +738,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
       sectionOrder: order,
       showEducatorCard: showEducator,
       showThirdCard: showThird,
+      showFourthCard: showFourth,
+      showFifthCard: showFifth,
     })));
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
@@ -725,6 +759,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
       setSectionOrder(JSON.parse(JSON.stringify(state.sectionOrder)));
       setShowEducatorCard(state.showEducatorCard);
       setShowThirdCard(state.showThirdCard);
+      setShowFourthCard(state.showFourthCard || false);
+      setShowFifthCard(state.showFifthCard || false);
       
       // Invalidate preview cache when undoing
       invalidatePreviewCache();
@@ -951,13 +987,15 @@ const PCRReportPage = ({ campaign, onBack }) => {
       setSectionOrder(JSON.parse(JSON.stringify(state.sectionOrder)));
       setShowEducatorCard(state.showEducatorCard);
       setShowThirdCard(state.showThirdCard);
+      setShowFourthCard(state.showFourthCard || false);
+      setShowFifthCard(state.showFifthCard || false);
     }
   };
 
   // Track changes for undo/redo
   useEffect(() => {
     if (isEditMode && history.length === 0) {
-      saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard);
+      saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, showFourthCard, showFifthCard);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode]);
@@ -985,16 +1023,18 @@ const PCRReportPage = ({ campaign, onBack }) => {
         sectionOrder,
         showEducatorCard,
         showThirdCard,
+        showFourthCard,
+        showFifthCard,
       };
       
       if (JSON.stringify(lastState) !== JSON.stringify(currentState)) {
-        saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard);
+        saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, showFourthCard, showFifthCard);
       }
     }, 500); 
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, isEditMode]);
+  }, [editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, showFourthCard, showFifthCard, isEditMode]);
 
   // Measure cards height and update chart height (Edit Mode)
   useEffect(() => {
@@ -1026,7 +1066,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [showEducatorCard, showThirdCard, editableContent.comicContentStyle, editableContent.educatorContentStyle, editableContent.thirdContentStyle]);
+  }, [showEducatorCard, showThirdCard, showFourthCard, showFifthCard, editableContent.comicContentStyle, editableContent.educatorContentStyle, editableContent.thirdContentStyle, editableContent.fourthContentStyle, editableContent.fifthContentStyle]);
 
   useEffect(() => {
     const updateDisplayCardsHeight = () => {
@@ -1059,7 +1099,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [showEducatorCard, showThirdCard, editableContent.comicContentStyle, editableContent.educatorContentStyle, editableContent.thirdContentStyle]);
+  }, [showEducatorCard, showThirdCard, showFourthCard, showFifthCard, editableContent.comicContentStyle, editableContent.educatorContentStyle, editableContent.thirdContentStyle, editableContent.fourthContentStyle, editableContent.fifthContentStyle]);
 
   const handleSavePCR = async () => {
     if (!campaign?.id) return;
@@ -1114,8 +1154,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                       (loadedContent.educatorContentStyle && loadedContent.educatorContentStyle.trim() !== '');
             const hasThirdContent = (loadedContent.thirdTitle && loadedContent.thirdTitle.trim() !== '') ||
                                    (loadedContent.thirdContentStyle && loadedContent.thirdContentStyle.trim() !== '');
+            const hasFourthContent = (loadedContent.fourthTitle && loadedContent.fourthTitle.trim() !== '') ||
+                                    (loadedContent.fourthContentStyle && loadedContent.fourthContentStyle.trim() !== '');
+            const hasFifthContent = (loadedContent.fifthTitle && loadedContent.fifthTitle.trim() !== '') ||
+                                   (loadedContent.fifthContentStyle && loadedContent.fifthContentStyle.trim() !== '');
             setShowEducatorCard(hasEducatorContent);
             setShowThirdCard(hasThirdContent);
+            setShowFourthCard(hasFourthContent);
+            setShowFifthCard(hasFifthContent);
             
             // Force remeasure of card heights after DOM updates
             setTimeout(() => {
@@ -1228,12 +1274,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
       if (sections.length === 0) {
         await addGradientBackground();
 
-        const canvas = await html2canvas(pdfContainer, {
+      const canvas = await html2canvas(pdfContainer, {
           scale: 3, // Higher scale for better quality
-          useCORS: true,
-          logging: false,
-          backgroundColor: null,
-          windowWidth: 1078,
+        useCORS: true,
+        logging: false,
+        backgroundColor: null,
+        windowWidth: 1078,
           windowHeight: pdfContainer.scrollHeight,
           imageTimeout: 0,
           removeContainer: true,
@@ -3733,32 +3779,27 @@ const PCRReportPage = ({ campaign, onBack }) => {
         <Button
           onClick={handleExportPDF}
           sx={{
-            width: '79px',
+            minWidth: '44px',
+            width: '44px',
             height: '44px',
             borderRadius: '8px',
-            gap: '6px',
-            padding: '10px 16px 13px 16px',
-            background: '#3A3A3C',
-            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-            color: '#FFFFFF',
-            textTransform: 'none',
-            fontFamily: 'Inter Display, sans-serif',
-            fontWeight: 600,
-            fontStyle: 'normal',
-            fontSize: '16px',
-            lineHeight: '20px',
-            letterSpacing: '0%',
+            padding: '10px',
+            background: '#FFFFFF',
+            border: '1px solid #E7E7E7',
+            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            color: '#1340FF',
             '&:hover': {
-              background: '#2A2A2C',
-              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
+              background: '#F9FAFB',
+              border: '1px solid #D1D5DB',
+              boxShadow: '0px -3px 0px 0px #D1D5DB inset',
             },
             '&:active': {
-              boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
+              boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
               transform: 'translateY(1px)',
             }
           }}
         >
-          Share
+          <Iconify icon="material-symbols:download-rounded" width={20} />
         </Button>
           </>
         )}
@@ -3946,7 +3987,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       </Box>
         </Box>
         
-        <Box sx={{ position: 'relative', right: '-20px' }}>
+        <Box sx={{ position: 'relative', right: '-5px' }}>
           <Box
             component="img"
             src="/logo/CC.svg"
@@ -6873,7 +6914,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 width: '95px',
                 height: '95px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                background: 'linear-gradient(135deg, #1340FF 0%, #1340FF 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -6892,11 +6933,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <Box 
             sx={{ 
               position: 'absolute',
-              right: '12px',
-              left: '70px', // Space for circle
+              right: '24px',
+              left: '82px', // Space for circle + padding
               top: isEditMode ? '20px' : '50%',
               transform: isEditMode ? 'none' : 'translateY(-50%)',
-               maxWidth: 'calc(480px - 82px)', // Card width minus circle space
+               maxWidth: 'calc(480px - 106px)', // Card width minus circle space and padding
               transition: 'top 0.3s ease, transform 0.3s ease',
             }}
           >
@@ -7138,7 +7179,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 width: '95px',
                 height: '95px',
                 borderRadius: '50%',
-                background: '#D4FF00',
+                background: '#8A5AFE',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -7157,11 +7198,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <Box 
             sx={{ 
               position: 'absolute',
-              right: '12px',
-              left: '70px', // Space for circle
+              right: '24px',
+              left: '82px', // Space for circle + padding
               top: isEditMode ? '20px' : '50%',
               transform: isEditMode ? 'none' : 'translateY(-50%)',
-               maxWidth: 'calc(480px - 82px)', // Card width minus circle space
+               maxWidth: 'calc(480px - 106px)', // Card width minus circle space and padding
               transition: 'top 0.3s ease, transform 0.3s ease',
             }}
           >
@@ -7440,7 +7481,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 width: '95px',
                 height: '95px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
+                background: 'linear-gradient(135deg, #FF3500 0%, #FF3500 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -7653,8 +7694,606 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Box>
         )}
 
-        {/* Add Persona Button - Show when there are less than 3 cards */}
-        {(!showEducatorCard || !showThirdCard) && (
+        {/* Fourth Persona Card - Only show if showFourthCard is true */}
+        {showFourthCard && (
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 3, ml: 0, position: 'relative', width: '100%', minWidth: 0, overflow: 'visible' }}>
+          {/* Card */}
+          <Box
+            sx={{
+              width: isEditMode ? '910px' : '860px',
+              minWidth: '470px',
+              flexShrink: 0,
+              height: isEditMode ? '280px' : '189px',
+              borderRadius: '20px',
+              background: '#F5F5F5',
+              border: '10px solid #FFFFFF',
+              boxShadow: '0px 4px 4px 0px #8E8E9340',
+              position: 'relative',
+              transition: 'height 0.3s ease',
+              overflow: 'visible',
+            }}
+          >
+          {/* Circle with Icon - Positioned as separate component */}
+          <Box
+            sx={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              border: '8px solid #FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'absolute',
+              left: '-60px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 1,
+              boxShadow: '-4px 4px 4px 0px #8E8E9340',
+            }}
+          >
+            {/* Editable label for emoji */}
+            {isEditMode && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -30,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  bgcolor: '#F3F4F6',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#3A3A3C' }}>
+                  Editable
+                </Typography>
+              </Box>
+            )}
+            {/* Inner gradient circle */}
+            <Box
+              onClick={(e) => {
+                if (isEditMode) {
+                  setEmojiPickerAnchor(e.currentTarget);
+                  setEmojiPickerType('fourth');
+                }
+              }}
+              sx={{
+                width: '95px',
+                height: '95px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #D8FF01 0%, #D8FF01 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '32px',
+                cursor: isEditMode ? 'pointer' : 'default',
+                '&:hover': isEditMode ? {
+                  opacity: 0.8,
+                } : {},
+              }}
+            >
+              {editableContent.fourthEmoji}
+            </Box>
+          </Box>
+
+          {/* Content - Positioned independently */}
+          <Box 
+            sx={{ 
+              position: 'absolute',
+              right: '12px',
+              left: '70px', // Space for circle
+              top: isEditMode ? '20px' : '50%',
+              transform: isEditMode ? 'none' : 'translateY(-50%)',
+               maxWidth: isEditMode ? 'calc(920px - 82px)' : 'calc(860px - 82px)', // Card width minus circle space
+              transition: 'top 0.3s ease, transform 0.3s ease',
+              overflow: 'visible',
+            }}
+          >
+            {isEditMode ? (
+              <Box sx={{ position: 'relative', mb: 0.75 }}>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 6,
+                    left: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    zIndex: 1,
+                  }}
+                >
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                    Editable
+                  </Typography>
+                </Box>
+              <TextField
+                value={editableContent.fourthTitle}
+                onChange={(e) => setEditableContent({ ...editableContent, fourthTitle: e.target.value })}
+                  fullWidth
+                  inputProps={{
+                    maxLength: 30,
+                    style: {
+                      fontFamily: 'Instrument Serif, serif',
+                      fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                      color: '#0067D5',
+                      textAlign: 'left',
+                    }
+                  }}
+                sx={{
+                    bgcolor: '#E5E7EB',
+                    borderRadius: '8px',
+                    '& .MuiInputBase-root': {
+                    fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                    color: '#0067D5',
+                    textAlign: 'left',
+                      padding: '8px',
+                      paddingLeft: '6px',
+                      paddingTop: '26px',
+                      height: '56px',
+                  },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                }}
+              />
+              </Box>
+            ) : (
+              <Typography
+                sx={{
+                  fontFamily: 'Instrument Serif, serif',
+                  fontWeight: 400,
+                  fontStyle: 'normal',
+                  fontSize: '36px',
+                  lineHeight: '40px',
+                  letterSpacing: '0%',
+                  color: '#0067D5',
+                  mb: 1.5,
+                  textAlign: 'center',
+                  ml: -3,
+                }}
+              >
+                {editableContent.fourthTitle}
+              </Typography>
+            )}
+            
+            {isEditMode && (
+              <>
+                <Box sx={{ position: 'relative', mb: 0.75 }}>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                      Editable
+                    </Typography>
+                  </Box>
+                <TextField
+                  value={editableContent.fourthContentStyle}
+                  onChange={(e) => setEditableContent({ ...editableContent, fourthContentStyle: e.target.value })}
+                  fullWidth
+                    multiline
+                    rows={2}
+                    inputProps={{
+                      maxLength: 200,
+                      style: {
+                        fontFamily: 'Inter Display, sans-serif',
+                        fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '20px',
+                        color: '#000000',
+                        textAlign: 'left',
+                      }
+                    }}
+                  sx={{
+                    bgcolor: '#E5E7EB',
+                    borderRadius: '8px',
+                      '& .MuiInputBase-root': {
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '20px',
+                        color: '#000000',
+                      textAlign: 'left',
+                        padding: '8px',
+                        paddingLeft: '6px',
+                        paddingTop: '26px',
+                    },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                  }}
+                />
+                </Box>
+
+                <Box sx={{ mt: 1 }}>
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#636366', mb: 1 }}>
+                    Number of Creators
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TextField
+                      value={editableContent.fourthCreatorCount}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow numbers
+                        if (value === '' || /^\d+$/.test(value)) {
+                          setEditableContent({ ...editableContent, fourthCreatorCount: value });
+                        }
+                      }}
+                      placeholder="Number of Creators"
+                  sx={{
+                        flex: 1,
+                        bgcolor: '#FFFFFF',
+                        borderRadius: '8px',
+                        '& .MuiInputBase-root': {
+                          padding: '12px',
+                          height: '48px',
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#E5E7EB',
+                        },
+                      }}
+                      inputProps={{
+                        maxLength: 3,
+                        inputMode: 'numeric',
+                        pattern: '[0-9]*',
+                        style: {
+                          fontFamily: 'Aileron',
+                    fontSize: '14px',
+                    color: '#000000',
+                        }
+                      }}
+                    />
+                    <IconButton
+                      onClick={() => {
+                        setShowFourthCard(false);
+                        setEditableContent({
+                          ...editableContent,
+                          fourthTitle: '',
+                          fourthContentStyle: '',
+                          fourthCreatorCount: '',
+                          fourthEmoji: ''
+                        });
+                      }}
+                      sx={{
+                        color: '#000000',
+                        width: '48px',
+                        height: '48px',
+                        padding: 0,
+                        '&:hover': {
+                          opacity: 0.7,
+                        },
+                  }}
+                >
+                      <img src="/assets/delete.svg" alt="Delete" style={{ width: '20px', height: '20px' }} />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </>
+              )}
+            </Box>
+          </Box>
+          </Box>
+        )}
+
+        {/* Fifth Persona Card - Only show if showFifthCard is true */}
+        {showFifthCard && (
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 3, ml: 0, position: 'relative', width: '100%', minWidth: 0, overflow: 'visible' }}>
+          {/* Card */}
+          <Box
+            sx={{
+              width: isEditMode ? '910px' : '860px',
+              minWidth: '470px',
+              flexShrink: 0,
+              height: isEditMode ? '280px' : '189px',
+              borderRadius: '20px',
+              background: '#F5F5F5',
+              border: '10px solid #FFFFFF',
+              boxShadow: '0px 4px 4px 0px #8E8E9340',
+              position: 'relative',
+              transition: 'height 0.3s ease',
+              overflow: 'visible',
+            }}
+          >
+          {/* Circle with Icon - Positioned as separate component */}
+          <Box
+            sx={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              border: '8px solid #FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'absolute',
+              left: '-60px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 1,
+              boxShadow: '-4px 4px 4px 0px #8E8E9340',
+            }}
+          >
+            {/* Editable label for emoji */}
+            {isEditMode && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -30,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  bgcolor: '#F3F4F6',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#3A3A3C' }}>
+                  Editable
+                </Typography>
+              </Box>
+            )}
+            {/* Inner gradient circle */}
+            <Box
+              onClick={(e) => {
+                if (isEditMode) {
+                  setEmojiPickerAnchor(e.currentTarget);
+                  setEmojiPickerType('fifth');
+                }
+              }}
+              sx={{
+                width: '95px',
+                height: '95px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #026D54 0%, #026D54 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '32px',
+                cursor: isEditMode ? 'pointer' : 'default',
+                '&:hover': isEditMode ? {
+                  opacity: 0.8,
+                } : {},
+              }}
+            >
+              {editableContent.fifthEmoji}
+            </Box>
+          </Box>
+
+          {/* Content - Positioned independently */}
+          <Box 
+            sx={{ 
+              position: 'absolute',
+              right: '12px',
+              left: '70px', // Space for circle
+              top: isEditMode ? '20px' : '50%',
+              transform: isEditMode ? 'none' : 'translateY(-50%)',
+               maxWidth: isEditMode ? 'calc(920px - 82px)' : 'calc(860px - 82px)', // Card width minus circle space
+              transition: 'top 0.3s ease, transform 0.3s ease',
+              overflow: 'visible',
+            }}
+          >
+            {isEditMode ? (
+              <Box sx={{ position: 'relative', mb: 0.75 }}>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 6,
+                    left: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    zIndex: 1,
+                  }}
+                >
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                    Editable
+                  </Typography>
+                </Box>
+              <TextField
+                value={editableContent.fifthTitle}
+                onChange={(e) => setEditableContent({ ...editableContent, fifthTitle: e.target.value })}
+                  fullWidth
+                  inputProps={{
+                    maxLength: 30,
+                    style: {
+                      fontFamily: 'Instrument Serif, serif',
+                      fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                      color: '#0067D5',
+                      textAlign: 'left',
+                    }
+                  }}
+                sx={{
+                    bgcolor: '#E5E7EB',
+                    borderRadius: '8px',
+                    '& .MuiInputBase-root': {
+                    fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                    color: '#0067D5',
+                    textAlign: 'left',
+                      padding: '8px',
+                      paddingLeft: '6px',
+                      paddingTop: '26px',
+                      height: '56px',
+                  },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                }}
+              />
+              </Box>
+            ) : (
+              <Typography
+                sx={{
+                  fontFamily: 'Instrument Serif, serif',
+                  fontWeight: 400,
+                  fontStyle: 'normal',
+                  fontSize: '36px',
+                  lineHeight: '40px',
+                  letterSpacing: '0%',
+                  color: '#0067D5',
+                  mb: 1.5,
+                  textAlign: 'center',
+                  ml: -3,
+                }}
+              >
+                {editableContent.fifthTitle}
+              </Typography>
+            )}
+            
+            {isEditMode && (
+              <>
+                <Box sx={{ position: 'relative', mb: 0.75 }}>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                      Editable
+                    </Typography>
+                  </Box>
+                <TextField
+                  value={editableContent.fifthContentStyle}
+                  onChange={(e) => setEditableContent({ ...editableContent, fifthContentStyle: e.target.value })}
+                  fullWidth
+                    multiline
+                    rows={2}
+                    inputProps={{
+                      maxLength: 200,
+                      style: {
+                        fontFamily: 'Inter Display, sans-serif',
+                        fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '20px',
+                        color: '#000000',
+                        textAlign: 'left',
+                      }
+                    }}
+                  sx={{
+                    bgcolor: '#E5E7EB',
+                    borderRadius: '8px',
+                      '& .MuiInputBase-root': {
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '20px',
+                        color: '#000000',
+                      textAlign: 'left',
+                        padding: '8px',
+                        paddingLeft: '6px',
+                        paddingTop: '26px',
+                    },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                  }}
+                />
+                </Box>
+
+                <Box sx={{ mt: 1 }}>
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#636366', mb: 1 }}>
+                    Number of Creators
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TextField
+                      value={editableContent.fifthCreatorCount}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow numbers
+                        if (value === '' || /^\d+$/.test(value)) {
+                          setEditableContent({ ...editableContent, fifthCreatorCount: value });
+                        }
+                      }}
+                      placeholder="Number of Creators"
+                  sx={{
+                        flex: 1,
+                        bgcolor: '#FFFFFF',
+                        borderRadius: '8px',
+                        '& .MuiInputBase-root': {
+                          padding: '12px',
+                          height: '48px',
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#E5E7EB',
+                        },
+                      }}
+                      inputProps={{
+                        maxLength: 3,
+                        inputMode: 'numeric',
+                        pattern: '[0-9]*',
+                        style: {
+                          fontFamily: 'Aileron',
+                    fontSize: '14px',
+                    color: '#000000',
+                        }
+                      }}
+                    />
+                    <IconButton
+                      onClick={() => {
+                        setShowFifthCard(false);
+                        setEditableContent({
+                          ...editableContent,
+                          fifthTitle: '',
+                          fifthContentStyle: '',
+                          fifthCreatorCount: '',
+                          fifthEmoji: ''
+                        });
+                      }}
+                      sx={{
+                        color: '#000000',
+                        width: '48px',
+                        height: '48px',
+                        padding: 0,
+                        '&:hover': {
+                          opacity: 0.7,
+                        },
+                  }}
+                >
+                      <img src="/assets/delete.svg" alt="Delete" style={{ width: '20px', height: '20px' }} />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </>
+              )}
+            </Box>
+          </Box>
+          </Box>
+        )}
+
+        {/* Add Persona Button - Show when there are less than 5 cards */}
+        {(!showEducatorCard || !showThirdCard || !showFourthCard || !showFifthCard) && (
           <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 3, ml: 2 }}>
             <IconButton
               onClick={() => {
@@ -7662,6 +8301,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   setShowEducatorCard(true);
                 } else if (!showThirdCard) {
                   setShowThirdCard(true);
+                } else if (!showFourthCard) {
+                  setShowFourthCard(true);
+                } else if (!showFifthCard) {
+                  setShowFifthCard(true);
                 }
               }}
               sx={{
@@ -7697,11 +8340,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
               width: '400px',
               height: (() => {
                 // Calculate height based on number of visible cards
-                const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0);
+                const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0) + (showFourthCard ? 1 : 0) + (showFifthCard ? 1 : 0);
                 if (visibleCards === 1) return '220px';
                 if (visibleCards === 2) return '580px';
                 if (visibleCards === 3) return '580px';
-                return '460px'; // 3 cards
+                if (visibleCards === 4) return '580px';
+                if (visibleCards === 5) return '580px';
+                return '460px'; // fallback
               })(),
               display: 'flex',
               flexDirection: 'column',
@@ -7735,17 +8380,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <svg width="360" height="360" viewBox="0 0 160 160">
                         {(() => {
                           const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
-                          const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
-                          const thirdCount = parseInt(editableContent.thirdCreatorCount, 10) || 1;
-                          const total = comicCount + educatorCount + thirdCount;
+                          const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || (showEducatorCard ? 1 : 0);
+                          const thirdCount = parseInt(editableContent.thirdCreatorCount, 10) || (showThirdCard ? 1 : 0);
+                          const fourthCount = parseInt(editableContent.fourthCreatorCount, 10) || (showFourthCard ? 1 : 0);
+                          const fifthCount = parseInt(editableContent.fifthCreatorCount, 10) || (showFifthCard ? 1 : 0);
+                          const total = comicCount + educatorCount + thirdCount + fourthCount + fifthCount;
                           const comicPercentage = comicCount / total;
                           const educatorPercentage = educatorCount / total;
                           const thirdPercentage = thirdCount / total;
+                          const fourthPercentage = fourthCount / total;
+                          const fifthPercentage = fifthCount / total;
                           
                           // Calculate cumulative angles
                           const comicAngle = comicPercentage * 2 * Math.PI;
                           const educatorAngle = educatorPercentage * 2 * Math.PI;
                           const thirdAngle = thirdPercentage * 2 * Math.PI;
+                          const fourthAngle = fourthPercentage * 2 * Math.PI;
+                          const fifthAngle = fifthPercentage * 2 * Math.PI;
                           
                           let currentAngle = 0;
                           const comicEndAngle = currentAngle + comicAngle;
@@ -7765,6 +8416,18 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           const thirdEndY = 80 - 70 * Math.cos(thirdEndAngle);
                           const thirdLargeArc = thirdAngle > Math.PI ? 1 : 0;
                           
+                          currentAngle = thirdEndAngle;
+                          const fourthEndAngle = currentAngle + fourthAngle;
+                          const fourthEndX = 80 + 70 * Math.sin(fourthEndAngle);
+                          const fourthEndY = 80 - 70 * Math.cos(fourthEndAngle);
+                          const fourthLargeArc = fourthAngle > Math.PI ? 1 : 0;
+                          
+                          currentAngle = fourthEndAngle;
+                          const fifthEndAngle = currentAngle + fifthAngle;
+                          const fifthEndX = 80 + 70 * Math.sin(fifthEndAngle);
+                          const fifthEndY = 80 - 70 * Math.cos(fifthEndAngle);
+                          const fifthLargeArc = fifthAngle > Math.PI ? 1 : 0;
+                          
                           const comicMidAngle = comicAngle / 2;
                           const comicTextX = 80 + 35 * Math.sin(comicMidAngle);
                           const comicTextY = 80 - 35 * Math.cos(comicMidAngle);
@@ -7777,23 +8440,64 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           const thirdTextX = 80 + 35 * Math.sin(thirdMidAngle);
                           const thirdTextY = 80 - 35 * Math.cos(thirdMidAngle);
                           
+                          const fourthMidAngle = comicAngle + educatorAngle + thirdAngle + fourthAngle / 2;
+                          const fourthTextX = 80 + 35 * Math.sin(fourthMidAngle);
+                          const fourthTextY = 80 - 35 * Math.cos(fourthMidAngle);
+                          
+                          const fifthMidAngle = comicAngle + educatorAngle + thirdAngle + fourthAngle + fifthAngle / 2;
+                          const fifthTextX = 80 + 35 * Math.sin(fifthMidAngle);
+                          const fifthTextY = 80 - 35 * Math.cos(fifthMidAngle);
+                          
                           return (
                             <>
-                              {/* Comic segment (purple) */}
+                              {/* Comic segment (blue) */}
                               <path
                                 d={`M 80 80 L 80 10 A 70 70 0 ${comicLargeArc} 1 ${comicEndX} ${comicEndY} Z`}
-                                fill="#8A5AFE"
+                                fill="#1340FF"
                               />
-                              {/* Educator segment (yellow-green) */}
-                              <path
-                                d={`M 80 80 L ${comicEndX} ${comicEndY} A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
-                                fill="#D4FF00"
-                              />
+                              {/* Educator segment (purple) */}
+                              {showEducatorCard && (
+                                <path
+                                  d={`M 80 80 L ${comicEndX} ${comicEndY} A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
+                                  fill="#8A5AFE"
+                                />
+                              )}
                               {/* Third segment (orange-red) */}
-                              <path
-                                d={`M 80 80 L ${educatorEndX} ${educatorEndY} A 70 70 0 ${thirdLargeArc} 1 80 10 Z`}
-                                fill="#FF6B35"
-                              />
+                              {showThirdCard && (
+                                <path
+                                  d={`M 80 80 L ${educatorEndX} ${educatorEndY} A 70 70 0 ${thirdLargeArc} 1 ${thirdEndX} ${thirdEndY} Z`}
+                                  fill="#FF3500"
+                                />
+                              )}
+                              {/* Fourth segment (yellow-green) */}
+                              {showFourthCard && (
+                                <path
+                                  d={`M 80 80 L ${thirdEndX} ${thirdEndY} A 70 70 0 ${fourthLargeArc} 1 ${fourthEndX} ${fourthEndY} Z`}
+                                  fill="#D8FF01"
+                                />
+                              )}
+                              {/* Fifth segment (teal) - closes the circle */}
+                              {showFifthCard && (
+                                <path
+                                  d={`M 80 80 L ${fourthEndX} ${fourthEndY} A 70 70 0 ${fifthLargeArc} 1 80 10 Z`}
+                                  fill="#026D54"
+                                />
+                              )}
+                              {/* If no fifth card, close with the last visible segment */}
+                              {!showFifthCard && showFourthCard && (
+                                <path
+                                  d={`M 80 80 L ${fourthEndX} ${fourthEndY} A 70 70 0 ${fifthLargeArc} 1 80 10 Z`}
+                                  fill="#026D54"
+                                  opacity="0"
+                                />
+                              )}
+                              {!showFifthCard && !showFourthCard && showThirdCard && (
+                                <path
+                                  d={`M 80 80 L ${thirdEndX} ${thirdEndY} A 70 70 0 0 1 80 10 Z`}
+                                  fill="#FF3500"
+                                  opacity="0"
+                                />
+                              )}
                               {/* Comic number */}
                               <text
                                 x={comicTextX}
@@ -7809,21 +8513,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                 {comicCount}
                               </text>
                               {/* Educator number */}
-                              <text
-                                x={educatorTextX}
-                                y={educatorTextY}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                                fill="#FFFFFF"
-                                fontSize="14"
-                                fontFamily="Aileron"
-                                fontWeight="600"
-                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
-                              >
-                                {educatorCount}
-                              </text>
+                              {showEducatorCard && educatorCount > 0 && (
+                                <text
+                                  x={educatorTextX}
+                                  y={educatorTextY}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  fill="#FFFFFF"
+                                  fontSize="14"
+                                  fontFamily="Aileron"
+                                  fontWeight="600"
+                                  style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                >
+                                  {educatorCount}
+                                </text>
+                              )}
                               {/* Third number */}
-                              {thirdCount > 0 && (
+                              {showThirdCard && thirdCount > 0 && (
                                 <text
                                   x={thirdTextX}
                                   y={thirdTextY}
@@ -7836,6 +8542,38 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                   style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
                                 >
                                   {thirdCount}
+                                </text>
+                              )}
+                              {/* Fourth number */}
+                              {showFourthCard && fourthCount > 0 && (
+                                <text
+                                  x={fourthTextX}
+                                  y={fourthTextY}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  fill="#FFFFFF"
+                                  fontSize="14"
+                                  fontFamily="Aileron"
+                                  fontWeight="600"
+                                  style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                >
+                                  {fourthCount}
+                                </text>
+                              )}
+                              {/* Fifth number */}
+                              {showFifthCard && fifthCount > 0 && (
+                                <text
+                                  x={fifthTextX}
+                                  y={fifthTextY}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  fill="#FFFFFF"
+                                  fontSize="14"
+                                  fontFamily="Aileron"
+                                  fontWeight="600"
+                                  style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                >
+                                  {fifthCount}
                                 </text>
                               )}
                             </>
@@ -7855,50 +8593,36 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
                           const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
                           const total = comicCount + educatorCount;
-                          const educatorPercentage = educatorCount / total;
                           const comicPercentage = comicCount / total;
+                          const educatorPercentage = educatorCount / total;
                           
                           // Calculate angles
-                          const educatorAngle = educatorPercentage * 2 * Math.PI;
                           const comicAngle = comicPercentage * 2 * Math.PI;
+                          const educatorAngle = educatorPercentage * 2 * Math.PI;
                           
-                          // Calculate path for educator segment
-                          const educatorEndX = 80 + 70 * Math.sin(educatorAngle);
-                          const educatorEndY = 80 - 70 * Math.cos(educatorAngle);
-                          const educatorLargeArc = educatorPercentage > 0.5 ? 1 : 0;
+                          // Calculate path for comic segment (purple)
+                          const comicEndX = 80 + 70 * Math.sin(comicAngle);
+                          const comicEndY = 80 - 70 * Math.cos(comicAngle);
+                          const comicLargeArc = comicPercentage > 0.5 ? 1 : 0;
                           
                           // Calculate positions for numbers (middle of each segment)
-                          // Educator number position (middle of yellow segment)
-                          const educatorMidAngle = educatorAngle / 2;
-                          const educatorTextX = 80 + 35 * Math.sin(educatorMidAngle);
-                          const educatorTextY = 80 - 35 * Math.cos(educatorMidAngle);
-                          
                           // Comic number position (middle of purple segment)
-                          const comicMidAngle = educatorAngle + (comicAngle / 2);
+                          const comicMidAngle = comicAngle / 2;
                           const comicTextX = 80 + 35 * Math.sin(comicMidAngle);
                           const comicTextY = 80 - 35 * Math.cos(comicMidAngle);
                           
+                          // Educator number position (middle of yellow segment)
+                          const educatorMidAngle = comicAngle + (educatorAngle / 2);
+                          const educatorTextX = 80 + 35 * Math.sin(educatorMidAngle);
+                          const educatorTextY = 80 - 35 * Math.cos(educatorMidAngle);
+                          
                           return (
                             <>
-                              <circle cx="80" cy="80" r="70" fill="#D4FF00" />
+                              <circle cx="80" cy="80" r="70" fill="#8A5AFE" />
                               <path
-                                d={`M 80 80 L 80 10 A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
-                                fill="#8A5AFE"
+                                d={`M 80 80 L 80 10 A 70 70 0 ${comicLargeArc} 1 ${comicEndX} ${comicEndY} Z`}
+                                fill="#1340FF"
                               />
-                              {/* Educator number */}
-                              <text
-                                x={educatorTextX}
-                                y={educatorTextY}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                                fill="#FFFFFF"
-                                fontSize="14"
-                                fontFamily="Aileron"
-                                fontWeight="600"
-                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
-                              >
-                                {educatorCount}
-                              </text>
                               {/* Comic number */}
                               <text
                                 x={comicTextX}
@@ -7912,6 +8636,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                 style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
                               >
                                 {comicCount}
+                              </text>
+                              {/* Educator number */}
+                              <text
+                                x={educatorTextX}
+                                y={educatorTextY}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#FFFFFF"
+                                fontSize="14"
+                                fontFamily="Aileron"
+                                fontWeight="600"
+                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                              >
+                                {educatorCount}
                               </text>
                             </>
                           );
@@ -7929,7 +8667,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         cx="80"
                         cy="80"
                         r="70"
-                        fill="#8A5AFE"
+                        fill="#1340FF"
                       />
                     </svg>
                   <Box
@@ -7963,14 +8701,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Box>
 
               {/* Legend - Moved to bottom */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%', px: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, width: '100%', px: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                   <Box
                     sx={{
-                      width: '12px',
-                      height: '12px',
+                      width: '10px',
+                      height: '10px',
                       borderRadius: '50%',
-                      bgcolor: '#8A5AFE',
+                      bgcolor: '#1340FF',
                       flexShrink: 0,
                   }}
                   />
@@ -7981,19 +8719,22 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '14px',
                       lineHeight: '18px',
                       color: '#231F20',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                       }}
                     >
-                    {editableContent.comicTitle} ({editableContent.creatorStrategyCount || '1'})
+                    {editableContent.comicTitle}
                     </Typography>
                 </Box>
                 {showEducatorCard && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <Box
                       sx={{
-                        width: '12px',
-                        height: '12px',
+                        width: '10px',
+                        height: '10px',
                         borderRadius: '50%',
-                        bgcolor: '#D4FF00',
+                        bgcolor: '#8A5AFE',
                         flexShrink: 0,
                       }}
                     />
@@ -8004,20 +8745,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     fontSize: '14px',
                     lineHeight: '18px',
                         color: '#231F20',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                   }}
                 >
-                      {editableContent.educatorTitle} ({editableContent.educatorCreatorCount || '1'})
+                      {editableContent.educatorTitle}
                 </Typography>
         </Box>
         )}
                 {showThirdCard && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <Box
                       sx={{
-                        width: '12px',
-                        height: '12px',
+                        width: '10px',
+                        height: '10px',
                         borderRadius: '50%',
-                        bgcolor: '#FF6B35',
+                        bgcolor: '#FF3500',
                         flexShrink: 0,
                       }}
                     />
@@ -8028,9 +8772,66 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fontSize: '14px',
                         lineHeight: '18px',
                         color: '#231F20',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                 }}
               >
-                      {editableContent.thirdTitle} ({editableContent.thirdCreatorCount || '1'})
+                      {editableContent.thirdTitle}
+              </Typography>
+                </Box>
+            )}
+                {showFourthCard && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <Box
+                      sx={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        bgcolor: '#D8FF01',
+                        flexShrink: 0,
+                      }}
+                    />
+              <Typography
+                sx={{
+                        fontFamily: 'Aileron',
+                  fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        color: '#231F20',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                }}
+              >
+                      {editableContent.fourthTitle}
+              </Typography>
+                </Box>
+            )}
+                {showFifthCard && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <Box
+                      sx={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        bgcolor: '#026D54',
+                        flexShrink: 0,
+                      }}
+                    />
+              <Typography
+                sx={{
+                        fontFamily: 'Aileron',
+                  fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        color: '#231F20',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                }}
+              >
+                      {editableContent.fifthTitle}
               </Typography>
                 </Box>
             )}
@@ -8087,7 +8888,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       width: '110px',
                       height: '110px',
                       borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                      background: 'linear-gradient(135deg, #1340FF 0%, #1340FF 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -8177,7 +8978,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       width: '110px',
                       height: '110px',
                       borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                      background: 'linear-gradient(135deg, #1340FF 0%, #1340FF 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -8274,7 +9075,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     width: '110px',
                     height: '110px',
                   borderRadius: '50%',
-                    background: '#D4FF00',
+                    background: '#8A5AFE',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -8372,7 +9173,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     width: '110px',
                     height: '110px',
                   borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
+                    background: 'linear-gradient(135deg, #FF3500 0%, #FF3500 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -8427,6 +9228,206 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </Box>
             </Box>
           )}
+
+          {/* Fourth Persona Card (Display Mode) - Only show if showFourthCard is true */}
+          {showFourthCard && editableContent.fourthTitle && (
+            <Box>
+            {/* Card */}
+      <Box
+        sx={{
+          width: '890px',
+          minWidth: '470px',
+          flexShrink: 0,
+          minHeight: '220px',
+          borderRadius: '20px',
+          background: '#F5F5F5',
+          border: '10px solid #FFFFFF',
+          boxShadow: '0px 4px 4px 0px #8E8E9340',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
+        {/* Circle with Icon - Positioned as separate component */}
+        <Box
+          sx={{
+            width: '140px',
+            height: '140px',
+            borderRadius: '50%',
+            background: '#FFFFFF',
+            border: '8px solid #FFFFFF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'absolute',
+              left: '-80px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 1,
+            boxShadow: '-4px 4px 4px 0px #8E8E9340',
+          }}
+        >
+          {/* Inner gradient circle */}
+          <Box
+            sx={{
+                width: '110px',
+                height: '110px',
+              borderRadius: '50%',
+                background: 'linear-gradient(135deg, #D8FF01 0%, #D8FF01 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+                fontSize: '48px',
+            }}
+          >
+            {editableContent.fourthEmoji}
+          </Box>
+        </Box>
+
+        {/* Content - Positioned independently */}
+        <Box 
+          sx={{ 
+              ml: '80px',
+              maxWidth: 'calc(890px - 92px)',
+              pr: 3,
+              py: 3,
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: 'Instrument Serif, serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+                fontSize: '32px',
+                lineHeight: '36px',
+              letterSpacing: '0%',
+              color: '#0067D5',
+              mb: 1.5,
+                textAlign: 'left',
+            }}
+          >
+            {editableContent.fourthTitle}
+          </Typography>
+          
+            <Typography
+              sx={{
+                fontFamily: 'Inter Display, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '16px',
+                  lineHeight: '22px',
+                color: '#000000',
+                  textAlign: 'left',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                whiteSpace: 'pre-wrap'
+              }}
+            >
+                {editableContent.fourthContentStyle}
+            </Typography>
+            </Box>
+        </Box>
+        </Box>
+      )}
+
+          {/* Fifth Persona Card (Display Mode) - Only show if showFifthCard is true */}
+          {showFifthCard && editableContent.fifthTitle && (
+            <Box>
+            {/* Card */}
+      <Box
+        sx={{
+          width: '890px',
+          minWidth: '470px',
+          flexShrink: 0,
+          minHeight: '220px',
+          borderRadius: '20px',
+          background: '#F5F5F5',
+          border: '10px solid #FFFFFF',
+          boxShadow: '0px 4px 4px 0px #8E8E9340',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
+        {/* Circle with Icon - Positioned as separate component */}
+        <Box
+          sx={{
+            width: '140px',
+            height: '140px',
+            borderRadius: '50%',
+            background: '#FFFFFF',
+            border: '8px solid #FFFFFF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'absolute',
+              left: '-80px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 1,
+            boxShadow: '-4px 4px 4px 0px #8E8E9340',
+          }}
+        >
+          {/* Inner gradient circle */}
+          <Box
+            sx={{
+                width: '110px',
+                height: '110px',
+              borderRadius: '50%',
+                background: 'linear-gradient(135deg, #026D54 0%, #026D54 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+                fontSize: '48px',
+            }}
+          >
+            {editableContent.fifthEmoji}
+          </Box>
+        </Box>
+
+        {/* Content - Positioned independently */}
+        <Box 
+          sx={{ 
+              ml: '80px',
+              maxWidth: 'calc(890px - 92px)',
+              pr: 3,
+              py: 3,
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: 'Instrument Serif, serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+                fontSize: '32px',
+                lineHeight: '36px',
+              letterSpacing: '0%',
+              color: '#0067D5',
+              mb: 1.5,
+                textAlign: 'left',
+            }}
+          >
+            {editableContent.fifthTitle}
+          </Typography>
+          
+            <Typography
+              sx={{
+                fontFamily: 'Inter Display, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '16px',
+                  lineHeight: '22px',
+                color: '#000000',
+                  textAlign: 'left',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                whiteSpace: 'pre-wrap'
+              }}
+            >
+                {editableContent.fifthContentStyle}
+            </Typography>
+            </Box>
+        </Box>
+        </Box>
+      )}
             </Box>
           </Grid>
 
@@ -8441,10 +9442,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 width: '400px',
                 height: (() => {
                   // Calculate height based on number of visible cards
-                  const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0);
+                  const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0) + (showFourthCard ? 1 : 0) + (showFifthCard ? 1 : 0);
                   if (visibleCards === 1) return '220px';
                   if (visibleCards === 2) return '465px';
-                  return '460px'; // 3 cards
+                  if (visibleCards === 3) return '460px';
+                  if (visibleCards === 4) return '460px';
+                  if (visibleCards === 5) return '460px';
+                  return '460px'; // fallback
                 })(),
                 display: 'flex',
                 flexDirection: 'column',
@@ -8466,13 +9470,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </Typography>
 
               {/* Circle and Legend Layout */}
-                <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? 3 : 2, flex: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? 1.5 : 2, flex: 1 }}>
                 {/* Full Circle Chart or Pie Chart */}
                 <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: (showEducatorCard || showThirdCard) ? 1 : 'none' }}>
                     {(() => {
                       // Render different chart based on number of personas
-                      if (showThirdCard) {
-                        // Pie chart when 3 personas are visible
+                      if (showFifthCard || showFourthCard || showThirdCard) {
+                        // Pie chart when 3+ personas are visible
                         return (
                       <>
                         <svg width="280" height="280" viewBox="0 0 160 160">
@@ -8480,14 +9484,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
                             const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
                             const thirdCount = parseInt(editableContent.thirdCreatorCount, 10) || 1;
-                            const total = comicCount + educatorCount + thirdCount;
+                            const fourthCount = parseInt(editableContent.fourthCreatorCount, 10) || 1;
+                            const fifthCount = parseInt(editableContent.fifthCreatorCount, 10) || 1;
+                            const total = comicCount + (showEducatorCard ? educatorCount : 0) + (showThirdCard ? thirdCount : 0) + (showFourthCard ? fourthCount : 0) + (showFifthCard ? fifthCount : 0);
                             const comicPercentage = comicCount / total;
-                            const educatorPercentage = educatorCount / total;
-                            const thirdPercentage = thirdCount / total;
+                            const educatorPercentage = showEducatorCard ? educatorCount / total : 0;
+                            const thirdPercentage = showThirdCard ? thirdCount / total : 0;
+                            const fourthPercentage = showFourthCard ? fourthCount / total : 0;
+                            const fifthPercentage = showFifthCard ? fifthCount / total : 0;
                             
                             const comicAngle = comicPercentage * 2 * Math.PI;
                             const educatorAngle = educatorPercentage * 2 * Math.PI;
                             const thirdAngle = thirdPercentage * 2 * Math.PI;
+                            const fourthAngle = fourthPercentage * 2 * Math.PI;
+                            const fifthAngle = fifthPercentage * 2 * Math.PI;
                             
                             let currentAngle = 0;
                             
@@ -8507,6 +9517,18 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             const thirdEndX = 80 + 70 * Math.sin(thirdEndAngle);
                             const thirdEndY = 80 - 70 * Math.cos(thirdEndAngle);
                             const thirdLargeArc = thirdAngle > Math.PI ? 1 : 0;
+                            
+                            currentAngle = thirdEndAngle;
+                            const fourthEndAngle = currentAngle + fourthAngle;
+                            const fourthEndX = 80 + 70 * Math.sin(fourthEndAngle);
+                            const fourthEndY = 80 - 70 * Math.cos(fourthEndAngle);
+                            const fourthLargeArc = fourthAngle > Math.PI ? 1 : 0;
+                            
+                            currentAngle = fourthEndAngle;
+                            const fifthEndAngle = currentAngle + fifthAngle;
+                            const fifthEndX = 80 + 70 * Math.sin(fifthEndAngle);
+                            const fifthEndY = 80 - 70 * Math.cos(fifthEndAngle);
+                            const fifthLargeArc = fifthAngle > Math.PI ? 1 : 0;
   
                             const comicMidAngle = comicAngle / 2;
                             const comicTextX = 80 + 35 * Math.sin(comicMidAngle);
@@ -8520,23 +9542,63 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             const thirdTextX = 80 + 35 * Math.sin(thirdMidAngle);
                             const thirdTextY = 80 - 35 * Math.cos(thirdMidAngle);
                             
+                            const fourthMidAngle = comicAngle + educatorAngle + thirdAngle + fourthAngle / 2;
+                            const fourthTextX = 80 + 35 * Math.sin(fourthMidAngle);
+                            const fourthTextY = 80 - 35 * Math.cos(fourthMidAngle);
+                            
+                            const fifthMidAngle = comicAngle + educatorAngle + thirdAngle + fourthAngle + fifthAngle / 2;
+                            const fifthTextX = 80 + 35 * Math.sin(fifthMidAngle);
+                            const fifthTextY = 80 - 35 * Math.cos(fifthMidAngle);
+                            
                             return (
                               <>
-                                {/* Comic segment (purple) */}
+                                {/* Comic segment (blue) */}
                                 <path
                                   d={`M 80 80 L 80 10 A 70 70 0 ${comicLargeArc} 1 ${comicEndX} ${comicEndY} Z`}
-                                  fill="#8A5AFE"
+                                  fill="#1340FF"
                                 />
-                                {/* Educator segment (yellow-green) */}
+                                {/* Educator segment (purple) */}
+                                {showEducatorCard && (
                                 <path
                                   d={`M 80 80 L ${comicEndX} ${comicEndY} A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
-                                  fill="#D4FF00"
+                                  fill="#8A5AFE"
                                 />
+                                )}
                                 {/* Third segment (orange-red) */}
+                                {showThirdCard && (
                                 <path
-                                  d={`M 80 80 L ${educatorEndX} ${educatorEndY} A 70 70 0 ${thirdLargeArc} 1 80 10 Z`}
-                                  fill="#FF6B35"
+                                  d={`M 80 80 L ${educatorEndX} ${educatorEndY} A 70 70 0 ${thirdLargeArc} 1 ${thirdEndX} ${thirdEndY} Z`}
+                                  fill="#FF3500"
                                 />
+                                )}
+                                {/* Fourth segment (yellow-green) */}
+                                {showFourthCard && (
+                                <path
+                                  d={`M 80 80 L ${thirdEndX} ${thirdEndY} A 70 70 0 ${fourthLargeArc} 1 ${fourthEndX} ${fourthEndY} Z`}
+                                  fill="#D8FF01"
+                                />
+                                )}
+                                {/* Fifth segment (teal) - closes the circle */}
+                                {showFifthCard && (
+                                <path
+                                  d={`M 80 80 L ${fourthEndX} ${fourthEndY} A 70 70 0 ${fifthLargeArc} 1 80 10 Z`}
+                                  fill="#026D54"
+                                />
+                                )}
+                                {!showFifthCard && showFourthCard && (
+                                <path
+                                  d={`M 80 80 L ${fourthEndX} ${fourthEndY} A 70 70 0 0 1 80 10 Z`}
+                                  fill="#D8FF01"
+                                  opacity="0"
+                                />
+                                )}
+                                {!showFifthCard && !showFourthCard && (
+                                <path
+                                  d={`M 80 80 L ${thirdEndX} ${thirdEndY} A 70 70 0 0 1 80 10 Z`}
+                                  fill="#FF3500"
+                                  opacity="0"
+                                />
+                                )}
                                 {/* Comic number */}
                                 <text
                                   x={comicTextX}
@@ -8566,7 +9628,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                   {educatorCount}
                                 </text>
                                 {/* Third number */}
-                                {thirdCount > 0 && (
+                                {thirdCount > 0 && showThirdCard && (
                                   <text
                                     x={thirdTextX}
                                     y={thirdTextY}
@@ -8579,6 +9641,38 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                     style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
                                   >
                                     {thirdCount}
+                                  </text>
+                                )}
+                                {/* Fourth number */}
+                                {fourthCount > 0 && showFourthCard && (
+                                  <text
+                                    x={fourthTextX}
+                                    y={fourthTextY}
+                                    textAnchor="middle"
+                                    dominantBaseline="middle"
+                                    fill="#FFFFFF"
+                                    fontSize="14"
+                                    fontFamily="Aileron"
+                                    fontWeight="600"
+                                    style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                  >
+                                    {fourthCount}
+                                  </text>
+                                )}
+                                {/* Fifth number */}
+                                {fifthCount > 0 && showFifthCard && (
+                                  <text
+                                    x={fifthTextX}
+                                    y={fifthTextY}
+                                    textAnchor="middle"
+                                    dominantBaseline="middle"
+                                    fill="#FFFFFF"
+                                    fontSize="14"
+                                    fontFamily="Aileron"
+                                    fontWeight="600"
+                                    style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                  >
+                                    {fifthCount}
                                   </text>
                                 )}
                               </>
@@ -8598,50 +9692,36 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
                             const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
                             const total = comicCount + educatorCount;
-                            const educatorPercentage = educatorCount / total;
                             const comicPercentage = comicCount / total;
+                            const educatorPercentage = educatorCount / total;
                             
                             // Calculate angles
-                            const educatorAngle = educatorPercentage * 2 * Math.PI;
                             const comicAngle = comicPercentage * 2 * Math.PI;
+                            const educatorAngle = educatorPercentage * 2 * Math.PI;
                             
-                            // Calculate path for educator segment
-                            const educatorEndX = 80 + 70 * Math.sin(educatorAngle);
-                            const educatorEndY = 80 - 70 * Math.cos(educatorAngle);
-                            const educatorLargeArc = educatorPercentage > 0.5 ? 1 : 0;
+                            // Calculate path for comic segment (purple)
+                            const comicEndX = 80 + 70 * Math.sin(comicAngle);
+                            const comicEndY = 80 - 70 * Math.cos(comicAngle);
+                            const comicLargeArc = comicPercentage > 0.5 ? 1 : 0;
                             
                             // Calculate positions for numbers (middle of each segment)
-                            // Educator number position (middle of yellow segment)
-                            const educatorMidAngle = educatorAngle / 2;
-                            const educatorTextX = 80 + 35 * Math.sin(educatorMidAngle);
-                            const educatorTextY = 80 - 35 * Math.cos(educatorMidAngle);
-                            
                             // Comic number position (middle of purple segment)
-                            const comicMidAngle = educatorAngle + (comicAngle / 2);
+                            const comicMidAngle = comicAngle / 2;
                             const comicTextX = 80 + 35 * Math.sin(comicMidAngle);
                             const comicTextY = 80 - 35 * Math.cos(comicMidAngle);
                             
+                            // Educator number position (middle of yellow segment)
+                            const educatorMidAngle = comicAngle + (educatorAngle / 2);
+                            const educatorTextX = 80 + 35 * Math.sin(educatorMidAngle);
+                            const educatorTextY = 80 - 35 * Math.cos(educatorMidAngle);
+                            
                             return (
                               <>
-                                <circle cx="80" cy="80" r="70" fill="#D4FF00" />
+                                <circle cx="80" cy="80" r="70" fill="#8A5AFE" />
                                 <path
-                                  d={`M 80 80 L 80 10 A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
-                                  fill="#8A5AFE"
+                                  d={`M 80 80 L 80 10 A 70 70 0 ${comicLargeArc} 1 ${comicEndX} ${comicEndY} Z`}
+                                  fill="#1340FF"
                                 />
-                              {/* Educator number */}
-                              <text
-                                x={educatorTextX}
-                                y={educatorTextY}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                                fill="#FFFFFF"
-                                fontSize="14"
-                                fontFamily="Aileron"
-                                fontWeight="600"
-                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
-                              >
-                                {educatorCount}
-                              </text>
                               {/* Comic number */}
                               <text
                                 x={comicTextX}
@@ -8655,6 +9735,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                 style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
                               >
                                 {comicCount}
+                              </text>
+                              {/* Educator number */}
+                              <text
+                                x={educatorTextX}
+                                y={educatorTextY}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#FFFFFF"
+                                fontSize="14"
+                                fontFamily="Aileron"
+                                fontWeight="600"
+                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                              >
+                                {educatorCount}
                               </text>
                               </>
                             );
@@ -8672,7 +9766,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             cx="80"
                             cy="80"
                             r="70"
-                            fill="#8A5AFE"
+                            fill="#1340FF"
                           />
                         </svg>
                         <Box
@@ -8706,14 +9800,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Box>
 
                   {/* Legend - Moved to bottom */}
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%', px: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, width: '100%', px: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                       <Box
                         sx={{
-                          width: '12px',
-                          height: '12px',
+                          width: '10px',
+                          height: '10px',
                           borderRadius: '50%',
-                          bgcolor: '#8A5AFE',
+                          bgcolor: '#1340FF',
                           flexShrink: 0,
                         }}
                       />
@@ -8724,19 +9818,22 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     fontSize: '14px',
                     lineHeight: '18px',
                           color: '#231F20',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
                   }}
                 >
-                        {editableContent.comicTitle} ({editableContent.creatorStrategyCount || '1'})
+                        {editableContent.comicTitle}
                 </Typography>
                     </Box>
                     {showEducatorCard && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                         <Box
                           sx={{
-                            width: '12px',
-                            height: '12px',
+                            width: '10px',
+                            height: '10px',
                             borderRadius: '50%',
-                            bgcolor: '#D4FF00',
+                            bgcolor: '#8A5AFE',
                             flexShrink: 0,
                           }}
                         />
@@ -8747,20 +9844,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     fontSize: '14px',
                     lineHeight: '18px',
                             color: '#231F20',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                   }}
                 >
-                          {editableContent.educatorTitle} ({editableContent.educatorCreatorCount || '1'})
+                          {editableContent.educatorTitle}
                 </Typography>
               </Box>
                     )}
                     {showThirdCard && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                         <Box
                           sx={{
-                            width: '12px',
-                            height: '12px',
+                            width: '10px',
+                            height: '10px',
                             borderRadius: '50%',
-                            bgcolor: '#FF6B35',
+                            bgcolor: '#FF3500',
                             flexShrink: 0,
                           }}
                         />
@@ -8771,9 +9871,66 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             fontSize: '14px',
                             lineHeight: '18px',
                             color: '#231F20',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                           }}
                         >
-                          {editableContent.thirdTitle} ({editableContent.thirdCreatorCount || '1'})
+                          {editableContent.thirdTitle}
+                        </Typography>
+            </Box>
+                    )}
+                    {showFourthCard && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                        <Box
+                          sx={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            bgcolor: '#D8FF01',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography
+                          sx={{
+                            fontFamily: 'Aileron',
+                            fontWeight: 400,
+                            fontSize: '14px',
+                            lineHeight: '18px',
+                            color: '#231F20',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {editableContent.fourthTitle}
+                        </Typography>
+            </Box>
+                    )}
+                    {showFifthCard && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                        <Box
+                          sx={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            bgcolor: '#026D54',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography
+                          sx={{
+                            fontFamily: 'Aileron',
+                            fontWeight: 400,
+                            fontSize: '14px',
+                            lineHeight: '18px',
+                            color: '#231F20',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {editableContent.fifthTitle}
                         </Typography>
             </Box>
                     )}
@@ -8930,6 +10087,177 @@ const PCRReportPage = ({ campaign, onBack }) => {
     </Box>
 
     <Grid container spacing={3} sx={{ mb: 6 }}>
+      {/* What Worked Well - Purple */}
+      <Grid item xs={12} md={4}>
+        <Box sx={{ height: '100%' }}>
+          {/* Header */}
+      <Box
+        sx={{
+              background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
+              borderRadius: '12px 12px 0 0',
+              p: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1
+            }}
+          >
+            <Box
+              component="img"
+              src="/assets/icons/pcr/rewarded_ads.svg"
+              alt="Rewarded ads icon"
+              sx={{ width: '24px', height: '24px' }}
+            />
+            <Typography 
+              sx={{ 
+                fontFamily: 'Aileron',
+                fontWeight: 700,
+                fontSize: '18px',
+                color: 'white',
+                textAlign: 'center'
+              }}
+            >
+              What Worked Well
+      </Typography>
+          </Box>
+          
+          {/* Content Boxes */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            {editableContent.workedWellInsights.length === 0 && !isEditMode && (
+              <Box className="hide-in-pdf" sx={{ 
+                background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)', 
+                p: 3, 
+                color: 'white', 
+                height: '120px', 
+                display: 'flex', 
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '0 0 12px 12px',
+              }}>
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.8 }}>
+                  Click Edit Report to edit What Worked Well
+                </Typography>
+              </Box>
+            )}
+            {editableContent.workedWellInsights.map((insight, index) => (
+      <Box
+                key={index}
+        sx={{
+                  background: getWorkedWellInsightBgColor(index),
+                  opacity: getWorkedWellOpacity(index),
+                  px: 2, // Changed from p: 1.5 to px: 2 for consistent horizontal padding
+                  py: 1.5, // Kept vertical padding
+                  color: 'white', 
+                  height: '120px', 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderRadius: index === editableContent.workedWellInsights.length - 1 ? '0 0 12px 12px' : 0,
+                  position: 'relative',
+                }}
+              >
+                {isEditMode && !sectionEditStates.recommendations ? (
+                  <Box sx={{ 
+                    bgcolor: '#E5E7EB', 
+          borderRadius: '12px',
+                    p: 2,
+                    flex: 1,
+                    display: 'flex',
+                    gap: 0.5,
+                  }}>
+                    <Box sx={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          mb: 0.5,
+                        }}
+                      >
+                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                          Editable
+        </Typography>
+      </Box>
+                      <TextField
+                        value={insight}
+                        onChange={(e) => {
+                          const newInsights = [...editableContent.workedWellInsights];
+                          newInsights[index] = e.target.value;
+                          setEditableContent({ ...editableContent, workedWellInsights: newInsights });
+                        }}
+                        fullWidth
+                        multiline
+                        rows={2}
+                        inputProps={{
+                          maxLength: 200,
+                        }}
+                        sx={{
+                          '& .MuiInputBase-root': {
+                            fontFamily: 'Aileron',
+                            fontSize: '12px',
+                            lineHeight: '18px',
+                            color: '#000000',
+                            padding: 0,
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            border: 'none',
+                          },
+                        }}
+                      />
+    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const newInsights = editableContent.workedWellInsights.filter((_, i) => i !== index);
+                        setEditableContent({ ...editableContent, workedWellInsights: newInsights });
+                      }}
+                      sx={{ color: '#000000', alignSelf: 'flex-start' }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ) : (
+                  <Typography sx={{ 
+                    fontFamily: 'Aileron', 
+                    fontSize: '14px', 
+                    lineHeight: '20px',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
+                  }}>
+                    {insight}
+                  </Typography>
+                )}
+              </Box>
+            ))}
+            
+            {isEditMode && editableContent.workedWellInsights.length < 3 && (
+              <IconButton
+                onClick={() => {
+                  setEditableContent({
+                    ...editableContent,
+                    workedWellInsights: [...editableContent.workedWellInsights, ''],
+                  });
+                }}
+                sx={{
+                  background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
+          color: 'white',
+                  '&:hover': { background: 'linear-gradient(0deg, #7A4AEE, #7A4AEE)' },
+                  borderRadius: '12px',
+                  width: '44px',
+                  height: '44px',
+                  fontSize: '36px',
+                  fontWeight: 300,
+                }}
+              >
+                +
+              </IconButton>
+            )}
+          </Box>
+        </Box>
+      </Grid>
+
       {/* What Could Be Improved - Blue */}
       <Grid item xs={12} md={4}>
         <Box sx={{ height: '100%' }}>
@@ -8987,13 +10315,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 key={index}
         sx={{
                   bgcolor: getImprovedInsightBgColor(index),
-                  p: 1.5, 
+                  px: 2, // Changed from p: 1.5 to px: 2 for consistent horizontal padding
+                  py: 1.5, // Kept vertical padding
                   color: 'white', 
                   height: '120px', 
                   display: 'flex', 
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  borderRadius: index === editableContent.improvedInsights.length - 1 ? '0 0 12px 12px' : 0,
+                  borderRadius: index === editableContent.workedWellInsights.length - 1 ? '0 0 12px 12px' : 0,
                   position: 'relative',
                 }}
               >
@@ -9060,8 +10389,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 ) : (
                   <Typography sx={{ 
                     fontFamily: 'Aileron', 
-                    fontSize: '12px', 
-                    lineHeight: '18px',
+                    fontSize: '14px', 
+                    lineHeight: '20px',
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
@@ -9085,182 +10414,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   bgcolor: '#1340FF',
                   color: 'white',
                   '&:hover': { bgcolor: '#0D2FCC' },
-                  borderRadius: '12px',
-                  width: '44px',
-                  height: '44px',
-                  fontSize: '36px',
-                  fontWeight: 300,
-                }}
-              >
-                +
-              </IconButton>
-            )}
-          </Box>
-        </Box>
-      </Grid>
-
-      {/* What Worked Well - Purple */}
-      <Grid item xs={12} md={4}>
-        <Box sx={{ height: '100%' }}>
-          {/* Header */}
-      <Box
-        sx={{
-              background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
-              borderRadius: '12px 12px 0 0',
-              p: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1
-            }}
-          >
-            <Box
-              component="img"
-              src="/assets/icons/pcr/rewarded_ads.svg"
-              alt="Rewarded ads icon"
-              sx={{ width: '24px', height: '24px' }}
-            />
-            <Typography 
-              sx={{ 
-                fontFamily: 'Aileron',
-                fontWeight: 700,
-                fontSize: '18px',
-                color: 'white',
-                textAlign: 'center'
-              }}
-            >
-              What Worked Well
-        </Typography>
-      </Box>
-          
-          {/* Content Boxes */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            {editableContent.workedWellInsights.length === 0 && !isEditMode && (
-              <Box className="hide-in-pdf" sx={{ 
-                background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
-                opacity: 0.85,
-                p: 3, 
-                color: 'white', 
-                height: '120px', 
-                display: 'flex', 
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '0 0 12px 12px',
-              }}>
-                <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.9 }}>
-                  Click Edit Report to edit What Worked Well
-                </Typography>
-              </Box>
-            )}
-            {editableContent.workedWellInsights.map((insight, index) => (
-              <Box 
-                key={index}
-                sx={{ 
-                  background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
-                  opacity: getWorkedWellOpacity(index),
-                  p: 1, 
-                  color: 'white', 
-                  height: '120px', 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderRadius: index === editableContent.workedWellInsights.length - 1 ? '0 0 12px 12px' : 0,
-                  position: 'relative',
-                }}
-              >
-                {isEditMode && !sectionEditStates.recommendations ? (
-                  <Box sx={{ 
-                    bgcolor: '#E5E7EB', 
-          borderRadius: '12px',
-          p: 2.5,
-                    px: 1,
-                    flex: 1,
-                    display: 'flex',
-                    gap: 0.5,
-                  }}>
-                    <Box sx={{ position: 'relative', flex: 1 }}>
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          zIndex: 1,
-                        }}
-                      >
-                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
-                          Editable
-                        </Typography>
-                      </Box>
-                      <TextField
-                        value={insight}
-                        onChange={(e) => {
-                          const newInsights = [...editableContent.workedWellInsights];
-                          newInsights[index] = e.target.value;
-                          setEditableContent({ ...editableContent, workedWellInsights: newInsights });
-                        }}
-                        fullWidth
-                        multiline
-                        rows={2}
-                        inputProps={{
-                          maxLength: 200,
-                        }}
-                        sx={{
-                          mt: 1.5,
-                          '& .MuiInputBase-root': {
-                            fontFamily: 'Aileron',
-                            fontSize: '12px',
-                            lineHeight: '18px',
-                            color: '#000000',
-                            padding: 0,
-                          },
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            border: 'none',
-                          },
-                        }}
-                      />
-                    </Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        const newInsights = editableContent.workedWellInsights.filter((_, i) => i !== index);
-                        setEditableContent({ ...editableContent, workedWellInsights: newInsights });
-                      }}
-                      sx={{ color: '#000000', alignSelf: 'flex-start' }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                ) : (
-                  <Typography sx={{ 
-                    fontFamily: 'Aileron', 
-                    fontSize: '12px', 
-                    lineHeight: '18px',
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-line',
-                  }}>
-                    {insight}
-                  </Typography>
-                )}
-              </Box>
-            ))}
-            
-            {isEditMode && editableContent.workedWellInsights.length < 3 && (
-              <IconButton
-                onClick={() => {
-                  setEditableContent({
-                    ...editableContent,
-                    workedWellInsights: [...editableContent.workedWellInsights, ''],
-                  });
-                }}
-                sx={{
-                  background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
-          color: 'white',
-                  '&:hover': { background: 'linear-gradient(0deg, #7A4AEE, #7A4AEE)' },
                   borderRadius: '12px',
                   width: '44px',
                   height: '44px',
@@ -9332,7 +10485,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 key={index}
                 sx={{ 
                   bgcolor: index === 0 ? '#026D54D9' : '#026D54BF',
-                  p: 1, 
+                  px: 2, // Changed from p: 1 to px: 2 for consistent horizontal padding
+                  py: 1.5, // Added vertical padding
                   color: 'white', 
                   height: '120px', 
                   display: 'flex', 
@@ -9410,8 +10564,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 ) : (
                   <Typography sx={{ 
                     fontFamily: 'Aileron', 
-                    fontSize: '12px', 
-                    lineHeight: '18px',
+                    fontSize: '14px', 
+                    lineHeight: '20px',
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
@@ -9488,6 +10642,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
             setEditableContent({ ...editableContent, educatorEmoji: emojiObject.emoji });
           } else if (emojiPickerType === 'third') {
             setEditableContent({ ...editableContent, thirdEmoji: emojiObject.emoji });
+          } else if (emojiPickerType === 'fourth') {
+            setEditableContent({ ...editableContent, fourthEmoji: emojiObject.emoji });
+          } else if (emojiPickerType === 'fifth') {
+            setEditableContent({ ...editableContent, fifthEmoji: emojiObject.emoji });
           }
           setEmojiPickerAnchor(null);
           setEmojiPickerType(null);
