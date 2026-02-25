@@ -45,6 +45,7 @@ import { fDateTime, fToNow } from 'src/utils/format-time';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
+import { useSettingsContext } from 'src/components/settings';
 
 import { useGetNpsFeedback, useGetNpsFeedbackStats } from 'src/hooks/use-get-nps-feedback';
 
@@ -54,10 +55,9 @@ import DateFilterSelect from '../components/date-filter-select';
 
 const COLUMNS = [
   { id: 'name', label: 'User', align: 'left', sortable: false },
-  { id: 'userType', label: 'Type', align: 'left', sortable: false },
-  { id: 'email', label: 'Email', align: 'left', sortable: false },
   { id: 'rating', label: 'Rating', align: 'left' },
   { id: 'feedback', label: 'Feedback', align: 'left', sortable: false },
+  { id: 'device', label: 'Device', align: 'left', sortable: false },
   { id: 'createdAt', label: 'Date', align: 'left' },
   { id: 'action', label: '', align: 'center', sortable: false },
 ];
@@ -93,7 +93,7 @@ function UserTypeChip({ userType, compact, sx }) {
         width: 'fit-content',
         lineHeight: 1,
         '& .MuiChip-label': {
-          pb: compact ? 0 : '2px',
+          transform: 'translateY(-1px)',
         },
         '&:hover': { backgroundColor: '#FFFFFF' },
         ...sx,
@@ -112,6 +112,7 @@ UserTypeChip.propTypes = {
 
 export default function FeedbackView() {
   const theme = useTheme();
+  const settings = useSettingsContext();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [page, setPage] = useState(0);
@@ -169,7 +170,7 @@ export default function FeedbackView() {
   }, []);
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       <Typography variant="h2" fontFamily="Instrument Serif" fontWeight="normal" gutterBottom>
         Feedback
       </Typography>
@@ -648,6 +649,101 @@ SortableHeader.propTypes = {
 
 // ----------------------------------------------------------------------
 
+const DEVICE_CONFIG = {
+  mobile: { icon: 'mdi:cellphone', color: '#1340FF', bg: '#EBF0FF' },
+  tablet: { icon: 'mdi:tablet', color: '#8E33FF', bg: '#F3E8FF' },
+  desktop: { icon: 'mdi:monitor', color: '#454F5B', bg: '#F4F6F8' },
+};
+
+const OS_ICONS = {
+  macos: 'mdi:apple',
+  ios: 'mdi:apple',
+  windows: 'mdi:microsoft-windows',
+  android: 'mdi:android',
+  linux: 'mdi:linux',
+};
+
+const BROWSER_ICONS = {
+  chrome: 'mdi:google-chrome',
+  safari: 'mdi:apple-safari',
+  firefox: 'mdi:firefox',
+  edge: 'mdi:microsoft-edge',
+  opera: 'mdi:opera',
+  samsung: 'mdi:cellphone',
+};
+
+const getOsIcon = (os) => {
+  if (!os) return null;
+  const key = Object.keys(OS_ICONS).find((k) => os.toLowerCase().startsWith(k));
+  return key ? OS_ICONS[key] : 'mdi:devices';
+};
+
+const getBrowserIcon = (browser) => {
+  if (!browser) return null;
+  const key = Object.keys(BROWSER_ICONS).find((k) => browser.toLowerCase().startsWith(k));
+  return key ? BROWSER_ICONS[key] : 'mdi:web';
+};
+
+// Strip version numbers for compact table display — "Chrome 145.0.0.0" → "Chrome"
+const shortName = (str) => {
+  if (!str) return '';
+  return str.replace(/\s[\d.]+.*$/, '');
+};
+
+function DeviceCell({ row }) {
+  const config = DEVICE_CONFIG[row.deviceType] || DEVICE_CONFIG.desktop;
+  const osName = shortName(row.os);
+  const browserName = shortName(row.browser);
+
+  return (
+    <Tooltip
+      title={[row.os, row.browser].filter(Boolean).join(' · ')}
+      arrow
+      placement="top"
+    >
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={0.75}
+        sx={{
+          px: 1.25,
+          py: 0.5,
+          borderRadius: 1,
+          bgcolor: config.bg,
+          border: `1px solid ${config.color}14`,
+          width: 'fit-content',
+        }}
+      >
+        <Iconify icon={config.icon} width={16} sx={{ color: config.color, flexShrink: 0 }} />
+        {osName && (
+          <>
+            <Box sx={{ width: '1px', height: 14, bgcolor: `${config.color}30`, flexShrink: 0 }} />
+            <Iconify icon={getOsIcon(row.os)} width={14} sx={{ color: 'text.secondary', flexShrink: 0 }} />
+            <Typography variant="caption" fontWeight={600} noWrap sx={{ fontSize: 11, color: 'text.secondary' }}>
+              {osName}
+            </Typography>
+          </>
+        )}
+        {browserName && (
+          <>
+            <Box sx={{ width: '1px', height: 14, bgcolor: `${config.color}30`, flexShrink: 0 }} />
+            <Iconify icon={getBrowserIcon(row.browser)} width={14} sx={{ color: 'text.secondary', flexShrink: 0 }} />
+            <Typography variant="caption" fontWeight={600} noWrap sx={{ fontSize: 11, color: 'text.secondary' }}>
+              {browserName}
+            </Typography>
+          </>
+        )}
+      </Stack>
+    </Tooltip>
+  );
+}
+
+DeviceCell.propTypes = {
+  row: PropTypes.object.isRequired,
+};
+
+// ----------------------------------------------------------------------
+
 function FeedbackRow({ row, onRowClick }) {
   return (
     <TableRow hover onClick={() => onRowClick(row)} sx={{ cursor: 'pointer' }}>
@@ -655,26 +751,17 @@ function FeedbackRow({ row, onRowClick }) {
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <Avatar src={row.user?.photoURL} alt={row.user?.name} sx={{ width: 36, height: 36 }} />
           <Box>
-            <Typography variant="body2" fontWeight={600}>
-              {row.user?.name || '-'}
-            </Typography>
-            {row.user?.client?.company?.name && (
-              <Typography variant="caption" color="text.secondary" noWrap>
-                {row.user.client.company.name}
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Typography variant="body2" fontWeight={600}>
+                {row.user?.name || '-'}
               </Typography>
-            )}
+              <UserTypeChip userType={row.userType} compact />
+            </Stack>
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {row.user?.email || '-'}
+            </Typography>
           </Box>
         </Stack>
-      </TableCell>
-
-      <TableCell>
-        <UserTypeChip userType={row.userType} />
-      </TableCell>
-
-      <TableCell>
-        <Typography variant="body2" color="text.secondary">
-          {row.user?.email || '-'}
-        </Typography>
       </TableCell>
 
       <TableCell>
@@ -701,6 +788,14 @@ function FeedbackRow({ row, onRowClick }) {
       </TableCell>
 
       <TableCell>
+        {row.deviceType ? (
+          <DeviceCell row={row} />
+        ) : (
+          <Typography variant="body2" color="text.disabled">-</Typography>
+        )}
+      </TableCell>
+
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>
         <Typography variant="body2" color="text.secondary">
           {fDateTime(row.createdAt)}
         </Typography>
@@ -771,10 +866,39 @@ function FeedbackCard({ row, onClick }) {
         </Typography>
       )}
 
-      {/* Date */}
-      <Typography variant="caption" color="text.disabled">
-        {fDateTime(row.createdAt)}
-      </Typography>
+      {/* Date & Device */}
+      <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={0.5}>
+        <Typography variant="caption" color="text.disabled">
+          {fDateTime(row.createdAt)}
+        </Typography>
+        {row.deviceType && (
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={0.5}
+            sx={{
+              px: 1,
+              py: 0.25,
+              borderRadius: 0.75,
+              bgcolor: (DEVICE_CONFIG[row.deviceType] || DEVICE_CONFIG.desktop).bg,
+            }}
+          >
+            <Iconify
+              icon={(DEVICE_CONFIG[row.deviceType] || DEVICE_CONFIG.desktop).icon}
+              width={13}
+              sx={{ color: (DEVICE_CONFIG[row.deviceType] || DEVICE_CONFIG.desktop).color }}
+            />
+            <Typography variant="caption" sx={{ fontSize: 11, color: 'text.secondary' }}>
+              {[
+                shortName(row.os),
+                shortName(row.browser),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </Typography>
+          </Stack>
+        )}
+      </Stack>
     </Card>
   );
 }
@@ -972,6 +1096,96 @@ function FeedbackDrawer({ row, rows = [], onClose, onNavigate }) {
             )}
           </Box>
         </Box>
+
+        {/* Device Info */}
+        {(row?.deviceType || row?.os || row?.browser) && (() => {
+          const dConfig = DEVICE_CONFIG[row.deviceType] || DEVICE_CONFIG.desktop;
+          const deviceLabel = row.deviceType?.charAt(0).toUpperCase() + row.deviceType?.slice(1);
+          const deviceSub = [row.deviceVendor, row.deviceModel].filter(Boolean).join(' ');
+
+          const tiles = [
+            row.deviceType && {
+              icon: dConfig.icon,
+              iconColor: dConfig.color,
+              label: 'Device',
+              value: deviceLabel,
+              sub: deviceSub,
+            },
+            row.os && {
+              icon: getOsIcon(row.os),
+              iconColor: '#636366',
+              label: 'OS',
+              value: shortName(row.os),
+              sub: row.os.replace(shortName(row.os), '').trim() || null,
+            },
+            row.browser && {
+              icon: getBrowserIcon(row.browser),
+              iconColor: '#636366',
+              label: 'Browser',
+              value: shortName(row.browser),
+              sub: row.browser.replace(shortName(row.browser), '').trim() || null,
+            },
+          ].filter(Boolean);
+
+          return (
+            <Box sx={{ px: 3, py: 2 }}>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                <Iconify icon={dConfig.icon} sx={{ color: '#1340FF' }} />
+                <Typography variant="subtitle2">Device Info</Typography>
+              </Stack>
+              <Stack
+                direction="row"
+                spacing={0}
+                sx={{
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                {tiles.map((tile, i) => (
+                  <Box
+                    key={tile.label}
+                    sx={{
+                      flex: 1,
+                      px: 1.5,
+                      py: 1.5,
+                      textAlign: 'center',
+                      bgcolor: '#FAFBFC',
+                      ...(i < tiles.length - 1 && {
+                        borderRight: '1px solid',
+                        borderColor: 'divider',
+                      }),
+                    }}
+                  >
+                    <Iconify icon={tile.icon} width={26} sx={{ color: tile.iconColor, mb: 0.75 }} />
+                    <Typography
+                      sx={{
+                        display: 'block',
+                        color: 'text.disabled',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                        mb: 0.25,
+                      }}
+                    >
+                      {tile.label}
+                    </Typography>
+                    <Typography variant="body2" fontWeight={700} sx={{ display: 'block', color: '#221f20', lineHeight: 1.3 }}>
+                      {tile.value}
+                    </Typography>
+                    {tile.sub && (
+                      <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontSize: 11, mt: 0.25 }}>
+                        {tile.sub}
+                      </Typography>
+                    )}
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
+          );
+        })()}
 
         <Divider />
 
