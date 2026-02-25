@@ -1,6 +1,8 @@
 import PropTypes from 'prop-types';
 
-import { Box, Stack, Divider, Skeleton, Typography } from '@mui/material';
+import { Box, Stack, Button, Divider, Skeleton, Typography } from '@mui/material';
+
+import Iconify from 'src/components/iconify';
 
 import CreatorCard from './CreatorCard';
 
@@ -13,11 +15,19 @@ const CreatorCardSkeleton = () => (
       flexDirection: 'row',
       alignItems: 'center',
       gap: 2,
-      p: 1
+      p: 1,
     }}
   >
     {/* Left */}
-    <Box sx={{ width: 188, display: 'flex', flexDirection: 'column', alignItems: 'center', borderColor: 'divider' }}>
+    <Box
+      sx={{
+        width: 188,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        borderColor: 'divider',
+      }}
+    >
       <Skeleton variant="circular" width={72} height={72} />
       <Skeleton width={100} height={18} sx={{ mt: 1 }} />
       <Skeleton width={80} height={14} sx={{ mt: 0.5 }} />
@@ -72,7 +82,15 @@ const EmptyState = () => (
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-const CreatorList = ({ creators, isLoading, isError, pagination, selectedIds, onSelect }) => {
+const CreatorList = ({
+  creators,
+  isLoading,
+  isError,
+  pagination,
+  selectedIds,
+  onSelect,
+  onCompare,
+}) => {
   if (isError) {
     return (
       <Box sx={{ textAlign: 'center', py: 6 }}>
@@ -100,8 +118,47 @@ const CreatorList = ({ creators, isLoading, isError, pagination, selectedIds, on
     return <EmptyState />;
   }
 
+  // Compute viewedCount and total for results info
+  const total = pagination?.total ?? creators.length;
+  const viewedCount = pagination?.limit && pagination?.page
+    ? Math.min(pagination.page * pagination.limit, total)
+    : creators.length;
+
   return (
-    <Box sx={{ mt: 2 }}>
+    <Box sx={{ mt: 4 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', mb: 1.5, gap: 2 }}>
+        <Typography sx={{ fontSize: 14, color: 'text.secondary', mr: 2 }}>
+          {`${viewedCount} of ${total} creator${total === 1 ? '' : 's'}`}
+        </Typography>
+        <Button
+          onClick={() => onCompare?.(selectedIds)}
+          disabled={selectedIds?.length !== 2}
+          sx={{
+            color: '#231F20',
+            bgcolor: '#FFFFFF',
+            textTransform: 'none',
+            fontWeight: 600,
+            fontSize: 14,
+            pb: 1,
+            borderRadius: 1,
+            border: '1px solid #E7E7E7',
+            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            '&:hover': {
+              bgcolor: 'rgba(0, 0, 0, 0.03)',
+              border: '1px solid #E7E7E7',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            },
+            ':disabled': {
+              bgcolor: 'rgba(0, 0, 0, 0.05)',
+              border: '1px solid rgba(0, 0, 0, 0.05)',
+              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.05) inset'
+            }
+          }}
+        >
+          Compare Creators
+        </Button>
+      </Box>
+
       {/* Creator rows */}
       <Box
         sx={{
@@ -114,14 +171,14 @@ const CreatorList = ({ creators, isLoading, isError, pagination, selectedIds, on
           const rowKey = creator.rowId || `${creator.userId}-${creator.platform || index}`;
 
           return (
-          <Box key={rowKey}>
-            {index > 0 && <Divider />}
-            <CreatorCard
-              creator={creator}
-              selected={selectedIds?.includes(rowKey)}
-              onSelect={onSelect}
-            />
-          </Box>
+            <Box key={rowKey}>
+              {index > 0 && <Divider />}
+              <CreatorCard
+                creator={creator}
+                selected={selectedIds?.includes(rowKey)}
+                onSelect={onSelect}
+              />
+            </Box>
           );
         })}
       </Box>
@@ -140,6 +197,7 @@ CreatorList.propTypes = {
   }),
   selectedIds: PropTypes.arrayOf(PropTypes.string),
   onSelect: PropTypes.func,
+  onCompare: PropTypes.func,
 };
 
 CreatorList.defaultProps = {
@@ -149,6 +207,7 @@ CreatorList.defaultProps = {
   pagination: null,
   selectedIds: [],
   onSelect: undefined,
+  onCompare: undefined,
 };
 
 export default CreatorList;

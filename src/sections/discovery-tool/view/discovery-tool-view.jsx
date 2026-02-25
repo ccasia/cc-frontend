@@ -5,6 +5,7 @@ import { Box, Container, Pagination, Typography } from '@mui/material';
 import useGetDiscoveryCreators from 'src/hooks/use-get-discovery-creators';
 
 import { CreatorList, DiscoveryFilterBar } from '../components';
+import CompareCreatorsDialog from './compare-creators-dialog';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -96,13 +97,27 @@ const DiscoveryToolView = () => {
 		setCurrentPage(nextPage);
 	}, []);
 
-	// Creator selection for comparison
+	// Creator selection & comparison
 	const [selectedCreatorIds, setSelectedCreatorIds] = useState([]);
+	const [compareOpen, setCompareOpen] = useState(false);
 
 	const handleSelectCreator = useCallback((rowId) => {
 		setSelectedCreatorIds((prev) =>
 			prev.includes(rowId) ? prev.filter((id) => id !== rowId) : [...prev, rowId]
 		);
+	}, []);
+
+	// Resolve selected creator objects for comparison dialog
+	const selectedCreators = useMemo(
+		() =>
+			selectedCreatorIds
+				.map((id) => creators.find((c) => (c.rowId || c.userId) === id))
+				.filter(Boolean),
+		[selectedCreatorIds, creators]
+	);
+
+	const handleCompare = useCallback(() => {
+		setCompareOpen(true);
 	}, []);
 
 	// Log results only when they actually change
@@ -133,35 +148,6 @@ const DiscoveryToolView = () => {
 			/>
 
 			{shouldShowResults && (
-				<Box
-					sx={{
-						mt: 3,
-						display: 'flex',
-						alignItems: 'center',
-						justifyContent: 'space-between',
-						gap: 2,
-						flexWrap: 'wrap',
-					}}
-				>
-					<Typography sx={{ fontSize: 14, color: 'text.secondary' }}>
-						{isLoading
-							? 'Loading creators…'
-							: `Showing ${viewedCount} of ${pagination?.total ?? creators.length} creator${(pagination?.total ?? creators.length) === 1 ? '' : 's'}`}
-					</Typography>
-
-					{!isLoading && totalPages > 1 && (
-						<Pagination
-							count={totalPages}
-							page={currentPage}
-							onChange={handlePageChange}
-							size="small"
-							variant='outlined'
-						/>
-					)}
-				</Box>
-			)}
-
-			{shouldShowResults && (
 				<CreatorList
 					creators={creators}
 					isLoading={isLoading}
@@ -169,8 +155,28 @@ const DiscoveryToolView = () => {
 					pagination={pagination}
 					selectedIds={selectedCreatorIds}
 					onSelect={handleSelectCreator}
+					onCompare={handleCompare}
 				/>
 			)}
+
+			{shouldShowResults && !isLoading && totalPages > 1 && (
+				<Box display={'flex'} justifyContent={'center'} mt={2}>
+					<Pagination
+						count={totalPages}
+						page={currentPage}
+						onChange={handlePageChange}
+						size="medium"
+						variant='contained'
+					/>
+				</Box>
+			)}
+
+			{/* Compare Dialog */}
+			<CompareCreatorsDialog
+				open={compareOpen}
+				onClose={() => setCompareOpen(false)}
+				creators={selectedCreators}
+			/>
 		</Container>
 	);
 };
