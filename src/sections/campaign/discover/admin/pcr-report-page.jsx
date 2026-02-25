@@ -959,7 +959,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
     if (isEditMode && history.length === 0) {
       saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode]);
 
   useEffect(() => {
@@ -1190,12 +1190,15 @@ const PCRReportPage = ({ campaign, onBack }) => {
         // Keep borderRadius for curved edges in PDF
       });
 
+      // Wait for charts to fully render (especially SVG-based charts like PieChart)
+      await new Promise(resolve => { setTimeout(resolve, 500); });
+
       // eslint-disable-next-line new-cap
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
-        compress: true, 
+        compress: false, // Disable compression for HD quality
       });
 
       const pageWidth = 210; 
@@ -1205,7 +1208,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       
       const addGradientBackground = async () => {
         const gradientCanvas = document.createElement('canvas');
-        const dpi = 96;
+        const dpi = 600; // Ultra-HD DPI (maximum practical quality)
         gradientCanvas.width = (pageWidth * dpi) / 25.4;
         gradientCanvas.height = (pageHeight * dpi) / 25.4;
         const ctx = gradientCanvas.getContext('2d');
@@ -1216,8 +1219,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, gradientCanvas.width, gradientCanvas.height);
         
-        const gradientData = gradientCanvas.toDataURL('image/jpeg', 0.95);
-        pdf.addImage(gradientData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+        const gradientData = gradientCanvas.toDataURL('image/png'); // PNG for lossless quality
+        pdf.addImage(gradientData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'SLOW');
       };
       
       const sections = pdfContainer.querySelectorAll('.pcr-section');
@@ -1226,20 +1229,74 @@ const PCRReportPage = ({ campaign, onBack }) => {
         await addGradientBackground();
 
         const canvas = await html2canvas(pdfContainer, {
-          scale: 1.5, 
+          scale: 3, // Higher scale for better quality
           useCORS: true,
           logging: false,
           backgroundColor: null,
           windowWidth: 1078,
+          windowHeight: pdfContainer.scrollHeight,
           imageTimeout: 0,
           removeContainer: true,
+          allowTaint: true,
+          foreignObjectRendering: false,
+          onclone: (clonedDoc) => {
+            // Fix all elements to match original styling
+            const allElements = clonedDoc.querySelectorAll('*');
+            allElements.forEach((el) => {
+              try {
+                const original = pdfContainer.querySelector(`[data-cursor-element-id="${el.dataset.cursorElementId}"]`) || el;
+                const computedStyle = window.getComputedStyle(original);
+                
+                // Preserve all visual styles
+                if (computedStyle.background && computedStyle.background !== 'none') {
+                  el.style.background = computedStyle.background;
+                }
+                if (computedStyle.boxShadow && computedStyle.boxShadow !== 'none') {
+                  el.style.boxShadow = computedStyle.boxShadow;
+                }
+                if (computedStyle.borderRadius && computedStyle.borderRadius !== '0px') {
+                  el.style.borderRadius = computedStyle.borderRadius;
+                }
+                if (computedStyle.filter && computedStyle.filter !== 'none') {
+                  el.style.filter = computedStyle.filter;
+                }
+                if (computedStyle.opacity && computedStyle.opacity !== '1') {
+                  el.style.opacity = computedStyle.opacity;
+                }
+                
+                // Font rendering
+                el.style.webkitFontSmoothing = 'antialiased';
+                el.style.mozOsxFontSmoothing = 'grayscale';
+                el.style.textRendering = 'optimizeLegibility';
+              } catch (e) {
+                // Skip if element not found
+              }
+            });
+            
+            // Fix images - prevent stretching
+            const allImages = clonedDoc.querySelectorAll('img');
+            allImages.forEach((img) => {
+              img.style.objectFit = 'contain';
+              img.style.maxWidth = '100%';
+              img.style.height = 'auto';
+              img.style.display = 'block';
+            });
+            
+            // Fix SVG charts
+            const allSvgs = clonedDoc.querySelectorAll('svg');
+            allSvgs.forEach((svg) => {
+              svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+              svg.style.display = 'block';
+              svg.style.visibility = 'visible';
+            });
+          },
         });
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
+        const imgData = canvas.toDataURL('image/png'); // PNG for lossless quality
         const imgWidth = contentWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
-        pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight, undefined, 'FAST');
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight, undefined, 'SLOW');
       } else {
         // Add gradient to first page
         await addGradientBackground();
@@ -1261,29 +1318,81 @@ const PCRReportPage = ({ campaign, onBack }) => {
             // Sequential processing is required for PDF generation
             // eslint-disable-next-line no-await-in-loop
             const canvas = await html2canvas(section, {
-              scale: 1.5, 
+              scale: 3, // Higher scale for better quality
               useCORS: true,
               logging: false,
               backgroundColor: '#FFFFFF',
               windowWidth: 1078,
+              windowHeight: section.scrollHeight,
               imageTimeout: 0,
               removeContainer: true,
               allowTaint: true,
-              foreignObjectRendering: false, 
+              foreignObjectRendering: false,
+              onclone: (clonedDoc) => {
+                // Fix all elements to match original styling
+                const allElements = clonedDoc.querySelectorAll('*');
+                allElements.forEach((el) => {
+                  try {
+                    const original = section.querySelector(`[data-cursor-element-id="${el.dataset.cursorElementId}"]`) || el;
+                    const computedStyle = window.getComputedStyle(original);
+                    
+                    // Preserve all visual styles
+                    if (computedStyle.background && computedStyle.background !== 'none') {
+                      el.style.background = computedStyle.background;
+                    }
+                    if (computedStyle.boxShadow && computedStyle.boxShadow !== 'none') {
+                      el.style.boxShadow = computedStyle.boxShadow;
+                    }
+                    if (computedStyle.borderRadius && computedStyle.borderRadius !== '0px') {
+                      el.style.borderRadius = computedStyle.borderRadius;
+                    }
+                    if (computedStyle.filter && computedStyle.filter !== 'none') {
+                      el.style.filter = computedStyle.filter;
+                    }
+                    if (computedStyle.opacity && computedStyle.opacity !== '1') {
+                      el.style.opacity = computedStyle.opacity;
+                    }
+                    
+                    // Font rendering
+                    el.style.webkitFontSmoothing = 'antialiased';
+                    el.style.mozOsxFontSmoothing = 'grayscale';
+                    el.style.textRendering = 'optimizeLegibility';
+                  } catch (e) {
+                    // Skip if element not found
+                  }
+                });
+                
+                // Fix images - prevent stretching
+                const allImages = clonedDoc.querySelectorAll('img');
+                allImages.forEach((img) => {
+                  img.style.objectFit = 'contain';
+                  img.style.maxWidth = '100%';
+                  img.style.height = 'auto';
+                  img.style.display = 'block';
+                });
+                
+                // Fix SVG charts
+                const allSvgs = clonedDoc.querySelectorAll('svg');
+                allSvgs.forEach((svg) => {
+                  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                  svg.style.display = 'block';
+                  svg.style.visibility = 'visible';
+                });
+              },
             });
 
-            const imgData = canvas.toDataURL('image/jpeg', 0.9); 
+            const imgData = canvas.toDataURL('image/png'); // PNG for lossless quality
             const imgWidth = contentWidth;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
             if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
-              pdf.addPage();
+        pdf.addPage();
               // eslint-disable-next-line no-await-in-loop
               await addGradientBackground();
               currentY = margin;
             }
             
-            pdf.addImage(imgData, 'JPEG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
+            pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight, undefined, 'SLOW');
             currentY += imgHeight + 4; 
             
             isFirstSection = false;
@@ -1413,7 +1522,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             ? creator.overallER / creator.snapshotCount 
             : 0;
 
-          return {
+        return {
             userId: creator.userId,
             name: creator.name,
             isManualEntry: creator.isManualEntry,
@@ -1912,19 +2021,19 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         justifyContent: 'center'
                       }}
                     >
-                      <Typography
+            <Typography 
               sx={{ 
                           fontFamily: 'Aileron',
                           fontSize: '16px',
-                          fontWeight: 600,
+                fontWeight: 600,
                           color: creator.finalWeek ? '#FFFFFF' : '#9CA3AF'
-                        }}
-                      >
+              }}
+            >
                         {creator.finalWeek ? `${creator.finalWeek.toFixed(1)}%` : '-'}
-                      </Typography>
-                    </Box>
+          </Typography>
+        </Box>
                   )}
-                </Box>
+        </Box>
               </Box>
             );
           })}
@@ -2584,7 +2693,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const likes = getMetricValue(insightData.insight, 'likes');
       if (likes > maxLikes) {
         maxLikes = likes;
-        result = { submission, insightData, likes };
+        result = { submission, insightData, likes, platform: insightData.platform || submission.platform };
       }
     });
     
@@ -2601,7 +2710,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const shares = getMetricValue(insightData.insight, 'shares');
       if (shares > maxShares) {
         maxShares = shares;
-        result = { submission, insightData, shares };
+        result = { submission, insightData, shares, platform: insightData.platform || submission.platform };
       }
     });
     
@@ -2720,21 +2829,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
         {/* Bar Chart */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', mt: 1 }}>
           {top5Creators.map((creator, index) => {
-            // Check if this is a manual entry (user.id matches submission.id)
-            const isManualEntry = creator.submission.user?.id === creator.submission.id;
+            const creatorData = creatorDataList[index]?.data;
             
-            let username;
-            if (isManualEntry) {
-              // For manual entries, get username from submission data
-              username = creator.platform === 'Instagram' 
-                ? creator.submission.user?.creator?.instagram 
-                : creator.submission.user?.creator?.tiktok;
+            // Try multiple sources for username with comprehensive fallbacks
+            let username = null;
+            if (creator.platform === 'Instagram') {
+              username = creatorData?.user?.creator?.instagram 
+                || creator.submission.user?.creator?.instagram 
+                || creator.submission.user?.username
+                || creator.submission.user?.name
+                || creatorData?.user?.username
+                || creatorData?.user?.name;
             } else {
-              // For regular creators, get from fetched data
-              const creatorData = creatorDataList[index]?.data;
-              username = creator.platform === 'Instagram' 
-                ? creatorData?.user?.creator?.instagram 
-                : creatorData?.user?.creator?.tiktok;
+              username = creatorData?.user?.creator?.tiktok 
+                || creator.submission.user?.creator?.tiktok 
+                || creator.submission.user?.username
+                || creator.submission.user?.name
+                || creatorData?.user?.username
+                || creatorData?.user?.name;
             }
             
             // Gradient colors from darkest to lightest purple
@@ -2779,7 +2891,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       }
                     }}>
                       {username || 'Unknown'}
-                    </Typography>
+        </Typography>
                   </Link>
                 </Box>
 
@@ -2901,21 +3013,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
         {/* Bar Chart */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', mt: 1 }}>
           {top5Creators.map((creator, index) => {
-            // Check if this is a manual entry (user.id matches submission.id)
-            const isManualEntry = creator.submission.user?.id === creator.submission.id;
+            const creatorData = creatorDataList[index]?.data;
             
-            let username;
-            if (isManualEntry) {
-              // For manual entries, get username from submission data
-              username = creator.platform === 'Instagram' 
-                ? creator.submission.user?.creator?.instagram 
-                : creator.submission.user?.creator?.tiktok;
+            // Try multiple sources for username with comprehensive fallbacks
+            let username = null;
+            if (creator.platform === 'Instagram') {
+              username = creatorData?.user?.creator?.instagram 
+                || creator.submission.user?.creator?.instagram 
+                || creator.submission.user?.username
+                || creator.submission.user?.name
+                || creatorData?.user?.username
+                || creatorData?.user?.name;
             } else {
-              // For regular creators, get from fetched data
-              const creatorData = creatorDataList[index]?.data;
-              username = creator.platform === 'Instagram' 
-                ? creatorData?.user?.creator?.instagram 
-                : creatorData?.user?.creator?.tiktok;
+              username = creatorData?.user?.creator?.tiktok 
+                || creator.submission.user?.creator?.tiktok 
+                || creator.submission.user?.username
+                || creator.submission.user?.name
+                || creatorData?.user?.username
+                || creatorData?.user?.name;
             }
             
             const opacity = 1 - (index * 0.1);
@@ -3078,21 +3193,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
         /* Creator bars */
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'space-around', py: 1 }}>
           {top5Creators.map((creator, index) => {
-            // Check if this is a manual entry (user.id matches submission.id)
-            const isManualEntry = creator.submission.user?.id === creator.submission.id;
+            const creatorData = creatorDataList[index]?.data;
             
-            let username;
-            if (isManualEntry) {
-              // For manual entries, get username from submission data
-              username = creator.platform === 'Instagram' 
-                ? creator.submission.user?.creator?.instagram 
-                : creator.submission.user?.creator?.tiktok;
+            // Try multiple sources for username with comprehensive fallbacks
+            let username = null;
+            if (creator.platform === 'Instagram') {
+              username = creatorData?.user?.creator?.instagram 
+                || creator.submission.user?.creator?.instagram 
+                || creator.submission.user?.username
+                || creator.submission.user?.name
+                || creatorData?.user?.username
+                || creatorData?.user?.name;
             } else {
-              // For regular creators, get from fetched data
-              const creatorData = creatorDataList[index]?.data;
-              username = creator.platform === 'Instagram' 
-                ? creatorData?.user?.creator?.instagram 
-                : creatorData?.user?.creator?.tiktok;
+              username = creatorData?.user?.creator?.tiktok 
+                || creator.submission.user?.creator?.tiktok 
+                || creator.submission.user?.username
+                || creator.submission.user?.name
+                || creatorData?.user?.username
+                || creatorData?.user?.name;
             }
             
             const platform = creator.platform;
@@ -3120,13 +3238,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       display: 'inline-block'
                     }}
                   />
-                  <Link
+          <Link
                     href={creator.submission.postingLink || '#'}
-                    target="_blank"
+            target="_blank"
                     rel="noopener noreferrer"
-                    sx={{
-                      textDecoration: 'none',
-                      '&:hover': {
+            sx={{
+              textDecoration: 'none',
+              '&:hover': {
                         textDecoration: 'underline'
                       }
                     }}
@@ -4661,6 +4779,25 @@ const PCRReportPage = ({ campaign, onBack }) => {
               const maxLikes = mostLikesCreator ? mostLikesCreator.likes : 0;
               const engagementRate = mostLikesCreator ? calculateEngagementRate(mostLikesCreator.insightData.insight) : 0;
               
+              // Get username based on platform
+              let username = '';
+              if (mostLikesCreator) {
+                const platform = mostLikesCreator.platform;
+                if (platform === 'Instagram') {
+                  username = mostLikesCreatorData?.user?.creator?.instagram 
+                    || mostLikesCreator?.submission?.user?.creator?.instagram 
+                    || mostLikesCreator?.submission?.user?.username
+                    || mostLikesCreator?.submission?.user?.name
+                    || '';
+                } else if (platform === 'TikTok') {
+                  username = mostLikesCreatorData?.user?.creator?.tiktok 
+                    || mostLikesCreator?.submission?.user?.creator?.tiktok 
+                    || mostLikesCreator?.submission?.user?.username
+                    || mostLikesCreator?.submission?.user?.name
+                    || '';
+                }
+              }
+              
               return mostLikesCreator && (
                 <Grid item xs={12} md={12}>
               <Box sx={{ 
@@ -4717,7 +4854,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             color: '#636366',
                             lineHeight: '16px'
                     }}>
-                            {mostLikesCreatorData?.user?.creator?.instagram || mostLikesCreator?.submission?.user?.creator?.instagram || mostLikesCreatorData?.user?.creator?.tiktok || mostLikesCreator?.submission?.user?.creator?.tiktok || ''}
+                            {username}
                     </Typography>
                   </Box>
                 </Box>
@@ -4819,6 +4956,25 @@ const PCRReportPage = ({ campaign, onBack }) => {
               const maxShares = mostSharesCreator ? mostSharesCreator.shares : 0;
               const engagementRate = mostSharesCreator ? calculateEngagementRate(mostSharesCreator.insightData.insight) : 0;
           
+              // Get username based on platform
+              let username = '';
+              if (mostSharesCreator) {
+                const platform = mostSharesCreator.platform;
+                if (platform === 'Instagram') {
+                  username = mostSharesCreatorData?.user?.creator?.instagram 
+                    || mostSharesCreator?.submission?.user?.creator?.instagram 
+                    || mostSharesCreator?.submission?.user?.username
+                    || mostSharesCreator?.submission?.user?.name
+                    || '';
+                } else if (platform === 'TikTok') {
+                  username = mostSharesCreatorData?.user?.creator?.tiktok 
+                    || mostSharesCreator?.submission?.user?.creator?.tiktok 
+                    || mostSharesCreator?.submission?.user?.username
+                    || mostSharesCreator?.submission?.user?.name
+                    || '';
+                }
+              }
+          
               return mostSharesCreator && (
                 <Grid item xs={12} md={12}>
               <Box sx={{ 
@@ -4875,7 +5031,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             color: '#636366',
                             lineHeight: '16px'
                     }}>
-                            {mostSharesCreatorData?.user?.creator?.instagram || mostSharesCreator?.submission?.user?.creator?.instagram || mostSharesCreatorData?.user?.creator?.tiktok || mostSharesCreator?.submission?.user?.creator?.tiktok || ''}
+                            {username}
                     </Typography>
                   </Box>
                 </Box>
@@ -5649,8 +5805,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                               color: '#1340FF'
                             }
                           }}>
-                            {comment.username}
-                          </Typography>
+                          {comment.username}
+      </Typography>
                         </Link>
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
                           {comment.comment}
@@ -5879,8 +6035,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                               color: '#1340FF'
                             }
                           }}>
-                            {comment.username}
-                          </Typography>
+                          {comment.username}
+                        </Typography>
                         </Link>
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
                           {comment.comment}
