@@ -83,8 +83,9 @@ export default function Main({ children, sx, ...other }) {
           <Box
             sx={{
               position: 'absolute',
-              bottom: 15,
-              right: 45,
+              zIndex: 100,
+              bottom: 10,
+              right: 25,
               textAlign: 'right',
             }}
           >

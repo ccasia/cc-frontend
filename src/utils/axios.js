@@ -351,6 +351,9 @@ export const endpoints = {
     stats: '/api/nps-feedback/stats',
     checkCreator: '/api/nps-feedback/check-creator',
   },
+  discovery: {
+    creators: '/api/discovery/creators',
+  },
   invoice: {
     getAll: '/api/invoice/',
     getCampaignById: (id) => `/api/campaign/getCampaignByIdInvoice/${id}`,

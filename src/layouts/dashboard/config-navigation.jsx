@@ -166,6 +166,12 @@ export function useNavData() {
             path: paths.dashboard.company.discover,
             icon: ICONS.clients,
           },
+          {
+            roles: ['superadmin', 'CSM', 'CSL', 'client', 'god'],
+            title: 'Creator Discovery Tool',
+            path: paths.dashboard.discoveryTool,
+            icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
+          },
           // {
           //   title: 'My Tasks',
           //   path: paths.dashboard.kanban,
