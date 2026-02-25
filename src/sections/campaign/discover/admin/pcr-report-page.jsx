@@ -10834,6 +10834,11 @@ PCRReportPage.propTypes = {
       postingEndDate: PropTypes.string,
     }),
     submission: PropTypes.array,
+    shortlisted: PropTypes.arrayOf(
+      PropTypes.shape({
+        creditTier: PropTypes.string,
+      })
+    ),
   }),
   onBack: PropTypes.func.isRequired,
 };
