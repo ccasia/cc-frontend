@@ -255,25 +255,28 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
           borderRadius: 2,
           boxShadow: '2px 2px 2px 1px rgba(0,0,0,0.08)',
           transition: 'box-shadow 0.2s, transform 0.3s',
+          cursor: 'pointer',
           '&:hover': {
             boxShadow: '3px 3px 5px 2px rgba(0,0,0,0.5)',
             transform: 'translateY(-1px)',
           },
         }}
+        onClick={() => onSelect?.(creator.rowId || creator.userId)}
       >
         {/* Selection checkbox */}
         <Checkbox
           checked={selected}
-          onChange={() => onSelect?.(creator.rowId || creator.userId)}
+          readOnly
           size="medium"
-					checkedIcon={<Iconify icon='fluent-mdl2:checkbox-composite' width={14} />}
-					icon={<Iconify icon='fluent-mdl2:checkbox' width={14} />}
+          checkedIcon={<Iconify icon='fluent-mdl2:checkbox-composite' width={14} />}
+          icon={<Iconify icon='fluent-mdl2:checkbox' width={14} />}
           sx={{
             position: 'absolute',
             top: 14,
             left: 14,
             p: 0,
             color: '#7B7B7B',
+            pointerEvents: 'none',
             '&.Mui-checked': {
               color: '#1340FF',
             },

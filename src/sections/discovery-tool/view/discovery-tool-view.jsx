@@ -4,8 +4,8 @@ import { Box, Container, Pagination, Typography } from '@mui/material';
 
 import useGetDiscoveryCreators from 'src/hooks/use-get-discovery-creators';
 
-import { CreatorList, DiscoveryFilterBar } from '../components';
 import CompareCreatorsDialog from './compare-creators-dialog';
+import { CreatorList, DiscoveryFilterBar } from '../components';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -28,7 +28,7 @@ const DiscoveryToolView = () => {
 	const [currentPage, setCurrentPage] = useState(1);
 
 	// All filters are now server-side — pass them all to the SWR hook
-	const { creators, pagination, availableLocations, isLoading, isError, pageSize } = useGetDiscoveryCreators({
+	const { creators, pagination, availableLocations, isLoading, isError } = useGetDiscoveryCreators({
 		platform: filters.platform,
 		gender: filters.gender || undefined,
 		ageRange: filters.ageRange || undefined,
@@ -86,12 +86,6 @@ const DiscoveryToolView = () => {
 		if (!pagination?.total || !pagination?.limit) return 1;
 		return Math.max(1, Math.ceil(pagination.total / pagination.limit));
 	}, [pagination]);
-
-	const viewedCount = useMemo(() => {
-		const total = pagination?.total ?? creators.length;
-		if (!total) return 0;
-		return Math.min(currentPage * pageSize, total);
-	}, [pagination?.total, creators.length, currentPage, pageSize]);
 
 	const handlePageChange = useCallback((_event, nextPage) => {
 		setCurrentPage(nextPage);
@@ -160,7 +154,7 @@ const DiscoveryToolView = () => {
 			)}
 
 			{shouldShowResults && !isLoading && totalPages > 1 && (
-				<Box display={'flex'} justifyContent={'center'} mt={2}>
+				<Box display="flex" justifyContent="center" mt={2}>
 					<Pagination
 						count={totalPages}
 						page={currentPage}

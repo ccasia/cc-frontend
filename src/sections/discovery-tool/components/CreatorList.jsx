@@ -2,8 +2,6 @@ import PropTypes from 'prop-types';
 
 import { Box, Stack, Button, Divider, Skeleton, Typography } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
-
 import CreatorCard from './CreatorCard';
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
