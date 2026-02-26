@@ -38,10 +38,8 @@ export const formatNumber = (num) => {
   return num.toString();
 };
 
-const TopContentGrid = ({ topContents, mobileCarousel }) => {
-  const { isMobile, theme } = useMediaKitResponsive();
-
-  console.log(topContents)
+const TopContentGrid = ({ topContents }) => {
+  const { isMobile } = useMediaKitResponsive();
 
   const displayContent = (topContents || [])
     .sort((a, b) => b?.like_count > a?.like_count)
