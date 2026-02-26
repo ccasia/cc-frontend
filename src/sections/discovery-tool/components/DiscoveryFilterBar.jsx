@@ -17,6 +17,8 @@ import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
 
+import { formatNumber } from 'src/utils/socialMetricsCalculator'
+
 import FilterPills from './FilterPills';
 import {
   GENDERS,
@@ -336,7 +338,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           displayEmpty
           fullWidth
           sx={{
-            maxWidth: 160,
+            maxWidth: 145,
             maxHeight: 53.5,
             '& .MuiSelect-select': {
               overflow: 'hidden',
@@ -397,16 +399,17 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
             variant="contained"
             onClick={onShowResults}
             disabled={isCountLoading}
+            fullWidth
             sx={{
-              minWidth: 160,
+              maxWidth: 160,
               bgcolor: '#1340FF',
               '&:hover': { bgcolor: '#0F30D4' },
               textTransform: 'none',
               borderRadius: 1,
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: 600,
               minHeight: 53.5,
-              boxShadow: '0px -3px 0px 0px #00000073 inset'
+              boxShadow: '0px -3px 0px 0px #00000073 inset',
             }}
           >
             {(() => {
@@ -414,7 +417,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
                 return 'Searching creators...';
               }
               if (resultCount != null) {
-                return `Show ${resultCount} Creator${resultCount !== 1 ? 's' : ''}`;
+                return `Show ${formatNumber(resultCount)} Creator${resultCount !== 1 ? 's' : ''}`;
               }
               return 'Show Results';
             })()}

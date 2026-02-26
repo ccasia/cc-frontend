@@ -7,8 +7,16 @@ export const getMetricValue = (insight, metricName) => {
 export const formatNumber = (num) => {
   if (!num && num !== 0) return '0';
   const rounded = Math.round(num);
-  if (rounded >= 1000000) return `${(rounded / 1000000).toFixed(1)  }M`;
-  if (rounded >= 1000) return `${(rounded / 1000).toFixed(1)  }K`;
+  if (rounded >= 1000000) {
+    const value = rounded / 1000000;
+    // Show no decimal if exact million
+    return value % 1 === 0 ? `${value}M` : `${value.toFixed(1)}M`;
+  }
+  if (rounded >= 1000) {
+    const value = rounded / 1000;
+    // Show no decimal if exact thousand
+    return value % 1 === 0 ? `${value}K` : `${value.toFixed(1)}K`;
+  }
   return rounded.toLocaleString();
 };
 
