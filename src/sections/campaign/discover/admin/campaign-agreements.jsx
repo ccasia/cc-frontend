@@ -867,78 +867,125 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     <Box>
       <Stack direction="column" spacing={2}>
         <Stack
-          direction={{ xs: 'column', sm: 'row' }}
+          direction={'column'}
           spacing={{ xs: 1, sm: 1.5 }}
           justifyContent="flex-start"
-          alignItems={{ xs: 'stretch', sm: 'center' }}
           sx={{ mb: 1 }}
         >
-          {/* Alphabetical Sort Button */}
-          <Button
-            onClick={handleToggleSort}
-            endIcon={
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                {sortDirection === 'asc' ? (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                    >
-                      A
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                    >
-                      Z
-                    </Typography>
-                  </Stack>
-                ) : (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                    >
-                      Z
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                    >
-                      A
-                    </Typography>
-                  </Stack>
-                )}
-                <Iconify
-                  icon={
-                    sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
-                  }
-                  width={12}
-                />
-              </Stack>
-            }
-            sx={{
-              px: 1.5,
-              py: 0.75,
-              height: '42px',
-              color: '#637381',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderRadius: 1,
-              textTransform: 'none',
-              whiteSpace: 'nowrap',
-              boxShadow: 'none',
-              alignSelf: 'self-start',
-              '&:hover': {
+          <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ width: '100%'}} alignSelf={'start'} spacing={2} mb={0.5}>
+            <TextField
+              placeholder="Search creators..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{
+                width: { xs: '100%', sm: 300 },
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#FFFFFF',
+                  border: '1.5px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                  borderRadius: 1.15,
+                  height: 44,
+                  fontSize: '0.85rem',
+                  '& fieldset': {
+                    border: 'none',
+                  },
+                  '&.Mui-focused': {
+                    border: '1.5px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
+                  },
+                },
+                '& .MuiOutlinedInput-input': {
+                  py: 1.25,
+                  px: 0,
+                  color: '#637381',
+                  fontWeight: 600,
+                  '&::placeholder': {
+                    color: '#637381',
+                    opacity: 1,
+                    fontWeight: 400,
+                  },
+                },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify
+                      icon="eva:search-fill"
+                      width={18}
+                      sx={{ color: '#637381' }}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            {/* Alphabetical Sort Button */}
+            <Button
+              onClick={handleToggleSort}
+              endIcon={
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  {sortDirection === 'asc' ? (
+                    <Stack direction="column" alignItems="center" spacing={0}>
+                      <Typography
+                        variant="caption"
+                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                      >
+                        A
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                      >
+                        Z
+                      </Typography>
+                    </Stack>
+                  ) : (
+                    <Stack direction="column" alignItems="center" spacing={0}>
+                      <Typography
+                        variant="caption"
+                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                      >
+                        Z
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                      >
+                        A
+                      </Typography>
+                    </Stack>
+                  )}
+                  <Iconify
+                    icon={
+                      sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
+                    }
+                    width={12}
+                  />
+                </Stack>
+                    }
+              sx={{
+                px: 1.5,
+                py: 0.75,
+                height: '42px',
+                color: '#637381',
+                fontWeight: 600,
+                fontSize: '0.875rem',
                 backgroundColor: 'transparent',
-                color: '#221f20',
-              },
-            }}
-          >
-            Alphabetical
-          </Button>
+                border: 'none',
+                borderRadius: 1,
+                textTransform: 'none',
+                whiteSpace: 'nowrap',
+                boxShadow: 'none',
+                alignSelf: { xs: 'flex-start', sm: 'center' },
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  color: '#221f20',
+                },
+              }}
+            >
+              Alphabetical
+            </Button>
+          </Stack>
 
           {lgUp ? (
           <Stack
@@ -1168,54 +1215,6 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
             <MenuItem value="approved">{`Approved (${filterCounts.approved})`}</MenuItem>
           </Select>
           )}
-
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', flex: 1 }}>
-            <TextField
-              placeholder="Search creators..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{
-                width: { xs: '100%', sm: 300 },
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: '#FFFFFF',
-                  border: '1.5px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1.15,
-                  height: 44,
-                  fontSize: '0.85rem',
-                  '& fieldset': {
-                    border: 'none',
-                  },
-                  '&.Mui-focused': {
-                    border: '1.5px solid #e7e7e7',
-                    borderBottom: '3px solid #e7e7e7',
-                  },
-                },
-                '& .MuiOutlinedInput-input': {
-                  py: 1.25,
-                  px: 0,
-                  color: '#637381',
-                  fontWeight: 600,
-                  '&::placeholder': {
-                    color: '#637381',
-                    opacity: 1,
-                    fontWeight: 400,
-                  },
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Iconify
-                      icon="eva:search-fill"
-                      width={18}
-                      sx={{ color: '#637381' }}
-                    />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
         </Stack>
 
         {!filteredData || filteredData.length < 1 ? (

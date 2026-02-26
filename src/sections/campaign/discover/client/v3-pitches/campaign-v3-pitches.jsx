@@ -1358,7 +1358,7 @@ export function AddCreatorModal({ open, onClose, onSelect, campaign }) {
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="xs"
+      maxWidth="sm"
       fullWidth
       PaperProps={{
         sx: {
@@ -1402,8 +1402,8 @@ export function AddCreatorModal({ open, onClose, onSelect, campaign }) {
                 bgcolor: '#fff',
                 border: '1px solid #E7E7E7',
                 borderRadius: 1,
-                px: 1.5,
-                py: 0.75,
+                px: 1,
+                py: 1,
               }}
             >
               <Typography
