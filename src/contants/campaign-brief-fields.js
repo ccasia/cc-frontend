@@ -1,0 +1,78 @@
+export const campaignBriefList = {
+  // General Info
+  campaignTitle: 'Campaign Title',
+  campaignDescription: 'Campaign Description',
+  brandAbout: 'About the Brand',
+  campaignStartDate: 'Campaign Start Date',
+  campaignEndDate: 'Campaign End Date',
+  postingStartDate: 'Posting Start Date',
+  postingEndDate: 'Posting End Date',
+  productName: 'Product Name',
+  campaignIndustries: 'Industries',
+  websiteLink: 'Website Link',
+  campaignCredits: 'Campaign Credits',
+  campaignImages: 'Campaign Images',
+
+  // Objectives
+  campaignObjectives: 'Primary Objective',
+  secondaryObjectives: 'Secondary Objectives',
+  boostContent: 'Boost Content',
+  primaryKPI: 'Primary KPI',
+  performanceBaseline: 'Performance Baseline',
+
+  // Audience
+  audienceGender: 'Target Gender',
+  audienceAge: 'Target Age',
+  country: 'Target Country',
+  audienceLanguage: 'Target Language',
+  audienceCreatorPersona: 'Creator Persona',
+  audienceUserPersona: 'User Persona',
+  geographicFocus: 'Geographic Focus',
+  secondaryAudienceGender: 'Secondary Gender',
+  secondaryAudienceAge: 'Secondary Age',
+  secondaryCountry: 'Secondary Country',
+  secondaryAudienceLanguage: 'Secondary Language',
+  secondaryAudienceCreatorPersona: 'Secondary Creator Persona',
+  secondaryAudienceUserPersona: 'Secondary User Persona',
+
+  // Logistics
+  logisticsType: 'Logistics Type',
+  allowMultipleBookings: 'Allow Multiple Bookings',
+  schedulingOption: 'Scheduling Option',
+  products: 'Delivery Products',
+  locations: 'Reservation Locations',
+  reservationNotes: 'Reservation Notes',
+  clientRemarks: 'Logistic Remarks',
+
+  // Additional Details
+  socialMediaPlatform: 'Social Media Platform',
+  contentFormat: 'Content Format',
+  mainMessage: 'Main Message',
+  keyPoints: 'Key Points',
+  toneAndStyle: 'Tone & Style',
+  brandGuidelines: 'Brand Guidelines',
+  referenceContent: 'Reference Content',
+  productImage1: 'Product Image 1',
+  productImage2: 'Product Image 2',
+  hashtagsToUse: 'Hashtags',
+  mentionsTagsRequired: 'Required Mentions/Tags',
+  creatorCompensation: 'Creator Compensation',
+  ctaDesiredAction: 'CTA Action',
+  ctaLinkUrl: 'CTA Link',
+  ctaPromoCode: 'Promo Code',
+  ctaLinkInBioRequirements: 'Link in Bio Requirement',
+  specialNotesInstructions: 'Special Instructions',
+  needAds: 'Requires Ads',
+};
+
+export const campaignBriefSteps = {
+  GENERAL_CAMPAIGN_INFORMATION: 'General Info',
+  CAMPAIGN_OBJECTIVES: 'Objectives',
+  TARGET_AUDIENCE: 'Target Audience',
+  LOGISTICS__OPTIONAL_: 'Logistics Selection',
+  RESERVATION_SLOTS: 'Reservation Slots',
+  ADDITIONAL_LOGISTIC_REMARKS: 'Logistic Remarks',
+  NEXT_STEPS: 'Next Steps',
+  ADDITIONAL_DETAILS_1: 'Additional Details 1',
+  ADDITIONAL_DETAILS_2: 'Additional Details 2',
+};

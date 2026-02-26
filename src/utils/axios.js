@@ -419,4 +419,15 @@ export const endpoints = {
     createCompany: '/api/client/createCompany',
     createCampaign: '/api/client/createClientCampaign',
   },
+  analytics: {
+    tracker: '/api/analytics/tracker',
+    client: {
+      activation: '/api/analytics/client/activation',
+      campaigns: '/api/analytics/client/campaigns',
+      approve: '/api/analytics/client/approve',
+      journey: '/api/analytics/client/journey',
+      support: '/api/analytics/client/support',
+      shortlist: '/api/analytics/client/shortlist',
+    },
+  },
 };

@@ -28,6 +28,7 @@ const BAR_BG = '#F4F6F8';
 const TABS = [
   { value: 'creators', label: 'Creators' },
   { value: 'admins', label: 'Admins' },
+  { value: 'clients', label: 'Clients' },
 ];
 
 function TabSkeleton() {
@@ -75,21 +76,22 @@ function KpiCards() {
   const prevCreators = filteredGrowth[filteredGrowth.length - 2];
 
   // For daily mode, use period comparison from backend; for monthly, use growthRate
-  const creatorTrend = isDaily && periodComparison
-    ? periodComparison.percentChange
-    : (latestCreators.growthRate ?? 0);
+  const creatorTrend =
+    isDaily && periodComparison ? periodComparison.percentChange : (latestCreators.growthRate ?? 0);
 
   const latestActivation = filteredActivation[filteredActivation.length - 1] || {};
   const prevActivation = filteredActivation[filteredActivation.length - 2];
   const latestPitch = filteredPitch[filteredPitch.length - 1] || {};
   const prevPitch = filteredPitch[filteredPitch.length - 2];
   // Filter to non-null rating entries for trend calculation
-  const nonNullNps = useMemo(() => filteredNpsTrend.filter((d) => d.avgRating != null), [filteredNpsTrend]);
+  const nonNullNps = useMemo(
+    () => filteredNpsTrend.filter((d) => d.avgRating != null),
+    [filteredNpsTrend]
+  );
   const latestNps = nonNullNps[nonNullNps.length - 1];
   const prevNps = nonNullNps.length >= 2 ? nonNullNps[nonNullNps.length - 2] : undefined;
-  const npsTrendChange = prevNps && latestNps
-    ? Math.round((latestNps.avgRating - prevNps.avgRating) * 10) / 10
-    : 0;
+  const npsTrendChange =
+    prevNps && latestNps ? Math.round((latestNps.avgRating - prevNps.avgRating) * 10) / 10 : 0;
 
   // Hover popover state for rating breakdown
   const ratingAnchorRef = useRef(null);
@@ -111,7 +113,8 @@ function KpiCards() {
   const reversed = [...distribution].reverse();
   const maxCount = Math.max(...distribution.map((d) => d.count), 1);
 
-  const ratingValue = averageRating != null && averageRating !== 0 ? Number(averageRating).toFixed(1) : '—';
+  const ratingValue =
+    averageRating != null && averageRating !== 0 ? Number(averageRating).toFixed(1) : '—';
 
   return (
     <>
@@ -264,7 +267,7 @@ function KpiCards() {
 }
 
 export default function AnalyticViewV2() {
-  const [currentTab, setCurrentTab] = useState('creators');
+  const [currentTab, setCurrentTab] = useState('clients'); // change back to 'creators'
   const [dateFilter, setDateFilter] = useState('all');
   const [filterStartDate, setFilterStartDate] = useState(null);
   const [filterEndDate, setFilterEndDate] = useState(null);
@@ -370,7 +373,8 @@ export default function AnalyticViewV2() {
 
         <DateFilterProvider dateFilter={dateFilter} startDate={filterStartDate} endDate={filterEndDate} creditTiers={creditTiers}>
           {/* Top-Level KPI Cards */}
-          <KpiCards />
+          {(currentTab === 'creators' || currentTab === 'admins') && <KpiCards />}
+          {/* {currentTab === 'client' && } */}
 
           {/* Tab Content */}
           <AnimatePresence mode="wait">
@@ -387,6 +391,12 @@ export default function AnalyticViewV2() {
               </Suspense>
             </m.div>
           </AnimatePresence>
+
+          <Fade in={currentTab === 'clients'} timeout={200} unmountOnExit>
+            <Grid>
+              <ClientAnalytics />
+            </Grid>
+          </Fade>
         </DateFilterProvider>
       </Container>
     </>
