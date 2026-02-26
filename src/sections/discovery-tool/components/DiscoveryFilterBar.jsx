@@ -13,11 +13,11 @@ import {
   Autocomplete,
 } from '@mui/material';
 
+import { formatNumber } from 'src/utils/socialMetricsCalculator'
+
 import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
-
-import { formatNumber } from 'src/utils/socialMetricsCalculator'
 
 import FilterPills from './FilterPills';
 import {
