@@ -100,7 +100,11 @@ function RangeDay(props) {
           width: 32,
           height: 32,
           fontSize: '0.8125rem',
-          fontWeight: isEndpoint ? 700 : inRange ? 500 : 400,
+          fontWeight: (() => {
+            if (isEndpoint) return 700;
+            if (inRange) return 500;
+            return 400;
+          })(),
           // In-range days get blue text
           ...(inRange &&
             !isEndpoint && {

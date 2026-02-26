@@ -1,0 +1,510 @@
+
+import { useRef, useMemo, useState, useEffect, useContext, useCallback, createContext } from 'react';
+import PropTypes from 'prop-types';
+
+import { BarChart } from '@mui/x-charts/BarChart';
+import { PieChart } from '@mui/x-charts/PieChart';
+import { LineChart } from '@mui/x-charts/LineChart';
+import WcOutlinedIcon from '@mui/icons-material/WcOutlined';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import RemoveIcon from '@mui/icons-material/Remove';
+import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
+import { useAxisTooltip } from '@mui/x-charts/ChartsTooltip';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import { Box, Card, Chip, Stack, Paper, Divider, Tooltip, Typography, useTheme, useMediaQuery } from '@mui/material';
+
+import useChartZoom from 'src/hooks/use-chart-zoom';
+import useGetCreatorGrowth from 'src/hooks/use-get-creator-growth';
+import useGetCreatorGrowthCreators from 'src/hooks/use-get-creator-growth-creators';
+
+import ChartItemTooltip from '../components/chart-item-tooltip';
+import ZoomableChart from '../components/zoomable-chart';
+import CreatorDrilldownDrawer from './creator-drilldown-drawer';
+import { useDateFilter, useFilteredData, useFilterLabel, useIsDaily } from '../date-filter-context';
+import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, TICK_LABEL_STYLE, getTrendProps } from '../chart-config';
+
+const GrowthDataContext = createContext([]);
+
+const GENDER_COLORS = { male: '#1340FF', female: '#E45DBF', nonBinary: '#919EAB' };
+
+function GrowthHeroStats({ genderBreakdown, count }) {
+  const total = count || 0;
+  const items = [
+    { label: 'Total', value: total, color: '#1A1A2E' },
+    { label: 'Female', value: genderBreakdown?.female || 0, color: GENDER_COLORS.female },
+    { label: 'Male', value: genderBreakdown?.male || 0, color: GENDER_COLORS.male },
+    { label: 'Other', value: genderBreakdown?.nonBinary || 0, color: GENDER_COLORS.nonBinary },
+  ];
+
+  return (
+    <Stack
+      direction="row"
+      spacing={0}
+      sx={{
+        mt: 1.5,
+        mx: 2.5,
+        mb: 2,
+        borderRadius: '10px',
+        border: '1px solid #E8ECEE',
+        overflow: 'hidden',
+      }}
+    >
+      {items.map((item, idx) => (
+        <Box key={item.label} sx={{ display: 'contents' }}>
+          {idx > 0 && <Box sx={{ width: '1px', bgcolor: '#E8ECEE', my: 1 }} />}
+          <Stack alignItems="center" sx={{ flex: 1, py: 1.5 }}>
+            <Typography sx={{ fontSize: '1.375rem', fontWeight: 700, color: item.color, lineHeight: 1, letterSpacing: '-0.02em' }}>
+              {item.value}
+            </Typography>
+            <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: '#919EAB', textTransform: 'uppercase', letterSpacing: '0.05em', mt: 0.5 }}>
+              {item.label}
+            </Typography>
+          </Stack>
+        </Box>
+      ))}
+    </Stack>
+  );
+}
+
+GrowthHeroStats.propTypes = {
+  genderBreakdown: PropTypes.object,
+  count: PropTypes.number,
+};
+
+const GROWTH_DRAWER_CONFIG = {
+  useCreatorsHook: useGetCreatorGrowthCreators,
+  variant: 'simple',
+  subtitle: (
+    <>
+      Creators who <Typography component="span" sx={{ fontWeight: 700, color: '#637381', fontSize: 'inherit' }}>signed up</Typography> in this period
+    </>
+  ),
+  renderHeroStats: (hookData) => (
+    <GrowthHeroStats genderBreakdown={hookData.genderBreakdown} count={hookData.count} />
+  ),
+  emptyTitle: 'No new sign-ups',
+  emptySubtitle: 'No creators registered in this period',
+};
+
+function GrowthTooltip() {
+  const tooltipData = useAxisTooltip();
+  const growthData = useContext(GrowthDataContext);
+
+  if (!tooltipData) return null;
+
+  const { axisFormattedValue, axisValue, seriesItems } = tooltipData;
+  const dataIndex = Math.round(axisValue);
+  const item = dataIndex >= 0 && dataIndex < growthData.length ? growthData[dataIndex] : null;
+
+  if (!item) return null;
+
+  return (
+    <Paper
+      elevation={3}
+      sx={{
+        p: 1.5,
+        borderRadius: 1,
+        minWidth: 160,
+      }}
+    >
+      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.75 }}>
+        {axisFormattedValue ?? axisValue}
+      </Typography>
+      {seriesItems.map((s) => (
+        <Stack key={s.seriesId} direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+          <Stack direction="row" alignItems="center" spacing={0.75}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: s.color, display: 'inline-block' }} />
+            <Typography variant="caption" sx={{ color: '#666' }}>New Sign-ups</Typography>
+          </Stack>
+          <Typography variant="caption" sx={{ fontWeight: 700 }}>{item.newSignups}</Typography>
+        </Stack>
+      ))}
+      <Divider sx={{ my: 0.75 }} />
+      <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Typography variant="caption" sx={{ color: '#666' }}>Total Creators</Typography>
+        <Typography variant="caption" sx={{ fontWeight: 700 }}>{item.total.toLocaleString()}</Typography>
+      </Stack>
+    </Paper>
+  );
+}
+
+// Demographics panel — gender donut + age group bars
+function DemographicsPanel({ chipLabel, total, growthRate, trend, TrendIcon, isNeutral, demographics }) {
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
+  const donutSize = isSmall ? 160 : 180;
+
+  const { gender, ageGroups } = demographics;
+  const genderTotal = gender.reduce((sum, d) => sum + d.value, 0) || 1;
+
+  const pieData = gender.map((d, i) => ({
+    id: i,
+    value: d.value,
+    label: d.label,
+    color: d.color,
+  }));
+
+  return (
+    <Stack sx={{ px: 3, pb: 2, width: '100%', height: '100%', justifyContent: 'space-between' }}>
+      {/* Gender Section */}
+      <Box>
+        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1.5 }}>
+          <WcOutlinedIcon sx={{ fontSize: 18, color: '#919EAB' }} />
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
+            Gender
+          </Typography>
+        </Stack>
+        <Stack alignItems="center" spacing={1}>
+          <Box sx={{ position: 'relative', flexShrink: 0, width: donutSize, height: donutSize }}>
+            <PieChart
+              series={[{
+                data: pieData,
+                innerRadius: '55%',
+                outerRadius: '90%',
+                paddingAngle: 2,
+                cornerRadius: 3,
+                valueFormatter: (item) => `${item.value.toLocaleString()} creators`,
+              }]}
+              height={donutSize}
+              width={donutSize}
+              margin={{ top: 0, bottom: 0, left: 0, right: 0 }}
+              hideLegend
+              slots={{ tooltip: ChartItemTooltip }}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+              }}
+            >
+              <Typography variant="caption" sx={{ color: '#919EAB', fontSize: '0.7rem', lineHeight: 1 }}>
+                Total
+              </Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: '1.35rem', lineHeight: 1.2, color: '#333' }}>
+                {genderTotal.toLocaleString()}
+              </Typography>
+            </Box>
+          </Box>
+          {/* Gender legend */}
+          <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap">
+            {gender.map((d) => (
+              <Stack key={d.label} direction="row" alignItems="center" spacing={0.5}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: d.color, flexShrink: 0 }} />
+                <Typography variant="caption" sx={{ color: '#333', fontWeight: 500, fontSize: '0.75rem' }}>
+                  {d.label}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#919EAB', fontWeight: 500, fontSize: '0.7rem' }}>
+                  {((d.value / genderTotal) * 100).toFixed(0)}%
+                </Typography>
+              </Stack>
+            ))}
+          </Stack>
+        </Stack>
+      </Box>
+
+      <Divider sx={{ borderColor: '#E8ECEE', my: 1.5 }} />
+
+      {/* Age Groups Section */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <Stack direction="row" alignItems="center" spacing={0.75}>
+          <CalendarMonthOutlinedIcon sx={{ fontSize: 18, color: '#919EAB' }} />
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
+            Age Groups
+          </Typography>
+        </Stack>
+        <Box sx={{ width: '100%' }}>
+          <BarChart
+            layout="horizontal"
+            series={[{
+              data: ageGroups.map((d) => d.value),
+              valueFormatter: (val) => {
+                const pct = ((val / genderTotal) * 100).toFixed(1);
+                return `${val.toLocaleString()} (${pct}%)`;
+              },
+            }]}
+            yAxis={[{
+              scaleType: 'band',
+              data: ageGroups.map((d) => d.label),
+              tickLabelStyle: { fill: '#333', fontSize: 12, fontWeight: 500 },
+              colorMap: {
+                type: 'ordinal',
+                values: ageGroups.map((d) => d.label),
+                colors: ageGroups.map((d) => d.color),
+              },
+            }]}
+            xAxis={[{
+              tickLabelStyle: { fill: '#666', fontSize: 11, fontWeight: 500 },
+            }]}
+            height={280}
+            margin={{ top: 16, bottom: 8, left: 36, right: 36 }}
+            grid={{ vertical: true, horizontal: false }}
+            hideLegend
+            barLabel={(item) => {
+              const val = item.value;
+              const pct = ((val / genderTotal) * 100).toFixed(0);
+              return `${val.toLocaleString()} (${pct}%)`;
+            }}
+            sx={{
+              overflow: 'visible',
+              '& .MuiChartsAxis-tick': { display: 'none' },
+              '& .MuiChartsAxis-left .MuiChartsAxis-line': { display: 'none' },
+              '& .MuiChartsAxis-bottom .MuiChartsAxis-line': { stroke: '#E0E3E7', strokeWidth: 1 },
+              '& .MuiChartsGrid-line': { stroke: '#F0F2F4', strokeDasharray: '4 4' },
+              '& .MuiBarLabel-root': { fill: '#fff', fontSize: 11, fontWeight: 600 },
+              '& .MuiBarElement-root': { rx: 3 },
+            }}
+          />
+        </Box>
+      </Box>
+    </Stack>
+  );
+}
+
+DemographicsPanel.propTypes = {
+  chipLabel: PropTypes.string,
+  total: PropTypes.number,
+  growthRate: PropTypes.number,
+  trend: PropTypes.object,
+  TrendIcon: PropTypes.elementType,
+  isNeutral: PropTypes.bool,
+  demographics: PropTypes.shape({
+    gender: PropTypes.arrayOf(PropTypes.shape({
+      label: PropTypes.string,
+      value: PropTypes.number,
+      color: PropTypes.string,
+    })),
+    ageGroups: PropTypes.arrayOf(PropTypes.shape({
+      label: PropTypes.string,
+      value: PropTypes.number,
+      color: PropTypes.string,
+    })),
+  }),
+};
+
+export default function CreatorGrowthChart() {
+  const { startDate, endDate } = useDateFilter();
+  const isDaily = useIsDaily();
+
+  const hookOptions = useMemo(() => {
+    if (isDaily && startDate && endDate) {
+      return { granularity: 'daily', startDate, endDate };
+    }
+    return {};
+  }, [isDaily, startDate, endDate]);
+
+  const { creatorGrowth, demographics } = useGetCreatorGrowth(hookOptions);
+
+  // Always call useFilteredData (hooks can't be conditional) — only used for monthly
+  const monthlyFiltered = useFilteredData(creatorGrowth);
+  const filtered = isDaily ? creatorGrowth : monthlyFiltered;
+
+  const chipLabel = useFilterLabel('All time');
+  const tooltipText = isDaily ? 'New creator sign-ups per day' : 'New creator sign-ups per month';
+
+  const signups = useMemo(() => filtered.map((d) => d.newSignups), [filtered]);
+  const labels = useMemo(() => filtered.map((d) => d.date || d.month), [filtered]);
+  const indices = useMemo(() => labels.map((_, i) => i), [labels]);
+
+  const [selectedPoint, setSelectedPoint] = useState(null);
+  const clickStartRef = useRef(null);
+
+  const handleAxisClick = useCallback((event, d) => {
+    if (!d || d.dataIndex == null) return;
+    if (clickStartRef.current) {
+      const dx = event.clientX - clickStartRef.current.x;
+      const dy = event.clientY - clickStartRef.current.y;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) return;
+    }
+    const label = labels[d.dataIndex];
+    if (label) setSelectedPoint(label);
+  }, [labels]);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const latest = filtered[filtered.length - 1] || { total: 0, growthRate: 0, newSignups: 0 };
+  const prev = filtered.length >= 2 ? filtered[filtered.length - 2] : null;
+  const isNeutral = !prev || latest.growthRate === 0;
+  const isUp = !isNeutral && latest.newSignups > prev.newSignups;
+  const trend = getTrendProps(isNeutral, isUp);
+  let TrendIcon = RemoveIcon;
+  if (!isNeutral) TrendIcon = isUp ? ArrowDropUpIcon : ArrowDropDownIcon;
+
+  const { xAxis: xDomain, yDomain, isZoomed, resetZoom, containerProps, setYSources } = useChartZoom(filtered.length);
+
+  useEffect(() => { setYSources([signups]); }, [setYSources, signups]);
+
+  const { min: xMin, max: xMax } = xDomain;
+  const xAxisConfig = useMemo(() => [{
+    scaleType: 'linear',
+    data: indices,
+    min: xMin,
+    max: xMax,
+    valueFormatter: (v) => {
+      const i = Math.round(v);
+      return i >= 0 && i < labels.length ? labels[i] : '';
+    },
+    tickMinStep: 1,
+    tickLabelStyle: TICK_LABEL_STYLE,
+  }], [xMin, xMax, labels, indices]);
+
+  return (
+    <GrowthDataContext.Provider value={filtered}>
+    <Card
+      sx={{
+        border: '1px solid #E8ECEE',
+        borderRadius: 2,
+        bgcolor: '#FFFFFF',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+        overflow: 'visible',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        sx={{ height: '100%', flex: 1 }}
+      >
+        {/* Left: Chart section with its own header */}
+        <Box sx={{ flex: { md: 3 }, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          {/* Chart header */}
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, pt: 3, pb: 1 }}>
+            <Stack direction="row" alignItems="center" spacing={0.75}>
+              <ShowChartIcon sx={{ fontSize: 18, color: '#919EAB', mr: 0.5 }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
+                Creator Growth
+              </Typography>
+              <Tooltip
+                title={tooltipText}
+                arrow
+                placement="top"
+                slotProps={{
+                  tooltip: {
+                    sx: {
+                      bgcolor: '#1C252E',
+                      fontSize: '0.75rem',
+                      fontWeight: 500,
+                      maxWidth: 240,
+                      px: 1.5,
+                      py: 1,
+                      borderRadius: 1,
+                    },
+                  },
+                  arrow: { sx: { color: '#1C252E' } },
+                }}
+              >
+                <HelpOutlineIcon
+                  sx={{
+                    fontSize: 16,
+                    color: '#919EAB',
+                    cursor: 'help',
+                    transition: 'color 0.2s',
+                    '&:hover': { color: '#333' },
+                  }}
+                />
+              </Tooltip>
+            </Stack>
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Chip label={chipLabel} size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: 11, height: 22, color: '#919EAB', borderColor: '#E8ECEE' }} />
+              <Stack direction="row" alignItems="baseline" spacing={0.5}>
+                <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, lineHeight: 1 }}>
+                  {latest.total.toLocaleString()}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#919EAB', fontWeight: 500 }}>creators</Typography>
+              </Stack>
+              <Stack
+                direction="row"
+                alignItems="center"
+                sx={{ bgcolor: trend.bg, borderRadius: 0.75, px: 0.5, py: 0.25 }}
+              >
+                <TrendIcon sx={{ fontSize: trend.iconSize, color: trend.color, ml: -0.25 }} />
+                <Typography variant="caption" sx={{ fontWeight: 600, color: trend.color, fontSize: '0.7rem', mr: 0.25 }}>
+                  {isNeutral ? '0%' : `${latest.growthRate > 0 ? '+' : ''}${latest.growthRate}%`}
+                </Typography>
+              </Stack>
+            </Stack>
+          </Stack>
+          {/* Chart content */}
+          <Box sx={{ px: 1, pb: 1, flex: 1 }}>
+            <ZoomableChart
+              containerProps={{
+                ...containerProps,
+                onMouseDown: (e) => {
+                  clickStartRef.current = { x: e.clientX, y: e.clientY };
+                  containerProps.onMouseDown(e);
+                },
+              }}
+              isZoomed={isZoomed}
+              resetZoom={resetZoom}
+            >
+              <LineChart
+                series={[{
+                  data: signups,
+                  label: 'New Creators',
+                  color: CHART_COLORS.primary,
+                  area: true,
+                  curve: 'linear',
+                }]}
+                xAxis={xAxisConfig}
+                yAxis={[{ ...yDomain, tickLabelStyle: TICK_LABEL_STYLE }]}
+                height={560}
+                margin={CHART_MARGIN}
+                grid={CHART_GRID}
+                tooltip={{ trigger: 'axis' }}
+                slots={{ axisContent: GrowthTooltip }}
+                onAxisClick={handleAxisClick}
+                skipAnimation={isZoomed}
+                hideLegend
+                sx={{
+                  ...CHART_SX,
+                  cursor: 'pointer',
+                }}
+              />
+            </ZoomableChart>
+          </Box>
+        </Box>
+
+        {/* Right: Demographics panel - starts from top of card */}
+        <Stack
+          sx={{
+            flex: { md: 2 },
+            borderLeft: { md: '1px solid #E8ECEE' },
+            borderTop: { xs: '1px solid #E8ECEE', md: 'none' },
+            pt: { md: 3 },
+          }}
+        >
+          <DemographicsPanel
+            chipLabel={chipLabel}
+            total={latest.total}
+            growthRate={latest.growthRate}
+            trend={trend}
+            TrendIcon={TrendIcon}
+            isNeutral={isNeutral}
+            demographics={demographics}
+          />
+        </Stack>
+      </Stack>
+    </Card>
+    <CreatorDrilldownDrawer
+      selectedPoint={selectedPoint}
+      points={labels}
+      data={filtered}
+      isDaily={isDaily}
+      onClose={() => setSelectedPoint(null)}
+      onNavigate={setSelectedPoint}
+      config={GROWTH_DRAWER_CONFIG}
+    />
+    </GrowthDataContext.Provider>
+  );
+}

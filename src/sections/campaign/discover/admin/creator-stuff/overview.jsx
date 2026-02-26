@@ -28,7 +28,7 @@ const OverView = ({ campaign }) => {
                   margin={{ right: 5 }}
                   height={60}
                   width={60}
-                  legend={{ hidden: true }}
+                  slotProps={{ legend: { hidden: true } }}
                 />
 
                 <Typography
@@ -75,7 +75,7 @@ const OverView = ({ campaign }) => {
                   margin={{ right: 5 }}
                   height={60}
                   width={60}
-                  legend={{ hidden: true }}
+                  slotProps={{ legend: { hidden: true } }}
                 />
 
                 <Typography
@@ -115,7 +115,7 @@ const OverView = ({ campaign }) => {
                 margin={{ right: 5 }}
                 height={60}
                 width={60}
-                legend={{ hidden: true }}
+                slotProps={{ legend: { hidden: true } }}
               />
             </Box>
           </Stack>
