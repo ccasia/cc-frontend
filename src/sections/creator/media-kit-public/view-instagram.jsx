@@ -31,7 +31,9 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const topThreeContents = topContents.sort((a, b) => a?.like_count > b?.like_count).slice(0, 3);
+  const topThreeContents = [...(topContents || [])]
+    .sort((a, b) => (b?.like_count || 0) - (a?.like_count || 0))
+    .slice(0, 3);
 
   // Carousel layout for mobile
   if (isMobile) {
@@ -284,9 +286,29 @@ TopContentGrid.propTypes = {
   mobileCarousel: PropTypes.bool,
 };
 
-const MediaKitSocialContent = ({ instagramVideos, forceDesktop = false }) => {
+const MediaKitSocialContent = ({ instagramVideos, isLoading = false, forceDesktop = false }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm')) && !forceDesktop;
+
+  if (isLoading)
+    return (
+      <Label
+        color="info"
+        sx={{
+          height: 250,
+          textAlign: 'center',
+          borderStyle: 'dashed',
+          borderColor: theme.palette.divider,
+          borderWidth: 1.5,
+          bgcolor: alpha(theme.palette.info.main, 0.08),
+          width: 1,
+        }}
+      >
+        <Stack spacing={1} alignItems="center">
+          <Typography variant="subtitle2">Loading Instagram content...</Typography>
+        </Stack>
+      </Label>
+    );
 
   if (!instagramVideos?.length)
     return (
@@ -355,5 +377,6 @@ export default MediaKitSocialContent;
 
 MediaKitSocialContent.propTypes = {
   instagramVideos: PropTypes.array,
+  isLoading: PropTypes.bool,
   forceDesktop: PropTypes.bool,
 };
