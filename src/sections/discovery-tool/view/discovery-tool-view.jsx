@@ -19,6 +19,7 @@ const DiscoveryToolView = () => {
 		city: null,
 		gender: '',
 		creditTier: '',
+		languages: [],
 		interests: [],
 	});
 
@@ -26,6 +27,7 @@ const DiscoveryToolView = () => {
 	const [showResults, setShowResults] = useState(true);
 	const isInitialMount = useRef(true);
 	const [currentPage, setCurrentPage] = useState(1);
+	const [sortByFollowers, setSortByFollowers] = useState(false);
 
 	// All filters are now server-side — pass them all to the SWR hook
 	const { creators, pagination, availableLocations, isLoading, isError } = useGetDiscoveryCreators({
@@ -35,9 +37,12 @@ const DiscoveryToolView = () => {
 		country: filters.country || undefined,
 		city: filters.city || undefined,
 		creditTier: filters.creditTier || undefined,
+		languages: filters.languages?.length ? filters.languages : undefined,
 		interests: filters.interests?.length ? filters.interests : undefined,
 		keyword: filters.debouncedKeyword || undefined,
 		hashtag: filters.debouncedHashtag || undefined,
+		sortBy: sortByFollowers ? 'followers' : 'name',
+		sortDirection: sortByFollowers ? 'desc' : 'asc',
 		page: currentPage,
 		limit: 20,
 	});
@@ -53,6 +58,7 @@ const DiscoveryToolView = () => {
 			filters.city !== null ||
 			filters.gender !== '' ||
 			filters.creditTier !== '' ||
+			filters.languages.length > 0 ||
 			filters.interests.length > 0,
 		[filters]
 	);
@@ -89,6 +95,11 @@ const DiscoveryToolView = () => {
 
 	const handlePageChange = useCallback((_event, nextPage) => {
 		setCurrentPage(nextPage);
+	}, []);
+
+	const handleToggleFollowersSort = useCallback(() => {
+		setSortByFollowers((prev) => !prev);
+		setCurrentPage(1);
 	}, []);
 
 	// Creator selection & comparison
@@ -147,6 +158,8 @@ const DiscoveryToolView = () => {
 					isLoading={isLoading}
 					isError={isError}
 					pagination={pagination}
+					sortByFollowers={sortByFollowers}
+					onToggleFollowersSort={handleToggleFollowersSort}
 					selectedIds={selectedCreatorIds}
 					onSelect={handleSelectCreator}
 					onCompare={handleCompare}

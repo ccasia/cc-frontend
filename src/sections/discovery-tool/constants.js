@@ -28,6 +28,93 @@ export const PLATFORMS = [
   { value: 'tiktok', label: 'TikTok' },
 ];
 
+export const LANGUAGES = [
+  'Mandarin Chinese',
+  'Spanish',
+  'English',
+  'Hindi',
+  'Bengali',
+  'Portuguese',
+  'Russian',
+  'Japanese',
+  'Western Punjabi',
+  'Marathi',
+  'Telugu',
+  'Wu Chinese',
+  'Turkish',
+  'Korean',
+  'French',
+  'German',
+  'Vietnamese',
+  'Tamil',
+  'Yue Chinese (Cantonese)',
+  'Urdu',
+  'Javanese',
+  'Italian',
+  'Gujarati',
+  'Thai',
+  'Persian',
+  'Polish',
+  'Pashto',
+  'Kannada',
+  'Malayalam',
+  'Sundanese',
+  'Hausa',
+  'Odia',
+  'Burmese',
+  'Arabic',
+  'Dutch',
+  'Greek',
+  'Hebrew',
+  'Hungarian',
+  'Swedish',
+  'Czech',
+  'Romanian',
+  'Finnish',
+  'Danish',
+  'Norwegian',
+  'Ukrainian',
+  'Amharic',
+  'Somali',
+  'Azerbaijani',
+  'Khmer',
+  'Nepali',
+  'Sinhala',
+  'Zulu',
+  'Xhosa',
+  'Afrikaans',
+  'Haitian Creole',
+  'Mongolian',
+  'Georgian',
+  'Armenian',
+  'Tatar',
+  'Kazakh',
+  'Uzbek',
+  'Tajik',
+  'Kyrgyz',
+  'Turkmen',
+  'Latvian',
+  'Lithuanian',
+  'Estonian',
+  'Macedonian',
+  'Bosnian',
+  'Serbian',
+  'Croatian',
+  'Slovenian',
+  'Albanian',
+  'Maltese',
+  'Icelandic',
+  'Welsh',
+  'Irish',
+  'Scottish Gaelic',
+  'Maori',
+  'Samoan',
+  'Tongan',
+  'Fijian',
+  'Malay',
+  'Indonesian',
+].sort((a, b) => a.localeCompare(b));
+
 // ─── Filter initial state & reducer ──────────────────────────────────────────
 
 export const FILTER_INITIAL_STATE = {
@@ -41,6 +128,7 @@ export const FILTER_INITIAL_STATE = {
   city: null,
   gender: '',
   creditTier: '',
+  languages: [],
   interests: [],
 };
 
@@ -76,6 +164,14 @@ export const filterReducer = (state, action) => {
     case 'SET_CREDIT_TIER':
       if (state.creditTier === action.payload) return state;
       return { ...state, creditTier: action.payload };
+    case 'SET_LANGUAGES':
+      if (
+        state.languages.length === action.payload.length &&
+        state.languages.every((value, index) => value === action.payload[index])
+      ) {
+        return state;
+      }
+      return { ...state, languages: action.payload };
     case 'SET_INTERESTS':
       if (
         state.interests.length === action.payload.length &&

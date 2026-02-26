@@ -77,6 +77,14 @@ const FilterPills = ({ filters, onRemoveFilter }) => {
     });
   }
 
+  if (filters.languages.length > 0) {
+    pills.push({
+      key: 'languages',
+      label: `Languages: ${filters.languages.join(', ')}`,
+      onRemove: () => onRemoveFilter('SET_LANGUAGES', []),
+    });
+  }
+
   if (filters.interests.length > 0) {
     pills.push({
       key: 'interests',
@@ -88,28 +96,45 @@ const FilterPills = ({ filters, onRemoveFilter }) => {
   if (pills.length === 0) return null;
 
   return (
-    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap mb={1}>
-      {pills.map((pill) => (
-        <Chip
-          key={pill.key}
-          label={pill.label}
-          onDelete={pill.onRemove}
-          deleteIcon={<Iconify icon="mingcute:close-line" width={12} />}
-          size="small"
-					variant='outline'
-          sx={{
-						px: 0.5,
-						py: 1.6,
-						bgcolor: '#D9D9D9',
-						color: '#231F20',
-							borderRadius: 2,
-							fontSize: 13,
-							'& .MuiChip-deleteIcon': {
-								marginLeft: 2,
-							},
-          }}
-        />
-      ))}
+    <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1} mb={1}>
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ flex: 1 }}>
+        {pills.map((pill) => (
+          <Chip
+            key={pill.key}
+            label={pill.label}
+            onDelete={pill.onRemove}
+            deleteIcon={<Iconify icon="mingcute:close-line" width={12} />}
+            size="small"
+						variant='outline'
+            sx={{
+							px: 0.5,
+							py: 1.6,
+							bgcolor: '#D9D9D9',
+							color: '#231F20',
+								borderRadius: 2,
+								fontSize: 13,
+								'& .MuiChip-deleteIcon': {
+									marginLeft: 2,
+								},
+            }}
+          />
+        ))}
+      </Stack>
+
+      <Chip
+        label="Clear All"
+        onClick={() => onRemoveFilter('CLEAR_ALL')}
+        size="small"
+        variant='outlined'
+        color='default'
+        sx={{
+          px: 0.5,
+          py: 1.6,
+          borderRadius: 2,
+          fontSize: 13,
+          cursor: 'pointer',
+        }}
+      />
     </Stack>
   );
 };
@@ -124,6 +149,7 @@ FilterPills.propTypes = {
     country: PropTypes.string,
     city: PropTypes.string,
     creditTier: PropTypes.string,
+    languages: PropTypes.arrayOf(PropTypes.string),
     interests: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
   onRemoveFilter: PropTypes.func.isRequired,
