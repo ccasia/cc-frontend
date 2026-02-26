@@ -39,7 +39,6 @@ import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
-
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
@@ -441,7 +440,6 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
   const { user } = useAuthContext();
 
   const smUp = useResponsive('up', 'sm');
-  const mdUp = useResponsive('up', 'md');
   const lgUp = useResponsive('up', 'lg');
 
   // Get tier data for an agreement item
@@ -867,12 +865,12 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     <Box>
       <Stack direction="column" spacing={2}>
         <Stack
-          direction={'column'}
+          direction="column"
           spacing={{ xs: 1, sm: 1.5 }}
           justifyContent="flex-start"
           sx={{ mb: 1 }}
         >
-          <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ width: '100%'}} alignSelf={'start'} spacing={2} mb={0.5}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ width: '100%'}} alignSelf="start" spacing={2} mb={0.5}>
             <TextField
               placeholder="Search creators..."
               value={searchQuery}
