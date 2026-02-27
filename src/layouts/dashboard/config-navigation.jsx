@@ -167,7 +167,7 @@ export function useNavData() {
             icon: ICONS.clients,
           },
           {
-            roles: ['superadmin', 'CSM', 'CSL', 'client', 'god'],
+            roles: ['superadmin', 'CSL', 'god'],
             title: 'Creator Discovery Tool',
             path: paths.dashboard.discoveryTool,
             icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
