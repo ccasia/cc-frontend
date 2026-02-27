@@ -20,6 +20,8 @@ import {
   DialogActions,
 } from '@mui/material';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
@@ -27,6 +29,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+import CampaignInvitationModal from 'src/layouts/common/campaign-invitation';
 
 import Iconify from 'src/components/iconify';
 import SocialLinksModal from 'src/components/social-links-modal';
@@ -79,9 +82,15 @@ const FormField = ({ label, children, ...others }) => (
 
 export default function DashboardLayout({ children }) {
   const { user } = useAuthContext();
+  const router = useRouter();
   const { socket, isOnline } = useSocketContext();
-  const [hasSubmittedKWSP, setHasSubmittedKWSP] = useState(false);
+  const [, setHasSubmittedKWSP] = useState(false);
   const [socialLinksModalOpen, setSocialLinksModalOpen] = useState(false);
+  const [inviteApprovalPopup, setInviteApprovalPopup] = useState({
+    open: false,
+    campaignId: null,
+    campaignName: '',
+  });
 
   const bugFormDialog = useBoolean();
   const kwspFormDialog = useBoolean();
@@ -166,17 +175,43 @@ export default function DashboardLayout({ children }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    socket?.on('notification', (data) =>
-      mutate(endpoints.notification.root, (currentData) => ({
-        ...currentData,
-        data,
-      }))
-    );
+    socket?.on('notification', (data) => {
+      mutate(endpoints.notification.root);
+
+      const isCreatorInviteApproval =
+        user?.role === 'creator' &&
+        data?.entity === 'Pitch' &&
+        data?.title === 'Campaign Invitation' &&
+        Boolean(data?.campaignId);
+
+      if (isCreatorInviteApproval) {
+        const campaignNameFromPayload = data?.campaign?.name;
+        const campaignNameFromMessage = data?.message?.match(/"([^"]+)"/)?.[1] || '';
+
+        setInviteApprovalPopup({
+          open: true,
+          campaignId: data.campaignId,
+          campaignName: campaignNameFromPayload || campaignNameFromMessage,
+        });
+      }
+    });
 
     return () => {
       socket?.off('notification');
     };
   }, [user, socket]);
+
+  const handleGoToInvitedCampaign = () => {
+    if (!inviteApprovalPopup.campaignId) {
+      setInviteApprovalPopup({ open: false, campaignId: null, campaignName: '' });
+      return;
+    }
+
+    const targetLink = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage?tab=pending&campaignId=${inviteApprovalPopup.campaignId}`;
+    setInviteApprovalPopup({ open: false, campaignId: null, campaignName: '' });
+    router.push('/dashboard/temp');
+    setTimeout(() => router.push(targetLink), 0);
+  };
 
   const lgUp = useResponsive('up', 'lg');
 
@@ -521,6 +556,13 @@ export default function DashboardLayout({ children }) {
         {kwspButton}
         {feedbackForm}
         {kwspForm}
+
+        <CampaignInvitationModal
+          open={inviteApprovalPopup.open}
+          onClose={() => setInviteApprovalPopup({ open: false, campaignId: null, campaignName: '' })}
+          onGoToCampaign={handleGoToInvitedCampaign}
+          campaignName={inviteApprovalPopup.campaignName}
+        />
       </Box>
 
       {/* Social Links Modal for Creators */}
