@@ -103,7 +103,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   // We need to display them as "APPROVED" rows to avoid missing data
   const mergedPitchesAndShortlisted = useMemo(() => {
     const pitchUserIds = new Set((pitches || []).map((p) => p.userId));
-    
+
     // Transform shortlisted creators (without pitch records) into pitch-like objects
     const shortlistedWithoutPitch = (shortlistedCreators || [])
       .filter((sc) => sc.userId && !pitchUserIds.has(sc.userId))
@@ -138,6 +138,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const sentToClientCount = countPitchesByStatus(mergedPitchesAndShortlisted, [
     'SENT_TO_CLIENT',
     'SENT_TO_CLIENT_WITH_COMMENTS',
+    'INVITED',
   ]);
 
   const maybeCount = countPitchesByStatus(mergedPitchesAndShortlisted, ['MAYBE']);
@@ -205,7 +206,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
 
       // Define status checks
       const isPending = ['PENDING_REVIEW'].includes(status);
-      const sentToClient = ['SENT_TO_CLIENT'].includes(status);
+      const sentToClient = ['SENT_TO_CLIENT', 'INVITED'].includes(status);
       const sentToClientWithComments = ['SENT_TO_CLIENT_WITH_COMMENTS'].includes(status);
       const isMaybe = ['MAYBE'].includes(status);
       const isApproved = [
@@ -230,14 +231,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         );
       }
 
-      return (
-        isApproved ||
-        isPending ||
-        sentToClient ||
-        isMaybe ||
-        isRejected ||
-        withdrawn
-      );
+      return isApproved || isPending || sentToClient || isMaybe || isRejected || withdrawn;
     });
 
     if (selectedFilter === 'PENDING_REVIEW') {
@@ -245,7 +239,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         (pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW'
       );
     } else if (selectedFilter === 'SENT_TO_CLIENT') {
-      const sentToClientStatuses = ['SENT_TO_CLIENT'];
+      const sentToClientStatuses = ['SENT_TO_CLIENT', 'INVITED'];
       if (isV4) sentToClientStatuses.push('SENT_TO_CLIENT_WITH_COMMENTS');
       filtered = filtered?.filter((pitch) =>
         sentToClientStatuses.includes(pitch.displayStatus || pitch.status)
@@ -273,9 +267,15 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered?.filter((pitch) => {
         const creatorName = (pitch.user?.name || '').toLowerCase();
-        const instagramUsername = (pitch.user?.creator?.instagramUser?.username || '').toLowerCase();
+        const instagramUsername = (
+          pitch.user?.creator?.instagramUser?.username || ''
+        ).toLowerCase();
         const tiktokUsername = (pitch.user?.creator?.tiktokUser?.username || '').toLowerCase();
-        const profileLink = (pitch.user?.creator?.profileLink || pitch.user?.profileLink || '').toLowerCase();
+        const profileLink = (
+          pitch.user?.creator?.profileLink ||
+          pitch.user?.profileLink ||
+          ''
+        ).toLowerCase();
 
         return (
           creatorName.includes(query) ||
@@ -368,7 +368,15 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [mergedPitchesAndShortlisted, selectedFilter, sortColumn, sortDirection, campaign, searchQuery, outreachStatusFilter]);
+  }, [
+    mergedPitchesAndShortlisted,
+    selectedFilter,
+    sortColumn,
+    sortDirection,
+    campaign,
+    searchQuery,
+    outreachStatusFilter,
+  ]);
 
   // Reopen modal when returning from media kit if state indicates
   useEffect(() => {
@@ -382,7 +390,13 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         navigate(location.pathname + location.search, { replace: true, state: {} });
       }
     }
-  }, [location?.state, mergedPitchesAndShortlisted, navigate, location?.pathname, location?.search]);
+  }, [
+    location?.state,
+    mergedPitchesAndShortlisted,
+    navigate,
+    location?.pathname,
+    location?.search,
+  ]);
 
   const handleViewPitch = (pitch) => {
     setSelectedPitch(pitch);
@@ -403,7 +417,15 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
     handleClosePitchModal();
   };
 
-  const getStatusInfo = (status) => {
+  const getStatusInfo = (status, pitch) => {
+    if ((status === 'APPROVED' || status === 'approved') && pitch?.isInvited === true) {
+      return {
+        color: '#FFC702',
+        borderColor: '#FFC702',
+        tooltip: 'Invited creator approved by client',
+      };
+    }
+
     // Check for AGREEMENT_PENDING status with PENDING_REVIEW agreement form
     if (status === 'AGREEMENT_PENDING' && campaign?.submission) {
       const agreementFormSubmission = campaign.submission.find(
@@ -436,6 +458,11 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         tooltip: 'Pitch is pending admin review',
       },
       SENT_TO_CLIENT: {
+        color: '#8A5AFE',
+        borderColor: '#8A5AFE',
+        tooltip: 'Pitch has been sent to client for review',
+      },
+      INVITED: {
         color: '#8A5AFE',
         borderColor: '#8A5AFE',
         tooltip: 'Pitch has been sent to client for review',
@@ -515,9 +542,9 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   return (
     <Box sx={{ width: '100%', overflowX: 'auto' }}>
       <Stack direction="column" spacing={2}>
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          spacing={2} 
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
           alignItems={{ xs: 'stretch', sm: 'center' }}
           sx={{ width: '100%' }}
         >
@@ -558,11 +585,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Iconify
-                    icon="eva:search-fill"
-                    width={18}
-                    sx={{ color: '#637381' }}
-                  />
+                  <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
                 </InputAdornment>
               ),
             }}
@@ -577,7 +600,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
               bgcolor: outreachStatusFilter.length > 0 ? 'rgba(32, 63, 245, 0.08)' : '#FFFFFF',
               border: '1.5px solid',
               borderColor: outreachStatusFilter.length > 0 ? '#1340FF' : '#e7e7e7',
-              borderBottom: outreachStatusFilter.length > 0 ? '3px solid #1340FF' : '3px solid #e7e7e7',
+              borderBottom:
+                outreachStatusFilter.length > 0 ? '3px solid #1340FF' : '3px solid #e7e7e7',
               borderRadius: 1.15,
               color: outreachStatusFilter.length > 0 ? '#1340FF' : '#637381',
               fontWeight: 600,
@@ -662,7 +686,9 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                 },
               }}
             >
-              <Box component="span" sx={{ flex: 1, textAlign: 'center' }}>Not Set</Box>
+              <Box component="span" sx={{ flex: 1, textAlign: 'center' }}>
+                Not Set
+              </Box>
               {outreachStatusFilter.includes('NOT_SET') && (
                 <Iconify icon="eva:checkmark-fill" width={16} sx={{ ml: 1, flexShrink: 0 }} />
               )}
@@ -699,7 +725,9 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                   },
                 }}
               >
-                <Box component="span" sx={{ flex: 1, textAlign: 'center' }}>{option.label}</Box>
+                <Box component="span" sx={{ flex: 1, textAlign: 'center' }}>
+                  {option.label}
+                </Box>
                 {outreachStatusFilter.includes(option.value) && (
                   <Iconify icon="eva:checkmark-fill" width={16} sx={{ ml: 1, flexShrink: 0 }} />
                 )}
@@ -1029,10 +1057,10 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
             </Button>
           </Stack>
 
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              justifyContent: { xs: 'flex-start', md: 'flex-end' }, 
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: { xs: 'flex-start', md: 'flex-end' },
               flex: 1,
               width: { xs: '100%', md: 'auto' },
               mt: { xs: 1, md: 0 },
@@ -1114,7 +1142,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
             },
           }}
         >
-          <Table 
+          <Table
             size={smUp ? 'medium' : 'small'}
             sx={{
               minWidth: { xs: 800, sm: 'auto' },
@@ -1227,8 +1255,9 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
             <TableBody>
               {filteredPitches?.map((pitch) => {
                 const displayStatus = pitch.displayStatus || pitch.status;
-                const statusInfo = getStatusInfo(displayStatus);
+                const statusInfo = getStatusInfo(displayStatus, pitch);
                 const isGuestCreator = pitch.user?.creator?.isGuest;
+                const isInvitedCreator = pitch.status === 'INVITED' || pitch.isInvited;
 
                 return (
                   <PitchRow
@@ -1236,6 +1265,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                     pitch={pitch}
                     displayStatus={displayStatus}
                     statusInfo={statusInfo}
+                    isInvitedCreator={isInvitedCreator}
                     isGuestCreator={isGuestCreator}
                     campaign={campaign}
                     isCreditTier={campaign?.isCreditTier}
@@ -1332,18 +1362,15 @@ export function AddCreatorModal({ open, onClose, onSelect, campaign }) {
     const isCreditTier = campaign?.isCreditTier === true;
 
     const sentAgreementUserIds = new Set(
-      (campaign?.creatorAgreement || [])
-        .filter(a => a.isSent)
-        .map(a => a.userId)
+      (campaign?.creatorAgreement || []).filter((a) => a.isSent).map((a) => a.userId)
     );
 
     const utilizedCredits = (campaign?.shortlisted || []).reduce((total, creator) => {
-      if (sentAgreementUserIds.has(creator.userId) &&
-          creator.user?.creator?.isGuest !== true) {
+      if (sentAgreementUserIds.has(creator.userId) && creator.user?.creator?.isGuest !== true) {
         const videos = creator.ugcVideos || 0;
         // For credit tier campaigns, use creditPerVideo; for regular campaigns, use 1
-        const creditsPerVideo = isCreditTier ? (creator.creditPerVideo || 1) : 1;
-        return total + (videos * creditsPerVideo);
+        const creditsPerVideo = isCreditTier ? creator.creditPerVideo || 1 : 1;
+        return total + videos * creditsPerVideo;
       }
       return total;
     }, 0);
@@ -1549,7 +1576,9 @@ const ListboxComponent = React.forwardRef((props, ref) => {
 export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdated }) {
   const { data, isLoading } = useGetAllCreators();
   const { enqueueSnackbar } = useSnackbar();
-  const [creatorRows, setCreatorRows] = useState([{ id: 1, creator: null, followerCount: '', adminComments: '', hasMediaKit: false }]);
+  const [creatorRows, setCreatorRows] = useState([
+    { id: 1, creator: null, followerCount: '', adminComments: '', hasMediaKit: false },
+  ]);
   const [submitting, setSubmitting] = useState(false);
 
   const shortlistedCreators = campaign?.shortlisted || [];
@@ -1557,11 +1586,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
 
   // Also exclude creators with existing pitches (any status means they're already in the workflow)
   // This includes SENT_TO_CLIENT (V4 admin approved), PENDING_REVIEW (applied), APPROVED, etc.
-  const pitchUserIds = new Set(
-    (pitches || [])
-      .filter((p) => p.userId)
-      .map((p) => p.userId)
-  );
+  const pitchUserIds = new Set((pitches || []).filter((p) => p.userId).map((p) => p.userId));
 
   // Determine if this is a credit tier campaign (controls follower count field visibility)
   const isCreditTier = campaign?.isCreditTier || false;
@@ -1590,8 +1615,8 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   // Filter options - exclude already shortlisted and already selected in other rows
   const getFilteredOptions = (currentRowId) => {
     const selectedInOtherRows = creatorRows
-      .filter(row => row.id !== currentRowId && row.creator)
-      .map(row => row.creator.id);
+      .filter((row) => row.id !== currentRowId && row.creator)
+      .map((row) => row.creator.id);
 
     return (data || [])
       .filter((item) => item.status === 'active' && item?.creator?.isFormCompleted)
@@ -1602,7 +1627,10 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   // Add a new creator row (max 3)
   const handleAddCreatorRow = () => {
     if (creatorRows.length < 3) {
-      setCreatorRows([...creatorRows, { id: Date.now(), creator: null, followerCount: '', adminComments: '', hasMediaKit: false }]);
+      setCreatorRows([
+        ...creatorRows,
+        { id: Date.now(), creator: null, followerCount: '', adminComments: '', hasMediaKit: false },
+      ]);
     }
   };
 
@@ -1615,50 +1643,59 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
 
   // Update creator selection for a specific row
   const handleCreatorRowChange = (rowId, selectedCreator) => {
-    setCreatorRows(rows => rows.map(row => {
-      if (row.id === rowId) {
-        const hasMediaKit = hasMediaKitLinked(selectedCreator);
-        // Always use getHighestFollowerCount - it handles priority: media kit > manualFollowerCount
-        const followerCount = getHighestFollowerCount(selectedCreator) || '';
-        // Only reset adminComments when clearing creator (null), preserve when switching creators
-        const shouldResetComments = selectedCreator === null;
-        return {
-          ...row,
-          creator: selectedCreator,
-          followerCount,
-          hasMediaKit,
-          adminComments: shouldResetComments ? '' : row.adminComments
-        };
-      }
-      return row;
-    }));
+    setCreatorRows((rows) =>
+      rows.map((row) => {
+        if (row.id === rowId) {
+          const hasMediaKit = hasMediaKitLinked(selectedCreator);
+          // Always use getHighestFollowerCount - it handles priority: media kit > manualFollowerCount
+          const followerCount = getHighestFollowerCount(selectedCreator) || '';
+          // Only reset adminComments when clearing creator (null), preserve when switching creators
+          const shouldResetComments = selectedCreator === null;
+          return {
+            ...row,
+            creator: selectedCreator,
+            followerCount,
+            hasMediaKit,
+            adminComments: shouldResetComments ? '' : row.adminComments,
+          };
+        }
+        return row;
+      })
+    );
   };
 
   // Update follower count for a specific row (only for manual entry)
   const handleFollowerCountChange = (rowId, value) => {
-    setCreatorRows(rows => rows.map(row => {
-      if (row.id === rowId && !row.hasMediaKit) {
-        return { ...row, followerCount: value };
-      }
-      return row;
-    }));
+    setCreatorRows((rows) =>
+      rows.map((row) => {
+        if (row.id === rowId && !row.hasMediaKit) {
+          return { ...row, followerCount: value };
+        }
+        return row;
+      })
+    );
   };
 
   // Update admin comments for a specific row
   const handleAdminCommentsChange = (rowId, value) => {
-    setCreatorRows(rows => rows.map(row => {
-      if (row.id === rowId) {
-        return { ...row, adminComments: value };
-      }
-      return row;
-    }));
+    setCreatorRows((rows) =>
+      rows.map((row) => {
+        if (row.id === rowId) {
+          return { ...row, adminComments: value };
+        }
+        return row;
+      })
+    );
   };
 
   // Get valid creators from rows
-  const getValidCreatorsFromRows = () => creatorRows.filter(row => row.creator !== null).map(row => row.creator);
+  const getValidCreatorsFromRows = () =>
+    creatorRows.filter((row) => row.creator !== null).map((row) => row.creator);
 
   const resetState = () => {
-    setCreatorRows([{ id: 1, creator: null, followerCount: '', adminComments: '', hasMediaKit: false }]);
+    setCreatorRows([
+      { id: 1, creator: null, followerCount: '', adminComments: '', hasMediaKit: false },
+    ]);
     setSubmitting(false);
   };
 
@@ -1669,17 +1706,19 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
 
   const handleSubmit = async () => {
     // Get valid rows (with creator selected)
-    const validRows = creatorRows.filter(row => row.creator !== null);
+    const validRows = creatorRows.filter((row) => row.creator !== null);
     if (!validRows.length || !campaign?.id) return;
 
     // Validate follower counts - max 10 billion
     const MAX_FOLLOWER_COUNT = 10_000_000_000;
-    const invalidRow = validRows.find(row => {
+    const invalidRow = validRows.find((row) => {
       const count = row.followerCount ? parseInt(row.followerCount, 10) : 0;
       return count > MAX_FOLLOWER_COUNT;
     });
     if (invalidRow) {
-      enqueueSnackbar('Follower count is too large. Please enter a valid number.', { variant: 'error' });
+      enqueueSnackbar('Follower count is too large. Please enter a valid number.', {
+        variant: 'error',
+      });
       return;
     }
 
@@ -1689,7 +1728,9 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
       await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
         campaignId: campaign.id,
         creators: validRows.map((row) => {
-          const parsedFollowerCount = row.followerCount ? parseInt(row.followerCount, 10) : undefined;
+          const parsedFollowerCount = row.followerCount
+            ? parseInt(row.followerCount, 10)
+            : undefined;
           return {
             id: row.creator.id,
             followerCount: !Number.isNaN(parsedFollowerCount) ? parsedFollowerCount : undefined,
@@ -1795,7 +1836,15 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                       {/* Creator Autocomplete */}
                       <Box flex={1} sx={{ minWidth: { xs: '100%', md: 'auto' } }}>
-                        <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
+                        <Typography
+                          sx={{
+                            mb: 0.5,
+                            display: 'block',
+                            color: '#636366',
+                            fontSize: '14px !important',
+                            fontWeight: 600,
+                          }}
+                        >
                           Select Creators to add
                         </Typography>
                         <Autocomplete
@@ -1828,7 +1877,13 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                           }}
                           isOptionEqualToValue={(option, value) => option?.id === value?.id}
                           disableClearable={!!row.creator}
-                          popupIcon={<Iconify icon="eva:chevron-down-fill" width={20} sx={{ color: '#231F20' }} />}
+                          popupIcon={
+                            <Iconify
+                              icon="eva:chevron-down-fill"
+                              width={20}
+                              sx={{ color: '#231F20' }}
+                            />
+                          }
                           renderInput={(params) => (
                             <TextField
                               {...params}
@@ -1866,7 +1921,13 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                                   >
                                     <Avatar
                                       src={row.creator?.photoURL}
-                                      sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: '#e0e0e0', flexShrink: 0 }}
+                                      sx={{
+                                        width: 24,
+                                        height: 24,
+                                        fontSize: '0.75rem',
+                                        bgcolor: '#e0e0e0',
+                                        flexShrink: 0,
+                                      }}
                                     >
                                       {row.creator?.name?.charAt(0)}
                                     </Avatar>
@@ -1888,7 +1949,11 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                                       }}
                                       sx={{ p: 0, flexShrink: 0 }}
                                     >
-                                      <Iconify icon="mdi:close" width={16} sx={{ color: '#636366' }} />
+                                      <Iconify
+                                        icon="mdi:close"
+                                        width={16}
+                                        sx={{ color: '#636366' }}
+                                      />
                                     </IconButton>
                                   </Box>
                                 ) : null,
@@ -1896,13 +1961,25 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                             />
                           )}
                           renderOption={({ key, ...optionProps }, option) => (
-                            <Box key={key} component="li" {...optionProps} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
-                              <Avatar src={option?.photoURL} sx={{ width: 32, height: 32, bgcolor: '#e0e0e0' }}>
+                            <Box
+                              key={key}
+                              component="li"
+                              {...optionProps}
+                              sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}
+                            >
+                              <Avatar
+                                src={option?.photoURL}
+                                sx={{ width: 32, height: 32, bgcolor: '#e0e0e0' }}
+                              >
                                 {option?.name?.charAt(0)}
                               </Avatar>
                               <Box>
-                                <Typography variant="body2" fontWeight={500}>{option?.name}</Typography>
-                                <Typography variant="caption" sx={{ color: '#636366' }}>{option?.email}</Typography>
+                                <Typography variant="body2" fontWeight={500}>
+                                  {option?.name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#636366' }}>
+                                  {option?.email}
+                                </Typography>
                               </Box>
                             </Box>
                           )}
@@ -1934,7 +2011,15 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                             }}
                             sx={{ overflow: 'hidden', minWidth: 0 }}
                           >
-                            <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
+                            <Typography
+                              sx={{
+                                mb: 0.5,
+                                display: 'block',
+                                color: '#636366',
+                                fontSize: '14px !important',
+                                fontWeight: 600,
+                              }}
+                            >
                               Follower Count
                             </Typography>
                             <TextField
@@ -1964,7 +2049,15 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
 
                       {/* CS Comments (Optional) */}
                       <Box sx={{ flex: { xs: 1, md: 1.5 }, minWidth: { xs: '100%', md: 'auto' } }}>
-                        <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
+                        <Typography
+                          sx={{
+                            mb: 0.5,
+                            display: 'block',
+                            color: '#636366',
+                            fontSize: '14px !important',
+                            fontWeight: 600,
+                          }}
+                        >
                           CS Comments (Optional)
                         </Typography>
                         <TextField
@@ -2168,7 +2261,9 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
       return count > MAX_FOLLOWER_COUNT;
     });
     if (invalidFollower) {
-      enqueueSnackbar('Follower count is too large. Please enter a valid number.', { variant: 'error' });
+      enqueueSnackbar('Follower count is too large. Please enter a valid number.', {
+        variant: 'error',
+      });
       return;
     }
 
@@ -2286,7 +2381,15 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} mb={2}>
                 {/* Creator Name */}
                 <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
-                  <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
+                  <Typography
+                    sx={{
+                      mb: 0.5,
+                      display: 'block',
+                      color: '#636366',
+                      fontSize: '14px !important',
+                      fontWeight: 600,
+                    }}
+                  >
                     Creator Name
                   </Typography>
                   <TextField
@@ -2306,7 +2409,15 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
 
                 {/* Follower Count */}
                 <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
-                  <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
+                  <Typography
+                    sx={{
+                      mb: 0.5,
+                      display: 'block',
+                      color: '#636366',
+                      fontSize: '14px !important',
+                      fontWeight: 600,
+                    }}
+                  >
                     Follower Count
                   </Typography>
                   <TextField
@@ -2335,7 +2446,15 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
 
                 {/* Profile Link */}
                 <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
-                  <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
+                  <Typography
+                    sx={{
+                      mb: 0.5,
+                      display: 'block',
+                      color: '#636366',
+                      fontSize: '14px !important',
+                      fontWeight: 600,
+                    }}
+                  >
                     Profile Link
                   </Typography>
                   <TextField
@@ -2356,7 +2475,15 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
 
               {/* CS Comments - separate row below */}
               <Box sx={{ mt: 2 }}>
-                <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
+                <Typography
+                  sx={{
+                    mb: 0.5,
+                    display: 'block',
+                    color: '#636366',
+                    fontSize: '14px !important',
+                    fontWeight: 600,
+                  }}
+                >
                   CS Comments (Optional)
                 </Typography>
                 <TextField

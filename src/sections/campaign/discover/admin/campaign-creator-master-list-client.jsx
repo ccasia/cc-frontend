@@ -84,6 +84,11 @@ const getStatusInfo = (pitch) => {
       label: 'SENT TO CLIENT',
       normalizedStatus: 'SENT_TO_CLIENT',
     },
+    INVITED: {
+      color: '#FFC702',
+      label: 'PENDING REVIEW',
+      normalizedStatus: 'PENDING_REVIEW',
+    },
     pending: { color: '#FF9A02', label: 'PENDING', normalizedStatus: 'PENDING_REVIEW' },
     filtered: { color: '#FF4842', label: 'FILTERED', normalizedStatus: 'REJECTED' },
     draft: { color: '#637381', label: 'DRAFT', normalizedStatus: 'DRAFT' },

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import React, { useState } from 'react';
 
-import { Box, Link, Stack, Avatar, Tooltip, Popover, MenuItem, TableRow, TableCell, Typography, IconButton, CircularProgress } from '@mui/material';
+import { Box, Link, Stack, Avatar, Tooltip, Popover, TableRow, TableCell, Typography, IconButton, CircularProgress } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
@@ -23,12 +23,16 @@ const TYPE_LABELS = {
   shortlisted: 'Shortlisted',
 };
 
-const PitchTypeCell = React.memo(({ type, isGuestCreator }) => {
+const PitchTypeCell = React.memo(({ type, isGuestCreator, isInvitedCreator, acceptedInviteByCreator }) => {
   const label = TYPE_LABELS[type] ?? (type || '—');
 
   let subtitle = null;
   if (type === 'shortlisted') {
     subtitle = isGuestCreator ? '(Non-platform)' : '(On Platform)';
+  }
+
+  if (type === 'shortlisted' && (isInvitedCreator || acceptedInviteByCreator)) {
+    subtitle = '(Discovery Tool)';
   }
 
   return (
@@ -44,6 +48,8 @@ const PitchTypeCell = React.memo(({ type, isGuestCreator }) => {
 PitchTypeCell.propTypes = {
   type: PropTypes.string,
   isGuestCreator: PropTypes.bool,
+  isInvitedCreator: PropTypes.bool,
+  acceptedInviteByCreator: PropTypes.bool,
 };
 
 const getStatusText = (status, pitch, campaign) => {
@@ -58,9 +64,14 @@ const getStatusText = (status, pitch, campaign) => {
     }
   }
 
+  if (status === 'APPROVED' && pitch.isInvited) {
+    return 'INVITED'
+  }
+
   const statusTextMap = {
     PENDING_REVIEW: 'PENDING REVIEW',
     SENT_TO_CLIENT: 'SENT TO CLIENT',
+    INVITED: 'SENT TO CLIENT',
     SENT_TO_CLIENT_WITH_COMMENTS: 'SENT TO CLIENT',
     MAYBE: 'MAYBE',
     maybe: 'MAYBE',
@@ -73,9 +84,11 @@ const getStatusText = (status, pitch, campaign) => {
   return statusTextMap[status] || status;
 };
 
-const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, isCreditTier, onViewPitch, onRemoved, onOutreachUpdate, isDisabled = false }) => {
+const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedCreator, campaign, isCreditTier, onViewPitch, onRemoved, onOutreachUpdate, isDisabled = false }) => {
   const smUp = useResponsive('up', 'sm');
   const { enqueueSnackbar } = useSnackbar();
+
+  const acceptedInviteByCreator = pitch?.acceptedInviteByCreatorId !== null;
 
   // Outreach status dropdown state
   const [outreachAnchorEl, setOutreachAnchorEl] = useState(null);
@@ -482,7 +495,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
         </Stack>
       </TableCell>
       <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
-        <PitchTypeCell type={pitch.type} isGuestCreator={isGuestCreator} />
+        <PitchTypeCell type={pitch.type} isGuestCreator={isGuestCreator} isInvitedCreator={isInvitedCreator} acceptedInviteByCreator={acceptedInviteByCreator} />
       </TableCell>
       <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
         <Box
@@ -541,6 +554,7 @@ PitchRow.propTypes = {
   displayStatus: PropTypes.string.isRequired,
   statusInfo: PropTypes.object.isRequired,
   isGuestCreator: PropTypes.bool,
+  isInvitedCreator: PropTypes.bool,
   campaign: PropTypes.object,
   isCreditTier: PropTypes.bool,
   onViewPitch: PropTypes.func.isRequired,
