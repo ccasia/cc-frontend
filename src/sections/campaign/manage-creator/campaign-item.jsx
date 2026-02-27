@@ -1,4 +1,5 @@
 /* eslint-disable no-nested-ternary */
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import { useTheme } from '@mui/material/styles';
@@ -21,7 +22,7 @@ import CampaignModal from './campaign-modal';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({ campaign, user }) {
+export default function CampaignItem({ campaign, user, autoOpen = false }) {
   // const [open, setOpen] = useState(false);
   // const [upload, setUpload] = useState([]);
   // const [, setLoading] = useState(false);
@@ -131,6 +132,12 @@ export default function CampaignItem({ campaign, user }) {
   // };
 
   const campaignInfo = useBoolean();
+
+  useEffect(() => {
+    if (autoOpen) {
+      campaignInfo.onTrue();
+    }
+  }, [autoOpen, campaignInfo]);
 
   const handleCardClick = () => {
     campaignInfo.onTrue();
@@ -344,4 +351,5 @@ export default function CampaignItem({ campaign, user }) {
 CampaignItem.propTypes = {
   campaign: PropTypes.object,
   user: PropTypes.object,
+  autoOpen: PropTypes.bool,
 };
