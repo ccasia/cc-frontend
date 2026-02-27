@@ -153,7 +153,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           onChange={handlePlatform}
           size="medium"
           displayEmpty
-          sx={{ minWidth: 170 }}
+          sx={{ maxWidth: 160 }}
           IconComponent={() => null}
           endAdornment={
             <Iconify icon='line-md:chevron-down' width={40} height={40} color='#231F20' />
@@ -216,7 +216,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           onChange={handleGender}
           size="medium"
           displayEmpty
-          sx={{ maxWidth: 160 }}
+          sx={{ maxWidth: 150 }}
           IconComponent={() => null}
           endAdornment={
             <Iconify icon='line-md:chevron-down' width={40} height={40} color='#231F20' />
@@ -233,19 +233,59 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           ))}
         </Select>
 
+        {/* Languages */}
+        <Select
+          multiple
+          value={state.languages}
+          onChange={(e) => handleLanguages(null, e.target.value)}
+          size="medium"
+          displayEmpty
+          fullWidth
+          sx={{
+            maxWidth: 145,
+            maxHeight: 53.5,
+            '& .MuiSelect-select': {
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            },
+          }}
+          MenuProps={{
+            style: {
+              maxHeight: 500,
+            }
+          }}
+          IconComponent={() => null}
+          endAdornment={
+            <Iconify icon="line-md:chevron-down" width={30} height={30} color="#231F20" />
+          }
+          renderValue={(selected) => {
+            if (!selected || selected.length === 0) {
+              return <Typography sx={{ color: 'text.disabled', fontSize: 14 }}>Language</Typography>;
+            }
+            return selected.join(', ');
+          }}
+        >
+          {LANGUAGES.map((language) => (
+            <MenuItem key={language} value={language} sx={{ height: 50 }}>
+              {language}
+            </MenuItem>
+          ))}
+        </Select>
+
         {/* Age Range */}
         <Select
           value={state.ageRange}
           onChange={handleAgeRange}
           size="medium"
           displayEmpty
-          sx={{ maxWidth: 145 }}
+          sx={{ minWidth: 150 }}
           IconComponent={() => null}
           endAdornment={
             <Iconify icon='line-md:chevron-down' width={40} height={40} color='#231F20' />
           }
           renderValue={(selected) => {
-            if (!selected) return <Typography sx={{ color: 'text.disabled', fontSize: 14 }}>Age Range</Typography>;
+            if (!selected) return <Typography sx={{ color: 'text.disabled', fontSize: 14 }}>Age</Typography>;
             return selected;
           }}
         >
@@ -289,46 +329,6 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           )}
         />
 
-        {/* Languages */}
-        <Select
-          multiple
-          value={state.languages}
-          onChange={(e) => handleLanguages(null, e.target.value)}
-          size="medium"
-          displayEmpty
-          fullWidth
-          sx={{
-            maxWidth: 160,
-            maxHeight: 53.5,
-            '& .MuiSelect-select': {
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            },
-          }}
-          MenuProps={{
-            style: {
-              maxHeight: 500,
-            }
-          }}
-          IconComponent={() => null}
-          endAdornment={
-            <Iconify icon="line-md:chevron-down" width={30} height={30} color="#231F20" />
-          }
-          renderValue={(selected) => {
-            if (!selected || selected.length === 0) {
-              return <Typography sx={{ color: 'text.disabled', fontSize: 14 }}>Languages</Typography>;
-            }
-            return selected.join(', ');
-          }}
-        >
-          {LANGUAGES.map((language) => (
-            <MenuItem key={language} value={language} sx={{ height: 50 }}>
-              {language}
-            </MenuItem>
-          ))}
-        </Select>
-
         {/* Interests (multi-select) */}
         <Select
           multiple
@@ -338,7 +338,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           displayEmpty
           fullWidth
           sx={{
-            maxWidth: 145,
+            maxWidth: 200,
             maxHeight: 53.5,
             '& .MuiSelect-select': {
               overflow: 'hidden',
@@ -374,7 +374,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           onChange={handleCreditTier}
           size="medium"
           displayEmpty
-          sx={{ minWidth: 145 }}
+          sx={{ minWidth: 150 }}
           IconComponent={() => null}
           endAdornment={
             <Iconify icon='line-md:chevron-down' width={40} height={40} color='#231F20' />
