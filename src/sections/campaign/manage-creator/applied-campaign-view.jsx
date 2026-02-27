@@ -3,13 +3,10 @@ import React, { useMemo } from 'react';
 
 import { Box, Typography } from '@mui/material';
 
-import { useAuthContext } from 'src/auth/hooks';
-
 import CampaignItem from './campaign-item';
 
-const AppliedCampaignView = ({ searchQuery, campaigns }) => {
+const AppliedCampaignView = ({ searchQuery, campaigns, autoOpenCampaignId }) => {
   // const { campaigns: data, isLoading } = useGetCampaigns('creator');
-  const { user } = useAuthContext();
 
   // const filteredCampaigns = useMemo(
   //   () =>
@@ -44,7 +41,11 @@ const AppliedCampaignView = ({ searchQuery, campaigns }) => {
           }}
         >
           {filteredData.map((campaign) => (
-            <CampaignItem key={campaign.id} campaign={campaign} />
+            <CampaignItem
+              key={campaign.id}
+              campaign={campaign}
+              autoOpen={Boolean(autoOpenCampaignId) && campaign.id === autoOpenCampaignId}
+            />
             // <CampaignItem key={campaign.id} campaign={campaign} user={user} />
           ))}
         </Box>
@@ -90,4 +91,5 @@ export default AppliedCampaignView;
 AppliedCampaignView.propTypes = {
   searchQuery: PropTypes.string,
   campaigns: PropTypes.array,
+  autoOpenCampaignId: PropTypes.string,
 };
