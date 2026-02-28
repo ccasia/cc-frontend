@@ -8441,7 +8441,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Typography>
 
             {/* Circle and Legend Layout */}
-            <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? 3 : 2, flex: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? 0.5 : 2, flex: 1 }}>
               {/* Full Circle Chart or Pie Chart */}
               <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: (showEducatorCard || showThirdCard) ? 1 : 'none' }}>
                 {(() => {
@@ -9542,7 +9542,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </Typography>
 
               {/* Circle and Legend Layout */}
-                <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? 1.5 : 2, flex: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? -1 : 2, flex: 1 }}>
                 {/* Full Circle Chart or Pie Chart */}
                 <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: (showEducatorCard || showThirdCard) ? 1 : 'none' }}>
                     {(() => {
@@ -10194,7 +10194,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Box>
           
           {/* Content Boxes */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
             {editableContent.workedWellInsights.length === 0 && !isEditMode && (
               <Box className="hide-in-pdf" sx={{ 
                 background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)', 
@@ -10217,8 +10217,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
         sx={{
                   background: getWorkedWellInsightBgColor(index),
                   opacity: getWorkedWellOpacity(index),
-                  px: 2, // Changed from p: 1.5 to px: 2 for consistent horizontal padding
-                  py: 1.5, // Kept vertical padding
+                  px: 2,
+                  py: 1.5, 
                   color: 'white', 
                   height: '120px', 
                   display: 'flex', 
@@ -10365,7 +10365,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Box>
           
           {/* Content Boxes */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
             {editableContent.improvedInsights.length === 0 && !isEditMode && (
               <Box className="hide-in-pdf" sx={{ 
                 bgcolor: '#1340FFD9', 
@@ -10535,7 +10535,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       </Box>
           
           {/* Content Boxes */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
             {editableContent.nextStepsInsights.length === 0 && !isEditMode && (
               <Box className="hide-in-pdf" sx={{ 
                 bgcolor: '#026D54D9',
