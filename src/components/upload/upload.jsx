@@ -1,8 +1,10 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
+import { useRef, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 
 import Box from '@mui/material/Box';
+import { Chip } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import { grey } from '@mui/material/colors';
@@ -41,15 +43,41 @@ export default function Upload({
     useDropzone({
       multiple,
       noClick: true,
+
       disabled,
       ...other,
     });
+
+  const [isHover, setIsHover] = useState(false);
 
   const hasFile = !!file && !multiple;
 
   const hasFiles = !!files && multiple && !!files.length;
 
   const hasError = isDragReject || !!error;
+
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!ref?.current) return;
+    const currentRef = ref.current;
+
+    const handleMouseOver = () => {
+      setIsHover(true);
+    };
+    const handleMouseLeave = () => {
+      setIsHover(false);
+    };
+
+    currentRef.addEventListener('mouseover', handleMouseOver);
+    currentRef.addEventListener('mouseleave', handleMouseLeave);
+
+    // eslint-disable-next-line consistent-return
+    return () => {
+      currentRef.removeEventListener('mouseover', handleMouseOver);
+      currentRef.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, []);
 
   const renderPlaceholder = (
     <Box
@@ -68,7 +96,7 @@ export default function Upload({
         bgcolor: 'white',
         transition: 'all .1s linear',
         '&:hover': {
-          opacity: 0.4,
+          opacity: 0.6,
         },
         height,
         borderRadius: 2,
@@ -91,18 +119,23 @@ export default function Upload({
       <Stack alignItems="center" spacing={2}>
         <Box
           sx={{
-            bgcolor: '#203ff5',
             borderRadius: '50%',
-            width: 40,
-            height: 40,
+            width: 60,
+            height: 60,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            background: 'linear-gradient(to bottom right, #203ff5, #6379F8)',
+            ...(isHover && {
+              scale: 1.1,
+              transform: 'translateY(-3px)',
+            }),
+            transition: 'all ease .2s',
           }}
         >
           <Iconify
-            icon="fluent:add-24-filled"
-            width={26}
+            icon="formkit:uploadcloud"
+            width={30}
             sx={{
               color: '#fff',
             }}
@@ -125,16 +158,20 @@ export default function Upload({
           />
         ) : Object.keys(other.accept)[0].includes('video') ? (
           <ListItemText
-            primary="Choose a file or drag and drop here"
-            secondary="Acceptable files: MP4, MOV"
+            primary="Drop your video here"
+            secondary="or browse from your device"
             primaryTypographyProps={{
               textAlign: 'center',
-              variant: 'h5',
+              variant: 'subtitle1',
+              letterSpacing: 0.4,
+              fontSize: 17,
             }}
             secondaryTypographyProps={{
               textAlign: 'center',
-              variant: 'body1',
+              variant: 'subtitle2',
               color: '#8E8E93',
+              fontWeight: 400,
+              fontSize: 13,
             }}
           />
         ) : Object.keys(other.accept)[0].includes('application/pdf') ? (
@@ -169,6 +206,41 @@ export default function Upload({
               color: '#8E8E93',
             }}
           />
+        )}
+
+        {!!Object.keys(other.accept)[0].includes('video') && (
+          <Stack direction="row" gap={1}>
+            <Chip
+              label="MP4"
+              size="small"
+              sx={{
+                borderRadius: 0.4,
+                fontWeight: 'bold',
+                bgcolor: '#BBC5FC',
+                color: '#3754F6',
+                borderColor: '#8F9FFA',
+                fontSize: 11,
+                minWidth: 50,
+              }}
+              variant="outlined"
+              color="info"
+            />
+            <Chip
+              label="MOV"
+              size="small"
+              sx={{
+                borderRadius: 0.4,
+                fontWeight: 'bold',
+                bgcolor: '#BBC5FC',
+                color: '#3754F6',
+                borderColor: '#8F9FFA',
+                fontSize: 11,
+                minWidth: 50,
+              }}
+              variant="outlined"
+              color="info"
+            />
+          </Stack>
         )}
       </Stack>
     </Box>
@@ -226,7 +298,7 @@ export default function Upload({
   );
 
   return (
-    <Box sx={{ width: 1, position: 'relative', ...sx }}>
+    <Box ref={ref} sx={{ width: 1, position: 'relative', ...sx }}>
       {hasFile ? renderSinglePreview : renderPlaceholder}
 
       {removeSinglePreview}
@@ -236,9 +308,7 @@ export default function Upload({
           {helperText}
         </Typography>
       )}
-
       <RejectionFiles fileRejections={fileRejections} />
-
       {renderMultiPreview}
     </Box>
   );

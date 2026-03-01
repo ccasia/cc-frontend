@@ -1,327 +1,3 @@
-// import dayjs from 'dayjs';
-// import { useTheme } from '@emotion/react';
-// import React, { useState, useEffect } from 'react';
-// import useSWR from 'swr';
-
-// import { grey } from '@mui/material/colors';
-// import {
-//   Box,
-//   Grid,
-//   Card,
-//   alpha,
-//   Stack,
-//   Table,
-//   Paper,
-//   TableRow,
-//   TableHead,
-//   TableCell,
-//   TableBody,
-//   Typography,
-//   TableContainer,
-//   CircularProgress,
-// } from '@mui/material';
-
-// import useGetCreators from 'src/hooks/use-get-creators';
-// import useGetCampaigns from 'src/hooks/use-get-campaigns';
-
-// import { fetcher } from 'src/utils/axios';
-// import { fNumber } from 'src/utils/format-number';
-
-// import { useAuthContext } from 'src/auth/hooks';
-// import useSocketContext from 'src/socket/hooks/useSocketContext';
-
-// import Label from 'src/components/label';
-// import Chart from 'src/components/chart';
-// import { useSettingsContext } from 'src/components/settings';
-// import EmptyContent from 'src/components/empty-content/empty-content';
-
-// const DashboardSuperadmin = () => {
-//   const { campaigns, isLoading } = useGetCampaigns();
-//   const { data: creators, isLoading: creatorLoading } = useGetCreators();
-//   const { socket } = useSocketContext();
-//   const [onlineUsers, setOnlineUsers] = useState(null);
-//   const { user } = useAuthContext();
-//   const { data: clientData, isLoading: isClientLoading } = useSWR('/api/company/', fetcher);
-
-//   const theme = useTheme();
-//   const setting = useSettingsContext();
-
-//   // const loadingDone = !isLoading && !creatorLoading;
-
-//   const taskLists =
-//     !isLoading &&
-//     campaigns
-//       ?.filter((campaign) => campaign.status === 'ACTIVE')
-//       .map((campaign) => {
-//         const campaignTasks = campaign?.campaignTasks.filter(
-//           (item) => item.status === 'IN_PROGRESS'
-//         );
-//         return (
-//           campaignTasks.length &&
-//           campaignTasks.map((task) => ({
-//             campaignName: campaign.name,
-//             campaignTask: task.task,
-//             dueDate: task.dueDate,
-//             status: task.status,
-//           }))
-//         );
-//       })
-//       .flat()
-//       .filter((item) => item !== 0);
-
-//   const chartOptions = {
-//     colors: [theme.palette.primary.light, theme.palette.primary.main].map((colr) => colr[1]),
-//     fill: {
-//       type: 'gradient',
-//       gradient: {
-//         colorStops: [
-//           { offset: 0, color: theme.palette.primary.light, opacity: 1 },
-//           { offset: 100, color: theme.palette.primary.main, opacity: 1 },
-//         ],
-//       },
-//     },
-//     chart: {
-//       sparkline: {
-//         enabled: true,
-//       },
-//     },
-//     xaxis: {
-//       categories: [
-//         'Jan',
-//         'Feb',
-//         'Mar',
-//         'Apr',
-//         'May',
-//         'Jun',
-//         'Jul',
-//         'Aug',
-//         'Sep',
-//         'Oct',
-//         'Nov',
-//         'Dec',
-//       ],
-//     },
-//     plotOptions: {
-//       bar: {
-//         columnWidth: '68%',
-//         borderRadius: 2,
-//       },
-//     },
-//     tooltip: {
-//       theme: setting.themeMode,
-//       x: { show: true },
-//       y: {
-//         formatter: (value) => fNumber(value),
-//         title: {
-//           formatter: () => '',
-//         },
-//       },
-//       marker: { show: false },
-//     },
-//   };
-
-//   const renderCampaignLists = (
-//     <TableContainer component={Paper} sx={{ mt: 2 }}>
-//       <Table size="medium">
-//         <TableHead>
-//           <TableRow>
-//             <TableCell align="center">Campaign Name</TableCell>
-//             <TableCell align="center">Start Date</TableCell>
-//             <TableCell align="center">End Date</TableCell>
-//             <TableCell align="center">Total Shortlisted Creator</TableCell>
-//             <TableCell align="center">Total Pitch</TableCell>
-//           </TableRow>
-//         </TableHead>
-//         <TableBody>
-//           {!isLoading &&
-//             campaigns
-//               ?.filter((item) => item.status === 'ACTIVE')
-//               .map((campaign) => (
-//                 <TableRow key={campaign.id}>
-//                   <TableCell align="center">{campaign?.name}</TableCell>
-//                   <TableCell align="center">
-//                     <Typography variant="caption" color="text.secondary">
-//                       {dayjs(campaign?.campaignBrief?.startDate).format('ddd LL')}
-//                     </Typography>
-//                   </TableCell>
-//                   <TableCell align="center">
-//                     <Typography variant="caption" color="text.secondary">
-//                       {dayjs(campaign?.campaignBrief?.endDate).format('ddd LL')}
-//                     </Typography>
-//                   </TableCell>
-//                   <TableCell align="center">
-//                     <Label color="success">{campaign?.shortlisted.length}</Label>
-//                   </TableCell>
-//                   <TableCell align="center">
-//                     <Label color="success">{campaign?.pitch.length}</Label>
-//                   </TableCell>
-//                 </TableRow>
-//               ))}
-//         </TableBody>
-//       </Table>
-//     </TableContainer>
-//   );
-
-//   useEffect(() => {
-//     socket?.emit('online-user');
-
-//     socket?.on('onlineUsers', (data) => {
-//       setOnlineUsers(data.onlineUsers);
-//     });
-
-//     return () => {
-//       socket?.off('onlineUsers');
-//     };
-//   }, [socket]);
-
-//   if (creatorLoading || isClientLoading) {
-//     return (
-//       <Box
-//         sx={{
-//           position: 'relative',
-//           top: 200,
-//           textAlign: 'center',
-//         }}
-//       >
-//         <CircularProgress
-//           thickness={7}
-//           size={25}
-//           sx={{
-//             color: theme.palette.common.black,
-//             strokeLinecap: 'round',
-//           }}
-//         />
-//       </Box>
-//     );
-//   }
-
-//   return (
-//     <Grid container spacing={3}>
-//       {user?.role === 'superadmin' && (
-//         <Grid item xs={12} justifyItems="end">
-//           <Label>Online Users: {onlineUsers || 0}</Label>
-//         </Grid>
-//       )}
-//       <Grid item xs={12} md={3}>
-//         <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
-//           <Stack gap={1}>
-//             <Typography variant="subtitle2" color="text.secondary">
-//               Total Campaign
-//             </Typography>
-//             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-//               <Typography variant="h2">
-//                 {campaigns?.filter((campaign) => campaign.status === 'ACTIVE')?.length}
-//               </Typography>
-//               <Chart
-//                 dir="ltr"
-//                 type="bar"
-//                 series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
-//                 options={chartOptions}
-//                 width={60}
-//                 height={36}
-//               />
-//             </Stack>
-//           </Stack>
-//         </Box>
-//       </Grid>
-//       <Grid item xs={12} md={3}>
-//         <Box
-//           component={Card}
-//           p="16px 24px"
-//           sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
-//         >
-//           <Stack gap={1}>
-//             <Typography variant="subtitle2" color="text.secondary">
-//               Total Chats
-//             </Typography>
-//             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-//               <Typography variant="h2">
-//                 {/* {campaigns
-
-//                   ?.filter((campaign) => campaign.status === 'ACTIVE')
-//                   .reduce((acc, campaign) => acc + campaign.pitch.length, 0)} */}
-//                 {user?._count?.UserThread || 0}
-//               </Typography>
-//               <Chart
-//                 dir="ltr"
-//                 type="bar"
-//                 series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
-//                 options={chartOptions}
-//                 width={60}
-//                 height={36}
-//               />
-//             </Stack>
-//           </Stack>
-//         </Box>
-//       </Grid>
-//       <Grid item xs={12} md={3}>
-//         <Box
-//           component={Card}
-//           p="16px 24px"
-//           sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
-//         >
-//           <Stack gap={1}>
-//             <Typography variant="subtitle2" color="text.secondary">
-//               Total Creator
-//             </Typography>
-//             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-//               <Typography variant="h2">{creators?.length}</Typography>
-//               <Chart
-//                 dir="ltr"
-//                 type="bar"
-//                 series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
-//                 options={chartOptions}
-//                 width={60}
-//                 height={36}
-//               />
-//             </Stack>
-//           </Stack>
-//         </Box>
-//       </Grid>
-//       <Grid item xs={12} md={3}>
-//         <Box
-//           component={Card}
-//           p="16px 24px"
-//           sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
-//         >
-//           <Stack gap={1}>
-//             <Typography variant="subtitle2" color="text.secondary">
-//               Total Clients
-//             </Typography>
-//             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-//               <Typography variant="h2">{clientData || 0}</Typography>
-//               <Chart
-//                 dir="ltr"
-//                 type="bar"
-//                 series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
-//                 options={chartOptions}
-//                 width={60}
-//                 height={36}
-//               />
-//             </Stack>
-//           </Stack>
-//         </Box>
-//       </Grid>
-//       <Grid item xs={12} md={12}>
-//         <Box
-//           component={Card}
-//           p="16px 24px"
-//           sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.1)}` }}
-//         >
-//           <Stack gap={1}>
-//             <Typography variant="subtitle2" color="text.secondary">
-//               Active Campaigns
-//             </Typography>
-//             {campaigns?.length ? renderCampaignLists : <EmptyContent title="No active campaign" />}
-//           </Stack>
-//         </Box>
-//       </Grid>
-//     </Grid>
-//   );
-// };
-
-// export default DashboardSuperadmin;
-
 import useSWR from 'swr';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -398,13 +74,13 @@ const DashboardSuperadmin = () => {
       dedupingInterval: 120000, // Cache for 2 minutes
     }
   );
-  
+
   // Extract campaigns from response (backend returns array directly)
   const campaigns = useMemo(
     () => (Array.isArray(campaignsData) ? campaignsData : campaignsData?.data || []),
     [campaignsData]
   );
-  
+
   // OPTIMIZATION: Use dashboard stats endpoint (aggregated data from backend)
   const { data: dashboardStats, isLoading: statsLoading } = useSWR(
     endpoints.dashboard.stats,
@@ -429,7 +105,7 @@ const DashboardSuperadmin = () => {
 
   // REMOVED: No longer fetching all creators - using stats endpoint instead
   // const { data: creators, isLoading: creatorLoading } = useGetCreators();
-  
+
   const { socket } = useSocketContext();
   const [onlineUsers, setOnlineUsers] = useState(null);
   const [selectedCampaign, setSelectedCampaign] = useState('all');
@@ -451,10 +127,7 @@ const DashboardSuperadmin = () => {
   // Minimal color palette with blue accent
 
   // OPTIMIZATION: Backend already returns only ACTIVE campaigns, no filtering needed
-  const activeCampaigns = useMemo(
-    () => campaigns || [],
-    [campaigns]
-  );
+  const activeCampaigns = useMemo(() => campaigns || [], [campaigns]);
 
   // OPTIMIZATION: Completed campaigns count comes from stats endpoint
   const completedCampaigns = useMemo(
@@ -488,9 +161,7 @@ const DashboardSuperadmin = () => {
 
     // OPTIMIZATION: Sort and limit to top 10 (backend already limits to 10 per campaign)
     if (allPitches.length === 0) return [];
-    return allPitches
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 10); // Only keep top 10 for display
+    return allPitches.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10); // Only keep top 10 for display
   }, [campaigns]);
 
   // Filter pitches based on selected campaign
@@ -500,21 +171,33 @@ const DashboardSuperadmin = () => {
   }, [pendingPitches, selectedCampaign]);
 
   const totalChats = user?._count?.UserThread || 0;
-  
+
   // OPTIMIZATION: Use backend stats if available, otherwise fallback to creator count endpoint
   const totalCreators = dashboardStats?.data?.totalCreators || creatorCountData?.count || 0;
   const totalClients = dashboardStats?.data?.totalClients || clientData || 0;
 
   // OPTIMIZATION: Use backend stats only - no client-side calculation needed
-  const totalApprovedPitches = useMemo(() => dashboardStats?.data?.approvedPitches || 0, [dashboardStats]);
+  const totalApprovedPitches = useMemo(
+    () => dashboardStats?.data?.approvedPitches || 0,
+    [dashboardStats]
+  );
 
-  const totalRejectedPitches = useMemo(() => dashboardStats?.data?.rejectedPitches || 0, [dashboardStats]);
+  const totalRejectedPitches = useMemo(
+    () => dashboardStats?.data?.rejectedPitches || 0,
+    [dashboardStats]
+  );
 
   // OPTIMIZATION: Use backend stats only - no client-side calculation needed
-  const totalCreatorsWithMediaKit = useMemo(() => dashboardStats?.data?.creatorsWithMediaKit || 0, [dashboardStats]);
+  const totalCreatorsWithMediaKit = useMemo(
+    () => dashboardStats?.data?.creatorsWithMediaKit || 0,
+    [dashboardStats]
+  );
 
   // OPTIMIZATION: Use backend stats only - no client-side calculation needed
-  const totalCreatorsInAtLeastOneCampaign = useMemo(() => dashboardStats?.data?.creatorsInCampaigns || 0, [dashboardStats]);
+  const totalCreatorsInAtLeastOneCampaign = useMemo(
+    () => dashboardStats?.data?.creatorsInCampaigns || 0,
+    [dashboardStats]
+  );
 
   // Generate last 6 months data based on actual metrics
   const monthlyData = useMemo(() => {
@@ -601,65 +284,74 @@ const DashboardSuperadmin = () => {
   ];
 
   // OPTIMIZATION: Memoize handlers to prevent unnecessary re-renders
-  const handleViewCampaign = useCallback((campaignId) => {
-    router.push(paths.dashboard.campaign.adminCampaignDetail(campaignId));
-  }, [router]);
+  const handleViewCampaign = useCallback(
+    (campaignId) => {
+      router.push(paths.dashboard.campaign.adminCampaignDetail(campaignId));
+    },
+    [router]
+  );
 
-  const handleViewPitch = useCallback((pitch) => {
-    // Set the tab to pitch section before navigating
-    localStorage.setItem('campaigndetail', 'pitch');
-    // Navigate to the campaign's pitch section
-    router.push(paths.dashboard.campaign.adminCampaignDetail(pitch.campaignId));
-  }, [router]);
+  const handleViewPitch = useCallback(
+    (pitch) => {
+      // Set the tab to pitch section before navigating
+      localStorage.setItem('campaigndetail', 'pitch');
+      // Navigate to the campaign's pitch section
+      router.push(paths.dashboard.campaign.adminCampaignDetail(pitch.campaignId));
+    },
+    [router]
+  );
 
   // OPTIMIZATION: Memoize metric card render function
-  const renderMetricCard = useCallback((metric, index) => (
-    <Grid item xs={6} md={3} key={index}>
-      <Card
-        sx={{
-          p: 3,
-          height: 120,
-          bgcolor: colors.background,
-          border: `1px solid ${colors.border}`,
-          borderRadius: 1,
-          transition: 'border-color 0.2s ease',
-          '&:hover': {
-            borderColor: metric.color,
-          },
-        }}
-      >
-        <Stack spacing={1} height="100%" justifyContent="space-between">
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
+  const renderMetricCard = useCallback(
+    (metric, index) => (
+      <Grid item xs={6} md={3} key={index}>
+        <Card
+          sx={{
+            p: 3,
+            height: 120,
+            bgcolor: colors.background,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 1,
+            transition: 'border-color 0.2s ease',
+            '&:hover': {
+              borderColor: metric.color,
+            },
+          }}
+        >
+          <Stack spacing={1} height="100%" justifyContent="space-between">
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Typography
+                variant="caption"
+                sx={{
+                  color: colors.secondary,
+                  fontWeight: 500,
+                  textTransform: 'uppercase',
+                  letterSpacing: 1,
+                  fontSize: '0.7rem',
+                }}
+              >
+                {metric.title}
+              </Typography>
+              <Box sx={{ color: metric.color, opacity: 0.8 }}>{metric.icon}</Box>
+            </Stack>
+
             <Typography
-              variant="caption"
+              variant="h3"
               sx={{
-                color: colors.secondary,
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: 1,
-                fontSize: '0.7rem',
+                color: metric.color,
+                fontWeight: 700,
+                lineHeight: 1,
+                fontSize: '2rem',
               }}
             >
-              {metric.title}
+              {typeof metric.value === 'number' ? metric.value.toLocaleString() : '0'}
             </Typography>
-            <Box sx={{ color: metric.color, opacity: 0.8 }}>{metric.icon}</Box>
           </Stack>
-
-          <Typography
-            variant="h3"
-            sx={{
-              color: metric.color,
-              fontWeight: 700,
-              lineHeight: 1,
-              fontSize: '2rem',
-            }}
-          >
-            {typeof metric.value === 'number' ? metric.value.toLocaleString() : '0'}
-          </Typography>
-        </Stack>
-      </Card>
-    </Grid>
-  ), []);
+        </Card>
+      </Grid>
+    ),
+    []
+  );
 
   const renderPendingPitches = (
     <Card
@@ -925,64 +617,70 @@ const DashboardSuperadmin = () => {
           </Stack>
           <Stack direction="row" spacing={1.5} alignItems="center">
             {user?.role === 'superadmin' && (
-            <LoadingButton
-              size="small"
-              loading={exportCampaignsLoading}
-              onClick={async (e) => {
-                e.stopPropagation();
-                try {
-                  setExportCampaignsLoading(true);
-                  await axiosInstance.post(endpoints.campaign.exportActiveCompleted);
-                  setExportCampaignsLoading(false);
-                  setExportCampaignsDone(true);
-                  setTimeout(() => setExportCampaignsDone(false), 1500);
-                } catch {
-                  setExportCampaignsLoading(false);
-                }
-              }}
-              sx={{
-                bgcolor: exportCampaignsDone ? '#22c55e' : colors.primary,
-                color: colors.background,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                height: 28,
-                px: 1.5,
-                '&:hover': { opacity: 0.9, bgcolor: exportCampaignsDone ? '#16a34a' : colors.primary },
-              }}
-              variant="contained"
-            >
-              {exportCampaignsDone ? 'Done' : 'Export Campaigns'}
-            </LoadingButton>
+              <LoadingButton
+                size="small"
+                loading={exportCampaignsLoading}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    setExportCampaignsLoading(true);
+                    await axiosInstance.post(endpoints.campaign.exportActiveCompleted);
+                    setExportCampaignsLoading(false);
+                    setExportCampaignsDone(true);
+                    setTimeout(() => setExportCampaignsDone(false), 1500);
+                  } catch {
+                    setExportCampaignsLoading(false);
+                  }
+                }}
+                sx={{
+                  bgcolor: exportCampaignsDone ? '#22c55e' : colors.primary,
+                  color: colors.background,
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  height: 28,
+                  px: 1.5,
+                  '&:hover': {
+                    opacity: 0.9,
+                    bgcolor: exportCampaignsDone ? '#16a34a' : colors.primary,
+                  },
+                }}
+                variant="contained"
+              >
+                {exportCampaignsDone ? 'Done' : 'Export Campaigns'}
+              </LoadingButton>
             )}
             {user?.role === 'superadmin' && (
-            <LoadingButton
-              size="small"
-              loading={exportCreatorsLoading}
-              onClick={async (e) => {
-                e.stopPropagation();
-                try {
-                  setExportCreatorsLoading(true);
-                  await axiosInstance.post(endpoints.campaign.exportCampaignCreators);
-                  setExportCreatorsLoading(false);
-                  setExportCreatorsDone(true);
-                  setTimeout(() => setExportCreatorsDone(false), 1500);
-                } catch {
-                  setExportCreatorsLoading(false);
-                }
-              }}
-              sx={{
-                bgcolor: exportCreatorsDone ? '#22c55e' : colors.secondary,
-                color: colors.background,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                height: 28,
-                px: 1.5,
-                '&:hover': { opacity: 0.9, bgcolor: exportCreatorsDone ? '#16a34a' : colors.secondary },
-              }}
-              variant="contained"
-            >
-              {exportCreatorsDone ? 'Done' : 'Export Creators'}
-            </LoadingButton>
+              <LoadingButton
+                size="small"
+                loading={exportCreatorsLoading}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    setExportCreatorsLoading(true);
+                    await axiosInstance.post(endpoints.campaign.exportCampaignCreators);
+                    setExportCreatorsLoading(false);
+                    setExportCreatorsDone(true);
+                    setTimeout(() => setExportCreatorsDone(false), 1500);
+                  } catch {
+                    setExportCreatorsLoading(false);
+                  }
+                }}
+                sx={{
+                  bgcolor: exportCreatorsDone ? '#22c55e' : colors.secondary,
+                  color: colors.background,
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  height: 28,
+                  px: 1.5,
+                  '&:hover': {
+                    opacity: 0.9,
+                    bgcolor: exportCreatorsDone ? '#16a34a' : colors.secondary,
+                  },
+                }}
+                variant="contained"
+              >
+                {exportCreatorsDone ? 'Done' : 'Export Creators'}
+              </LoadingButton>
             )}
           </Stack>
         </Stack>
@@ -1204,7 +902,7 @@ const DashboardSuperadmin = () => {
 
   // OPTIMIZATION: Check loading states - removed creator loading since we're not fetching creators
   const isLoadingData = statsLoading || creatorCountLoading || isClientLoading || campaignsLoading;
-  
+
   if (isLoadingData) {
     return (
       <Box
@@ -1226,9 +924,9 @@ const DashboardSuperadmin = () => {
         {/* Header */}
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           {/* <Stack spacing={0.5}>
-            <Typography 
-              variant="h4" 
-              sx={{ 
+            <Typography
+              variant="h4"
+              sx={{
                 color: colors.primary,
                 fontWeight: 700,
                 fontSize: '1.75rem',
@@ -1237,9 +935,9 @@ const DashboardSuperadmin = () => {
             >
               Dashboard
             </Typography>
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 color: colors.secondary,
                 fontSize: '0.9rem'
               }}

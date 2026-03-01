@@ -56,6 +56,12 @@ const UploadDraftVideoModal = ({
     previousSubmission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length ||
     1;
 
+  const rejectedVideoIds =
+    (submission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length &&
+      submission?.video.filter((x) => x.status === 'REVISION_REQUESTED')) ||
+    (previousSubmission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length &&
+      previousSubmission?.video.filter((x) => x.status === 'REVISION_REQUESTED'));
+
   const validateFileCount = (files) => {
     if (previousSubmission?.status === 'CHANGES_REQUIRED') {
       if (files.length !== videosToUpdateCount) {
@@ -68,8 +74,6 @@ const UploadDraftVideoModal = ({
     }
     return true;
   };
-
-  // V3 submissions removed
 
   // Socket.io progress handling
   useEffect(() => {
@@ -105,12 +109,12 @@ const UploadDraftVideoModal = ({
         setIsProcessing(false);
         reset();
         setUploadProgress([]);
-        
+
         // Refresh data
         mutate(endpoints.kanban.root);
         deliverableMutate();
         mutate(endpoints.campaign.creator.getCampaign(campaign?.id));
-        
+
         enqueueSnackbar('Upload completed successfully!', { variant: 'success' });
       }, 2000);
 
@@ -128,7 +132,7 @@ const UploadDraftVideoModal = ({
   const onSubmit = handleSubmit(async (data) => {
     if (!data?.draftVideo?.length) {
       enqueueSnackbar(`Upload a video in order to proceed`, {
-        variant: 'error',
+        variant: 'warning',
       });
       return;
     }
@@ -148,9 +152,17 @@ const UploadDraftVideoModal = ({
       setIsSubmitting(true);
       setIsProcessing(true);
       setUploadProgress([]);
-      
+
       const formData = new FormData();
-      const newData = { caption: data.caption, submissionId };
+
+      const filteredRejectedVideoIds = rejectedVideoIds.map((rejectedVideo) => rejectedVideo.id);
+
+      const newData = {
+        caption: data.caption,
+        submissionId,
+        rejectedVideoIds: filteredRejectedVideoIds,
+      };
+
       formData.append('data', JSON.stringify(newData));
 
       // Handle multiple files
@@ -159,10 +171,10 @@ const UploadDraftVideoModal = ({
           formData.append('draftVideo', file);
         });
       }
-      
+
       // V3 submissions removed - using V2 endpoint only
       const endpoint = endpoints.submission.creator.draftSubmission;
-      
+
       await axiosInstance.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -187,7 +199,7 @@ const UploadDraftVideoModal = ({
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / k**i).toFixed(2))  } ${  sizes[i]}`;
+    return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
   };
 
   const truncateText = (text, maxLength) =>
@@ -292,15 +304,12 @@ const UploadDraftVideoModal = ({
                               bgcolor: 'background.paper',
                               '& .MuiLinearProgress-bar': {
                                 borderRadius: 1,
-                                bgcolor: currentFile?.progress === 100 ? 'success.main' : 'primary.main',
+                                bgcolor:
+                                  currentFile?.progress === 100 ? 'success.main' : 'primary.main',
                               },
                             }}
                           />
-                          <Stack
-                            direction="row"
-                            justifyContent="space-between"
-                            alignItems="center"
-                          >
+                          <Stack direction="row" justifyContent="space-between" alignItems="center">
                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                               {currentFile?.progress === 100 ? (
                                 <Box
@@ -368,7 +377,10 @@ const UploadDraftVideoModal = ({
                 width={16}
                 sx={{ mr: 0.5, verticalAlign: 'text-bottom' }}
               />
-              You are required to upload <span style={{ color: 'info.main', fontWeight: 600 }}>{totalUGCVideos} UGC {totalUGCVideos === 1 ? 'Video' : 'Videos'}.</span>
+              You are required to upload{' '}
+              <span style={{ color: 'info.main', fontWeight: 600 }}>
+                {totalUGCVideos} UGC {totalUGCVideos === 1 ? 'Video' : 'Videos'}.
+              </span>
             </Typography>
           </Box>
         )}
@@ -389,6 +401,7 @@ const UploadDraftVideoModal = ({
                   *
                 </Box>
               </Typography>
+
               <RHFUpload
                 name="draftVideo"
                 type="video"
@@ -397,6 +410,7 @@ const UploadDraftVideoModal = ({
                 maxFiles={videosToUpdateCount}
               />
             </Box>
+
             <RHFTextField
               name="caption"
               label="Caption"
@@ -412,10 +426,12 @@ const UploadDraftVideoModal = ({
           fullWidth
           loading={isSubmitting}
           loadingPosition="center"
+          M
           loadingIndicator={<CircularProgress color="inherit" size={24} />}
           variant="contained"
           onClick={onSubmit}
           disabled={isProcessing}
+          startIcon={<Iconify icon="material-symbols:upload-rounded" width={24} />}
           sx={{
             bgcolor: '#203ff5',
             color: 'white',

@@ -13,21 +13,30 @@ const SocketProvider = ({ children }) => {
   const { user } = useAuthContext();
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const uuid = crypto.randomUUID();
+
   useEffect(() => {
     const socketConnection = io({
       transports: ['websocket', 'polling'],
       reconnection: true,
       path: '/socket.io/',
+      auth: {
+        id: uuid,
+      },
     });
 
     socketConnection.on('connect', () => {
       setSocket(socketConnection);
       setOnline(true);
+    });
 
-      if (user?.id) {
-        socketConnection.emit('register', user.id);
-        socketConnection.emit('online-user');
-      }
+    if (user?.id) {
+      socketConnection.emit('register', user.id);
+      socketConnection.emit('online-user');
+    }
+
+    socketConnection.emit('tah', localStorage.getItem('tah'), (data) => {
+      localStorage.setItem('tah', data);
     });
 
     // expose helpers for campaign room subscription
