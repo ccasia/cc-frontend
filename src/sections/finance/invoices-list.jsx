@@ -68,14 +68,7 @@ const defaultFilters = {
 const TABLE_HEAD = [
   { id: 'checkbox', label: '', width: 48, hideSortIcon: true },
   { id: 'invoiceNumber', label: 'Invoice ID', width: 150, hideSortIcon: false },
-  { id: 'checkbox', label: '', width: 48, hideSortIcon: true },
-  { id: 'invoiceNumber', label: 'Invoice ID', width: 150, hideSortIcon: false },
   { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true },
-  { id: 'creatorName', label: 'Recipient', width: 180, hideSortIcon: true },
-  { id: 'createdAt', label: 'Invoice Date', width: 120, hideSortIcon: true },
-  { id: 'dueDate', label: 'Due Date', width: 120, hideSortIcon: false },
-  { id: 'amount', label: 'Amount', width: 120, hideSortIcon: true },
-  { id: 'status', label: 'Status', width: 120, hideSortIcon: true },
   { id: 'creatorName', label: 'Recipient', width: 180, hideSortIcon: true },
   { id: 'createdAt', label: 'Invoice Date', width: 120, hideSortIcon: true },
   { id: 'dueDate', label: 'Due Date', width: 120, hideSortIcon: false },
@@ -1225,36 +1218,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                         openEditInvoice={() => openEditInvoice(invoice.id)}
                       />
                     ))}
-                    {invoicesLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={TABLE_HEAD.length} align="center" sx={{ py: 5 }}>
-                          <CircularProgress />
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      <>
-                        {dataFiltered?.map((invoice) => (
-                          <InvoiceItem
-                            key={invoice.id}
-                            invoice={invoice}
-                            onChangeStatus={changeInvoiceStatus}
-                            selected={table.selected.includes(invoice.id)}
-                            onSelectRow={() => table.onSelectRow(invoice.id)}
-                            openEditInvoice={() => openEditInvoice(invoice.id)}
-                          />
-                        ))}
 
-                        <TableNoData
-                          notFound={notFound}
-                          sx={{
-                            '& .MuiTableCell-root': {
-                              p: 0,
-                              height: 300,
-                            },
-                          }}
-                        />
-                      </>
-                    )}
                     <TableNoData
                       notFound={notFound}
                       sx={{
@@ -1303,13 +1267,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         }}
       >
         <DialogContent sx={{ p: 2, overflow: 'hidden' }}>
-          <InvoiceNewEditForm
-            id={selectedId}
-            creators={selectedData}
-            onClose={closeEditInvoice}
-            mutateInvoices={mutateInvoices}
-            mutateStats={mutateStats}
-          />
           <InvoiceNewEditForm
             id={selectedId}
             creators={selectedData}
