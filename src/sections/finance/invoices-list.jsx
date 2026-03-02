@@ -1232,14 +1232,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         onRowsPerPageChange={table.onChangeRowsPerPage}
         sx={{ py: 2, px: 2.5 }}
       />
-      <TablePaginationCustom
-        count={pagination?.total || dataFiltered.length}
-        page={table.page}
-        rowsPerPage={table.rowsPerPage}
-        onPageChange={table.onChangePage}
-        onRowsPerPageChange={table.onChangeRowsPerPage}
-        sx={{ py: 2, px: 2.5 }}
-      />
 
       <Dialog
         open={editDialog.value}
@@ -1718,35 +1710,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* connect to xero */}
-      <Dialog open={xeroDialog.value} onClose={xeroDialog.onFalse}>
-        <DialogTitle>Connect to Xero</DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            You need to be connected to Xero to approve these invoices. Please connect your account
-            to proceed.
-          </DialogContentText>
-
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <LoadingButton
-              variant="contained"
-              size="large"
-              loading={xeroLoading.value}
-              onClick={handleActivateXero}
-              startIcon={<Iconify icon="logos:xero" width={24} />}
-              sx={{ bgcolor: '#13B5EA', '&:hover': { bgcolor: '#0e9bc7' } }} // Xero Blue
-            >
-              Connect to Xero
-            </LoadingButton>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={xeroDialog.onFalse} color="inherit">
-            Cancel
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };
@@ -1806,10 +1769,6 @@ function applyFilter({ inputData, comparator, filters }) {
     inputData = inputData.filter(
       (item) => item?.campaign?.name?.toLowerCase().indexOf(campaignName.toLowerCase()) !== -1
     );
-  }
-
-  if (campaigns?.length) {
-    inputData = inputData.filter((item) => campaigns.includes(item?.campaign?.name));
   }
 
   if (campaigns?.length) {
