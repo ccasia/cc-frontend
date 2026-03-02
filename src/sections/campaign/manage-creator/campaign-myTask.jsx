@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
-import PropTypes from 'prop-types';
 import { mutate } from 'swr';
+import PropTypes from 'prop-types';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 
 import { Box, Card, Stack, Typography, useMediaQuery, CircularProgress } from '@mui/material';
@@ -17,27 +17,27 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import CampaignPosting from './submissions/campaign-posting';
+import LogisticsForm from './submissions/campaign-logistics';
 import MobileSubmissionLayout from './mobile-submission-layout';
 import CampaignAgreement from './submissions/campaign-agreement';
 import CampaignFirstDraft from './submissions/campaign-first-draft';
 import CampaignFinalDraft from './submissions/campaign-final-draft';
-import LogisticsForm from './submissions/campaign-logistics';
 
 /**
  * Campaign My Tasks Component
- * 
+ *
  * V2 Flow Only:
  * - Handles V2 statuses: PENDING_REVIEW, CHANGES_REQUIRED, APPROVED
  * - Stage visibility logic for V2 workflow
  * - Socket event listeners for V2 flow updates
  * - Status display and completion indicators for V2 flows
- * 
+ *
  * IMPORTANT: 1st Draft vs 2nd Draft Clarity
  * - When 2nd Draft is active, 1st Draft shows as "In Review" to prevent confusion
  * - When 1st Draft has "Changes Required", it shows as "Completed" (green) to make creators focus on 2nd Draft
  * - This ensures creators know they should work on the 2nd Draft, not the 1st Draft
  * - Simple color scheme: Green for completed, Yellow for everything else
- * 
+ *
  * Status: ✅ V2 Flow Only - V3 Removed
  * Status: ✅ 1st Draft vs 2nd Draft Confusion Prevention Implemented
  * Status: ✅ Simplified Color Scheme (Yellow/Green Only)
@@ -126,12 +126,12 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
   useEffect(() => {
     // Track which events we've already handled to prevent duplicates
     const handledEvents = new Set();
-    
+
     socket?.on('draft', () => {
       if (!handledEvents.has('draft')) {
         handledEvents.add('draft');
         console.log('🔄 Draft event received, updating first draft data');
-      mutate(endpoints.campaign.draft.getFirstDraftForCreator(campaign.id));
+        mutate(endpoints.campaign.draft.getFirstDraftForCreator(campaign.id));
         // Remove from handled events after a delay to allow future events
         setTimeout(() => handledEvents.delete('draft'), 5000);
       }
@@ -151,7 +151,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
       if (!handledEvents.has('agreementReady')) {
         handledEvents.add('agreementReady');
         console.log('🔄 Agreement ready event received, updating user data');
-      mutate(endpoints.auth.me);
+        mutate(endpoints.auth.me);
         // Remove from handled events after a delay to allow future events
         setTimeout(() => handledEvents.delete('agreementReady'), 5000);
       }
@@ -162,7 +162,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
       if (!handledEvents.has('submissionStatusChanged')) {
         handledEvents.add('submissionStatusChanged');
         console.log('🔄 Submission status changed event received, updating submissions');
-      submissionMutate();
+        submissionMutate();
         // Remove from handled events after a delay to allow future events
         setTimeout(() => handledEvents.delete('submissionStatusChanged'), 5000);
       }
@@ -172,7 +172,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
       if (!handledEvents.has('draftSubmitted')) {
         handledEvents.add('draftSubmitted');
         console.log('🔄 Draft submitted event received, updating submissions');
-      submissionMutate();
+        submissionMutate();
         // Remove from handled events after a delay to allow future events
         setTimeout(() => handledEvents.delete('draftSubmitted'), 5000);
       }
@@ -182,7 +182,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
       if (!handledEvents.has('draftApproved')) {
         handledEvents.add('draftApproved');
         console.log('🔄 Draft approved event received, updating submissions');
-      submissionMutate();
+        submissionMutate();
         // Remove from handled events after a delay to allow future events
         setTimeout(() => handledEvents.delete('draftApproved'), 5000);
       }
@@ -192,7 +192,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
       if (!handledEvents.has('changesRequested')) {
         handledEvents.add('changesRequested');
         console.log('🔄 Changes requested event received, updating submissions');
-      submissionMutate();
+        submissionMutate();
         // Remove from handled events after a delay to allow future events
         setTimeout(() => handledEvents.delete('changesRequested'), 5000);
       }
@@ -215,27 +215,32 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
     if (hasManualSelection.current || !submissions) {
       return;
     }
-    
-    const firstDraftSubmission = submissions.find((item) => item.submissionType?.type === 'FIRST_DRAFT');
-    const finalDraftSubmission = submissions.find((item) => item.submissionType?.type === 'FINAL_DRAFT');
+
+    const firstDraftSubmission = submissions.find(
+      (item) => item.submissionType?.type === 'FIRST_DRAFT'
+    );
+    const finalDraftSubmission = submissions.find(
+      (item) => item.submissionType?.type === 'FINAL_DRAFT'
+    );
     const postingSubmission = submissions.find((item) => item.submissionType?.type === 'POSTING');
-    
+
     // If First Draft or Final Draft is approved and posting is available, select posting stage
     if (
-      ((firstDraftSubmission?.status === 'APPROVED' || firstDraftSubmission?.status === 'CLIENT_APPROVED') ||
-       (finalDraftSubmission?.status === 'APPROVED' || finalDraftSubmission?.status === 'CLIENT_APPROVED')) &&
+      (firstDraftSubmission?.status === 'APPROVED' ||
+        firstDraftSubmission?.status === 'CLIENT_APPROVED' ||
+        finalDraftSubmission?.status === 'APPROVED' ||
+        finalDraftSubmission?.status === 'CLIENT_APPROVED') &&
       postingSubmission?.status === 'IN_PROGRESS' &&
       selectedStage !== 'POSTING'
     ) {
       console.log('Auto-selecting POSTING stage');
       setSelectedStage('POSTING');
     }
-    
-  }, [submissions, selectedStage]); 
+  }, [submissions, selectedStage]);
 
   const getVisibleStages = useCallback(() => {
     let stages = [];
-    const addedStages = new Set(); 
+    const addedStages = new Set();
     const agreementSubmission = value('AGREEMENT_FORM');
     const firstDraftSubmission = value('FIRST_DRAFT');
     const finalDraftSubmission = value('FINAL_DRAFT');
@@ -292,7 +297,9 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
       (firstDraftSubmission?.status === 'CHANGES_REQUIRED' ||
         (finalDraftSubmission &&
           finalDraftSubmission?.status !== 'NOT_STARTED' &&
-          ['IN_PROGRESS', 'CHANGES_REQUIRED', 'PENDING_REVIEW', 'APPROVED'].includes(finalDraftSubmission?.status))) &&
+          ['IN_PROGRESS', 'CHANGES_REQUIRED', 'PENDING_REVIEW', 'APPROVED'].includes(
+            finalDraftSubmission?.status
+          ))) &&
       !addedStages.has('FINAL_DRAFT')
     ) {
       stages.unshift({ ...defaultSubmission.find((s) => s.type === 'FINAL_DRAFT') });
@@ -304,13 +311,11 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
     // - Final Draft is approved, OR
     // - Posting submission already has an active status
     if (
-      (
-        (firstDraftSubmission?.status === 'APPROVED' &&
-          (!finalDraftSubmission || finalDraftSubmission?.status === 'NOT_STARTED')) ||
+      ((firstDraftSubmission?.status === 'APPROVED' &&
+        (!finalDraftSubmission || finalDraftSubmission?.status === 'NOT_STARTED')) ||
         finalDraftSubmission?.status === 'APPROVED' ||
         (postingSubmission &&
-          ['IN_PROGRESS', 'PENDING_REVIEW', 'APPROVED'].includes(postingSubmission?.status))
-      ) &&
+          ['IN_PROGRESS', 'PENDING_REVIEW', 'APPROVED'].includes(postingSubmission?.status))) &&
       !addedStages.has('POSTING')
     ) {
       stages.unshift({ ...defaultSubmission.find((s) => s.type === 'POSTING') });
@@ -321,7 +326,10 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
       stages = stages.filter((stage) => stage.value !== 'Posting');
     }
 
-    console.log('Final stages to show:', stages.map(s => ({ name: s.name, type: s.type })));
+    console.log(
+      'Final stages to show:',
+      stages.map((s) => ({ name: s.name, type: s.type }))
+    );
 
     // Add sequential stage numbers starting from the bottom
     return stages.map((stage, index) => ({
@@ -361,34 +369,45 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
   );
 
   // Helper function to check if a stage is in progress (V2 only)
-  const isStageInProgress = useCallback((stageType) => {
-    const stageValue = value(stageType);
-    if (!stageValue) return false;
-    
-    // Only show as "in progress" if it's actually being worked on
-    return stageValue.status === 'IN_PROGRESS';
-  }, [value]);
+  const isStageInProgress = useCallback(
+    (stageType) => {
+      const stageValue = value(stageType);
+      if (!stageValue) return false;
+
+      // Only show as "in progress" if it's actually being worked on
+      return stageValue.status === 'IN_PROGRESS';
+    },
+    [value]
+  );
 
   // Helper function to check if a stage needs changes (V2 only)
-  const isStageNeedsChanges = useCallback((stageType) => {
-    const stageValue = value(stageType);
-    if (!stageValue) return false;
-    
-    // Only show as "needs changes" if changes are actually required
-    return stageValue.status === 'CHANGES_REQUIRED';
-  }, [value]);
+  const isStageNeedsChanges = useCallback(
+    (stageType) => {
+      const stageValue = value(stageType);
+      if (!stageValue) return false;
+
+      // Only show as "needs changes" if changes are actually required
+      return stageValue.status === 'CHANGES_REQUIRED';
+    },
+    [value]
+  );
 
   // Helper function to check if a stage is pending review (V2 only)
-  const isStagePendingReview = useCallback((stageType) => {
-    const stageValue = value(stageType);
-    if (!stageValue) return false;
-    
-    // Show as "pending review" if it's waiting for admin/client review
-    return stageValue.status === 'PENDING_REVIEW' || 
-           stageValue.status === 'SENT_TO_CLIENT' ||
-           stageValue.status === 'SENT_TO_ADMIN' ||
-           stageValue.status === 'CLIENT_FEEDBACK';
-  }, [value]);
+  const isStagePendingReview = useCallback(
+    (stageType) => {
+      const stageValue = value(stageType);
+      if (!stageValue) return false;
+
+      // Show as "pending review" if it's waiting for admin/client review
+      return (
+        stageValue.status === 'PENDING_REVIEW' ||
+        stageValue.status === 'SENT_TO_CLIENT' ||
+        stageValue.status === 'SENT_TO_ADMIN' ||
+        stageValue.status === 'CLIENT_FEEDBACK'
+      );
+    },
+    [value]
+  );
 
   // Helper function to get status text for display
   const getStatusText = useCallback(
@@ -438,9 +457,9 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
         case 'PENDING_REVIEW':
           return 'Pending Review';
         case 'SENT_TO_CLIENT':
-          return 'In Review'; 
+          return 'In Review';
         case 'CLIENT_FEEDBACK':
-          return 'In Review'; 
+          return 'In Review';
         case 'CHANGES_REQUIRED':
           return 'Revision Requested';
         case 'APPROVED':
@@ -496,10 +515,10 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
     console.log('Current selectedStage:', selectedStage);
     console.log('Stage value:', value(stageType));
     console.log('Stage status:', value(stageType)?.status);
-    
+
     // Mark that user has manually selected a stage
     hasManualSelection.current = true;
-    
+
     setSelectedStage(stageType);
     if (!viewedStages.includes(stageType)) {
       const newViewedStages = [...viewedStages, stageType];
@@ -514,28 +533,28 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
 
   const isNewStage = (stageType) => {
     const stageValue = value(stageType);
-    
+
     // Don't show NEW if stage is already viewed
     if (viewedStages.includes(stageType)) {
       return false;
     }
-    
+
     // Don't show NEW if stage is completed
     if (isStageCompleted(stageType)) {
       return false;
     }
-    
+
     // Don't show NEW for stages that are just waiting for review/feedback
     // These don't require creator action
     if (isStagePendingReview(stageType)) {
       return false;
     }
-    
+
     // Don't show NEW for stages that need changes (creator already knows about this)
     if (isStageNeedsChanges(stageType)) {
       return false;
     }
-    
+
     // Only show NEW for stages that are actually ready for creator to work on
     return stageValue?.status === 'IN_PROGRESS' || stageValue?.status === 'NOT_STARTED';
   };
@@ -543,14 +562,14 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
   // Debug function to track feedback flow and prevent confusion
   const debugFeedbackFlow = useCallback(() => {
     if (!submissions) return;
-    
+
     console.log('🔍 Debugging Feedback Flow for Campaign:', campaign.name);
     console.log('📊 All Submissions:', submissions);
-    
+
     submissions.forEach((submission) => {
       const { submissionType, status, id } = submission;
       console.log(`  ${submissionType?.type}: ${status} (ID: ${id})`);
-      
+
       // Track feedback flow for V2
       if (submissionType?.type === 'FIRST_DRAFT') {
         if (status === 'CHANGES_REQUIRED') {
@@ -561,7 +580,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
           console.log('    ✅ Admin approved, stage completed');
         }
       }
-      
+
       if (submissionType?.type === 'FINAL_DRAFT') {
         if (status === 'CHANGES_REQUIRED') {
           console.log('    ⚠️  Creator needs to make changes based on admin feedback');
@@ -572,7 +591,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
         }
       }
     });
-    
+
     console.log('🎯 Current Stage Selection:', selectedStage);
     console.log('👀 Viewed Stages:', viewedStages);
   }, [submissions, campaign.name, selectedStage, viewedStages]);
@@ -694,11 +713,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
                         bgcolor: getStatusColor(item.type),
                       }}
                     >
-                        <Iconify
-                        icon={getStatusIcon(item.type)}
-                          sx={{ color: '#fff' }}
-                          width={20}
-                        />
+                      <Iconify icon={getStatusIcon(item.type)} sx={{ color: '#fff' }} width={20} />
                     </Label>
 
                     <Box sx={{ flexGrow: 1 }}>
@@ -737,7 +752,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
                             : getDueDate(item.type)
                         ).format('D MMMM, YYYY')}{' '}
                       </Typography>
-                      
+
                       {/* Show status text */}
                       <Typography
                         variant="caption"
@@ -859,7 +874,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
                   {console.log('Rendering POSTING component with:', {
                     submission: value('POSTING'),
                     selectedStage,
-                    campaign
+                    campaign,
                   })}
                   <CampaignPosting
                     campaign={campaign}

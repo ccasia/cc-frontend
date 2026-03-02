@@ -26,8 +26,6 @@ import {
   DialogActions,
 } from '@mui/material';
 
-import Markdown from 'src/components/markdown';
-
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -35,6 +33,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import Markdown from 'src/components/markdown';
 
 const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -1313,11 +1312,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
               },
             }}
           >
-            {isSubmitting ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : (
-              'Submit Reason'
-            )}
+            {isSubmitting ? <CircularProgress size={20} color="inherit" /> : 'Submit Reason'}
           </Button>
         </DialogActions>
       </Dialog>

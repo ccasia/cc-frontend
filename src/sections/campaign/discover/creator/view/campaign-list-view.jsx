@@ -119,7 +119,7 @@ export default function CampaignListView() {
   const { user } = useAuthContext();
   const dialog = useBoolean(!user?.creator?.isOnBoardingFormCompleted);
   const backdrop = useBoolean(!user?.creator?.isFormCompleted);
-  
+
   const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
 
   const load = useBoolean();
@@ -149,15 +149,15 @@ export default function CampaignListView() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-  
+
   // Check if the media kit popup should be shown when the component mounts
   useEffect(() => {
     // Only proceed if user is logged in
     if (!user) return;
-    
+
     const popupShownInSession = sessionStorage.getItem('mediaKitPopupShown');
     const shouldShow = shouldShowMediaKitPopup(user);
-    
+
     if (shouldShow && !popupShownInSession) {
       setShowMediaKitPopup(true);
       sessionStorage.setItem('mediaKitPopupShown', 'true');
@@ -997,9 +997,9 @@ export default function CampaignListView() {
         </Fab>
       )}
 
-      <MediaKitPopup 
-        open={showMediaKitPopup} 
-        onClose={() => setShowMediaKitPopup(false)} 
+      <MediaKitPopup
+        open={showMediaKitPopup}
+        onClose={() => setShowMediaKitPopup(false)}
         userId={user?.id || ''}
       />
 

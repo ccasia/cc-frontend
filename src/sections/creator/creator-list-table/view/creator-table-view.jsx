@@ -154,18 +154,16 @@ function CreatorTableView() {
     const notMarked = selectedCreators.filter((creator) => !creator.mediaKitMandatory);
 
     if (alreadyMarked.length === selectedCreators.length) {
-      enqueueSnackbar(
-        `All selected creator(s) are already marked as Media Kit Mandatory`,
-        { variant: 'info' }
-      );
+      enqueueSnackbar(`All selected creator(s) are already marked as Media Kit Mandatory`, {
+        variant: 'info',
+      });
       return;
     }
 
     if (alreadyMarked.length > 0) {
-      enqueueSnackbar(
-        `${alreadyMarked.length} creator(s) are already marked and will be skipped`,
-        { variant: 'info' }
-      );
+      enqueueSnackbar(`${alreadyMarked.length} creator(s) are already marked and will be skipped`, {
+        variant: 'info',
+      });
     }
 
     try {
@@ -204,10 +202,9 @@ function CreatorTableView() {
     const marked = selectedCreators.filter((creator) => creator.mediaKitMandatory);
 
     if (alreadyUnmarked.length === selectedCreators.length) {
-      enqueueSnackbar(
-        `All selected creator(s) are already unmarked from Media Kit Mandatory`,
-        { variant: 'info' }
-      );
+      enqueueSnackbar(`All selected creator(s) are already unmarked from Media Kit Mandatory`, {
+        variant: 'info',
+      });
       return;
     }
 

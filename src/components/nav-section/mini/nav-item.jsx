@@ -119,7 +119,30 @@ const NavItem = forwardRef(
           }),
         }}
       >
-        {renderContent}
+        <Tooltip
+          title={title}
+          placement="right"
+          slotProps={{
+            popper: {
+              sx: {
+                display: (hasChild || depth !== 1) && 'none',
+              },
+            },
+            tooltip: {
+              sx: {
+                borderRadius: 0.5,
+                height: 40,
+                minWidth: 80,
+                fontSize: 12,
+                textAlign: 'center',
+                alignContent: 'center',
+                // bgcolor: (theme) => alpha(theme.palette.grey[700], 0.8),
+              },
+            },
+          }}
+        >
+          {renderContent}
+        </Tooltip>
       </Link>
     );
   }
@@ -221,7 +244,7 @@ const StyledNavItem = styled(ListItemButton, {
           theme.palette.mode === 'light' ? 'rgba(19, 64, 255, 1)' : theme.palette.primary.light,
         background: alpha('rgba(19, 64, 255, 1)', 0.08),
         '&:hover': {
-          backgroundColor: alpha('#203ff5', 0.20),
+          backgroundColor: alpha('#203ff5', 0.2),
         },
       }),
       ...(opened && {
