@@ -32,26 +32,6 @@ export default function NavVertical({ openNav, onCloseNav }) {
 
   const navData = useNavData();
 
-  // const { data } = useGetTokenExpiry();
-
-  // const date = new Date(data?.lastRefreshToken || new Date());
-
-  // const formatter = new Intl.DateTimeFormat('en-US', {
-  //   day: '2-digit',
-  //   month: '2-digit',
-  //   year: 'numeric',
-  // });
-  // const formattedDate = formatter.format(date);
-
-  // const handleActivateXero = async () => {
-  //   try {
-  //     const response = await axios.get(endpoints.invoice.xero, { withCredentials: true });
-  //     window.location.href = response.data.url;
-  //   } catch (error) {
-  //     console.error('Error connecting to Xero:', error);
-  //   }
-  // };
-
   useEffect(() => {
     if (openNav) {
       onCloseNav();
@@ -78,18 +58,6 @@ export default function NavVertical({ openNav, onCloseNav }) {
           borderRadius: 'inherit',
         }}
       />
-      {/* <Avatar
-        sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 30,
-          height: 30,
-          borderRadius: 0,
-        }}
-        src="/assets/icons/navbar/ic_nav_logo.svg"
-      /> */}
     </Box>
   );
 
@@ -104,7 +72,6 @@ export default function NavVertical({ openNav, onCloseNav }) {
         },
       }}
     >
-      {/* <Logo sx={{ mt: 3, ml: 4, mb: 1 }} /> */}
       <Stack
         sx={{
           p: 2,
@@ -119,7 +86,9 @@ export default function NavVertical({ openNav, onCloseNav }) {
             CULT CREATIVE
           </Typography>
           <Typography fontSize="12px" color="#636366" fontWeight={500}>
-            {user?.role === 'admin' ? `${user?.admin?.role?.name}` : `${user?.role?.slice(0, 1).toUpperCase()}${user?.role?.slice(1)}`}
+            {user?.role === 'admin'
+              ? `${user?.admin?.role?.name}`
+              : `${user?.role?.slice(0, 1).toUpperCase()}${user?.role?.slice(1)}`}
           </Typography>
         </Stack>
         <IconButton
@@ -155,43 +124,6 @@ export default function NavVertical({ openNav, onCloseNav }) {
           onItemClick: onCloseNav,
         }}
       />
-      {/* {!data?.tokenStatus && user.role === 'admin' && user.admin.role.name === 'Finance' ? (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: 1,
-            borderTop: (theme) => `dashed 1px ${theme.palette.divider}`,
-          }}
-        >
-          <Typography variant="h6" sx={{ mx: 1, mb: 1 }}>
-            Update xero
-          </Typography>
-
-          <Button
-            onClick={handleActivateXero}
-            variant="contained"
-            color="info"
-            sx={{
-              mx: 1,
-              mb: 1,
-              width: 'calc(100% - 100px)',
-            }}
-          >
-            Click me
-          </Button>
-          <p
-            style={{
-              opacity: 0.5,
-            }}
-          >
-            {' '}
-            Last modified {formattedDate}
-          </p>
-        </Box>
-      ) : null} */}
 
       <Box sx={{ flexGrow: 1 }} />
     </Scrollbar>
@@ -204,16 +136,12 @@ export default function NavVertical({ openNav, onCloseNav }) {
         width: { lg: NAV.W_VERTICAL },
       }}
     >
-      {/* <NavToggleButton /> */}
-
       {lgUp ? (
         <Stack
           sx={{
             height: 1,
             position: 'fixed',
             width: NAV.W_VERTICAL,
-            // boxShadow: 5,
-            // borderRight: (theme) => `dashed 1px ${theme.palette.divider}`,
           }}
         >
           {renderContent}

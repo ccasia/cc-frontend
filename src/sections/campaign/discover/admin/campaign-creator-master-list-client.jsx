@@ -108,7 +108,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
   const mediaKit = useBoolean();
   const smDown = useResponsive('down', 'sm');
-  
+
   // Mobile-specific state
   const [expandedSections, setExpandedSections] = useState({
     pending: true,
@@ -117,8 +117,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   });
 
   // Fetch V3 pitches for client-created campaigns OR admin-created v4 campaigns
-  const fetchV3Pitches =
-    campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4';
+  const fetchV3Pitches = campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4';
   const {
     pitches: v3Pitches,
     isLoading: v3PitchesLoading,
@@ -142,39 +141,37 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     if (!campaign) return [];
 
     if (campaign.submissionVersion === 'v4' && v3Pitches) {
-      return (
-        v3Pitches
-          .map((pitch) => ({
-              pitchId: pitch.id,
-              user: {
-                id: pitch.userId || pitch.user?.id,
-                name: pitch.user?.name,
-                email: pitch.user?.email,
-                ig_username: pitch.user?.creator?.instagramUser?.username,
-                tiktok_username: pitch.user?.creator?.tiktokUser?.username,
-                photoURL: pitch.user?.photoURL,
-                status: pitch.user?.status || 'active',
-                creator: pitch.user?.creator,
-                engagementRate: pitch.user?.instagramUser?.engagement_rate,
-                followerCount: pitch.user?.instagramUser?.followers_count,
-                profileLink: pitch.user?.creator?.profileLink,
-              },
-              status: pitch.displayStatus || pitch.status || 'undecided',
-              displayStatus: pitch.displayStatus || pitch.status || 'undecided',
-              createdAt: pitch.createdAt || new Date().toISOString(),
-              type: pitch.type || 'text',
-              content: pitch.content || pitch.user?.creator?.about || 'No content available',
-              adminComments: pitch.adminComments,
-              rejectionReason: pitch.rejectionReason,
-              customRejectionText: pitch.customRejectionText,
-              followerCount: pitch.followerCount,
-              engagementRate: pitch.engagementRate,
-              isShortlisted: false,
-              outreachStatus: pitch.outreachStatus,
-            }))
-          .filter((creator) => !!creator.user && !!creator.user.id)
-          .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT')
-      );
+      return v3Pitches
+        .map((pitch) => ({
+          pitchId: pitch.id,
+          user: {
+            id: pitch.userId || pitch.user?.id,
+            name: pitch.user?.name,
+            email: pitch.user?.email,
+            ig_username: pitch.user?.creator?.instagramUser?.username,
+            tiktok_username: pitch.user?.creator?.tiktokUser?.username,
+            photoURL: pitch.user?.photoURL,
+            status: pitch.user?.status || 'active',
+            creator: pitch.user?.creator,
+            engagementRate: pitch.user?.instagramUser?.engagement_rate,
+            followerCount: pitch.user?.instagramUser?.followers_count,
+            profileLink: pitch.user?.creator?.profileLink,
+          },
+          status: pitch.displayStatus || pitch.status || 'undecided',
+          displayStatus: pitch.displayStatus || pitch.status || 'undecided',
+          createdAt: pitch.createdAt || new Date().toISOString(),
+          type: pitch.type || 'text',
+          content: pitch.content || pitch.user?.creator?.about || 'No content available',
+          adminComments: pitch.adminComments,
+          rejectionReason: pitch.rejectionReason,
+          customRejectionText: pitch.customRejectionText,
+          followerCount: pitch.followerCount,
+          engagementRate: pitch.engagementRate,
+          isShortlisted: false,
+          outreachStatus: pitch.outreachStatus,
+        }))
+        .filter((creator) => !!creator.user && !!creator.user.id)
+        .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT');
     }
 
     // Get creators from shortlisted
@@ -260,7 +257,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
-  console.log('List of creators: ', creators)
+  console.log('List of creators: ', creators);
 
   const filteredCreators = useMemo(() => {
     let filtered = creators;
@@ -283,9 +280,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
 
     // Apply search filter
     if (search) {
-      filtered = filtered.filter(
-        (elem) =>
-          elem.user.name?.toLowerCase().includes(search.toLowerCase())
+      filtered = filtered.filter((elem) =>
+        elem.user.name?.toLowerCase().includes(search.toLowerCase())
       );
     }
 
@@ -408,7 +404,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     const rejected = filteredCreators.filter(
       (creator) => getStatusInfo(creator).normalizedStatus === 'REJECTED'
     );
-    
+
     return { pending, approved, rejected };
   }, [filteredCreators]);
 
@@ -1009,9 +1005,14 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
   // Helper function to select the account with most followers and highest engagement
   const selectBestAccount = () => {
     const igFollowers = instagramStats?.followers_count || 0;
-    const igEngagement = ((instagramStats?.totalLikes || 0) + (instagramStats?.totalComments || 0)) / igFollowers || 0;
+    const igEngagement =
+      ((instagramStats?.totalLikes || 0) + (instagramStats?.totalComments || 0)) / igFollowers || 0;
     const tkFollowers = tiktokStats?.follower_count || 0;
-    const tkEngagement = ((tiktokStats?.likes_count || 0) + (tiktokStats?.totalComments || 0) + (tiktokStats?.totalShares || 0)) / tkFollowers || 0;
+    const tkEngagement =
+      ((tiktokStats?.likes_count || 0) +
+        (tiktokStats?.totalComments || 0) +
+        (tiktokStats?.totalShares || 0)) /
+        tkFollowers || 0;
 
     // If only one account exists, use it
     if (!tkFollowers) return { followers: igFollowers, engagement: igEngagement };
@@ -1027,8 +1028,11 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
   const bestAccount = selectBestAccount();
 
   // Extract social media usernames
-  const instagramUsername = instagramStats?.username || extractUsernameFromProfileLink(creatorProfile?.instagramProfileLink);
-  const tiktokUsername = tiktokStats?.username || extractUsernameFromProfileLink(creatorProfile?.tiktokProfileLink);
+  const instagramUsername =
+    instagramStats?.username ||
+    extractUsernameFromProfileLink(creatorProfile?.instagramProfileLink);
+  const tiktokUsername =
+    tiktokStats?.username || extractUsernameFromProfileLink(creatorProfile?.tiktokProfileLink);
   const profileUsername = extractUsernameFromProfileLink(creatorProfile?.profileLink);
   const hasSocialUsernames = instagramUsername || tiktokUsername;
 
@@ -1054,7 +1058,14 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
               sx={{ width: 35, height: 35 }}
             />
 
-            <Typography variant="subtitle2" fontWeight="bold" lineHeight={1.4} sx={{ color: '#221f20' }} flex={3} alignSelf="center">
+            <Typography
+              variant="subtitle2"
+              fontWeight="bold"
+              lineHeight={1.4}
+              sx={{ color: '#221f20' }}
+              flex={3}
+              alignSelf="center"
+            >
               {pitch?.user?.name || 'Unknown Creator'}
             </Typography>
 
@@ -1100,13 +1111,15 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
                 </Stack>
               )}
             </Stack>
-          ) : profileUsername && (
-            <Stack direction="row" alignItems="center" spacing={0.5}>
-              <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
-                {profileUsername}
-              </Typography>
-            </Stack>
-        )}
+          ) : (
+            profileUsername && (
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
+                  {profileUsername}
+                </Typography>
+              </Stack>
+            )
+          )}
         </Stack>
 
         <Stack direction="row" spacing={2} ml={5.2} sx={{ mt: 0.5 }}>
@@ -1119,7 +1132,8 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
           <Stack direction="row" alignItems="center" spacing={0.5}>
             <Iconify icon="mage:chart-up-b" width={16} sx={{ color: '#637381' }} />
             <Typography variant="caption" sx={{ color: '#637381', fontSize: 12, pt: 0.2 }}>
-              {typeof engagementRate === 'number' ? `${(engagementRate * 100).toFixed(2)}%` : 'N/A'} Engagement
+              {typeof engagementRate === 'number' ? `${(engagementRate * 100).toFixed(2)}%` : 'N/A'}{' '}
+              Engagement
             </Typography>
           </Stack>
         </Stack>

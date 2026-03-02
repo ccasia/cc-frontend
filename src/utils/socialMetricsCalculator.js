@@ -5,9 +5,11 @@ export const getMetricValue = (insight, metricName) => {
 };
 
 export const formatNumber = (num) => {
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1)  }M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(1)  }K`;
-  return num.toLocaleString();
+  if (!num && num !== 0) return '0';
+  const rounded = Math.round(num);
+  if (rounded >= 1000000) return `${(rounded / 1000000).toFixed(1)  }M`;
+  if (rounded >= 1000) return `${(rounded / 1000).toFixed(1)  }K`;
+  return rounded.toLocaleString();
 };
 
 // Format number with commas for input fields (e.g., 2000 -> "2,000")

@@ -79,12 +79,14 @@ export default function Main({ children, sx, ...other }) {
         {...other}
       >
         {children}
-        {lgUp && 
+
+        {lgUp && (
           <Box
             sx={{
               position: 'absolute',
-              bottom: 15,
-              right: 45,
+              zIndex: 100,
+              bottom: 10,
+              right: 25,
               textAlign: 'right',
             }}
           >
@@ -101,8 +103,8 @@ export default function Main({ children, sx, ...other }) {
             >
               <Image src="/assets/chat.svg" alt="Chat" sx={{ width: 30 }} />
             </IconButton>
-          </Box>        
-        }
+          </Box>
+        )}
         <ChatModal open={isChatopen} onClose={() => setAnchorEl(null)} anchorEl={anchorEl} />
       </Box>
     </mainContext.Provider>

@@ -1,11 +1,12 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect, useCallback } from 'react';
+import { UAParser } from 'ua-parser-js';
 import { enqueueSnackbar } from 'notistack';
 import { m, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
 
+import LoadingButton from '@mui/lab/LoadingButton';
 import { Box, Stack, Dialog, TextField, Typography } from '@mui/material';
 import { Star as StarIcon, StarBorder as StarBorderIcon } from '@mui/icons-material';
-import LoadingButton from '@mui/lab/LoadingButton';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -196,9 +197,23 @@ export default function NpsFeedbackModal({ open, onSuccess, onMutate }) {
 
     try {
       setLoading(true);
+
+      const parser = new UAParser();
+      const result = parser.getResult();
+      const deviceType = result.device.type || 'desktop';
+      const os = [result.os.name, result.os.version].filter(Boolean).join(' ') || undefined;
+      const browser = [result.browser.name, result.browser.version].filter(Boolean).join(' ') || undefined;
+      const deviceModel = result.device.model || undefined;
+      const deviceVendor = result.device.vendor || undefined;
+
       await axiosInstance.post(endpoints.npsFeedback.root, {
         rating,
         feedback: feedback.trim() || undefined,
+        deviceType,
+        os,
+        browser,
+        deviceModel,
+        deviceVendor,
       });
       setSubmitted(true);
       onMutate?.();

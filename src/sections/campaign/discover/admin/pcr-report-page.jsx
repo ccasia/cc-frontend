@@ -5,25 +5,24 @@ import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
 import html2canvas from 'html2canvas';
+import { CSS } from '@dnd-kit/utilities';
 import { enqueueSnackbar } from 'notistack';
 import EmojiPicker from 'emoji-picker-react';
 import { useRef, useMemo, useState, useEffect } from 'react';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useSensor, DndContext, useSensors, closestCenter, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
+import { arrayMove, useSortable, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
+import { PieChart } from '@mui/x-charts';
 import SendIcon from '@mui/icons-material/Send';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
-import { Box, Grid, Link, Button, Avatar, Popover, TextField, Typography, IconButton, InputAdornment, CircularProgress, Table, TableBody, TableCell, TableHead, TableRow, Modal, Dialog, DialogContent, DialogTitle } from '@mui/material';
-import { PieChart } from '@mui/x-charts';
-
-import Iconify from 'src/components/iconify';
+import { Box, Grid, Link, Button, Avatar, Dialog, Popover, TextField, Typography, IconButton, DialogTitle, DialogContent, InputAdornment, CircularProgress } from '@mui/material';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
+import { usePostEngagementSnapshots } from 'src/hooks/use-post-engagement-snapshots';
 
 import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
 import {
@@ -33,16 +32,53 @@ import {
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
 
+import Iconify from 'src/components/iconify';
+
 const getImprovedInsightBgColor = (index) => {
   if (index === 0) return '#1340FFD9';
   if (index === 1) return '#1340FFBF';
   return '#1340FFA6';
 };
 
+const getWorkedWellInsightBgColor = (index) => {
+  if (index === 0) return 'linear-gradient(0deg, #8A5AFE, #8A5AFE)';
+  if (index === 1) return 'linear-gradient(0deg, #8A5AFE, #8A5AFE)';
+  return 'linear-gradient(0deg, #8A5AFE, #8A5AFE)';
+};
+
 const getWorkedWellOpacity = (index) => {
   if (index === 0) return 0.85;
   if (index === 1) return 0.75;
   return 0.65;
+};
+
+// Utility function to handle paste events and strip formatting
+const handlePlainTextPaste = (e) => {
+  e.preventDefault();
+  const text = e.clipboardData.getData('text/plain');
+  
+  // For contentEditable elements
+  if (e.target.contentEditable === 'true') {
+    document.execCommand('insertText', false, text);
+  } else {
+    // For regular input/textarea elements
+    const {target} = e;
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    const {value} = target;
+    
+    // Insert plain text at cursor position
+    const newValue = value.substring(0, start) + text + value.substring(end);
+    target.value = newValue;
+    
+    // Set cursor position after pasted text
+    const newCursorPos = start + text.length;
+    target.setSelectionRange(newCursorPos, newCursorPos);
+    
+    // Trigger change event
+    const event = new Event('input', { bubbles: true });
+    target.dispatchEvent(event);
+  }
 };
 
 const SortableSection = ({ id, children, isEditMode }) => {
@@ -68,7 +104,7 @@ const SortableSection = ({ id, children, isEditMode }) => {
   };
 
   const handlePointerDown = (e) => {
-    const target = e.target;
+    const {target} = e;
     const tagName = target.tagName.toLowerCase();
     if (
       tagName === 'button' ||
@@ -147,34 +183,101 @@ const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} })
     
     if (!selectedText) return;
 
-    let formattedElement;
-    if (formatType === 'bold') {
-      formattedElement = document.createElement('strong');
-    } else if (formatType === 'italic') {
-      formattedElement = document.createElement('em');
-    } else if (formatType === 'underline') {
-      formattedElement = document.createElement('u');
-    }
+    // Save the current selection
+    const {startContainer} = range;
+    const {startOffset} = range;
+    const {endContainer} = range;
+    const {endOffset} = range;
 
-    formattedElement.textContent = selectedText;
-    range.deleteContents();
-    range.insertNode(formattedElement);
+    try {
+      // Use execCommand for better browser compatibility
+      // Even though deprecated, it still works reliably across browsers
+      let command;
+      if (formatType === 'bold') {
+        command = 'bold';
+      } else if (formatType === 'italic') {
+        command = 'italic';
+      } else if (formatType === 'underline') {
+        command = 'underline';
+      }
 
-    // Move cursor after the inserted element
-    const newRange = document.createRange();
-    newRange.setStartAfter(formattedElement);
-    newRange.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(newRange);
+      // Focus the editor first
+      if (editorRef.current) {
+        editorRef.current.focus();
+      }
 
-    // Update the value
-    if (editorRef.current) {
-      onChange({ target: { value: editorRef.current.innerHTML } });
+      // Restore selection
+      const newRange = document.createRange();
+      newRange.setStart(startContainer, startOffset);
+      newRange.setEnd(endContainer, endOffset);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+
+      // Apply formatting
+      document.execCommand(command, false, null);
+
+      // Update the value
+      if (editorRef.current) {
+        onChange({ target: { value: editorRef.current.innerHTML } });
+      }
+
+      // Keep selection for potential additional formatting
+      setTimeout(() => {
+        if (editorRef.current) {
+          editorRef.current.focus();
+        }
+      }, 0);
+    } catch (error) {
+      console.error('Error applying format:', error);
+      
+      // Fallback to manual DOM manipulation
+      let formattedElement;
+      if (formatType === 'bold') {
+        formattedElement = document.createElement('strong');
+      } else if (formatType === 'italic') {
+        formattedElement = document.createElement('em');
+      } else if (formatType === 'underline') {
+        formattedElement = document.createElement('u');
+      }
+
+      formattedElement.textContent = selectedText;
+      range.deleteContents();
+      range.insertNode(formattedElement);
+
+      // Move cursor after the inserted element
+      const newRange = document.createRange();
+      newRange.setStartAfter(formattedElement);
+      newRange.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+
+      // Update the value
+      if (editorRef.current) {
+        onChange({ target: { value: editorRef.current.innerHTML } });
+      }
     }
   };
 
   const handleInput = (e) => {
     onChange({ target: { value: e.currentTarget.innerHTML } });
+  };
+
+  const handleKeyDown = (e) => {
+    // Check for Cmd (Mac) or Ctrl (Windows/Linux)
+    const isMod = e.metaKey || e.ctrlKey;
+    
+    if (isMod) {
+      if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        applyFormat('bold');
+      } else if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        applyFormat('italic');
+      } else if (e.key === 'u' || e.key === 'U') {
+        e.preventDefault();
+        applyFormat('underline');
+      }
+    }
   };
 
   return (
@@ -222,6 +325,7 @@ const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} })
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}
+        onKeyDown={handleKeyDown}
         sx={{
           minHeight: `${rows * 24}px`,
           padding: '12px',
@@ -354,6 +458,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Show third persona card state
   const [showThirdCard, setShowThirdCard] = useState(false);
   
+  // Show fourth persona card state
+  const [showFourthCard, setShowFourthCard] = useState(false);
+  
+  // Show fifth persona card state
+  const [showFifthCard, setShowFifthCard] = useState(false);
+  
   // Persona cards array state
   const [personaCards, setPersonaCards] = useState([
     {
@@ -391,6 +501,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
     thirdContentStyle: '',
     thirdWhyWork: '',
     thirdCreatorCount: '',
+    fourthTitle: '',
+    fourthEmoji: '',
+    fourthContentStyle: '',
+    fourthWhyWork: '',
+    fourthCreatorCount: '',
+    fifthTitle: '',
+    fifthEmoji: '',
+    fifthContentStyle: '',
+    fifthWhyWork: '',
+    fifthCreatorCount: '',
     personaCards: [],
     improvedInsights: [],
     workedWellInsights: [],
@@ -414,6 +534,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Preview modal state
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
+  const [isPreviewCached, setIsPreviewCached] = useState(false);
+  const [lastPreviewContent, setLastPreviewContent] = useState(null);
   
   const reportRef = useRef(null);
   const cardsContainerRef = useRef(null);
@@ -449,6 +571,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
     data: insightsData, 
     isLoading: loadingInsights 
   } = useSocialInsights(postingSubmissions, campaignId);
+
+  // Fetch post engagement snapshots (Day 7, 15, 30 ER tracking)
+  const {
+    snapshots: postSnapshots,
+    loading: loadingSnapshots,
+    error: snapshotsError
+  } = usePostEngagementSnapshots(campaignId);
 
   const manualInsightsData = useMemo(() => {
     const transformed = manualEntries.map((entry) => ({
@@ -596,11 +725,21 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                     (loadedContent.educatorContentStyle && loadedContent.educatorContentStyle.trim() !== '');
           const hasThirdContent = (loadedContent.thirdTitle && loadedContent.thirdTitle.trim() !== '') ||
                                  (loadedContent.thirdContentStyle && loadedContent.thirdContentStyle.trim() !== '');
+          const hasFourthContent = (loadedContent.fourthTitle && loadedContent.fourthTitle.trim() !== '') ||
+                                  (loadedContent.fourthContentStyle && loadedContent.fourthContentStyle.trim() !== '');
+          const hasFifthContent = (loadedContent.fifthTitle && loadedContent.fifthTitle.trim() !== '') ||
+                                 (loadedContent.fifthContentStyle && loadedContent.fifthContentStyle.trim() !== '');
           if (hasEducatorContent) {
             setShowEducatorCard(true);
           }
           if (hasThirdContent) {
             setShowThirdCard(true);
+          }
+          if (hasFourthContent) {
+            setShowFourthCard(true);
+          }
+          if (hasFifthContent) {
+            setShowFifthCard(true);
           }
         } else {
           console.log('ℹ️ No PCR data found, using defaults');
@@ -615,9 +754,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
     loadPCRData();
   }, [campaign?.id]);
   
-  // Save PCR data to backend
-  // Save content to history for undo/redo
-  const saveToHistory = (content, visibility, order, showEducator, showThird) => {
+  // Helper function to invalidate preview cache
+  const invalidatePreviewCache = () => {
+    setIsPreviewCached(false);
+  };
+  
+  const saveToHistory = (content, visibility, order, showEducator, showThird, showFourth, showFifth) => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(JSON.parse(JSON.stringify({
       content,
@@ -625,9 +767,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
       sectionOrder: order,
       showEducatorCard: showEducator,
       showThirdCard: showThird,
+      showFourthCard: showFourth,
+      showFifthCard: showFifth,
     })));
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
+    
+    // Invalidate preview cache when content changes
+    invalidatePreviewCache();
   };
 
   // Undo function
@@ -641,12 +788,30 @@ const PCRReportPage = ({ campaign, onBack }) => {
       setSectionOrder(JSON.parse(JSON.stringify(state.sectionOrder)));
       setShowEducatorCard(state.showEducatorCard);
       setShowThirdCard(state.showThirdCard);
+      setShowFourthCard(state.showFourthCard || false);
+      setShowFifthCard(state.showFifthCard || false);
+      
+      // Invalidate preview cache when undoing
+      invalidatePreviewCache();
     }
   };
   
   // Generate preview - simulates PDF export view with page breaks
   const handleGeneratePreview = async () => {
     try {
+      // Check if content has changed since last preview
+      const currentContentHash = JSON.stringify({
+        content: editableContent,
+        visibility: sectionVisibility,
+        order: sectionOrder
+      });
+      
+      // If preview is cached and content hasn't changed, just open the modal
+      if (isPreviewCached && lastPreviewContent === currentContentHash && previewImages.length > 0) {
+        setIsPreviewOpen(true);
+        return;
+      }
+      
       setIsExportingPDF(true);
       enqueueSnackbar('Generating preview...', { 
         variant: 'info',
@@ -693,9 +858,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
         setPreviewImages([imgData]);
       } else {
         // Capture each section separately and organize into pages
-        const pageHeight = 297; // A4 height in mm
-        const pageWidth = 210; // A4 width in mm
-        const margin = 5; // Reduced margin for wider sections
+        const pageHeight = 297; 
+        const pageWidth = 210;
+        const margin = 5; 
         const contentWidth = pageWidth - (2 * margin);
         const maxPageHeight = pageHeight - (2 * margin);
         
@@ -706,9 +871,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         // Batch process sections with yield to UI thread
         const processSections = async () => {
           const results = [];
-          
-          // Process sections sequentially to maintain order
-          // eslint-disable-next-line no-restricted-syntax
+
           for (let i = 0; i < sections.length; i += 1) {
             const section = sections[i];
             
@@ -721,7 +884,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             // Capture this section with high quality for preview
             // eslint-disable-next-line no-await-in-loop
             const canvas = await html2canvas(section, {
-              scale: 2, // Higher quality for preview
+              scale: 2, 
               useCORS: true,
               logging: false,
               backgroundColor: '#FFFFFF',
@@ -755,7 +918,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             height: imgHeight,
             width: imgWidth
           });
-          currentPageHeight += imgHeight + 4; // 4mm gap between sections
+          currentPageHeight += imgHeight + 4; 
         });
         
         if (currentPage.length > 0) {
@@ -763,7 +926,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         }
         
         // Create page images with gradient background at higher DPI for preview
-        const dpi = 150; // Increased DPI for better quality
+        const dpi = 150;
         const pageCanvasWidth = (pageWidth * dpi) / 25.4;
         const pageCanvasHeight = (pageHeight * dpi) / 25.4;
         
@@ -799,10 +962,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
               const sectionHeight = (section.height * dpi) / 25.4;
               
               ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
-              yOffset += sectionHeight + ((4 * dpi) / 25.4); // 4mm gap between sections
+              yOffset += sectionHeight + ((4 * dpi) / 25.4); 
             });
             
-            // Use PNG for preview to maintain quality
             pageImages.push(pageCanvas.toDataURL('image/png', 1.0));
           }
           
@@ -813,16 +975,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
         setPreviewImages(pageImages);
       }
 
-      // Show buttons again
       buttonsToHide.forEach(el => {
         el.style.display = '';
       });
-      
-      // Restore edit mode if it was active
       if (wasInEditMode) {
         setIsEditMode(true);
       }
 
+      setLastPreviewContent(currentContentHash);
+      setIsPreviewCached(true);
+      
       setIsPreviewOpen(true);
       enqueueSnackbar('Preview generated!', { 
         variant: 'success',
@@ -854,33 +1016,35 @@ const PCRReportPage = ({ campaign, onBack }) => {
       setSectionOrder(JSON.parse(JSON.stringify(state.sectionOrder)));
       setShowEducatorCard(state.showEducatorCard);
       setShowThirdCard(state.showThirdCard);
+      setShowFourthCard(state.showFourthCard || false);
+      setShowFifthCard(state.showFifthCard || false);
     }
   };
 
   // Track changes for undo/redo
   useEffect(() => {
     if (isEditMode && history.length === 0) {
-      // Initialize history when entering edit mode
-      saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard);
+      saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, showFourthCard, showFifthCard);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode]);
 
-  // Initialize Creator Tiers editor content
   useEffect(() => {
     if (creatorTiersEditorRef.current && editableContent.creatorTiersDescription) {
-      creatorTiersEditorRef.current.innerHTML = editableContent.creatorTiersDescription;
+      const isEditorFocused = document.activeElement === creatorTiersEditorRef.current;
+      
+      if (!isEditorFocused) {
+        creatorTiersEditorRef.current.innerHTML = editableContent.creatorTiersDescription;
+      }
     }
   }, [isEditMode, editableContent.creatorTiersDescription]);
 
-  // Save to history when content changes (debounced)
   useEffect(() => {
     if (!isEditMode || history.length === 0) {
       return undefined;
     }
 
     const timeoutId = setTimeout(() => {
-      // Only save if state actually changed
       const lastState = history[historyIndex];
       const currentState = {
         content: editableContent,
@@ -888,16 +1052,41 @@ const PCRReportPage = ({ campaign, onBack }) => {
         sectionOrder,
         showEducatorCard,
         showThirdCard,
+        showFourthCard,
+        showFifthCard,
       };
       
       if (JSON.stringify(lastState) !== JSON.stringify(currentState)) {
-        saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard);
+        saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, showFourthCard, showFifthCard);
       }
-    }, 500); // Debounce for 500ms
+    }, 500); 
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, isEditMode]);
+  }, [editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, showFourthCard, showFifthCard, isEditMode]);
+
+  // Global paste event listener to strip formatting from all pasted content
+  useEffect(() => {
+    const handleGlobalPaste = (e) => {
+      // Only apply to inputs, textareas, and contentEditable elements within the report
+      const {target} = e;
+      const isInReport = reportRef.current?.contains(target);
+      
+      if (isInReport && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.contentEditable === 'true'
+      )) {
+        handlePlainTextPaste(e);
+      }
+    };
+
+    document.addEventListener('paste', handleGlobalPaste);
+    
+    return () => {
+      document.removeEventListener('paste', handleGlobalPaste);
+    };
+  }, []);
 
   // Measure cards height and update chart height (Edit Mode)
   useEffect(() => {
@@ -910,7 +1099,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         if (comicCard && educatorCard) {
           const comicHeight = comicCard.offsetHeight;
           const educatorHeight = educatorCard.offsetHeight;
-          const gap = 24; // gap: 3 = 24px
+          const gap = 24; 
           const totalHeight = comicHeight + gap + educatorHeight;
           setCardsHeight(totalHeight);
         }
@@ -929,7 +1118,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [showEducatorCard, showThirdCard, editableContent.comicContentStyle, editableContent.educatorContentStyle, editableContent.thirdContentStyle]);
+  }, [showEducatorCard, showThirdCard, showFourthCard, showFifthCard, editableContent.comicContentStyle, editableContent.educatorContentStyle, editableContent.thirdContentStyle, editableContent.fourthContentStyle, editableContent.fifthContentStyle]);
 
   useEffect(() => {
     const updateDisplayCardsHeight = () => {
@@ -962,14 +1151,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [showEducatorCard, showThirdCard, editableContent.comicContentStyle, editableContent.educatorContentStyle, editableContent.thirdContentStyle]);
+  }, [showEducatorCard, showThirdCard, showFourthCard, showFifthCard, editableContent.comicContentStyle, editableContent.educatorContentStyle, editableContent.thirdContentStyle, editableContent.fourthContentStyle, editableContent.fifthContentStyle]);
 
   const handleSavePCR = async () => {
     if (!campaign?.id) return;
     
     try {
       setIsSaving(true);
-      console.log('💾 Saving PCR data for campaign:', campaign.id);
+      console.log('Saving PCR data for campaign:', campaign.id);
       
       const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
         content: {
@@ -1017,8 +1206,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                       (loadedContent.educatorContentStyle && loadedContent.educatorContentStyle.trim() !== '');
             const hasThirdContent = (loadedContent.thirdTitle && loadedContent.thirdTitle.trim() !== '') ||
                                    (loadedContent.thirdContentStyle && loadedContent.thirdContentStyle.trim() !== '');
+            const hasFourthContent = (loadedContent.fourthTitle && loadedContent.fourthTitle.trim() !== '') ||
+                                    (loadedContent.fourthContentStyle && loadedContent.fourthContentStyle.trim() !== '');
+            const hasFifthContent = (loadedContent.fifthTitle && loadedContent.fifthTitle.trim() !== '') ||
+                                   (loadedContent.fifthContentStyle && loadedContent.fifthContentStyle.trim() !== '');
             setShowEducatorCard(hasEducatorContent);
             setShowThirdCard(hasThirdContent);
+            setShowFourthCard(hasFourthContent);
+            setShowFifthCard(hasFifthContent);
             
             // Force remeasure of card heights after DOM updates
             setTimeout(() => {
@@ -1093,35 +1288,37 @@ const PCRReportPage = ({ campaign, onBack }) => {
         // Keep borderRadius for curved edges in PDF
       });
 
+      // Wait for charts to fully render (especially SVG-based charts like PieChart)
+      await new Promise(resolve => { setTimeout(resolve, 500); });
+
       // eslint-disable-next-line new-cap
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
-        compress: true, // Enable compression
+        compress: false, // Disable compression for HD quality
       });
 
       const pageWidth = 210; 
       const pageHeight = 297; 
-      const margin = 5; // Reduced margin for wider sections
+      const margin = 5; 
       const contentWidth = pageWidth - (2 * margin);
       
       const addGradientBackground = async () => {
         const gradientCanvas = document.createElement('canvas');
-        const dpi = 96;
+        const dpi = 600; // Ultra-HD DPI (maximum practical quality)
         gradientCanvas.width = (pageWidth * dpi) / 25.4;
         gradientCanvas.height = (pageHeight * dpi) / 25.4;
         const ctx = gradientCanvas.getContext('2d');
         
-        // Create smooth gradient
         const gradient = ctx.createLinearGradient(0, 0, 0, gradientCanvas.height);
         gradient.addColorStop(0, '#1340FF');
         gradient.addColorStop(1, '#8A5AFE');
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, gradientCanvas.width, gradientCanvas.height);
         
-        const gradientData = gradientCanvas.toDataURL('image/jpeg', 0.95);
-        pdf.addImage(gradientData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+        const gradientData = gradientCanvas.toDataURL('image/png'); // PNG for lossless quality
+        pdf.addImage(gradientData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'SLOW');
       };
       
       const sections = pdfContainer.querySelectorAll('.pcr-section');
@@ -1129,21 +1326,75 @@ const PCRReportPage = ({ campaign, onBack }) => {
       if (sections.length === 0) {
         await addGradientBackground();
 
-        const canvas = await html2canvas(pdfContainer, {
-          scale: 1.5, 
-          useCORS: true,
-          logging: false,
-          backgroundColor: null,
-          windowWidth: 1078,
+      const canvas = await html2canvas(pdfContainer, {
+          scale: 3, // Higher scale for better quality
+        useCORS: true,
+        logging: false,
+        backgroundColor: null,
+        windowWidth: 1078,
+          windowHeight: pdfContainer.scrollHeight,
           imageTimeout: 0,
           removeContainer: true,
+          allowTaint: true,
+          foreignObjectRendering: false,
+          onclone: (clonedDoc) => {
+            // Fix all elements to match original styling
+            const allElements = clonedDoc.querySelectorAll('*');
+            allElements.forEach((el) => {
+              try {
+                const original = pdfContainer.querySelector(`[data-cursor-element-id="${el.dataset.cursorElementId}"]`) || el;
+                const computedStyle = window.getComputedStyle(original);
+                
+                // Preserve all visual styles
+                if (computedStyle.background && computedStyle.background !== 'none') {
+                  el.style.background = computedStyle.background;
+                }
+                if (computedStyle.boxShadow && computedStyle.boxShadow !== 'none') {
+                  el.style.boxShadow = computedStyle.boxShadow;
+                }
+                if (computedStyle.borderRadius && computedStyle.borderRadius !== '0px') {
+                  el.style.borderRadius = computedStyle.borderRadius;
+                }
+                if (computedStyle.filter && computedStyle.filter !== 'none') {
+                  el.style.filter = computedStyle.filter;
+                }
+                if (computedStyle.opacity && computedStyle.opacity !== '1') {
+                  el.style.opacity = computedStyle.opacity;
+                }
+                
+                // Font rendering
+                el.style.webkitFontSmoothing = 'antialiased';
+                el.style.mozOsxFontSmoothing = 'grayscale';
+                el.style.textRendering = 'optimizeLegibility';
+              } catch (e) {
+                // Skip if element not found
+              }
+            });
+            
+            // Fix images - prevent stretching
+            const allImages = clonedDoc.querySelectorAll('img');
+            allImages.forEach((img) => {
+              img.style.objectFit = 'contain';
+              img.style.maxWidth = '100%';
+              img.style.height = 'auto';
+              img.style.display = 'block';
+            });
+            
+            // Fix SVG charts
+            const allSvgs = clonedDoc.querySelectorAll('svg');
+            allSvgs.forEach((svg) => {
+              svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+              svg.style.display = 'block';
+              svg.style.visibility = 'visible';
+            });
+          },
         });
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
+        const imgData = canvas.toDataURL('image/png'); // PNG for lossless quality
         const imgWidth = contentWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
-        pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight, undefined, 'FAST');
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight, undefined, 'SLOW');
       } else {
         // Add gradient to first page
         await addGradientBackground();
@@ -1153,8 +1404,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
         let isFirstSection = true;
 
         const processPdfSections = async () => {
-          // Process sections sequentially to maintain order and add to PDF
-          // eslint-disable-next-line no-restricted-syntax
           for (let i = 0; i < sections.length; i += 1) {
             const section = sections[i];
             
@@ -1163,34 +1412,86 @@ const PCRReportPage = ({ campaign, onBack }) => {
               // eslint-disable-next-line no-await-in-loop
               await new Promise(resolve => { setTimeout(resolve, 0); });
             }
-            
-            // Capture this section with optimized settings
+
+            // Sequential processing is required for PDF generation
             // eslint-disable-next-line no-await-in-loop
             const canvas = await html2canvas(section, {
-              scale: 1.5, // Reduced from 2 for better performance
+              scale: 3, // Higher scale for better quality
               useCORS: true,
               logging: false,
               backgroundColor: '#FFFFFF',
               windowWidth: 1078,
+              windowHeight: section.scrollHeight,
               imageTimeout: 0,
               removeContainer: true,
+              allowTaint: true,
+              foreignObjectRendering: false,
+              onclone: (clonedDoc) => {
+                // Fix all elements to match original styling
+                const allElements = clonedDoc.querySelectorAll('*');
+                allElements.forEach((el) => {
+                  try {
+                    const original = section.querySelector(`[data-cursor-element-id="${el.dataset.cursorElementId}"]`) || el;
+                    const computedStyle = window.getComputedStyle(original);
+                    
+                    // Preserve all visual styles
+                    if (computedStyle.background && computedStyle.background !== 'none') {
+                      el.style.background = computedStyle.background;
+                    }
+                    if (computedStyle.boxShadow && computedStyle.boxShadow !== 'none') {
+                      el.style.boxShadow = computedStyle.boxShadow;
+                    }
+                    if (computedStyle.borderRadius && computedStyle.borderRadius !== '0px') {
+                      el.style.borderRadius = computedStyle.borderRadius;
+                    }
+                    if (computedStyle.filter && computedStyle.filter !== 'none') {
+                      el.style.filter = computedStyle.filter;
+                    }
+                    if (computedStyle.opacity && computedStyle.opacity !== '1') {
+                      el.style.opacity = computedStyle.opacity;
+                    }
+                    
+                    // Font rendering
+                    el.style.webkitFontSmoothing = 'antialiased';
+                    el.style.mozOsxFontSmoothing = 'grayscale';
+                    el.style.textRendering = 'optimizeLegibility';
+                  } catch (e) {
+                    // Skip if element not found
+                  }
+                });
+                
+                // Fix images - prevent stretching
+                const allImages = clonedDoc.querySelectorAll('img');
+                allImages.forEach((img) => {
+                  img.style.objectFit = 'contain';
+                  img.style.maxWidth = '100%';
+                  img.style.height = 'auto';
+                  img.style.display = 'block';
+                });
+                
+                // Fix SVG charts
+                const allSvgs = clonedDoc.querySelectorAll('svg');
+                allSvgs.forEach((svg) => {
+                  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                  svg.style.display = 'block';
+                  svg.style.visibility = 'visible';
+                });
+              },
             });
 
-            const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG with 90% quality
+            const imgData = canvas.toDataURL('image/png'); // PNG for lossless quality
             const imgWidth = contentWidth;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
-            // Check if section fits on current page
+
             if (currentY + imgHeight > pageHeight - margin && !isFirstSection) {
-              pdf.addPage();
+        pdf.addPage();
               // eslint-disable-next-line no-await-in-loop
               await addGradientBackground();
               currentY = margin;
             }
             
-            // Add section to PDF with FAST compression
-            pdf.addImage(imgData, 'JPEG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
-            currentY += imgHeight + 4; // Add 4mm gap between sections
+            pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight, undefined, 'SLOW');
+            currentY += imgHeight + 4; 
             
             isFirstSection = false;
           }
@@ -1232,7 +1533,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const response = await axios.post(`/api/campaign/${campaign.id}/trends/refresh`);
       console.log('Refresh response:', response.data);
       alert('Insights refreshed! Please wait a moment and refresh the page.');
-      // Revalidate the heatmap data
       window.location.reload();
     } catch (error) {
       console.error('Error refreshing insights:', error);
@@ -1248,53 +1548,218 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const postingEndDate = campaign?.campaignBrief?.postingEndDate;
       
       if (!postingStartDate || !postingEndDate) {
-        console.log('No posting period dates available');
-        console.log('Campaign Brief:', campaign?.campaignBrief);
         return [];
       }
 
       const campaignStart = new Date(postingStartDate);
       const campaignEnd = new Date(postingEndDate);
       const campaignDuration = (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24);
-      
 
-      const firstWeekStart = 1; 
-      const firstWeekEnd = 8; 
-      const midCampaignStart = 12; 
-      const midCampaignEnd = campaignDuration; 
-      const afterPeriodStart = campaignDuration; 
-      const afterPeriodEnd = campaignDuration + 7;
+      // Phase definitions (Day 7, 15, 30 from campaign start)
+      const firstWeekStart = 0; // Day 0
+      const firstWeekEnd = 7; // Day 7
+      const midPeriodDay = 15; // Day 15
+      const finalWeekStart = 25; // Day 25
+      const finalWeekEnd = 30; // Day 30
 
       const creatorPhaseData = new Map();
+
+      // Use snapshot data if available
+      if (postSnapshots && postSnapshots.length > 0) {
+        console.log('📸 Using snapshot data for heatmap:', postSnapshots.length, 'posts');
+        
+        postSnapshots.forEach((snapshot) => {
+          const {userId} = snapshot;
+          
+          if (!creatorPhaseData.has(userId)) {
+            // Find the submission to get creator info
+            const submission = filteredSubmissions.find(
+              (sub) => sub.id === snapshot.submissionId
+            );
+            
+            const username = submission?.user?.username;
+            const name = submission?.user?.name;
+            const creatorName = submission?.user?.creator?.name;
+            const displayName = username || name || creatorName || 'Unknown';
+            
+            creatorPhaseData.set(userId, {
+              userId,
+              name: displayName,
+              isManualEntry: false,
+              day7: null,
+              day15: null,
+              day30: null,
+              overallER: 0,
+              snapshotCount: 0,
+            });
+          }
+
+          const creatorData = creatorPhaseData.get(userId);
+          
+          // Map snapshot days to phase data
+          if (snapshot.snapshots.day7) {
+            creatorData.day7 = snapshot.snapshots.day7.er;
+            creatorData.overallER += snapshot.snapshots.day7.er;
+            creatorData.snapshotCount += 1;
+          }
+          if (snapshot.snapshots.day15) {
+            creatorData.day15 = snapshot.snapshots.day15.er;
+            creatorData.overallER += snapshot.snapshots.day15.er;
+            creatorData.snapshotCount += 1;
+          }
+          if (snapshot.snapshots.day30) {
+            creatorData.day30 = snapshot.snapshots.day30.er;
+            creatorData.overallER += snapshot.snapshots.day30.er;
+            creatorData.snapshotCount += 1;
+          }
+        });
+
+        // Calculate average ER
+        const creatorsWithAverages = Array.from(creatorPhaseData.values()).map(creator => {
+          const avgER = creator.snapshotCount > 0 
+            ? creator.overallER / creator.snapshotCount 
+            : 0;
+
+        return {
+            userId: creator.userId,
+            name: creator.name,
+            isManualEntry: creator.isManualEntry,
+            firstWeek: creator.day7,
+            midPeriod: creator.day15,
+            finalWeek: creator.day30,
+            overallER: avgER,
+            firstPostPhase: 'firstWeek', // All posts have snapshots from day 7
+          };
+        });
+
+        // Sort by overall ER and take top 5
+        const top5 = creatorsWithAverages
+          .filter(c => c.overallER > 0)
+          .sort((a, b) => b.overallER - a.overallER)
+          .slice(0, 5);
+
+        console.log('🏆 Top 5 creators from snapshots:', top5.length);
+        return top5;
+      }
+
+      // Fallback to old logic if no snapshots available
+      console.log('⚠️ No snapshot data available, using current insights');
+      creatorPhaseData.clear(); // Clear the map for fallback logic
+      
+      console.log('📊 Processing insights:', filteredInsightsData.length);
+      console.log('📊 Processing submissions:', filteredSubmissions.length);
       
       filteredInsightsData.forEach((insightData, idx) => {
         const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
-        if (!submission) return;
+        if (!submission) {
+          console.log(`⚠️ No submission found for insight ${idx}`);
+          return;
+        }
 
-        // Get post date
+        // Get post date - prioritize actual post date from Instagram/TikTok
         let postDate = null;
-        if (insightData.insight?.timestamp) {
-          postDate = new Date(insightData.insight.timestamp * 1000);
-        } else if (submission.createdAt) {
-          postDate = new Date(submission.createdAt);
+        
+        console.log(`\n🔍 Post ${idx} - Looking for date:`);
+        console.log('  video object:', insightData.video);
+        console.log('  video.taken_at:', insightData.video?.taken_at);
+        console.log('  video.timestamp:', insightData.video?.timestamp);
+        
+        // For Instagram: check video.taken_at field
+        if (insightData.video?.taken_at) {
+          const takenAt = insightData.video.taken_at;
+          console.log('  Trying taken_at:', takenAt, 'type:', typeof takenAt);
+          
+          // Check if it's already a valid date string or needs conversion
+          if (typeof takenAt === 'string') {
+            postDate = new Date(takenAt);
+          } else if (typeof takenAt === 'number') {
+            postDate = new Date(takenAt * 1000);
+          }
+          
+          if (postDate && !Number.isNaN(postDate.getTime())) {
+            console.log(`📸 Using Instagram video.taken_at: ${postDate.toISOString()}`);
+          } else {
+            postDate = null;
+          }
         }
         
-        if (!postDate) return;
+        // For Instagram: check video.timestamp field
+        if (!postDate && insightData.video?.timestamp) {
+          const {timestamp} = insightData.video;
+          console.log('  Trying timestamp:', timestamp, 'type:', typeof timestamp);
+          
+          if (typeof timestamp === 'string') {
+            postDate = new Date(timestamp);
+          } else if (typeof timestamp === 'number') {
+            postDate = new Date(timestamp * 1000);
+          }
+          
+          if (postDate && !Number.isNaN(postDate.getTime())) {
+            console.log(`📸 Using Instagram video.timestamp: ${postDate.toISOString()}`);
+          } else {
+            postDate = null;
+          }
+        }
+        
+        // For TikTok: use video.create_time field
+        if (!postDate && insightData.video?.create_time) {
+          const createTime = insightData.video.create_time;
+          console.log('  Trying create_time:', createTime, 'type:', typeof createTime);
+          
+          if (typeof createTime === 'string') {
+            postDate = new Date(createTime);
+          } else if (typeof createTime === 'number') {
+            postDate = new Date(createTime * 1000);
+          }
+          
+          if (postDate && !Number.isNaN(postDate.getTime())) {
+            console.log(`📸 Using TikTok video.create_time: ${postDate.toISOString()}`);
+          } else {
+            postDate = null;
+          }
+        }
+        
+        // Fallback to submission created date
+        if (!postDate && submission.createdAt) {
+          postDate = new Date(submission.createdAt);
+          if (postDate && !Number.isNaN(postDate.getTime())) {
+            console.log(`📝 Using submission createdAt: ${postDate.toISOString()}`);
+            console.log(`⚠️ Warning: Using submission date instead of actual post date!`);
+          } else {
+            postDate = null;
+          }
+        }
+        
+        if (!postDate || Number.isNaN(postDate.getTime())) {
+          console.log(`⚠️ No valid post date for submission ${idx}`);
+          return;
+        }
 
-        // Calculate days from campaign start
         const daysFromStart = (postDate - campaignStart) / (1000 * 60 * 60 * 24);
+        console.log(`📅 Post ${idx}: ${daysFromStart.toFixed(1)} days from start (${postDate.toISOString()})`);
+        console.log(`   Campaign: ${campaignStart.toISOString()} to ${campaignEnd.toISOString()}`);
         
         // Determine which phase this post belongs to
         let phase = null;
         if (daysFromStart >= firstWeekStart && daysFromStart <= firstWeekEnd) {
           phase = 'firstWeek';
-        } else if (daysFromStart >= midCampaignStart && daysFromStart <= midCampaignEnd) {
-          phase = 'midCampaign';
-        } else if (daysFromStart >= afterPeriodStart && daysFromStart <= afterPeriodEnd) {
-          phase = 'afterPeriod';
+        } else if (daysFromStart > firstWeekEnd && daysFromStart < finalWeekStart) {
+          phase = 'midPeriod';
+        } else if (daysFromStart >= finalWeekStart && daysFromStart <= finalWeekEnd) {
+          phase = 'finalWeek';
         }
         
-        if (!phase) return;
+        // Skip posts outside campaign period
+        if (!phase || daysFromStart < 0 || daysFromStart > campaignDuration) {
+          if (daysFromStart < 0) {
+            console.log(`⚠️ Post ${idx} is BEFORE campaign start (${Math.abs(daysFromStart).toFixed(1)} days before)`);
+          } else {
+            console.log(`⚠️ Post ${idx} is AFTER campaign end (${(daysFromStart - campaignDuration).toFixed(1)} days after)`);
+          }
+          return;
+        }
+        
+        console.log(`✅ Post ${idx} assigned to ${phase}`);
 
         // Get creator identifier
         const userId = typeof submission.user === 'string' ? submission.user : submission.user?.id;
@@ -1322,11 +1787,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
             isManualEntry,
             creatorUsername: platformUsername,
             firstWeek: [],
-            midCampaign: [],
-            afterPeriod: [],
+            midPeriod: [],
+            finalWeek: [],
             totalER: 0,
             postCount: 0,
             firstPostPhase: null,
+            firstPostDay: null, // Track when they first posted
           });
         }
 
@@ -1334,13 +1800,29 @@ const PCRReportPage = ({ campaign, onBack }) => {
         const engagementRate = parseFloat(calculateEngagementRate(insightData.insight));
         
         if (!Number.isNaN(engagementRate) && engagementRate > 0) {
+          // Add the ER to the phase where the post was made
           creatorData[phase].push(engagementRate);
+          
+          // Also add the same ER to all future phases (same post tracked over time)
+          if (phase === 'firstWeek') {
+            // If posted in first week, also track in mid period and final week
+            creatorData.midPeriod.push(engagementRate);
+            creatorData.finalWeek.push(engagementRate);
+          } else if (phase === 'midPeriod') {
+            // If posted in mid period, also track in final week
+            creatorData.finalWeek.push(engagementRate);
+          }
+          // If posted in finalWeek, only track there
+          
           creatorData.totalER += engagementRate;
           creatorData.postCount += 1;
           
-          // Track first post phase
+          // Track first post phase and day
           if (!creatorData.firstPostPhase) {
             creatorData.firstPostPhase = phase;
+            creatorData.firstPostDay = daysFromStart;
+            console.log(`🎯 Creator's first post: Day ${daysFromStart.toFixed(1)} in ${phase}`);
+            console.log(`   → Will track this post's ER (${engagementRate.toFixed(2)}%) across all future periods`);
           }
         }
       });
@@ -1351,26 +1833,31 @@ const PCRReportPage = ({ campaign, onBack }) => {
           ? creator.firstWeek.reduce((a, b) => a + b, 0) / creator.firstWeek.length
           : null;
         
-        const midCampaignAvg = creator.midCampaign.length > 0
-          ? creator.midCampaign.reduce((a, b) => a + b, 0) / creator.midCampaign.length
+        const midPeriodAvg = creator.midPeriod.length > 0
+          ? creator.midPeriod.reduce((a, b) => a + b, 0) / creator.midPeriod.length
           : null;
         
-        const afterPeriodAvg = creator.afterPeriod.length > 0
-          ? creator.afterPeriod.reduce((a, b) => a + b, 0) / creator.afterPeriod.length
+        const finalWeekAvg = creator.finalWeek.length > 0
+          ? creator.finalWeek.reduce((a, b) => a + b, 0) / creator.finalWeek.length
           : null;
 
-        let showFirstWeek = firstWeekAvg !== null;
-        let showMidCampaign = midCampaignAvg !== null;
-        const showAfterPeriod = afterPeriodAvg !== null;
+        // Determine which bars to show based on when they first posted
+        let showFirstWeek = false;
+        let showMidPeriod = false;
+        let showFinalWeek = false;
         
-        if (creator.firstPostPhase === 'midCampaign') {
-          showMidCampaign = false;
-        }
-        
-        // If first post was in after period, only show after period
-        if (creator.firstPostPhase === 'afterPeriod') {
-          showFirstWeek = false;
-          showMidCampaign = false;
+        if (creator.firstPostPhase === 'firstWeek') {
+          // Posted in first week → show all 3 bars
+          showFirstWeek = true;
+          showMidPeriod = true;
+          showFinalWeek = true;
+        } else if (creator.firstPostPhase === 'midPeriod') {
+          // Posted in mid period → show mid period and final week
+          showMidPeriod = true;
+          showFinalWeek = true;
+        } else if (creator.firstPostPhase === 'finalWeek') {
+          // Posted in final week → show only final week
+          showFinalWeek = true;
         }
 
         return {
@@ -1378,10 +1865,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
           name: creator.name,
           isManualEntry: creator.isManualEntry,
           creatorUsername: creator.creatorUsername,
-          firstWeek: showFirstWeek ? firstWeekAvg : null,
-          midCampaign: showMidCampaign ? midCampaignAvg : null,
-          afterPeriod: showAfterPeriod ? afterPeriodAvg : null,
+          // Show bars based on when they first posted, use 0 if no data yet
+          firstWeek: showFirstWeek ? (firstWeekAvg || 0) : null,
+          midPeriod: showMidPeriod ? (midPeriodAvg || 0) : null,
+          finalWeek: showFinalWeek ? (finalWeekAvg || 0) : null,
           overallER: creator.postCount > 0 ? creator.totalER / creator.postCount : 0,
+          firstPostPhase: creator.firstPostPhase,
         };
       });
 
@@ -1391,15 +1880,43 @@ const PCRReportPage = ({ campaign, onBack }) => {
         .sort((a, b) => b.overallER - a.overallER)
         .slice(0, 5);
 
+      console.log('🏆 Top 5 creators with phase data:', top5.length);
+      top5.forEach((c, i) => {
+        console.log(`${i + 1}. ${c.name}: Overall ER ${c.overallER.toFixed(2)}% (First posted in: ${c.firstPostPhase})`);
+        
+        // Format First Week
+        let firstWeekDisplay = 'hidden';
+        if (c.firstWeek !== null) {
+          firstWeekDisplay = c.firstWeek ? `${c.firstWeek.toFixed(2)}%` : '0% (no data)';
+        }
+        console.log(`   First Week: ${firstWeekDisplay}`);
+        
+        // Format Mid Period
+        let midPeriodDisplay = 'hidden';
+        if (c.midPeriod !== null) {
+          midPeriodDisplay = c.midPeriod ? `${c.midPeriod.toFixed(2)}%` : '0% (no data)';
+        }
+        console.log(`   Mid Period: ${midPeriodDisplay}`);
+        
+        // Format Final Week
+        let finalWeekDisplay = 'hidden';
+        if (c.finalWeek !== null) {
+          finalWeekDisplay = c.finalWeek ? `${c.finalWeek.toFixed(2)}%` : '0% (no data)';
+        }
+        console.log(`   Final Week: ${finalWeekDisplay}`);
+        
+        const boxCount = [c.firstWeek, c.midPeriod, c.finalWeek].filter(v => v !== null).length;
+        console.log(`   → Will show ${boxCount} bar(s)`);
+      });
+
       return top5;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filteredInsightsData, filteredSubmissions, campaign]);
+    }, [filteredInsightsData, filteredSubmissions, campaign, postSnapshots]);
 
     const creatorIdsToFetch = top5CreatorsPhases
       .filter(c => !c.isManualEntry && c.userId)
       .map(c => c.userId);
     
-    // Call hooks for each creator ID (up to 5 creators)
     const creator0Data = useGetCreatorById(creatorIdsToFetch[0] || null);
     const creator1Data = useGetCreatorById(creatorIdsToFetch[1] || null);
     const creator2Data = useGetCreatorById(creatorIdsToFetch[2] || null);
@@ -1540,13 +2057,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
                 {/* Phase boxes */}
                 <Box sx={{ display: 'flex', gap: '8px', flex: 1 }}>
-                  {/* First Week of Post - only show if has data */}
+                  {/* First Week - show if creator posted in first week */}
                   {creator.firstWeek !== null && (
             <Box 
               sx={{ 
                         flex: 1,
                         height: '40px',
-                        backgroundColor: getPhaseColor(creator.firstWeek),
+                        backgroundColor: creator.firstWeek ? getPhaseColor(creator.firstWeek) : '#E5E7EB',
                 display: 'flex',
                 alignItems: 'center',
                         justifyContent: 'center'
@@ -1557,21 +2074,21 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           fontFamily: 'Aileron',
                           fontSize: '16px',
                           fontWeight: 600,
-                          color: '#FFFFFF'
+                          color: creator.firstWeek ? '#FFFFFF' : '#9CA3AF'
                         }}
                       >
-                        {creator.firstWeek.toFixed(1)}%
+                        {creator.firstWeek ? `${creator.firstWeek.toFixed(1)}%` : '-'}
                       </Typography>
             </Box>
                   )}
 
-                  {/* Mid Posting Period - only show if has data */}
-                  {creator.midCampaign !== null && (
+                  {/* Mid Period - show if creator posted in first week or mid period */}
+                  {creator.midPeriod !== null && (
             <Box 
               sx={{ 
                         flex: 1,
                         height: '40px',
-                        backgroundColor: getPhaseColor(creator.midCampaign),
+                        backgroundColor: creator.midPeriod ? getPhaseColor(creator.midPeriod) : '#E5E7EB',
                 display: 'flex',
                 alignItems: 'center',
                         justifyContent: 'center'
@@ -1582,23 +2099,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           fontFamily: 'Aileron',
                           fontSize: '16px',
                           fontWeight: 600,
-                          color: '#FFFFFF'
+                          color: creator.midPeriod ? '#FFFFFF' : '#9CA3AF'
                         }}
                       >
-                        {creator.midCampaign.toFixed(1)}%
+                        {creator.midPeriod ? `${creator.midPeriod.toFixed(1)}%` : '-'}
                       </Typography>
             </Box>
                   )}
 
-                  {/* 1 Week After Posting Period - only show if has data */}
-                  {creator.afterPeriod !== null && (
+                  {/* Final Week - always show (all creators should have this) */}
+                  {creator.finalWeek !== null && (
                     <Box
               sx={{ 
                         flex: 1,
                         height: '40px',
-                        backgroundColor: getPhaseColor(creator.afterPeriod),
-                        display: 'flex',
-                        alignItems: 'center',
+                        backgroundColor: creator.finalWeek ? getPhaseColor(creator.finalWeek) : '#E5E7EB',
+                display: 'flex',
+                alignItems: 'center',
                         justifyContent: 'center'
                       }}
                     >
@@ -1607,10 +2124,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           fontFamily: 'Aileron',
                           fontSize: '16px',
                 fontWeight: 600,
-                          color: '#FFFFFF'
+                          color: creator.finalWeek ? '#FFFFFF' : '#9CA3AF'
               }}
             >
-                        {creator.afterPeriod.toFixed(1)}%
+                        {creator.finalWeek ? `${creator.finalWeek.toFixed(1)}%` : '-'}
           </Typography>
         </Box>
                   )}
@@ -1622,20 +2139,32 @@ const PCRReportPage = ({ campaign, onBack }) => {
         )}
 
         {/* Phase labels and legend - only show if there's data */}
-        {displayData.length > 0 && (
+        {displayData.length > 0 && (() => {
+          // Determine which phases have data across all creators
+          const hasFirstWeek = displayData.some(c => c.firstWeek !== null);
+          const hasMidPeriod = displayData.some(c => c.midPeriod !== null);
+          const hasFinalWeek = displayData.some(c => c.finalWeek !== null);
+          
+          return (
         <>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px', mt: 'auto' }}>
             <Box sx={{ minWidth: '80px' }} /> 
             <Box sx={{ display: 'flex', gap: '8px', flex: 1 }}>
-              <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
-                First Week of Post
-              </Typography>
-              <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
-                Mid Posting Period
-              </Typography>
-              <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
-                1 Week After Posting Period
-              </Typography>
+              {hasFirstWeek && (
+                <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
+                  First Week of Post
+                </Typography>
+              )}
+              {hasMidPeriod && (
+                <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
+                  Mid Posting Period
+                </Typography>
+              )}
+              {hasFinalWeek && (
+                <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'Aileron', fontSize: '11px', fontWeight: 400, color: '#231F20', whiteSpace: 'nowrap' }}>
+                  1 Week after P.Period
+                </Typography>
+              )}
             </Box>
           </Box>
 
@@ -1661,7 +2190,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Box>
           </Box>
         </>
-        )}
+          );
+        })()}
       </Box>
     );
   };
@@ -1723,10 +2253,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
     
     const startAngle = -135; 
     
-    const chartData = [
+    const chartData = useMemo(() => [
       { id: 0, value: platformData.tiktok, label: 'TikTok', color: '#000000' },
       { id: 1, value: platformData.instagram, label: 'Instagram', color: '#C13584' },
-    ].filter((item) => item.value > 0);
+    ].filter((item) => item.value > 0), [platformData.tiktok, platformData.instagram]);
 
     return (
       <Box
@@ -2261,7 +2791,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const likes = getMetricValue(insightData.insight, 'likes');
       if (likes > maxLikes) {
         maxLikes = likes;
-        result = { submission, insightData, likes };
+        result = { submission, insightData, likes, platform: insightData.platform || submission.platform };
       }
     });
     
@@ -2278,15 +2808,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const shares = getMetricValue(insightData.insight, 'shares');
       if (shares > maxShares) {
         maxShares = shares;
-        result = { submission, insightData, shares };
+        result = { submission, insightData, shares, platform: insightData.platform || submission.platform };
       }
     });
     
     return result;
   }, [filteredInsightsData, filteredSubmissions]);
 
-  // Get creator data for all cards
-  // For manual entries, submission.user is an object; for regular ones, it's a string ID
   const mostViewsUserId = typeof mostViewsCreator?.submission?.user === 'string' 
     ? mostViewsCreator?.submission?.user 
     : mostViewsCreator?.submission?.user?.id;
@@ -2399,21 +2927,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
         {/* Bar Chart */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', mt: 1 }}>
           {top5Creators.map((creator, index) => {
-            // Check if this is a manual entry (user.id matches submission.id)
-            const isManualEntry = creator.submission.user?.id === creator.submission.id;
+            const creatorData = creatorDataList[index]?.data;
             
-            let username;
-            if (isManualEntry) {
-              // For manual entries, get username from submission data
-              username = creator.platform === 'Instagram' 
-                ? creator.submission.user?.creator?.instagram 
-                : creator.submission.user?.creator?.tiktok;
+            // Try multiple sources for username with comprehensive fallbacks
+            let username = null;
+            if (creator.platform === 'Instagram') {
+              username = creatorData?.user?.creator?.instagram 
+                || creator.submission.user?.creator?.instagram 
+                || creator.submission.user?.username
+                || creator.submission.user?.name
+                || creatorData?.user?.username
+                || creatorData?.user?.name;
             } else {
-              // For regular creators, get from fetched data
-              const creatorData = creatorDataList[index]?.data;
-              username = creator.platform === 'Instagram' 
-                ? creatorData?.user?.creator?.instagram 
-                : creatorData?.user?.creator?.tiktok;
+              username = creatorData?.user?.creator?.tiktok 
+                || creator.submission.user?.creator?.tiktok 
+                || creator.submission.user?.username
+                || creator.submission.user?.name
+                || creatorData?.user?.username
+                || creatorData?.user?.name;
             }
             
             // Gradient colors from darkest to lightest purple
@@ -2436,14 +2967,30 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       display: 'inline-block'
                     }}
                   />
-                  <Typography sx={{
-                    fontFamily: 'Aileron',
-                    fontSize: '16px',
-                    fontWeight: 400,
-                    color: '#636366'
-                  }}>
-                    {username || 'Unknown'}
+                  <Link
+                    href={creator.submission.postingLink || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline'
+                      }
+                    }}
+                  >
+                    <Typography sx={{
+                      fontFamily: 'Aileron',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#636366',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        color: '#1340FF'
+                      }
+                    }}>
+                      {username || 'Unknown'}
         </Typography>
+                  </Link>
                 </Box>
 
                 {/* Progress bar and value on bottom */}
@@ -2564,24 +3111,26 @@ const PCRReportPage = ({ campaign, onBack }) => {
         {/* Bar Chart */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', mt: 1 }}>
           {top5Creators.map((creator, index) => {
-            // Check if this is a manual entry (user.id matches submission.id)
-            const isManualEntry = creator.submission.user?.id === creator.submission.id;
+            const creatorData = creatorDataList[index]?.data;
             
-            let username;
-            if (isManualEntry) {
-              // For manual entries, get username from submission data
-              username = creator.platform === 'Instagram' 
-                ? creator.submission.user?.creator?.instagram 
-                : creator.submission.user?.creator?.tiktok;
+            // Try multiple sources for username with comprehensive fallbacks
+            let username = null;
+            if (creator.platform === 'Instagram') {
+              username = creatorData?.user?.creator?.instagram 
+                || creator.submission.user?.creator?.instagram 
+                || creator.submission.user?.username
+                || creator.submission.user?.name
+                || creatorData?.user?.username
+                || creatorData?.user?.name;
             } else {
-              // For regular creators, get from fetched data
-              const creatorData = creatorDataList[index]?.data;
-              username = creator.platform === 'Instagram' 
-                ? creatorData?.user?.creator?.instagram 
-                : creatorData?.user?.creator?.tiktok;
+              username = creatorData?.user?.creator?.tiktok 
+                || creator.submission.user?.creator?.tiktok 
+                || creator.submission.user?.username
+                || creator.submission.user?.name
+                || creatorData?.user?.username
+                || creatorData?.user?.name;
             }
             
-            // Calculate opacity: 1st = 100%, 2nd = 90%, 3rd = 80%, 4th = 70%, 5th = 60%
             const opacity = 1 - (index * 0.1);
             
             return (
@@ -2600,14 +3149,30 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       display: 'inline-block'
                     }}
                   />
-                  <Typography sx={{
-                    fontFamily: 'Aileron',
-                    fontSize: '16px',
-                    fontWeight: 400,
-                    color: '#636366'
-                  }}>
-                    {username || 'Unknown'}
-                  </Typography>
+                  <Link
+                    href={creator.submission.postingLink || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline'
+                      }
+                    }}
+                  >
+                    <Typography sx={{
+                      fontFamily: 'Aileron',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#636366',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        color: '#1340FF'
+                      }
+                    }}>
+                      {username || 'Unknown'}
+                    </Typography>
+                  </Link>
                 </Box>
 
                 {/* Progress bar and value on bottom */}
@@ -2645,7 +3210,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
   // TopEngagementCard component - Top 5 Creator Engagement Rate
   const TopEngagementCard = () => {
-    // Calculate top 5 creators by engagement rate
     const top5Creators = useMemo(() => {
       const creatorsWithEngagement = [];
       
@@ -2727,25 +3291,28 @@ const PCRReportPage = ({ campaign, onBack }) => {
         /* Creator bars */
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'space-around', py: 1 }}>
           {top5Creators.map((creator, index) => {
-            // Check if this is a manual entry (user.id matches submission.id)
-            const isManualEntry = creator.submission.user?.id === creator.submission.id;
+            const creatorData = creatorDataList[index]?.data;
             
-            let username;
-            if (isManualEntry) {
-              // For manual entries, get username from submission data
-              username = creator.platform === 'Instagram' 
-                ? creator.submission.user?.creator?.instagram 
-                : creator.submission.user?.creator?.tiktok;
+            // Try multiple sources for username with comprehensive fallbacks
+            let username = null;
+            if (creator.platform === 'Instagram') {
+              username = creatorData?.user?.creator?.instagram 
+                || creator.submission.user?.creator?.instagram 
+                || creator.submission.user?.username
+                || creator.submission.user?.name
+                || creatorData?.user?.username
+                || creatorData?.user?.name;
             } else {
-              // For regular creators, get from fetched data
-              const creatorData = creatorDataList[index]?.data;
-              username = creator.platform === 'Instagram' 
-                ? creatorData?.user?.creator?.instagram 
-                : creatorData?.user?.creator?.tiktok;
+              username = creatorData?.user?.creator?.tiktok 
+                || creator.submission.user?.creator?.tiktok 
+                || creator.submission.user?.username
+                || creator.submission.user?.name
+                || creatorData?.user?.username
+                || creatorData?.user?.name;
             }
             
-            const platform = creator.platform;
-            const engagementRate = creator.engagementRate;
+            const {platform} = creator;
+            const {engagementRate} = creator;
 
             const barWidth = (engagementRate / maxEngagementRate) * 100;
             
@@ -2769,13 +3336,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       display: 'inline-block'
                     }}
                   />
-                  <Link
+          <Link
                     href={creator.submission.postingLink || '#'}
-                    target="_blank"
+            target="_blank"
                     rel="noopener noreferrer"
-                    sx={{
-                      textDecoration: 'none',
-                      '&:hover': {
+            sx={{
+              textDecoration: 'none',
+              '&:hover': {
                         textDecoration: 'underline'
                       }
                     }}
@@ -3022,6 +3589,44 @@ const PCRReportPage = ({ campaign, onBack }) => {
         {isEditMode ? (
           <>
             <Button
+              sx={{
+                width: '90px',
+                height: '44px',
+                borderRadius: '8px',
+                gap: '6px',
+                padding: '10px 16px 13px 16px',
+                background: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                color: '#374151',
+                textTransform: 'none',
+                fontFamily: 'Inter Display, sans-serif',
+                fontWeight: 600,
+                fontStyle: 'normal',
+                fontSize: '16px',
+                lineHeight: '20px',
+                letterSpacing: '0%',
+                whiteSpace: 'nowrap',
+                '&:hover': {
+                  background: '#F9FAFB',
+                  border: '1px solid #D1D5DB',
+                  boxShadow: '0px -3px 0px 0px #D1D5DB inset',
+                },
+                '&:active': {
+                  boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                  transform: 'translateY(1px)',
+                },
+                '&:disabled': {
+                  background: '#F3F4F6',
+                  color: '#9CA3AF',
+                  border: '1px solid #E5E7EB',
+                }
+              }}
+              onClick={handleGeneratePreview}
+            >
+              Preview
+            </Button>
+            <Button
               onClick={handleUndo}
               disabled={historyIndex <= 0}
               endIcon={
@@ -3226,32 +3831,27 @@ const PCRReportPage = ({ campaign, onBack }) => {
         <Button
           onClick={handleExportPDF}
           sx={{
-            width: '79px',
+            minWidth: '44px',
+            width: '44px',
             height: '44px',
             borderRadius: '8px',
-            gap: '6px',
-            padding: '10px 16px 13px 16px',
-            background: '#3A3A3C',
-            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-            color: '#FFFFFF',
-            textTransform: 'none',
-            fontFamily: 'Inter Display, sans-serif',
-            fontWeight: 600,
-            fontStyle: 'normal',
-            fontSize: '16px',
-            lineHeight: '20px',
-            letterSpacing: '0%',
+            padding: '10px',
+            background: '#FFFFFF',
+            border: '1px solid #E7E7E7',
+            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            color: '#1340FF',
             '&:hover': {
-              background: '#2A2A2C',
-              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
+              background: '#F9FAFB',
+              border: '1px solid #D1D5DB',
+              boxShadow: '0px -3px 0px 0px #D1D5DB inset',
             },
             '&:active': {
-              boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
+              boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
               transform: 'translateY(1px)',
             }
           }}
         >
-          Share
+          <Iconify icon="material-symbols:download-rounded" width={20} />
         </Button>
           </>
         )}
@@ -3439,7 +4039,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       </Box>
         </Box>
         
-        <Box sx={{ position: 'relative', right: '-20px' }}>
+        <Box sx={{ position: 'relative', right: '-5px' }}>
           <Box
             component="img"
             src="/logo/CC.svg"
@@ -3535,10 +4135,105 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     {/* Metrics Cards */}
     <Grid container spacing={2} sx={{ mb: 4 }}>
+      {/* Engagement Card */}
       <Grid item xs={6} md={2.4}>
         <Box
           sx={{
             background: 'linear-gradient(0deg, #026D54 0%, rgba(2, 109, 84, 0) 107.14%)',
+            borderRadius: '12px',
+            p: 3,
+            color: 'white',
+            height: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-start'
+          }}
+        >
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 500,
+              fontStyle: 'normal',
+              fontSize: '46px !important',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              color: '#FFFFFF',
+              mb: 0.5
+            }}
+          >
+            {summaryStats.avgEngagementRate ? `${summaryStats.avgEngagementRate}%` : '0%'}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '16px',
+              letterSpacing: '0%',
+              color: '#FFFFFF'
+            }}
+          >
+            Engagement
+          </Typography>
+        </Box>
+      </Grid>
+      
+      {/* Total Creators Card */}
+      <Grid item xs={6} md={2.4}>
+        <Box
+          sx={{
+            background: 'linear-gradient(359.86deg, #8A5AFE 0.13%, rgba(138, 90, 254, 0) 109.62%)',
+            borderRadius: '12px',
+            p: 3,
+            color: 'white',
+            height: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-start'
+          }}
+        >
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 500,
+              fontStyle: 'normal',
+              fontSize: '46px !important',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              color: '#FFFFFF',
+              mb: 0.5
+            }}
+          >
+            {formatNumber(filteredSubmissions?.length || 0)}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '16px',
+              letterSpacing: '0%',
+              color: '#FFFFFF'
+            }}
+          >
+            Total Creators
+          </Typography>
+        </Box>
+      </Grid>
+      
+      {/* Total Views Card */}
+      <Grid item xs={6} md={2.4}>
+        <Box
+          sx={{
+            background: 'linear-gradient(180deg, rgba(255, 53, 0, 0) -9.77%, #FF3500 100%)',
             borderRadius: '12px',
             p: 3,
             color: 'white',
@@ -3580,96 +4275,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Typography>
         </Box>
       </Grid>
-      <Grid item xs={6} md={2.4}>
-        <Box
-          sx={{
-            background: 'linear-gradient(359.86deg, #8A5AFE 0.13%, rgba(138, 90, 254, 0) 109.62%)',
-            borderRadius: '12px',
-            p: 3,
-            color: 'white',
-            height: '120px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            alignItems: 'flex-start'
-          }}
-        >
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 500,
-              fontStyle: 'normal',
-              fontSize: '46px !important',
-              lineHeight: '100%',
-              letterSpacing: '0%',
-              color: '#FFFFFF',
-              mb: 0.5
-            }}
-          >
-            {formatNumber(summaryStats.totalLikes) || '0'}
-          </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 400,
-              fontStyle: 'normal',
-              fontSize: '12px',
-              lineHeight: '16px',
-              letterSpacing: '0%',
-              color: '#FFFFFF'
-            }}
-          >
-            Total Likes
-          </Typography>
-        </Box>
-      </Grid>
-      <Grid item xs={6} md={2.4}>
-        <Box
-          sx={{
-            background: 'linear-gradient(180deg, rgba(255, 53, 0, 0) -9.77%, #FF3500 100%)',
-            borderRadius: '12px',
-            p: 3,
-            color: 'white',
-            height: '120px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            alignItems: 'flex-start'
-          }}
-        >
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 500,
-              fontStyle: 'normal',
-              fontSize: '46px !important',
-              lineHeight: '100%',
-              letterSpacing: '0%',
-              color: '#FFFFFF',
-              mb: 0.5
-            }}
-          >
-            {formatNumber(summaryStats.totalComments) || '0'}
-          </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 400,
-              fontStyle: 'normal',
-              fontSize: '12px',
-              lineHeight: '16px',
-              letterSpacing: '0%',
-              color: '#FFFFFF'
-            }}
-          >
-            Total Comments
-          </Typography>
-        </Box>
-      </Grid>
+      
+      {/* Total Interactions Card */}
       <Grid item xs={6} md={2.4}>
         <Box
           sx={{
@@ -3697,7 +4304,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               mb: 0.5
             }}
           >
-            {formatNumber(summaryStats.totalSaved) || '0'}
+            {formatNumber((summaryStats.totalLikes || 0) + (summaryStats.totalComments || 0) + (summaryStats.totalShares || 0) + (summaryStats.totalSaved || 0))}
           </Typography>
           <Typography 
             variant="body2" 
@@ -3711,10 +4318,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
               color: '#FFFFFF'
             }}
           >
-            Total Saved
+            Total Interactions
           </Typography>
         </Box>
       </Grid>
+      
+      {/* Total Shares Card */}
       <Grid item xs={6} md={2.4}>
         <Box
           sx={{
@@ -4263,6 +4872,25 @@ const PCRReportPage = ({ campaign, onBack }) => {
               const maxLikes = mostLikesCreator ? mostLikesCreator.likes : 0;
               const engagementRate = mostLikesCreator ? calculateEngagementRate(mostLikesCreator.insightData.insight) : 0;
               
+              // Get username based on platform
+              let username = '';
+              if (mostLikesCreator) {
+                const {platform} = mostLikesCreator;
+                if (platform === 'Instagram') {
+                  username = mostLikesCreatorData?.user?.creator?.instagram 
+                    || mostLikesCreator?.submission?.user?.creator?.instagram 
+                    || mostLikesCreator?.submission?.user?.username
+                    || mostLikesCreator?.submission?.user?.name
+                    || '';
+                } else if (platform === 'TikTok') {
+                  username = mostLikesCreatorData?.user?.creator?.tiktok 
+                    || mostLikesCreator?.submission?.user?.creator?.tiktok 
+                    || mostLikesCreator?.submission?.user?.username
+                    || mostLikesCreator?.submission?.user?.name
+                    || '';
+                }
+              }
+              
               return mostLikesCreator && (
                 <Grid item xs={12} md={12}>
               <Box sx={{ 
@@ -4319,7 +4947,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             color: '#636366',
                             lineHeight: '16px'
                     }}>
-                            {mostLikesCreatorData?.user?.creator?.instagram || mostLikesCreator?.submission?.user?.creator?.instagram || mostLikesCreatorData?.user?.creator?.tiktok || mostLikesCreator?.submission?.user?.creator?.tiktok || ''}
+                            {username}
                     </Typography>
                   </Box>
                 </Box>
@@ -4421,6 +5049,25 @@ const PCRReportPage = ({ campaign, onBack }) => {
               const maxShares = mostSharesCreator ? mostSharesCreator.shares : 0;
               const engagementRate = mostSharesCreator ? calculateEngagementRate(mostSharesCreator.insightData.insight) : 0;
           
+              // Get username based on platform
+              let username = '';
+              if (mostSharesCreator) {
+                const {platform} = mostSharesCreator;
+                if (platform === 'Instagram') {
+                  username = mostSharesCreatorData?.user?.creator?.instagram 
+                    || mostSharesCreator?.submission?.user?.creator?.instagram 
+                    || mostSharesCreator?.submission?.user?.username
+                    || mostSharesCreator?.submission?.user?.name
+                    || '';
+                } else if (platform === 'TikTok') {
+                  username = mostSharesCreatorData?.user?.creator?.tiktok 
+                    || mostSharesCreator?.submission?.user?.creator?.tiktok 
+                    || mostSharesCreator?.submission?.user?.username
+                    || mostSharesCreator?.submission?.user?.name
+                    || '';
+                }
+              }
+          
               return mostSharesCreator && (
                 <Grid item xs={12} md={12}>
               <Box sx={{ 
@@ -4477,7 +5124,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             color: '#636366',
                             lineHeight: '16px'
                     }}>
-                            {mostSharesCreatorData?.user?.creator?.instagram || mostSharesCreator?.submission?.user?.creator?.instagram || mostSharesCreatorData?.user?.creator?.tiktok || mostSharesCreator?.submission?.user?.creator?.tiktok || ''}
+                            {username}
                     </Typography>
                   </Box>
                 </Box>
@@ -5038,6 +5685,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       })()}
       
       {/* Positive Comments */}
+      {(isEditMode || editableContent.positiveComments.length > 0) && (
       <Box sx={{ mb: 3, position: 'relative', mt: 3 }}>
       <Box
         sx={{
@@ -5251,8 +5899,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                               color: '#1340FF'
                             }
                           }}>
-                            {comment.username}
-                          </Typography>
+                          {comment.username}
+      </Typography>
                         </Link>
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
                           {comment.comment}
@@ -5266,8 +5914,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
           )}
       </Box>
     </Box>
+      )}
 
       {/* Neutral Comments */}
+      {(isEditMode || editableContent.neutralComments.length > 0) && (
       <Box sx={{ mb: 3, position: 'relative', mt: 3 }}>
       <Box
         sx={{
@@ -5481,8 +6131,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                               color: '#1340FF'
                             }
                           }}>
-                            {comment.username}
-                          </Typography>
+                          {comment.username}
+                        </Typography>
                         </Link>
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
                           {comment.comment}
@@ -5496,6 +6146,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           )}
         </Box>
         </Box>
+      )}
       </Box>
     </Box>
                 </SortableSection>
@@ -5682,18 +6333,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         const range = selection.getRangeAt(0);
                         const selectedText = range.toString();
                         if (!selectedText) return;
-                        const strong = document.createElement('strong');
-                        strong.textContent = selectedText;
-                        range.deleteContents();
-                        range.insertNode(strong);
-                        // Move cursor after the inserted element
-                        const newRange = document.createRange();
-                        newRange.setStartAfter(strong);
-                        newRange.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(newRange);
-                        const event = new Event('input', { bubbles: true });
-                        document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
+                        
+                        const editor = document.querySelector('[data-creator-tiers-editor]');
+                        if (editor) {
+                          editor.focus();
+                          document.execCommand('bold', false, null);
+                          const event = new Event('input', { bubbles: true });
+                          editor.dispatchEvent(event);
+                        }
                       }}
                       sx={{ width: 20, height: 20, color: '#636366' }}
                     >
@@ -5707,18 +6354,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         const range = selection.getRangeAt(0);
                         const selectedText = range.toString();
                         if (!selectedText) return;
-                        const em = document.createElement('em');
-                        em.textContent = selectedText;
-                        range.deleteContents();
-                        range.insertNode(em);
-                        // Move cursor after the inserted element
-                        const newRange = document.createRange();
-                        newRange.setStartAfter(em);
-                        newRange.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(newRange);
-                        const event = new Event('input', { bubbles: true });
-                        document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
+                        
+                        const editor = document.querySelector('[data-creator-tiers-editor]');
+                        if (editor) {
+                          editor.focus();
+                          document.execCommand('italic', false, null);
+                          const event = new Event('input', { bubbles: true });
+                          editor.dispatchEvent(event);
+                        }
                       }}
                       sx={{ width: 20, height: 20, color: '#636366' }}
                     >
@@ -5732,18 +6375,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         const range = selection.getRangeAt(0);
                         const selectedText = range.toString();
                         if (!selectedText) return;
-                        const u = document.createElement('u');
-                        u.textContent = selectedText;
-                        range.deleteContents();
-                        range.insertNode(u);
-                        // Move cursor after the inserted element
-                        const newRange = document.createRange();
-                        newRange.setStartAfter(u);
-                        newRange.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(newRange);
-                        const event = new Event('input', { bubbles: true });
-                        document.querySelector('[data-creator-tiers-editor]').dispatchEvent(event);
+                        
+                        const editor = document.querySelector('[data-creator-tiers-editor]');
+                        if (editor) {
+                          editor.focus();
+                          document.execCommand('underline', false, null);
+                          const event = new Event('input', { bubbles: true });
+                          editor.dispatchEvent(event);
+                        }
                       }}
                       sx={{ width: 20, height: 20, color: '#636366' }}
                     >
@@ -5758,6 +6397,34 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     contentEditable
                     suppressContentEditableWarning
                     onInput={(e) => setEditableContent({ ...editableContent, creatorTiersDescription: e.currentTarget.innerHTML })}
+                    onKeyDown={(e) => {
+                      const isMod = e.metaKey || e.ctrlKey;
+                      if (isMod) {
+                        const editor = document.querySelector('[data-creator-tiers-editor]');
+                        if (e.key === 'b' || e.key === 'B') {
+                          e.preventDefault();
+                          document.execCommand('bold', false, null);
+                          if (editor) {
+                            const event = new Event('input', { bubbles: true });
+                            editor.dispatchEvent(event);
+                          }
+                        } else if (e.key === 'i' || e.key === 'I') {
+                          e.preventDefault();
+                          document.execCommand('italic', false, null);
+                          if (editor) {
+                            const event = new Event('input', { bubbles: true });
+                            editor.dispatchEvent(event);
+                          }
+                        } else if (e.key === 'u' || e.key === 'U') {
+                          e.preventDefault();
+                          document.execCommand('underline', false, null);
+                          if (editor) {
+                            const event = new Event('input', { bubbles: true });
+                            editor.dispatchEvent(event);
+                          }
+                        }
+                      }
+                    }}
                     onFocus={(e) => {
                       // Set initial content if empty
                       if (!e.currentTarget.innerHTML) {
@@ -5850,17 +6517,34 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
         {/* Tier Table */}
         {(() => {
-          // Calculate tier data from submissions
+          // Calculate tier data from shortlisted creators (for credit tier campaigns)
           const tierDataMap = new Map();
           
-          if (campaign?.isCreditTier && submissions?.length > 0) {
-            submissions.forEach((submission) => {
-              const tier = submission?.user?.creator?.creditTier;
+          if (campaign?.isCreditTier && campaign?.shortlisted?.length > 0) {
+            campaign.shortlisted.forEach((shortlisted) => {
+              // Get tier from shortlisted record (tier at assignment time)
+              const tier = shortlisted?.creditTier;
               if (tier) {
                 const tierName = tier.name || 'Unknown';
-                const engagementRate = submission?.insightData?.insight?.engagementRate || 
-                                      submission?.engagementRate || 
-                                      null;
+                
+                // Get engagement rates from all submissions/insights for this creator
+                const userSubmissions = submissions.filter(sub => sub.userId === shortlisted.userId);
+                const engagementRates = [];
+                
+                // Get ER from insights data
+                userSubmissions.forEach(submission => {
+                  const insightData = filteredInsightsData.find(
+                    insight => insight.submissionId === submission.id
+                  );
+                  
+                  if (insightData?.insight) {
+                    const er = calculateEngagementRate(insightData.insight);
+                    const erValue = parseFloat(er);
+                    if (!Number.isNaN(erValue) && erValue > 0) {
+                      engagementRates.push(erValue);
+                    }
+                  }
+                });
                 
                 if (!tierDataMap.has(tierName)) {
                   tierDataMap.set(tierName, {
@@ -5869,9 +6553,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   });
                 }
                 
-                if (engagementRate !== null && engagementRate !== undefined) {
-                  tierDataMap.get(tierName).engagementRates.push(parseFloat(engagementRate));
-                }
+                // Add all engagement rates for this creator to their tier
+                tierDataMap.get(tierName).engagementRates.push(...engagementRates);
               }
             });
           }
@@ -6303,7 +6986,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 width: '95px',
                 height: '95px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                background: 'linear-gradient(135deg, #1340FF 0%, #1340FF 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -6322,11 +7005,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <Box 
             sx={{ 
               position: 'absolute',
-              right: '12px',
-              left: '70px', // Space for circle
+              right: '24px',
+              left: '82px', // Space for circle + padding
               top: isEditMode ? '20px' : '50%',
               transform: isEditMode ? 'none' : 'translateY(-50%)',
-               maxWidth: 'calc(480px - 82px)', // Card width minus circle space
+               maxWidth: 'calc(480px - 106px)', // Card width minus circle space and padding
               transition: 'top 0.3s ease, transform 0.3s ease',
             }}
           >
@@ -6460,7 +7143,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 <TextField
                     value={editableContent.creatorStrategyCount}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      const {value} = e.target;
                       // Only allow numbers
                       if (value === '' || /^\d+$/.test(value)) {
                         setEditableContent({ ...editableContent, creatorStrategyCount: value });
@@ -6568,7 +7251,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 width: '95px',
                 height: '95px',
                 borderRadius: '50%',
-                background: '#D4FF00',
+                background: '#8A5AFE',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -6587,11 +7270,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <Box 
             sx={{ 
               position: 'absolute',
-              right: '12px',
-              left: '70px', // Space for circle
+              right: '24px',
+              left: '82px', // Space for circle + padding
               top: isEditMode ? '20px' : '50%',
               transform: isEditMode ? 'none' : 'translateY(-50%)',
-               maxWidth: 'calc(480px - 82px)', // Card width minus circle space
+               maxWidth: 'calc(480px - 106px)', // Card width minus circle space and padding
               transition: 'top 0.3s ease, transform 0.3s ease',
             }}
           >
@@ -6718,7 +7401,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <TextField
                       value={editableContent.educatorCreatorCount}
                       onChange={(e) => {
-                        const value = e.target.value;
+                        const {value} = e.target;
                         // Only allow numbers
                         if (value === '' || /^\d+$/.test(value)) {
                           setEditableContent({ ...editableContent, educatorCreatorCount: value });
@@ -6870,7 +7553,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 width: '95px',
                 height: '95px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
+                background: 'linear-gradient(135deg, #FF3500 0%, #FF3500 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -7021,7 +7704,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <TextField
                       value={editableContent.thirdCreatorCount}
                       onChange={(e) => {
-                        const value = e.target.value;
+                        const {value} = e.target;
                         // Only allow numbers
                         if (value === '' || /^\d+$/.test(value)) {
                           setEditableContent({ ...editableContent, thirdCreatorCount: value });
@@ -7083,8 +7766,606 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Box>
         )}
 
-        {/* Add Persona Button - Show when there are less than 3 cards */}
-        {(!showEducatorCard || !showThirdCard) && (
+        {/* Fourth Persona Card - Only show if showFourthCard is true */}
+        {showFourthCard && (
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 3, ml: 0, position: 'relative', width: '100%', minWidth: 0, overflow: 'visible' }}>
+          {/* Card */}
+          <Box
+            sx={{
+              width: isEditMode ? '910px' : '860px',
+              minWidth: '470px',
+              flexShrink: 0,
+              height: isEditMode ? '280px' : '189px',
+              borderRadius: '20px',
+              background: '#F5F5F5',
+              border: '10px solid #FFFFFF',
+              boxShadow: '0px 4px 4px 0px #8E8E9340',
+              position: 'relative',
+              transition: 'height 0.3s ease',
+              overflow: 'visible',
+            }}
+          >
+          {/* Circle with Icon - Positioned as separate component */}
+          <Box
+            sx={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              border: '8px solid #FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'absolute',
+              left: '-60px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 1,
+              boxShadow: '-4px 4px 4px 0px #8E8E9340',
+            }}
+          >
+            {/* Editable label for emoji */}
+            {isEditMode && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -30,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  bgcolor: '#F3F4F6',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#3A3A3C' }}>
+                  Editable
+                </Typography>
+              </Box>
+            )}
+            {/* Inner gradient circle */}
+            <Box
+              onClick={(e) => {
+                if (isEditMode) {
+                  setEmojiPickerAnchor(e.currentTarget);
+                  setEmojiPickerType('fourth');
+                }
+              }}
+              sx={{
+                width: '95px',
+                height: '95px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #D8FF01 0%, #D8FF01 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '32px',
+                cursor: isEditMode ? 'pointer' : 'default',
+                '&:hover': isEditMode ? {
+                  opacity: 0.8,
+                } : {},
+              }}
+            >
+              {editableContent.fourthEmoji}
+            </Box>
+          </Box>
+
+          {/* Content - Positioned independently */}
+          <Box 
+            sx={{ 
+              position: 'absolute',
+              right: '12px',
+              left: '70px', // Space for circle
+              top: isEditMode ? '20px' : '50%',
+              transform: isEditMode ? 'none' : 'translateY(-50%)',
+               maxWidth: isEditMode ? 'calc(920px - 82px)' : 'calc(860px - 82px)', // Card width minus circle space
+              transition: 'top 0.3s ease, transform 0.3s ease',
+              overflow: 'visible',
+            }}
+          >
+            {isEditMode ? (
+              <Box sx={{ position: 'relative', mb: 0.75 }}>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 6,
+                    left: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    zIndex: 1,
+                  }}
+                >
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                    Editable
+                  </Typography>
+                </Box>
+              <TextField
+                value={editableContent.fourthTitle}
+                onChange={(e) => setEditableContent({ ...editableContent, fourthTitle: e.target.value })}
+                  fullWidth
+                  inputProps={{
+                    maxLength: 30,
+                    style: {
+                      fontFamily: 'Instrument Serif, serif',
+                      fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                      color: '#0067D5',
+                      textAlign: 'left',
+                    }
+                  }}
+                sx={{
+                    bgcolor: '#E5E7EB',
+                    borderRadius: '8px',
+                    '& .MuiInputBase-root': {
+                    fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                    color: '#0067D5',
+                    textAlign: 'left',
+                      padding: '8px',
+                      paddingLeft: '6px',
+                      paddingTop: '26px',
+                      height: '56px',
+                  },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                }}
+              />
+              </Box>
+            ) : (
+              <Typography
+                sx={{
+                  fontFamily: 'Instrument Serif, serif',
+                  fontWeight: 400,
+                  fontStyle: 'normal',
+                  fontSize: '36px',
+                  lineHeight: '40px',
+                  letterSpacing: '0%',
+                  color: '#0067D5',
+                  mb: 1.5,
+                  textAlign: 'center',
+                  ml: -3,
+                }}
+              >
+                {editableContent.fourthTitle}
+              </Typography>
+            )}
+            
+            {isEditMode && (
+              <>
+                <Box sx={{ position: 'relative', mb: 0.75 }}>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                      Editable
+                    </Typography>
+                  </Box>
+                <TextField
+                  value={editableContent.fourthContentStyle}
+                  onChange={(e) => setEditableContent({ ...editableContent, fourthContentStyle: e.target.value })}
+                  fullWidth
+                    multiline
+                    rows={2}
+                    inputProps={{
+                      maxLength: 200,
+                      style: {
+                        fontFamily: 'Inter Display, sans-serif',
+                        fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '20px',
+                        color: '#000000',
+                        textAlign: 'left',
+                      }
+                    }}
+                  sx={{
+                    bgcolor: '#E5E7EB',
+                    borderRadius: '8px',
+                      '& .MuiInputBase-root': {
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '20px',
+                        color: '#000000',
+                      textAlign: 'left',
+                        padding: '8px',
+                        paddingLeft: '6px',
+                        paddingTop: '26px',
+                    },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                  }}
+                />
+                </Box>
+
+                <Box sx={{ mt: 1 }}>
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#636366', mb: 1 }}>
+                    Number of Creators
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TextField
+                      value={editableContent.fourthCreatorCount}
+                      onChange={(e) => {
+                        const {value} = e.target;
+                        // Only allow numbers
+                        if (value === '' || /^\d+$/.test(value)) {
+                          setEditableContent({ ...editableContent, fourthCreatorCount: value });
+                        }
+                      }}
+                      placeholder="Number of Creators"
+                  sx={{
+                        flex: 1,
+                        bgcolor: '#FFFFFF',
+                        borderRadius: '8px',
+                        '& .MuiInputBase-root': {
+                          padding: '12px',
+                          height: '48px',
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#E5E7EB',
+                        },
+                      }}
+                      inputProps={{
+                        maxLength: 3,
+                        inputMode: 'numeric',
+                        pattern: '[0-9]*',
+                        style: {
+                          fontFamily: 'Aileron',
+                    fontSize: '14px',
+                    color: '#000000',
+                        }
+                      }}
+                    />
+                    <IconButton
+                      onClick={() => {
+                        setShowFourthCard(false);
+                        setEditableContent({
+                          ...editableContent,
+                          fourthTitle: '',
+                          fourthContentStyle: '',
+                          fourthCreatorCount: '',
+                          fourthEmoji: ''
+                        });
+                      }}
+                      sx={{
+                        color: '#000000',
+                        width: '48px',
+                        height: '48px',
+                        padding: 0,
+                        '&:hover': {
+                          opacity: 0.7,
+                        },
+                  }}
+                >
+                      <img src="/assets/delete.svg" alt="Delete" style={{ width: '20px', height: '20px' }} />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </>
+              )}
+            </Box>
+          </Box>
+          </Box>
+        )}
+
+        {/* Fifth Persona Card - Only show if showFifthCard is true */}
+        {showFifthCard && (
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 3, ml: 0, position: 'relative', width: '100%', minWidth: 0, overflow: 'visible' }}>
+          {/* Card */}
+          <Box
+            sx={{
+              width: isEditMode ? '910px' : '860px',
+              minWidth: '470px',
+              flexShrink: 0,
+              height: isEditMode ? '280px' : '189px',
+              borderRadius: '20px',
+              background: '#F5F5F5',
+              border: '10px solid #FFFFFF',
+              boxShadow: '0px 4px 4px 0px #8E8E9340',
+              position: 'relative',
+              transition: 'height 0.3s ease',
+              overflow: 'visible',
+            }}
+          >
+          {/* Circle with Icon - Positioned as separate component */}
+          <Box
+            sx={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              border: '8px solid #FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'absolute',
+              left: '-60px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 1,
+              boxShadow: '-4px 4px 4px 0px #8E8E9340',
+            }}
+          >
+            {/* Editable label for emoji */}
+            {isEditMode && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -30,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  bgcolor: '#F3F4F6',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#3A3A3C' }}>
+                  Editable
+                </Typography>
+              </Box>
+            )}
+            {/* Inner gradient circle */}
+            <Box
+              onClick={(e) => {
+                if (isEditMode) {
+                  setEmojiPickerAnchor(e.currentTarget);
+                  setEmojiPickerType('fifth');
+                }
+              }}
+              sx={{
+                width: '95px',
+                height: '95px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #026D54 0%, #026D54 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '32px',
+                cursor: isEditMode ? 'pointer' : 'default',
+                '&:hover': isEditMode ? {
+                  opacity: 0.8,
+                } : {},
+              }}
+            >
+              {editableContent.fifthEmoji}
+            </Box>
+          </Box>
+
+          {/* Content - Positioned independently */}
+          <Box 
+            sx={{ 
+              position: 'absolute',
+              right: '12px',
+              left: '70px', // Space for circle
+              top: isEditMode ? '20px' : '50%',
+              transform: isEditMode ? 'none' : 'translateY(-50%)',
+               maxWidth: isEditMode ? 'calc(920px - 82px)' : 'calc(860px - 82px)', // Card width minus circle space
+              transition: 'top 0.3s ease, transform 0.3s ease',
+              overflow: 'visible',
+            }}
+          >
+            {isEditMode ? (
+              <Box sx={{ position: 'relative', mb: 0.75 }}>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 6,
+                    left: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    zIndex: 1,
+                  }}
+                >
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                    Editable
+                  </Typography>
+                </Box>
+              <TextField
+                value={editableContent.fifthTitle}
+                onChange={(e) => setEditableContent({ ...editableContent, fifthTitle: e.target.value })}
+                  fullWidth
+                  inputProps={{
+                    maxLength: 30,
+                    style: {
+                      fontFamily: 'Instrument Serif, serif',
+                      fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                      color: '#0067D5',
+                      textAlign: 'left',
+                    }
+                  }}
+                sx={{
+                    bgcolor: '#E5E7EB',
+                    borderRadius: '8px',
+                    '& .MuiInputBase-root': {
+                    fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                    color: '#0067D5',
+                    textAlign: 'left',
+                      padding: '8px',
+                      paddingLeft: '6px',
+                      paddingTop: '26px',
+                      height: '56px',
+                  },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                }}
+              />
+              </Box>
+            ) : (
+              <Typography
+                sx={{
+                  fontFamily: 'Instrument Serif, serif',
+                  fontWeight: 400,
+                  fontStyle: 'normal',
+                  fontSize: '36px',
+                  lineHeight: '40px',
+                  letterSpacing: '0%',
+                  color: '#0067D5',
+                  mb: 1.5,
+                  textAlign: 'center',
+                  ml: -3,
+                }}
+              >
+                {editableContent.fifthTitle}
+              </Typography>
+            )}
+            
+            {isEditMode && (
+              <>
+                <Box sx={{ position: 'relative', mb: 0.75 }}>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                      Editable
+                    </Typography>
+                  </Box>
+                <TextField
+                  value={editableContent.fifthContentStyle}
+                  onChange={(e) => setEditableContent({ ...editableContent, fifthContentStyle: e.target.value })}
+                  fullWidth
+                    multiline
+                    rows={2}
+                    inputProps={{
+                      maxLength: 200,
+                      style: {
+                        fontFamily: 'Inter Display, sans-serif',
+                        fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '20px',
+                        color: '#000000',
+                        textAlign: 'left',
+                      }
+                    }}
+                  sx={{
+                    bgcolor: '#E5E7EB',
+                    borderRadius: '8px',
+                      '& .MuiInputBase-root': {
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '20px',
+                        color: '#000000',
+                      textAlign: 'left',
+                        padding: '8px',
+                        paddingLeft: '6px',
+                        paddingTop: '26px',
+                    },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                  }}
+                />
+                </Box>
+
+                <Box sx={{ mt: 1 }}>
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#636366', mb: 1 }}>
+                    Number of Creators
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TextField
+                      value={editableContent.fifthCreatorCount}
+                      onChange={(e) => {
+                        const {value} = e.target;
+                        // Only allow numbers
+                        if (value === '' || /^\d+$/.test(value)) {
+                          setEditableContent({ ...editableContent, fifthCreatorCount: value });
+                        }
+                      }}
+                      placeholder="Number of Creators"
+                  sx={{
+                        flex: 1,
+                        bgcolor: '#FFFFFF',
+                        borderRadius: '8px',
+                        '& .MuiInputBase-root': {
+                          padding: '12px',
+                          height: '48px',
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#E5E7EB',
+                        },
+                      }}
+                      inputProps={{
+                        maxLength: 3,
+                        inputMode: 'numeric',
+                        pattern: '[0-9]*',
+                        style: {
+                          fontFamily: 'Aileron',
+                    fontSize: '14px',
+                    color: '#000000',
+                        }
+                      }}
+                    />
+                    <IconButton
+                      onClick={() => {
+                        setShowFifthCard(false);
+                        setEditableContent({
+                          ...editableContent,
+                          fifthTitle: '',
+                          fifthContentStyle: '',
+                          fifthCreatorCount: '',
+                          fifthEmoji: ''
+                        });
+                      }}
+                      sx={{
+                        color: '#000000',
+                        width: '48px',
+                        height: '48px',
+                        padding: 0,
+                        '&:hover': {
+                          opacity: 0.7,
+                        },
+                  }}
+                >
+                      <img src="/assets/delete.svg" alt="Delete" style={{ width: '20px', height: '20px' }} />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </>
+              )}
+            </Box>
+          </Box>
+          </Box>
+        )}
+
+        {/* Add Persona Button - Show when there are less than 5 cards */}
+        {(!showEducatorCard || !showThirdCard || !showFourthCard || !showFifthCard) && (
           <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 3, ml: 2 }}>
             <IconButton
               onClick={() => {
@@ -7092,6 +8373,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   setShowEducatorCard(true);
                 } else if (!showThirdCard) {
                   setShowThirdCard(true);
+                } else if (!showFourthCard) {
+                  setShowFourthCard(true);
+                } else if (!showFifthCard) {
+                  setShowFifthCard(true);
                 }
               }}
               sx={{
@@ -7127,11 +8412,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
               width: '400px',
               height: (() => {
                 // Calculate height based on number of visible cards
-                const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0);
+                const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0) + (showFourthCard ? 1 : 0) + (showFifthCard ? 1 : 0);
                 if (visibleCards === 1) return '220px';
                 if (visibleCards === 2) return '580px';
                 if (visibleCards === 3) return '580px';
-                return '460px'; // 3 cards
+                if (visibleCards === 4) return '580px';
+                if (visibleCards === 5) return '580px';
+                return '460px'; // fallback
               })(),
               display: 'flex',
               flexDirection: 'column',
@@ -7154,28 +8441,33 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Typography>
 
             {/* Circle and Legend Layout */}
-            <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? 3 : 2, flex: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? 0.5 : 2, flex: 1 }}>
               {/* Full Circle Chart or Pie Chart */}
               <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: (showEducatorCard || showThirdCard) ? 1 : 'none' }}>
                 {(() => {
                   // Render different chart based on number of personas
                   if (showThirdCard) {
                     return (
-                  <>
-                    <svg width="360" height="360" viewBox="0 0 160 160">
+                  <svg width="360" height="360" viewBox="0 0 160 160">
                         {(() => {
                           const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
-                          const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
-                          const thirdCount = parseInt(editableContent.thirdCreatorCount, 10) || 1;
-                          const total = comicCount + educatorCount + thirdCount;
+                          const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || (showEducatorCard ? 1 : 0);
+                          const thirdCount = parseInt(editableContent.thirdCreatorCount, 10) || (showThirdCard ? 1 : 0);
+                          const fourthCount = parseInt(editableContent.fourthCreatorCount, 10) || (showFourthCard ? 1 : 0);
+                          const fifthCount = parseInt(editableContent.fifthCreatorCount, 10) || (showFifthCard ? 1 : 0);
+                          const total = comicCount + educatorCount + thirdCount + fourthCount + fifthCount;
                           const comicPercentage = comicCount / total;
                           const educatorPercentage = educatorCount / total;
                           const thirdPercentage = thirdCount / total;
+                          const fourthPercentage = fourthCount / total;
+                          const fifthPercentage = fifthCount / total;
                           
                           // Calculate cumulative angles
                           const comicAngle = comicPercentage * 2 * Math.PI;
                           const educatorAngle = educatorPercentage * 2 * Math.PI;
                           const thirdAngle = thirdPercentage * 2 * Math.PI;
+                          const fourthAngle = fourthPercentage * 2 * Math.PI;
+                          const fifthAngle = fifthPercentage * 2 * Math.PI;
                           
                           let currentAngle = 0;
                           const comicEndAngle = currentAngle + comicAngle;
@@ -7195,6 +8487,18 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           const thirdEndY = 80 - 70 * Math.cos(thirdEndAngle);
                           const thirdLargeArc = thirdAngle > Math.PI ? 1 : 0;
                           
+                          currentAngle = thirdEndAngle;
+                          const fourthEndAngle = currentAngle + fourthAngle;
+                          const fourthEndX = 80 + 70 * Math.sin(fourthEndAngle);
+                          const fourthEndY = 80 - 70 * Math.cos(fourthEndAngle);
+                          const fourthLargeArc = fourthAngle > Math.PI ? 1 : 0;
+                          
+                          currentAngle = fourthEndAngle;
+                          const fifthEndAngle = currentAngle + fifthAngle;
+                          const fifthEndX = 80 + 70 * Math.sin(fifthEndAngle);
+                          const fifthEndY = 80 - 70 * Math.cos(fifthEndAngle);
+                          const fifthLargeArc = fifthAngle > Math.PI ? 1 : 0;
+                          
                           const comicMidAngle = comicAngle / 2;
                           const comicTextX = 80 + 35 * Math.sin(comicMidAngle);
                           const comicTextY = 80 - 35 * Math.cos(comicMidAngle);
@@ -7207,23 +8511,64 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           const thirdTextX = 80 + 35 * Math.sin(thirdMidAngle);
                           const thirdTextY = 80 - 35 * Math.cos(thirdMidAngle);
                           
+                          const fourthMidAngle = comicAngle + educatorAngle + thirdAngle + fourthAngle / 2;
+                          const fourthTextX = 80 + 35 * Math.sin(fourthMidAngle);
+                          const fourthTextY = 80 - 35 * Math.cos(fourthMidAngle);
+                          
+                          const fifthMidAngle = comicAngle + educatorAngle + thirdAngle + fourthAngle + fifthAngle / 2;
+                          const fifthTextX = 80 + 35 * Math.sin(fifthMidAngle);
+                          const fifthTextY = 80 - 35 * Math.cos(fifthMidAngle);
+                          
                           return (
                             <>
-                              {/* Comic segment (purple) */}
+                              {/* Comic segment (blue) */}
                               <path
                                 d={`M 80 80 L 80 10 A 70 70 0 ${comicLargeArc} 1 ${comicEndX} ${comicEndY} Z`}
-                                fill="#8A5AFE"
+                                fill="#1340FF"
                               />
-                              {/* Educator segment (yellow-green) */}
-                              <path
-                                d={`M 80 80 L ${comicEndX} ${comicEndY} A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
-                                fill="#D4FF00"
-                              />
+                              {/* Educator segment (purple) */}
+                              {showEducatorCard && (
+                                <path
+                                  d={`M 80 80 L ${comicEndX} ${comicEndY} A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
+                                  fill="#8A5AFE"
+                                />
+                              )}
                               {/* Third segment (orange-red) */}
-                              <path
-                                d={`M 80 80 L ${educatorEndX} ${educatorEndY} A 70 70 0 ${thirdLargeArc} 1 80 10 Z`}
-                                fill="#FF6B35"
-                              />
+                              {showThirdCard && (
+                                <path
+                                  d={`M 80 80 L ${educatorEndX} ${educatorEndY} A 70 70 0 ${thirdLargeArc} 1 ${thirdEndX} ${thirdEndY} Z`}
+                                  fill="#FF3500"
+                                />
+                              )}
+                              {/* Fourth segment (yellow-green) */}
+                              {showFourthCard && (
+                                <path
+                                  d={`M 80 80 L ${thirdEndX} ${thirdEndY} A 70 70 0 ${fourthLargeArc} 1 ${fourthEndX} ${fourthEndY} Z`}
+                                  fill="#D8FF01"
+                                />
+                              )}
+                              {/* Fifth segment (teal) - closes the circle */}
+                              {showFifthCard && (
+                                <path
+                                  d={`M 80 80 L ${fourthEndX} ${fourthEndY} A 70 70 0 ${fifthLargeArc} 1 80 10 Z`}
+                                  fill="#026D54"
+                                />
+                              )}
+                              {/* If no fifth card, close with the last visible segment */}
+                              {!showFifthCard && showFourthCard && (
+                                <path
+                                  d={`M 80 80 L ${fourthEndX} ${fourthEndY} A 70 70 0 ${fifthLargeArc} 1 80 10 Z`}
+                                  fill="#026D54"
+                                  opacity="0"
+                                />
+                              )}
+                              {!showFifthCard && !showFourthCard && showThirdCard && (
+                                <path
+                                  d={`M 80 80 L ${thirdEndX} ${thirdEndY} A 70 70 0 0 1 80 10 Z`}
+                                  fill="#FF3500"
+                                  opacity="0"
+                                />
+                              )}
                               {/* Comic number */}
                               <text
                                 x={comicTextX}
@@ -7239,21 +8584,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                 {comicCount}
                               </text>
                               {/* Educator number */}
-                              <text
-                                x={educatorTextX}
-                                y={educatorTextY}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                                fill="#FFFFFF"
-                                fontSize="14"
-                                fontFamily="Aileron"
-                                fontWeight="600"
-                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
-                              >
-                                {educatorCount}
-                              </text>
+                              {showEducatorCard && educatorCount > 0 && (
+                                <text
+                                  x={educatorTextX}
+                                  y={educatorTextY}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  fill="#FFFFFF"
+                                  fontSize="14"
+                                  fontFamily="Aileron"
+                                  fontWeight="600"
+                                  style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                >
+                                  {educatorCount}
+                                </text>
+                              )}
                               {/* Third number */}
-                              {thirdCount > 0 && (
+                              {showThirdCard && thirdCount > 0 && (
                                 <text
                                   x={thirdTextX}
                                   y={thirdTextY}
@@ -7268,67 +8615,83 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                   {thirdCount}
                                 </text>
                               )}
+                              {/* Fourth number */}
+                              {showFourthCard && fourthCount > 0 && (
+                                <text
+                                  x={fourthTextX}
+                                  y={fourthTextY}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  fill="#FFFFFF"
+                                  fontSize="14"
+                                  fontFamily="Aileron"
+                                  fontWeight="600"
+                                  style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                >
+                                  {fourthCount}
+                                </text>
+                              )}
+                              {/* Fifth number */}
+                              {showFifthCard && fifthCount > 0 && (
+                                <text
+                                  x={fifthTextX}
+                                  y={fifthTextY}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  fill="#FFFFFF"
+                                  fontSize="14"
+                                  fontFamily="Aileron"
+                                  fontWeight="600"
+                                  style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                >
+                                  {fifthCount}
+                                </text>
+                              )}
                             </>
                           );
                         })()}
                       </svg>
-                  </>
                     );
                   }
                   
                   if (showEducatorCard) {
                     return (
                   // Pie chart when both personas are visible
-                  <>
-                    <svg width="360" height="360" viewBox="0 0 160 160">
+                  <svg width="360" height="360" viewBox="0 0 160 160">
                         {(() => {
                           const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
                           const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
                           const total = comicCount + educatorCount;
-                          const educatorPercentage = educatorCount / total;
                           const comicPercentage = comicCount / total;
+                          const educatorPercentage = educatorCount / total;
                           
                           // Calculate angles
-                          const educatorAngle = educatorPercentage * 2 * Math.PI;
                           const comicAngle = comicPercentage * 2 * Math.PI;
+                          const educatorAngle = educatorPercentage * 2 * Math.PI;
                           
-                          // Calculate path for educator segment
-                          const educatorEndX = 80 + 70 * Math.sin(educatorAngle);
-                          const educatorEndY = 80 - 70 * Math.cos(educatorAngle);
-                          const educatorLargeArc = educatorPercentage > 0.5 ? 1 : 0;
+                          // Calculate path for comic segment (purple)
+                          const comicEndX = 80 + 70 * Math.sin(comicAngle);
+                          const comicEndY = 80 - 70 * Math.cos(comicAngle);
+                          const comicLargeArc = comicPercentage > 0.5 ? 1 : 0;
                           
                           // Calculate positions for numbers (middle of each segment)
-                          // Educator number position (middle of yellow segment)
-                          const educatorMidAngle = educatorAngle / 2;
-                          const educatorTextX = 80 + 35 * Math.sin(educatorMidAngle);
-                          const educatorTextY = 80 - 35 * Math.cos(educatorMidAngle);
-                          
                           // Comic number position (middle of purple segment)
-                          const comicMidAngle = educatorAngle + (comicAngle / 2);
+                          const comicMidAngle = comicAngle / 2;
                           const comicTextX = 80 + 35 * Math.sin(comicMidAngle);
                           const comicTextY = 80 - 35 * Math.cos(comicMidAngle);
                           
+                          // Educator number position (middle of yellow segment)
+                          const educatorMidAngle = comicAngle + (educatorAngle / 2);
+                          const educatorTextX = 80 + 35 * Math.sin(educatorMidAngle);
+                          const educatorTextY = 80 - 35 * Math.cos(educatorMidAngle);
+                          
                           return (
                             <>
-                              <circle cx="80" cy="80" r="70" fill="#D4FF00" />
+                              <circle cx="80" cy="80" r="70" fill="#8A5AFE" />
                               <path
-                                d={`M 80 80 L 80 10 A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
-                                fill="#8A5AFE"
+                                d={`M 80 80 L 80 10 A 70 70 0 ${comicLargeArc} 1 ${comicEndX} ${comicEndY} Z`}
+                                fill="#1340FF"
                               />
-                              {/* Educator number */}
-                              <text
-                                x={educatorTextX}
-                                y={educatorTextY}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                                fill="#FFFFFF"
-                                fontSize="14"
-                                fontFamily="Aileron"
-                                fontWeight="600"
-                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
-                              >
-                                {educatorCount}
-                              </text>
                               {/* Comic number */}
                               <text
                                 x={comicTextX}
@@ -7343,11 +8706,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
                               >
                                 {comicCount}
                               </text>
+                              {/* Educator number */}
+                              <text
+                                x={educatorTextX}
+                                y={educatorTextY}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#FFFFFF"
+                                fontSize="14"
+                                fontFamily="Aileron"
+                                fontWeight="600"
+                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                              >
+                                {educatorCount}
+                              </text>
                             </>
                           );
                         })()}
                       </svg>
-                  </>
                     );
                   }
                   
@@ -7359,7 +8735,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         cx="80"
                         cy="80"
                         r="70"
-                        fill="#8A5AFE"
+                        fill="#1340FF"
                       />
                     </svg>
                   <Box
@@ -7393,14 +8769,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Box>
 
               {/* Legend - Moved to bottom */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%', px: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, width: '100%', px: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                   <Box
                     sx={{
-                      width: '12px',
-                      height: '12px',
+                      width: '10px',
+                      height: '10px',
                       borderRadius: '50%',
-                      bgcolor: '#8A5AFE',
+                      bgcolor: '#1340FF',
                       flexShrink: 0,
                   }}
                   />
@@ -7411,19 +8787,22 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '14px',
                       lineHeight: '18px',
                       color: '#231F20',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                       }}
                     >
-                    {editableContent.comicTitle} ({editableContent.creatorStrategyCount || '1'})
+                    {editableContent.comicTitle}
                     </Typography>
                 </Box>
                 {showEducatorCard && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <Box
                       sx={{
-                        width: '12px',
-                        height: '12px',
+                        width: '10px',
+                        height: '10px',
                         borderRadius: '50%',
-                        bgcolor: '#D4FF00',
+                        bgcolor: '#8A5AFE',
                         flexShrink: 0,
                       }}
                     />
@@ -7434,20 +8813,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     fontSize: '14px',
                     lineHeight: '18px',
                         color: '#231F20',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                   }}
                 >
-                      {editableContent.educatorTitle} ({editableContent.educatorCreatorCount || '1'})
+                      {editableContent.educatorTitle}
                 </Typography>
         </Box>
         )}
                 {showThirdCard && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <Box
                       sx={{
-                        width: '12px',
-                        height: '12px',
+                        width: '10px',
+                        height: '10px',
                         borderRadius: '50%',
-                        bgcolor: '#FF6B35',
+                        bgcolor: '#FF3500',
                         flexShrink: 0,
                       }}
                     />
@@ -7458,9 +8840,66 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fontSize: '14px',
                         lineHeight: '18px',
                         color: '#231F20',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                 }}
               >
-                      {editableContent.thirdTitle} ({editableContent.thirdCreatorCount || '1'})
+                      {editableContent.thirdTitle}
+              </Typography>
+                </Box>
+            )}
+                {showFourthCard && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <Box
+                      sx={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        bgcolor: '#D8FF01',
+                        flexShrink: 0,
+                      }}
+                    />
+              <Typography
+                sx={{
+                        fontFamily: 'Aileron',
+                  fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        color: '#231F20',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                }}
+              >
+                      {editableContent.fourthTitle}
+              </Typography>
+                </Box>
+            )}
+                {showFifthCard && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <Box
+                      sx={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        bgcolor: '#026D54',
+                        flexShrink: 0,
+                      }}
+                    />
+              <Typography
+                sx={{
+                        fontFamily: 'Aileron',
+                  fontWeight: 400,
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        color: '#231F20',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                }}
+              >
+                      {editableContent.fifthTitle}
               </Typography>
                 </Box>
             )}
@@ -7517,7 +8956,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       width: '110px',
                       height: '110px',
                       borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                      background: 'linear-gradient(135deg, #1340FF 0%, #1340FF 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -7607,7 +9046,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       width: '110px',
                       height: '110px',
                       borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                      background: 'linear-gradient(135deg, #1340FF 0%, #1340FF 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -7704,7 +9143,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     width: '110px',
                     height: '110px',
                   borderRadius: '50%',
-                    background: '#D4FF00',
+                    background: '#8A5AFE',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -7802,7 +9241,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     width: '110px',
                     height: '110px',
                   borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
+                    background: 'linear-gradient(135deg, #FF3500 0%, #FF3500 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -7857,6 +9296,206 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </Box>
             </Box>
           )}
+
+          {/* Fourth Persona Card (Display Mode) - Only show if showFourthCard is true */}
+          {showFourthCard && editableContent.fourthTitle && (
+            <Box>
+            {/* Card */}
+      <Box
+        sx={{
+          width: '890px',
+          minWidth: '470px',
+          flexShrink: 0,
+          minHeight: '220px',
+          borderRadius: '20px',
+          background: '#F5F5F5',
+          border: '10px solid #FFFFFF',
+          boxShadow: '0px 4px 4px 0px #8E8E9340',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
+        {/* Circle with Icon - Positioned as separate component */}
+        <Box
+          sx={{
+            width: '140px',
+            height: '140px',
+            borderRadius: '50%',
+            background: '#FFFFFF',
+            border: '8px solid #FFFFFF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'absolute',
+              left: '-80px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 1,
+            boxShadow: '-4px 4px 4px 0px #8E8E9340',
+          }}
+        >
+          {/* Inner gradient circle */}
+          <Box
+            sx={{
+                width: '110px',
+                height: '110px',
+              borderRadius: '50%',
+                background: 'linear-gradient(135deg, #D8FF01 0%, #D8FF01 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+                fontSize: '48px',
+            }}
+          >
+            {editableContent.fourthEmoji}
+          </Box>
+        </Box>
+
+        {/* Content - Positioned independently */}
+        <Box 
+          sx={{ 
+              ml: '80px',
+              maxWidth: 'calc(890px - 92px)',
+              pr: 3,
+              py: 3,
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: 'Instrument Serif, serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+                fontSize: '32px',
+                lineHeight: '36px',
+              letterSpacing: '0%',
+              color: '#0067D5',
+              mb: 1.5,
+                textAlign: 'left',
+            }}
+          >
+            {editableContent.fourthTitle}
+          </Typography>
+          
+            <Typography
+              sx={{
+                fontFamily: 'Inter Display, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '16px',
+                  lineHeight: '22px',
+                color: '#000000',
+                  textAlign: 'left',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                whiteSpace: 'pre-wrap'
+              }}
+            >
+                {editableContent.fourthContentStyle}
+            </Typography>
+            </Box>
+        </Box>
+        </Box>
+      )}
+
+          {/* Fifth Persona Card (Display Mode) - Only show if showFifthCard is true */}
+          {showFifthCard && editableContent.fifthTitle && (
+            <Box>
+            {/* Card */}
+      <Box
+        sx={{
+          width: '890px',
+          minWidth: '470px',
+          flexShrink: 0,
+          minHeight: '220px',
+          borderRadius: '20px',
+          background: '#F5F5F5',
+          border: '10px solid #FFFFFF',
+          boxShadow: '0px 4px 4px 0px #8E8E9340',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
+        {/* Circle with Icon - Positioned as separate component */}
+        <Box
+          sx={{
+            width: '140px',
+            height: '140px',
+            borderRadius: '50%',
+            background: '#FFFFFF',
+            border: '8px solid #FFFFFF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'absolute',
+              left: '-80px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 1,
+            boxShadow: '-4px 4px 4px 0px #8E8E9340',
+          }}
+        >
+          {/* Inner gradient circle */}
+          <Box
+            sx={{
+                width: '110px',
+                height: '110px',
+              borderRadius: '50%',
+                background: 'linear-gradient(135deg, #026D54 0%, #026D54 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+                fontSize: '48px',
+            }}
+          >
+            {editableContent.fifthEmoji}
+          </Box>
+        </Box>
+
+        {/* Content - Positioned independently */}
+        <Box 
+          sx={{ 
+              ml: '80px',
+              maxWidth: 'calc(890px - 92px)',
+              pr: 3,
+              py: 3,
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: 'Instrument Serif, serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+                fontSize: '32px',
+                lineHeight: '36px',
+              letterSpacing: '0%',
+              color: '#0067D5',
+              mb: 1.5,
+                textAlign: 'left',
+            }}
+          >
+            {editableContent.fifthTitle}
+          </Typography>
+          
+            <Typography
+              sx={{
+                fontFamily: 'Inter Display, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '16px',
+                  lineHeight: '22px',
+                color: '#000000',
+                  textAlign: 'left',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                whiteSpace: 'pre-wrap'
+              }}
+            >
+                {editableContent.fifthContentStyle}
+            </Typography>
+            </Box>
+        </Box>
+        </Box>
+      )}
             </Box>
           </Grid>
 
@@ -7871,10 +9510,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 width: '400px',
                 height: (() => {
                   // Calculate height based on number of visible cards
-                  const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0);
+                  const visibleCards = 1 + (showEducatorCard ? 1 : 0) + (showThirdCard ? 1 : 0) + (showFourthCard ? 1 : 0) + (showFifthCard ? 1 : 0);
                   if (visibleCards === 1) return '220px';
                   if (visibleCards === 2) return '465px';
-                  return '460px'; // 3 cards
+                  if (visibleCards === 3) return '460px';
+                  if (visibleCards === 4) return '460px';
+                  if (visibleCards === 5) return '460px';
+                  return '460px'; // fallback
                 })(),
                 display: 'flex',
                 flexDirection: 'column',
@@ -7896,28 +9538,33 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </Typography>
 
               {/* Circle and Legend Layout */}
-                <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? 3 : 2, flex: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: (showEducatorCard || showThirdCard) ? 'column' : 'row', alignItems: 'center', gap: (showEducatorCard || showThirdCard) ? -1 : 2, flex: 1 }}>
                 {/* Full Circle Chart or Pie Chart */}
                 <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: (showEducatorCard || showThirdCard) ? 1 : 'none' }}>
                     {(() => {
                       // Render different chart based on number of personas
-                      if (showThirdCard) {
-                        // Pie chart when 3 personas are visible
+                      if (showFifthCard || showFourthCard || showThirdCard) {
+                        // Pie chart when 3+ personas are visible
                         return (
-                      <>
-                        <svg width="280" height="280" viewBox="0 0 160 160">
+                      <svg width="280" height="280" viewBox="0 0 160 160">
                           {(() => {
                             const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
                             const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
                             const thirdCount = parseInt(editableContent.thirdCreatorCount, 10) || 1;
-                            const total = comicCount + educatorCount + thirdCount;
+                            const fourthCount = parseInt(editableContent.fourthCreatorCount, 10) || 1;
+                            const fifthCount = parseInt(editableContent.fifthCreatorCount, 10) || 1;
+                            const total = comicCount + (showEducatorCard ? educatorCount : 0) + (showThirdCard ? thirdCount : 0) + (showFourthCard ? fourthCount : 0) + (showFifthCard ? fifthCount : 0);
                             const comicPercentage = comicCount / total;
-                            const educatorPercentage = educatorCount / total;
-                            const thirdPercentage = thirdCount / total;
+                            const educatorPercentage = showEducatorCard ? educatorCount / total : 0;
+                            const thirdPercentage = showThirdCard ? thirdCount / total : 0;
+                            const fourthPercentage = showFourthCard ? fourthCount / total : 0;
+                            const fifthPercentage = showFifthCard ? fifthCount / total : 0;
                             
                             const comicAngle = comicPercentage * 2 * Math.PI;
                             const educatorAngle = educatorPercentage * 2 * Math.PI;
                             const thirdAngle = thirdPercentage * 2 * Math.PI;
+                            const fourthAngle = fourthPercentage * 2 * Math.PI;
+                            const fifthAngle = fifthPercentage * 2 * Math.PI;
                             
                             let currentAngle = 0;
                             
@@ -7937,6 +9584,18 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             const thirdEndX = 80 + 70 * Math.sin(thirdEndAngle);
                             const thirdEndY = 80 - 70 * Math.cos(thirdEndAngle);
                             const thirdLargeArc = thirdAngle > Math.PI ? 1 : 0;
+                            
+                            currentAngle = thirdEndAngle;
+                            const fourthEndAngle = currentAngle + fourthAngle;
+                            const fourthEndX = 80 + 70 * Math.sin(fourthEndAngle);
+                            const fourthEndY = 80 - 70 * Math.cos(fourthEndAngle);
+                            const fourthLargeArc = fourthAngle > Math.PI ? 1 : 0;
+                            
+                            currentAngle = fourthEndAngle;
+                            const fifthEndAngle = currentAngle + fifthAngle;
+                            const fifthEndX = 80 + 70 * Math.sin(fifthEndAngle);
+                            const fifthEndY = 80 - 70 * Math.cos(fifthEndAngle);
+                            const fifthLargeArc = fifthAngle > Math.PI ? 1 : 0;
   
                             const comicMidAngle = comicAngle / 2;
                             const comicTextX = 80 + 35 * Math.sin(comicMidAngle);
@@ -7950,23 +9609,63 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             const thirdTextX = 80 + 35 * Math.sin(thirdMidAngle);
                             const thirdTextY = 80 - 35 * Math.cos(thirdMidAngle);
                             
+                            const fourthMidAngle = comicAngle + educatorAngle + thirdAngle + fourthAngle / 2;
+                            const fourthTextX = 80 + 35 * Math.sin(fourthMidAngle);
+                            const fourthTextY = 80 - 35 * Math.cos(fourthMidAngle);
+                            
+                            const fifthMidAngle = comicAngle + educatorAngle + thirdAngle + fourthAngle + fifthAngle / 2;
+                            const fifthTextX = 80 + 35 * Math.sin(fifthMidAngle);
+                            const fifthTextY = 80 - 35 * Math.cos(fifthMidAngle);
+                            
                             return (
                               <>
-                                {/* Comic segment (purple) */}
+                                {/* Comic segment (blue) */}
                                 <path
                                   d={`M 80 80 L 80 10 A 70 70 0 ${comicLargeArc} 1 ${comicEndX} ${comicEndY} Z`}
-                                  fill="#8A5AFE"
+                                  fill="#1340FF"
                                 />
-                                {/* Educator segment (yellow-green) */}
+                                {/* Educator segment (purple) */}
+                                {showEducatorCard && (
                                 <path
                                   d={`M 80 80 L ${comicEndX} ${comicEndY} A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
-                                  fill="#D4FF00"
+                                  fill="#8A5AFE"
                                 />
+                                )}
                                 {/* Third segment (orange-red) */}
+                                {showThirdCard && (
                                 <path
-                                  d={`M 80 80 L ${educatorEndX} ${educatorEndY} A 70 70 0 ${thirdLargeArc} 1 80 10 Z`}
-                                  fill="#FF6B35"
+                                  d={`M 80 80 L ${educatorEndX} ${educatorEndY} A 70 70 0 ${thirdLargeArc} 1 ${thirdEndX} ${thirdEndY} Z`}
+                                  fill="#FF3500"
                                 />
+                                )}
+                                {/* Fourth segment (yellow-green) */}
+                                {showFourthCard && (
+                                <path
+                                  d={`M 80 80 L ${thirdEndX} ${thirdEndY} A 70 70 0 ${fourthLargeArc} 1 ${fourthEndX} ${fourthEndY} Z`}
+                                  fill="#D8FF01"
+                                />
+                                )}
+                                {/* Fifth segment (teal) - closes the circle */}
+                                {showFifthCard && (
+                                <path
+                                  d={`M 80 80 L ${fourthEndX} ${fourthEndY} A 70 70 0 ${fifthLargeArc} 1 80 10 Z`}
+                                  fill="#026D54"
+                                />
+                                )}
+                                {!showFifthCard && showFourthCard && (
+                                <path
+                                  d={`M 80 80 L ${fourthEndX} ${fourthEndY} A 70 70 0 0 1 80 10 Z`}
+                                  fill="#D8FF01"
+                                  opacity="0"
+                                />
+                                )}
+                                {!showFifthCard && !showFourthCard && (
+                                <path
+                                  d={`M 80 80 L ${thirdEndX} ${thirdEndY} A 70 70 0 0 1 80 10 Z`}
+                                  fill="#FF3500"
+                                  opacity="0"
+                                />
+                                )}
                                 {/* Comic number */}
                                 <text
                                   x={comicTextX}
@@ -7996,7 +9695,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                   {educatorCount}
                                 </text>
                                 {/* Third number */}
-                                {thirdCount > 0 && (
+                                {thirdCount > 0 && showThirdCard && (
                                   <text
                                     x={thirdTextX}
                                     y={thirdTextY}
@@ -8011,67 +9710,83 @@ const PCRReportPage = ({ campaign, onBack }) => {
                                     {thirdCount}
                                   </text>
                                 )}
+                                {/* Fourth number */}
+                                {fourthCount > 0 && showFourthCard && (
+                                  <text
+                                    x={fourthTextX}
+                                    y={fourthTextY}
+                                    textAnchor="middle"
+                                    dominantBaseline="middle"
+                                    fill="#FFFFFF"
+                                    fontSize="14"
+                                    fontFamily="Aileron"
+                                    fontWeight="600"
+                                    style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                  >
+                                    {fourthCount}
+                                  </text>
+                                )}
+                                {/* Fifth number */}
+                                {fifthCount > 0 && showFifthCard && (
+                                  <text
+                                    x={fifthTextX}
+                                    y={fifthTextY}
+                                    textAnchor="middle"
+                                    dominantBaseline="middle"
+                                    fill="#FFFFFF"
+                                    fontSize="14"
+                                    fontFamily="Aileron"
+                                    fontWeight="600"
+                                    style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                                  >
+                                    {fifthCount}
+                                  </text>
+                                )}
                               </>
                             );
                           })()}
                         </svg>
-                      </>
                         );
                       }
                       
                       if (showEducatorCard) {
                         // Pie chart when both personas are visible
                         return (
-                      <>
-                        <svg width="280" height="280" viewBox="0 0 160 160">
+                      <svg width="280" height="280" viewBox="0 0 160 160">
                           {(() => {
                             const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
                             const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
                             const total = comicCount + educatorCount;
-                            const educatorPercentage = educatorCount / total;
                             const comicPercentage = comicCount / total;
+                            const educatorPercentage = educatorCount / total;
                             
                             // Calculate angles
-                            const educatorAngle = educatorPercentage * 2 * Math.PI;
                             const comicAngle = comicPercentage * 2 * Math.PI;
+                            const educatorAngle = educatorPercentage * 2 * Math.PI;
                             
-                            // Calculate path for educator segment
-                            const educatorEndX = 80 + 70 * Math.sin(educatorAngle);
-                            const educatorEndY = 80 - 70 * Math.cos(educatorAngle);
-                            const educatorLargeArc = educatorPercentage > 0.5 ? 1 : 0;
+                            // Calculate path for comic segment (purple)
+                            const comicEndX = 80 + 70 * Math.sin(comicAngle);
+                            const comicEndY = 80 - 70 * Math.cos(comicAngle);
+                            const comicLargeArc = comicPercentage > 0.5 ? 1 : 0;
                             
                             // Calculate positions for numbers (middle of each segment)
-                            // Educator number position (middle of yellow segment)
-                            const educatorMidAngle = educatorAngle / 2;
-                            const educatorTextX = 80 + 35 * Math.sin(educatorMidAngle);
-                            const educatorTextY = 80 - 35 * Math.cos(educatorMidAngle);
-                            
                             // Comic number position (middle of purple segment)
-                            const comicMidAngle = educatorAngle + (comicAngle / 2);
+                            const comicMidAngle = comicAngle / 2;
                             const comicTextX = 80 + 35 * Math.sin(comicMidAngle);
                             const comicTextY = 80 - 35 * Math.cos(comicMidAngle);
                             
+                            // Educator number position (middle of yellow segment)
+                            const educatorMidAngle = comicAngle + (educatorAngle / 2);
+                            const educatorTextX = 80 + 35 * Math.sin(educatorMidAngle);
+                            const educatorTextY = 80 - 35 * Math.cos(educatorMidAngle);
+                            
                             return (
                               <>
-                                <circle cx="80" cy="80" r="70" fill="#D4FF00" />
+                                <circle cx="80" cy="80" r="70" fill="#8A5AFE" />
                                 <path
-                                  d={`M 80 80 L 80 10 A 70 70 0 ${educatorLargeArc} 1 ${educatorEndX} ${educatorEndY} Z`}
-                                  fill="#8A5AFE"
+                                  d={`M 80 80 L 80 10 A 70 70 0 ${comicLargeArc} 1 ${comicEndX} ${comicEndY} Z`}
+                                  fill="#1340FF"
                                 />
-                              {/* Educator number */}
-                              <text
-                                x={educatorTextX}
-                                y={educatorTextY}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                                fill="#FFFFFF"
-                                fontSize="14"
-                                fontFamily="Aileron"
-                                fontWeight="600"
-                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
-                              >
-                                {educatorCount}
-                              </text>
                               {/* Comic number */}
                               <text
                                 x={comicTextX}
@@ -8086,11 +9801,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
                               >
                                 {comicCount}
                               </text>
+                              {/* Educator number */}
+                              <text
+                                x={educatorTextX}
+                                y={educatorTextY}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#FFFFFF"
+                                fontSize="14"
+                                fontFamily="Aileron"
+                                fontWeight="600"
+                                style={{ textShadow: '1px 1px 3px #231F20, 0px 0px 2px rgba(0, 0, 0, 0.8)' }}
+                              >
+                                {educatorCount}
+                              </text>
                               </>
                             );
                           })()}
                         </svg>
-                      </>
                         );
                       }
                       
@@ -8102,7 +9830,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             cx="80"
                             cy="80"
                             r="70"
-                            fill="#8A5AFE"
+                            fill="#1340FF"
                           />
                         </svg>
                         <Box
@@ -8136,14 +9864,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Box>
 
                   {/* Legend - Moved to bottom */}
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%', px: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, width: '100%', px: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                       <Box
                         sx={{
-                          width: '12px',
-                          height: '12px',
+                          width: '10px',
+                          height: '10px',
                           borderRadius: '50%',
-                          bgcolor: '#8A5AFE',
+                          bgcolor: '#1340FF',
                           flexShrink: 0,
                         }}
                       />
@@ -8154,19 +9882,22 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     fontSize: '14px',
                     lineHeight: '18px',
                           color: '#231F20',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
                   }}
                 >
-                        {editableContent.comicTitle} ({editableContent.creatorStrategyCount || '1'})
+                        {editableContent.comicTitle}
                 </Typography>
                     </Box>
                     {showEducatorCard && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                         <Box
                           sx={{
-                            width: '12px',
-                            height: '12px',
+                            width: '10px',
+                            height: '10px',
                             borderRadius: '50%',
-                            bgcolor: '#D4FF00',
+                            bgcolor: '#8A5AFE',
                             flexShrink: 0,
                           }}
                         />
@@ -8177,20 +9908,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     fontSize: '14px',
                     lineHeight: '18px',
                             color: '#231F20',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                   }}
                 >
-                          {editableContent.educatorTitle} ({editableContent.educatorCreatorCount || '1'})
+                          {editableContent.educatorTitle}
                 </Typography>
               </Box>
                     )}
                     {showThirdCard && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                         <Box
                           sx={{
-                            width: '12px',
-                            height: '12px',
+                            width: '10px',
+                            height: '10px',
                             borderRadius: '50%',
-                            bgcolor: '#FF6B35',
+                            bgcolor: '#FF3500',
                             flexShrink: 0,
                           }}
                         />
@@ -8201,9 +9935,66 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             fontSize: '14px',
                             lineHeight: '18px',
                             color: '#231F20',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                           }}
                         >
-                          {editableContent.thirdTitle} ({editableContent.thirdCreatorCount || '1'})
+                          {editableContent.thirdTitle}
+                        </Typography>
+            </Box>
+                    )}
+                    {showFourthCard && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                        <Box
+                          sx={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            bgcolor: '#D8FF01',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography
+                          sx={{
+                            fontFamily: 'Aileron',
+                            fontWeight: 400,
+                            fontSize: '14px',
+                            lineHeight: '18px',
+                            color: '#231F20',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {editableContent.fourthTitle}
+                        </Typography>
+            </Box>
+                    )}
+                    {showFifthCard && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                        <Box
+                          sx={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            bgcolor: '#026D54',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography
+                          sx={{
+                            fontFamily: 'Aileron',
+                            fontWeight: 400,
+                            fontSize: '14px',
+                            lineHeight: '18px',
+                            color: '#231F20',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {editableContent.fifthTitle}
                         </Typography>
             </Box>
                     )}
@@ -8360,6 +10151,177 @@ const PCRReportPage = ({ campaign, onBack }) => {
     </Box>
 
     <Grid container spacing={3} sx={{ mb: 6 }}>
+      {/* What Worked Well - Purple */}
+      <Grid item xs={12} md={4}>
+        <Box sx={{ height: '100%' }}>
+          {/* Header */}
+      <Box
+        sx={{
+              background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
+              borderRadius: '12px 12px 0 0',
+              p: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1
+            }}
+          >
+            <Box
+              component="img"
+              src="/assets/icons/pcr/rewarded_ads.svg"
+              alt="Rewarded ads icon"
+              sx={{ width: '24px', height: '24px' }}
+            />
+            <Typography 
+              sx={{ 
+                fontFamily: 'Aileron',
+                fontWeight: 700,
+                fontSize: '18px',
+                color: 'white',
+                textAlign: 'center'
+              }}
+            >
+              What Worked Well
+      </Typography>
+          </Box>
+          
+          {/* Content Boxes */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
+            {editableContent.workedWellInsights.length === 0 && !isEditMode && (
+              <Box className="hide-in-pdf" sx={{ 
+                background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)', 
+                p: 3, 
+                color: 'white', 
+                height: '120px', 
+                display: 'flex', 
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '0 0 12px 12px',
+              }}>
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.8 }}>
+                  Click Edit Report to edit What Worked Well
+                </Typography>
+              </Box>
+            )}
+            {editableContent.workedWellInsights.map((insight, index) => (
+      <Box
+                key={index}
+        sx={{
+                  background: getWorkedWellInsightBgColor(index),
+                  opacity: getWorkedWellOpacity(index),
+                  px: 2,
+                  py: 1.5, 
+                  color: 'white', 
+                  height: '120px', 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderRadius: index === editableContent.workedWellInsights.length - 1 ? '0 0 12px 12px' : 0,
+                  position: 'relative',
+                }}
+              >
+                {isEditMode && !sectionEditStates.recommendations ? (
+                  <Box sx={{ 
+                    bgcolor: '#E5E7EB', 
+          borderRadius: '12px',
+                    p: 2,
+                    flex: 1,
+                    display: 'flex',
+                    gap: 0.5,
+                  }}>
+                    <Box sx={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          mb: 0.5,
+                        }}
+                      >
+                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                          Editable
+        </Typography>
+      </Box>
+                      <TextField
+                        value={insight}
+                        onChange={(e) => {
+                          const newInsights = [...editableContent.workedWellInsights];
+                          newInsights[index] = e.target.value;
+                          setEditableContent({ ...editableContent, workedWellInsights: newInsights });
+                        }}
+                        fullWidth
+                        multiline
+                        rows={2}
+                        inputProps={{
+                          maxLength: 200,
+                        }}
+                        sx={{
+                          '& .MuiInputBase-root': {
+                            fontFamily: 'Aileron',
+                            fontSize: '12px',
+                            lineHeight: '18px',
+                            color: '#000000',
+                            padding: 0,
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            border: 'none',
+                          },
+                        }}
+                      />
+    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const newInsights = editableContent.workedWellInsights.filter((_, i) => i !== index);
+                        setEditableContent({ ...editableContent, workedWellInsights: newInsights });
+                      }}
+                      sx={{ color: '#000000', alignSelf: 'flex-start' }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ) : (
+                  <Typography sx={{ 
+                    fontFamily: 'Aileron', 
+                    fontSize: '14px', 
+                    lineHeight: '20px',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
+                  }}>
+                    {insight}
+                  </Typography>
+                )}
+              </Box>
+            ))}
+            
+            {isEditMode && editableContent.workedWellInsights.length < 3 && (
+              <IconButton
+                onClick={() => {
+                  setEditableContent({
+                    ...editableContent,
+                    workedWellInsights: [...editableContent.workedWellInsights, ''],
+                  });
+                }}
+                sx={{
+                  background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
+          color: 'white',
+                  '&:hover': { background: 'linear-gradient(0deg, #7A4AEE, #7A4AEE)' },
+                  borderRadius: '12px',
+                  width: '44px',
+                  height: '44px',
+                  fontSize: '36px',
+                  fontWeight: 300,
+                }}
+              >
+                +
+              </IconButton>
+            )}
+          </Box>
+        </Box>
+      </Grid>
+
       {/* What Could Be Improved - Blue */}
       <Grid item xs={12} md={4}>
         <Box sx={{ height: '100%' }}>
@@ -8395,7 +10357,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Box>
           
           {/* Content Boxes */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
             {editableContent.improvedInsights.length === 0 && !isEditMode && (
               <Box className="hide-in-pdf" sx={{ 
                 bgcolor: '#1340FFD9', 
@@ -8417,13 +10379,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 key={index}
         sx={{
                   bgcolor: getImprovedInsightBgColor(index),
-                  p: 1.5, 
+                  px: 2, // Changed from p: 1.5 to px: 2 for consistent horizontal padding
+                  py: 1.5, // Kept vertical padding
                   color: 'white', 
                   height: '120px', 
                   display: 'flex', 
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  borderRadius: index === editableContent.improvedInsights.length - 1 ? '0 0 12px 12px' : 0,
+                  borderRadius: index === editableContent.workedWellInsights.length - 1 ? '0 0 12px 12px' : 0,
                   position: 'relative',
                 }}
               >
@@ -8490,8 +10453,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 ) : (
                   <Typography sx={{ 
                     fontFamily: 'Aileron', 
-                    fontSize: '12px', 
-                    lineHeight: '18px',
+                    fontSize: '14px', 
+                    lineHeight: '20px',
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
@@ -8515,182 +10478,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   bgcolor: '#1340FF',
                   color: 'white',
                   '&:hover': { bgcolor: '#0D2FCC' },
-                  borderRadius: '12px',
-                  width: '44px',
-                  height: '44px',
-                  fontSize: '36px',
-                  fontWeight: 300,
-                }}
-              >
-                +
-              </IconButton>
-            )}
-          </Box>
-        </Box>
-      </Grid>
-
-      {/* What Worked Well - Purple */}
-      <Grid item xs={12} md={4}>
-        <Box sx={{ height: '100%' }}>
-          {/* Header */}
-      <Box
-        sx={{
-              background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
-              borderRadius: '12px 12px 0 0',
-              p: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1
-            }}
-          >
-            <Box
-              component="img"
-              src="/assets/icons/pcr/rewarded_ads.svg"
-              alt="Rewarded ads icon"
-              sx={{ width: '24px', height: '24px' }}
-            />
-            <Typography 
-              sx={{ 
-                fontFamily: 'Aileron',
-                fontWeight: 700,
-                fontSize: '18px',
-                color: 'white',
-                textAlign: 'center'
-              }}
-            >
-              What Worked Well
-        </Typography>
-      </Box>
-          
-          {/* Content Boxes */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            {editableContent.workedWellInsights.length === 0 && !isEditMode && (
-              <Box className="hide-in-pdf" sx={{ 
-                background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
-                opacity: 0.85,
-                p: 3, 
-                color: 'white', 
-                height: '120px', 
-                display: 'flex', 
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '0 0 12px 12px',
-              }}>
-                <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.9 }}>
-                  Click Edit Report to edit What Worked Well
-                </Typography>
-              </Box>
-            )}
-            {editableContent.workedWellInsights.map((insight, index) => (
-              <Box 
-                key={index}
-                sx={{ 
-                  background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
-                  opacity: getWorkedWellOpacity(index),
-                  p: 1, 
-                  color: 'white', 
-                  height: '120px', 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderRadius: index === editableContent.workedWellInsights.length - 1 ? '0 0 12px 12px' : 0,
-                  position: 'relative',
-                }}
-              >
-                {isEditMode && !sectionEditStates.recommendations ? (
-                  <Box sx={{ 
-                    bgcolor: '#E5E7EB', 
-          borderRadius: '12px',
-          p: 2.5,
-                    px: 1,
-                    flex: 1,
-                    display: 'flex',
-                    gap: 0.5,
-                  }}>
-                    <Box sx={{ position: 'relative', flex: 1 }}>
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          zIndex: 1,
-                        }}
-                      >
-                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
-                          Editable
-                        </Typography>
-                      </Box>
-                      <TextField
-                        value={insight}
-                        onChange={(e) => {
-                          const newInsights = [...editableContent.workedWellInsights];
-                          newInsights[index] = e.target.value;
-                          setEditableContent({ ...editableContent, workedWellInsights: newInsights });
-                        }}
-                        fullWidth
-                        multiline
-                        rows={2}
-                        inputProps={{
-                          maxLength: 200,
-                        }}
-                        sx={{
-                          mt: 1.5,
-                          '& .MuiInputBase-root': {
-                            fontFamily: 'Aileron',
-                            fontSize: '12px',
-                            lineHeight: '18px',
-                            color: '#000000',
-                            padding: 0,
-                          },
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            border: 'none',
-                          },
-                        }}
-                      />
-                    </Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        const newInsights = editableContent.workedWellInsights.filter((_, i) => i !== index);
-                        setEditableContent({ ...editableContent, workedWellInsights: newInsights });
-                      }}
-                      sx={{ color: '#000000', alignSelf: 'flex-start' }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                ) : (
-                  <Typography sx={{ 
-                    fontFamily: 'Aileron', 
-                    fontSize: '12px', 
-                    lineHeight: '18px',
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-line',
-                  }}>
-                    {insight}
-                  </Typography>
-                )}
-              </Box>
-            ))}
-            
-            {isEditMode && editableContent.workedWellInsights.length < 3 && (
-              <IconButton
-                onClick={() => {
-                  setEditableContent({
-                    ...editableContent,
-                    workedWellInsights: [...editableContent.workedWellInsights, ''],
-                  });
-                }}
-                sx={{
-                  background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
-          color: 'white',
-                  '&:hover': { background: 'linear-gradient(0deg, #7A4AEE, #7A4AEE)' },
                   borderRadius: '12px',
                   width: '44px',
                   height: '44px',
@@ -8740,7 +10527,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       </Box>
           
           {/* Content Boxes */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
             {editableContent.nextStepsInsights.length === 0 && !isEditMode && (
               <Box className="hide-in-pdf" sx={{ 
                 bgcolor: '#026D54D9',
@@ -8762,7 +10549,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 key={index}
                 sx={{ 
                   bgcolor: index === 0 ? '#026D54D9' : '#026D54BF',
-                  p: 1, 
+                  px: 2, // Changed from p: 1 to px: 2 for consistent horizontal padding
+                  py: 1.5, // Added vertical padding
                   color: 'white', 
                   height: '120px', 
                   display: 'flex', 
@@ -8840,8 +10628,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 ) : (
                   <Typography sx={{ 
                     fontFamily: 'Aileron', 
-                    fontSize: '12px', 
-                    lineHeight: '18px',
+                    fontSize: '14px', 
+                    lineHeight: '20px',
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
@@ -8918,6 +10706,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
             setEditableContent({ ...editableContent, educatorEmoji: emojiObject.emoji });
           } else if (emojiPickerType === 'third') {
             setEditableContent({ ...editableContent, thirdEmoji: emojiObject.emoji });
+          } else if (emojiPickerType === 'fourth') {
+            setEditableContent({ ...editableContent, fourthEmoji: emojiObject.emoji });
+          } else if (emojiPickerType === 'fifth') {
+            setEditableContent({ ...editableContent, fifthEmoji: emojiObject.emoji });
           }
           setEmojiPickerAnchor(null);
           setEmojiPickerType(null);
@@ -9034,6 +10826,11 @@ PCRReportPage.propTypes = {
       postingEndDate: PropTypes.string,
     }),
     submission: PropTypes.array,
+    shortlisted: PropTypes.arrayOf(
+      PropTypes.shape({
+        creditTier: PropTypes.string,
+      })
+    ),
   }),
   onBack: PropTypes.func.isRequired,
 };

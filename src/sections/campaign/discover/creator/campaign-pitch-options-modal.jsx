@@ -42,34 +42,24 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video, m
   };
 
   const handlePitch = () => {
-    // Check if user is in the target list for media kit requirement
-    const targetUserIds = [
-      'cmeuvjc6b003on401rn4pw62b',
-      'cmf813vtd0000pd3psk46u4lt', 
-      'cmipdmkvd0005k43fnfgxrb4t',
-      'cmf8289xu000cpdmcj4a4fosl', 
-      'user456'
-    ];
-    const isTargetUser = targetUserIds.includes(user?.id);
-    
+    // Check if user is marked as Media Kit Mandatory
+    const isMKM = user?.mediaKitMandatory === true;
+
     // Check if media kit is connected
-    const hasMediaKit = user?.creator && 
-      (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
-    
+    const hasMediaKit =
+      user?.creator && (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+
     // Check if payment details are completed
     const hasPaymentDetails = user?.creator?.isFormCompleted && user?.paymentForm?.bankAccountName;
-    
-    // For target users, check both media kit and payment details
-    if (isTargetUser && (!hasMediaKit || !hasPaymentDetails)) {
-      // Show media kit popup with pitch error message if media kit is missing
-      if (!hasMediaKit) {
-        setShowMediaKitPopup(true);
-      }
+
+    // For MKM users, enforce media kit connection
+    if (isMKM && !hasMediaKit) {
+      setShowMediaKitPopup(true);
       return;
     }
-    
-    // For non-target users, only check payment details (original behavior)
-    if (!isTargetUser && (!user?.creator?.isFormCompleted || !user?.paymentForm?.bankAccountName)) {
+
+    // Check payment details for all users
+    if (!user?.creator?.isFormCompleted || !user?.paymentForm?.bankAccountName) {
       return;
     }
 
@@ -240,7 +230,12 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video, m
         }}
         mutate={mutate}
       />
-      <CampaignPitchVideoModal open={video.value} handleClose={video.onFalse} campaign={campaign} mutate={mutate} />
+      <CampaignPitchVideoModal
+        open={video.value}
+        handleClose={video.onFalse}
+        campaign={campaign}
+        mutate={mutate}
+      />
 
       <MediaKitPopup
         open={showMediaKitPopup}

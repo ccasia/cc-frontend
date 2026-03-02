@@ -446,23 +446,16 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
             >
               {campaign?.shortlisted &&
                 (() => {
-                  // Check if user is in the target list for media kit requirement
-                  const targetUserIds = [
-                    'cmeuvjc6b003on401rn4pw62b',
-                    'cmf813vtd0000pd3psk46u4lt',
-                    'cmipdmkvd0005k43fnfgxrb4t',
-                    'cmf8289xu000cpdmcj4a4fosl',
-                    'user456',
-                  ];
-                  const isTargetUser = targetUserIds.includes(user?.id);
+                  // Check if user is marked as Media Kit Mandatory
+                  const isMKM = user?.mediaKitMandatory === true;
 
                   // Check if media kit is connected
                   const hasMediaKit =
                     user?.creator &&
                     (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
 
-                  // For target users, disable manage button if no media kit
-                  const isDisabled = isTargetUser && !hasMediaKit;
+                  // For MKM users, disable manage button if no media kit
+                  const isDisabled = isMKM && !hasMediaKit;
 
                   return (
                     <Button
@@ -650,22 +643,15 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
           {/* Warning message for incomplete media kit */}
           {campaign?.shortlisted &&
             (() => {
-              // Check if user is in the target list for media kit requirement
-              const targetUserIds = [
-                'cmeuvjc6b003on401rn4pw62b',
-                'cmf813vtd0000pd3psk46u4lt',
-                'cmipdmkvd0005k43fnfgxrb4t',
-                'cmf8289xu000cpdmcj4a4fosl',
-                'user456',
-              ];
-              const isTargetUser = targetUserIds.includes(user?.id);
+              // Check if user is marked as Media Kit Mandatory
+              const isMKM = user?.mediaKitMandatory === true;
 
               // Check if media kit is connected
               const hasMediaKit =
                 user?.creator &&
                 (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
 
-              if (isTargetUser && !hasMediaKit) {
+              if (isMKM && !hasMediaKit) {
                 return (
                   <Typography
                     sx={{

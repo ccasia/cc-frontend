@@ -136,6 +136,7 @@ export function useNavData() {
             roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
             title: 'Campaigns',
             path: paths.dashboard.campaign.view,
+            path: paths.dashboard.campaign.view,
             icon: ICONS.mycampaigns,
           },
           {
@@ -166,6 +167,12 @@ export function useNavData() {
             path: paths.dashboard.company.discover,
             icon: ICONS.clients,
           },
+          // {
+          //   roles: ['superadmin', 'CSM', 'CSL', 'client', 'god'],
+          //   title: 'Creator Discovery Tool',
+          //   path: paths.dashboard.discoveryTool,
+          //   icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
+          // },
           // {
           //   title: 'My Tasks',
           //   path: paths.dashboard.kanban,
@@ -323,10 +330,11 @@ export function useNavData() {
 
   // // add finance naviagation
   const navigations = useMemo(
-    // roles => "god" , "normal", "designation", "admin", "creator"
-    // user?.role === 'creator' ? creatorNavigations : adminNavigations,
     // eslint-disable-next-line no-nested-ternary
     () => {
+      if (user?.role === 'superadmin') {
+        return adminNavigations;
+      }
       if (user?.role === 'creator') {
         return creatorNavigations;
       }
@@ -341,21 +349,6 @@ export function useNavData() {
       }
       if (user?.admin?.role?.name === 'CSL') {
         return csLeadNavigations;
-      }
-
-      if (user?.role === 'superadmin') {
-        return [
-          ...adminNavigations,
-          // {
-          //   items: [
-          //     {
-          //       title: 'Invoices',
-          //       path: paths.dashboard.finance.invoice,
-          //       icon: <Iconify icon="iconamoon:invoice" width={25} />,
-          //     },
-          //   ],
-          // },
-        ];
       }
 
       return [];

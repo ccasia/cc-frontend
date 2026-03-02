@@ -18,9 +18,8 @@ import {
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
 
 import { useAuthContext } from 'src/auth/hooks';
-import useSocketContext from 'src/socket/hooks/useSocketContext';
-
 import { getStatusColor } from 'src/contants/statusColors';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
@@ -102,9 +101,10 @@ function ScrollingName({ name }) {
               fontSize: { xs: '0.9rem', sm: '1rem' },
               whiteSpace: 'nowrap',
               display: 'inline-block',
-              ...(shouldScroll && scrollDistance > 0 && {
-                animation: `${animationName} 8s ease-in-out infinite`,
-              }),
+              ...(shouldScroll &&
+                scrollDistance > 0 && {
+                  animation: `${animationName} 8s ease-in-out infinite`,
+                }),
             }}
           >
             {name}
@@ -121,25 +121,24 @@ ScrollingName.propTypes = {
 
 function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false }) {
   // Get V4 submissions for this creator to check if they have any
-  const { 
-    submissions, 
-    submissionsLoading
-  } = useGetV4Submissions(campaign?.id, creator?.userId);
-
-
+  const { submissions, submissionsLoading } = useGetV4Submissions(campaign?.id, creator?.userId);
 
   // Don't render if loading or if no submissions exist
   if (submissionsLoading || submissions.length === 0) {
     return null;
   }
 
-  return (
-    <CreatorAccordion
-      creator={creator}
-      campaign={campaign}
-      isDisabled={isDisabled}
-    />
-  );
+  // Check if the creator has an approved agreement submission
+  // Only show creators whose agreement has been approved by CSM admin
+  const agreementSubmission = submissions.find((s) => s.submissionType?.type === 'AGREEMENT_FORM');
+  const isAgreementApproved = agreementSubmission?.status === 'APPROVED';
+
+  // Don't render if agreement doesn't exist or isn't approved
+  if (!agreementSubmission || !isAgreementApproved) {
+    return null;
+  }
+
+  return <CreatorAccordion creator={creator} campaign={campaign} isDisabled={isDisabled} />;
 }
 
 function CreatorAccordion({ creator, campaign, isDisabled = false }) {
@@ -150,15 +149,13 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
 
-  const {campaignType} = campaign;
+  const { campaignType } = campaign;
 
   // Get V4 submissions for this creator
-  const {
-    submissions,
-    grouped,
-    submissionsLoading,
-    submissionsMutate
-  } = useGetV4Submissions(campaign?.id, creator?.userId);
+  const { submissions, grouped, submissionsLoading, submissionsMutate } = useGetV4Submissions(
+    campaign?.id,
+    creator?.userId
+  );
 
   // Listen for real-time submission updates for this creator
   useV4SubmissionListSocket({
@@ -169,23 +166,45 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
     userId: user?.id,
   });
 
-  const onlyAgreement = submissions.length === 1 && submissions[0].submissionType.type === 'AGREEMENT_FORM';
+  // Listen for real-time submission updates for this creator
+  useV4SubmissionListSocket({
+    socket,
+    campaignId: campaign?.id,
+    creatorUserId: creator?.userId,
+    onUpdate: () => submissionsMutate(),
+    userId: user?.id,
+  });
 
-  const handleSubmissionToggle = useCallback(async (submissionType, submissionId) => {
-    const key = `${submissionType}-${submissionId}`;
-    const isCurrentlyExpanded = expandedSubmission === key;
-    
-    if (!isCurrentlyExpanded) {
-      // If expanding, refresh the data first
-      try {
-        await submissionsMutate();
-      } catch (error) {
-        console.error('Error refreshing submission:', error);
+  // Listen for real-time submission updates for this creator
+  useV4SubmissionListSocket({
+    socket,
+    campaignId: campaign?.id,
+    creatorUserId: creator?.userId,
+    onUpdate: () => submissionsMutate(),
+    userId: user?.id,
+  });
+
+  const onlyAgreement =
+    submissions.length === 1 && submissions[0].submissionType.type === 'AGREEMENT_FORM';
+
+  const handleSubmissionToggle = useCallback(
+    async (submissionType, submissionId) => {
+      const key = `${submissionType}-${submissionId}`;
+      const isCurrentlyExpanded = expandedSubmission === key;
+
+      if (!isCurrentlyExpanded) {
+        // If expanding, refresh the data first
+        try {
+          await submissionsMutate();
+        } catch (error) {
+          console.error('Error refreshing submission:', error);
+        }
       }
-    }
-    
-    setExpandedSubmission(prev => prev === key ? null : key);
-  }, [expandedSubmission, submissionsMutate]);
+
+      setExpandedSubmission((prev) => (prev === key ? null : key));
+    },
+    [expandedSubmission, submissionsMutate]
+  );
 
   const renderSubmissionPills = () => {
     const pills = [];
@@ -199,15 +218,18 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
         switch (status) {
           case 'CLIENT_APPROVED':
             // Only show PENDING_REVIEW color for video and photo submissions in normal campaigns
-            if (campaignType === 'normal' && (submissionType === 'video' || submissionType === 'photo')) {
+            if (
+              campaignType === 'normal' &&
+              (submissionType === 'video' || submissionType === 'photo')
+            ) {
               return getStatusColor('PENDING_REVIEW');
             }
             return getStatusColor(status);
           default:
-            return getStatusColor(status)
+            return getStatusColor(status);
         }
       }
-      
+
       // Client-specific
       switch (status) {
         case 'SENT_TO_CLIENT':
@@ -241,7 +263,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
         }
       } else if (!isClient) {
         if (status === 'IN_PROGRESS') return 'PROCESSING';
-        return formatStatus(status)
+        return formatStatus(status);
       }
 
       // Client-specific
@@ -260,7 +282,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
         case 'POSTED':
           return 'POSTED';
         case 'CLIENT_FEEDBACK':
-          return 'IN PROGRESS'; 
+          return 'IN PROGRESS';
         case 'CHANGES_REQUIRED':
         case 'REJECTED':
           return 'IN PROGRESS';
@@ -268,7 +290,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
           return formatStatus(status);
       }
     };
-    
+
     // Video submission pills
     grouped.videos?.forEach((videoSubmission, index) => {
       // removed unused submissionCounter
@@ -283,7 +305,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
           flexDirection="row"
           alignItems="center"
           justifyContent="space-between"
-          sx={{ 
+          sx={{
             cursor: 'pointer',
             gap: { xs: 0.2, sm: 0.4, md: 0.5 },
             width: { xs: 140, sm: 210 },
@@ -292,16 +314,21 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
             borderTopLeftRadius: 10,
             '&:hover': {
               bgcolor: isExpanded ? 'background.neutral' : 'rgba(231, 231, 231, 0.8)',
-            }
+            },
           }}
           bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
           py={{ xs: 1.2, sm: 1.5 }}
           pr={{ xs: 0.3, sm: 0.5 }}
           pl={{ xs: 0.5, sm: 0.8 }}
         >
-          <Box display="flex" alignItems="center" justifyContent="center" gap={{ xs: 0.2, sm: 0.3 }}>
-            <Tooltip 
-              title="Video" 
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            gap={{ xs: 0.2, sm: 0.3 }}
+          >
+            <Tooltip
+              title="Video"
               placement="top"
               PopperProps={{
                 modifiers: [
@@ -328,9 +355,9 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                     boxShadow: '0px 4px 4px 0px #00000040',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
-                  }
-                }
+                    justifyContent: 'center',
+                  },
+                },
               }}
             >
               <Box
@@ -339,8 +366,10 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                 sx={{
                   width: { xs: 22, sm: 25, md: 27 },
                   height: { xs: 22, sm: 25, md: 27 },
-                  filter: isExpanded ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)' : 'none',
-                  cursor: 'pointer'
+                  filter: isExpanded
+                    ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)'
+                    : 'none',
+                  cursor: 'pointer',
                 }}
               />
             </Tooltip>
@@ -365,7 +394,10 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                 <CircularProgress
                   size={12}
                   thickness={5}
-                  sx={{ color: getClientStatusColor(videoSubmission.status, 'video'), display: 'flex' }}
+                  sx={{
+                    color: getClientStatusColor(videoSubmission.status, 'video'),
+                    display: 'flex',
+                  }}
                 />
               )}
               <Typography
@@ -383,21 +415,17 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
               </Typography>
             </Box>
           </Box>
-          <Box
-            display="flex"
-            alignItems="center"
-            flexShrink={0}
-          >
-            <Iconify 
-              icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"}
-              sx={{ 
-                width: { xs: 20, sm: 22, md: 24, lg: 26 }, 
-                height: { xs: 20, sm: 22, md: 24, lg: 26 } 
+          <Box display="flex" alignItems="center" flexShrink={0}>
+            <Iconify
+              icon={isExpanded ? 'mingcute:up-line' : 'mingcute:down-line'}
+              sx={{
+                width: { xs: 20, sm: 22, md: 24, lg: 26 },
+                height: { xs: 20, sm: 22, md: 24, lg: 26 },
               }}
               color={isExpanded ? '#1340FF' : '#8E8E93'}
-            />            
+            />
           </Box>
-        </Box> 
+        </Box>
       );
     });
 
@@ -406,7 +434,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
       // removed unused submissionCounter
       const key = `photo-${photoSubmission.id}`;
       const isExpanded = expandedSubmission === key;
-      
+
       pills.push(
         <Box
           key={key}
@@ -415,7 +443,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
           flexDirection="row"
           alignItems="center"
           justifyContent="space-between"
-          sx={{ 
+          sx={{
             cursor: 'pointer',
             gap: { xs: 0.2, sm: 0.4, md: 0.5 },
             width: { xs: 140, sm: 210 },
@@ -424,16 +452,21 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
             borderTopLeftRadius: 10,
             '&:hover': {
               bgcolor: isExpanded ? 'background.neutral' : 'rgba(231, 231, 231, 0.8)',
-            }
+            },
           }}
           bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
           py={{ xs: 1.2, sm: 1.5 }}
           pl={{ xs: 0.5, sm: 0.8 }}
           pr={{ xs: 0.3, sm: 0.5 }}
         >
-          <Box display="flex" alignItems="center" justifyContent="center" gap={{ xs: 0.2, sm: 0.3 }}>
-            <Tooltip 
-              title="Photo" 
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            gap={{ xs: 0.2, sm: 0.3 }}
+          >
+            <Tooltip
+              title="Photo"
               placement="top"
               PopperProps={{
                 modifiers: [
@@ -460,9 +493,9 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                     boxShadow: '0px 4px 4px 0px #00000040',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
-                  }
-                }
+                    justifyContent: 'center',
+                  },
+                },
               }}
             >
               <Box
@@ -471,8 +504,10 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                 sx={{
                   width: { xs: 22, sm: 25, md: 27 },
                   height: { xs: 22, sm: 25, md: 27 },
-                  filter: isExpanded ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)' : 'none',
-                  cursor: 'pointer'
+                  filter: isExpanded
+                    ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)'
+                    : 'none',
+                  cursor: 'pointer',
                 }}
               />
             </Tooltip>
@@ -493,13 +528,13 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                 flexShrink: 1,
               }}
             >
-              <Typography 
-                fontWeight="SemiBold" 
-                pb={0.2} 
-                fontSize={{ xs: 8, sm: 12 }} 
+              <Typography
+                fontWeight="SemiBold"
+                pb={0.2}
+                fontSize={{ xs: 8, sm: 12 }}
                 color={getClientStatusColor(photoSubmission.status, 'photo')}
                 noWrap
-                sx={{ 
+                sx={{
                   maxWidth: { xs: 60, sm: 210 },
                 }}
                 textOverflow="ellipsis"
@@ -509,11 +544,11 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
               </Typography>
             </Box>
           </Box>
-          <Iconify 
-            icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"} 
-            sx={{ 
-              width: { xs: 20, sm: 22, md: 24, lg: 26 }, 
-              height: { xs: 20, sm: 22, md: 24, lg: 26 } 
+          <Iconify
+            icon={isExpanded ? 'mingcute:up-line' : 'mingcute:down-line'}
+            sx={{
+              width: { xs: 20, sm: 22, md: 24, lg: 26 },
+              height: { xs: 20, sm: 22, md: 24, lg: 26 },
             }}
             color={isExpanded ? '#1340FF' : '#8E8E93'}
           />
@@ -526,7 +561,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
       // removed unused submissionCounter
       const key = `rawFootage-${rawFootageSubmission.id}`;
       const isExpanded = expandedSubmission === key;
-      
+
       pills.push(
         <Box
           key={key}
@@ -535,7 +570,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
           flexDirection="row"
           alignItems="center"
           justifyContent="space-between"
-          sx={{ 
+          sx={{
             cursor: 'pointer',
             gap: { xs: 0.2, sm: 0.4, md: 0.5 },
             width: { xs: 140, sm: 210 },
@@ -544,16 +579,21 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
             borderTopLeftRadius: 10,
             '&:hover': {
               bgcolor: isExpanded ? 'background.neutral' : 'rgba(231, 231, 231, 0.8)',
-            }
+            },
           }}
           bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
           py={{ xs: 1.2, sm: 1.5 }}
           pl={{ xs: 0.5, sm: 0.8 }}
           pr={{ xs: 0.3, sm: 0.5 }}
         >
-          <Box display="flex" alignItems="center" justifyContent="center" gap={{ xs: 0.2, sm: 0.3 }}>
-            <Tooltip 
-              title="Raw Footage" 
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            gap={{ xs: 0.2, sm: 0.3 }}
+          >
+            <Tooltip
+              title="Raw Footage"
               placement="top"
               PopperProps={{
                 modifiers: [
@@ -580,9 +620,9 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                     boxShadow: '0px 4px 4px 0px #00000040',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
-                  }
-                }
+                    justifyContent: 'center',
+                  },
+                },
               }}
             >
               <Box
@@ -591,8 +631,10 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                 sx={{
                   width: { xs: 22, sm: 25, md: 27 },
                   height: { xs: 22, sm: 25, md: 27 },
-                  filter: isExpanded ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)' : 'none',
-                  cursor: 'pointer'
+                  filter: isExpanded
+                    ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)'
+                    : 'none',
+                  cursor: 'pointer',
                 }}
               />
             </Tooltip>
@@ -613,13 +655,13 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                 flexShrink: 1,
               }}
             >
-              <Typography 
-                fontWeight="SemiBold" 
-                pb={0.2} 
-                fontSize={{ xs: 8, sm: 12 }} 
+              <Typography
+                fontWeight="SemiBold"
+                pb={0.2}
+                fontSize={{ xs: 8, sm: 12 }}
                 color={getClientStatusColor(rawFootageSubmission.status, 'rawFootage')}
                 noWrap
-                sx={{ 
+                sx={{
                   maxWidth: { xs: 60, sm: 210 },
                 }}
                 textOverflow="ellipsis"
@@ -629,11 +671,11 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
               </Typography>
             </Box>
           </Box>
-          <Iconify 
-            icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"}
-            sx={{ 
-              width: { xs: 20, sm: 22, md: 24, lg: 26 }, 
-              height: { xs: 20, sm: 22, md: 24, lg: 26 } 
+          <Iconify
+            icon={isExpanded ? 'mingcute:up-line' : 'mingcute:down-line'}
+            sx={{
+              width: { xs: 20, sm: 22, md: 24, lg: 26 },
+              height: { xs: 20, sm: 22, md: 24, lg: 26 },
             }}
             color={isExpanded ? '#1340FF' : '#8E8E93'}
           />
@@ -641,7 +683,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
       );
     });
 
-    console.log(pills)
+    console.log(pills);
 
     return pills;
   };
@@ -650,16 +692,16 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
     if (!expandedSubmission) return null;
 
     const [type, id] = expandedSubmission.split('-');
-    
+
     if (type === 'video') {
-      const submission = grouped.videos?.find(v => v.id === id);
+      const submission = grouped.videos?.find((v) => v.id === id);
       if (submission) {
         return (
           <V4VideoSubmission
             key={`expanded-${submission.id}`}
             submission={submission}
             campaign={campaign}
-            index={grouped.videos.findIndex(v => v.id === id) + 1}
+            index={grouped.videos.findIndex((v) => v.id === id) + 1}
             onUpdate={submissionsMutate}
             expanded
             isDisabled={isDisabled}
@@ -667,16 +709,16 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
         );
       }
     }
-    
+
     if (type === 'photo') {
-      const submission = grouped.photos?.find(p => p.id === id);
+      const submission = grouped.photos?.find((p) => p.id === id);
       if (submission) {
         return (
           <V4PhotoSubmission
             key={`expanded-${submission.id}`}
             submission={submission}
             campaign={campaign}
-            index={grouped.photos.findIndex(p => p.id === id) + 1}
+            index={grouped.photos.findIndex((p) => p.id === id) + 1}
             onUpdate={submissionsMutate}
             expanded
             isDisabled={isDisabled}
@@ -684,16 +726,16 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
         );
       }
     }
-    
+
     if (type === 'rawFootage') {
-      const submission = grouped.rawFootage?.find(rf => rf.id === id);
+      const submission = grouped.rawFootage?.find((rf) => rf.id === id);
       if (submission) {
         return (
           <V4RawFootageSubmission
             key={`expanded-${submission.id}`}
             submission={submission}
             campaign={campaign}
-            index={grouped.rawFootage.findIndex(rf => rf.id === id) + 1}
+            index={grouped.rawFootage.findIndex((rf) => rf.id === id) + 1}
             onUpdate={submissionsMutate}
             expanded
             isDisabled={isDisabled}
@@ -706,40 +748,46 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
   };
 
   return (
-    <Box sx={{ 
-      mb: 1,
-    }}>
+    <Box
+      sx={{
+        mb: 1,
+      }}
+    >
       {/* Creator Info Row */}
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        backgroundColor: '#E7E7E7',
-        boxShadow: '0px 4px 4px 0px #8E8E9340',
-        borderRadius: 1,
-        pl: { xs: 0.8, sm: 1 },
-        pr: { xs: 0.5, sm: onlyAgreement ? 1 : 0 },
-        flexDirection: { xs: 'column', sm: 'row' },
-        py: { xs: 1, sm: onlyAgreement ? 1 : 0 },
-        gap: { xs: 1, sm: 0 },
-      }}>
-        {/* Creator Info Section */}
-        <Box sx={{ 
-          display: 'flex', 
+      <Box
+        sx={{
+          display: 'flex',
           alignItems: 'center',
-          pr: { xs: 0, sm: 2 },
-          minWidth: 0,
-          maxWidth: { xs: '100%', sm: onlyAgreement ? '100%' : 300 },
-          width: { xs: '100%', sm: 'auto' },
-          justifyContent: { xs: 'flex-start', sm: 'flex-start' },
-        }}>
+          backgroundColor: '#E7E7E7',
+          boxShadow: '0px 4px 4px 0px #8E8E9340',
+          borderRadius: 1,
+          pl: { xs: 0.8, sm: 1 },
+          pr: { xs: 0.5, sm: onlyAgreement ? 1 : 0 },
+          flexDirection: { xs: 'column', sm: 'row' },
+          py: { xs: 1, sm: onlyAgreement ? 1 : 0 },
+          gap: { xs: 1, sm: 0 },
+        }}
+      >
+        {/* Creator Info Section */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            pr: { xs: 0, sm: 2 },
+            minWidth: 0,
+            maxWidth: { xs: '100%', sm: onlyAgreement ? '100%' : 300 },
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'flex-start', sm: 'flex-start' },
+          }}
+        >
           <Avatar
             src={creator.user?.photoURL}
             alt={creator.user?.name}
-            sx={{ 
-              width: { xs: 32, sm: 35 }, 
-              height: { xs: 32, sm: 35 }, 
-              mr: { xs: 1.5, sm: 2 }, 
-              flexShrink: 0 
+            sx={{
+              width: { xs: 32, sm: 35 },
+              height: { xs: 32, sm: 35 },
+              mr: { xs: 1.5, sm: 2 },
+              flexShrink: 0,
             }}
           >
             {creator.user?.name?.charAt(0).toUpperCase()}
@@ -750,26 +798,28 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
         </Box>
 
         {/* Submission Pills Section */}
-        <Box sx={{ 
-          flex: 1, 
-          display: 'flex', 
-          justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-          gap: { xs: 0.8, sm: 1.2, md: 1.5 },
-          flexWrap: { xs: 'wrap', sm: 'nowrap' },
-          width: { xs: '100%', sm: 'auto' },
-          overflowX: { xs: 'auto', sm: 'visible' },
-          '&::-webkit-scrollbar': {
-            height: 2,
-            display: { xs: 'block', sm: 'none' }
-          },
-          '&::-webkit-scrollbar-track': {
-            backgroundColor: 'transparent',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(0,0,0,0.2)',
-            borderRadius: 2,
-          },
-        }}>
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+            gap: { xs: 0.8, sm: 1.2, md: 1.5 },
+            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+            width: { xs: '100%', sm: 'auto' },
+            overflowX: { xs: 'auto', sm: 'visible' },
+            '&::-webkit-scrollbar': {
+              height: 2,
+              display: { xs: 'block', sm: 'none' },
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: 'transparent',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(0,0,0,0.2)',
+              borderRadius: 2,
+            },
+          }}
+        >
           {(() => {
             if (submissionsLoading) {
               return (
@@ -785,11 +835,8 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
 
       {/* Expanded Submission Content */}
       {expandedSubmission && (
-        <Box sx={{ p: 0, overflow: 'hidden' }}>
-          {renderExpandedSubmission()}
-        </Box>
+        <Box sx={{ p: 0, overflow: 'hidden' }}>{renderExpandedSubmission()}</Box>
       )}
-
     </Box>
   );
 }
@@ -812,7 +859,6 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
   const [searchTerm, setSearchTerm] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
 
-
   const handleSearchChange = useCallback((event) => {
     setSearchTerm(event.target.value);
   }, []);
@@ -820,8 +866,6 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
   const toggleSortDirection = useCallback(() => {
     setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
   }, []);
-
-
 
   // Sort and filter creators based on search term and sort direction
   const sortedCreators = (campaign?.shortlisted || []).slice().sort((a, b) => {
@@ -832,12 +876,13 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
     return aName < bName ? 1 : -1;
   });
 
-  const filteredCreators = sortedCreators.filter(creator => {
-    const name = creator.user?.name?.toLowerCase() || '';
-    const email = creator.user?.email?.toLowerCase() || '';
-    const searchLower = searchTerm.toLowerCase();
-    return name.includes(searchLower) || email.includes(searchLower);
-  }) || [];
+  const filteredCreators =
+    sortedCreators.filter((creator) => {
+      const name = creator.user?.name?.toLowerCase() || '';
+      const email = creator.user?.email?.toLowerCase() || '';
+      const searchLower = searchTerm.toLowerCase();
+      return name.includes(searchLower) || email.includes(searchLower);
+    }) || [];
 
   // Only show V4 campaigns
   if (campaign?.submissionVersion !== 'v4') {
@@ -849,7 +894,13 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
           This tab is only available for V4 campaigns with content-type based submissions.
         </Typography>
-        <Typography variant="caption" color="text.secondary" textAlign="center" display="block" sx={{ mt: 1 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          textAlign="center"
+          display="block"
+          sx={{ mt: 1 }}
+        >
           Current campaign version: {campaign?.submissionVersion || 'Not set'}
         </Typography>
       </Box>
@@ -902,11 +953,7 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Iconify
-                    icon="eva:search-fill"
-                    width={18}
-                    sx={{ color: '#637381' }}
-                  />
+                  <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
                 </InputAdornment>
               ),
             }}
@@ -982,7 +1029,7 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
 
       {/* Mobile View */}
       {(() => {
-          if (isMobile) {
+        if (isMobile) {
           return (
             <MobileCreatorSubmissions
               campaign={campaign}
@@ -996,7 +1043,7 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
         if (filteredCreators.length === 0) {
           return (
             <Box sx={{ p: 3, textAlign: 'center' }}>
-              <EmptyContent sx={{ py: 10 }}  title="No creators found" filled />
+              <EmptyContent sx={{ py: 10 }} title="No creators found" filled />
             </Box>
           );
         }

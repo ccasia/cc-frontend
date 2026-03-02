@@ -53,6 +53,8 @@ import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 // HIDE: logistics
 import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 
+// import CampaignLogisticsClient from '../campaign-logistics-client';
+import CampaignFAQ from '../campaign-faq';
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
@@ -60,7 +62,6 @@ import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
-// import CampaignLogisticsClient from '../campaign-logistics-client';
 // import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
@@ -69,7 +70,6 @@ import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
-import CampaignFAQ from '../campaign-faq';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 
 // Ensure campaignTabs exists and is loaded from localStorage
@@ -399,8 +399,8 @@ const CampaignDetailView = ({ id }) => {
                 // HIDE: logistics
                 campaign?.logisticsType && campaign.logisticsType !== ''
                   ? {
-                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                  value: 'logistics',
+                      label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                      value: 'logistics',
                     }
                   : null,
                 // {
@@ -587,7 +587,13 @@ const CampaignDetailView = ({ id }) => {
     'creator-master-list': (
       <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
     ),
-    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
+    agreement: (
+      <CampaignAgreements
+        campaign={campaign}
+        campaignMutate={campaignMutate}
+        isDisabled={isDisabled}
+      />
+    ),
     // HIDE: logistics
     logistics: isClient ? (
       <CampaignLogisticsView
@@ -612,11 +618,23 @@ const CampaignDetailView = ({ id }) => {
     // ) : (
     //   <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
     // ),
-    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
+    invoices: (
+      <CampaignInvoicesList
+        campId={campaign?.id}
+        campaignMutate={campaignMutate}
+        isDisabled={isDisabled}
+      />
+    ),
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
-    pitch: <CampaignV3PitchesWrapper campaign={campaign} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
+    pitch: (
+      <CampaignV3PitchesWrapper
+        campaign={campaign}
+        campaignMutate={campaignMutate}
+        isDisabled={isDisabled}
+      />
+    ),
     submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
     deliverables: isClient ? (
       <CampaignCreatorDeliverablesClient campaign={campaign} campaignMutate={campaignMutate} />
@@ -624,7 +642,13 @@ const CampaignDetailView = ({ id }) => {
       <CampaignCreatorDeliverables campaign={campaign} isDisabled={isDisabled} />
     ),
     'submissions-v4': <CampaignCreatorSubmissionsV4 campaign={campaign} isDisabled={isDisabled} />,
-    analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
+    analytics: (
+      <CampaignAnalytics
+        campaign={campaign}
+        campaignMutate={campaignMutate}
+        isDisabled={isDisabled}
+      />
+    ),
     faq: <CampaignFAQ />,
   };
 
@@ -771,6 +795,34 @@ const CampaignDetailView = ({ id }) => {
           </Button>
         );
       }
+
+      // HIDE: logistics - button moved to logistics view
+      // if (currentTab === 'logistics') {
+      //   return (
+      //     <Button
+      //       variant="contained"
+      //       size="small"
+      //       startIcon={<Iconify icon="eva:edit-2-fill" width={20} />}
+      //       onClick={() => setOpenBulkAssign(true)}
+      //       disabled={isDisabled}
+      //       sx={{
+      //         height: 42,
+      //         borderRadius: 1,
+      //         color: 'white',
+      //         bgcolor: '#1340ff',
+      //         border: '1px solid #1340ff',
+      //         borderBottom: '4px solid #0e2fd6',
+      //         fontWeight: 600,
+      //         fontSize: '0.95rem',
+      //         px: 2,
+      //         whiteSpace: 'nowrap',
+      //         '&:hover': { bgcolor: '#0e2fd6' },
+      //       }}
+      //     >
+      //       Edit & Bulk Assign
+      //     </Button>
+      //   );
+      // }
 
       return (
         <Button

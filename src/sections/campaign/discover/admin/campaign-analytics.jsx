@@ -22,7 +22,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { useAuthContext } from 'src/auth/hooks';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -38,6 +37,7 @@ import {
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
 
+import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { deleteManualCreatorEntry, updateManualCreatorEntry } from 'src/api/manual-creator';
 

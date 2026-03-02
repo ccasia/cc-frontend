@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
@@ -31,42 +31,24 @@ function ServerDay(props) {
     outsideCurrentMonth,
     isReservation,
     reservationConfig,
-    campaignBrief,
     ...other
   } = props;
 
   const dateString = format(day, 'yyyy-MM-dd');
 
   const hasConfig = useMemo(() => {
-    if (isReservation) {
-      const availabilityRules = reservationConfig?.availabilityRules;
+    const availabilityRules = reservationConfig?.availabilityRules;
 
-      if (!isReservation || !availabilityRules) return true;
+    if (!isReservation || !availabilityRules) return true;
 
-      return availabilityRules.some((rule) =>
-        rule.dates?.some((d) => {
-          const ruleDateString =
-            typeof d === 'string' ? d.split('T')[0] : format(new Date(d), 'yyyy-MM-dd');
-          return ruleDateString === dateString;
-        })
-      );
-    }
-
-    const startDate = campaignBrief?.startDate;
-    const endDate = campaignBrief?.endDate;
-
-    if (startDate && endDate) {
-      try {
-        return isWithinInterval(startOfDay(day), {
-          start: startOfDay(new Date(startDate)),
-          end: endOfDay(new Date(endDate)),
-        });
-      } catch (error) {
-        return true;
-      }
-    }
-    return true;
-  }, [isReservation, reservationConfig, dateString, campaignBrief, day]);
+    return availabilityRules.some((rule) =>
+      rule.dates?.some((d) => {
+        const ruleDateString =
+          typeof d === 'string' ? d.split('T')[0] : format(new Date(d), 'yyyy-MM-dd');
+        return ruleDateString === dateString;
+      })
+    );
+  }, [isReservation, reservationConfig, dateString]);
 
   const dayLogistics = logistics.filter((logistic) => {
     if (isReservation) {
@@ -180,7 +162,6 @@ ServerDay.propTypes = {
   logistics: PropTypes.array,
   isReservation: PropTypes.bool,
   reservationConfig: PropTypes.object,
-  campaignBrief: PropTypes.object,
 };
 
 export default function LogisticsCalendar({
@@ -189,7 +170,6 @@ export default function LogisticsCalendar({
   logistics,
   isReservation,
   reservationConfig,
-  campaignBrief,
 }) {
   const safeLogistics = logistics || [];
 
@@ -210,7 +190,6 @@ export default function LogisticsCalendar({
               logistics: safeLogistics,
               isReservation,
               reservationConfig,
-              campaignBrief,
             },
           }}
           sx={{
@@ -251,5 +230,4 @@ LogisticsCalendar.propTypes = {
   logistics: PropTypes.array,
   isReservation: PropTypes.bool,
   reservationConfig: PropTypes.object,
-  campaignBrief: PropTypes.object,
 };

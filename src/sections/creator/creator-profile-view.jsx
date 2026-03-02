@@ -53,7 +53,7 @@ const BoxStyle = {
 const CreatorProfileView = ({ id }) => {
   const { data, isLoading } = useGetCreatorById(id);
   const { data: campaigns = [] } = useGetMyCampaign(id);
-  const { initialize } = useAuthContext();
+  const { initialize, user } = useAuthContext();
   const router = useRouter();
 
   const [isLoadingImpersonation, setIsLoading] = useState(false);
@@ -80,6 +80,7 @@ const CreatorProfileView = ({ id }) => {
       await axiosInstance.post('/api/admin/impersonate-creator', { userId });
       await new Promise((resolve) => setTimeout(resolve, 3000));
       initialize();
+      router.replace('/dashboard');
     } catch (error) {
       console.log(error);
       toast.error('Failed to impersonate');
@@ -171,7 +172,7 @@ const CreatorProfileView = ({ id }) => {
         >
           Back
         </Button>
-        {data.user.status === 'active' && (
+        {data.user.status === 'active' && user.role === 'superadmin' && (
           <LoadingButton
             variant="outlined"
             startIcon={<Iconify icon="solar:user-linear" width={20} />}

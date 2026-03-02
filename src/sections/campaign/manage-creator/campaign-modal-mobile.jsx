@@ -4,14 +4,14 @@ import PropTypes from 'prop-types';
 import {
   Box,
   Chip,
+  Link,
   Stack,
   Avatar,
   Divider,
   Accordion,
   Typography,
   AccordionSummary,
-  AccordionDetails,
-  Link
+  AccordionDetails
 } from '@mui/material';
 
 import { fDate } from 'src/utils/format-time';

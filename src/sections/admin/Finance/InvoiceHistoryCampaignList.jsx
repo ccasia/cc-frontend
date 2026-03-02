@@ -21,7 +21,6 @@ import {
   InputAdornment,
 } from '@mui/material';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchChange }) => {

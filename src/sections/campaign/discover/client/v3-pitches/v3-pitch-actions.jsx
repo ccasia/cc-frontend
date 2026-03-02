@@ -3,14 +3,7 @@ import { useSnackbar } from 'notistack';
 import React, { useMemo, useState } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import {
-  Box,
-  Stack,
-  Button,
-  Dialog,
-  Typography,
-  DialogContent,
-} from '@mui/material';
+import { Box, Stack, Button, Dialog, Typography, DialogContent } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -38,12 +31,12 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
   const getRealPitchId = () => {
     const pitchId = pitch?.id;
     if (!pitchId) return null;
-    
+
     // Remove 'shortlisted-' prefix if present
     if (pitchId.startsWith('shortlisted-')) {
       return pitchId.replace('shortlisted-', '');
     }
-    
+
     return pitchId;
   };
 
@@ -72,7 +65,7 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
   const handleWithdrawCreator = async () => {
     try {
       setLoading(true);
-      
+
       // If this is a synthetic pitch (shortlisted creator without a real pitch record),
       // use the removeCreator endpoint instead of the withdraw endpoint
       if (isSyntheticPitch()) {
@@ -81,7 +74,7 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
           creatorId: pitch.userId,
           campaignId,
         });
-        
+
         enqueueSnackbar(res?.data?.message || 'Creator withdrawn successfully');
         setConfirmDialogOpen(false);
         if (onRemoved) {
@@ -89,14 +82,14 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
         }
         return;
       }
-      
+
       // For real pitch records, use the withdraw endpoint
       const realPitchId = getRealPitchId();
-      
+
       if (!realPitchId) {
         throw new Error('Invalid pitch ID');
       }
-      
+
       const res = await axiosInstance.patch(endpoints.campaign.pitch.v3.withdraw(realPitchId), {
         reason: 'Withdrawn by admin',
       });
@@ -107,9 +100,12 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
         onRemoved();
       }
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || error?.message || 'Failed to withdraw creator', {
-        variant: 'error',
-      });
+      enqueueSnackbar(
+        error?.response?.data?.message || error?.message || 'Failed to withdraw creator',
+        {
+          variant: 'error',
+        }
+      );
     } finally {
       setLoading(false);
     }
@@ -118,6 +114,34 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
   return (
     <>
       <Stack direction="row" spacing={1}>
+        <Button
+          onClick={() => onViewPitch(pitch)}
+          sx={{
+            bgcolor: '#FFFFFF',
+            border: '1.5px solid #e7e7e7',
+            borderBottom: '3px solid #e7e7e7',
+            borderRadius: 1,
+            color: '#1340FF',
+            height: 36,
+            px: 2,
+            py: 1.5,
+            fontWeight: 600,
+            fontSize: '0.85rem',
+            textTransform: 'none',
+            whiteSpace: 'nowrap',
+            minWidth: '90px',
+            display: 'flex',
+            alignItems: 'center',
+            '&:hover': {
+              bgcolor: 'rgba(19, 64, 255, 0.08)',
+              border: '1.5px solid #1340FF',
+              borderBottom: '3px solid #1340FF',
+              color: '#1340FF',
+            },
+          }}
+        >
+          View
+        </Button>
         {isApproved ? (
           // Withdraw button for approved creators (red/danger style)
           <Button
@@ -167,11 +191,7 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
           <Button
             variant="outlined"
             size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              setConfirmDialogOpen(true);
-            }}
-            disabled={isDisabled}
+            onClick={() => setConfirmDialogOpen(true)}
             sx={{
               cursor: isDisabled ? 'not-allowed' : 'pointer',
               px: 2,

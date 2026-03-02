@@ -114,6 +114,7 @@
     "stylis": "^4.3.0",
     "stylis-plugin-rtl": "^2.1.1",
     "swr": "^2.2.5",
+    "ua-parser-js": "^2.0.9",
     "use-sound": "^4.0.3",
     "yarn": "^1.22.22",
     "yet-another-react-lightbox": "^3.20.0",
