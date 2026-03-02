@@ -57,6 +57,7 @@ export const endpoints = {
     clientRejectionRate: '/api/analytics/v2/client-rejection-rate',
     creditsPerCS: '/api/analytics/v2/credits-per-cs',
     rejectionReasons: '/api/analytics/v2/rejection-reasons',
+    requireChangesRate: '/api/analytics/v2/require-changes-rate',
   },
   overview: {
     root: (userId) => `/api/user/overview/${userId}`,
