@@ -4,9 +4,9 @@ import { useMemo } from 'react';
 import { fetcher, endpoints } from 'src/utils/axios';
 
 
-const useGetRejectionReasons = ({ startDate, endDate } = {}) => {
+const useGetTopShortlistedCreators = ({ startDate, endDate } = {}) => {
   const url = useMemo(() => {
-    const base = endpoints.analytics.rejectionReasons;
+    const base = endpoints.analytics.topShortlistedCreators;
     if (startDate && endDate) {
       const params = new URLSearchParams({
         startDate: startDate.toISOString(),
@@ -25,7 +25,7 @@ const useGetRejectionReasons = ({ startDate, endDate } = {}) => {
 
   return useMemo(
     () => ({
-      reasons: data?.data?.reasons ?? [],
+      creators: data?.data?.creators ?? [],
       isLoading,
       isError: error,
     }),
@@ -33,4 +33,4 @@ const useGetRejectionReasons = ({ startDate, endDate } = {}) => {
   );
 };
 
-export default useGetRejectionReasons;
+export default useGetTopShortlistedCreators;

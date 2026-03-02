@@ -3,13 +3,6 @@ import { useMemo } from 'react';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
-// Format Date as YYYY-MM-DD (local) to avoid timezone shifts from toISOString()
-const toLocalDate = (d) => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
 
 const useGetPitchRate = ({ granularity, startDate, endDate } = {}) => {
   const url = useMemo(() => {
@@ -17,8 +10,8 @@ const useGetPitchRate = ({ granularity, startDate, endDate } = {}) => {
     if (granularity === 'daily' && startDate && endDate) {
       const params = new URLSearchParams({
         granularity: 'daily',
-        startDate: toLocalDate(startDate),
-        endDate: toLocalDate(endDate),
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
       });
       return `${base}?${params}`;
     }
