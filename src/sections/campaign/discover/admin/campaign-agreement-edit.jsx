@@ -313,6 +313,7 @@ const CampaignAgreementEdit = ({
           ADMIN_IC_NUMBER={extractAgremmentsInfo?.adminICNumber ?? 'Default'}
           ADMIN_NAME={extractAgremmentsInfo?.adminName ?? 'Default'}
           SIGNATURE={extractAgremmentsInfo?.signURL ?? 'Default'}
+          isForSurfShark={campaign?.isForSurfShark}
         />
       ).toBlob();
 

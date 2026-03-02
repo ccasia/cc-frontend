@@ -1,8 +1,8 @@
 // components/admins/SendAgreementsAnalytics.jsx
 
 import useSWR from 'swr';
-import { useMemo } from "react";
 import dayjs from "dayjs";
+import { useMemo } from "react";
 import duration from "dayjs/plugin/duration";
 
 import EditIcon from "@mui/icons-material/Edit";

@@ -85,6 +85,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   const [pdfError, setPdfError] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
 
   // eslint-disable-next-line no-shadow
   const onDocumentLoadSuccess = ({ numPages }) => {
@@ -395,6 +396,22 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     }
   };
 
+  const handleFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      enqueueSnackbar('Please upload a PDF file', { variant: 'error' });
+      return;
+    }
+
+    setUploadedFile(file);
+    
+    // Directly submit the uploaded file
+    await handleAgreementSubmit(file);
+  };
+
   return (
     <Box p={1.5} sx={{ pb: 0 }}>
       {!agreementStatus && !agreementUrl ? (
@@ -565,7 +582,44 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 }}
               />
 
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  justifyContent: 'flex-end', 
+                  mt: 2, 
+                  gap: { xs: 1.5, sm: 1 } 
+                }}
+              >
+                <Button
+                  variant="contained"
+                  component="label"
+                  startIcon={<Iconify icon="solar:upload-linear" width={20} />}
+                  sx={{
+                    bgcolor: '#fff',
+                    color: '#203ff5',
+                    border: 1,
+                    borderColor: '#e7e7e7',
+                    borderBottom: 3,
+                    borderBottomColor: '#e7e7e7',
+                    borderRadius: 1.5,
+                    px: 2.5,
+                    py: 1.2,
+                    '&:hover': {
+                      bgcolor: '#f5f5f5',
+                      borderColor: '#e7e7e7',
+                    },
+                    width: { xs: '100%', sm: 'auto' },
+                  }}
+                >
+                  Upload Agreement
+                  <input
+                    type="file"
+                    hidden
+                    accept="application/pdf"
+                    onChange={handleFileUpload}
+                  />
+                </Button>
                 <Button
                   variant="contained"
                   onClick={editor.onTrue}
@@ -582,7 +636,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                       bgcolor: '#203ff5',
                       opacity: 0.9,
                     },
-                    flex: { xs: 1, md: 'none' },
+                    width: { xs: '100%', sm: 'auto' },
                   }}
                 >
                   Sign Agreement
@@ -741,7 +795,44 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 }}
               /> */}
 
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  justifyContent: 'flex-end', 
+                  gap: { xs: 1.5, sm: 1 } 
+                }}
+              >
+                <Button
+                  variant="contained"
+                  component="label"
+                  startIcon={<Iconify icon="solar:upload-linear" width={20} />}
+                  sx={{
+                    bgcolor: '#fff',
+                    color: '#203ff5',
+                    border: 1,
+                    borderColor: '#e7e7e7',
+                    borderBottom: 3,
+                    borderBottomColor: '#e7e7e7',
+                    borderRadius: 1.5,
+                    px: 2,
+                    py: 1.2,
+                    '&:hover': {
+                      bgcolor: '#f5f5f5',
+                      borderColor: '#e7e7e7',
+                    },
+                    width: { xs: '100%', sm: 'auto' },
+                  }}
+                >
+                  <Typography variant='body2' fontWeight="bold">Upload Agreement</Typography>
+                  <input
+                    type="file"
+                    hidden
+                    accept="application/pdf"
+                    onChange={handleFileUpload}
+                  />
+                </Button>
+
                 <Button
                   variant="contained"
                   onClick={editor.onTrue}
@@ -758,7 +849,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                       bgcolor: '#203ff5',
                       opacity: 0.9,
                     },
-                    flex: { xs: 1, md: 'none' },
+                    width: { xs: '100%', sm: 'auto' },
                   }}
                 >
                   Sign Agreement
@@ -779,12 +870,10 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                       bgcolor: 'white',
                       borderColor: '#e7e7e7',
                     },
-                    '& .MuiButton-startIcon': {
-                      color: '#203ff5',
-                    },
+                    width: { xs: '100%', sm: 'auto' },
                   }}
                 >
-                  <Typography variant='body2' fontWeight="bold" sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
+                  <Typography variant='body2' fontWeight="bold" sx={{ display: { xs: 'flex', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
                   <Iconify icon="material-symbols:download" width={25} />
                 </Button>
               </Box>
@@ -987,7 +1076,44 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 </Box>
               </Box>
 
-              <Box sx={{ display: 'flex', justifyContent: { xs: 'space-between', md: 'flex-end'}, gap: 1 }}>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  justifyContent: 'flex-end', 
+                  gap: { xs: 1.5, sm: 1 } 
+                }}
+              >
+                <Button
+                  variant="contained"
+                  component="label"
+                  startIcon={<Iconify icon="solar:upload-linear" width={20} />}
+                  sx={{
+                    bgcolor: '#fff',
+                    color: '#203ff5',
+                    border: 1,
+                    borderColor: '#e7e7e7',
+                    borderBottom: 3,
+                    borderBottomColor: '#e7e7e7',
+                    borderRadius: 1.5,
+                    px: 2,
+                    py: 1.2,
+                    '&:hover': {
+                      bgcolor: '#f5f5f5',
+                      borderColor: '#e7e7e7',
+                    },
+                    width: { xs: '100%', sm: 'auto' },
+                  }}
+                >
+                  <Typography variant='body2' fontWeight="bold">Upload Agreement</Typography>
+                  <input
+                    type="file"
+                    hidden
+                    accept="application/pdf"
+                    onChange={handleFileUpload}
+                  />
+                </Button>
+
                 <Button
                   variant="contained"
                   onClick={editor.onTrue}
@@ -1004,7 +1130,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                       bgcolor: '#203ff5',
                       opacity: 0.9,
                     },
-                    flex: { xs: 1, md: 'none' },
+                    width: { xs: '100%', sm: 'auto' },
                   }}
                 >
                   Sign Agreement
@@ -1025,12 +1151,10 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                       bgcolor: '#f2f2f2',
                       borderColor: '#e7e7e7',
                     },
-                    '& .MuiButton-startIcon': {
-                      color: '#203ff5',
-                    },
+                    width: { xs: '100%', sm: 'auto' },
                   }}
                 >
-                  <Typography variant='body2' fontWeight="bold" sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
+                  <Typography variant='body2' fontWeight="bold" sx={{ display: { xs: 'flex', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
                   <Iconify icon="material-symbols:download" width={25} />
                 </Button>
               </Box>

@@ -1,13 +1,12 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect, useCallback } from 'react';
+import { UAParser } from 'ua-parser-js';
 import { enqueueSnackbar } from 'notistack';
 import { m, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
 
+import LoadingButton from '@mui/lab/LoadingButton';
 import { Box, Stack, Dialog, TextField, Typography } from '@mui/material';
 import { Star as StarIcon, StarBorder as StarBorderIcon } from '@mui/icons-material';
-import LoadingButton from '@mui/lab/LoadingButton';
-
-import { UAParser } from 'ua-parser-js';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 

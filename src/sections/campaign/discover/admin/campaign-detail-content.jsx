@@ -272,28 +272,55 @@ const CampaignDetailContent = ({ campaign }) => {
                       >
                         {item.label}
                       </Typography>
-                      {Array.isArray(item.data) ? (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {item.data?.map((value, idx) => (
-                            <Chip key={idx} label={value} size="small" sx={ChipStyle} />
-                          ))}
-                        </Box>
-                      ) : (
-                        item.label === 'Country' && (
-                          <Box
-                            display="inline-flex"
-                            gap={1}
-                            sx={{ ...ChipStyle, p: 1, px: 1.5 }}
-                            alignItems="center"
-                          >
-                            <Iconify
-                              icon={`emojione:flag-for-${item.data.toLowerCase()}`}
-                              width={20}
-                            />
-                            <Typography variant="subtitle2">{item.data}</Typography>
-                          </Box>
-                        )
-                      )}
+                      {(() => {
+                        if (item.isCountries) {
+                          return (
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                              {item.data?.map((countryName, idx) => (
+                                <Box
+                                  key={idx}
+                                  display="inline-flex"
+                                  gap={1}
+                                  sx={{ ...ChipStyle, p: 1, px: 1.5 }}
+                                  alignItems="center"
+                                >
+                                  <Iconify
+                                    icon={`emojione:flag-for-${countryName.toLowerCase()}`}
+                                    width={20}
+                                  />
+                                  <Typography variant="subtitle2">{countryName}</Typography>
+                                </Box>
+                              ))}
+                            </Box>
+                          );
+                        }
+                        if (Array.isArray(item.data)) {
+                          return (
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                              {item.data?.map((value, idx) => (
+                                <Chip key={idx} label={value} size="small" sx={ChipStyle} />
+                              ))}
+                            </Box>
+                          );
+                        }
+                        if (item.isCountry) {
+                          return (
+                            <Box
+                              display="inline-flex"
+                              gap={1}
+                              sx={{ ...ChipStyle, p: 1, px: 1.5 }}
+                              alignItems="center"
+                            >
+                              <Iconify
+                                icon={`emojione:flag-for-${item.data.toLowerCase()}`}
+                                width={20}
+                              />
+                              <Typography variant="subtitle2">{item.data}</Typography>
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })()}
                     </Box>
                   ))}
               </Stack>
@@ -381,24 +408,27 @@ const CampaignDetailContent = ({ campaign }) => {
 
             <Stack spacing={1} sx={{ pl: 0.5 }}>
               {campaign?.campaignBrief?.campaigns_do?.length > 0 &&
-              campaign?.campaignBrief?.campaigns_do?.some(item => item.value) ? (
+              campaign?.campaignBrief?.campaigns_do?.some((item) => item.value) ? (
                 campaign?.campaignBrief?.campaigns_do?.map((item, index) => (
-                <Stack key={index} direction="row" spacing={1} alignItems="center">
-                  {item.value && (
-                    <Iconify
-                      icon="octicon:dot-fill-16"
-                      sx={{
-                        color: '#000000',
-                        width: 12,
-                        height: 12,
-                        flexShrink: 0,
-                      }}
-                    />
-                  )}
-                  <Typography variant={item?.value ? 'body2' : 'caption'} sx={{ color: '#221f20' }}>
-                    {item?.value || 'No campaign do.'}
-                  </Typography>
-                </Stack>
+                  <Stack key={index} direction="row" spacing={1} alignItems="center">
+                    {item.value && (
+                      <Iconify
+                        icon="octicon:dot-fill-16"
+                        sx={{
+                          color: '#000000',
+                          width: 12,
+                          height: 12,
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                    <Typography
+                      variant={item?.value ? 'body2' : 'caption'}
+                      sx={{ color: '#221f20' }}
+                    >
+                      {item?.value || 'No campaign do.'}
+                    </Typography>
+                  </Stack>
                 ))
               ) : (
                 <Typography variant="caption" color="text.secondary">
@@ -432,7 +462,7 @@ const CampaignDetailContent = ({ campaign }) => {
             </Box>
 
             {campaign?.campaignBrief?.campaigns_dont?.length > 0 &&
-            campaign?.campaignBrief?.campaigns_dont?.some(item => item.value) ? (
+            campaign?.campaignBrief?.campaigns_dont?.some((item) => item.value) ? (
               <Stack spacing={1} sx={{ pl: 0.5 }}>
                 {campaign?.campaignBrief?.campaigns_dont?.map((item, index) => (
                   <Stack key={index} direction="row" spacing={1} alignItems="center">

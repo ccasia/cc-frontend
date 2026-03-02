@@ -1,11 +1,12 @@
 import dayjs from 'dayjs';
+import ExcelJS from 'exceljs';
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useRef, useMemo, useState, useCallback, useEffect, useContext } from 'react';
-import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { pdf } from '@react-pdf/renderer';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Menu,
@@ -33,27 +34,25 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetAllInvoiceStats from 'src/hooks/use-get-all-invoice-stats';
 
-import { useGetAllInvoices } from 'src/api/invoices';
 import { formatCurrencyAmount } from 'src/utils/currency';
-
-import Scrollbar from 'src/components/scrollbar';
-import useDateRangePicker from 'src/components/custom-date-range-picker/use-date-range-picker';
-import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
-import { useTable, TableNoData, TablePaginationCustom } from 'src/components/table';
-import { useSnackbar } from 'src/components/snackbar';
-import Iconify from 'src/components/iconify';
-import { LoadingButton } from '@mui/lab';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useGetAllInvoices } from 'src/api/invoices';
 import { getBankCode, getPaymentMode } from 'src/contants/bank-codes';
+import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
+
+import Iconify from 'src/components/iconify';
+import Scrollbar from 'src/components/scrollbar';
+import { useSnackbar } from 'src/components/snackbar';
+import { useTable, TableNoData, TablePaginationCustom } from 'src/components/table';
+import useDateRangePicker from 'src/components/custom-date-range-picker/use-date-range-picker';
 
 import InvoiceItem from './invoice-item';
 import InvoicePDF from '../invoice/invoice-pdf';
+import { STATUS_COLORS } from './invoice-constants';
 import InvoiceTableToolbar from './invoice-table-toolbar';
 import InvoiceNewEditForm from '../invoice/invoice-new-edit-form';
 import InvoiceTableFiltersResult from './invoice-table-filters-result';
-
-import { STATUS_COLORS } from './invoice-constants';
 
 const defaultFilters = {
   name: '',
@@ -256,8 +255,9 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   }, [dateRange]);
 
   const handleExportCSV = useCallback(async () => {
-    const source = (exportData?.length ? exportData : dataFiltered)
-      .filter((inv) => exportSelected.has(inv.id));
+    const source = (exportData?.length ? exportData : dataFiltered).filter((inv) =>
+      exportSelected.has(inv.id)
+    );
     if (!source?.length) return;
 
     // Alliance Bank BizSmart Bulk Payment format (59 columns)
@@ -278,16 +278,46 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       'Beneficiary Email 1',
       'Beneficiary Email 2',
       'Generic Payment Information',
-      'Invoice Date 1', 'Invoice Amount 1', 'Payment Amount 1', 'Payment Description 1',
-      'Invoice Date 2', 'Invoice Amount 2', 'Payment Amount 2', 'Payment Description 2',
-      'Invoice Date 3', 'Invoice Amount 3', 'Payment Amount 3', 'Payment Description 3',
-      'Invoice Date 4', 'Invoice Amount 4', 'Payment Amount 4', 'Payment Description 4',
-      'Invoice Date 5', 'Invoice Amount 5', 'Payment Amount 5', 'Payment Description 5',
-      'Invoice Date 6', 'Invoice Amount 6', 'Payment Amount 6', 'Payment Description 6',
-      'Invoice Date 7', 'Invoice Amount 7', 'Payment Amount 7', 'Payment Description 7',
-      'Invoice Date 8', 'Invoice Amount 8', 'Payment Amount 8', 'Payment Description 8',
-      'Invoice Date 9', 'Invoice Amount 9', 'Payment Amount 9', 'Payment Description 9',
-      'Invoice Date 10', 'Invoice Amount 10', 'Payment Amount 10', 'Payment Description 10',
+      'Invoice Date 1',
+      'Invoice Amount 1',
+      'Payment Amount 1',
+      'Payment Description 1',
+      'Invoice Date 2',
+      'Invoice Amount 2',
+      'Payment Amount 2',
+      'Payment Description 2',
+      'Invoice Date 3',
+      'Invoice Amount 3',
+      'Payment Amount 3',
+      'Payment Description 3',
+      'Invoice Date 4',
+      'Invoice Amount 4',
+      'Payment Amount 4',
+      'Payment Description 4',
+      'Invoice Date 5',
+      'Invoice Amount 5',
+      'Payment Amount 5',
+      'Payment Description 5',
+      'Invoice Date 6',
+      'Invoice Amount 6',
+      'Payment Amount 6',
+      'Payment Description 6',
+      'Invoice Date 7',
+      'Invoice Amount 7',
+      'Payment Amount 7',
+      'Payment Description 7',
+      'Invoice Date 8',
+      'Invoice Amount 8',
+      'Payment Amount 8',
+      'Payment Description 8',
+      'Invoice Date 9',
+      'Invoice Amount 9',
+      'Payment Amount 9',
+      'Payment Description 9',
+      'Invoice Date 10',
+      'Invoice Amount 10',
+      'Payment Amount 10',
+      'Payment Description 10',
       'Batch Reference No.',
       'Payment Date',
       'Beneficiary Address',
@@ -325,16 +355,46 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         email,
         '', // Beneficiary Email 2
         'Email For Notification', // Generic Payment Information
-        '', '', '', '', // Invoice Date 1, Invoice Amount 1, Payment Amount 1, Payment Description 1
-        '', '', '', '', // Invoice Date 2, Invoice Amount 2, Payment Amount 2, Payment Description 2
-        '', '', '', '', // Invoice Date 3, Invoice Amount 3, Payment Amount 3, Payment Description 3
-        '', '', '', '', // Invoice Date 4, Invoice Amount 4, Payment Amount 4, Payment Description 4
-        '', '', '', '', // Invoice Date 5, Invoice Amount 5, Payment Amount 5, Payment Description 5
-        '', '', '', '', // Invoice Date 6, Invoice Amount 6, Payment Amount 6, Payment Description 6
-        '', '', '', '', // Invoice Date 7, Invoice Amount 7, Payment Amount 7, Payment Description 7
-        '', '', '', '', // Invoice Date 8, Invoice Amount 8, Payment Amount 8, Payment Description 8
-        '', '', '', '', // Invoice Date 9, Invoice Amount 9, Payment Amount 9, Payment Description 9
-        '', '', '', '', // Invoice Date 10, Invoice Amount 10, Payment Amount 10, Payment Description 10
+        '',
+        '',
+        '',
+        '', // Invoice Date 1, Invoice Amount 1, Payment Amount 1, Payment Description 1
+        '',
+        '',
+        '',
+        '', // Invoice Date 2, Invoice Amount 2, Payment Amount 2, Payment Description 2
+        '',
+        '',
+        '',
+        '', // Invoice Date 3, Invoice Amount 3, Payment Amount 3, Payment Description 3
+        '',
+        '',
+        '',
+        '', // Invoice Date 4, Invoice Amount 4, Payment Amount 4, Payment Description 4
+        '',
+        '',
+        '',
+        '', // Invoice Date 5, Invoice Amount 5, Payment Amount 5, Payment Description 5
+        '',
+        '',
+        '',
+        '', // Invoice Date 6, Invoice Amount 6, Payment Amount 6, Payment Description 6
+        '',
+        '',
+        '',
+        '', // Invoice Date 7, Invoice Amount 7, Payment Amount 7, Payment Description 7
+        '',
+        '',
+        '',
+        '', // Invoice Date 8, Invoice Amount 8, Payment Amount 8, Payment Description 8
+        '',
+        '',
+        '',
+        '', // Invoice Date 9, Invoice Amount 9, Payment Amount 9, Payment Description 9
+        '',
+        '',
+        '',
+        '', // Invoice Date 10, Invoice Amount 10, Payment Amount 10, Payment Description 10
         '', // Batch Reference No.
         '', // Payment Date
         '', // Beneficiary Address
@@ -391,27 +451,71 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   }, [exportData, dataFiltered, exportSelected]);
 
   const handleExportPlainCSV = useCallback(async () => {
-    const source = (exportData?.length ? exportData : dataFiltered)
-      .filter((inv) => exportSelected.has(inv.id));
+    const source = (exportData?.length ? exportData : dataFiltered).filter((inv) =>
+      exportSelected.has(inv.id)
+    );
     if (!source?.length) return;
 
     const headers = [
-      'Payment Mode', 'Beneficiary Name', 'Beneficiary Account', 'Beneficiary Bank Code',
-      'Amount', 'Payment Description', 'Payment Reference',
-      'Beneficiary New IC No', 'Beneficiary Old IC No', 'Beneficiary Business Registration',
-      'Beneficiary Others', 'Payment Advice Indicator', 'Mobile Phone No',
-      'Beneficiary Email 1', 'Beneficiary Email 2', 'Generic Payment Information',
-      'Invoice Date 1', 'Invoice Amount 1', 'Payment Amount 1', 'Payment Description 1',
-      'Invoice Date 2', 'Invoice Amount 2', 'Payment Amount 2', 'Payment Description 2',
-      'Invoice Date 3', 'Invoice Amount 3', 'Payment Amount 3', 'Payment Description 3',
-      'Invoice Date 4', 'Invoice Amount 4', 'Payment Amount 4', 'Payment Description 4',
-      'Invoice Date 5', 'Invoice Amount 5', 'Payment Amount 5', 'Payment Description 5',
-      'Invoice Date 6', 'Invoice Amount 6', 'Payment Amount 6', 'Payment Description 6',
-      'Invoice Date 7', 'Invoice Amount 7', 'Payment Amount 7', 'Payment Description 7',
-      'Invoice Date 8', 'Invoice Amount 8', 'Payment Amount 8', 'Payment Description 8',
-      'Invoice Date 9', 'Invoice Amount 9', 'Payment Amount 9', 'Payment Description 9',
-      'Invoice Date 10', 'Invoice Amount 10', 'Payment Amount 10', 'Payment Description 10',
-      'Batch Reference No.', 'Payment Date', 'Beneficiary Address',
+      'Payment Mode',
+      'Beneficiary Name',
+      'Beneficiary Account',
+      'Beneficiary Bank Code',
+      'Amount',
+      'Payment Description',
+      'Payment Reference',
+      'Beneficiary New IC No',
+      'Beneficiary Old IC No',
+      'Beneficiary Business Registration',
+      'Beneficiary Others',
+      'Payment Advice Indicator',
+      'Mobile Phone No',
+      'Beneficiary Email 1',
+      'Beneficiary Email 2',
+      'Generic Payment Information',
+      'Invoice Date 1',
+      'Invoice Amount 1',
+      'Payment Amount 1',
+      'Payment Description 1',
+      'Invoice Date 2',
+      'Invoice Amount 2',
+      'Payment Amount 2',
+      'Payment Description 2',
+      'Invoice Date 3',
+      'Invoice Amount 3',
+      'Payment Amount 3',
+      'Payment Description 3',
+      'Invoice Date 4',
+      'Invoice Amount 4',
+      'Payment Amount 4',
+      'Payment Description 4',
+      'Invoice Date 5',
+      'Invoice Amount 5',
+      'Payment Amount 5',
+      'Payment Description 5',
+      'Invoice Date 6',
+      'Invoice Amount 6',
+      'Payment Amount 6',
+      'Payment Description 6',
+      'Invoice Date 7',
+      'Invoice Amount 7',
+      'Payment Amount 7',
+      'Payment Description 7',
+      'Invoice Date 8',
+      'Invoice Amount 8',
+      'Payment Amount 8',
+      'Payment Description 8',
+      'Invoice Date 9',
+      'Invoice Amount 9',
+      'Payment Amount 9',
+      'Payment Description 9',
+      'Invoice Date 10',
+      'Invoice Amount 10',
+      'Payment Amount 10',
+      'Payment Description 10',
+      'Batch Reference No.',
+      'Payment Date',
+      'Beneficiary Address',
     ];
 
     const escapeCSV = (val) => {
@@ -430,18 +534,65 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       const beneficiaryName = paymentForm?.bankAccountName || invoice?.creator?.user?.name || '';
       const beneficiaryAccount = paymentForm?.bankAccountNumber || '';
       const amount = invoice?.amount != null ? Number(invoice.amount).toFixed(2) : '0.00';
-      const description = invoice?.task?.service || invoice?.task?.description || 'Content Creation';
+      const description =
+        invoice?.task?.service || invoice?.task?.description || 'Content Creation';
       const campaignName = invoice?.campaign?.name || '';
       const paymentRef = campaignName.replace(/\s/g, '').substring(0, 20);
       const phone = invoice?.creator?.user?.phoneNumber || '';
       const email = invoice?.creator?.user?.email || '';
 
       return [
-        paymentMode, beneficiaryName, beneficiaryAccount, bankCode, amount, description, paymentRef,
-        paymentForm?.icNumber || '', '', '', '', 'E', phone, email, '', 'Email For Notification',
-        '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-        '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-        '', '', '',
+        paymentMode,
+        beneficiaryName,
+        beneficiaryAccount,
+        bankCode,
+        amount,
+        description,
+        paymentRef,
+        paymentForm?.icNumber || '',
+        '',
+        '',
+        '',
+        'E',
+        phone,
+        email,
+        '',
+        'Email For Notification',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
       ];
     });
 
@@ -467,7 +618,8 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       if (filters.currency) queryParams.append('currency', filters.currency);
       if (filters.name) queryParams.append('search', filters.name);
       if (filters.campaignName) queryParams.append('campaignName', filters.campaignName);
-      if (dateRange.startDate) queryParams.append('startDate', dayjs(dateRange.startDate).toISOString());
+      if (dateRange.startDate)
+        queryParams.append('startDate', dayjs(dateRange.startDate).toISOString());
       if (dateRange.endDate) queryParams.append('endDate', dayjs(dateRange.endDate).toISOString());
       const res = await axiosInstance.get(`${endpoints.invoice.getAll}?${queryParams.toString()}`);
       let data = res.data?.data || [];
@@ -487,71 +639,84 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     }
   }, [dataFiltered, exportPreview, filters, dateRange, enqueueSnackbar]);
 
-  const handleConfirmExport = useCallback(async (format = 'xlsx') => {
-    setExportingCSV(true);
-    try {
-      if (format === 'csv') {
-        await handleExportPlainCSV();
+  const handleConfirmExport = useCallback(
+    async (format = 'xlsx') => {
+      setExportingCSV(true);
+      try {
+        if (format === 'csv') {
+          await handleExportPlainCSV();
+        } else {
+          await handleExportCSV();
+        }
+      } catch (err) {
+        console.error(`Failed to generate ${format.toUpperCase()} export:`, err);
+        enqueueSnackbar(`Failed to generate ${format.toUpperCase()} export`, { variant: 'error' });
+      } finally {
+        setExportingCSV(false);
+        exportPreview.onFalse();
+        setExportData([]);
+        setExportSelected(new Set());
+        setExportStatuses([]);
+      }
+    },
+    [handleExportCSV, handleExportPlainCSV, exportPreview, enqueueSnackbar]
+  );
+
+  const handleAddStatus = useCallback(
+    async (statusValue) => {
+      setAddStatusAnchor(null);
+      setExportLoading(true);
+      try {
+        const queryParams = new URLSearchParams();
+        queryParams.append('limit', '10000');
+        queryParams.append('status', statusValue);
+        if (filters.currency) queryParams.append('currency', filters.currency);
+        if (filters.name) queryParams.append('search', filters.name);
+        if (filters.campaignName) queryParams.append('campaignName', filters.campaignName);
+        if (dateRange.startDate)
+          queryParams.append('startDate', dayjs(dateRange.startDate).toISOString());
+        if (dateRange.endDate)
+          queryParams.append('endDate', dayjs(dateRange.endDate).toISOString());
+        const res = await axiosInstance.get(
+          `${endpoints.invoice.getAll}?${queryParams.toString()}`
+        );
+        let newData = res.data?.data || [];
+        // Apply client-side filters the API doesn't support
+        if (filters.campaigns?.length) {
+          newData = newData.filter((inv) => filters.campaigns.includes(inv?.campaign?.name));
+        }
+        setExportData((prev) => {
+          const existingIds = new Set(prev.map((inv) => inv.id));
+          const unique = newData.filter((inv) => !existingIds.has(inv.id));
+          return [...prev, ...unique];
+        });
+        setExportSelected((prev) => {
+          const next = new Set(prev);
+          newData.forEach((inv) => next.add(inv.id));
+          return next;
+        });
+        setExportStatuses((prev) => [...prev, statusValue]);
+      } catch (err) {
+        console.error('Failed to fetch invoices for status:', statusValue, err);
+        enqueueSnackbar(`Failed to load ${statusValue} invoices`, { variant: 'error' });
+      } finally {
+        setExportLoading(false);
+      }
+    },
+    [filters, dateRange, enqueueSnackbar]
+  );
+
+  const handleExportSelectAll = useCallback(
+    (checked) => {
+      const allData = exportData?.length ? exportData : dataFiltered;
+      if (checked) {
+        setExportSelected(new Set(allData.map((inv) => inv.id)));
       } else {
-        await handleExportCSV();
+        setExportSelected(new Set());
       }
-    } catch (err) {
-      console.error(`Failed to generate ${format.toUpperCase()} export:`, err);
-      enqueueSnackbar(`Failed to generate ${format.toUpperCase()} export`, { variant: 'error' });
-    } finally {
-      setExportingCSV(false);
-      exportPreview.onFalse();
-      setExportData([]);
-      setExportSelected(new Set());
-      setExportStatuses([]);
-    }
-  }, [handleExportCSV, handleExportPlainCSV, exportPreview, enqueueSnackbar]);
-
-  const handleAddStatus = useCallback(async (statusValue) => {
-    setAddStatusAnchor(null);
-    setExportLoading(true);
-    try {
-      const queryParams = new URLSearchParams();
-      queryParams.append('limit', '10000');
-      queryParams.append('status', statusValue);
-      if (filters.currency) queryParams.append('currency', filters.currency);
-      if (filters.name) queryParams.append('search', filters.name);
-      if (filters.campaignName) queryParams.append('campaignName', filters.campaignName);
-      if (dateRange.startDate) queryParams.append('startDate', dayjs(dateRange.startDate).toISOString());
-      if (dateRange.endDate) queryParams.append('endDate', dayjs(dateRange.endDate).toISOString());
-      const res = await axiosInstance.get(`${endpoints.invoice.getAll}?${queryParams.toString()}`);
-      let newData = res.data?.data || [];
-      // Apply client-side filters the API doesn't support
-      if (filters.campaigns?.length) {
-        newData = newData.filter((inv) => filters.campaigns.includes(inv?.campaign?.name));
-      }
-      setExportData((prev) => {
-        const existingIds = new Set(prev.map((inv) => inv.id));
-        const unique = newData.filter((inv) => !existingIds.has(inv.id));
-        return [...prev, ...unique];
-      });
-      setExportSelected((prev) => {
-        const next = new Set(prev);
-        newData.forEach((inv) => next.add(inv.id));
-        return next;
-      });
-      setExportStatuses((prev) => [...prev, statusValue]);
-    } catch (err) {
-      console.error('Failed to fetch invoices for status:', statusValue, err);
-      enqueueSnackbar(`Failed to load ${statusValue} invoices`, { variant: 'error' });
-    } finally {
-      setExportLoading(false);
-    }
-  }, [filters, dateRange, enqueueSnackbar]);
-
-  const handleExportSelectAll = useCallback((checked) => {
-    const allData = exportData?.length ? exportData : dataFiltered;
-    if (checked) {
-      setExportSelected(new Set(allData.map((inv) => inv.id)));
-    } else {
-      setExportSelected(new Set());
-    }
-  }, [exportData, dataFiltered]);
+    },
+    [exportData, dataFiltered]
+  );
 
   const handleExportSelectRow = useCallback((id) => {
     setExportSelected((prev) => {
@@ -569,7 +734,9 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     setExportData((prev) => {
       const filtered = prev.filter((inv) => inv?.status !== statusToRemove);
       setExportSelected((prevSel) => {
-        const removedIds = new Set(prev.filter((inv) => inv?.status === statusToRemove).map((inv) => inv.id));
+        const removedIds = new Set(
+          prev.filter((inv) => inv?.status === statusToRemove).map((inv) => inv.id)
+        );
         const next = new Set(prevSel);
         removedIds.forEach((id) => next.delete(id));
         return next;
@@ -580,7 +747,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   }, []);
 
   const changeInvoiceStatus = useCallback(() => {}, []);
-
 
   const TABS = useMemo(() => {
     // Check if stats are loaded and have counts
@@ -700,15 +866,15 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         }
 
         table.onSelectAllRows(false, []);
-        
+
         const pollInterval = setInterval(async () => {
           try {
             const queryParams = new URLSearchParams();
             queryParams.append('limit', '10000');
-            const res = await axiosInstance.get(
+            const response = await axiosInstance.get(
               `${endpoints.invoice.getAll}?${queryParams.toString()}`
             );
-            const updatedInvoices = res.data?.data || [];
+            const updatedInvoices = response.data?.data || [];
 
             setInvoices(updatedInvoices);
 
@@ -1060,9 +1226,15 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         maxWidth="xl"
         PaperProps={{ sx: { borderRadius: 1.5, height: '90vh' } }}
       >
-        <DialogTitle sx={{ pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <DialogTitle
+          sx={{ pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <img src="/logo/Alliance_Bank_Malaysia_logo.png" alt="Alliance Bank" style={{ height: 24 }} />
+            <img
+              src="/logo/Alliance_Bank_Malaysia_logo.png"
+              alt="Alliance Bank"
+              style={{ height: 24 }}
+            />
             Bulk Payment Export
           </Box>
           <IconButton onClick={exportPreview.onFalse} size="small">
@@ -1153,122 +1325,118 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                       <CircularProgress size={28} />
                     </TableCell>
                   </TableRow>
-                ) : (exportData?.length ? exportData : dataFiltered)?.map((inv) => {
-                  const paymentForm = inv?.creator?.user?.paymentForm;
-                  const bankName = paymentForm?.bankName || '';
-                  const bankCode = getBankCode(bankName);
-                  const paymentMode = getPaymentMode(bankCode);
-                  const beneficiaryName =
-                    paymentForm?.bankAccountName || inv?.creator?.user?.name || '';
-                  const campaignName = inv?.campaign?.name || '';
-                  const paymentRef = campaignName.replace(/\s/g, '').substring(0, 20);
+                ) : (
+                  (exportData?.length ? exportData : dataFiltered)?.map((inv) => {
+                    const paymentForm = inv?.creator?.user?.paymentForm;
+                    const bankName = paymentForm?.bankName || '';
+                    const bankCode = getBankCode(bankName);
+                    const paymentMode = getPaymentMode(bankCode);
+                    const beneficiaryName =
+                      paymentForm?.bankAccountName || inv?.creator?.user?.name || '';
+                    const campaignName = inv?.campaign?.name || '';
+                    const paymentRef = campaignName.replace(/\s/g, '').substring(0, 20);
 
-                  const cellSx = { py: 0.75, fontSize: '0.875rem', whiteSpace: 'nowrap' };
+                    const cellSx = { py: 0.75, fontSize: '0.875rem', whiteSpace: 'nowrap' };
 
-                  return (
-                    <TableRow
-                      key={inv.id}
-                      sx={{
-                        '&:last-child td': { borderBottom: 0 },
-                        opacity: exportSelected.has(inv.id) ? 1 : 0.45,
-                      }}
-                    >
-                      <TableCell padding="checkbox" sx={{ py: 0.75 }}>
-                        <Checkbox
-                          checked={exportSelected.has(inv.id)}
-                          onChange={() => handleExportSelectRow(inv.id)}
-                          size="small"
-                          sx={{
-                            color: STATUS_COLORS[inv?.status] || '#637381',
-                            '&.Mui-checked': {
+                    return (
+                      <TableRow
+                        key={inv.id}
+                        sx={{
+                          '&:last-child td': { borderBottom: 0 },
+                          opacity: exportSelected.has(inv.id) ? 1 : 0.45,
+                        }}
+                      >
+                        <TableCell padding="checkbox" sx={{ py: 0.75 }}>
+                          <Checkbox
+                            checked={exportSelected.has(inv.id)}
+                            onChange={() => handleExportSelectRow(inv.id)}
+                            size="small"
+                            sx={{
                               color: STATUS_COLORS[inv?.status] || '#637381',
-                            },
-                          }}
-                        />
-                      </TableCell>
-                      {/* 1. Payment Mode */}
-                      <TableCell sx={cellSx}>
-                        <Typography
-                          sx={{
-                            fontWeight: 700,
-                            display: 'inline-block',
-                            px: 1,
-                            py: 0.25,
-                            fontSize: '0.75rem',
-                            border: '1px solid',
-                            borderBottom: '2px solid',
-                            borderRadius: 0.6,
-                            bgcolor: 'white',
-                            color: paymentMode ? '#1340FF' : '#637381',
-                            borderColor: paymentMode ? '#1340FF' : '#637381',
-                          }}
-                        >
-                          {paymentMode || 'N/A'}
-                        </Typography>
-                      </TableCell>
-                      {/* 2. Beneficiary Name */}
-                      <TableCell sx={{ ...cellSx, maxWidth: 200 }}>
-                        <Typography variant="inherit" noWrap>
-                          {beneficiaryName || '-'}
-                        </Typography>
-                      </TableCell>
-                      {/* 3. Beneficiary Account */}
-                      <TableCell sx={cellSx}>
-                        {paymentForm?.bankAccountNumber || '-'}
-                      </TableCell>
-                      {/* 4. Beneficiary Bank Code */}
-                      <TableCell sx={cellSx}>{bankCode || '-'}</TableCell>
-                      {/* 5. Amount */}
-                      <TableCell sx={cellSx}>
-                        {formatCurrencyAmount(
-                          inv?.amount,
-                          inv?.currency || 'MYR',
-                          inv?.task?.currencySymbol || inv?.currencySymbol
-                        )}
-                      </TableCell>
-                      {/* 6. Payment Description */}
-                      <TableCell sx={{ ...cellSx, maxWidth: 180 }}>
-                        <Typography variant="inherit" noWrap>
-                          {inv?.task?.service || inv?.task?.description || 'Content Creation'}
-                        </Typography>
-                      </TableCell>
-                      {/* 7. Payment Reference */}
-                      <TableCell sx={{ ...cellSx, maxWidth: 160 }}>
-                        <Typography variant="inherit" noWrap>
-                          {paymentRef || '-'}
-                        </Typography>
-                      </TableCell>
-                      {/* 8. Beneficiary New IC No */}
-                      <TableCell sx={cellSx}>
-                        {paymentForm?.icNumber || '-'}
-                      </TableCell>
-                      {/* 9. Beneficiary Old IC No */}
-                      <TableCell sx={cellSx}>-</TableCell>
-                      {/* 10. Beneficiary Business Registration */}
-                      <TableCell sx={cellSx}>-</TableCell>
-                      {/* 11. Beneficiary Others */}
-                      <TableCell sx={cellSx}>-</TableCell>
-                      {/* 12. Payment Advice Indicator */}
-                      <TableCell sx={cellSx}>E</TableCell>
-                      {/* 13. Mobile Phone No */}
-                      <TableCell sx={cellSx}>
-                        {inv?.creator?.user?.phoneNumber || '-'}
-                      </TableCell>
-                      {/* 14. Beneficiary Email 1 */}
-                      <TableCell sx={{ ...cellSx, maxWidth: 200 }}>
-                        <Typography variant="inherit" noWrap>
-                          {inv?.creator?.user?.email || '-'}
-                        </Typography>
-                      </TableCell>
-                      {/* 15. Batch Reference No. */}
-                      <TableCell sx={cellSx}>-</TableCell>
-                      {/* 16. Payment Date */}
-                      <TableCell sx={cellSx}>-</TableCell>
-                      {/* 17. Beneficiary Address */}
-                      <TableCell sx={cellSx}>-</TableCell>
-                    </TableRow>
-                  );
-                })}
+                              '&.Mui-checked': {
+                                color: STATUS_COLORS[inv?.status] || '#637381',
+                              },
+                            }}
+                          />
+                        </TableCell>
+                        {/* 1. Payment Mode */}
+                        <TableCell sx={cellSx}>
+                          <Typography
+                            sx={{
+                              fontWeight: 700,
+                              display: 'inline-block',
+                              px: 1,
+                              py: 0.25,
+                              fontSize: '0.75rem',
+                              border: '1px solid',
+                              borderBottom: '2px solid',
+                              borderRadius: 0.6,
+                              bgcolor: 'white',
+                              color: paymentMode ? '#1340FF' : '#637381',
+                              borderColor: paymentMode ? '#1340FF' : '#637381',
+                            }}
+                          >
+                            {paymentMode || 'N/A'}
+                          </Typography>
+                        </TableCell>
+                        {/* 2. Beneficiary Name */}
+                        <TableCell sx={{ ...cellSx, maxWidth: 200 }}>
+                          <Typography variant="inherit" noWrap>
+                            {beneficiaryName || '-'}
+                          </Typography>
+                        </TableCell>
+                        {/* 3. Beneficiary Account */}
+                        <TableCell sx={cellSx}>{paymentForm?.bankAccountNumber || '-'}</TableCell>
+                        {/* 4. Beneficiary Bank Code */}
+                        <TableCell sx={cellSx}>{bankCode || '-'}</TableCell>
+                        {/* 5. Amount */}
+                        <TableCell sx={cellSx}>
+                          {formatCurrencyAmount(
+                            inv?.amount,
+                            inv?.currency || 'MYR',
+                            inv?.task?.currencySymbol || inv?.currencySymbol
+                          )}
+                        </TableCell>
+                        {/* 6. Payment Description */}
+                        <TableCell sx={{ ...cellSx, maxWidth: 180 }}>
+                          <Typography variant="inherit" noWrap>
+                            {inv?.task?.service || inv?.task?.description || 'Content Creation'}
+                          </Typography>
+                        </TableCell>
+                        {/* 7. Payment Reference */}
+                        <TableCell sx={{ ...cellSx, maxWidth: 160 }}>
+                          <Typography variant="inherit" noWrap>
+                            {paymentRef || '-'}
+                          </Typography>
+                        </TableCell>
+                        {/* 8. Beneficiary New IC No */}
+                        <TableCell sx={cellSx}>{paymentForm?.icNumber || '-'}</TableCell>
+                        {/* 9. Beneficiary Old IC No */}
+                        <TableCell sx={cellSx}>-</TableCell>
+                        {/* 10. Beneficiary Business Registration */}
+                        <TableCell sx={cellSx}>-</TableCell>
+                        {/* 11. Beneficiary Others */}
+                        <TableCell sx={cellSx}>-</TableCell>
+                        {/* 12. Payment Advice Indicator */}
+                        <TableCell sx={cellSx}>E</TableCell>
+                        {/* 13. Mobile Phone No */}
+                        <TableCell sx={cellSx}>{inv?.creator?.user?.phoneNumber || '-'}</TableCell>
+                        {/* 14. Beneficiary Email 1 */}
+                        <TableCell sx={{ ...cellSx, maxWidth: 200 }}>
+                          <Typography variant="inherit" noWrap>
+                            {inv?.creator?.user?.email || '-'}
+                          </Typography>
+                        </TableCell>
+                        {/* 15. Batch Reference No. */}
+                        <TableCell sx={cellSx}>-</TableCell>
+                        {/* 16. Payment Date */}
+                        <TableCell sx={cellSx}>-</TableCell>
+                        {/* 17. Beneficiary Address */}
+                        <TableCell sx={cellSx}>-</TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -1334,35 +1502,36 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                 )}
               </Box>
             ))}
-            {!exportStatuses.includes('all') && TABS.some((tab) => tab.value !== 'all' && !exportStatuses.includes(tab.value)) && (
-              <>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={(e) => setAddStatusAnchor(e.currentTarget)}
-                  disabled={exportLoading}
-                  startIcon={<Iconify icon="mingcute:add-line" width={16} />}
-                  sx={{
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    fontSize: '0.75rem',
-                    borderColor: '#c4cdd5',
-                    color: '#637381',
-                    '&:hover': { borderColor: '#919eab', bgcolor: '#f5f5f5' },
-                  }}
-                >
-                  Add Status
-                </Button>
-                <Menu
-                  anchorEl={addStatusAnchor}
-                  open={Boolean(addStatusAnchor)}
-                  onClose={() => setAddStatusAnchor(null)}
-                  anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-                  transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                >
-                  {TABS
-                    .filter((tab) => tab.value !== 'all' && !exportStatuses.includes(tab.value))
-                    .map((tab) => (
+            {!exportStatuses.includes('all') &&
+              TABS.some((tab) => tab.value !== 'all' && !exportStatuses.includes(tab.value)) && (
+                <>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={(e) => setAddStatusAnchor(e.currentTarget)}
+                    disabled={exportLoading}
+                    startIcon={<Iconify icon="mingcute:add-line" width={16} />}
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                      borderColor: '#c4cdd5',
+                      color: '#637381',
+                      '&:hover': { borderColor: '#919eab', bgcolor: '#f5f5f5' },
+                    }}
+                  >
+                    Add Status
+                  </Button>
+                  <Menu
+                    anchorEl={addStatusAnchor}
+                    open={Boolean(addStatusAnchor)}
+                    onClose={() => setAddStatusAnchor(null)}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+                    transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  >
+                    {TABS.filter(
+                      (tab) => tab.value !== 'all' && !exportStatuses.includes(tab.value)
+                    ).map((tab) => (
                       <MenuItem
                         key={tab.value}
                         onClick={() => handleAddStatus(tab.value)}
@@ -1387,22 +1556,27 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                         </Typography>
                       </MenuItem>
                     ))}
-                </Menu>
-              </>
-            )}
+                  </Menu>
+                </>
+              )}
           </Box>
 
           {/* Right side: selection summary + actions */}
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: { xs: 1, md: 2 },
-            flexShrink: 0,
-            justifyContent: { xs: 'space-between', md: 'flex-end' },
-          }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: { xs: 1, md: 2 },
+              flexShrink: 0,
+              justifyContent: { xs: 'space-between', md: 'flex-end' },
+            }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 2 } }}>
-              <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600, whiteSpace: 'nowrap' }}>
+              <Typography
+                variant="body2"
+                sx={{ color: '#637381', fontWeight: 600, whiteSpace: 'nowrap' }}
+              >
                 {exportSummary.count}/{exportSummary.totalCount} selected
               </Typography>
               <Box sx={{ width: '1px', height: 20, bgcolor: 'divider' }} />

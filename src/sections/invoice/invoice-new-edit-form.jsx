@@ -1,11 +1,12 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
-import { pdf, PDFViewer } from '@react-pdf/renderer';
 import { FixedSizeList } from 'react-window';
+import { pdf, PDFViewer } from '@react-pdf/renderer';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useMemo, useEffect, useCallback } from 'react';
 
+import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Box,
   Card,
@@ -29,7 +30,6 @@ import {
   TableContainer,
   CircularProgress,
 } from '@mui/material';
-import LoadingButton from '@mui/lab/LoadingButton';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
@@ -274,7 +274,7 @@ export default function InvoiceNewEditForm({ id, creators, onClose, mutateInvoic
     const formData = new FormData();
 
     const pdfBlob = await pdf(<InvoicePDF invoice={invoice} />).toBlob();
-
+    
     formData.append('file', pdfBlob, `Invoice-${id}.pdf`);
     formData.append(
       'data',
@@ -428,7 +428,7 @@ export default function InvoiceNewEditForm({ id, creators, onClose, mutateInvoic
           {/* Main Form Area */}
           <Grid item xs={12} md={9}>
             <Card sx={{ px: 4, py: 3, borderRadius: 2, overflowY: 'auto' }}>
-              <InvoiceNewEditAddress creators={creatorList} invoice={invoice} />
+              <InvoiceNewEditAddress creators={creatorList} />
 
               <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
 

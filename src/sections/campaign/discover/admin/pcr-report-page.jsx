@@ -5,22 +5,20 @@ import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
 import html2canvas from 'html2canvas';
+import { CSS } from '@dnd-kit/utilities';
 import { enqueueSnackbar } from 'notistack';
 import EmojiPicker from 'emoji-picker-react';
 import { useRef, useMemo, useState, useEffect } from 'react';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useSensor, DndContext, useSensors, closestCenter, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
+import { arrayMove, useSortable, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
+import { PieChart } from '@mui/x-charts';
 import SendIcon from '@mui/icons-material/Send';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
-import { Box, Grid, Link, Button, Avatar, Popover, TextField, Typography, IconButton, InputAdornment, CircularProgress, Table, TableBody, TableCell, TableHead, TableRow, Modal, Dialog, DialogContent, DialogTitle } from '@mui/material';
-import { PieChart } from '@mui/x-charts';
-
-import Iconify from 'src/components/iconify';
+import { Box, Grid, Link, Button, Avatar, Dialog, Popover, TextField, Typography, IconButton, DialogTitle, DialogContent, InputAdornment, CircularProgress } from '@mui/material';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -33,6 +31,8 @@ import {
   calculateSummaryStats,
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
+
+import Iconify from 'src/components/iconify';
 
 const getImprovedInsightBgColor = (index) => {
   if (index === 0) return '#1340FFD9';
@@ -62,10 +62,10 @@ const handlePlainTextPaste = (e) => {
     document.execCommand('insertText', false, text);
   } else {
     // For regular input/textarea elements
-    const target = e.target;
+    const {target} = e;
     const start = target.selectionStart;
     const end = target.selectionEnd;
-    const value = target.value;
+    const {value} = target;
     
     // Insert plain text at cursor position
     const newValue = value.substring(0, start) + text + value.substring(end);
@@ -104,7 +104,7 @@ const SortableSection = ({ id, children, isEditMode }) => {
   };
 
   const handlePointerDown = (e) => {
-    const target = e.target;
+    const {target} = e;
     const tagName = target.tagName.toLowerCase();
     if (
       tagName === 'button' ||
@@ -184,10 +184,10 @@ const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} })
     if (!selectedText) return;
 
     // Save the current selection
-    const startContainer = range.startContainer;
-    const startOffset = range.startOffset;
-    const endContainer = range.endContainer;
-    const endOffset = range.endOffset;
+    const {startContainer} = range;
+    const {startOffset} = range;
+    const {endContainer} = range;
+    const {endOffset} = range;
 
     try {
       // Use execCommand for better browser compatibility
@@ -1069,7 +1069,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
   useEffect(() => {
     const handleGlobalPaste = (e) => {
       // Only apply to inputs, textareas, and contentEditable elements within the report
-      const target = e.target;
+      const {target} = e;
       const isInReport = reportRef.current?.contains(target);
       
       if (isInReport && (
@@ -1569,7 +1569,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         console.log('📸 Using snapshot data for heatmap:', postSnapshots.length, 'posts');
         
         postSnapshots.forEach((snapshot) => {
-          const userId = snapshot.userId;
+          const {userId} = snapshot;
           
           if (!creatorPhaseData.has(userId)) {
             // Find the submission to get creator info
@@ -1685,7 +1685,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         
         // For Instagram: check video.timestamp field
         if (!postDate && insightData.video?.timestamp) {
-          const timestamp = insightData.video.timestamp;
+          const {timestamp} = insightData.video;
           console.log('  Trying timestamp:', timestamp, 'type:', typeof timestamp);
           
           if (typeof timestamp === 'string') {
@@ -3311,8 +3311,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 || creatorData?.user?.name;
             }
             
-            const platform = creator.platform;
-            const engagementRate = creator.engagementRate;
+            const {platform} = creator;
+            const {engagementRate} = creator;
 
             const barWidth = (engagementRate / maxEngagementRate) * 100;
             
@@ -4875,7 +4875,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               // Get username based on platform
               let username = '';
               if (mostLikesCreator) {
-                const platform = mostLikesCreator.platform;
+                const {platform} = mostLikesCreator;
                 if (platform === 'Instagram') {
                   username = mostLikesCreatorData?.user?.creator?.instagram 
                     || mostLikesCreator?.submission?.user?.creator?.instagram 
@@ -5052,7 +5052,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               // Get username based on platform
               let username = '';
               if (mostSharesCreator) {
-                const platform = mostSharesCreator.platform;
+                const {platform} = mostSharesCreator;
                 if (platform === 'Instagram') {
                   username = mostSharesCreatorData?.user?.creator?.instagram 
                     || mostSharesCreator?.submission?.user?.creator?.instagram 
@@ -7143,7 +7143,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 <TextField
                     value={editableContent.creatorStrategyCount}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      const {value} = e.target;
                       // Only allow numbers
                       if (value === '' || /^\d+$/.test(value)) {
                         setEditableContent({ ...editableContent, creatorStrategyCount: value });
@@ -7401,7 +7401,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <TextField
                       value={editableContent.educatorCreatorCount}
                       onChange={(e) => {
-                        const value = e.target.value;
+                        const {value} = e.target;
                         // Only allow numbers
                         if (value === '' || /^\d+$/.test(value)) {
                           setEditableContent({ ...editableContent, educatorCreatorCount: value });
@@ -7704,7 +7704,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <TextField
                       value={editableContent.thirdCreatorCount}
                       onChange={(e) => {
-                        const value = e.target.value;
+                        const {value} = e.target;
                         // Only allow numbers
                         if (value === '' || /^\d+$/.test(value)) {
                           setEditableContent({ ...editableContent, thirdCreatorCount: value });
@@ -8003,7 +8003,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <TextField
                       value={editableContent.fourthCreatorCount}
                       onChange={(e) => {
-                        const value = e.target.value;
+                        const {value} = e.target;
                         // Only allow numbers
                         if (value === '' || /^\d+$/.test(value)) {
                           setEditableContent({ ...editableContent, fourthCreatorCount: value });
@@ -8302,7 +8302,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <TextField
                       value={editableContent.fifthCreatorCount}
                       onChange={(e) => {
-                        const value = e.target.value;
+                        const {value} = e.target;
                         // Only allow numbers
                         if (value === '' || /^\d+$/.test(value)) {
                           setEditableContent({ ...editableContent, fifthCreatorCount: value });
@@ -8448,8 +8448,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   // Render different chart based on number of personas
                   if (showThirdCard) {
                     return (
-                  <>
-                    <svg width="360" height="360" viewBox="0 0 160 160">
+                  <svg width="360" height="360" viewBox="0 0 160 160">
                         {(() => {
                           const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
                           const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || (showEducatorCard ? 1 : 0);
@@ -8652,15 +8651,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           );
                         })()}
                       </svg>
-                  </>
                     );
                   }
                   
                   if (showEducatorCard) {
                     return (
                   // Pie chart when both personas are visible
-                  <>
-                    <svg width="360" height="360" viewBox="0 0 160 160">
+                  <svg width="360" height="360" viewBox="0 0 160 160">
                         {(() => {
                           const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
                           const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
@@ -8727,7 +8724,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           );
                         })()}
                       </svg>
-                  </>
                     );
                   }
                   
@@ -9550,8 +9546,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       if (showFifthCard || showFourthCard || showThirdCard) {
                         // Pie chart when 3+ personas are visible
                         return (
-                      <>
-                        <svg width="280" height="280" viewBox="0 0 160 160">
+                      <svg width="280" height="280" viewBox="0 0 160 160">
                           {(() => {
                             const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
                             const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
@@ -9751,15 +9746,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             );
                           })()}
                         </svg>
-                      </>
                         );
                       }
                       
                       if (showEducatorCard) {
                         // Pie chart when both personas are visible
                         return (
-                      <>
-                        <svg width="280" height="280" viewBox="0 0 160 160">
+                      <svg width="280" height="280" viewBox="0 0 160 160">
                           {(() => {
                             const comicCount = parseInt(editableContent.creatorStrategyCount, 10) || 1;
                             const educatorCount = parseInt(editableContent.educatorCreatorCount, 10) || 1;
@@ -9826,7 +9819,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                             );
                           })()}
                         </svg>
-                      </>
                         );
                       }
                       

@@ -84,6 +84,7 @@ const Profile = () => {
     if (path.includes('/preference')) return 'preference';
     if (path.includes('/client')) return 'client';
     if (path.includes('/accounts')) return 'accounts';
+    if (path.includes('/agreements')) return 'agreements';
 
     // Default to general/account tab
     if (user?.role === 'client') return 'client';
@@ -1045,7 +1046,6 @@ const Profile = () => {
         >
           Profile
         </Button>
-
         <Button
           component={Link}
           to={paths.dashboard.user.profileTabs.security}
@@ -1094,7 +1094,6 @@ const Profile = () => {
         >
           Security
         </Button>
-
         {/* Only show Accounts tab for parent clients (not child accounts) */}
         {user?.role === 'client' && user?.client && user?.isChildAccount !== true && (
           <Button
@@ -1147,41 +1146,6 @@ const Profile = () => {
           </Button>
         )}
       </Stack>
-
-      {/* Indicator for more tabs */}
-      {/* <Box
-        sx={{
-          position: 'absolute',
-          right: { xs: '15px', sm: '20px', md: 0 },
-          top: 0,
-          height: '100%',
-          background:
-            'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,1) 100%)',
-          width: { xs: '80px', sm: '100px' },
-          pointerEvents: 'none',
-          display: { xs: 'block', md: 'none' },
-          zIndex: 1,
-        }}
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            right: { xs: 5, sm: 10 },
-            top: '50%',
-            transform: 'translateY(-50%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#f0f0f0',
-            borderRadius: '50%',
-            width: 24,
-            height: 24,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          }}
-        >
-          <Iconify icon="eva:arrow-ios-forward-fill" width={16} color="#1340ff" />
-        </Box>
-      </Box> */}
     </Box>
   );
 
@@ -1225,7 +1189,10 @@ const Profile = () => {
     <>
       {currentTab === 'client' && <ClientProfile />}
       {currentTab === 'security' && <AccountSecurity />}
-      {currentTab === 'accounts' && user?.role === 'client' && user?.client && user?.isChildAccount !== true && <ChildAccounts />}
+      {currentTab === 'accounts' &&
+        user?.role === 'client' &&
+        user?.client &&
+        user?.isChildAccount !== true && <ChildAccounts />}
     </>
   );
 

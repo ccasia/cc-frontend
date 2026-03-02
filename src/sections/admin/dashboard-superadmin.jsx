@@ -360,9 +360,6 @@ import {
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-// REMOVED: useGetCreators - using stats endpoint instead
-// REMOVED: useGetCampaigns - using lightweight dashboard campaigns endpoint instead
-
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -396,12 +393,12 @@ const DashboardSuperadmin = () => {
       dedupingInterval: 120000,
     }
   );
-  
+
   const campaigns = useMemo(
     () => (Array.isArray(campaignsData) ? campaignsData : campaignsData?.data || []),
     [campaignsData]
   );
-  
+
   const { data: dashboardStats, isLoading: statsLoading } = useSWR(
     endpoints.dashboard.stats,
     fetcher,
@@ -421,7 +418,7 @@ const DashboardSuperadmin = () => {
       dedupingInterval: 120000,
     }
   );
-  
+
   const { socket } = useSocketContext();
   const [onlineUsers, setOnlineUsers] = useState(null);
   const [selectedCampaign, setSelectedCampaign] = useState('all');
@@ -438,11 +435,9 @@ const DashboardSuperadmin = () => {
   const [exportCampaignsDone, setExportCampaignsDone] = useState(false);
   const [exportCreatorsDone, setExportCreatorsDone] = useState(false);
 
-  const activeCampaigns = useMemo(
-    () => campaigns || [],
-    [campaigns]
-  );
+  const activeCampaigns = useMemo(() => campaigns || [], [campaigns]);
 
+  // OPTIMIZATION: Completed campaigns count comes from stats endpoint
   const completedCampaigns = useMemo(
     () => dashboardStats?.data?.completedCampaigns || 0,
     [dashboardStats]
@@ -470,9 +465,7 @@ const DashboardSuperadmin = () => {
     }
 
     if (allPitches.length === 0) return [];
-    return allPitches
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 10);
+    return allPitches.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10);
   }, [campaigns]);
 
   // Filter pitches based on selected campaign
@@ -485,13 +478,25 @@ const DashboardSuperadmin = () => {
   const totalCreators = dashboardStats?.data?.totalCreators || creatorCountData?.count || 0;
   const totalClients = dashboardStats?.data?.totalClients || clientData || 0;
 
-  const totalApprovedPitches = useMemo(() => dashboardStats?.data?.approvedPitches || 0, [dashboardStats]);
+  const totalApprovedPitches = useMemo(
+    () => dashboardStats?.data?.approvedPitches || 0,
+    [dashboardStats]
+  );
 
-  const totalRejectedPitches = useMemo(() => dashboardStats?.data?.rejectedPitches || 0, [dashboardStats]);
+  const totalRejectedPitches = useMemo(
+    () => dashboardStats?.data?.rejectedPitches || 0,
+    [dashboardStats]
+  );
 
-  const totalCreatorsWithMediaKit = useMemo(() => dashboardStats?.data?.creatorsWithMediaKit || 0, [dashboardStats]);
+  const totalCreatorsWithMediaKit = useMemo(
+    () => dashboardStats?.data?.creatorsWithMediaKit || 0,
+    [dashboardStats]
+  );
 
-  const totalCreatorsInAtLeastOneCampaign = useMemo(() => dashboardStats?.data?.creatorsInCampaigns || 0, [dashboardStats]);
+  const totalCreatorsInAtLeastOneCampaign = useMemo(
+    () => dashboardStats?.data?.creatorsInCampaigns || 0,
+    [dashboardStats]
+  );
 
   const monthlyData = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
@@ -510,6 +515,7 @@ const DashboardSuperadmin = () => {
   }, [activeCampaigns.length, totalCreators, totalPitches]);
 
   const icon = useMemo(
+    // eslint-disable-next-line react/no-unstable-nested-components
     () => (name) => (
       <SvgColor
         src={`/assets/icons/navbar/${name}.svg`}
@@ -575,62 +581,71 @@ const DashboardSuperadmin = () => {
   ];
 
   // OPTIMIZATION: Memoize handlers to prevent unnecessary re-renders
-  const handleViewCampaign = useCallback((campaignId) => {
-    router.push(paths.dashboard.campaign.adminCampaignDetail(campaignId));
-  }, [router]);
+  const handleViewCampaign = useCallback(
+    (campaignId) => {
+      router.push(paths.dashboard.campaign.adminCampaignDetail(campaignId));
+    },
+    [router]
+  );
 
-  const handleViewPitch = useCallback((pitch) => {
-    localStorage.setItem('campaigndetail', 'pitch');
-    router.push(paths.dashboard.campaign.adminCampaignDetail(pitch.campaignId));
-  }, [router]);
+  const handleViewPitch = useCallback(
+    (pitch) => {
+      localStorage.setItem('campaigndetail', 'pitch');
+      router.push(paths.dashboard.campaign.adminCampaignDetail(pitch.campaignId));
+    },
+    [router]
+  );
 
-  const renderMetricCard = useCallback((metric, index) => (
-    <Grid item xs={6} md={3} key={index}>
-      <Card
-        sx={{
-          p: 3,
-          height: 120,
-          bgcolor: colors.background,
-          border: `1px solid ${colors.border}`,
-          borderRadius: 1,
-          transition: 'border-color 0.2s ease',
-          '&:hover': {
-            borderColor: metric.color,
-          },
-        }}
-      >
-        <Stack spacing={1} height="100%" justifyContent="space-between">
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
+  const renderMetricCard = useCallback(
+    (metric, index) => (
+      <Grid item xs={6} md={3} key={index}>
+        <Card
+          sx={{
+            p: 3,
+            height: 120,
+            bgcolor: colors.background,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 1,
+            transition: 'border-color 0.2s ease',
+            '&:hover': {
+              borderColor: metric.color,
+            },
+          }}
+        >
+          <Stack spacing={1} height="100%" justifyContent="space-between">
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Typography
+                variant="caption"
+                sx={{
+                  color: colors.secondary,
+                  fontWeight: 500,
+                  textTransform: 'uppercase',
+                  letterSpacing: 1,
+                  fontSize: '0.7rem',
+                }}
+              >
+                {metric.title}
+              </Typography>
+              <Box sx={{ color: metric.color, opacity: 0.8 }}>{metric.icon}</Box>
+            </Stack>
+
             <Typography
-              variant="caption"
+              variant="h3"
               sx={{
-                color: colors.secondary,
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: 1,
-                fontSize: '0.7rem',
+                color: metric.color,
+                fontWeight: 700,
+                lineHeight: 1,
+                fontSize: '2rem',
               }}
             >
-              {metric.title}
+              {typeof metric.value === 'number' ? metric.value.toLocaleString() : '0'}
             </Typography>
-            <Box sx={{ color: metric.color, opacity: 0.8 }}>{metric.icon}</Box>
           </Stack>
-
-          <Typography
-            variant="h3"
-            sx={{
-              color: metric.color,
-              fontWeight: 700,
-              lineHeight: 1,
-              fontSize: '2rem',
-            }}
-          >
-            {typeof metric.value === 'number' ? metric.value.toLocaleString() : '0'}
-          </Typography>
-        </Stack>
-      </Card>
-    </Grid>
-  ), []);
+        </Card>
+      </Grid>
+    ),
+    []
+  );
 
   const renderPendingPitches = (
     <Card
@@ -896,64 +911,70 @@ const DashboardSuperadmin = () => {
           </Stack>
           <Stack direction="row" spacing={1.5} alignItems="center">
             {user?.role === 'superadmin' && (
-            <LoadingButton
-              size="small"
-              loading={exportCampaignsLoading}
-              onClick={async (e) => {
-                e.stopPropagation();
-                try {
-                  setExportCampaignsLoading(true);
-                  await axiosInstance.post(endpoints.campaign.exportActiveCompleted);
-                  setExportCampaignsLoading(false);
-                  setExportCampaignsDone(true);
-                  setTimeout(() => setExportCampaignsDone(false), 1500);
-                } catch {
-                  setExportCampaignsLoading(false);
-                }
-              }}
-              sx={{
-                bgcolor: exportCampaignsDone ? '#22c55e' : colors.primary,
-                color: colors.background,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                height: 28,
-                px: 1.5,
-                '&:hover': { opacity: 0.9, bgcolor: exportCampaignsDone ? '#16a34a' : colors.primary },
-              }}
-              variant="contained"
-            >
-              {exportCampaignsDone ? 'Done' : 'Export Campaigns'}
-            </LoadingButton>
+              <LoadingButton
+                size="small"
+                loading={exportCampaignsLoading}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    setExportCampaignsLoading(true);
+                    await axiosInstance.post(endpoints.campaign.exportActiveCompleted);
+                    setExportCampaignsLoading(false);
+                    setExportCampaignsDone(true);
+                    setTimeout(() => setExportCampaignsDone(false), 1500);
+                  } catch {
+                    setExportCampaignsLoading(false);
+                  }
+                }}
+                sx={{
+                  bgcolor: exportCampaignsDone ? '#22c55e' : colors.primary,
+                  color: colors.background,
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  height: 28,
+                  px: 1.5,
+                  '&:hover': {
+                    opacity: 0.9,
+                    bgcolor: exportCampaignsDone ? '#16a34a' : colors.primary,
+                  },
+                }}
+                variant="contained"
+              >
+                {exportCampaignsDone ? 'Done' : 'Export Campaigns'}
+              </LoadingButton>
             )}
             {user?.role === 'superadmin' && (
-            <LoadingButton
-              size="small"
-              loading={exportCreatorsLoading}
-              onClick={async (e) => {
-                e.stopPropagation();
-                try {
-                  setExportCreatorsLoading(true);
-                  await axiosInstance.post(endpoints.campaign.exportCampaignCreators);
-                  setExportCreatorsLoading(false);
-                  setExportCreatorsDone(true);
-                  setTimeout(() => setExportCreatorsDone(false), 1500);
-                } catch {
-                  setExportCreatorsLoading(false);
-                }
-              }}
-              sx={{
-                bgcolor: exportCreatorsDone ? '#22c55e' : colors.secondary,
-                color: colors.background,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                height: 28,
-                px: 1.5,
-                '&:hover': { opacity: 0.9, bgcolor: exportCreatorsDone ? '#16a34a' : colors.secondary },
-              }}
-              variant="contained"
-            >
-              {exportCreatorsDone ? 'Done' : 'Export Creators'}
-            </LoadingButton>
+              <LoadingButton
+                size="small"
+                loading={exportCreatorsLoading}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    setExportCreatorsLoading(true);
+                    await axiosInstance.post(endpoints.campaign.exportCampaignCreators);
+                    setExportCreatorsLoading(false);
+                    setExportCreatorsDone(true);
+                    setTimeout(() => setExportCreatorsDone(false), 1500);
+                  } catch {
+                    setExportCreatorsLoading(false);
+                  }
+                }}
+                sx={{
+                  bgcolor: exportCreatorsDone ? '#22c55e' : colors.secondary,
+                  color: colors.background,
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  height: 28,
+                  px: 1.5,
+                  '&:hover': {
+                    opacity: 0.9,
+                    bgcolor: exportCreatorsDone ? '#16a34a' : colors.secondary,
+                  },
+                }}
+                variant="contained"
+              >
+                {exportCreatorsDone ? 'Done' : 'Export Creators'}
+              </LoadingButton>
             )}
           </Stack>
         </Stack>
@@ -1174,7 +1195,7 @@ const DashboardSuperadmin = () => {
   }, [socket]);
 
   const isLoadingData = statsLoading || creatorCountLoading || isClientLoading || campaignsLoading;
-  
+
   if (isLoadingData) {
     return (
       <Box

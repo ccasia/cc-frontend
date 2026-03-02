@@ -44,20 +44,20 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video, m
   const handlePitch = () => {
     // Check if user is marked as Media Kit Mandatory
     const isMKM = user?.mediaKitMandatory === true;
-    
+
     // Check if media kit is connected
-    const hasMediaKit = user?.creator && 
-      (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
-    
+    const hasMediaKit =
+      user?.creator && (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+
     // Check if payment details are completed
     const hasPaymentDetails = user?.creator?.isFormCompleted && user?.paymentForm?.bankAccountName;
-    
+
     // For MKM users, enforce media kit connection
     if (isMKM && !hasMediaKit) {
       setShowMediaKitPopup(true);
       return;
     }
-    
+
     // Check payment details for all users
     if (!user?.creator?.isFormCompleted || !user?.paymentForm?.bankAccountName) {
       return;
@@ -230,7 +230,12 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video, m
         }}
         mutate={mutate}
       />
-      <CampaignPitchVideoModal open={video.value} handleClose={video.onFalse} campaign={campaign} mutate={mutate} />
+      <CampaignPitchVideoModal
+        open={video.value}
+        handleClose={video.onFalse}
+        campaign={campaign}
+        mutate={mutate}
+      />
 
       <MediaKitPopup
         open={showMediaKitPopup}

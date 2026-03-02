@@ -27,14 +27,13 @@ import {
   DialogActions,
 } from '@mui/material';
 
-import Markdown from 'src/components/markdown';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllCreators } from 'src/api/creator';
 
 import Iconify from 'src/components/iconify';
-
+import Markdown from 'src/components/markdown';
 
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = false }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -1551,13 +1550,20 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
           </Button>
         </DialogActions>
       </Dialog>
-
     </>
   );
 };
 
 // Modal for Guest Creator
-export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign, onSwapped, isDisabled = false }) {
+export function ViewGuestCreatorModal({
+  open,
+  onClose,
+  pitch,
+  isAdmin,
+  campaign,
+  onSwapped,
+  isDisabled = false,
+}) {
   const { enqueueSnackbar } = useSnackbar();
   const { data: allCreators, isLoading: creatorsLoading } = useGetAllCreators();
 
@@ -1730,7 +1736,13 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
             {/* Creator Name */}
             <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
               <Typography
-                sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}
+                sx={{
+                  mb: 0.5,
+                  display: 'block',
+                  color: '#636366',
+                  fontSize: '14px !important',
+                  fontWeight: 600,
+                }}
               >
                 Creator Name
               </Typography>
@@ -1759,7 +1771,13 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
             {/* Profile Link */}
             <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
               <Typography
-                sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}
+                sx={{
+                  mb: 0.5,
+                  display: 'block',
+                  color: '#636366',
+                  fontSize: '14px !important',
+                  fontWeight: 600,
+                }}
               >
                 Profile Link
               </Typography>
@@ -1799,7 +1817,13 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
             {/* Follower Count */}
             <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
               <Typography
-                sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}
+                sx={{
+                  mb: 0.5,
+                  display: 'block',
+                  color: '#636366',
+                  fontSize: '14px !important',
+                  fontWeight: 600,
+                }}
               >
                 Follower Count
               </Typography>
@@ -1828,7 +1852,13 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
             {/* Engagement Rate */}
             <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
               <Typography
-                sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}
+                sx={{
+                  mb: 0.5,
+                  display: 'block',
+                  color: '#636366',
+                  fontSize: '14px !important',
+                  fontWeight: 600,
+                }}
               >
                 Engagement Rate (%)
               </Typography>
@@ -1858,7 +1888,13 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
           {/* CS Comments */}
           <Box>
             <Typography
-              sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}
+              sx={{
+                mb: 0.5,
+                display: 'block',
+                color: '#636366',
+                fontSize: '14px !important',
+                fontWeight: 600,
+              }}
             >
               CS Comments (Optional)
             </Typography>
@@ -1889,7 +1925,13 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
         {isAdmin && showCreatorSelection && (
           <Box>
             <Typography
-              sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}
+              sx={{
+                mb: 0.5,
+                display: 'block',
+                color: '#636366',
+                fontSize: '14px !important',
+                fontWeight: 600,
+              }}
             >
               Select Platform Creator to Link
             </Typography>
@@ -1951,7 +1993,11 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
                         {option?.email}
                       </Typography>
                       {option?.creator?.instagram && (
-                        <Typography variant="caption" color="primary.main" sx={{ display: 'block' }}>
+                        <Typography
+                          variant="caption"
+                          color="primary.main"
+                          sx={{ display: 'block' }}
+                        >
                           {option.creator.instagram}
                         </Typography>
                       )}
@@ -2049,11 +2095,7 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
                 },
               }}
               startIcon={
-                <Iconify
-                  icon="mdi:account-plus-outline"
-                  width={20}
-                  sx={{ color: 'inherit' }}
-                />
+                <Iconify icon="mdi:account-plus-outline" width={20} sx={{ color: 'inherit' }} />
               }
             >
               Link Creator

@@ -809,6 +809,7 @@ export default function CampaignItem({
       }}
       sx={{
         overflow: 'hidden',
+        textDecoration: 'none',
         cursor: 'pointer',
         transition: 'all 0.3s',
         bgcolor: 'background.default',

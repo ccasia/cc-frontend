@@ -1,10 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { endOfDay } from 'date-fns';
-import { m } from 'framer-motion';
+import React, { useState, useCallback } from 'react';
 
-import { varFade, varContainer } from 'src/components/animate';
-
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Card,
@@ -36,18 +35,17 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { useTheme } from '@mui/material/styles';
-
-import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
-
-import { fDateTime, fToNow } from 'src/utils/format-time';
-
-import Iconify from 'src/components/iconify';
-import EmptyContent from 'src/components/empty-content/empty-content';
-import { useSettingsContext } from 'src/components/settings';
+import { useRouter } from 'src/routes/hooks';
 
 import { useGetNpsFeedback, useGetNpsFeedbackStats } from 'src/hooks/use-get-nps-feedback';
+
+import { fToNow, fDateTime } from 'src/utils/format-time';
+
+import Iconify from 'src/components/iconify';
+import { useSettingsContext } from 'src/components/settings';
+import { varFade, varContainer } from 'src/components/animate';
+import EmptyContent from 'src/components/empty-content/empty-content';
 
 import DateFilterSelect from '../components/date-filter-select';
 
@@ -146,7 +144,10 @@ export default function FeedbackView() {
     ...ratingParam,
   });
 
-  const { stats, isLoading: statsLoading } = useGetNpsFeedbackStats({ ...dateParams, ...userTypeParam });
+  const { stats, isLoading: statsLoading } = useGetNpsFeedbackStats({
+    ...dateParams,
+    ...userTypeParam,
+  });
 
   const handleDateFilterChange = useCallback(({ preset, startDate, endDate }) => {
     setDateFilter(preset);
@@ -155,10 +156,13 @@ export default function FeedbackView() {
     setPage(0);
   }, []);
 
-  const handleSort = useCallback((column) => {
-    setSortOrder((prev) => (sortBy === column && prev === 'desc' ? 'asc' : 'desc'));
-    setSortBy(column);
-  }, [sortBy]);
+  const handleSort = useCallback(
+    (column) => {
+      setSortOrder((prev) => (sortBy === column && prev === 'desc' ? 'asc' : 'desc'));
+      setSortBy(column);
+    },
+    [sortBy]
+  );
 
   const handleChangePage = useCallback((_, newPage) => {
     setPage(newPage);
@@ -200,10 +204,27 @@ export default function FeedbackView() {
             }}
           >
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-              <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Iconify icon="mdi:message-reply-text-outline" width={16} sx={{ color: '#1340FF' }} />
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 1.5,
+                  bgcolor: '#EEF2FF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Iconify
+                  icon="mdi:message-reply-text-outline"
+                  width={16}
+                  sx={{ color: '#1340FF' }}
+                />
               </Box>
-              <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 0.5, fontSize: 11 }}>
+              <Typography
+                variant="overline"
+                sx={{ color: 'text.secondary', letterSpacing: 0.5, fontSize: 11 }}
+              >
                 Total Responses
               </Typography>
             </Stack>
@@ -215,12 +236,28 @@ export default function FeedbackView() {
                 <Chip
                   size="small"
                   label={`${stats.creatorResponses} creators`}
-                  sx={{ height: 22, fontSize: 11, fontWeight: 600, bgcolor: '#EEF2FF', color: '#1340FF', '& .MuiChip-label': { px: 1 }, '&:hover': { bgcolor: '#EEF2FF' } }}
+                  sx={{
+                    height: 22,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    bgcolor: '#EEF2FF',
+                    color: '#1340FF',
+                    '& .MuiChip-label': { px: 1 },
+                    '&:hover': { bgcolor: '#EEF2FF' },
+                  }}
                 />
                 <Chip
                   size="small"
                   label={`${stats.clientResponses} clients`}
-                  sx={{ height: 22, fontSize: 11, fontWeight: 600, bgcolor: '#E8F5E9', color: '#00AB55', '& .MuiChip-label': { px: 1 }, '&:hover': { bgcolor: '#E8F5E9' } }}
+                  sx={{
+                    height: 22,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    bgcolor: '#E8F5E9',
+                    color: '#00AB55',
+                    '& .MuiChip-label': { px: 1 },
+                    '&:hover': { bgcolor: '#E8F5E9' },
+                  }}
                 />
               </Stack>
             )}
@@ -240,10 +277,23 @@ export default function FeedbackView() {
             }}
           >
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-              <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 1.5,
+                  bgcolor: '#FFFBEB',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <Iconify icon="mdi:star" width={16} sx={{ color: '#FFAB00' }} />
               </Box>
-              <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 0.5, fontSize: 11 }}>
+              <Typography
+                variant="overline"
+                sx={{ color: 'text.secondary', letterSpacing: 0.5, fontSize: 11 }}
+              >
                 Average Rating
               </Typography>
             </Stack>
@@ -251,14 +301,20 @@ export default function FeedbackView() {
               <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
                 {stats.averageRating}
               </Typography>
-              <Typography variant="body2" color="text.disabled">/ 5</Typography>
+              <Typography variant="body2" color="text.disabled">
+                / 5
+              </Typography>
             </Stack>
             <Rating
               value={stats.averageRating}
               precision={0.1}
               size="small"
               readOnly
-              sx={{ mt: 0.5, '& .MuiRating-iconFilled': { color: '#FFAB00' }, '& .MuiRating-iconEmpty': { color: '#DFE3E8' } }}
+              sx={{
+                mt: 0.5,
+                '& .MuiRating-iconFilled': { color: '#FFAB00' },
+                '& .MuiRating-iconEmpty': { color: '#DFE3E8' },
+              }}
             />
           </Card>
 
@@ -276,23 +332,54 @@ export default function FeedbackView() {
             }}
           >
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.25 }}>
-              <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 1.5,
+                  bgcolor: '#FFFBEB',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <Iconify icon="mdi:chart-bar" width={16} sx={{ color: '#FFAB00' }} />
               </Box>
-              <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 0.5, fontSize: 11 }}>
+              <Typography
+                variant="overline"
+                sx={{ color: 'text.secondary', letterSpacing: 0.5, fontSize: 11 }}
+              >
                 Distribution
               </Typography>
             </Stack>
             <Stack spacing={0.5}>
               {[...stats.distribution].reverse().map((item, idx) => {
-                const pct = stats.totalResponses > 0 ? (item.count / stats.totalResponses) * 100 : 0;
+                const pct =
+                  stats.totalResponses > 0 ? (item.count / stats.totalResponses) * 100 : 0;
                 return (
                   <Stack key={item.rating} direction="row" alignItems="center" spacing={0.75}>
                     <Stack direction="row" alignItems="center" spacing={0.25} sx={{ minWidth: 28 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 11, color: 'text.secondary' }}>{item.rating}</Typography>
-                      <Iconify icon="mdi:star" width={11} sx={{ color: item.count > 0 ? '#FFAB00' : '#DFE3E8' }} />
+                      <Typography
+                        variant="caption"
+                        sx={{ fontWeight: 700, fontSize: 11, color: 'text.secondary' }}
+                      >
+                        {item.rating}
+                      </Typography>
+                      <Iconify
+                        icon="mdi:star"
+                        width={11}
+                        sx={{ color: item.count > 0 ? '#FFAB00' : '#DFE3E8' }}
+                      />
                     </Stack>
-                    <Box sx={{ flex: 1, height: 7, borderRadius: 4, bgcolor: '#F4F6F8', overflow: 'hidden' }}>
+                    <Box
+                      sx={{
+                        flex: 1,
+                        height: 7,
+                        borderRadius: 4,
+                        bgcolor: '#F4F6F8',
+                        overflow: 'hidden',
+                      }}
+                    >
                       <Box
                         sx={{
                           height: 7,
@@ -304,7 +391,16 @@ export default function FeedbackView() {
                         }}
                       />
                     </Box>
-                    <Typography variant="caption" sx={{ fontWeight: 600, fontSize: 11, minWidth: 16, textAlign: 'right', color: item.count > 0 ? 'text.primary' : 'text.disabled' }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        minWidth: 16,
+                        textAlign: 'right',
+                        color: item.count > 0 ? 'text.primary' : 'text.disabled',
+                      }}
+                    >
                       {item.count}
                     </Typography>
                   </Stack>
@@ -340,7 +436,10 @@ export default function FeedbackView() {
                 key={tab.value}
                 disableRipple
                 size="large"
-                onClick={() => { setUserTypeFilter(tab.value); setPage(0); }}
+                onClick={() => {
+                  setUserTypeFilter(tab.value);
+                  setPage(0);
+                }}
                 sx={{
                   px: 1.2,
                   py: 0.5,
@@ -390,8 +489,25 @@ export default function FeedbackView() {
           </Stack>
 
           {/* Filters + Search — right */}
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ ml: { xs: 0, sm: 'auto' }, pb: 0.5, mt: { xs: 1, sm: 0 }, flexWrap: 'wrap', gap: 1 }}>
-            <RatingFilterSelect value={ratingFilter} onChange={(val) => { setRatingFilter(val); setPage(0); }} />
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{
+              ml: { xs: 0, sm: 'auto' },
+              pb: 0.5,
+              mt: { xs: 1, sm: 0 },
+              flexWrap: 'wrap',
+              gap: 1,
+            }}
+          >
+            <RatingFilterSelect
+              value={ratingFilter}
+              onChange={(val) => {
+                setRatingFilter(val);
+                setPage(0);
+              }}
+            />
             <DateFilterSelect
               value={dateFilter}
               startDate={filterStartDate}
@@ -402,7 +518,10 @@ export default function FeedbackView() {
               size="small"
               placeholder="Search..."
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -410,7 +529,10 @@ export default function FeedbackView() {
                   </InputAdornment>
                 ),
               }}
-              sx={{ width: { xs: '100%', sm: 220 }, '& .MuiOutlinedInput-root': { bgcolor: 'white', borderRadius: 1 } }}
+              sx={{
+                width: { xs: '100%', sm: 220 },
+                '& .MuiOutlinedInput-root': { bgcolor: 'white', borderRadius: 1 },
+              }}
             />
           </Stack>
         </Stack>
@@ -485,11 +607,11 @@ export default function FeedbackView() {
                     </TableCell>
                   </TableRow>
                 )}
-                {!isLoading && feedback.length > 0 &&
+                {!isLoading &&
+                  feedback.length > 0 &&
                   feedback.map((row) => (
                     <FeedbackRow key={row.id} row={row} onRowClick={setSelectedRow} />
-                  ))
-                }
+                  ))}
               </TableBody>
             </Table>
           </TableContainer>
@@ -539,7 +661,13 @@ function RatingFilterSelect({ value, onChange }) {
         color="inherit"
         onClick={(e) => setAnchorEl(e.currentTarget)}
         endIcon={<Iconify icon="eva:arrow-ios-downward-fill" width={16} />}
-        startIcon={<Iconify icon="mdi:star" width={16} sx={{ color: isFiltered ? '#FFAB00' : 'text.disabled' }} />}
+        startIcon={
+          <Iconify
+            icon="mdi:star"
+            width={16}
+            sx={{ color: isFiltered ? '#FFAB00' : 'text.disabled' }}
+          />
+        }
         sx={{
           bgcolor: 'white',
           border: '1px solid',
@@ -572,13 +700,22 @@ function RatingFilterSelect({ value, onChange }) {
           <MenuItem
             key={option.value}
             selected={value === option.value}
-            onClick={() => { onChange(option.value); setAnchorEl(null); }}
+            onClick={() => {
+              onChange(option.value);
+              setAnchorEl(null);
+            }}
           >
             <ListItemIcon sx={{ minWidth: 28 }}>
               {option.value === 'all' ? (
                 <Iconify icon="mdi:star-outline" width={18} sx={{ color: 'text.secondary' }} />
               ) : (
-                <Rating value={Number(option.value)} size="small" readOnly max={Number(option.value)} sx={{ '& .MuiRating-iconFilled': { color: '#FFAB00' } }} />
+                <Rating
+                  value={Number(option.value)}
+                  size="small"
+                  readOnly
+                  max={Number(option.value)}
+                  sx={{ '& .MuiRating-iconFilled': { color: '#FFAB00' } }}
+                />
               )}
             </ListItemIcon>
             <ListItemText primaryTypographyProps={{ variant: 'body2' }}>
@@ -598,7 +735,16 @@ RatingFilterSelect.propTypes = {
 
 // ----------------------------------------------------------------------
 
-function SortableHeader({ column, label, align, isFirst, isLast, sortColumn, sortDirection, onSort }) {
+function SortableHeader({
+  column,
+  label,
+  align,
+  isFirst,
+  isLast,
+  sortColumn,
+  sortDirection,
+  onSort,
+}) {
   const getBorderRadius = () => {
     if (isFirst) return '10px 0 0 10px';
     if (isLast) return '0 10px 10px 0';
@@ -622,11 +768,20 @@ function SortableHeader({ column, label, align, isFirst, isLast, sortColumn, sor
       }}
       align={align}
     >
-      <Stack direction="row" alignItems="center" spacing={0.5} justifyContent={align === 'center' ? 'center' : 'flex-start'}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={0.5}
+        justifyContent={align === 'center' ? 'center' : 'flex-start'}
+      >
         {label}
         {onSort && (
           <Iconify
-            icon={sortColumn === column && sortDirection === 'asc' ? 'eva:arrow-upward-fill' : 'eva:arrow-downward-fill'}
+            icon={
+              sortColumn === column && sortDirection === 'asc'
+                ? 'eva:arrow-upward-fill'
+                : 'eva:arrow-downward-fill'
+            }
             width={16}
             sx={{ color: sortColumn === column ? '#1340FF' : '#bdbdbd' }}
           />
@@ -696,11 +851,7 @@ function DeviceCell({ row }) {
   const browserName = shortName(row.browser);
 
   return (
-    <Tooltip
-      title={[row.os, row.browser].filter(Boolean).join(' · ')}
-      arrow
-      placement="top"
-    >
+    <Tooltip title={[row.os, row.browser].filter(Boolean).join(' · ')} arrow placement="top">
       <Stack
         direction="row"
         alignItems="center"
@@ -718,8 +869,17 @@ function DeviceCell({ row }) {
         {osName && (
           <>
             <Box sx={{ width: '1px', height: 14, bgcolor: `${config.color}30`, flexShrink: 0 }} />
-            <Iconify icon={getOsIcon(row.os)} width={14} sx={{ color: 'text.secondary', flexShrink: 0 }} />
-            <Typography variant="caption" fontWeight={600} noWrap sx={{ fontSize: 11, color: 'text.secondary' }}>
+            <Iconify
+              icon={getOsIcon(row.os)}
+              width={14}
+              sx={{ color: 'text.secondary', flexShrink: 0 }}
+            />
+            <Typography
+              variant="caption"
+              fontWeight={600}
+              noWrap
+              sx={{ fontSize: 11, color: 'text.secondary' }}
+            >
               {osName}
             </Typography>
           </>
@@ -727,8 +887,17 @@ function DeviceCell({ row }) {
         {browserName && (
           <>
             <Box sx={{ width: '1px', height: 14, bgcolor: `${config.color}30`, flexShrink: 0 }} />
-            <Iconify icon={getBrowserIcon(row.browser)} width={14} sx={{ color: 'text.secondary', flexShrink: 0 }} />
-            <Typography variant="caption" fontWeight={600} noWrap sx={{ fontSize: 11, color: 'text.secondary' }}>
+            <Iconify
+              icon={getBrowserIcon(row.browser)}
+              width={14}
+              sx={{ color: 'text.secondary', flexShrink: 0 }}
+            />
+            <Typography
+              variant="caption"
+              fontWeight={600}
+              noWrap
+              sx={{ fontSize: 11, color: 'text.secondary' }}
+            >
               {browserName}
             </Typography>
           </>
@@ -783,7 +952,9 @@ function FeedbackRow({ row, onRowClick }) {
             {row.feedback}
           </Typography>
         ) : (
-          <Typography variant="body2" color="text.disabled">-</Typography>
+          <Typography variant="body2" color="text.disabled">
+            -
+          </Typography>
         )}
       </TableCell>
 
@@ -791,7 +962,9 @@ function FeedbackRow({ row, onRowClick }) {
         {row.deviceType ? (
           <DeviceCell row={row} />
         ) : (
-          <Typography variant="body2" color="text.disabled">-</Typography>
+          <Typography variant="body2" color="text.disabled">
+            -
+          </Typography>
         )}
       </TableCell>
 
@@ -867,7 +1040,13 @@ function FeedbackCard({ row, onClick }) {
       )}
 
       {/* Date & Device */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={0.5}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        flexWrap="wrap"
+        gap={0.5}
+      >
         <Typography variant="caption" color="text.disabled">
           {fDateTime(row.createdAt)}
         </Typography>
@@ -889,12 +1068,7 @@ function FeedbackCard({ row, onClick }) {
               sx={{ color: (DEVICE_CONFIG[row.deviceType] || DEVICE_CONFIG.desktop).color }}
             />
             <Typography variant="caption" sx={{ fontSize: 11, color: 'text.secondary' }}>
-              {[
-                shortName(row.os),
-                shortName(row.browser),
-              ]
-                .filter(Boolean)
-                .join(' · ')}
+              {[shortName(row.os), shortName(row.browser)].filter(Boolean).join(' · ')}
             </Typography>
           </Stack>
         )}
@@ -968,8 +1142,8 @@ function FeedbackDrawer({ row, rows = [], onClose, onNavigate }) {
   const clientCampaigns = row?.user?.client?.company?.campaign || [];
   const campaigns = isCreator ? creatorCampaigns : clientCampaigns;
   const totalCampaigns = isCreator
-    ? (row?.user?._count?.shortlisted || 0)
-    : (row?.user?.client?.company?._count?.campaign || 0);
+    ? row?.user?._count?.shortlisted || 0
+    : row?.user?.client?.company?._count?.campaign || 0;
   const hasCampaigns = campaigns.length > 0;
 
   const handleViewProfile = () => {
@@ -1011,7 +1185,12 @@ function FeedbackDrawer({ row, rows = [], onClose, onNavigate }) {
           flexShrink: 0,
         }}
       >
-        <Stack direction="row" alignItems="center" justifyContent="flex-end" sx={{ pt: 1.5, px: 2.5 }}>
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="flex-end"
+          sx={{ pt: 1.5, px: 2.5 }}
+        >
           <IconButton onClick={onClose}>
             <Iconify icon="eva:close-fill" sx={{ height: 24, width: 24 }} />
           </IconButton>
@@ -1044,14 +1223,21 @@ function FeedbackDrawer({ row, rows = [], onClose, onNavigate }) {
             </Box>
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Stack direction="row" alignItems="center" spacing={1}>
-                <Typography variant="subtitle1" fontWeight={700} noWrap>{row?.user?.name || '-'}</Typography>
+                <Typography variant="subtitle1" fontWeight={700} noWrap>
+                  {row?.user?.name || '-'}
+                </Typography>
                 <UserTypeChip userType={row?.userType} compact />
               </Stack>
               <Typography variant="body2" color="text.secondary" noWrap>
                 {row?.user?.email || '-'}
               </Typography>
               {isClient && companyName && (
-                <Typography variant="caption" color="text.secondary" noWrap sx={{ mt: 0.25, display: 'block' }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  noWrap
+                  sx={{ mt: 0.25, display: 'block' }}
+                >
                   {companyName}
                 </Typography>
               )}
@@ -1081,12 +1267,14 @@ function FeedbackDrawer({ row, rows = [], onClose, onNavigate }) {
 
       {/* Scrollable content */}
       <Box sx={{ flex: 1, overflow: 'auto' }}>
-
         {/* Feedback */}
         <Box sx={{ px: 3, py: 2 }}>
           <Box sx={{ bgcolor: '#F4F6F8', borderRadius: 2, px: 2.5, py: 2 }}>
             {row?.feedback ? (
-              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: '#221f20' }}>
+              <Typography
+                variant="body1"
+                sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: '#221f20' }}
+              >
                 {row.feedback}
               </Typography>
             ) : (
@@ -1098,94 +1286,107 @@ function FeedbackDrawer({ row, rows = [], onClose, onNavigate }) {
         </Box>
 
         {/* Device Info */}
-        {(row?.deviceType || row?.os || row?.browser) && (() => {
-          const dConfig = DEVICE_CONFIG[row.deviceType] || DEVICE_CONFIG.desktop;
-          const deviceLabel = row.deviceType?.charAt(0).toUpperCase() + row.deviceType?.slice(1);
-          const deviceSub = [row.deviceVendor, row.deviceModel].filter(Boolean).join(' ');
+        {(row?.deviceType || row?.os || row?.browser) &&
+          (() => {
+            const dConfig = DEVICE_CONFIG[row.deviceType] || DEVICE_CONFIG.desktop;
+            // eslint-disable-next-line no-unsafe-optional-chaining
+            const deviceLabel = row.deviceType?.charAt(0).toUpperCase() + row.deviceType?.slice(1);
+            const deviceSub = [row.deviceVendor, row.deviceModel].filter(Boolean).join(' ');
 
-          const tiles = [
-            row.deviceType && {
-              icon: dConfig.icon,
-              iconColor: dConfig.color,
-              label: 'Device',
-              value: deviceLabel,
-              sub: deviceSub,
-            },
-            row.os && {
-              icon: getOsIcon(row.os),
-              iconColor: '#636366',
-              label: 'OS',
-              value: shortName(row.os),
-              sub: row.os.replace(shortName(row.os), '').trim() || null,
-            },
-            row.browser && {
-              icon: getBrowserIcon(row.browser),
-              iconColor: '#636366',
-              label: 'Browser',
-              value: shortName(row.browser),
-              sub: row.browser.replace(shortName(row.browser), '').trim() || null,
-            },
-          ].filter(Boolean);
+            const tiles = [
+              row.deviceType && {
+                icon: dConfig.icon,
+                iconColor: dConfig.color,
+                label: 'Device',
+                value: deviceLabel,
+                sub: deviceSub,
+              },
+              row.os && {
+                icon: getOsIcon(row.os),
+                iconColor: '#636366',
+                label: 'OS',
+                value: shortName(row.os),
+                sub: row.os.replace(shortName(row.os), '').trim() || null,
+              },
+              row.browser && {
+                icon: getBrowserIcon(row.browser),
+                iconColor: '#636366',
+                label: 'Browser',
+                value: shortName(row.browser),
+                sub: row.browser.replace(shortName(row.browser), '').trim() || null,
+              },
+            ].filter(Boolean);
 
-          return (
-            <Box sx={{ px: 3, py: 2 }}>
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-                <Iconify icon={dConfig.icon} sx={{ color: '#1340FF' }} />
-                <Typography variant="subtitle2">Device Info</Typography>
-              </Stack>
-              <Stack
-                direction="row"
-                spacing={0}
-                sx={{
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                }}
-              >
-                {tiles.map((tile, i) => (
-                  <Box
-                    key={tile.label}
-                    sx={{
-                      flex: 1,
-                      px: 1.5,
-                      py: 1.5,
-                      textAlign: 'center',
-                      bgcolor: '#FAFBFC',
-                      ...(i < tiles.length - 1 && {
-                        borderRight: '1px solid',
-                        borderColor: 'divider',
-                      }),
-                    }}
-                  >
-                    <Iconify icon={tile.icon} width={26} sx={{ color: tile.iconColor, mb: 0.75 }} />
-                    <Typography
+            return (
+              <Box sx={{ px: 3, py: 2 }}>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <Iconify icon={dConfig.icon} sx={{ color: '#1340FF' }} />
+                  <Typography variant="subtitle2">Device Info</Typography>
+                </Stack>
+                <Stack
+                  direction="row"
+                  spacing={0}
+                  sx={{
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
+                  {tiles.map((tile, i) => (
+                    <Box
+                      key={tile.label}
                       sx={{
-                        display: 'block',
-                        color: 'text.disabled',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: 0.5,
-                        mb: 0.25,
+                        flex: 1,
+                        px: 1.5,
+                        py: 1.5,
+                        textAlign: 'center',
+                        bgcolor: '#FAFBFC',
+                        ...(i < tiles.length - 1 && {
+                          borderRight: '1px solid',
+                          borderColor: 'divider',
+                        }),
                       }}
                     >
-                      {tile.label}
-                    </Typography>
-                    <Typography variant="body2" fontWeight={700} sx={{ display: 'block', color: '#221f20', lineHeight: 1.3 }}>
-                      {tile.value}
-                    </Typography>
-                    {tile.sub && (
-                      <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontSize: 11, mt: 0.25 }}>
-                        {tile.sub}
+                      <Iconify
+                        icon={tile.icon}
+                        width={26}
+                        sx={{ color: tile.iconColor, mb: 0.75 }}
+                      />
+                      <Typography
+                        sx={{
+                          display: 'block',
+                          color: 'text.disabled',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: 0.5,
+                          mb: 0.25,
+                        }}
+                      >
+                        {tile.label}
                       </Typography>
-                    )}
-                  </Box>
-                ))}
-              </Stack>
-            </Box>
-          );
-        })()}
+                      <Typography
+                        variant="body2"
+                        fontWeight={700}
+                        sx={{ display: 'block', color: '#221f20', lineHeight: 1.3 }}
+                      >
+                        {tile.value}
+                      </Typography>
+                      {tile.sub && (
+                        <Typography
+                          variant="caption"
+                          sx={{ display: 'block', color: 'text.secondary', fontSize: 11, mt: 0.25 }}
+                        >
+                          {tile.sub}
+                        </Typography>
+                      )}
+                    </Box>
+                  ))}
+                </Stack>
+              </Box>
+            );
+          })()}
 
         <Divider />
 
@@ -1245,7 +1446,9 @@ function FeedbackDrawer({ row, rows = [], onClose, onNavigate }) {
           <Box sx={{ px: 3, py: 2.5 }}>
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
               <Iconify icon="mdi:briefcase-outline" sx={{ color: '#1340FF' }} />
-              <Typography variant="subtitle2">{isCreator ? 'Campaign History' : 'Campaigns'}</Typography>
+              <Typography variant="subtitle2">
+                {isCreator ? 'Campaign History' : 'Campaigns'}
+              </Typography>
             </Stack>
             <Stack spacing={0.5}>
               {campaigns.map((item) => {
@@ -1260,7 +1463,9 @@ function FeedbackDrawer({ row, rows = [], onClose, onNavigate }) {
                     direction="row"
                     alignItems="center"
                     spacing={1.5}
-                    onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id))}
+                    onClick={() =>
+                      router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id))
+                    }
                     sx={{
                       py: 1,
                       px: 1,
@@ -1295,7 +1500,11 @@ function FeedbackDrawer({ row, rows = [], onClose, onNavigate }) {
                           flexShrink: 0,
                         }}
                       >
-                        <Iconify icon="mdi:image-outline" width={20} sx={{ color: 'text.disabled' }} />
+                        <Iconify
+                          icon="mdi:image-outline"
+                          width={20}
+                          sx={{ color: 'text.disabled' }}
+                        />
                       </Box>
                     )}
                     <Box sx={{ minWidth: 0, flex: 1 }}>
