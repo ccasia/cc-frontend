@@ -58,6 +58,7 @@ export const endpoints = {
     creditsPerCS: '/api/analytics/v2/credits-per-cs',
     rejectionReasons: '/api/analytics/v2/rejection-reasons',
     requireChangesRate: '/api/analytics/v2/require-changes-rate',
+    topShortlistedCreators: '/api/analytics/v2/top-shortlisted-creators',
   },
   overview: {
     root: (userId) => `/api/user/overview/${userId}`,
