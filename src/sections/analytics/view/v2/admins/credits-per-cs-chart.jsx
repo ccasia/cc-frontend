@@ -1,15 +1,17 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Stack } from '@mui/material';
+import { Box, Stack, Skeleton, Typography } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 
+import useGetCreditsPerCS from 'src/hooks/use-get-credits-per-cs';
+
 import ChartCard from '../components/chart-card';
-import { MOCK_CREDITS_PER_CS } from '../mock-data';
+import { useDateFilter } from '../date-filter-context';
 import ChartLegend from '../components/chart-legend';
 import CreditsPerCSDrawer from './credits-per-cs-drawer';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
-import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, TICK_LABEL_STYLE } from '../chart-config';
+import { UI_COLORS, CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, TICK_LABEL_STYLE } from '../chart-config';
 
 const LEGEND_ITEMS = [
   { label: 'Basic', color: CHART_COLORS.primary },
@@ -28,6 +30,10 @@ const ALL_SERIES = [
 export default function CreditsPerCSChart() {
   const [hiddenSeries, setHiddenSeries] = useState([]);
   const [selectedCS, setSelectedCS] = useState(null);
+  const { startDate, endDate } = useDateFilter();
+  const { csAdmins, isLoading } = useGetCreditsPerCS({ startDate, endDate });
+
+  useEffect(() => setSelectedCS(null), [startDate, endDate]);
 
   const handleToggle = useCallback((label) => {
     setHiddenSeries((prev) =>
@@ -37,10 +43,10 @@ export default function CreditsPerCSChart() {
 
   const sorted = useMemo(
     () =>
-      [...MOCK_CREDITS_PER_CS].sort(
+      [...csAdmins].sort(
         (a, b) => (b.basic + b.essential + b.pro + b.custom) - (a.basic + a.essential + a.pro + a.custom)
       ),
-    []
+    [csAdmins]
   );
 
   const visibleSeries = useMemo(
@@ -74,21 +80,35 @@ export default function CreditsPerCSChart() {
         />
       }
     >
-      <Stack spacing={1}>
-        <BarChart
-          series={visibleSeries}
-          xAxis={[{ scaleType: 'band', data: sorted.map((d) => d.csName), tickLabelStyle: { ...TICK_LABEL_STYLE, angle: -45 }, tickLabelInterval: () => true, height: 80 }]}
-          yAxis={[{ tickLabelStyle: TICK_LABEL_STYLE }]}
-          height={420}
-          margin={CHART_MARGIN}
-          grid={CHART_GRID}
-          hideLegend
-          tooltip={{ trigger: 'axis' }}
-          slots={{ axisContent: ChartAxisTooltip }}
-          onAxisClick={handleAxisClick}
-          sx={{ ...CHART_SX, cursor: 'pointer' }}
-        />
-      </Stack>
+      {isLoading ? (
+        <Stack spacing={1} sx={{ px: 3, pb: 2 }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} variant="rounded" height={36} />
+          ))}
+        </Stack>
+      ) : sorted.length === 0 ? (
+        <Box sx={{ px: 3, pb: 3, pt: 1 }}>
+          <Typography variant="body2" sx={{ color: UI_COLORS.textMuted }}>
+            No CS admin data found for this period.
+          </Typography>
+        </Box>
+      ) : (
+        <Stack spacing={1}>
+          <BarChart
+            series={visibleSeries}
+            xAxis={[{ scaleType: 'band', data: sorted.map((d) => d.csName), tickLabelStyle: { ...TICK_LABEL_STYLE, angle: -45 }, tickLabelInterval: () => true, height: 80 }]}
+            yAxis={[{ tickLabelStyle: TICK_LABEL_STYLE }]}
+            height={420}
+            margin={CHART_MARGIN}
+            grid={CHART_GRID}
+            hideLegend
+            tooltip={{ trigger: 'axis' }}
+            slots={{ axisContent: ChartAxisTooltip }}
+            onAxisClick={handleAxisClick}
+            sx={{ ...CHART_SX, cursor: 'pointer' }}
+          />
+        </Stack>
+      )}
 
       <CreditsPerCSDrawer
         selectedCS={selectedCS}

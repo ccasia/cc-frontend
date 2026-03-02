@@ -282,7 +282,8 @@ export default function CreditsPerCSDrawer({ selectedCS, csAdmins, onClose, onNa
                 <Stack direction="row" alignItems="center" spacing={1.5}>
                   {/* Campaign image */}
                   <Avatar
-                    src={`https://picsum.photos/seed/${encodeURIComponent(camp.name)}/80`}
+                    src={camp.campaignImage || undefined}
+                    alt={camp.name}
                     variant="rounded"
                     sx={{ width: 40, height: 40, flexShrink: 0, borderRadius: '8px' }}
                   />

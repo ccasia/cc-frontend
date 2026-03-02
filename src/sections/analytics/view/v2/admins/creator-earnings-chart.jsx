@@ -23,21 +23,28 @@ export default function CreatorEarningsChart() {
 
   const maxEarnings = sorted[0]?.totalEarnings || 1;
 
-  return (
-    <ChartCard title="Top Creator Earnings" icon={PaidIcon} subtitle="Total earnings per creator across all campaigns (top 10)">
-      {isLoading ? (
+  const renderContent = () => {
+    if (isLoading) {
+      return (
         <Stack spacing={1} sx={{ px: 3, pb: 2 }}>
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} variant="rounded" height={36} />
           ))}
         </Stack>
-      ) : sorted.length === 0 ? (
+      );
+    }
+
+    if (sorted.length === 0) {
+      return (
         <Box sx={{ px: 3, pb: 3, pt: 1 }}>
           <Typography variant="body2" sx={{ color: UI_COLORS.textMuted }}>
             No paid invoices found for this period.
           </Typography>
         </Box>
-      ) : (
+      );
+    }
+
+    return (
         <Stack spacing={0} sx={{ px: 2, pb: 1 }}>
           {sorted.map((creator, index) => (
             <Stack
@@ -142,7 +149,12 @@ export default function CreatorEarningsChart() {
             </Stack>
           ))}
         </Stack>
-      )}
+      );
+  };
+
+  return (
+    <ChartCard title="Top Creator Earnings" icon={PaidIcon} subtitle="Total earnings per creator across all campaigns (top 10)">
+      {renderContent()}
 
       <CreatorEarningsDrawer
         selectedCreator={selectedCreator}

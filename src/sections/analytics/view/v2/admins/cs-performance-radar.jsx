@@ -1,4 +1,5 @@
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+// eslint-disable-next-line import/no-unresolved
 import { RadarChart } from '@mui/x-charts/RadarChart';
 
 import ChartCard from '../components/chart-card';
