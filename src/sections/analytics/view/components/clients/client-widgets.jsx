@@ -1,10 +1,22 @@
 import React from 'react';
-import { Card, Box, Typography, Stack } from '@mui/material';
-import { BarChart } from '@mui/x-charts/BarChart';
-import { LineChart } from '@mui/x-charts/LineChart';
-import { PieChart } from '@mui/x-charts/PieChart';
-import { ScatterChart } from '@mui/x-charts/ScatterChart';
-import { axisClasses } from '@mui/x-charts/ChartsAxis';
+import PropTypes from 'prop-types';
+import { Card, Box, Grid, Typography, Stack, Tooltip } from '@mui/material';
+import {
+  PieChart,
+  BarChart,
+  LineChart,
+  axisClasses,
+  ScatterChart,
+  ChartsReferenceLine,
+  ChartContainer,
+  LinePlot,
+  ScatterPlot,
+  ChartsXAxis,
+  ChartsYAxis,
+  ChartsTooltip,
+} from '@mui/x-charts';
+
+import { ClientTooltip, MatrixTooltip, RenewalTooltip, TurnaroundTooltip } from './client-tooltips';
 
 // Your Brand Colors
 const COLORS = {
@@ -20,7 +32,7 @@ const hiddenAxisSettings = {
   disableLine: true,
   disableTicks: true,
   tickLabelStyle: {
-    display: 'none', // This hides the numeric values (0, 10, 20, etc.)
+    display: 'none',
   },
 };
 
@@ -32,33 +44,64 @@ const cleanChartSettings = {
     [`.${axisClasses.left} .${axisClasses.tick}`]: { display: 'none' },
     [`.${axisClasses.bottom} .${axisClasses.tick}`]: { display: 'none' },
     [`.${axisClasses.root}`]: {
-      padding: '10px',
+      padding: '5px',
     },
   },
 };
 
+const STEP_CONFIG = [
+  { key: 'GENERAL_CAMPAIGN_INFORMATION', title: 'General Info', color: '#8A5AFE' },
+  { key: 'CAMPAIGN_OBJECTIVES', title: 'Objectives', color: '#026D54' },
+  { key: 'TARGET_AUDIENCE', title: 'Target Audience', color: '#FFF0E5' },
+  { key: 'LOGISTICS__OPTIONAL_', title: 'Logistics', color: '#D8FF01' },
+  { key: 'RESERVATION_SLOTS', title: 'Reservation Slots', color: '#D8FF01' },
+  { key: 'ADDITIONAL_LOGISTIC_REMARKS', title: 'Logistic Remarks', color: '#D8FF01' },
+  { key: 'NEXT_STEPS', title: 'Next Steps', color: '#D8FF01' },
+  { key: 'ADDITIONAL_DETAILS_1', title: 'Additional Details 1', color: '#FF3500' },
+  { key: 'ADDITIONAL_DETAILS_2', title: 'Additional Details 2', color: '#D8FF01' },
+];
+
 // --- 1. Top KPI Cards (Unchanged, just layout) ---
-export const TopKPICard = ({ title, mainValue, children }) => (
-  <Card
-    sx={{ p: 2, borderRadius: 3, border: '1px solid #E5E7EB', boxShadow: 'none', height: '100%' }}
-  >
-    <Typography variant="subtitle2" color="text.secondary" mb={1}>
-      {title}
-    </Typography>
-    <Typography variant="h4" fontWeight="bold" mb={1}>
-      {mainValue}
-    </Typography>
-    <Box sx={{ mt: 'auto' }}>{children}</Box>
-  </Card>
-);
+export function TopKPICard({ title, mainValue, children }) {
+  return (
+    <Card
+      sx={{ p: 2, borderRadius: 3, border: '1px solid #E5E7EB', boxShadow: 'none', height: '100%' }}
+    >
+      <Typography variant="subtitle2" color="text.secondary" mb={1}>
+        {title}
+      </Typography>
+      <Typography
+        variant="h3"
+        sx={{
+          fontWeight: 700,
+          color: 'text.primary',
+          lineHeight: 1.2,
+          fontSize: { xs: '1.75rem', sm: '2rem' },
+        }}
+      >
+        {mainValue}
+      </Typography>
+      <Box sx={{ mt: 'auto' }}>{children}</Box>
+    </Card>
+  );
+}
+
+TopKPICard.propTypes = {
+  title: PropTypes.string.isRequired,
+  mainValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  children: PropTypes.node,
+};
 
 // --- 2. Row 2: Time Spent (Horizontal Bar) ---
-export const TimeSpentChart = ({ data }) => {
-  const dataset =
-    data?.map((item) => ({
-      name: item.name.replace(/_/g, ' '),
-      minutes: Number((item.value / 60).toFixed(1)),
-    })) || [];
+export function TimeSpentChart({ data }) {
+  const dataset = STEP_CONFIG.map((config) => {
+    const dbMatch = data?.find((item) => item.name === config.key);
+
+    return {
+      name: config.title,
+      minutes: dbMatch ? Number((dbMatch.value / 60).toFixed(1)) : 0,
+    };
+  });
 
   return (
     <Card
@@ -83,22 +126,48 @@ export const TimeSpentChart = ({ data }) => {
       <Box sx={{ flexGrow: 1 }}>
         <BarChart
           dataset={dataset}
-          yAxis={[{ scaleType: 'band', dataKey: 'name', categoryGapRatio: 0.3 }]}
+          yAxis={[{ scaleType: 'band', dataKey: 'name', categoryGapRatio: 0.5 }]}
           xAxis={[{ ...hiddenAxisSettings }]}
-          series={[{ dataKey: 'minutes', color: COLORS.blue, label: 'Minutes', borderRadius: 4 }]}
+          series={[
+            {
+              dataKey: 'minutes',
+              label: 'Time Spent',
+              borderRadius: 6,
+            },
+          ]}
           layout="horizontal"
-          margin={{ left: 100 }}
+          margin={{ left: 140, right: 40, top: 10, bottom: 10 }}
           {...cleanChartSettings}
-          slotProps={{ legend: { hidden: true } }}
+          slots={{ axisContent: ClientTooltip }}
+          slotProps={{ legend: { hidden: true }, tooltip: { trigger: 'item' } }}
         />
       </Box>
     </Card>
   );
+}
+
+TimeSpentChart.propTypes = {
+  data: PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string,
+      value: PropTypes.number,
+    })
+  ),
 };
 
 // --- 3. Row 2: Most Skipped Fields ---
-export const SkippedFieldsChart = ({ journey, campaign }) => {
-  const dataset = journey?.map((item) => ({ ...item, name: item.name.replace(/_/g, ' ') })) || [];
+export function SkippedFieldsChart({ journey, campaign }) {
+  const dataArray = Array.isArray(journey) ? journey : journey?.skippedFields || [];
+
+  const dataset = dataArray.map((item) => ({
+    ...item,
+    name: item.name
+      .replace(/_/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' '),
+  }));
 
   return (
     <Card
@@ -114,31 +183,76 @@ export const SkippedFieldsChart = ({ journey, campaign }) => {
     >
       <Stack direction="row" justifyContent="space-between" mb={1}>
         <Typography variant="subtitle1" fontWeight="bold">
-          Most skipped fields
+          Most skipped fields (Top 5)
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Client Created Campaigns: {campaign}
+          Campaigns Analyzed: {campaign || 0}
         </Typography>
       </Stack>
-      <Box sx={{ flexGrow: 1 }}>
+
+      <Box sx={{ flexGrow: 1, minHeight: 0, width: '100%' }}>
         <BarChart
           dataset={dataset}
-          yAxis={[{ scaleType: 'band', dataKey: 'name', categoryGapRatio: 0.3 }]}
+          yAxis={[
+            {
+              scaleType: 'band',
+              dataKey: 'name',
+              categoryGapRatio: 0.4,
+              disableLine: true,
+              disableTicks: true,
+              tickLabelStyle: { fontSize: 11 },
+            },
+          ]}
           xAxis={[{ ...hiddenAxisSettings }]}
-          series={[{ dataKey: 'value', color: COLORS.purple, label: 'Skips' }]}
+          series={[
+            {
+              dataKey: 'value',
+              color: COLORS.purple,
+              label: 'Total Skips',
+              borderRadius: 6,
+            },
+          ]}
           layout="horizontal"
-          margin={{ left: 120 }}
+          margin={{ left: 150, right: 40, top: 10, bottom: 10 }}
           {...cleanChartSettings}
-          slotProps={{ legend: { hidden: true } }}
+          slots={{ axisContent: ClientTooltip }}
+          slotProps={{
+            legend: { hidden: true },
+            tooltip: {
+              slotProps: {
+                root: {
+                  style: {
+                    padding: 0,
+                    background: 'transparent',
+                    border: 'none',
+                    boxShadow: 'none',
+                  },
+                },
+              },
+            },
+          }}
         />
       </Box>
     </Card>
   );
+}
+
+SkippedFieldsChart.propTypes = {
+  journey: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
+  campaign: PropTypes.number,
 };
 
 // --- 4. Row 3: Drop off Location ---
-export const DropOffChart = ({ data }) => {
-  const dataset = data?.map((item) => ({ ...item, name: item.name.replace(/_/g, ' ') })) || [];
+export function DropOffChart({ data }) {
+  const dataset = STEP_CONFIG.map((config) => {
+    const dbMatch = data?.find((item) => item.name === config.key);
+
+    return {
+      name: config.title,
+      value: dbMatch ? dbMatch.value : 0,
+      color: config.color,
+    };
+  }).filter((item) => item.value >= 0);
 
   return (
     <Card
@@ -163,32 +277,51 @@ export const DropOffChart = ({ data }) => {
       <Box sx={{ flexGrow: 1 }}>
         <BarChart
           dataset={dataset}
-          yAxis={[{ scaleType: 'band', dataKey: 'name', categoryGapRatio: 0.3 }]}
+          yAxis={[{ scaleType: 'band', dataKey: 'name', categoryGapRatio: 0.5 }]}
           xAxis={[{ ...hiddenAxisSettings }]}
-          series={[{ dataKey: 'value', color: COLORS.purple, label: 'Drop-offs' }]}
+          series={[
+            {
+              dataKey: 'value',
+              label: 'Drop Off',
+              dataset,
+              borderRadius: 6,
+              color: '#1340FF',
+            },
+          ]}
           layout="horizontal"
-          margin={{ left: 100 }}
+          margin={{ left: 140, right: 40, top: 10, bottom: 10 }}
           {...cleanChartSettings}
-          slotProps={{ legend: { hidden: true } }}
+          slotProps={{ legend: { hidden: true }, tooltip: { trigger: 'item' } }}
+          slots={{ axisContent: ClientTooltip }}
         />
       </Box>
     </Card>
   );
+}
+
+DropOffChart.propTypes = {
+  data: PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string,
+      value: PropTypes.number,
+    })
+  ),
 };
 
 // --- 5. Row 3: Package Renewal (Stacked Bar) ---
-export const RenewalChart = ({ data }) => {
-  const chartData =
-    data?.monthlyRenewals?.length > 0
-      ? data.monthlyRenewals
-      : [
-          {
-            name: 'Total Cohort',
-            Upgrades: data?.upgrades || 0,
-            Renewals: data?.renewals || 0,
-            Downgrades: data?.downgrades || 0,
-          },
-        ];
+export function RenewalChart({ data }) {
+  // const chartData =
+  //   data?.monthlyRenewals?.length > 0
+  //     ? data.monthlyRenewals
+  //     : [
+  //         {
+  //           name: 'Total Cohort',
+  //           Upgrades: data?.upgrades || 0,
+  //           Renewals: data?.renewals || 0,
+  //           Downgrades: data?.downgrades || 0,
+  //         },
+  //       ];
+  const chartData = data?.monthlyRenewals || [];
 
   return (
     <Card
@@ -203,27 +336,40 @@ export const RenewalChart = ({ data }) => {
       }}
     >
       <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-        Package Renewal Mix
+        Package Renewal
       </Typography>
       <Box sx={{ flexGrow: 1 }}>
         <BarChart
           dataset={chartData}
-          xAxis={[{ scaleType: 'band', dataKey: 'name' }]}
+          xAxis={[
+            {
+              scaleType: 'band',
+              dataKey: 'name',
+              valueFormatter: (value) => (typeof value === 'string' ? value.split(' ')[0] : value),
+            },
+          ]}
           series={[
             { dataKey: 'Upgrades', stack: 'A', color: COLORS.green, label: 'Upgrades' },
             { dataKey: 'Renewals', stack: 'A', color: COLORS.blue, label: 'Renewals' },
             { dataKey: 'Downgrades', stack: 'A', color: COLORS.orange, label: 'Downgrades' },
           ]}
           {...cleanChartSettings}
+          slots={{ axisContent: RenewalTooltip }}
+          slotProps={{ legend: { hidden: true } }}
         />
       </Box>
     </Card>
   );
+}
+
+RenewalChart.propTypes = {
+  data: PropTypes.shape({
+    monthlyRenewals: PropTypes.array,
+  }),
 };
 
 // --- 6. Row 4: Submission Review Efficiency (Scatter Plot) ---
-export const ReviewEfficiencyScatter = ({ data }) => {
-  // MUI X Charts handles coloring differently. We split data into 2 series to get Red/Blue dots.
+export function ReviewEfficiencyScatter({ data }) {
   const allPoints = data?.scatterPoints || [
     { x: data?.avgReviewTimeHours || 0, y: data?.avgRoundsToApproval || 0, id: 1 },
   ];
@@ -232,8 +378,11 @@ export const ReviewEfficiencyScatter = ({ data }) => {
     .filter((p) => p.x <= 24 && p.y <= 2)
     .map((p, i) => ({ ...p, id: `h-${i}` }));
   const riskPoints = allPoints
-    .filter((p) => p.x > 24 || p.y > 2)
+    .filter((p) => p.x > 24 && p.y > 2)
     .map((p, i) => ({ ...p, id: `r-${i}` }));
+  const warningPoints = allPoints
+    .filter((p) => (p.x > 24 && p.y <= 2) || (p.x <= 24 && p.y > 2))
+    .map((p, i) => ({ ...p, id: `w-${i}` }));
 
   return (
     <Card
@@ -247,13 +396,13 @@ export const ReviewEfficiencyScatter = ({ data }) => {
         flexDirection: 'column',
       }}
     >
-      <Stack direction="row" justifyContent="space-between" mb={2}>
+      <Stack direction="row" justifyContent="space-between" mb={-2}>
         <Typography variant="subtitle1" fontWeight="bold">
-          Review Efficiency
+          Submission Review Efficiency
         </Typography>
         <Stack alignItems="flex-end">
           <Typography variant="caption" color="text.secondary">
-            Avg Time: {data?.avgReviewTimeHours}h
+            Avg Review Time: {data?.avgReviewTimeHours}h
           </Typography>
           <Typography variant="caption" color="text.secondary">
             Avg Rounds: {data?.avgRoundsToApproval}
@@ -264,21 +413,61 @@ export const ReviewEfficiencyScatter = ({ data }) => {
       <Box sx={{ flexGrow: 1 }}>
         <ScatterChart
           series={[
-            { data: healthyPoints, color: COLORS.blue, label: 'Healthy', id: 'healthy' },
+            { data: healthyPoints, color: COLORS.blue, label: 'Within 2 rounds', id: 'healthy' },
             { data: riskPoints, color: COLORS.red, label: 'High Friction', id: 'risk' },
+            { data: warningPoints, color: COLORS.orange, label: 'Warning', id: 'warning' },
           ]}
+          voronoiMaxRadius={40}
+          margin={{ left: 40, bottom: 40, right: 60 }}
           xAxis={[{ label: 'Hours', min: 0 }]}
           yAxis={[{ label: 'Rounds', min: 0 }]}
-          {...cleanChartSettings}
-        />
+          grid={{ horizontal: true, vertical: true }}
+          sx={{
+            ...cleanChartSettings,
+            '& .MuiChartsGrid-line': {
+              strokeDasharray: '5 5',
+              stroke: '#E5E7EB',
+            },
+          }}
+          slots={{ itemContent: MatrixTooltip }}
+          slotProps={{ legend: { hidden: true } }}
+        >
+          {typeof data?.avgReviewTimeHours === 'number' && (
+            <ChartsReferenceLine
+              x={data.avgReviewTimeHours}
+              lineStyle={{ stroke: COLORS.red, strokeDasharray: '4 4', strokeWidth: 2 }}
+            />
+          )}
+
+          {typeof data?.avgRoundsToApproval === 'number' && (
+            <ChartsReferenceLine
+              y={data.avgRoundsToApproval}
+              lineStyle={{ stroke: COLORS.red, strokeDasharray: '4 4', strokeWidth: 2 }}
+            />
+          )}
+        </ScatterChart>
       </Box>
     </Card>
   );
+}
+
+ReviewEfficiencyScatter.propTypes = {
+  data: PropTypes.shape({
+    scatterPoints: PropTypes.array,
+    avgReviewTimeHours: PropTypes.number,
+    avgRoundsToApproval: PropTypes.number,
+  }),
 };
 
 // --- 7. Row 5: Turnaround Trend (Line Chart) ---
-export const TurnaroundChart = ({ data }) => {
-  const trendData = data?.trendData || [{ name: 'Current', hours: data?.avgTurnaroundHours || 0 }];
+export function TurnaroundChart({ data }) {
+  const trendData = data?.trendData || [];
+
+  const seriesData = {
+    slowest: trendData.map((d, i) => ({ x: i, y: d.slowestAvg, id: i, payload: d })),
+    average: trendData.map((d, i) => ({ x: i, y: d.average, id: i, payload: d })),
+    fastest: trendData.map((d, i) => ({ x: i, y: d.fastestAvg, id: i, payload: d })),
+  };
 
   return (
     <Card
@@ -287,37 +476,63 @@ export const TurnaroundChart = ({ data }) => {
         borderRadius: 3,
         border: '1px solid #E5E7EB',
         boxShadow: 'none',
-        height: 350,
+        height: 400,
         display: 'flex',
         flexDirection: 'column',
       }}
     >
       <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-        Turnaround Trend
+        Shortlist Turnaround Time
       </Typography>
       <Box sx={{ flexGrow: 1 }}>
-        <LineChart
-          dataset={trendData}
-          xAxis={[{ scaleType: 'point', dataKey: 'name' }]}
+        <ScatterChart
+          xAxis={[{ valueFormatter: (v) => trendData[v]?.name?.split(' ')[0] || '' }]}
           series={[
             {
-              dataKey: 'hours',
-              color: COLORS.blue,
-              label: 'Turnaround (Hrs)',
-              area: true, // Makes it an area chart which looks nice
-              showMark: true,
-              curve: 'natural', // Smooth lines
+              id: 'slowest',
+              data: seriesData.slowest,
+              color: '#D4321C',
+              label: 'Slowest',
+            },
+            {
+              id: 'average',
+              data: seriesData.average,
+              color: '#FFC702',
+              label: 'Average',
+            },
+            {
+              id: 'fastest',
+              data: seriesData.fastest,
+              color: '#1ABF66',
+              label: 'Fastest',
             },
           ]}
+          voronoiMaxRadius={50} // Magnetic dots
+          slots={{
+            itemContent: TurnaroundTooltip,
+          }}
+          slotProps={{
+            legend: { hidden: true },
+            // Ensure pointer events are enabled for tooltips
+            popper: {
+              sx: {
+                pointerEvents: 'none',
+                zIndex: 1300, // Force it above everything
+              },
+            },
+          }}
           {...cleanChartSettings}
-        />
+        >
+          {/* THIS IS THE TRICK: Draw lines manually using SVG paths if you really want lines */}
+          {/* But honestly, for "Turnaround Time per Month", just 3 colored dots per column looks very clean too. */}
+        </ScatterChart>
       </Box>
     </Card>
   );
-};
+}
 
 // --- 8. Row 5: Rejection Donut ---
-export const RejectionDonut = ({ data }) => {
+export function RejectionDonut({ data }) {
   const pieData =
     data?.map((item, index) => ({
       id: index,
@@ -358,28 +573,44 @@ export const RejectionDonut = ({ data }) => {
       </Box>
     </Card>
   );
+}
+
+RejectionDonut.propTypes = {
+  data: PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string,
+      value: PropTypes.number,
+    })
+  ),
 };
 
 // --- 9. Simple Metrics ---
-export const SimpleMetricCard = ({ title, value }) => (
-  <Card
-    sx={{
-      p: 3,
-      borderRadius: 3,
-      border: '1px solid #E5E7EB',
-      boxShadow: 'none',
-      height: '100%',
-      minHeight: 120,
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-    }}
-  >
-    <Typography variant="subtitle2" color="text.secondary" mb={1}>
-      {title}
-    </Typography>
-    <Typography variant="h4" fontWeight="bold">
-      {value}
-    </Typography>
-  </Card>
-);
+export function SimpleMetricCard({ title, value }) {
+  return (
+    <Card
+      sx={{
+        p: 3,
+        borderRadius: 3,
+        border: '1px solid #E5E7EB',
+        boxShadow: 'none',
+        height: '100%',
+        minHeight: 120,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+      }}
+    >
+      <Typography variant="subtitle2" color="text.secondary" mb={1}>
+        {title}
+      </Typography>
+      <Typography variant="h4" fontWeight="bold">
+        {value}
+      </Typography>
+    </Card>
+  );
+}
+
+SimpleMetricCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+};

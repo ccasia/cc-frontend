@@ -34,6 +34,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { NextStepsIcon } from 'src/assets/icons';
+import { useJourneyTracker } from 'src/hooks/use-journey-tracker';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
@@ -51,7 +52,6 @@ import AdditionalDetails2 from './additional-details-2';
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
 import CampaignTargetAudience from './campaign-target-audience';
-import { useJourneyTracker } from 'src/hooks/use-journey-tracker';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
@@ -534,7 +534,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       markCompleted({
         totalFieldsInStep: allFields.length,
         skippedCount: skippedFields.length,
-        skippedFields: skippedFields,
+        skippedFields,
         isStepPerfect: skippedFields.length === 0,
       });
 

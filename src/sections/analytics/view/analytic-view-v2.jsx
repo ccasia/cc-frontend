@@ -3,7 +3,17 @@ import { lazy, Suspense, useState, useMemo, useCallback, useRef, useEffect } fro
 import { Helmet } from 'react-helmet-async';
 import { m, AnimatePresence } from 'framer-motion';
 
-import { Box, Grid, Stack, Rating, Button, Skeleton, Container, Popover, Typography } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Stack,
+  Rating,
+  Button,
+  Skeleton,
+  Container,
+  Popover,
+  Typography,
+} from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 import { varFade, varContainer } from 'src/components/animate/variants';
@@ -17,7 +27,13 @@ import useGetPitchRate from 'src/hooks/use-get-pitch-rate';
 import CreditTierFilterSelect from './v2/components/credit-tier-filter-select';
 import KpiCard from './v2/components/kpi-card';
 import { CHART_COLORS } from './v2/chart-config';
-import { DateFilterProvider, useDateFilter, useFilteredData, useIsDaily, useTrendLabel } from './v2/date-filter-context';
+import {
+  DateFilterProvider,
+  useDateFilter,
+  useFilteredData,
+  useIsDaily,
+  useTrendLabel,
+} from './v2/date-filter-context';
 
 const CreatorsTabContent = lazy(() => import('./v2/creators-tab-content'));
 const AdminsTabContent = lazy(() => import('./v2/admins-tab-content'));
@@ -58,7 +74,8 @@ function KpiCards() {
   }, [isDaily, startDate, endDate, creditTiers]);
 
   const { creatorGrowth, periodComparison } = useGetCreatorGrowth(hookOptions);
-  const { activationRate, periodComparison: activationPeriodComparison } = useGetActivationRate(hookOptions);
+  const { activationRate, periodComparison: activationPeriodComparison } =
+    useGetActivationRate(hookOptions);
   const { pitchRate, periodComparison: pitchPeriodComparison } = useGetPitchRate(hookOptions);
 
   // Always call hooks unconditionally — use monthly filtered only when not daily
@@ -134,7 +151,7 @@ function KpiCards() {
             trend={creatorTrend}
             trendLabel={trendLabel}
             subtitle="All registered creators"
-            sparklineData={filteredGrowth.map((d) => isDaily ? d.newSignups : d.total)}
+            sparklineData={filteredGrowth.map((d) => (isDaily ? d.newSignups : d.total))}
             sparklineColor={CHART_COLORS.primary}
           />
         </Grid>
@@ -143,8 +160,10 @@ function KpiCards() {
             title="Activation Rate"
             value={latestActivation.rate != null ? `${latestActivation.rate}%` : '—'}
             trend={(() => {
-              if (isDaily && activationPeriodComparison) return activationPeriodComparison.percentChange;
-              if (prevActivation) return Math.round((latestActivation.rate - prevActivation.rate) * 10) / 10;
+              if (isDaily && activationPeriodComparison)
+                return activationPeriodComparison.percentChange;
+              if (prevActivation)
+                return Math.round((latestActivation.rate - prevActivation.rate) * 10) / 10;
               return 0;
             })()}
             trendLabel={trendLabel}
@@ -219,12 +238,21 @@ function KpiCards() {
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <Typography sx={{ fontSize: 32, fontWeight: 700, lineHeight: 1, color: '#333' }}>
             {averageRating}
-            <Typography component="span" sx={{ fontSize: 16, fontWeight: 500, color: '#999', ml: 0.3 }}>
+            <Typography
+              component="span"
+              sx={{ fontSize: 16, fontWeight: 500, color: '#999', ml: 0.3 }}
+            >
               /5
             </Typography>
           </Typography>
           <Stack spacing={0.25}>
-            <Rating value={averageRating} precision={0.1} readOnly size="small" sx={{ color: AMBER }} />
+            <Rating
+              value={averageRating}
+              precision={0.1}
+              readOnly
+              size="small"
+              sx={{ color: AMBER }}
+            />
             <Typography sx={{ color: '#919EAB', fontSize: '0.7rem', fontWeight: 500 }}>
               {totalResponses} responses
             </Typography>
@@ -242,18 +270,54 @@ function KpiCards() {
 
             return (
               <Stack key={item.rating} direction="row" alignItems="center" spacing={0.75}>
-                <Stack direction="row" alignItems="center" spacing={0.25} sx={{ flexShrink: 0, width: 26 }}>
-                  <Typography sx={{ fontWeight: 600, fontSize: '0.7rem', color: '#666', lineHeight: 1 }}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={0.25}
+                  sx={{ flexShrink: 0, width: 26 }}
+                >
+                  <Typography
+                    sx={{ fontWeight: 600, fontSize: '0.7rem', color: '#666', lineHeight: 1 }}
+                  >
                     {item.rating}
                   </Typography>
                   <Iconify icon="mdi:star" width={12} sx={{ color: AMBER }} />
                 </Stack>
-                <Box sx={{ flex: 1, height: 8, borderRadius: 0.75, bgcolor: BAR_BG, overflow: 'hidden' }}>
-                  <Box sx={{ width: `${barWidth}%`, height: '100%', borderRadius: 0.75, bgcolor: AMBER, transition: 'width 0.3s ease' }} />
+                <Box
+                  sx={{
+                    flex: 1,
+                    height: 8,
+                    borderRadius: 0.75,
+                    bgcolor: BAR_BG,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: `${barWidth}%`,
+                      height: '100%',
+                      borderRadius: 0.75,
+                      bgcolor: AMBER,
+                      transition: 'width 0.3s ease',
+                    }}
+                  />
                 </Box>
-                <Typography sx={{ color: '#666', fontWeight: 600, fontSize: '0.7rem', minWidth: 56, textAlign: 'right', flexShrink: 0, lineHeight: 1 }}>
+                <Typography
+                  sx={{
+                    color: '#666',
+                    fontWeight: 600,
+                    fontSize: '0.7rem',
+                    minWidth: 56,
+                    textAlign: 'right',
+                    flexShrink: 0,
+                    lineHeight: 1,
+                  }}
+                >
                   {item.count}
-                  <Typography component="span" sx={{ color: '#919EAB', fontWeight: 500, fontSize: '0.6rem', ml: 0.3 }}>
+                  <Typography
+                    component="span"
+                    sx={{ color: '#919EAB', fontWeight: 500, fontSize: '0.6rem', ml: 0.3 }}
+                  >
                     ({pct.toFixed(0)}%)
                   </Typography>
                 </Typography>
@@ -359,8 +423,17 @@ export default function AnalyticViewV2() {
             </Stack>
 
             {/* Filters — right */}
-            <Stack direction="row" spacing={1} sx={{ ml: { xs: 0, sm: 'auto' }, pb: 0.5, mt: { xs: 1, sm: 0 } }}>
-              <CreditTierFilterSelect value={creditTiers} onChange={handleCreditTiersChange} />
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ ml: { xs: 0, sm: 'auto' }, pb: 0.5, mt: { xs: 1, sm: 0 } }}
+            >
+              {(currentTab === 'creators' || currentTab === 'admins') && (
+                <CreditTierFilterSelect value={creditTiers} onChange={handleCreditTiersChange} />
+              )}
+              {currentTab === 'clients' && (
+                <PackageFilterSelect value={filterPackageType} onChange={setFilterPackageType} />
+              )}
               <DateFilterSelect
                 value={dateFilter}
                 startDate={filterStartDate}
@@ -371,7 +444,12 @@ export default function AnalyticViewV2() {
           </Stack>
         </Box>
 
-        <DateFilterProvider dateFilter={dateFilter} startDate={filterStartDate} endDate={filterEndDate} creditTiers={creditTiers}>
+        <DateFilterProvider
+          dateFilter={dateFilter}
+          startDate={filterStartDate}
+          endDate={filterEndDate}
+          creditTiers={creditTiers}
+        >
           {/* Top-Level KPI Cards */}
           {(currentTab === 'creators' || currentTab === 'admins') && <KpiCards />}
           {/* {currentTab === 'client' && } */}
@@ -394,7 +472,7 @@ export default function AnalyticViewV2() {
 
           <Fade in={currentTab === 'clients'} timeout={200} unmountOnExit>
             <Grid>
-              <ClientAnalytics />
+              <ClientAnalytics packageType={filterPackageType} />
             </Grid>
           </Fade>
         </DateFilterProvider>
