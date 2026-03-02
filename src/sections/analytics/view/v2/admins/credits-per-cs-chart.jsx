@@ -67,6 +67,46 @@ export default function CreditsPerCSChart() {
     setSelectedCS(sorted[data.dataIndex]);
   }, [sorted]);
 
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <Stack spacing={1} sx={{ px: 3, pb: 2 }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} variant="rounded" height={36} />
+          ))}
+        </Stack>
+      );
+    }
+
+    if (sorted.length === 0) {
+      return (
+        <Box sx={{ px: 3, pb: 3, pt: 1 }}>
+          <Typography variant="body2" sx={{ color: UI_COLORS.textMuted }}>
+            No CS admin data found for this period.
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Stack spacing={1}>
+        <BarChart
+          series={visibleSeries}
+          xAxis={[{ scaleType: 'band', data: sorted.map((d) => d.csName), tickLabelStyle: { ...TICK_LABEL_STYLE, angle: -45 }, tickLabelInterval: () => true, height: 80 }]}
+          yAxis={[{ tickLabelStyle: TICK_LABEL_STYLE }]}
+          height={420}
+          margin={CHART_MARGIN}
+          grid={CHART_GRID}
+          hideLegend
+          tooltip={{ trigger: 'axis' }}
+          slots={{ axisContent: ChartAxisTooltip }}
+          onAxisClick={handleAxisClick}
+          sx={{ ...CHART_SX, cursor: 'pointer' }}
+        />
+      </Stack>
+    );
+  };
+
   return (
     <ChartCard
       title="Credits per CS" icon={WorkspacePremiumIcon}
@@ -80,35 +120,7 @@ export default function CreditsPerCSChart() {
         />
       }
     >
-      {isLoading ? (
-        <Stack spacing={1} sx={{ px: 3, pb: 2 }}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} variant="rounded" height={36} />
-          ))}
-        </Stack>
-      ) : sorted.length === 0 ? (
-        <Box sx={{ px: 3, pb: 3, pt: 1 }}>
-          <Typography variant="body2" sx={{ color: UI_COLORS.textMuted }}>
-            No CS admin data found for this period.
-          </Typography>
-        </Box>
-      ) : (
-        <Stack spacing={1}>
-          <BarChart
-            series={visibleSeries}
-            xAxis={[{ scaleType: 'band', data: sorted.map((d) => d.csName), tickLabelStyle: { ...TICK_LABEL_STYLE, angle: -45 }, tickLabelInterval: () => true, height: 80 }]}
-            yAxis={[{ tickLabelStyle: TICK_LABEL_STYLE }]}
-            height={420}
-            margin={CHART_MARGIN}
-            grid={CHART_GRID}
-            hideLegend
-            tooltip={{ trigger: 'axis' }}
-            slots={{ axisContent: ChartAxisTooltip }}
-            onAxisClick={handleAxisClick}
-            sx={{ ...CHART_SX, cursor: 'pointer' }}
-          />
-        </Stack>
-      )}
+      {renderContent()}
 
       <CreditsPerCSDrawer
         selectedCS={selectedCS}

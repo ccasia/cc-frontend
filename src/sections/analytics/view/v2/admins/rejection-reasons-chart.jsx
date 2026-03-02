@@ -1,10 +1,12 @@
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import { Box, Stack, Typography, LinearProgress, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Stack, Skeleton, Typography, LinearProgress, useTheme, useMediaQuery } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
 
+import useGetRejectionReasons from 'src/hooks/use-get-rejection-reasons';
+
 import ChartCard from '../components/chart-card';
+import { useDateFilter } from '../date-filter-context';
 import ChartItemTooltip from '../components/chart-item-tooltip';
-import { MOCK_REJECTION_REASONS } from '../mock-data';
 
 const DONUT_COLORS = ['#EF4444', '#F59E0B', '#1340FF', '#8E33FF', '#10B981', '#00B8D9', '#919EAB'];
 
@@ -13,18 +15,47 @@ export default function RejectionReasonsChart() {
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
   const donutSize = isSmall ? 180 : 220;
 
-  const total = MOCK_REJECTION_REASONS.reduce((sum, d) => sum + d.count, 0);
-  const maxCount = Math.max(...MOCK_REJECTION_REASONS.map((d) => d.count));
+  const { startDate, endDate } = useDateFilter();
+  const { reasons, isLoading } = useGetRejectionReasons({ startDate, endDate });
 
-  const pieData = MOCK_REJECTION_REASONS.map((d, i) => ({
+  const total = reasons.reduce((sum, d) => sum + d.count, 0);
+  const maxCount = Math.max(...reasons.map((d) => d.count), 0);
+
+  const pieData = reasons.map((d, i) => ({
     id: i,
     value: d.count,
     label: d.reason,
     color: DONUT_COLORS[i % DONUT_COLORS.length],
   }));
 
-  return (
-    <ChartCard title="Rejection Reasons" icon={AssignmentIcon} subtitle="Breakdown by rejection category">
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center" sx={{ py: 1 }}>
+          <Skeleton variant="circular" width={donutSize} height={donutSize} sx={{ flexShrink: 0 }} />
+          <Stack spacing={1.5} sx={{ flex: 1, width: '100%' }}>
+            {[...Array(5)].map((_, i) => (
+              <Box key={i}>
+                <Skeleton variant="text" width="60%" height={20} />
+                <Skeleton variant="rectangular" height={4} sx={{ borderRadius: 2 }} />
+              </Box>
+            ))}
+          </Stack>
+        </Stack>
+      );
+    }
+
+    if (reasons.length === 0) {
+      return (
+        <Stack alignItems="center" justifyContent="center" sx={{ py: 6 }}>
+          <Typography variant="body2" sx={{ color: '#919EAB' }}>
+            No rejection reasons found for the selected period.
+          </Typography>
+        </Stack>
+      );
+    }
+
+    return (
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={3}
@@ -69,7 +100,7 @@ export default function RejectionReasonsChart() {
 
         {/* Right: Legend with progress bars */}
         <Stack spacing={1.5} sx={{ flex: 1, width: { xs: '100%', sm: 'auto' }, px: { xs: 2, sm: 0 }, pr: { sm: 1 } }}>
-          {MOCK_REJECTION_REASONS.map((d, i) => {
+          {reasons.map((d, i) => {
             const pct = ((d.count / total) * 100).toFixed(1);
             const barColor = DONUT_COLORS[i % DONUT_COLORS.length];
 
@@ -115,6 +146,12 @@ export default function RejectionReasonsChart() {
           })}
         </Stack>
       </Stack>
+    );
+  };
+
+  return (
+    <ChartCard title="Rejection Reasons" icon={AssignmentIcon} subtitle="Breakdown by rejection category">
+      {renderContent()}
     </ChartCard>
   );
 }
