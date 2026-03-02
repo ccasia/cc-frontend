@@ -446,41 +446,16 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
             >
               {campaign?.shortlisted &&
                 (() => {
-                  // Check if user is in the target list for media kit requirement
-                  const targetUserIds = [
-                    'cm8gvqtcv01hwph01uof2u9xu',
-                    'cm4132k9p00wb54qgcrs71v0t',
-                    'cmauqo8oy03ioky0157sbr2jg',
-                    'cm8jxuuvy0272ph01nr0h7din',
-                    'cm5b5p0zu00r2ylfpo241kqki',
-                    'cmewrex4p054ipx01u5xqkqhj',
-                    'cm7oe0q15005bms010ujmjb3r',
-                    'cm44lei3t00si132zq87a5lan',
-                    'cm9kzqz1u00ziqe01q2tsdptg',
-                    'cmj9pz1n40a3hs40154b31l90',
-                    'cm8mh5ic5032sph011r87rw4e',
-                    'cm40womsf001k54qg4epuacmu',
-                    'cm4utxiyv02mu9wevfkpyt8qj',
-                    'cmj7kdxxi05sqs401pro45vik',
-                    'cmj21yl0102ghpc01xmy9zkwa',
-                    'cm3pyp3vm006qm9m8qm1ep02d',
-                    'cm4ey6g9401w4trd2ip0zf1et',
-                    'cmh0bsyrv0bftp301prsp7y2k',
-                    'cm857tk4w03rhmr01r0pjlxkq',
-                    'cmang4buw01afn7010m7uzuni',
-                    'cmbvekkhd00sxqh01ittftmd4',
-                    'cmdgbxxdx01l7mc01xz9bx3v8',
-                    'cm5q6r86y007p11jxkphbe7ht',
-                  ];
-                  const isTargetUser = targetUserIds.includes(user?.id);
+                  // Check if user is marked as Media Kit Mandatory
+                  const isMKM = user?.mediaKitMandatory === true;
 
                   // Check if media kit is connected
                   const hasMediaKit =
                     user?.creator &&
                     (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
 
-                  // For target users, disable manage button if no media kit
-                  const isDisabled = isTargetUser && !hasMediaKit;
+                  // For MKM users, disable manage button if no media kit
+                  const isDisabled = isMKM && !hasMediaKit;
 
                   return (
                     <Button
@@ -668,34 +643,15 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
           {/* Warning message for incomplete media kit */}
           {campaign?.shortlisted &&
             (() => {
-              // Check if user is in the target list for media kit requirement
-              const targetUserIds = [
-                'cm8gvqtcv01hwph01uof2u9xu',
-                'cm4132k9p00wb54qgcrs71v0t',
-                'cmauqo8oy03ioky0157sbr2jg',
-                'cm8jxuuvy0272ph01nr0h7din',
-                'cm5b5p0zu00r2ylfpo241kqki',
-                'cmewrex4p054ipx01u5xqkqhj',
-                'cm7oe0q15005bms010ujmjb3r',
-                'cm44lei3t00si132zq87a5lan',
-                'cm9kzqz1u00ziqe01q2tsdptg',
-                'cmj9pz1n40a3hs40154b31l90',
-                'cm8mh5ic5032sph011r87rw4e',
-                'cm40womsf001k54qg4epuacmu',
-                'cm4utxiyv02mu9wevfkpyt8qj',
-                'cmj7kdxxi05sqs401pro45vik',
-                'cmj21yl0102ghpc01xmy9zkwa',
-                'cm3pyp3vm006qm9m8qm1ep02d',
-                'cm4ey6g9401w4trd2ip0zf1et',
-              ];
-              const isTargetUser = targetUserIds.includes(user?.id);
+              // Check if user is marked as Media Kit Mandatory
+              const isMKM = user?.mediaKitMandatory === true;
 
               // Check if media kit is connected
               const hasMediaKit =
                 user?.creator &&
                 (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
 
-              if (isTargetUser && !hasMediaKit) {
+              if (isMKM && !hasMediaKit) {
                 return (
                   <Typography
                     sx={{

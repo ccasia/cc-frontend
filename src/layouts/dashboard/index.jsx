@@ -258,7 +258,7 @@ export default function DashboardLayout({ children }) {
         transformOrigin: 'bottom right',
         top: { xs: 140, sm: 150, md: 160 },
         right: { xs: 8, sm: 12, md: 15 },
-        zIndex: 9999,
+        zIndex: 1099,
       }}
     >
       <Button
@@ -294,7 +294,7 @@ export default function DashboardLayout({ children }) {
         transformOrigin: 'bottom right',
         top: { xs: 280, sm: 300, md: 320 },
         right: { xs: 8, sm: 12, md: 15 },
-        zIndex: 9999,
+        zIndex: 1099,
       }}
     >
       <Button

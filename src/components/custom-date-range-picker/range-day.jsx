@@ -100,6 +100,7 @@ function RangeDay(props) {
           width: 32,
           height: 32,
           fontSize: '0.8125rem',
+          // eslint-disable-next-line no-nested-ternary
           fontWeight: isEndpoint ? 700 : inRange ? 500 : 400,
           // In-range days get blue text
           ...(inRange &&

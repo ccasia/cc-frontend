@@ -84,7 +84,7 @@ const MobileSubmissionLayout = ({
       setExpandedStage(null);
     } else {
       setExpandedStage(stageType);
-      
+
       // Mark as viewed
       if (!viewedStages.includes(stageType)) {
         const newViewedStages = [...viewedStages, stageType];
@@ -302,7 +302,7 @@ const MobileSubmissionLayout = ({
                     NEW
                   </Label>
                 )}
-                
+
                 <IconButton
                   sx={{
                     color: 'text.secondary',

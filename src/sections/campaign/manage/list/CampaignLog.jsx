@@ -1,1098 +1,499 @@
-/* eslint-disable no-nested-ternary */
-import dayjs from 'dayjs';
-import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useMemo, useState, useCallback } from 'react';
 
-import {
-  Box,
-  Tab,
-  Tabs,
-  Table,
-  Paper,
-  Stack,
-  Dialog,
-  Avatar,
-  TableRow,
-  TableHead,
-  TableCell,
-  TableBody,
-  Typography,
-  IconButton,
-  DialogTitle,
-  DialogContent,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Avatar from '@mui/material/Avatar';
+import Dialog from '@mui/material/Dialog';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import DialogContent from '@mui/material/DialogContent';
+import InputAdornment from '@mui/material/InputAdornment';
+
+import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 
 import Iconify from 'src/components/iconify';
-import Scrollbar from 'src/components/scrollbar';
+
+import CampaignLogTimeline from './campaign-log/campaign-log-timeline';
+import CampaignLogEmptyState from './campaign-log/campaign-log-empty-state';
+import CampaignLogDetailPanel from './campaign-log/campaign-log-detail-panel';
+import { extractInvoiceInfo } from './campaign-log/campaign-log-detail-utils';
+import {
+  classifyLog,
+  getTabCounts,
+  getCategoryMeta,
+  deduplicateLogs,
+  filterLogsByTab,
+  formatLogMessage,
+  formatLogSummary,
+  filterLogsBySearch,
+} from './campaign-log/campaign-log-utils';
+
+// ---------------------------------------------------------------------------
+
+const TABS = [
+  { value: 'all', label: 'All' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'creator', label: 'Creator' },
+  { value: 'client', label: 'Client' },
+  { value: 'invoice', label: 'Invoice' },
+];
+
+// ---------------------------------------------------------------------------
 
 export const CampaignLog = ({ open, campaign, onClose }) => {
   const [currentTab, setCurrentTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [creatorFilter, setCreatorFilter] = useState('');
+  const [adminFilter, setAdminFilter] = useState('');
+  const [actionFilter, setActionFilter] = useState('');
+  const [selectedLogId, setSelectedLogId] = useState(null);
 
-  const allRows =
-    campaign &&
-    campaign.campaignLogs
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // Sort by date descending (latest first)
-      .map((log) => ({
-        id: log.id,
-        datePerformed: dayjs(log.createdAt).format('MMM D, YYYY • h:mm A'),
-        action: log.message,
-        performedBy: log.admin.name,
-        performerRole: log.admin.role, // Add role to determine if client or admin
-      }));
+  // Build a name → photoURL lookup from all people in the campaign
+  const photoMap = useMemo(() => {
+    const map = new Map();
+    if (!campaign) return map;
 
-  // Filter invoice-related logs
-  const invoiceRows =
-    allRows?.filter(
-      (row) =>
-        row.action.toLowerCase().includes('invoice') &&
-        !row.action.toLowerCase().includes('during withdrawal') && // Exclude withdrawal-related invoice logs
-        (row.action.toLowerCase().includes('deleted invoice') ||
-          row.action.toLowerCase().includes('approved invoice') ||
-          row.action.toLowerCase().includes('was generated'))
-    ) || [];
+    // From shortlisted creators
+    campaign.shortlisted?.forEach((s) => {
+      if (s.user?.name && s.user?.photoURL) map.set(s.user.name, s.user.photoURL);
+    });
+    // From pitches (fills gaps for creators not yet shortlisted)
+    campaign.pitch?.forEach((p) => {
+      if (p.user?.name && p.user?.photoURL && !map.has(p.user.name))
+        map.set(p.user.name, p.user.photoURL);
+    });
+    // From campaign log admins
+    campaign.campaignLogs?.forEach((log) => {
+      if (log.admin?.name && log.admin?.photoURL && !map.has(log.admin.name))
+        map.set(log.admin.name, log.admin.photoURL);
+    });
 
-  // Filter creator activity logs
-  const creatorRows =
-    allRows
-      ?.filter(
-        (row) =>
-          row.action.includes('pitched for') ||
-          row.action.includes('submitted a pitch for') ||
-          row.action.includes('submitted the Agreement') ||
-          row.action.includes('submitted First Draft') ||
-          row.action.includes('submitted Final Draft') ||
-          row.action.includes('submitted Posting Link')
-      )
-      .map((row) => {
-        // Extract submission type from the action text
-        let submissionType = 'Unknown';
-        if (row.action.includes('pitched for')) {
-          submissionType = 'Pitch';
-        } else if (row.action.includes('submitted the Agreement')) {
-          submissionType = 'Agreement';
-        } else if (row.action.includes('submitted First Draft')) {
-          submissionType = 'First Draft';
-        } else if (row.action.includes('submitted Final Draft')) {
-          submissionType = 'Final Draft';
-        } else if (row.action.includes('submitted Posting Link')) {
-          submissionType = 'Posting Link';
-        }
+    return map;
+  }, [campaign]);
 
+  // Build unique creator list for the dropdown filter
+  const creatorList = useMemo(() => {
+    if (!campaign) return [];
+    const names = new Set();
+    campaign.shortlisted?.forEach((s) => {
+      if (s.user?.name) names.add(s.user.name);
+    });
+    campaign.pitch?.forEach((p) => {
+      if (p.user?.name) names.add(p.user.name);
+    });
+    return Array.from(names).sort();
+  }, [campaign]);
+
+  const classifiedLogs = useMemo(() => {
+    if (!campaign?.campaignLogs) return [];
+
+    const logs = [...campaign.campaignLogs]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map((log) => {
+        const { category, groups } = classifyLog(log.message);
+        const performedBy = log.admin?.name || 'System';
         return {
-          ...row,
-          submissionType,
+          id: log.id,
+          createdAt: log.createdAt,
+          action: log.message,
+          formattedAction: formatLogMessage(log.message, performedBy),
+          formattedSummary: formatLogSummary(log.message, performedBy),
+          metadata: log.metadata || null,
+          performedBy,
+          performerRole: log.admin?.role || '',
+          category,
+          groups,
         };
-      }) || [];
+      });
 
-  // Filter client activity logs (V4 campaigns) - based on performer role
-  const clientRows =
-    allRows
-      ?.filter(
-        (row) =>
-          // Filter by performer role = 'client'
-          row.performerRole === 'client' ||
-          // Legacy filters for backward compatibility
-          row.action.toLowerCase().startsWith('client') ||
-          // User login and account activation
-          row.action.toLowerCase().includes('user logs in') ||
-          row.action.toLowerCase().includes('client logged in') ||
-          row.action.toLowerCase().includes('first time login') ||
-          row.action.toLowerCase().includes('activated account') ||
-          // Campaign creation and activation (only if by client)
-          (row.action.toLowerCase().includes('submitted campaign') && row.performerRole === 'client') ||
-          (row.action.toLowerCase().includes('campaign created') && row.performerRole === 'client') ||
-          // Creator actions by client
-          (row.action.includes('profile has been approved') && row.performerRole === 'client') ||
-          (row.action.includes('profile has been rejected') && row.performerRole === 'client') ||
-          (row.action.includes('maybe') && row.performerRole === 'client') ||
-          // Draft actions
-          row.action.toLowerCase().includes('receive draft') ||
-          row.action.toLowerCase().includes('received draft') ||
-          row.action.toLowerCase().includes('approve draft') ||
-          row.action.toLowerCase().includes('approved draft') ||
-          row.action.toLowerCase().includes('request change') ||
-          row.action.toLowerCase().includes('requested changes') ||
-          row.action.toLowerCase().includes('changes requested') ||
-          // Other client actions
-          row.action.toLowerCase().includes('by client') ||
-          row.action.toLowerCase().includes('client requested') ||
-          row.action.toLowerCase().includes('client submitted') ||
-          row.action.toLowerCase().includes('client received') ||
-          row.action.toLowerCase().includes('client exported') ||
-          row.action.toLowerCase().includes('export campaign analytics')
-      )
-      .map((row) => {
-        // Extract submission type from the action text
-        let submissionType = 'Unknown';
+    return deduplicateLogs(logs);
+  }, [campaign?.campaignLogs]);
 
-        // User login and account activation
-        if (row.action.toLowerCase().includes('logs in') || 
-            row.action.toLowerCase().includes('logged in') ||
-            row.action.toLowerCase().includes('first time login') ||
-            row.action.toLowerCase().includes('activated account')) {
-          submissionType = 'Login';
-        } 
-        // Campaign creation and activation
-        else if (row.action.toLowerCase().includes('submitted campaign') || 
-                 row.action.toLowerCase().includes('campaign created')) {
-          submissionType = 'Campaign';
-        } 
-        else if (row.action.toLowerCase().includes('campaign activated') || 
-                 row.action.toLowerCase().includes('activated')) {
-          submissionType = 'Activation';
-        } 
-        // Creator/Pitch actions
-        else if (row.action.toLowerCase().includes('approve creator') || 
-                 (row.action.toLowerCase().includes('approved') && row.action.toLowerCase().includes('pitch'))) {
-          submissionType = 'Approve Pitch';
-        } 
-        else if (row.action.toLowerCase().includes('reject creator') || 
-                 (row.action.toLowerCase().includes('rejected') && row.action.toLowerCase().includes('pitch'))) {
-          submissionType = 'Reject Pitch';
-        } 
-        else if (row.action.toLowerCase().includes('maybe') ||
-                 row.action.toLowerCase().includes('set pitch')) {
-          submissionType = 'Maybe Pitch';
-        } 
-        // Draft actions
-        else if (row.action.toLowerCase().includes('receive draft') || 
-                 row.action.toLowerCase().includes('received draft')) {
-          submissionType = 'Receive Draft';
-        } 
-        else if ((row.action.toLowerCase().includes('approve draft') || 
-                 (row.action.toLowerCase().includes('approved') && row.action.toLowerCase().includes('draft'))) &&
-                 !row.action.toLowerCase().includes('changes requested')) {
-          submissionType = 'Approve Draft';
-        } 
-        else if (row.action.toLowerCase().includes('request change') || 
-                 row.action.toLowerCase().includes('requested changes') ||
-                 row.action.toLowerCase().includes('changes requested')) {
-          submissionType = 'Request Changes';
-        } 
-        else if (row.action.toLowerCase().includes('export campaign analytics') || 
-                 row.action.toLowerCase().includes('exported')) {
-          submissionType = 'Analytics';
-        } else if (row.action.includes('Agreement')) {
-          submissionType = 'Agreement';
-        } else if (row.action.includes('First Draft') || row.action.includes('first draft')) {
-          submissionType = 'First Draft';
-        } else if (row.action.includes('Final Draft') || row.action.includes('final draft')) {
-          submissionType = 'Final Draft';
-        } else if (row.action.includes('Posting Link') || row.action.includes('posting')) {
-          submissionType = 'Posting Link';
-        } else if (row.action.includes('approved')) {
-          submissionType = 'Approval';
-        } else if (row.action.includes('rejected')) {
-          submissionType = 'Rejection';
-        }
-
-        return {
-          ...row,
-          submissionType,
-        };
-      }) || [];
-
-  // Filter admin activity logs - based on performer role
-  const adminRows =
-    (
-      allRows?.filter(
-        (row) =>
-          // Filter by performer role != 'client' (admin, superadmin, etc.)
-          (row.performerRole && row.performerRole !== 'client') ||
-          // Include specific admin actions
-          ((row.action.includes('approved') &&
-            (row.action.includes('pitch') ||
-              row.action.includes('Agreement') ||
-              row.action.includes('First Draft') ||
-              row.action.includes('Final Draft') ||
-              row.action.includes('Posting Link'))) ||
-          (row.action.includes('rejected') && row.action.includes('pitch')) ||
-          row.action.includes('sent the Agreement to') ||
-          row.action.includes('withdrawn from the campaign') ||
-          row.action.includes('removed from the campaign') ||
-          row.action.includes('requested changes on') ||
-          row.action.includes('requested changes to') ||
-          row.action.includes('changed the amount from') ||
-          row.action.includes('resent the Agreement to') ||
-          row.action.includes('has been shortlisted') ||
-          row.action.includes('pitch has been approved') ||
-          row.action.includes('pitch has been rejected') ||
-          row.action.includes('Campaign Details edited') ||
-          (row.action.includes('Campaign Created') && row.performerRole !== 'client') ||
-          (row.action.includes('Campaign Activated') && row.performerRole !== 'client'))
-      ) || []
-    ).map((row) => {
-      // Extract submission type from the action text
-      let submissionType = 'Unknown';
-
-      if (row.action.includes('Campaign Details edited')) {
-        submissionType = 'Campaign Details';
-      } else if (row.action.includes('Campaign Created') || row.action.includes('Campaign Activated')) {
-        submissionType = 'Campaign';
-      } else if (row.action.includes('has been shortlisted')) {
-        submissionType = 'Creator Masterlist';
-      } else if (row.action.includes('pitch has been approved') || row.action.includes('profile has been approved')) {
-        submissionType = 'Creator Masterlist';
-      } else if (row.action.includes('pitch has been rejected') || row.action.includes('profile has been rejected')) {
-        submissionType = 'Creator Masterlist';
-      } else if (row.action.includes('Chose maybe for') || row.action.includes('chose maybe for')) {
-        submissionType = 'Creator Masterlist';
-      } else if (row.action.includes('submitted a pitch for')) {
-        submissionType = 'Creator Masterlist';
-      } else if (row.action.includes('withdrawn from the campaign') || row.action.includes('removed from the campaign')) {
-        submissionType = 'Creator Masterlist';
-      } else if (row.action.includes('Agreement has been sent to') || 
-                 row.action.includes('submitted agreement') || 
-                 row.action.includes('agreement has been approved') || 
-                 row.action.includes('agreement has been rejected')) {
-        submissionType = 'Agreements';
-      } else if (row.action.includes('pitch')) {
-        submissionType = 'Pitch';
-      } else if (row.action.includes('Agreement')) {
-        submissionType = 'Agreement';
-      } else if (row.action.includes('First Draft')) {
-        submissionType = 'First Draft';
-      } else if (row.action.includes('Final Draft')) {
-        submissionType = 'Final Draft';
-      } else if (row.action.includes('Posting Link')) {
-        submissionType = 'Posting Link';
-      } else if (row.action.includes('created') || row.action.includes('edited')) {
-        submissionType = 'Campaign';
-      } else if (row.action.includes('changed the amount')) {
-        submissionType = 'Agreement';
-      } else if (row.action.includes('requested changes')) {
-        if (row.action.includes('First Draft')) {
-          submissionType = 'First Draft';
-        } else if (row.action.includes('Final Draft')) {
-          submissionType = 'Final Draft';
-        } else if (row.action.includes('Posting Link')) {
-          submissionType = 'Posting Link';
-        } else if (row.action.includes('Agreement')) {
-          submissionType = 'Agreement';
-        }
-      }
-
-      return {
-        ...row,
-        submissionType,
-      };
-    }) || [];
-
-  const getRows = () => {
-    switch (currentTab) {
-      case 'invoice':
-        return invoiceRows;
-      case 'creator':
-        return creatorRows;
-      case 'admin':
-        return adminRows;
-      case 'client':
-        return clientRows;
-      default:
-        return allRows;
+  // Apply all non-tab filters first (search, creator, admin, action)
+  const baseFilteredLogs = useMemo(() => {
+    let result = filterLogsBySearch(classifiedLogs, searchQuery, creatorFilter);
+    if (actionFilter) {
+      result = result.filter((log) => log.category === actionFilter);
     }
-  };
+    if (adminFilter) {
+      result = result.filter((log) => log.performedBy === adminFilter);
+    }
+    return result;
+  }, [classifiedLogs, searchQuery, creatorFilter, actionFilter, adminFilter]);
 
-  const rows = getRows();
+  // Tab counts reflect active filters
+  const tabCounts = useMemo(() => getTabCounts(baseFilteredLogs), [baseFilteredLogs]);
+
+  // Build unique category list for the action filter dropdown
+  const categoryList = useMemo(() => {
+    const cats = new Set();
+    classifiedLogs.forEach((log) => cats.add(log.category));
+    return Array.from(cats).sort();
+  }, [classifiedLogs]);
+
+  // Build unique admin list for the admin filter dropdown
+  const adminList = useMemo(() => {
+    const admins = new Set();
+    classifiedLogs.forEach((log) => {
+      if (log.performedBy && log.performedBy !== 'System') admins.add(log.performedBy);
+    });
+    return Array.from(admins).sort();
+  }, [classifiedLogs]);
+
+  // Apply tab filter on top of base filtered logs
+  const filteredLogs = useMemo(
+    () => filterLogsByTab(baseFilteredLogs, currentTab),
+    [baseFilteredLogs, currentTab]
+  );
+
+  const selectedLog = useMemo(
+    () => filteredLogs.find((log) => log.id === selectedLogId) || null,
+    [filteredLogs, selectedLogId]
+  );
+
+  // Fetch the specific invoice when an invoice log is selected
+  const invoiceCategories = selectedLog?.category === 'Invoice' || selectedLog?.category === 'Amount Changed';
+  const selectedInvoiceNumber = invoiceCategories ? extractInvoiceInfo(selectedLog?.action)?.invoiceNumber : null;
+  const { campaigns: invoices, isLoading: invoicesLoading } = useGetInvoicesByCampId(
+    open && invoiceCategories ? campaign?.id : null,
+    selectedInvoiceNumber ? { search: selectedInvoiceNumber } : {}
+  );
+
+  const handleTabChange = useCallback((v) => {
+    setCurrentTab(v);
+    setSelectedLogId(null);
+  }, []);
+
+  const handleSearchChange = useCallback((e) => {
+    setSearchQuery(e.target.value);
+    setSelectedLogId(null);
+  }, []);
+
+  const handleCreatorFilterChange = useCallback((e) => {
+    setCreatorFilter(e.target.value);
+    setSelectedLogId(null);
+  }, []);
+
+  const handleActionFilterChange = useCallback((e) => {
+    setActionFilter(e.target.value);
+    setSelectedLogId(null);
+  }, []);
+
+  const handleAdminFilterChange = useCallback((e) => {
+    setAdminFilter(e.target.value);
+    setSelectedLogId(null);
+  }, []);
 
   const campaignImage = campaign?.campaignBrief?.images?.[0] || '';
-
-  // fallback
-  const getFirstLetter = (name) => (name ? name.charAt(0).toUpperCase() : 'C');
-
-  const handleTabChange = (event, newValue) => {
-    setCurrentTab(newValue);
-  };
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
       fullWidth
-      maxWidth="md"
+      maxWidth="xl"
       PaperProps={{
         sx: {
-          borderRadius: { xs: 1, sm: 2 },
-          boxShadow: (theme) => theme.customShadows.dialog,
+          bgcolor: '#F4F4F4',
+          borderRadius: 2,
           overflow: 'hidden',
         },
       }}
     >
-      <Paper
-        elevation={0}
-        sx={{
-          position: 'relative',
-          backgroundColor: 'white',
-          borderBottom: '2px solid #e9ecef',
-          color: 'black',
-        }}
-      >
+      {/* ---- Header ---- */}
+      <Box sx={{ px: 3, pt: 3, pb: 0, position: 'relative' }}>
         <IconButton
           onClick={onClose}
-          sx={{
-            position: 'absolute',
-            right: 16,
-            top: 16,
-            color: '#495057',
-            '&:hover': {
-              color: '#212529',
-            },
-            transition: 'all 0.2s ease-in-out',
-          }}
+          sx={{ position: 'absolute', right: 12, top: 12, color: '#636366' }}
         >
-          <Iconify icon="eva:close-fill" width={20} />
+          <Iconify icon="eva:close-fill" width={22} />
         </IconButton>
 
-        <DialogTitle sx={{ pt: 4, pb: 3, pr: 6 }}>
-          <Stack direction="row" spacing={3} alignItems="center">
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2.5 }}>
+          {campaignImage ? (
             <Box
+              component="img"
+              src={campaignImage}
+              alt={campaign?.name || 'Campaign'}
               sx={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                width: 56,
+                height: 56,
+                borderRadius: 1.5,
+                objectFit: 'cover',
+                flexShrink: 0,
+              }}
+            />
+          ) : (
+            <Avatar
+              sx={{
+                width: 56,
+                height: 56,
+                bgcolor: '#e7e7e7',
+                color: '#636366',
+                fontWeight: 700,
+                fontSize: 22,
+                borderRadius: 1.5,
+              }}
+              variant="rounded"
+            >
+              {campaign?.name ? campaign.name.charAt(0).toUpperCase() : 'C'}
+            </Avatar>
+          )}
+
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              sx={{
+                fontFamily: 'fontSecondaryFamily',
+                fontSize: 40,
+                fontWeight: 400,
+                lineHeight: 1.1,
+                color: '#221F20',
               }}
             >
-              {campaignImage ? (
-                <Box
-                  sx={{
-                    position: 'relative',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: -4,
-                      left: -4,
-                      right: -4,
-                      bottom: -4,
-                      backgroundColor: '#f8f9fa',
-                      borderRadius: 2,
-                      zIndex: 0,
-                      border: '1px solid #e9ecef',
-                    },
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src={campaignImage}
-                    alt={campaign?.name || 'Campaign'}
-                    sx={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: 1.5,
-                      objectFit: 'cover',
-                      border: '2px solid #e9ecef',
-                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
-                      position: 'relative',
-                      zIndex: 1,
-                    }}
-                  />
-                </Box>
-              ) : (
-                <Avatar
-                  sx={{
-                    width: 64,
-                    height: 64,
-                    backgroundColor: '#f8f9fa',
-                    color: '#212529',
-                    fontWeight: 'bold',
-                    fontSize: 28,
-                    border: '2px solid #e9ecef',
-                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
-                  }}
-                >
-                  {getFirstLetter(campaign?.name)}
-                </Avatar>
-              )}
-            </Box>
-
-            <Box sx={{ flex: 1 }}>
-              <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
-                <Typography
-                  variant="h3"
-                  sx={{
-                    fontFamily: 'fontSecondaryFamily',
-                    fontWeight: 'normal',
-                    fontSize: { xs: '1.5rem', sm: '1.75rem' },
-                    color: '#212529',
-                  }}
-                >
-                  Campaign Activity Log
-                </Typography>
-                <Box
-                  sx={{
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: 2,
-                    px: 2,
-                    py: 0.5,
-                    border: '1px solid #e9ecef',
-                  }}
-                >
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: '#495057',
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    {allRows?.length || 0} Total Actions
-                  </Typography>
-                </Box>
-              </Stack>
-
-              {campaign?.name && (
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: '#6c757d',
-                    fontWeight: 500,
-                    fontSize: '1rem',
-                  }}
-                >
-                  {campaign.name}
-                </Typography>
-              )}
-            </Box>
-          </Stack>
-        </DialogTitle>
-
-        {/* Clean Tabs Section */}
-        <Box sx={{ px: 3, pb: 3 }}>
-          <Box
-            sx={{
-              backgroundColor: '#f8f9fa',
-              borderRadius: 2,
-              p: 1,
-              border: '1px solid #e9ecef',
-            }}
-          >
-            <Tabs
-              value={currentTab}
-              onChange={handleTabChange}
-              variant="fullWidth"
-              sx={{
-                minHeight: 48,
-                '& .MuiTab-root': {
-                  minHeight: 48,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  color: '#6c757d',
-                  borderRadius: 1.5,
-                  margin: '4px',
-                  transition: 'all 0.2s ease-in-out',
-                  flex: 1,
-                  '&.Mui-selected': {
-                    color: '#212529',
-                    backgroundColor: 'white',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                    fontWeight: 700,
-                    border: '1px solid #e9ecef',
-                  },
-                  '&:hover:not(.Mui-selected)': {
-                    backgroundColor: '#e9ecef',
-                    color: '#495057',
-                  },
-                },
-                '& .MuiTabs-indicator': {
-                  display: 'none',
-                },
-                '& .MuiTabs-flexContainer': {
-                  gap: 1,
-                },
-              }}
-            >
-              <Tab
-                label={`All (${allRows?.length || 0})`}
-                value="all"
-                icon={<Iconify icon="solar:list-bold" width={18} />}
-                iconPosition="start"
-              />
-              <Tab
-                label={`Invoice (${invoiceRows?.length || 0})`}
-                value="invoice"
-                icon={<Iconify icon="solar:bill-list-bold" width={18} />}
-                iconPosition="start"
-              />
-              <Tab
-                label={`Creator (${creatorRows?.length || 0})`}
-                value="creator"
-                icon={<Iconify icon="solar:user-bold" width={18} />}
-                iconPosition="start"
-              />
-              <Tab
-                label={`Admin (${adminRows?.length || 0})`}
-                value="admin"
-                icon={<Iconify icon="solar:shield-user-bold" width={18} />}
-                iconPosition="start"
-              />
-              <Tab
-                label={`Client (${clientRows?.length || 0})`}
-                value="client"
-                icon={<Iconify icon="solar:user-id-bold" width={18} />}
-                iconPosition="start"
-              />
-            </Tabs>
+              Activity Log
+            </Typography>
+            {campaign?.name && (
+              <Typography variant="body1" sx={{ color: '#636366', mt: 0.25 }} noWrap>
+                {campaign.name}
+              </Typography>
+            )}
           </Box>
         </Box>
-      </Paper>
 
-      <DialogContent sx={{ p: 0, backgroundColor: '#ffffff' }}>
-        <Scrollbar sx={{ maxHeight: '60vh', minHeight: '60vh' }}>
-          {rows?.length > 0 ? (
-            <Box>
-              <Table sx={{ minWidth: 650 }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell
-                      width={currentTab === 'creator' || currentTab === 'admin' || currentTab === 'client' ? '25%' : '30%'}
-                      sx={{
-                        pl: 2,
-                        py: 2,
-                        fontWeight: 700,
-                        color: '#000000',
-                        backgroundColor: '#f8f9fa',
-                        borderBottom: '2px solid #e9ecef',
-                        fontSize: '0.8rem',
-                        textTransform: 'uppercase',
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      🕐 Date & Time
-                    </TableCell>
-                    {(currentTab === 'creator' || currentTab === 'admin' || currentTab === 'client') && (
-                      <TableCell
-                        width="15%"
-                        sx={{
-                          py: 2,
-                          fontWeight: 700,
-                          color: '#000000',
-                          backgroundColor: '#f8f9fa',
-                          borderBottom: '2px solid #e9ecef',
-                          fontSize: '0.8rem',
-                          textTransform: 'uppercase',
-                          letterSpacing: 0.5,
-                        }}
-                      >
-                        🏷️ Type
-                      </TableCell>
-                    )}
-                    <TableCell
-                      width={currentTab === 'creator' || currentTab === 'admin' || currentTab === 'client' ? '38%' : '50%'}
-                      sx={{
-                        py: 2,
-                        fontWeight: 700,
-                        color: '#000000',
-                        backgroundColor: '#f8f9fa',
-                        borderBottom: '2px solid #e9ecef',
-                        fontSize: '0.8rem',
-                        textTransform: 'uppercase',
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      ⚡ Action
-                    </TableCell>
-                    <TableCell
-                      width={currentTab === 'creator' || currentTab === 'admin' || currentTab === 'client' ? '22%' : '20%'}
-                      sx={{
-                        pr: 2,
-                        py: 2,
-                        fontWeight: 700,
-                        color: '#000000',
-                        backgroundColor: '#f8f9fa',
-                        borderBottom: '2px solid #e9ecef',
-                        fontSize: '0.8rem',
-                        textTransform: 'uppercase',
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      👤 Performed By
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {rows.map((row, index) => {
-                    // Select icon based on action type with varied colors
-                    let actionIcon = 'solar:info-circle-bold';
-                    let actionColor = '#6b7280';
-
-                    if (
-                      row.action.toLowerCase().includes('created') ||
-                      row.action.toLowerCase().includes('generated')
-                    ) {
-                      actionIcon = 'solar:add-circle-bold';
-                      actionColor = '#10b981';
-                    } else if (row.action.toLowerCase().includes('updated')) {
-                      actionIcon = 'solar:pen-bold';
-                      actionColor = '#f59e0b';
-                    } else if (
-                      row.action.toLowerCase().includes('deleted') ||
-                      row.action.toLowerCase().includes('removed')
-                    ) {
-                      actionIcon = 'solar:trash-bin-minimalistic-bold';
-                      actionColor = '#ef4444';
-                    } else if (row.action.toLowerCase().includes('approved')) {
-                      actionIcon = 'solar:check-circle-bold';
-                      actionColor = '#10b981';
-                    } else if (row.action.toLowerCase().includes('rejected')) {
-                      actionIcon = 'solar:close-circle-bold';
-                      actionColor = '#ef4444';
-                    } else if (row.action.toLowerCase().includes('requested changes')) {
-                      actionIcon = 'solar:refresh-circle-bold';
-                      actionColor = '#f59e0b';
-                    } else if (row.action.toLowerCase().includes('shortlisted')) {
-                      actionIcon = 'solar:star-bold';
-                      actionColor = '#fbbf24';
-                    } else if (row.action.toLowerCase().includes('invoice')) {
-                      actionIcon = 'solar:bill-list-bold';
-                      actionColor = '#8b5cf6';
-                    } else if (row.action.toLowerCase().includes('submitted')) {
-                      actionIcon = 'solar:upload-bold';
-                      actionColor = '#3b82f6';
-                    }
-
-                    return (
-                      <TableRow
-                        key={row.id}
-                        sx={{
-                          transition: 'all 0.2s ease-in-out',
-                          '&:hover': {
-                            backgroundColor: '#f8f9fa',
-                            transform: 'translateY(-1px)',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                          },
-                          '&:last-of-type td': {
-                            borderBottom: 0,
-                          },
-                          backgroundColor: index % 2 === 0 ? '#ffffff' : '#fafbfc',
-                        }}
-                      >
-                        <TableCell
-                          sx={{
-                            pl: 2,
-                            py: 1.5,
-                            borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-                          }}
-                        >
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: '#212529',
-                              fontWeight: 400,
-                              fontSize: '0.8rem',
-                            }}
-                          >
-                            {row.datePerformed}
-                          </Typography>
-                        </TableCell>
-
-                        {(currentTab === 'creator' || currentTab === 'admin' || currentTab === 'client') && (
-                          <TableCell
-                            sx={{
-                              py: 1.5,
-                              borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-                            }}
-                          >
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                textTransform: 'uppercase',
-                                fontWeight: 700,
-                                display: 'inline-block',
-                                px: 1.5,
-                                py: 0.5,
-                                fontSize: '0.75rem',
-                                borderRadius: 0.8,
-                                bgcolor: 'white',
-                                border: '1px solid',
-                                borderBottom: '3px solid',
-                                // Creator activity colors
-                                ...(currentTab === 'creator' &&
-                                  row.submissionType === 'Agreement' && {
-                                    color: '#1976d2',
-                                    borderColor: '#1976d2',
-                                  }),
-                                ...(currentTab === 'creator' &&
-                                  row.submissionType === 'First Draft' && {
-                                    color: '#ed6c02',
-                                    borderColor: '#ed6c02',
-                                  }),
-                                ...(currentTab === 'creator' &&
-                                  row.submissionType === 'Final Draft' && {
-                                    color: '#9c27b0',
-                                    borderColor: '#9c27b0',
-                                  }),
-                                ...(currentTab === 'creator' &&
-                                  row.submissionType === 'Posting Link' && {
-                                    color: '#2e7d32',
-                                    borderColor: '#2e7d32',
-                                  }),
-                                ...(currentTab === 'creator' &&
-                                  row.submissionType === 'Pitch' && {
-                                    color: '#f57c00',
-                                    borderColor: '#f57c00',
-                                  }),
-                                // Admin activity colors
-                                ...(currentTab === 'admin' &&
-                                  row.submissionType === 'Agreement' && {
-                                    color: '#1976d2',
-                                    borderColor: '#1976d2',
-                                  }),
-                                ...(currentTab === 'admin' &&
-                                  row.submissionType === 'First Draft' && {
-                                    color: '#ed6c02',
-                                    borderColor: '#ed6c02',
-                                  }),
-                                ...(currentTab === 'admin' &&
-                                  row.submissionType === 'Final Draft' && {
-                                    color: '#9c27b0',
-                                    borderColor: '#9c27b0',
-                                  }),
-                                ...(currentTab === 'admin' &&
-                                  row.submissionType === 'Posting Link' && {
-                                    color: '#2e7d32',
-                                    borderColor: '#2e7d32',
-                                  }),
-                                ...(currentTab === 'admin' &&
-                                  row.submissionType === 'Pitch' && {
-                                    color: '#f57c00',
-                                    borderColor: '#f57c00',
-                                  }),
-                                ...(currentTab === 'admin' &&
-                                  row.submissionType === 'Withdrawal' && {
-                                    color: '#f44336',
-                                    borderColor: '#f44336',
-                                  }),
-                                ...(currentTab === 'admin' &&
-                                  row.submissionType === 'Campaign' && {
-                                    color: '#673ab7',
-                                    borderColor: '#673ab7',
-                                  }),
-                                // Client activity colors
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Agreement' && {
-                                    color: '#1976d2',
-                                    borderColor: '#1976d2',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'First Draft' && {
-                                    color: '#ed6c02',
-                                    borderColor: '#ed6c02',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Final Draft' && {
-                                    color: '#9c27b0',
-                                    borderColor: '#9c27b0',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Posting Link' && {
-                                    color: '#2e7d32',
-                                    borderColor: '#2e7d32',
-                                  }),
-                                // Client pitch actions
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Approve Pitch' && {
-                                    color: '#10b981',
-                                    borderColor: '#10b981',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Reject Pitch' && {
-                                    color: '#f44336',
-                                    borderColor: '#f44336',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Maybe Pitch' && {
-                                    color: '#f57c00',
-                                    borderColor: '#f57c00',
-                                  }),
-                                // Client draft actions
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Receive Draft' && {
-                                    color: '#3b82f6',
-                                    borderColor: '#3b82f6',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Approve Draft' && {
-                                    color: '#10b981',
-                                    borderColor: '#10b981',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Request Changes' && {
-                                    color: '#f59e0b',
-                                    borderColor: '#f59e0b',
-                                  }),
-                                // Client campaign actions
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Campaign' && {
-                                    color: '#673ab7',
-                                    borderColor: '#673ab7',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Login' && {
-                                    color: '#06b6d4',
-                                    borderColor: '#06b6d4',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Activation' && {
-                                    color: '#10b981',
-                                    borderColor: '#10b981',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Analytics' && {
-                                    color: '#3b82f6',
-                                    borderColor: '#3b82f6',
-                                  }),
-                                // Legacy types
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Pitch' && {
-                                    color: '#f57c00',
-                                    borderColor: '#f57c00',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Draft' && {
-                                    color: '#9c27b0',
-                                    borderColor: '#9c27b0',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Changes' && {
-                                    color: '#f59e0b',
-                                    borderColor: '#f59e0b',
-                                  }),
-                              }}
-                            >
-                              {row.submissionType}
-                            </Typography>
-                          </TableCell>
-                        )}
-
-                        <TableCell
-                          sx={{
-                            py: 1.5,
-                            borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Box sx={{ flex: 1 }}>
-                              {(() => {
-                                const actionText = row.action;
-
-                                // Check if this is a creator activity
-                                if (actionText.toLowerCase().includes('creator')) {
-                                  // Extract creator name from quotes
-                                  const creatorMatch = actionText.match(/Creator "([^"]+)"/);
-                                  if (creatorMatch) {
-                                    const creatorName = creatorMatch[1];
-                                    const beforeCreator = actionText.substring(
-                                      0,
-                                      creatorMatch.index
-                                    );
-                                    const afterCreator = actionText.substring(
-                                      creatorMatch.index + creatorMatch[0].length
-                                    );
-
-                                    return (
-                                      <Typography
-                                        variant="body2"
-                                        sx={{
-                                          lineHeight: 1.4,
-                                          fontSize: '0.875rem',
-                                          color: '#212529',
-                                        }}
-                                      >
-                                        {beforeCreator}Creator{' '}
-                                        <Typography
-                                          component="span"
-                                          sx={{
-                                            fontWeight: 700,
-                                            color: '#000000',
-                                            backgroundColor: '#f8f9fa',
-                                            px: 0.75,
-                                            py: 0.25,
-                                            borderRadius: 0.75,
-                                            fontSize: '0.875rem',
-                                            border: '1px solid #e9ecef',
-                                          }}
-                                        >
-                                          {creatorName}
-                                        </Typography>
-                                        {afterCreator}
-                                      </Typography>
-                                    );
-                                  }
-                                }
-
-                                // For admin activities, make admin names bold
-                                if (actionText.toLowerCase().includes('admin')) {
-                                  const adminMatch = actionText.match(/Admin "([^"]+)"/);
-                                  if (adminMatch) {
-                                    const adminName = adminMatch[1];
-                                    const beforeAdmin = actionText.substring(0, adminMatch.index);
-                                    const afterAdmin = actionText.substring(
-                                      adminMatch.index + adminMatch[0].length
-                                    );
-
-                                    return (
-                                      <Typography
-                                        variant="body2"
-                                        sx={{
-                                          lineHeight: 1.4,
-                                          fontSize: '0.875rem',
-                                          color: '#212529',
-                                        }}
-                                      >
-                                        {beforeAdmin}Admin{' '}
-                                        <Typography
-                                          component="span"
-                                          sx={{
-                                            fontWeight: 700,
-                                            color: '#000000',
-                                            backgroundColor: '#f8f9fa',
-                                            px: 0.75,
-                                            py: 0.25,
-                                            borderRadius: 0.75,
-                                            fontSize: '0.875rem',
-                                            border: '1px solid #e9ecef',
-                                          }}
-                                        >
-                                          {adminName}
-                                        </Typography>
-                                        {afterAdmin}
-                                      </Typography>
-                                    );
-                                  }
-                                }
-
-                                // Default: return original text
-                                return (
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      lineHeight: 1.4,
-                                      fontSize: '0.875rem',
-                                      color: '#212529',
-                                    }}
-                                  >
-                                    {actionText}
-                                  </Typography>
-                                );
-                              })()}
-                            </Box>
-                          </Box>
-                        </TableCell>
-
-                        <TableCell
-                          sx={{
-                            pr: 2,
-                            py: 1.5,
-                            borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              backgroundColor: '#f8f9fa',
-                              borderRadius: 1.5,
-                              px: 1.5,
-                              py: 0.75,
-                              border: '1px solid #e9ecef',
-                              textAlign: 'center',
-                            }}
-                          >
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                color: '#212529',
-                                fontWeight: 400,
-                                fontSize: '0.8rem',
-                              }}
-                            >
-                              {row.performedBy}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                p: 4,
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#ffffff',
-                height: '100%',
-              }}
-            >
+        {/* ---- Pill Tabs ---- */}
+        <Box sx={{ display: 'flex', gap: 0.75, mb: 2 }}>
+          {TABS.map((tab) => {
+            const isActive = currentTab === tab.value;
+            const count = tabCounts[tab.value];
+            return (
               <Box
+                key={tab.value}
+                component="button"
+                onClick={() => handleTabChange(tab.value)}
                 sx={{
-                  backgroundColor: 'white',
-                  borderRadius: 3,
-                  p: 3,
-                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  maxWidth: 380,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  px: 1.5,
+                  py: 0.5,
+                  border: '1px solid',
+                  borderColor: isActive ? '#1340FF' : '#e7e7e7',
+                  borderRadius: 100,
+                  bgcolor: isActive ? '#EBF0FF' : 'transparent',
+                  color: isActive ? '#1340FF' : '#636366',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  outline: 'none',
+                  transition: 'all 0.15s',
+                  '&:hover': {
+                    borderColor: isActive ? '#1340FF' : '#c7c7cc',
+                    bgcolor: isActive ? '#EBF0FF' : '#F9FAFB',
+                  },
                 }}
               >
+                {tab.label}
                 <Box
+                  component="span"
                   sx={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: '50%',
-                    backgroundColor: '#f8f9fa',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 12px',
-                    border: '2px solid #e9ecef',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: isActive ? '#1340FF' : '#8e8e93',
                   }}
                 >
-                  <Iconify
-                    icon={
-                      currentTab === 'invoice'
-                        ? 'solar:bill-list-broken'
-                        : currentTab === 'creator'
-                          ? 'solar:user-broken'
-                          : currentTab === 'admin'
-                            ? 'solar:shield-user-broken'
-                            : currentTab === 'client'
-                              ? 'solar:user-id-broken'
-                              : 'solar:list-broken'
-                    }
-                    width={32}
-                    height={32}
-                    sx={{
-                      color: '#495057',
-                      opacity: 0.7,
-                    }}
-                  />
+                  {count}
                 </Box>
-                <Typography
-                  variant="h6"
-                  gutterBottom
-                  sx={{ color: '#212529', fontWeight: 700, fontSize: '1.1rem' }}
-                >
-                  {currentTab === 'invoice'
-                    ? 'No Invoice Activities 📄'
-                    : currentTab === 'creator'
-                      ? 'No Creator Activities 👨‍🎨'
-                      : currentTab === 'admin'
-                        ? 'No Admin Activities 👨‍💼'
-                        : currentTab === 'client'
-                          ? 'No Client Activities 👔'
-                          : 'No Activities Yet 📝'}
-                </Typography>
               </Box>
-            </Box>
+            );
+          })}
+        </Box>
+
+        {/* ---- Search & Filters ---- */}
+        <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search by name or action..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify icon="eva:search-fill" width={20} sx={{ color: '#8e8e93' }} />
+                </InputAdornment>
+              ),
+              ...(searchQuery && {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => { setSearchQuery(''); setSelectedLogId(null); }} edge="end">
+                      <Iconify icon="mingcute:close-line" width={18} />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }),
+            }}
+            sx={{
+              flex: 1,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 1.5,
+                bgcolor: '#FFFFFF',
+              },
+            }}
+          />
+
+          {/* Action filter */}
+          <TextField
+            select
+            size="small"
+            value={actionFilter}
+            onChange={handleActionFilterChange}
+            sx={{
+              minWidth: 180,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 1.5,
+                bgcolor: '#FFFFFF',
+                ...(actionFilter && { '& .MuiOutlinedInput-notchedOutline': { borderColor: '#1340FF' } }),
+              },
+            }}
+            SelectProps={{
+              displayEmpty: true,
+              renderValue: (val) => {
+                if (!val) return 'All Actions';
+                const m = getCategoryMeta(val);
+                return (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <Iconify icon={m.icon} width={16} sx={{ color: m.color, flexShrink: 0 }} />
+                    <span>{val}</span>
+                  </Box>
+                );
+              },
+            }}
+          >
+            <MenuItem value="">All Actions</MenuItem>
+            {categoryList.map((cat) => {
+              const meta = getCategoryMeta(cat);
+              return (
+                <MenuItem key={cat} value={cat} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Iconify icon={meta.icon} width={18} sx={{ color: meta.color, flexShrink: 0 }} />
+                  {cat}
+                </MenuItem>
+              );
+            })}
+          </TextField>
+
+          {/* Admin filter */}
+          <TextField
+            select
+            size="small"
+            value={adminFilter}
+            onChange={handleAdminFilterChange}
+            sx={{
+              minWidth: 170,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 1.5,
+                bgcolor: '#FFFFFF',
+                ...(adminFilter && { '& .MuiOutlinedInput-notchedOutline': { borderColor: '#1340FF' } }),
+              },
+            }}
+            SelectProps={{
+              displayEmpty: true,
+              renderValue: (val) => {
+                if (!val) return 'All Admins';
+                const photo = photoMap.get(val);
+                return (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <Avatar src={photo} alt={val} sx={{ width: 20, height: 20, fontSize: 10, fontWeight: 700 }}>
+                      {val.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <span>{val}</span>
+                  </Box>
+                );
+              },
+            }}
+          >
+            <MenuItem value="">All Admins</MenuItem>
+            {adminList.map((name) => (
+              <MenuItem key={name} value={name} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Avatar src={photoMap.get(name)} alt={name} sx={{ width: 22, height: 22, fontSize: 11, fontWeight: 700 }}>
+                  {name.charAt(0).toUpperCase()}
+                </Avatar>
+                {name}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          {/* Creator filter */}
+          <TextField
+            select
+            size="small"
+            value={creatorFilter}
+            onChange={handleCreatorFilterChange}
+            sx={{
+              minWidth: 170,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 1.5,
+                bgcolor: '#FFFFFF',
+                ...(creatorFilter && { '& .MuiOutlinedInput-notchedOutline': { borderColor: '#1340FF' } }),
+              },
+            }}
+            SelectProps={{
+              displayEmpty: true,
+              renderValue: (val) => {
+                if (!val) return 'All Creators';
+                const photo = photoMap.get(val);
+                return (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <Avatar src={photo} alt={val} sx={{ width: 20, height: 20, fontSize: 10, fontWeight: 700 }}>
+                      {val.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <span>{val}</span>
+                  </Box>
+                );
+              },
+            }}
+          >
+            <MenuItem value="">All Creators</MenuItem>
+            {creatorList.map((name) => (
+              <MenuItem key={name} value={name} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Avatar src={photoMap.get(name)} alt={name} sx={{ width: 22, height: 22, fontSize: 11, fontWeight: 700 }}>
+                  {name.charAt(0).toUpperCase()}
+                </Avatar>
+                {name}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Box>
+      </Box>
+
+      {/* ---- Content: 70/30 split ---- */}
+      <DialogContent sx={{ p: 0, height: '70vh', display: 'flex' }}>
+        {/* Left panel — 70% */}
+        <Box sx={{ width: '70%', height: '100%', borderRight: '1px solid #E7E7E7' }}>
+          {filteredLogs.length > 0 ? (
+            <CampaignLogTimeline
+              logs={filteredLogs}
+              photoMap={photoMap}
+              selectedLogId={selectedLogId}
+              onSelectLog={setSelectedLogId}
+            />
+          ) : (
+            <CampaignLogEmptyState tab={currentTab} query={searchQuery || creatorFilter || actionFilter} />
           )}
-        </Scrollbar>
+        </Box>
+
+        {/* Right panel — 30% */}
+        <Box sx={{ width: '30%', height: '100%', overflow: 'auto' }}>
+          <CampaignLogDetailPanel
+            log={selectedLog}
+            allLogs={classifiedLogs}
+            campaign={campaign}
+            photoMap={photoMap}
+            invoices={invoices}
+            invoicesLoading={invoicesLoading}
+          />
+        </Box>
       </DialogContent>
     </Dialog>
   );

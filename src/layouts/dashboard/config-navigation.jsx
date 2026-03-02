@@ -167,6 +167,12 @@ export function useNavData() {
             icon: ICONS.clients,
           },
           // {
+          //   roles: ['superadmin', 'CSM', 'CSL', 'client', 'god'],
+          //   title: 'Creator Discovery Tool',
+          //   path: paths.dashboard.discoveryTool,
+          //   icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
+          // },
+          // {
           //   title: 'My Tasks',
           //   path: paths.dashboard.kanban,
           //   icon: ICONS.mytasks,
@@ -195,6 +201,12 @@ export function useNavData() {
             title: 'Credit Tier',
             path: paths.dashboard.creditTier.root,
             icon: <Iconify icon="mdi:account-star-outline" width={25} />,
+          },
+          {
+            roles: ['superadmin', 'god'],
+            title: 'Feedback',
+            path: paths.dashboard.feedback.root,
+            icon: <Iconify icon="material-symbols:rate-review-outline" width={25} />,
           },
         ],
       },
@@ -391,9 +403,7 @@ export function useNavData() {
       items: [
         {
           title: (
-            <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-              FAQ
-            </span>
+            <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>FAQ</span>
           ),
           path: paths.dashboard.faq,
           icon: <Iconify icon="material-symbols:help-outline" width={25} />,

@@ -126,6 +126,8 @@ export const endpoints = {
     },
     updatePreference: (id) => `/api/creator/updatePreference/${id}`,
     exportCreators: '/api/creator/exportCreators',
+    markMediaKitMandatory: '/api/creator/markMediaKitMandatory',
+    unmarkMediaKitMandatory: '/api/creator/unmarkMediaKitMandatory',
   },
   users: {
     newAdmin: '/api/user/admins',
@@ -343,6 +345,14 @@ export const endpoints = {
     create: '/api/credit-tier',
     update: (id) => `/api/credit-tier/${id}`,
     delete: (id) => `/api/credit-tier/${id}`,
+  },
+  npsFeedback: {
+    root: '/api/nps-feedback',
+    stats: '/api/nps-feedback/stats',
+    checkCreator: '/api/nps-feedback/check-creator',
+  },
+  discovery: {
+    creators: '/api/discovery/creators',
   },
   invoice: {
     getAll: '/api/invoice/',

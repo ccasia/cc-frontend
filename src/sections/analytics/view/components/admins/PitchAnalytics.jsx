@@ -1,8 +1,9 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable perfectionist/sort-imports */
 
-import { useState, useEffect } from "react";
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import useSWR from 'swr';
+import { useMemo } from "react";
+import { fetcher, endpoints } from 'src/utils/axios';
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -25,32 +26,25 @@ import {
 dayjs.extend(duration);
 
 export default function ApprovePitch() {
-  const [pitches, setPitches] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    async function fetchPitches() {
-      try {
-        const response = await axiosInstance.get(endpoints.campaign.pitch.all);
-        setPitches(response.data.pitches);
-      } catch (err) {
-        setError(err.response?.data?.message || "Failed to fetch pitches");
-      } finally {
-        setLoading(false);
-      }
+  // OPTIMIZED: Use SWR with aggressive caching to reduce load time
+  const { data, isLoading: loading, error } = useSWR(
+    endpoints.campaign.pitch.all,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnMount: true,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      dedupingInterval: 120000, // Cache for 2 minutes
+      keepPreviousData: true,
     }
+  );
 
-    fetchPitches();
-  }, []);
-
-  // console.log("pitches", pitches)
-
-  //   if (loading) return <Typography>Loading...</Typography>;
-  //   if (error) return <Typography>Error: {error}</Typography>;
-  //   if (pitches.length === 0) return <Typography>No pitches found.</Typography>;
-  // Filter pitches that have both createdAt and completedAt
-  const validPitches = pitches.filter(pitch => pitch.createdAt && pitch.completedAt);
+  // OPTIMIZED: Memoize filtered data to prevent unnecessary re-calculations
+  const validPitches = useMemo(() => {
+    const pitches = data?.pitches || [];
+    return pitches.filter(pitch => pitch.createdAt && pitch.completedAt);
+  }, [data]);
 
   return (
     <Card sx={{ mb: 2 }}>

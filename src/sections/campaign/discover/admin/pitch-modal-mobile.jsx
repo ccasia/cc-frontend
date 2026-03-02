@@ -1312,11 +1312,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
               },
             }}
           >
-            {isSubmitting ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : (
-              'Submit Reason'
-            )}
+            {isSubmitting ? <CircularProgress size={20} color="inherit" /> : 'Submit Reason'}
           </Button>
         </DialogActions>
       </Dialog>

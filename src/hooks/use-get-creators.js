@@ -9,11 +9,13 @@ import { useCreator } from './zustands/useCreator';
 // const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
 
 const useGetCreators = () => {
+  // OPTIMIZED: Reduce unnecessary re-fetches for better performance
   const { data, isLoading } = useSWR(endpoints.creators.getCreators, fetcher, {
-    revalidateIfStale: true,
-    revalidateOnFocus: true,
+    revalidateOnFocus: false,
     revalidateOnMount: true,
-    revalidateOnReconnect: true,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    dedupingInterval: 30000, // Cache for 30 seconds
   });
 
   const memoizedValue = useMemo(

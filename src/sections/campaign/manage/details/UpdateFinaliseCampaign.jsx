@@ -112,7 +112,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
 
   // UGC_VIDEOS is the default/base deliverable
   const existingDeliverables = useMemo(() => {
-    const delivs = ['UGC_VIDEOS'];
+    const delivs = ['UGC_VIDEOS']; // UGC_VIDEOS is always included as the base
     if (campaign?.rawFootage) delivs.push('RAW_FOOTAGES');
     if (campaign?.photos) delivs.push('PHOTOS');
     if (campaign?.ads) delivs.push('ADS');

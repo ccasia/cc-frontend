@@ -130,7 +130,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
   const [animation, setCreditAnimation] = useState(undefined);
   const [, setError] = useState();
   const approveCreditModal = useBoolean();
-  const { mutate } = useGetCampaignById(campaign.id);
+  const { mutate } = useGetCampaignById(campaign?.id);
   
   // Ref to track if credits have been synced for this campaign
   const creditsSyncedRef = useRef(false);

@@ -48,7 +48,7 @@ export const extractPostingSubmissions = (submissions) => {
   validPostings.forEach(submission => {
     // Enhanced regex patterns for better URL matching
     const instagramRegex = /https?:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/([A-Za-z0-9_-]+)/g;
-    const tiktokRegex = /https?:\/\/(www\.)?(vm\.|m\.)?tiktok\.com\/[^\s]+/g;
+    const tiktokRegex = /https?:\/\/(www\.)?(vm\.|m\.|vt\.)?tiktok\.com\/[^\s]+/g;
     
     const instagramMatches = [...(submission.content.matchAll(instagramRegex) || [])];
     const tiktokMatches = [...(submission.content.matchAll(tiktokRegex) || [])];

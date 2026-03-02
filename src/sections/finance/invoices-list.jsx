@@ -1,11 +1,12 @@
 import dayjs from 'dayjs';
+import ExcelJS from 'exceljs';
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useRef, useMemo, useState, useCallback, useEffect, useContext } from 'react';
-import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { pdf } from '@react-pdf/renderer';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Menu,
@@ -33,30 +34,27 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetAllInvoiceStats from 'src/hooks/use-get-all-invoice-stats';
 
-import { useGetAllInvoices } from 'src/api/invoices';
 import { formatCurrencyAmount } from 'src/utils/currency';
-
-import Scrollbar from 'src/components/scrollbar';
-import useDateRangePicker from 'src/components/custom-date-range-picker/use-date-range-picker';
-import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
-import { useTable, TableNoData, TablePaginationCustom } from 'src/components/table';
-import { enqueueSnackbar, useSnackbar } from 'src/components/snackbar';
-import Iconify from 'src/components/iconify';
-import { LoadingButton } from '@mui/lab';
 import axiosInstance, { endpoints } from 'src/utils/axios';
-
-import { getBankCode, getPaymentMode } from 'src/contants/bank-codes';
 
 // Add useAuthContext import
 import { useAuthContext } from 'src/auth/hooks';
+import { useGetAllInvoices } from 'src/api/invoices';
+import { getBankCode, getPaymentMode } from 'src/contants/bank-codes';
+import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
+
+import Iconify from 'src/components/iconify';
+import Scrollbar from 'src/components/scrollbar';
+import { useSnackbar } from 'src/components/snackbar';
+import { useTable, TableNoData, TablePaginationCustom } from 'src/components/table';
+import useDateRangePicker from 'src/components/custom-date-range-picker/use-date-range-picker';
 
 import InvoiceItem from './invoice-item';
 import InvoicePDF from '../invoice/invoice-pdf';
+import { STATUS_COLORS } from './invoice-constants';
 import InvoiceTableToolbar from './invoice-table-toolbar';
 import InvoiceNewEditForm from '../invoice/invoice-new-edit-form';
 import InvoiceTableFiltersResult from './invoice-table-filters-result';
-
-import { STATUS_COLORS } from './invoice-constants';
 
 const defaultFilters = {
   name: '',
@@ -70,7 +68,14 @@ const defaultFilters = {
 const TABLE_HEAD = [
   { id: 'checkbox', label: '', width: 48, hideSortIcon: true },
   { id: 'invoiceNumber', label: 'Invoice ID', width: 150, hideSortIcon: false },
+  { id: 'checkbox', label: '', width: 48, hideSortIcon: true },
+  { id: 'invoiceNumber', label: 'Invoice ID', width: 150, hideSortIcon: false },
   { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true },
+  { id: 'creatorName', label: 'Recipient', width: 180, hideSortIcon: true },
+  { id: 'createdAt', label: 'Invoice Date', width: 120, hideSortIcon: true },
+  { id: 'dueDate', label: 'Due Date', width: 120, hideSortIcon: false },
+  { id: 'amount', label: 'Amount', width: 120, hideSortIcon: true },
+  { id: 'status', label: 'Status', width: 120, hideSortIcon: true },
   { id: 'creatorName', label: 'Recipient', width: 180, hideSortIcon: true },
   { id: 'createdAt', label: 'Invoice Date', width: 120, hideSortIcon: true },
   { id: 'dueDate', label: 'Due Date', width: 120, hideSortIcon: false },
@@ -251,8 +256,11 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     (campaignName) => {
       const newCampaigns = filters.campaigns.filter((c) => c !== campaignName);
       handleFilterCampaigns(newCampaigns);
+
+      dateRange.onReset();
+      setDatePresetLabel(null);
     },
-    [filters.campaigns, handleFilterCampaigns]
+    [dateRange, filters.campaigns, handleFilterCampaigns]
   );
 
   const handleResetFilters = useCallback(() => {
@@ -644,7 +652,18 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     } finally {
       setExportLoading(false);
     }
-  }, [dataFiltered, exportPreview, filters, dateRange]);
+  }, [
+    dataFiltered,
+    exportPreview,
+    filters.status,
+    filters.currency,
+    filters.name,
+    filters.campaignName,
+    filters.campaigns,
+    dateRange.startDate,
+    dateRange.endDate,
+    enqueueSnackbar,
+  ]);
 
   const handleConfirmExport = useCallback(
     async (format = 'xlsx') => {
@@ -666,7 +685,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         setExportStatuses([]);
       }
     },
-    [handleExportCSV, handleExportPlainCSV, exportPreview]
+    [handleExportPlainCSV, handleExportCSV, enqueueSnackbar, exportPreview]
   );
 
   const handleAddStatus = useCallback(
@@ -710,7 +729,15 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         setExportLoading(false);
       }
     },
-    [filters, dateRange]
+    [
+      filters.currency,
+      filters.name,
+      filters.campaignName,
+      filters.campaigns,
+      dateRange.startDate,
+      dateRange.endDate,
+      enqueueSnackbar,
+    ]
   );
 
   const handleExportSelectAll = useCallback(
@@ -786,6 +813,9 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   const openEditInvoice = useCallback(
     (id, data) => {
+      if (mainRef?.current) {
+        savedScrollPos.current = mainRef.current.scrollTop;
+      }
       if (mainRef?.current) {
         savedScrollPos.current = mainRef.current.scrollTop;
       }
@@ -887,10 +917,10 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           try {
             const queryParams = new URLSearchParams();
             queryParams.append('limit', '10000');
-            const res = await axiosInstance.get(
+            const response = await axiosInstance.get(
               `${endpoints.invoice.getAll}?${queryParams.toString()}`
             );
-            const updatedInvoices = res.data?.data || [];
+            const updatedInvoices = response.data?.data || [];
 
             setInvoices(updatedInvoices);
 
@@ -1066,6 +1096,18 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           sx={{ p: 2.5, pt: 0 }}
         />
       )}
+      {canReset && (
+        <InvoiceTableFiltersResult
+          filters={filters}
+          onFilters={handleFilters}
+          onResetFilters={handleResetFilters}
+          results={dataFiltered.length}
+          dateRange={dateRangeWithPreset}
+          onRemoveCampaign={handleRemoveCampaign}
+          campaignImages={campaignImages}
+          sx={{ p: 2.5, pt: 0 }}
+        />
+      )}
 
       <Box
         sx={{
@@ -1183,7 +1225,36 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                         openEditInvoice={() => openEditInvoice(invoice.id)}
                       />
                     ))}
+                    {invoicesLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={TABLE_HEAD.length} align="center" sx={{ py: 5 }}>
+                          <CircularProgress />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <>
+                        {dataFiltered?.map((invoice) => (
+                          <InvoiceItem
+                            key={invoice.id}
+                            invoice={invoice}
+                            onChangeStatus={changeInvoiceStatus}
+                            selected={table.selected.includes(invoice.id)}
+                            onSelectRow={() => table.onSelectRow(invoice.id)}
+                            openEditInvoice={() => openEditInvoice(invoice.id)}
+                          />
+                        ))}
 
+                        <TableNoData
+                          notFound={notFound}
+                          sx={{
+                            '& .MuiTableCell-root': {
+                              p: 0,
+                              height: 300,
+                            },
+                          }}
+                        />
+                      </>
+                    )}
                     <TableNoData
                       notFound={notFound}
                       sx={{
@@ -1209,6 +1280,14 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         onRowsPerPageChange={table.onChangeRowsPerPage}
         sx={{ py: 2, px: 2.5 }}
       />
+      <TablePaginationCustom
+        count={pagination?.total || dataFiltered.length}
+        page={table.page}
+        rowsPerPage={table.rowsPerPage}
+        onPageChange={table.onChangePage}
+        onRowsPerPageChange={table.onChangeRowsPerPage}
+        sx={{ py: 2, px: 2.5 }}
+      />
 
       <Dialog
         open={editDialog.value}
@@ -1224,6 +1303,13 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         }}
       >
         <DialogContent sx={{ p: 2, overflow: 'hidden' }}>
+          <InvoiceNewEditForm
+            id={selectedId}
+            creators={selectedData}
+            onClose={closeEditInvoice}
+            mutateInvoices={mutateInvoices}
+            mutateStats={mutateStats}
+          />
           <InvoiceNewEditForm
             id={selectedId}
             creators={selectedData}
@@ -1775,6 +1861,10 @@ function applyFilter({ inputData, comparator, filters }) {
     inputData = inputData.filter(
       (item) => item?.campaign?.name?.toLowerCase().indexOf(campaignName.toLowerCase()) !== -1
     );
+  }
+
+  if (campaigns?.length) {
+    inputData = inputData.filter((item) => campaigns.includes(item?.campaign?.name));
   }
 
   if (campaigns?.length) {

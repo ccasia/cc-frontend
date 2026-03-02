@@ -88,7 +88,10 @@ const VideoCard = ({
     },
   });
 
-  const { formState: { isSubmitting }, reset } = formMethods;
+  const {
+    formState: { isSubmitting },
+    reset,
+  } = formMethods;
 
   // Reset form when cardType changes
   useEffect(() => {
@@ -122,11 +125,14 @@ const VideoCard = ({
   const hasRevisionRequested = currentStatus === 'CHANGES_REQUIRED';
   const isClientFeedback = false; // V2 doesn't have client feedback
   const isChangesRequired = currentStatus === 'CHANGES_REQUIRED';
-  
+
   // For V2: Show approval buttons only when video status is PENDING and not approved
   // If video was approved in first draft (status = 'APPROVED'), it should remain approved in final draft
   const isVideoNotApproved = currentStatus !== 'APPROVED';
-  const isPendingReview = (currentStatus === 'PENDING' || currentStatus === 'PENDING_REVIEW') && isVideoNotApproved && !hasRevisionRequested;
+  const isPendingReview =
+    (currentStatus === 'PENDING' || currentStatus === 'PENDING_REVIEW') &&
+    isVideoNotApproved &&
+    !hasRevisionRequested;
 
   const getVideoFeedback = () => {
     let feedback;
@@ -136,13 +142,13 @@ const VideoCard = ({
     } else {
       // Fallback to submission-level feedback
       feedback = [...(submission?.feedback || [])]
-        .filter(f => f.videosToUpdate?.includes(videoItem.id))
+        .filter((f) => f.videosToUpdate?.includes(videoItem.id))
         .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
     }
 
     // Exclude feedback already shown on previous draft cards
     if (excludeFeedbackIds?.size > 0) {
-      feedback = feedback.filter(f => !excludeFeedbackIds.has(f.id));
+      feedback = feedback.filter((f) => !excludeFeedbackIds.has(f.id));
     }
 
     return feedback;
@@ -165,7 +171,11 @@ const VideoCard = ({
     if (isV3) {
       await handleApprove(videoItem.id, formMethods.getValues());
     } else if (onIndividualApprove) {
-      await onIndividualApprove(videoItem.id, formMethods.getValues().feedback, formMethods.getValues().dueDate);
+      await onIndividualApprove(
+        videoItem.id,
+        formMethods.getValues().feedback,
+        formMethods.getValues().dueDate
+      );
     }
   };
 
@@ -174,8 +184,10 @@ const VideoCard = ({
       await handleRequestChange(videoItem.id, formMethods.getValues());
     } else if (onIndividualRequestChange) {
       const values = formMethods.getValues();
-      const cleanReasons = Array.isArray(values.reasons) 
-        ? values.reasons.filter(reason => reason !== null && reason !== undefined && reason !== '')
+      const cleanReasons = Array.isArray(values.reasons)
+        ? values.reasons.filter(
+            (reason) => reason !== null && reason !== undefined && reason !== ''
+          )
         : [];
       await onIndividualRequestChange(videoItem.id, values.feedback, cleanReasons);
     }
@@ -336,12 +348,7 @@ const VideoCard = ({
             <Typography variant="subtitle2" color="#000000">
               Due Date
             </Typography>
-            <RHFDatePicker
-              name="dueDate"
-              label="Due Date"
-              minDate={dayjs()}
-              size="small"
-            />
+            <RHFDatePicker name="dueDate" label="Due Date" minDate={dayjs()} size="small" />
 
             <Typography variant="subtitle2" color="#000000">
               Comments For Creator
@@ -358,42 +365,42 @@ const VideoCard = ({
               <Stack direction="row" spacing={1.5}>
                 {/* Hide this button for clients to prevent duplicates */}
                 {userRole !== 'client' && (
-                <Button
-                  onClick={() => {
-                    setCardType('request');
-                  }}
-                  size="small"
-                  variant="contained"
-                  disabled={isProcessing || isDisabled}
-                  sx={{
-                    bgcolor: '#FFFFFF',
-                    border: 1.5,
-                    borderRadius: 1.15,
-                    borderColor: '#e7e7e7',
-                    borderBottom: 3,
-                    borderBottomColor: '#e7e7e7',
-                    color: '#D4321C',
-                    '&:hover': {
-                      bgcolor: '#f5f5f5',
-                      borderColor: '#D4321C',
-                    },
-                    textTransform: 'none',
-                    py: 1.2,
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    height: '40px',
-                    flex: 2,
-                    '&.Mui-disabled': {
-                      cursor: 'not-allowed',
-                      pointerEvents: 'auto',
-                    },
-                  }}
-                >
-                  Request a Change
-                </Button>
+                  <Button
+                    onClick={() => {
+                      setCardType('request');
+                    }}
+                    size="small"
+                    variant="contained"
+                    disabled={isProcessing || isDisabled}
+                    sx={{
+                      bgcolor: '#FFFFFF',
+                      border: 1.5,
+                      borderRadius: 1.15,
+                      borderColor: '#e7e7e7',
+                      borderBottom: 3,
+                      borderBottomColor: '#e7e7e7',
+                      color: '#D4321C',
+                      '&:hover': {
+                        bgcolor: '#f5f5f5',
+                        borderColor: '#D4321C',
+                      },
+                      textTransform: 'none',
+                      py: 1.2,
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      height: '40px',
+                      flex: 2,
+                      '&.Mui-disabled': {
+                        cursor: 'not-allowed',
+                        pointerEvents: 'auto',
+                      },
+                    }}
+                  >
+                    Request a Change
+                  </Button>
                 )}
 
-{(() => {
+                {(() => {
                   // V3 Admin - Pending Review
                   if (isV3 && userRole === 'admin' && submission?.status === 'PENDING_REVIEW') {
                     return (
@@ -427,7 +434,7 @@ const VideoCard = ({
                       </Stack>
                     );
                   }
-                  
+
                   // V3 Admin - Sent to Admin
                   if (isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_ADMIN') {
                     return (
@@ -437,20 +444,29 @@ const VideoCard = ({
                         onClick={() => {
                           console.log('[Send to Client Button Click] submission:', submission);
                           if (!submission || !submission.id) {
-                            console.error('[Send to Client Button] submission or submission.id is missing!', submission);
+                            console.error(
+                              '[Send to Client Button] submission or submission.id is missing!',
+                              submission
+                            );
                             enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
                             return;
                           }
                           handleSendToClient(submission.id);
                         }}
                         disabled={isSubmitting || isProcessing}
-                        sx={{ bgcolor: '#203ff5', color: 'white', borderRadius: 1.5, px: 2.5, py: 1.2 }}
+                        sx={{
+                          bgcolor: '#203ff5',
+                          color: 'white',
+                          borderRadius: 1.5,
+                          px: 2.5,
+                          py: 1.2,
+                        }}
                       >
                         Send to Client
                       </Button>
                     );
                   }
-                  
+
                   // Default - Approve Button
                   return (
                     <LoadingButton
@@ -532,10 +548,10 @@ const VideoCard = ({
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
                     borderBottomColor: '#e7e7e7',
-                    color: '#231F20',
+                    color: '#637381',
                     '&:hover': {
                       bgcolor: '#f5f5f5',
-                      borderColor: '#231F20',
+                      borderColor: '#b0b0b0',
                     },
                     textTransform: 'none',
                     py: 1.2,
@@ -710,9 +726,7 @@ const VideoCard = ({
       </Box>
 
       {/* Form Section */}
-      <CardContent sx={{ pt: 0 }}>
-        {renderFormContent()}
-      </CardContent>
+      <CardContent sx={{ pt: 0 }}>{renderFormContent()}</CardContent>
 
       {/* Feedback History */}
       {videoFeedback.length > 0 && (
@@ -733,10 +747,7 @@ const VideoCard = ({
                 }}
               >
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                  <Avatar
-                    src={feedback.admin?.photoURL}
-                    sx={{ width: 20, height: 20 }}
-                  />
+                  <Avatar src={feedback.admin?.photoURL} sx={{ width: 20, height: 20 }} />
                   <Typography variant="caption" sx={{ fontWeight: 600 }}>
                     {feedback.admin?.name || 'Admin'}
                   </Typography>
@@ -745,7 +756,7 @@ const VideoCard = ({
                   </Typography>
                   {/* Removed Change Request chip from display comments */}
                 </Stack>
-                
+
                 <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
                   {editingFeedbackId === feedback.id ? (
                     <Box>
@@ -764,7 +775,11 @@ const VideoCard = ({
                           size="small"
                           onClick={async () => {
                             try {
-                              await handleAdminEditFeedback(videoItem.id, feedback.id, editingContent);
+                              await handleAdminEditFeedback(
+                                videoItem.id,
+                                feedback.id,
+                                editingContent
+                              );
                               setEditingFeedbackId(null);
                               setEditingContent('');
                             } catch (error) {
@@ -848,78 +863,94 @@ const VideoCard = ({
                 )}
 
                 {/* Admin buttons for client feedback */}
-                {userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (feedback.type === 'REASON' || feedback.type === 'COMMENT') && (submission?.status === 'SENT_TO_ADMIN' || submission?.status === 'CLIENT_FEEDBACK') && (
-                  <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => {
-                        if (!isV3) {
-                          enqueueSnackbar('Edit functionality is only available for V3 campaigns', { variant: 'info' });
-                          return;
-                        }
-                        setEditingFeedbackId(feedback.id);
-                        setEditingContent(feedback.content || '');
-                      }}
-                      sx={{
-                        fontSize: '0.75rem',
-                        py: 0.8,
-                        px: 1.5,
-                        minWidth: 'auto',
-                        border: '1.5px solid #e0e0e0',
-                        borderBottom: '3px solid #e0e0e0',
-                        color: '#000000',
-                        fontWeight: 600,
-                        borderRadius: '8px',
-                        textTransform: 'none',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
+                {userRole === 'admin' &&
+                  (feedback.admin?.admin?.role?.name === 'client' ||
+                    feedback.admin?.admin?.role?.name === 'Client') &&
+                  (feedback.type === 'REASON' || feedback.type === 'COMMENT') &&
+                  (submission?.status === 'SENT_TO_ADMIN' ||
+                    submission?.status === 'CLIENT_FEEDBACK') && (
+                    <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                          if (!isV3) {
+                            enqueueSnackbar(
+                              'Edit functionality is only available for V3 campaigns',
+                              { variant: 'info' }
+                            );
+                            return;
+                          }
+                          setEditingFeedbackId(feedback.id);
+                          setEditingContent(feedback.content || '');
+                        }}
+                        sx={{
+                          fontSize: '0.75rem',
+                          py: 0.8,
+                          px: 1.5,
+                          minWidth: 'auto',
+                          border: '1.5px solid #e0e0e0',
+                          borderBottom: '3px solid #e0e0e0',
                           color: '#000000',
-                          borderColor: '#d0d0d0',
-                          transform: 'translateY(-1px)',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                        },
-                      }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={async () => {
-                        if (!isV3) {
-                          enqueueSnackbar('Send to Creator functionality is only available for V3 campaigns', { variant: 'info' });
-                          return;
-                        }
-                        await handleAdminSendToCreator(videoItem.id, feedback.id, setLocalStatus, 'video');
-                      }}
-                      sx={{
-                        fontSize: '0.75rem',
-                        py: 0.8,
-                        px: 1.5,
-                        minWidth: 'auto',
-                        bgcolor: '#ffffff',
-                        border: '1.5px solid #e0e0e0',
-                        borderBottom: '3px solid #e0e0e0',
-                        color: '#1ABF66',
-                        fontWeight: 600,
-                        borderRadius: '8px',
-                        textTransform: 'none',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          bgcolor: '#f0f9f0',
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: '#f5f5f5',
+                            color: '#000000',
+                            borderColor: '#d0d0d0',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                          },
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={async () => {
+                          if (!isV3) {
+                            enqueueSnackbar(
+                              'Send to Creator functionality is only available for V3 campaigns',
+                              { variant: 'info' }
+                            );
+                            return;
+                          }
+                          await handleAdminSendToCreator(
+                            videoItem.id,
+                            feedback.id,
+                            setLocalStatus,
+                            'video'
+                          );
+                        }}
+                        sx={{
+                          fontSize: '0.75rem',
+                          py: 0.8,
+                          px: 1.5,
+                          minWidth: 'auto',
+                          bgcolor: '#ffffff',
+                          border: '1.5px solid #e0e0e0',
+                          borderBottom: '3px solid #e0e0e0',
                           color: '#1ABF66',
-                          borderColor: '#d0d0d0',
-                          transform: 'translateY(-1px)',
-                          boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
-                        },
-                      }}
-                    >
-                      Send to Creator
-                    </Button>
-                  </Stack>
-                )}
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: '#f0f9f0',
+                            color: '#1ABF66',
+                            borderColor: '#d0d0d0',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                          },
+                        }}
+                      >
+                        Send to Creator
+                      </Button>
+                    </Stack>
+                  )}
               </Box>
             ))}
           </Stack>
@@ -1011,9 +1042,9 @@ const DraftVideos = ({
         const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
           mediaId: videoId,
           mediaType: 'video',
-          feedback: formValues?.feedback || 'Video approved by admin'
+          feedback: formValues?.feedback || 'Video approved by admin',
         });
-        
+
         if (response.status === 200) {
           enqueueSnackbar('Video approved and sent to client!', { variant: 'success' });
           // Refresh data using SWR mutations
@@ -1026,14 +1057,14 @@ const DraftVideos = ({
         }
       } else {
         // V2 flow: Direct approval
-      const payload = {
-        type: 'approve',
+        const payload = {
+          type: 'approve',
           feedback: formValues?.feedback || 'Video approved',
           dueDate: formValues?.dueDate ? dayjs(formValues.dueDate).format('YYYY-MM-DD') : null,
-        selectedVideos: [videoId],
-      };
+          selectedVideos: [videoId],
+        };
 
-      await onSubmit(payload);
+        await onSubmit(payload);
       }
     } catch (error) {
       console.error('Error submitting video review:', error);
@@ -1051,9 +1082,9 @@ const DraftVideos = ({
           mediaId: videoId,
           mediaType: 'video',
           feedback: formValues?.feedback || 'Changes requested for video',
-          reasons: formValues?.reasons || []
+          reasons: formValues?.reasons || [],
         });
-        
+
         if (response.status === 200) {
           enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
           // Refresh data using SWR mutations
@@ -1066,14 +1097,14 @@ const DraftVideos = ({
         }
       } else {
         // V2 flow: Direct request changes
-      const payload = {
-        type: 'request',
+        const payload = {
+          type: 'request',
           feedback: formValues?.feedback || 'Changes requested for video',
           reasons: formValues?.reasons || [],
-        selectedVideos: [videoId],
-      };
+          selectedVideos: [videoId],
+        };
 
-      await onSubmit(payload);
+        await onSubmit(payload);
       }
     } catch (error) {
       console.error('Error submitting video review:', error);
@@ -1090,7 +1121,7 @@ const DraftVideos = ({
       return;
     }
     try {
-      console.log(`[handleSendToClient] PATCH /api/submission/v3/${  submissionId  }/approve/admin`);
+      console.log(`[handleSendToClient] PATCH /api/submission/v3/${submissionId}/approve/admin`);
       const response = await axiosInstance.patch(
         `/api/submission/v3/${submissionId}/approve/admin`,
         { submissionId, feedback: 'All sections approved by admin' }
@@ -1106,13 +1137,15 @@ const DraftVideos = ({
       }
     } catch (error) {
       console.error('[handleSendToClient] Error:', error, error?.response);
-      enqueueSnackbar(error?.response?.data?.message || 'Error sending to client', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || 'Error sending to client', {
+        variant: 'error',
+      });
     }
   };
 
   // Check if all videos are already approved
-  const allVideosApproved = deliverables?.videos?.length > 0 &&
-    deliverables.videos.every(v => v.status === 'APPROVED');
+  const allVideosApproved =
+    deliverables?.videos?.length > 0 && deliverables.videos.every((v) => v.status === 'APPROVED');
 
   // Determine layout type
   const hasVideos = deliverables?.videos?.length > 0;
@@ -1180,8 +1213,9 @@ const DraftVideos = ({
       if (video.individualFeedback?.length > 0) {
         allFeedback = [...video.individualFeedback];
       } else {
-        allFeedback = [...(submission?.feedback || [])]
-          .filter(f => f.videosToUpdate?.includes(video.id));
+        allFeedback = [...(submission?.feedback || [])].filter((f) =>
+          f.videosToUpdate?.includes(video.id)
+        );
       }
 
       // Sort ascending (oldest first) to match previousDrafts order
@@ -1202,9 +1236,7 @@ const DraftVideos = ({
   return (
     <>
       {/* Videos Horizontal Scroll */}
-      {!hasVideos && (
-        <Typography>No videos uploaded yet.</Typography>
-      )}
+      {!hasVideos && <Typography>No videos uploaded yet.</Typography>}
 
       {shouldUseHorizontalScroll && (
         <Box
@@ -1232,10 +1264,7 @@ const DraftVideos = ({
           }}
         >
           {deliverables.videos.map((video, index) => (
-            <Box
-              key={video.id || index}
-              sx={{ display: 'flex', gap: 2, flexShrink: 0 }}
-            >
+            <Box key={video.id || index} sx={{ display: 'flex', gap: 2, flexShrink: 0 }}>
               <Box
                 sx={{
                   width: { xs: '280px', sm: '300px', md: '300px' },
@@ -1266,53 +1295,147 @@ const DraftVideos = ({
                 />
               </Box>
               {video.previousDrafts?.length > 0 && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: 240, minWidth: 240, flexShrink: 0 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
+                    width: 240,
+                    minWidth: 240,
+                    flexShrink: 0,
+                  }}
+                >
                   {video.previousDrafts.map((draftUrl, draftIdx) => {
                     const draftFeedback = feedbackByVideo[video.id]?.draftFeedback?.[draftIdx];
                     return (
-                    <Card key={`${video.id}_prev_${draftIdx}`} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                      <Box sx={{ p: 1.5 }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', mb: 0.75 }}>
-                          {`Previous Draft ${draftIdx + 1}`}
-                        </Typography>
-                        <Box sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', aspectRatio: '16/9', cursor: 'pointer' }}
-                          onClick={() => onPreviousDraftClick(draftUrl)}
-                        >
-                          <Box component="video" src={draftUrl} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Iconify icon="mdi:play" sx={{ color: 'white', width: 24, height: 24, opacity: 0.9 }} />
+                      <Card
+                        key={`${video.id}_prev_${draftIdx}`}
+                        sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
+                      >
+                        <Box sx={{ p: 1.5 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: 'text.secondary',
+                              fontSize: '0.6rem',
+                              fontWeight: 600,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px',
+                              display: 'block',
+                              mb: 0.75,
+                            }}
+                          >
+                            {`Previous Draft ${draftIdx + 1}`}
+                          </Typography>
+                          <Box
+                            sx={{
+                              position: 'relative',
+                              borderRadius: 1,
+                              overflow: 'hidden',
+                              aspectRatio: '16/9',
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => onPreviousDraftClick(draftUrl)}
+                          >
+                            <Box
+                              component="video"
+                              src={draftUrl}
+                              sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                bgcolor: 'rgba(0,0,0,0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <Iconify
+                                icon="mdi:play"
+                                sx={{ color: 'white', width: 24, height: 24, opacity: 0.9 }}
+                              />
+                            </Box>
                           </Box>
-                        </Box>
-                        {draftFeedback && (
-                          <Box sx={{ mt: 1, p: 1, borderRadius: 1, bgcolor: '#f9f9f9', border: '1px solid #e0e0e0' }}>
-                            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5 }}>
-                              <Avatar src={draftFeedback.admin?.photoURL} sx={{ width: 16, height: 16 }} />
-                              <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.6rem' }}>
-                                {draftFeedback.admin?.name || 'Admin'}
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.55rem' }}>
-                                {dayjs(draftFeedback.createdAt).format('MMM D, h:mm A')}
-                              </Typography>
-                            </Stack>
-                            <Typography variant="caption" sx={{ color: '#333', fontSize: '0.65rem', display: 'block', lineHeight: 1.4 }}>
-                              {draftFeedback.content}
-                            </Typography>
-                            {draftFeedback.reasons?.length > 0 && (
-                              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
-                                {draftFeedback.reasons.map((reason, ri) => (
-                                  <Box key={ri} sx={{
-                                    bgcolor: '#fff', color: '#666', border: '1px solid #e0e0e0',
-                                    borderRadius: 0.5, py: 0.2, px: 0.5, fontSize: '0.55rem', fontWeight: 600,
-                                  }}>
-                                    {reason}
-                                  </Box>
-                                ))}
+                          {draftFeedback && (
+                            <Box
+                              sx={{
+                                mt: 1,
+                                p: 1,
+                                borderRadius: 1,
+                                bgcolor: '#f9f9f9',
+                                border: '1px solid #e0e0e0',
+                              }}
+                            >
+                              <Stack
+                                direction="row"
+                                alignItems="center"
+                                spacing={0.5}
+                                sx={{ mb: 0.5 }}
+                              >
+                                <Avatar
+                                  src={draftFeedback.admin?.photoURL}
+                                  sx={{ width: 16, height: 16 }}
+                                />
+                                <Typography
+                                  variant="caption"
+                                  sx={{ fontWeight: 600, fontSize: '0.6rem' }}
+                                >
+                                  {draftFeedback.admin?.name || 'Admin'}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ color: 'text.secondary', fontSize: '0.55rem' }}
+                                >
+                                  {dayjs(draftFeedback.createdAt).format('MMM D, h:mm A')}
+                                </Typography>
                               </Stack>
-                            )}
-                          </Box>
-                        )}
-                      </Box>
-                    </Card>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: '#333',
+                                  fontSize: '0.65rem',
+                                  display: 'block',
+                                  lineHeight: 1.4,
+                                }}
+                              >
+                                {draftFeedback.content}
+                              </Typography>
+                              {draftFeedback.reasons?.length > 0 && (
+                                <Stack
+                                  direction="row"
+                                  spacing={0.5}
+                                  flexWrap="wrap"
+                                  useFlexGap
+                                  sx={{ mt: 0.5 }}
+                                >
+                                  {draftFeedback.reasons.map((reason, ri) => (
+                                    <Box
+                                      key={ri}
+                                      sx={{
+                                        bgcolor: '#fff',
+                                        color: '#666',
+                                        border: '1px solid #e0e0e0',
+                                        borderRadius: 0.5,
+                                        py: 0.2,
+                                        px: 0.5,
+                                        fontSize: '0.55rem',
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      {reason}
+                                    </Box>
+                                  ))}
+                                </Stack>
+                              )}
+                            </Box>
+                          )}
+                        </Box>
+                      </Card>
                     );
                   })}
                 </Box>
@@ -1356,49 +1479,134 @@ const DraftVideos = ({
                     {video.previousDrafts.map((draftUrl, draftIdx) => {
                       const draftFeedback = feedbackByVideo[video.id]?.draftFeedback?.[draftIdx];
                       return (
-                      <Card key={`${video.id}_prev_${draftIdx}`} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                        <Box sx={{ p: 1.5 }}>
-                          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', mb: 0.75 }}>
-                            {`Previous Draft ${draftIdx + 1}`}
-                          </Typography>
-                          <Box sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', aspectRatio: '16/9', cursor: 'pointer' }}
-                            onClick={() => onPreviousDraftClick(draftUrl)}
-                          >
-                            <Box component="video" src={draftUrl} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Iconify icon="mdi:play" sx={{ color: 'white', width: 24, height: 24, opacity: 0.9 }} />
+                        <Card
+                          key={`${video.id}_prev_${draftIdx}`}
+                          sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
+                        >
+                          <Box sx={{ p: 1.5 }}>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: 'text.secondary',
+                                fontSize: '0.6rem',
+                                fontWeight: 600,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
+                                display: 'block',
+                                mb: 0.75,
+                              }}
+                            >
+                              {`Previous Draft ${draftIdx + 1}`}
+                            </Typography>
+                            <Box
+                              sx={{
+                                position: 'relative',
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                aspectRatio: '16/9',
+                                cursor: 'pointer',
+                              }}
+                              onClick={() => onPreviousDraftClick(draftUrl)}
+                            >
+                              <Box
+                                component="video"
+                                src={draftUrl}
+                                sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  bgcolor: 'rgba(0,0,0,0.3)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                <Iconify
+                                  icon="mdi:play"
+                                  sx={{ color: 'white', width: 24, height: 24, opacity: 0.9 }}
+                                />
+                              </Box>
                             </Box>
-                          </Box>
-                          {draftFeedback && (
-                            <Box sx={{ mt: 1, p: 1, borderRadius: 1, bgcolor: '#f9f9f9', border: '1px solid #e0e0e0' }}>
-                              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5 }}>
-                                <Avatar src={draftFeedback.admin?.photoURL} sx={{ width: 16, height: 16 }} />
-                                <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.6rem' }}>
-                                  {draftFeedback.admin?.name || 'Admin'}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.55rem' }}>
-                                  {dayjs(draftFeedback.createdAt).format('MMM D, h:mm A')}
-                                </Typography>
-                              </Stack>
-                              <Typography variant="caption" sx={{ color: '#333', fontSize: '0.65rem', display: 'block', lineHeight: 1.4 }}>
-                                {draftFeedback.content}
-                              </Typography>
-                              {draftFeedback.reasons?.length > 0 && (
-                                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
-                                  {draftFeedback.reasons.map((reason, ri) => (
-                                    <Box key={ri} sx={{
-                                      bgcolor: '#fff', color: '#666', border: '1px solid #e0e0e0',
-                                      borderRadius: 0.5, py: 0.2, px: 0.5, fontSize: '0.55rem', fontWeight: 600,
-                                    }}>
-                                      {reason}
-                                    </Box>
-                                  ))}
+                            {draftFeedback && (
+                              <Box
+                                sx={{
+                                  mt: 1,
+                                  p: 1,
+                                  borderRadius: 1,
+                                  bgcolor: '#f9f9f9',
+                                  border: '1px solid #e0e0e0',
+                                }}
+                              >
+                                <Stack
+                                  direction="row"
+                                  alignItems="center"
+                                  spacing={0.5}
+                                  sx={{ mb: 0.5 }}
+                                >
+                                  <Avatar
+                                    src={draftFeedback.admin?.photoURL}
+                                    sx={{ width: 16, height: 16 }}
+                                  />
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ fontWeight: 600, fontSize: '0.6rem' }}
+                                  >
+                                    {draftFeedback.admin?.name || 'Admin'}
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ color: 'text.secondary', fontSize: '0.55rem' }}
+                                  >
+                                    {dayjs(draftFeedback.createdAt).format('MMM D, h:mm A')}
+                                  </Typography>
                                 </Stack>
-                              )}
-                            </Box>
-                          )}
-                        </Box>
-                      </Card>
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: '#333',
+                                    fontSize: '0.65rem',
+                                    display: 'block',
+                                    lineHeight: 1.4,
+                                  }}
+                                >
+                                  {draftFeedback.content}
+                                </Typography>
+                                {draftFeedback.reasons?.length > 0 && (
+                                  <Stack
+                                    direction="row"
+                                    spacing={0.5}
+                                    flexWrap="wrap"
+                                    useFlexGap
+                                    sx={{ mt: 0.5 }}
+                                  >
+                                    {draftFeedback.reasons.map((reason, ri) => (
+                                      <Box
+                                        key={ri}
+                                        sx={{
+                                          bgcolor: '#fff',
+                                          color: '#666',
+                                          border: '1px solid #e0e0e0',
+                                          borderRadius: 0.5,
+                                          py: 0.2,
+                                          px: 0.5,
+                                          fontSize: '0.55rem',
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        {reason}
+                                      </Box>
+                                    ))}
+                                  </Stack>
+                                )}
+                              </Box>
+                            )}
+                          </Box>
+                        </Card>
                       );
                     })}
                   </Stack>
@@ -1410,57 +1618,59 @@ const DraftVideos = ({
       )}
 
       {/* Caption Section */}
-      {hasVideos && deliverables.videos.some(video => 
-        video?.caption || submission?.caption || submission?.finalDraft?.caption
-      ) && (
-        <Box sx={{ mt: 3, mb: -2 }}>
-          {(() => {
-            // Get the first available caption from any source
-            const caption = deliverables.videos.find(video => video?.caption)?.caption || 
-                           submission?.caption || 
-                           submission?.finalDraft?.caption;
-            
-            if (!caption) return null;
-            
-            return (
-              <Box
-                sx={{
-                  p: 2,
-                  borderRadius: '8px',
-                  bgcolor: '#f5f5f5',
-                  border: '1px solid #e0e0e0',
-                }}
-              >
-                <Typography
-                  variant="caption"
+      {hasVideos &&
+        deliverables.videos.some(
+          (video) => video?.caption || submission?.caption || submission?.finalDraft?.caption
+        ) && (
+          <Box sx={{ mt: 3, mb: -2 }}>
+            {(() => {
+              // Get the first available caption from any source
+              const caption =
+                deliverables.videos.find((video) => video?.caption)?.caption ||
+                submission?.caption ||
+                submission?.finalDraft?.caption;
+
+              if (!caption) return null;
+
+              return (
+                <Box
                   sx={{
-                    color: '#666',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    display: 'block',
-                    mb: 1,
+                    p: 2,
+                    borderRadius: '8px',
+                    bgcolor: '#f5f5f5',
+                    border: '1px solid #e0e0e0',
                   }}
                 >
-                  Caption
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: '#333',
-                    fontSize: '13px',
-                    lineHeight: 1.6,
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {caption}
-                </Typography>
-              </Box>
-            );
-          })()}
-        </Box>
-      )}
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#666',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      display: 'block',
+                      mb: 1,
+                    }}
+                  >
+                    Caption
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#333',
+                      fontSize: '13px',
+                      lineHeight: 1.6,
+                      whiteSpace: 'pre-wrap',
+                    }}
+                  >
+                    {caption}
+                  </Typography>
+                </Box>
+              );
+            })()}
+          </Box>
+        )}
 
       {/* All Videos Approved Message */}
       {allVideosApproved && (

@@ -88,7 +88,9 @@ const AdminTaskPage = lazy(() => import('src/pages/dashboard/admin/tasks'));
 
 // Performance report
 const Report = lazy(() => import('src/pages/dashboard/report/report'));
-const ReportView = lazy(() => import('src/sections/report/view/reporting-view'));
+
+// Creator Discovery Tool
+const DiscoveryTool = lazy(() => import('src/pages/dashboard/discovery-tool/discovery-tool'));
 
 // Roles
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
@@ -106,6 +108,9 @@ const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 
 // Credit Tier
 const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tier'));
+
+// Feedback
+const Feedback = lazy(() => import('src/pages/dashboard/feedback/feedback'));
 
 // Mobile View
 const MobileModalView = lazy(
@@ -230,6 +235,14 @@ export const dashboardRoutes = [
             element: <ReportingView />,
           },
         ],
+      },
+      {
+        path: 'discovery-tool',
+        element: (
+          <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+            <DiscoveryTool />
+          </RoleBasedGuard>
+        ),
       },
       // For Finance
       {
@@ -612,6 +625,14 @@ export const dashboardRoutes = [
         element: (
           <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
             <CreditTier />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'feedback',
+        element: (
+          <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+            <Feedback />
           </RoleBasedGuard>
         ),
       },

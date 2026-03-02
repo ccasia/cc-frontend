@@ -72,7 +72,7 @@ const additionalSteps = [
   { title: 'Additional Details 2', logo: '📝', color: '#D8FF01', indicatorIndex: 6 },
 ];
 
-const getSteps = (showAdditionalDetails) => 
+const getSteps = (showAdditionalDetails) =>
   showAdditionalDetails ? [...baseSteps, ...additionalSteps] : baseSteps;
 
 const backSectionLabels = ['General', 'Objective', 'Audience', 'Logistics'];
@@ -127,7 +127,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
   // Derive steps based on showAdditionalDetails state
   const steps = getSteps(showAdditionalDetails);
-  
+
   // Determine if we're in the front or back section
   const inFrontSection = isInFrontSection(activeStep);
   const inBackSection = isInBackSection(activeStep);
@@ -375,10 +375,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           'productName',
         ];
       case 1: // Objective
-        return [
-          'campaignObjectives',
-          'secondaryObjectives',
-        ];
+        return ['campaignObjectives', 'secondaryObjectives'];
       case 2: // Audience
         return [
           'country',
@@ -580,6 +577,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         clientRemarks: data.clientRemarks || '',
         products: data.products?.filter((p) => p.name?.trim().length > 0) || [],
         availabilityRules: data.availabilityRules || [],
+        locations: data.locations?.filter((l) => l.name?.trim().length > 0) || [],
+        schedulingOption: data.schedulingOption,
+        allowMultipleBookings: data.allowMultipleBookings,
         // Additional Details 1 fields
         socialMediaPlatform: Array.isArray(data.socialMediaPlatform)
           ? data.socialMediaPlatform
@@ -781,10 +781,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           values.productName
         );
       case 1: // Objective
-        return (
-          values.campaignObjectives?.length > 0 &&
-          values.secondaryObjectives?.length > 0
-        );
+        return values.campaignObjectives?.length > 0 && values.secondaryObjectives?.length > 0;
       case 2: // Audience
         return (
           values.country &&
@@ -795,7 +792,22 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           values.audienceUserPersona &&
           values.geographicFocus
         );
-      case 3: // Logistics - optional
+      case 3: {
+        // Logistics - optional
+        const type = values.logisticsType;
+
+        if (!type) return true;
+
+        if (type === 'PRODUCT_DELIVERY') {
+          return values.products?.some((p) => p.name?.trim().length > 0);
+        }
+
+        if (type === 'RESERVATION') {
+          return values.locations?.some((l) => l.name?.trim().length > 0);
+        }
+
+        return true;
+      }
       case 4: // Reservation Slots - optional (shown only for RESERVATION)
       case 5: // Logistic Remarks - optional
         return true;
@@ -812,7 +824,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   // Get the current indicator indices for both sections
   const backSectionIndicator = getBackSectionIndicatorIndex(activeStep);
   const frontSectionIndicator = getFrontSectionIndicatorIndex(activeStep);
-  
+
   // Determine if Next Steps should be highlighted (step 6 or beyond)
   const isNextStepsActive = activeStep >= 6;
 
@@ -859,57 +871,58 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               sx={{ width: '100%' }}
             >
               {/* Back Section (General, Objective, Audience, Logistics) */}
-              {inBackSection && backSectionLabels.map((label, index) => (
-                <React.Fragment key={label}>
-                  <Box
-                    onClick={() => handleBackSectionStepClick(index)}
-                    sx={{
-                      minWidth: 135,
-                      height: 45,
-                      py: 1.2,
-                      textAlign: 'center',
-                      borderRadius: 1,
-                      fontSize: 14,
-                      fontWeight: 400,
-                      bgcolor:
-                        backSectionIndicator === index
-                          ? '#1340FF'
-                          : backSectionIndicator > index
+              {inBackSection &&
+                backSectionLabels.map((label, index) => (
+                  <React.Fragment key={label}>
+                    <Box
+                      onClick={() => handleBackSectionStepClick(index)}
+                      sx={{
+                        minWidth: 135,
+                        height: 45,
+                        py: 1.2,
+                        textAlign: 'center',
+                        borderRadius: 1,
+                        fontSize: 14,
+                        fontWeight: 400,
+                        bgcolor:
+                          backSectionIndicator === index
                             ? '#1340FF'
-                            : '#fff',
-                      color:
-                        backSectionIndicator === index
-                          ? '#fff'
-                          : backSectionIndicator > index
+                            : backSectionIndicator > index
+                              ? '#1340FF'
+                              : '#fff',
+                        color:
+                          backSectionIndicator === index
                             ? '#fff'
-                            : '#636366',
-                      border: '1px solid #636366',
-                      borderColor: backSectionIndicator >= index ? '#1340FF' : '#636366',
-                      cursor: index <= backSectionIndicator ? 'pointer' : 'default',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        opacity: index <= backSectionIndicator ? 0.85 : 1,
-                      },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Box component="span">{label}</Box>
-                  </Box>
-                  {/* Connector Line after each back section label */}
-                  <Box
-                    sx={{
-                      height: 1.2,
-                      flexGrow: 1,
-                      minWidth: 30,
-                      maxWidth: 50,
-                      bgcolor: backSectionIndicator > index ? '#1340FF' : '#636366',
-                    }}
-                  />
-                </React.Fragment>
-              ))}
+                            : backSectionIndicator > index
+                              ? '#fff'
+                              : '#636366',
+                        border: '1px solid #636366',
+                        borderColor: backSectionIndicator >= index ? '#1340FF' : '#636366',
+                        cursor: index <= backSectionIndicator ? 'pointer' : 'default',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          opacity: index <= backSectionIndicator ? 0.85 : 1,
+                        },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Box component="span">{label}</Box>
+                    </Box>
+                    {/* Connector Line after each back section label */}
+                    <Box
+                      sx={{
+                        height: 1.2,
+                        flexGrow: 1,
+                        minWidth: 30,
+                        maxWidth: 50,
+                        bgcolor: backSectionIndicator > index ? '#1340FF' : '#636366',
+                      }}
+                    />
+                  </React.Fragment>
+                ))}
 
               {/* Next Steps Section (Publish or Continue Additional Details) */}
               <Box
@@ -937,57 +950,58 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               </Box>
 
               {/* Front Section Labels (Additional Details 1, Additional Details 2) */}
-              {inFrontSection && frontSectionLabels.map((label, index) => (
-                <React.Fragment key={label}>
-                  {/* Connector Line before each front section label */}
-                  <Box
-                    sx={{
-                      height: 1.2,
-                      flexGrow: 1,
-                      minWidth: 30,
-                      maxWidth: 50,
-                      bgcolor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
-                    }}
-                  />
-                  <Box
-                    onClick={() => handleFrontSectionStepClick(index)}
-                    sx={{
-                      minWidth: 135,
-                      height: 45,
-                      py: 1.2,
-                      textAlign: 'center',
-                      borderRadius: 1,
-                      fontSize: 14,
-                      fontWeight: 400,
-                      bgcolor:
-                        frontSectionIndicator === index
-                          ? '#1340FF'
-                          : frontSectionIndicator > index
+              {inFrontSection &&
+                frontSectionLabels.map((label, index) => (
+                  <React.Fragment key={label}>
+                    {/* Connector Line before each front section label */}
+                    <Box
+                      sx={{
+                        height: 1.2,
+                        flexGrow: 1,
+                        minWidth: 30,
+                        maxWidth: 50,
+                        bgcolor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
+                      }}
+                    />
+                    <Box
+                      onClick={() => handleFrontSectionStepClick(index)}
+                      sx={{
+                        minWidth: 135,
+                        height: 45,
+                        py: 1.2,
+                        textAlign: 'center',
+                        borderRadius: 1,
+                        fontSize: 14,
+                        fontWeight: 400,
+                        bgcolor:
+                          frontSectionIndicator === index
                             ? '#1340FF'
-                            : '#fff',
-                      color:
-                        frontSectionIndicator === index
-                          ? '#fff'
-                          : frontSectionIndicator > index
+                            : frontSectionIndicator > index
+                              ? '#1340FF'
+                              : '#fff',
+                        color:
+                          frontSectionIndicator === index
                             ? '#fff'
-                            : '#636366',
-                      border: '1px solid #636366',
-                      borderColor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
-                      cursor: index <= frontSectionIndicator ? 'pointer' : 'default',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        opacity: index <= frontSectionIndicator ? 0.85 : 1,
-                      },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Box component="span">{label}</Box>
-                  </Box>
-                </React.Fragment>
-              ))}
+                            : frontSectionIndicator > index
+                              ? '#fff'
+                              : '#636366',
+                        border: '1px solid #636366',
+                        borderColor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
+                        cursor: index <= frontSectionIndicator ? 'pointer' : 'default',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          opacity: index <= frontSectionIndicator ? 0.85 : 1,
+                        },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Box component="span">{label}</Box>
+                    </Box>
+                  </React.Fragment>
+                ))}
             </Stack>
           </Box>
 

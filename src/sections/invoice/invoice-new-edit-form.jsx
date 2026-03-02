@@ -1,11 +1,12 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
-import { pdf, PDFViewer } from '@react-pdf/renderer';
 import { FixedSizeList } from 'react-window';
+import { pdf, PDFViewer } from '@react-pdf/renderer';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useMemo, useEffect, useCallback } from 'react';
 
+import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Box,
   Card,
@@ -29,7 +30,6 @@ import {
   TableContainer,
   CircularProgress,
 } from '@mui/material';
-import LoadingButton from '@mui/lab/LoadingButton';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
@@ -47,9 +47,9 @@ import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import InvoicePDF from './invoice-pdf';
-import InvoiceNewEditDetails from './invoice-new-edit-details';
 import InvoiceNewEditAddress from './invoice-new-edit-address';
 import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
+import InvoiceNewEditDetails from './invoice-new-edit-details';
 
 // ----------------------------------------------------------------------
 
@@ -274,7 +274,7 @@ export default function InvoiceNewEditForm({ id, creators, onClose, mutateInvoic
     const formData = new FormData();
 
     const pdfBlob = await pdf(<InvoicePDF invoice={invoice} />).toBlob();
-    
+
     formData.append('file', pdfBlob, `Invoice-${id}.pdf`);
     formData.append(
       'data',

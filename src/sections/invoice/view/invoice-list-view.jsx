@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
+import { useTheme } from '@mui/material';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
@@ -78,12 +79,14 @@ const defaultFilters = {
 
 export default function InvoiceListView({ campId, invoices, isDisabled: propIsDisabled = false }) {
   const { enqueueSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const settings = useSettingsContext();
 
   const { user } = useAuthContext();
 
   const [openNewInvoiceModal, setOpenNewInvoiceModal] = useState(false);
 
-  const { data } = useGetAgreements(campId);
+  const { data, isLoading, error } = useGetAgreements(campId);
 
   const router = useRouter();
 
@@ -150,8 +153,8 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
   const dataFiltered = useMemo(() => {
     if (alphabetical) {
       return [...filteredData].sort((a, b) => {
-        const nameA = ((a.creator.user.name ?? a.invoiceFrom?.name) || '').toLowerCase();
-        const nameB = ((b.creator.user.name ?? b.invoiceFrom?.name) || '').toLowerCase();
+        const nameA = (a.invoiceFrom?.name || '').toLowerCase();
+        const nameB = (b.invoiceFrom?.name || '').toLowerCase();
         return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
       });
     }
@@ -705,6 +708,7 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                   cursor: 'not-allowed',
                   pointerEvents: 'auto',
                 },
+
                 textTransform: 'none',
                 fontWeight: 600,
                 whiteSpace: 'nowrap',
@@ -941,15 +945,14 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                         >
                           <TableCell sx={{ width: 300, display: 'flex', alignItems: 'center' }}>
                             <Avatar alt={row.invoiceFrom?.name} sx={{ mr: 2 }}>
-                              {row.creator?.user?.name?.charAt(0).toUpperCase() ??
-                                row.invoiceFrom?.name?.charAt(0).toUpperCase()}
+                              {row.invoiceFrom?.name?.charAt(0).toUpperCase()}
                             </Avatar>
 
                             <ListItemText
                               disableTypography
                               primary={
                                 <Typography variant="body2" noWrap sx={{ mt: 1 }}>
-                                  {row.creator?.user?.name ?? row.invoiceFrom?.name}
+                                  {row.invoiceFrom?.name}
                                 </Typography>
                               }
                               secondary={

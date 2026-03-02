@@ -102,11 +102,9 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     audienceGender: Yup.array()
       .min(1, 'At least one option')
       .required('Audience Gender is required'),
-    countries: Yup.array()
-      .min(1, 'At least one country is required')
-      .required('Countries is required'),
-    audienceLocation: Yup.array().when('countries', {
-      is: (countries) => countries && countries.includes('Malaysia'),
+    country: Yup.string().required('Country is required'),
+    audienceLocation: Yup.array().when('country', {
+      is: 'Malaysia',
       then: (schema) =>
         schema.min(1, 'At least one option').required('Audience location is required'),
       otherwise: (schema) => schema.notRequired(),
@@ -164,11 +162,9 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     audienceGender: Yup.array()
       .min(1, 'At least one option')
       .required('Audience Gender is required'),
-    countries: Yup.array()
-      .min(1, 'At least one country is required')
-      .required('Countries is required'),
-    audienceLocation: Yup.array().when('countries', {
-      is: (countries) => countries && countries.includes('Malaysia'),
+    country: Yup.string().required('Country is required'),
+    audienceLocation: Yup.array().when('country', {
+      is: 'Malaysia',
       then: (schema) =>
         schema.min(1, 'At least one option').required('Audience location is required'),
       otherwise: (schema) => schema.notRequired(),
@@ -427,7 +423,7 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
 
     // NOTE: Need to set default timeline here because of form change
     const startDateVal = data.campaignStartDate ? dayjs(data.campaignStartDate) : dayjs();
-    const {campaignType} = data;
+    const { campaignType } = data;
 
     // Process default timelines based on campaign type
     let processedTimelines = [];
@@ -522,8 +518,12 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
               id: 4,
               name: 'Posting',
               timeline_type: { name: 'Posting' },
-              startDate: postingStartDateVal ? postingStartDateVal.format('ddd LL') : startDateVal.add(20, 'day').format('ddd LL'),
-              endDate: postingEndDateVal ? postingEndDateVal.format('ddd LL') : startDateVal.add(22, 'day').format('ddd LL'),
+              startDate: postingStartDateVal
+                ? postingStartDateVal.format('ddd LL')
+                : startDateVal.add(20, 'day').format('ddd LL'),
+              endDate: postingEndDateVal
+                ? postingEndDateVal.format('ddd LL')
+                : startDateVal.add(22, 'day').format('ddd LL'),
               duration: 2,
               for: 'creator',
             },

@@ -3,14 +3,7 @@ import { useSnackbar } from 'notistack';
 import React, { useMemo, useState } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import {
-  Box,
-  Stack,
-  Button,
-  Dialog,
-  Typography,
-  DialogContent,
-} from '@mui/material';
+import { Box, Stack, Button, Dialog, Typography, DialogContent } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -38,12 +31,12 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
   const getRealPitchId = () => {
     const pitchId = pitch?.id;
     if (!pitchId) return null;
-    
+
     // Remove 'shortlisted-' prefix if present
     if (pitchId.startsWith('shortlisted-')) {
       return pitchId.replace('shortlisted-', '');
     }
-    
+
     return pitchId;
   };
 
@@ -72,7 +65,7 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
   const handleWithdrawCreator = async () => {
     try {
       setLoading(true);
-      
+
       // If this is a synthetic pitch (shortlisted creator without a real pitch record),
       // use the removeCreator endpoint instead of the withdraw endpoint
       if (isSyntheticPitch()) {
@@ -81,7 +74,7 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
           creatorId: pitch.userId,
           campaignId,
         });
-        
+
         enqueueSnackbar(res?.data?.message || 'Creator withdrawn successfully');
         setConfirmDialogOpen(false);
         if (onRemoved) {
@@ -89,14 +82,14 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
         }
         return;
       }
-      
+
       // For real pitch records, use the withdraw endpoint
       const realPitchId = getRealPitchId();
-      
+
       if (!realPitchId) {
         throw new Error('Invalid pitch ID');
       }
-      
+
       const res = await axiosInstance.patch(endpoints.campaign.pitch.v3.withdraw(realPitchId), {
         reason: 'Withdrawn by admin',
       });
@@ -107,9 +100,12 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
         onRemoved();
       }
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || error?.message || 'Failed to withdraw creator', {
-        variant: 'error',
-      });
+      enqueueSnackbar(
+        error?.response?.data?.message || error?.message || 'Failed to withdraw creator',
+        {
+          variant: 'error',
+        }
+      );
     } finally {
       setLoading(false);
     }
@@ -151,7 +147,10 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
           <Button
             variant="outlined"
             size="small"
-            onClick={() => setConfirmDialogOpen(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmDialogOpen(true);
+            }}
             disabled={isDisabled}
             sx={{
               cursor: isDisabled ? 'not-allowed' : 'pointer',
@@ -234,7 +233,11 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
       {/* Custom Styled Confirmation Dialog */}
       <Dialog
         open={confirmDialogOpen}
-        onClose={() => setConfirmDialogOpen(false)}
+        onClose={(e) => {
+          if (e && e.stopPropagation) e.stopPropagation();
+          setConfirmDialogOpen(false);
+        }}
+        onClick={(e) => e.stopPropagation()}
         maxWidth="xs"
         fullWidth
         PaperProps={{
@@ -299,7 +302,11 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
               fullWidth
               variant="contained"
               loading={loading}
-              onClick={isApproved ? handleWithdrawCreator : handleRemoveCreator}
+              onClick={(e) => {
+                e.stopPropagation();
+                // eslint-disable-next-line no-unused-expressions
+                isApproved ? handleWithdrawCreator() : handleRemoveCreator();
+              }}
               sx={{
                 bgcolor: isApproved ? '#D4321C' : '#3A3A3C',
                 borderBottom: isApproved ? '3px solid #b71c1c' : '3px solid #00000073',
@@ -318,7 +325,10 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
             </LoadingButton>
             <Button
               fullWidth
-              onClick={() => setConfirmDialogOpen(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmDialogOpen(false);
+              }}
               disabled={loading}
               sx={{
                 color: '#3A3A3C',

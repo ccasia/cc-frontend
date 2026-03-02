@@ -36,9 +36,17 @@ export default function UserCardsView() {
 
   const filteredCreators = useMemo(
     () =>
-      creators?.filter((creator) =>
-        creator.name.toLowerCase().includes(searchTerm.toLowerCase())
-      ) || [],
+      creators?.filter((creator) => {
+        // Filter out creators without any connected social media accounts
+        const hasInstagram = !!creator?.creator?.instagramUser;
+        const hasTiktok = !!creator?.creator?.tiktokUser;
+        const hasConnectedMedia = hasInstagram || hasTiktok;
+        
+        // Also apply search filter
+        const matchesSearch = creator.name.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        return hasConnectedMedia && matchesSearch;
+      }) || [],
     [creators, searchTerm]
   );
 
