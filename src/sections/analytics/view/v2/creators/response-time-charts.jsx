@@ -1,4 +1,5 @@
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 import RemoveIcon from '@mui/icons-material/Remove';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -125,6 +126,18 @@ function SingleMetricChart({ title, numericData, color, months, latestValue, tre
     </Box>
   );
 }
+
+SingleMetricChart.propTypes = {
+  title: PropTypes.string.isRequired,
+  numericData: PropTypes.arrayOf(PropTypes.number).isRequired,
+  color: PropTypes.string.isRequired,
+  months: PropTypes.arrayOf(PropTypes.string).isRequired,
+  latestValue: PropTypes.number.isRequired,
+  trend: PropTypes.number,
+  trendLabel: PropTypes.string,
+  fmtHours: PropTypes.func.isRequired,
+  onAxisClick: PropTypes.func.isRequired,
+};
 
 export default function ResponseTimeCharts() {
   const { startDate, endDate } = useDateFilter();

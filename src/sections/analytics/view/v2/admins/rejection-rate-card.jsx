@@ -5,24 +5,25 @@ import {
   Chip,
   Menu,
   Stack,
-  Table,
+  Avatar,
   Button,
   Divider,
   Checkbox,
   MenuItem,
-  TableRow,
-  TableBody,
-  TableCell,
-  TableHead,
+  Skeleton,
   Typography,
-  TableContainer,
+  LinearProgress,
 } from '@mui/material';
 import BlockIcon from '@mui/icons-material/Block';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
+import useGetClientRejectionRate from 'src/hooks/use-get-client-rejection-rate';
+
 import ChartCard from '../components/chart-card';
-import { CHART_COLORS } from '../chart-config';
-import { MOCK_REJECTION_RATE } from '../mock-data';
+import { CHART_COLORS, UI_COLORS } from '../chart-config';
+import { useDateFilter } from '../date-filter-context';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -37,31 +38,12 @@ const PACKAGE_COLOR_MAP = {
   Custom: CHART_COLORS.warning,
 };
 
-const colors = {
-  secondary: '#666666',
-  border: '#E8ECEE',
-  error: '#EF4444',
-  success: '#10B981',
-  warning: '#F59E0B',
-};
-
-// Shared column widths so header + body tables stay aligned
-const COL_WIDTHS = ['36%', '16%', '12%', '12%', '24%'];
+const SEVERITY_COLORS = { error: '#EF4444', success: '#10B981', warning: '#F59E0B' };
 
 function getRateColor(rate) {
-  if (rate <= 15) return colors.success;
-  if (rate <= 25) return colors.warning;
-  return colors.error;
-}
-
-function SharedColGroup() {
-  return (
-    <colgroup>
-      {COL_WIDTHS.map((w, i) => (
-        <col key={i} style={{ width: w }} />
-      ))}
-    </colgroup>
-  );
+  if (rate <= 15) return SEVERITY_COLORS.success;
+  if (rate <= 25) return SEVERITY_COLORS.warning;
+  return SEVERITY_COLORS.error;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,6 +51,10 @@ function SharedColGroup() {
 // ---------------------------------------------------------------------------
 
 export default function RejectionRateCard() {
+  const router = useRouter();
+  const { startDate, endDate } = useDateFilter();
+  const { breakdown, isLoading } = useGetClientRejectionRate({ startDate, endDate });
+
   const [selectedPackages, setSelectedPackages] = useState(PACKAGE_TYPES);
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
@@ -77,23 +63,18 @@ export default function RejectionRateCard() {
 
   const filteredBreakdown = useMemo(
     () =>
-      [...MOCK_REJECTION_RATE.breakdown]
+      [...breakdown]
         .filter((row) => selectedPackages.includes(row.package))
         .sort((a, b) => b.rate - a.rate),
-    [selectedPackages]
+    [breakdown, selectedPackages]
   );
 
-  const filteredAvgRate = useMemo(() => {
-    if (filteredBreakdown.length === 0) return 0;
-    const totalRejected = filteredBreakdown.reduce((sum, r) => sum + r.rejected, 0);
-    const totalSubmissions = filteredBreakdown.reduce((sum, r) => sum + r.total, 0);
-    return totalSubmissions > 0 ? Math.round((totalRejected / totalSubmissions) * 1000) / 10 : 0;
+  const { filteredAvgRate, totalRejected, totalSubmissions } = useMemo(() => {
+    const rej = filteredBreakdown.reduce((sum, r) => sum + r.rejected, 0);
+    const tot = filteredBreakdown.reduce((sum, r) => sum + r.total, 0);
+    const rate = tot > 0 ? Math.round((rej / tot) * 1000) / 10 : 0;
+    return { filteredAvgRate: rate, totalRejected: rej, totalSubmissions: tot };
   }, [filteredBreakdown]);
-
-  const maxRate = useMemo(
-    () => (filteredBreakdown.length > 0 ? Math.max(...filteredBreakdown.map((r) => r.rate)) : 1),
-    [filteredBreakdown]
-  );
 
   // -- Handlers -------------------------------------------------------------
 
@@ -130,7 +111,7 @@ export default function RejectionRateCard() {
         fontSize: '0.8rem',
         bgcolor: menuOpen ? '#F4F6F8' : 'transparent',
         border: '1px solid',
-        borderColor: menuOpen ? '#C4CDD5' : '#E8ECEE',
+        borderColor: menuOpen ? '#C4CDD5' : UI_COLORS.border,
         borderRadius: 1,
         px: 1.5,
         py: 0.5,
@@ -148,240 +129,215 @@ export default function RejectionRateCard() {
       subtitle="Average rejection rate across V4 campaigns"
       headerRight={filterButton}
     >
-      {/* Avg rate stat row */}
+      {isLoading ? (
+        <Box sx={{ px: 2, pt: 1, pb: 2 }}>
+          {/* Hero stat skeleton */}
+          <Box sx={{ bgcolor: UI_COLORS.barBg, borderRadius: 1.5, px: 2, py: 1.5 }}>
+            <Skeleton variant="text" width={140} height={36} />
+            <Skeleton variant="rectangular" height={8} sx={{ mt: 1, borderRadius: 1 }} />
+            <Skeleton variant="text" width={100} height={16} sx={{ mt: 0.75 }} />
+          </Box>
+          {/* Row skeletons */}
+          {[...Array(3)].map((_, i) => (
+            <Stack key={i} direction="row" alignItems="center" spacing={1.5} sx={{ mt: 1, px: 0.5 }}>
+              <Skeleton variant="text" width={24} height={20} />
+              <Skeleton variant="rounded" width={32} height={32} sx={{ borderRadius: '8px', flexShrink: 0 }} />
+              <Box sx={{ flex: 1, borderLeft: '3px solid', borderColor: UI_COLORS.border, pl: 1.5 }}>
+                <Skeleton variant="text" height={20} />
+              </Box>
+            </Stack>
+          ))}
+        </Box>
+      ) : (
+      <>
+      {/* Avg rate summary */}
       <Box sx={{ px: 2, pt: 1, pb: 1.5 }}>
-        <Stack direction="row" alignItems="baseline" spacing={1}>
-          <Typography
+        <Box sx={{ bgcolor: UI_COLORS.barBg, borderRadius: 1.5, px: 2, py: 1.5 }}>
+          <Stack direction="row" alignItems="baseline" spacing={1}>
+            <Typography
+              sx={{
+                fontSize: '1.75rem',
+                fontWeight: 700,
+                lineHeight: 1.2,
+                color: getRateColor(filteredAvgRate),
+              }}
+            >
+              {filteredAvgRate}%
+            </Typography>
+            <Typography variant="caption" sx={{ color: UI_COLORS.textSecondary }}>
+              avg rate &middot; {filteredBreakdown.length} campaign{filteredBreakdown.length !== 1 ? 's' : ''}
+            </Typography>
+          </Stack>
+
+          <LinearProgress
+            variant="determinate"
+            value={totalSubmissions > 0 ? (totalRejected / totalSubmissions) * 100 : 0}
             sx={{
-              fontSize: '1.75rem',
-              fontWeight: 700,
-              lineHeight: 1.2,
-              color: getRateColor(filteredAvgRate),
+              mt: 1.25,
+              height: 8,
+              borderRadius: 1,
+              bgcolor: UI_COLORS.border,
+              '& .MuiLinearProgress-bar': {
+                borderRadius: 1,
+                bgcolor: getRateColor(filteredAvgRate),
+              },
             }}
-          >
-            {filteredAvgRate}%
+          />
+
+          <Typography variant="caption" sx={{ color: UI_COLORS.textMuted, mt: 0.75, display: 'block' }}>
+            {totalRejected} rejected / {totalSubmissions} sent
           </Typography>
-          <Typography variant="caption" sx={{ color: colors.secondary }}>
-            avg rejection rate
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{ color: '#919EAB', ml: 'auto !important' }}
-          >
-            {filteredBreakdown.length} campaign{filteredBreakdown.length !== 1 ? 's' : ''}
-          </Typography>
-        </Stack>
+        </Box>
       </Box>
 
       {/* Table or empty state */}
       {filteredBreakdown.length === 0 ? (
-        <Stack alignItems="center" justifyContent="center" sx={{ py: 6 }}>
-          <Typography variant="body2" sx={{ color: '#919EAB' }}>
+        <Stack alignItems="center" justifyContent="center" sx={{ py: 3 }}>
+          <BlockIcon sx={{ fontSize: 28, color: UI_COLORS.textMuted, mb: 1 }} />
+          <Typography variant="body2" sx={{ color: UI_COLORS.textMuted }}>
             No campaigns match the selected filters
           </Typography>
         </Stack>
       ) : (
-        <>
-          {/* Static table header */}
-          <TableContainer>
-            <Table size="small" sx={{ tableLayout: 'fixed' }}>
-              <SharedColGroup />
-              <TableHead>
-                <TableRow
+        <Box
+          sx={{
+            maxHeight: 280,
+            overflow: 'auto',
+            '&::-webkit-scrollbar': { width: '3px' },
+            '&::-webkit-scrollbar-track': { background: 'transparent' },
+            '&::-webkit-scrollbar-thumb': { background: 'transparent', borderRadius: '1.5px' },
+            '&:hover::-webkit-scrollbar-thumb': { background: '#D0D5DA' },
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'transparent transparent',
+            '&:hover': { scrollbarColor: '#D0D5DA transparent' },
+          }}
+        >
+          <Stack spacing={0}>
+            {filteredBreakdown.map((row, index) => {
+              const rateColor = getRateColor(row.rate);
+              const pkgColor = PACKAGE_COLOR_MAP[row.package];
+
+              return (
+                <Stack
+                  key={row.campaignId}
+                  direction="row"
+                  alignItems="center"
+                  spacing={1.5}
+                  onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(row.campaignId))}
                   sx={{
-                    '& td, & th': { bgcolor: '#F4F6F8' },
-                    '& td:first-of-type, & th:first-of-type': { borderRadius: '8px 0 0 8px' },
-                    '& td:last-of-type, & th:last-of-type': { borderRadius: '0 8px 8px 0' },
+                    py: 1,
+                    px: 1.5,
+                    borderRadius: 1,
+                    cursor: 'pointer',
+                    transition: 'background-color 0.15s',
+                    '&:hover': { bgcolor: UI_COLORS.backgroundHover },
                   }}
                 >
-                  {[
-                    { label: 'Campaign', align: 'left' },
-                    { label: 'Package', align: 'center' },
-                    { label: 'Rejected', align: 'center' },
-                    { label: 'Total', align: 'center' },
-                    { label: 'Rate', align: 'right' },
-                  ].map((col) => (
-                    <TableCell
-                      key={col.label}
-                      align={col.align}
-                      sx={{
-                        fontWeight: 600,
-                        fontSize: '0.7rem',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.04em',
-                        color: '#919EAB',
-                        border: 'none',
-                        py: 0.75,
-                      }}
-                    >
-                      {col.label}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-            </Table>
-          </TableContainer>
+                  {/* Rank */}
+                  <Typography
+                    sx={{
+                      width: 24,
+                      flexShrink: 0,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: UI_COLORS.textMuted,
+                      textAlign: 'right',
+                    }}
+                  >
+                    #{index + 1}
+                  </Typography>
 
-          {/* Scrollable table body */}
-          <TableContainer
-            sx={{
-              maxHeight: 380,
-              overflow: 'auto',
-              '&::-webkit-scrollbar': { width: '3px' },
-              '&::-webkit-scrollbar-track': { background: 'transparent' },
-              '&::-webkit-scrollbar-thumb': {
-                background: 'transparent',
-                borderRadius: '1.5px',
-              },
-              '&:hover::-webkit-scrollbar-thumb': {
-                background: '#D0D5DA',
-              },
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'transparent transparent',
-              '&:hover': {
-                scrollbarColor: '#D0D5DA transparent',
-              },
-            }}
-          >
-            <Table size="small" sx={{ tableLayout: 'fixed' }}>
-              <SharedColGroup />
-              <TableBody>
-                {filteredBreakdown.map((row, index) => {
-                  const isLast = index === filteredBreakdown.length - 1;
-                  const rateColor = getRateColor(row.rate);
-                  const pkgColor = PACKAGE_COLOR_MAP[row.package];
+                  {/* Campaign image */}
+                  <Avatar
+                    src={row.campaignImage}
+                    variant="rounded"
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      flexShrink: 0,
+                      borderRadius: '8px',
+                      bgcolor: UI_COLORS.barBg,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: UI_COLORS.textMuted,
+                    }}
+                  >
+                    {row.campaign?.charAt(0)?.toUpperCase()}
+                  </Avatar>
 
-                  return (
-                    <TableRow
-                      key={row.campaign}
-                      sx={{
-                        '&:hover': { bgcolor: '#F9FAFB' },
-                      }}
-                    >
-                      {/* Campaign name */}
-                      <TableCell
+                  {/* Left accent + content */}
+                  <Box
+                    sx={{
+                      flex: 1,
+                      minWidth: 0,
+                      borderLeft: `3px solid ${pkgColor}`,
+                      pl: 1.5,
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Typography
+                        title={row.campaign}
                         sx={{
-                          borderColor: colors.border,
-                          borderBottom: isLast ? 'none' : undefined,
-                          py: 1.25,
+                          flex: 1,
+                          minWidth: 0,
+                          fontWeight: 500,
+                          fontSize: 13,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
                         }}
                       >
-                        <Typography
-                          variant="body2"
-                          title={row.campaign}
-                          sx={{
-                            fontWeight: 500,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {row.campaign}
-                        </Typography>
-                      </TableCell>
+                        {row.campaign}
+                      </Typography>
 
-                      {/* Package tier */}
-                      <TableCell
-                        align="center"
+                      <Chip
+                        label={row.package}
+                        size="small"
                         sx={{
-                          borderColor: colors.border,
-                          borderBottom: isLast ? 'none' : undefined,
-                          py: 1.25,
+                          bgcolor: `${pkgColor}14`,
+                          color: pkgColor,
+                          fontWeight: 600,
+                          fontSize: '0.7rem',
+                          height: 22,
+                          flexShrink: 0,
+                          '&:hover': { bgcolor: `${pkgColor}14` },
                         }}
-                      >
-                        <Chip
-                          label={row.package}
-                          size="small"
-                          sx={{
-                            bgcolor: `${pkgColor}14`,
-                            color: pkgColor,
-                            fontWeight: 600,
-                            fontSize: '0.7rem',
-                            height: 22,
-                            '&:hover': { bgcolor: `${pkgColor}14` },
-                          }}
-                        />
-                      </TableCell>
+                      />
 
-                      {/* Rejected count */}
-                      <TableCell
-                        align="center"
+                      <Typography
                         sx={{
-                          borderColor: colors.border,
-                          borderBottom: isLast ? 'none' : undefined,
-                          py: 1.25,
+                          flexShrink: 0,
+                          fontSize: 12,
+                          color: UI_COLORS.textMuted,
                           fontVariantNumeric: 'tabular-nums',
                         }}
                       >
-                        {row.rejected}
-                      </TableCell>
+                        {row.rejected}/{row.total}
+                      </Typography>
 
-                      {/* Total count */}
-                      <TableCell
-                        align="center"
+                      <Typography
                         sx={{
-                          borderColor: colors.border,
-                          borderBottom: isLast ? 'none' : undefined,
-                          py: 1.25,
+                          flexShrink: 0,
+                          fontWeight: 600,
+                          fontSize: 13,
+                          color: rateColor,
+                          minWidth: 48,
+                          textAlign: 'right',
                           fontVariantNumeric: 'tabular-nums',
                         }}
                       >
-                        {row.total}
-                      </TableCell>
+                        {row.rate}%
+                      </Typography>
+                    </Stack>
+                  </Box>
+                </Stack>
+              );
+            })}
+          </Stack>
+        </Box>
+      )}
 
-                      {/* Rate bar + chip */}
-                      <TableCell
-                        align="right"
-                        sx={{
-                          borderColor: colors.border,
-                          borderBottom: isLast ? 'none' : undefined,
-                          py: 1.25,
-                        }}
-                      >
-                        <Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={1}>
-                          <Box
-                            sx={{
-                              flex: 1,
-                              maxWidth: 80,
-                              height: 8,
-                              borderRadius: 0.5,
-                              bgcolor: '#F4F6F8',
-                              overflow: 'hidden',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                width: `${(row.rate / maxRate) * 100}%`,
-                                height: '100%',
-                                borderRadius: 0.5,
-                                bgcolor: rateColor,
-                                transition: 'width 0.3s ease',
-                              }}
-                            />
-                          </Box>
-                          <Chip
-                            label={`${row.rate}%`}
-                            size="small"
-                            sx={{
-                              bgcolor: `${rateColor}18`,
-                              color: rateColor,
-                              fontWeight: 600,
-                              fontSize: '0.75rem',
-                              height: 24,
-                              minWidth: 52,
-                              '&:hover': { bgcolor: `${rateColor}18` },
-                            }}
-                          />
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </>
+      </>
       )}
 
       {/* Package filter menu */}
@@ -397,7 +353,7 @@ export default function RejectionRateCard() {
               mt: 0.5,
               minWidth: 180,
               borderRadius: 1.5,
-              border: '1px solid #E8ECEE',
+              border: `1px solid ${UI_COLORS.border}`,
               boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
             },
           },
