@@ -27,6 +27,7 @@ const useGetClientRejectionRate = ({ startDate, endDate } = {}) => {
     () => ({
       avgRate: data?.data?.avgRate ?? 0,
       breakdown: data?.data?.breakdown ?? [],
+      trend: data?.data?.trend ?? [],
       isLoading,
       isError: error,
     }),

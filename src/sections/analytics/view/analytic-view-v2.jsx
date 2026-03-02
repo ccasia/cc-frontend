@@ -10,6 +10,7 @@ import DateFilterSelect from 'src/sections/feedback/components/date-filter-selec
 import useGetCreatorGrowth from 'src/hooks/use-get-creator-growth';
 import useGetActivationRate from 'src/hooks/use-get-activation-rate';
 import useGetCreatorSatisfaction from 'src/hooks/use-get-creator-satisfaction';
+import useGetPitchRate from 'src/hooks/use-get-pitch-rate';
 
 import KpiCard from './v2/components/kpi-card';
 import { CHART_COLORS } from './v2/chart-config';
@@ -28,12 +29,8 @@ import CreatorGrowthChart from './v2/creators/creator-growth-chart';
 import ResponseTimeCharts from './v2/creators/response-time-charts';
 import ActivationRateChart from './v2/creators/activation-rate-chart';
 import TimeToActivationChart from './v2/creators/time-to-activation-chart';
-import CreatorRetentionChart from './v2/creators/creator-retention-chart';
+// import CreatorRetentionChart from './v2/creators/creator-retention-chart';
 import MediaKitActivationChart from './v2/creators/media-kit-activation-chart';
-// Mock data for top-level KPIs
-import {
-  MOCK_RETENTION,
-} from './v2/mock-data';
 
 const AMBER = '#FFAB00';
 const BAR_BG = '#F4F6F8';
@@ -57,6 +54,7 @@ function KpiCards() {
 
   const { creatorGrowth, periodComparison } = useGetCreatorGrowth(hookOptions);
   const { activationRate, periodComparison: activationPeriodComparison } = useGetActivationRate(hookOptions);
+  const { pitchRate, periodComparison: pitchPeriodComparison } = useGetPitchRate(hookOptions);
 
   // Always call hooks unconditionally — use monthly filtered only when not daily
   const monthlyFiltered = useFilteredData(creatorGrowth);
@@ -64,8 +62,9 @@ function KpiCards() {
 
   const monthlyFilteredActivation = useFilteredData(activationRate);
   const filteredActivation = isDaily ? activationRate : monthlyFilteredActivation;
+  const monthlyFilteredPitch = useFilteredData(pitchRate);
+  const filteredPitch = isDaily ? pitchRate : monthlyFilteredPitch;
   const { trend: npsTrend, overall: npsOverall } = useGetCreatorSatisfaction();
-  const filteredRetention = useFilteredData(MOCK_RETENTION);
   const filteredNpsTrend = useFilteredData(npsTrend);
 
   const latestCreators = filteredGrowth[filteredGrowth.length - 1] || {};
@@ -78,8 +77,8 @@ function KpiCards() {
 
   const latestActivation = filteredActivation[filteredActivation.length - 1] || {};
   const prevActivation = filteredActivation[filteredActivation.length - 2];
-  const latestRetention = filteredRetention[filteredRetention.length - 1] || {};
-  const prevRetention = filteredRetention[filteredRetention.length - 2];
+  const latestPitch = filteredPitch[filteredPitch.length - 1] || {};
+  const prevPitch = filteredPitch[filteredPitch.length - 2];
   // Filter to non-null rating entries for trend calculation
   const nonNullNps = useMemo(() => filteredNpsTrend.filter((d) => d.avgRating != null), [filteredNpsTrend]);
   const latestNps = nonNullNps[nonNullNps.length - 1];
@@ -141,12 +140,16 @@ function KpiCards() {
         </Grid>
         <Grid item xs={6} sm={6} md={3}>
           <KpiCard
-            title="Retention Rate"
-            value={latestRetention.rate != null ? `${latestRetention.rate}%` : '—'}
-            trend={prevRetention ? Math.round((latestRetention.rate - prevRetention.rate) * 10) / 10 : 0}
+            title="Pitch Rate"
+            value={latestPitch.rate != null ? `${latestPitch.rate}%` : '—'}
+            trend={(() => {
+              if (isDaily && pitchPeriodComparison) return pitchPeriodComparison.percentChange;
+              if (prevPitch) return Math.round((latestPitch.rate - prevPitch.rate) * 10) / 10;
+              return 0;
+            })()}
             trendLabel={trendLabel}
-            subtitle="2+ campaigns"
-            sparklineData={filteredRetention.map((d) => d.rate)}
+            subtitle="Pitched / active creators"
+            sparklineData={filteredPitch.map((d) => d.rate)}
             sparklineColor={CHART_COLORS.secondary}
           />
         </Grid>
@@ -369,24 +372,24 @@ export default function AnalyticViewV2() {
               <Grid item xs={12} md={6}>
                 <PitchRateChart />
               </Grid>
-              <Grid item xs={12} md={6}>
+              {/* <Grid item xs={12} md={6}>
                 <CreatorRetentionChart />
-              </Grid>
+              </Grid> */}
               <Grid item xs={12} md={6}>
                 <CreatorNpsChart />
               </Grid>
-              <Grid item xs={12}>
-                <ResponseTimeCharts />
+              <Grid item xs={12} md={6}>
+                <CreatorEarningsChart />
               </Grid>
               <Grid item xs={12}>
-                <CreatorEarningsChart />
+                <ResponseTimeCharts />
               </Grid>
             </Grid>
           </Fade>
 
           <Fade in={currentTab === 'admins'} timeout={200} unmountOnExit>
             <Grid container spacing={3} sx={{ mt: 1 }}>
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <RejectionRateCard />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -398,7 +401,7 @@ export default function AnalyticViewV2() {
               <Grid item xs={12} md={6}>
                 <CreditsPerCSChart />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <TopShortlistedCreatorsChart />
               </Grid>
             </Grid>
