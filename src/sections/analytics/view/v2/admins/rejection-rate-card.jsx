@@ -309,7 +309,7 @@ export default function RejectionRateCard() {
               </Typography>
             </Stack>
 
-            {isLoading ? (
+            {isLoading && (
               <Box sx={{ px: 2.5, pt: 1 }}>
                 {[...Array(5)].map((_, i) => (
                   <Stack key={i} direction="row" alignItems="center" spacing={1.5} sx={{ py: 1 }}>
@@ -321,14 +321,18 @@ export default function RejectionRateCard() {
                   </Stack>
                 ))}
               </Box>
-            ) : filteredBreakdown.length === 0 ? (
+            )}
+
+            {!isLoading && filteredBreakdown.length === 0 && (
               <Stack alignItems="center" justifyContent="center" sx={{ py: 6, flex: 1 }}>
                 <BlockIcon sx={{ fontSize: 28, color: UI_COLORS.textMuted, mb: 1 }} />
                 <Typography variant="body2" sx={{ color: UI_COLORS.textMuted }}>
                   No campaigns match the selected filters
                 </Typography>
               </Stack>
-            ) : (
+            )}
+
+            {!isLoading && filteredBreakdown.length > 0 && (
               <Box
                 sx={{
                   flex: 1,
