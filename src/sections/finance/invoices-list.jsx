@@ -1089,18 +1089,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           sx={{ p: 2.5, pt: 0 }}
         />
       )}
-      {canReset && (
-        <InvoiceTableFiltersResult
-          filters={filters}
-          onFilters={handleFilters}
-          onResetFilters={handleResetFilters}
-          results={dataFiltered.length}
-          dateRange={dateRangeWithPreset}
-          onRemoveCampaign={handleRemoveCampaign}
-          campaignImages={campaignImages}
-          sx={{ p: 2.5, pt: 0 }}
-        />
-      )}
 
       <Box
         sx={{
