@@ -56,6 +56,7 @@ export const endpoints = {
     avgSubmissionResponseDetails: '/api/analytics/v2/avg-submission-response/details',
     clientRejectionRate: '/api/analytics/v2/client-rejection-rate',
     creditsPerCS: '/api/analytics/v2/credits-per-cs',
+    rejectionReasons: '/api/analytics/v2/rejection-reasons',
   },
   overview: {
     root: (userId) => `/api/user/overview/${userId}`,
