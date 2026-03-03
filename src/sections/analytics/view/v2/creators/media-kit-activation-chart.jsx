@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 
 import { PieChart } from '@mui/x-charts/PieChart';
 import DevicesIcon from '@mui/icons-material/Devices';
@@ -38,7 +38,7 @@ const PLATFORM_ICONS = {
   Instagram: <InstagramIcon sx={{ fontSize: 28, color: IG_COLOR }} />,
 };
 
-export default function MediaKitActivationChart() {
+function MediaKitActivationChart() {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
   const donutSize = isSmall ? 140 : 180;
@@ -149,3 +149,5 @@ export default function MediaKitActivationChart() {
     </ChartCard>
   );
 }
+
+export default memo(MediaKitActivationChart);

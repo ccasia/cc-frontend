@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import { memo, useMemo, useRef, useState, useEffect, useCallback } from 'react';
 
 import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
@@ -24,7 +24,7 @@ import { CHART_SX, CHART_GRID, CHART_MARGIN, CHART_HEIGHT, TICK_LABEL_STYLE, get
 const AMBER = '#FFAB00';
 const BAR_BG = '#F4F6F8';
 
-export default function CreatorNpsChart() {
+function CreatorNpsChart() {
   const { trend: trendData, overall } = useGetCreatorSatisfaction();
   const { averageRating, totalResponses, distribution } = overall;
   const filtered = useFilteredData(trendData);
@@ -249,3 +249,5 @@ export default function CreatorNpsChart() {
     </ChartCard>
   );
 }
+
+export default memo(CreatorNpsChart);

@@ -1,10 +1,12 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { lazy, Suspense, useState, useMemo, useCallback, useRef, useEffect } from 'react';
 
 import { Helmet } from 'react-helmet-async';
+import { m, AnimatePresence } from 'framer-motion';
 
-import { Box, Fade, Grid, Stack, Rating, Button, Container, Popover, Typography } from '@mui/material';
+import { Box, Grid, Stack, Rating, Button, Skeleton, Container, Popover, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
+import { varFade, varContainer } from 'src/components/animate/variants';
 
 import DateFilterSelect from 'src/sections/feedback/components/date-filter-select';
 import useGetCreatorGrowth from 'src/hooks/use-get-creator-growth';
@@ -15,22 +17,9 @@ import useGetPitchRate from 'src/hooks/use-get-pitch-rate';
 import KpiCard from './v2/components/kpi-card';
 import { CHART_COLORS } from './v2/chart-config';
 import { DateFilterProvider, useDateFilter, useFilteredData, useIsDaily, useTrendLabel } from './v2/date-filter-context';
-import RejectionRateCard from './v2/admins/rejection-rate-card';
-import CreditsPerCSChart from './v2/admins/credits-per-cs-chart';
-import RequireChangesChart from './v2/admins/require-changes-chart';
-import PitchRateChart from './v2/creators/pitch-rate-chart';
-// Admin charts
-import CreatorEarningsChart from './v2/admins/creator-earnings-chart';
-import TopShortlistedCreatorsChart from './v2/admins/top-shortlisted-creators-chart';
-import CreatorNpsChart from './v2/creators/creator-nps-chart';
-import RejectionReasonsChart from './v2/admins/rejection-reasons-chart';
-// Creator charts
-import CreatorGrowthChart from './v2/creators/creator-growth-chart';
-import ResponseTimeCharts from './v2/creators/response-time-charts';
-import ActivationRateChart from './v2/creators/activation-rate-chart';
-import TimeToActivationChart from './v2/creators/time-to-activation-chart';
-// import CreatorRetentionChart from './v2/creators/creator-retention-chart';
-import MediaKitActivationChart from './v2/creators/media-kit-activation-chart';
+
+const CreatorsTabContent = lazy(() => import('./v2/creators-tab-content'));
+const AdminsTabContent = lazy(() => import('./v2/admins-tab-content'));
 
 const AMBER = '#FFAB00';
 const BAR_BG = '#F4F6F8';
@@ -39,6 +28,18 @@ const TABS = [
   { value: 'creators', label: 'Creators' },
   { value: 'admins', label: 'Admins' },
 ];
+
+function TabSkeleton() {
+  return (
+    <Grid container spacing={3} sx={{ mt: 1 }}>
+      {[0, 1, 2, 3].map((i) => (
+        <Grid item xs={12} md={i === 0 ? 12 : 6} key={i}>
+          <Skeleton variant="rounded" height={320} sx={{ borderRadius: 2 }} />
+        </Grid>
+      ))}
+    </Grid>
+  );
+}
 
 function KpiCards() {
   const trendLabel = useTrendLabel();
@@ -111,8 +112,16 @@ function KpiCards() {
 
   return (
     <>
-      <Grid container spacing={2} sx={{ mb: -1 }}>
-        <Grid item xs={6} sm={6} md={3}>
+      <Grid
+        container
+        spacing={2}
+        sx={{ mb: -1 }}
+        component={m.div}
+        variants={varContainer({ staggerIn: 0.08 })}
+        initial="initial"
+        animate="animate"
+      >
+        <Grid item xs={6} sm={6} md={3} component={m.div} variants={varFade({ distance: 24 }).inUp}>
           <KpiCard
             title="Total Creators"
             value={latestCreators.total ? latestCreators.total.toLocaleString() : '—'}
@@ -123,7 +132,7 @@ function KpiCards() {
             sparklineColor={CHART_COLORS.primary}
           />
         </Grid>
-        <Grid item xs={6} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3} component={m.div} variants={varFade({ distance: 24 }).inUp}>
           <KpiCard
             title="Activation Rate"
             value={latestActivation.rate != null ? `${latestActivation.rate}%` : '—'}
@@ -138,7 +147,7 @@ function KpiCards() {
             sparklineColor={CHART_COLORS.success}
           />
         </Grid>
-        <Grid item xs={6} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3} component={m.div} variants={varFade({ distance: 24 }).inUp}>
           <KpiCard
             title="Pitch Rate"
             value={latestPitch.rate != null ? `${latestPitch.rate}%` : '—'}
@@ -153,7 +162,7 @@ function KpiCards() {
             sparklineColor={CHART_COLORS.secondary}
           />
         </Grid>
-        <Grid item xs={6} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3} component={m.div} variants={varFade({ distance: 24 }).inUp}>
           <KpiCard
             title="Avg Rating"
             value={ratingValue}
@@ -355,57 +364,20 @@ export default function AnalyticViewV2() {
           <KpiCards />
 
           {/* Tab Content */}
-          <Fade in={currentTab === 'creators'} timeout={200} unmountOnExit>
-            <Grid container spacing={3} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
-                <CreatorGrowthChart />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <ActivationRateChart />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TimeToActivationChart />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <MediaKitActivationChart />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <PitchRateChart />
-              </Grid>
-              {/* <Grid item xs={12} md={6}>
-                <CreatorRetentionChart />
-              </Grid> */}
-              <Grid item xs={12} md={6}>
-                <CreatorNpsChart />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <CreatorEarningsChart />
-              </Grid>
-              <Grid item xs={12}>
-                <ResponseTimeCharts />
-              </Grid>
-            </Grid>
-          </Fade>
-
-          <Fade in={currentTab === 'admins'} timeout={200} unmountOnExit>
-            <Grid container spacing={3} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
-                <RejectionRateCard />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <RequireChangesChart />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <RejectionReasonsChart />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <CreditsPerCSChart />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TopShortlistedCreatorsChart />
-              </Grid>
-            </Grid>
-          </Fade>
+          <AnimatePresence mode="wait">
+            <m.div
+              key={currentTab}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.43, 0.13, 0.23, 0.96] }}
+            >
+              <Suspense fallback={<TabSkeleton />}>
+                {currentTab === 'creators' && <CreatorsTabContent />}
+                {currentTab === 'admins' && <AdminsTabContent />}
+              </Suspense>
+            </m.div>
+          </AnimatePresence>
         </DateFilterProvider>
       </Container>
     </>

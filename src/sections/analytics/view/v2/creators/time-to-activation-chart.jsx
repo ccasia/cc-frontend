@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { memo, useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import TimerIcon from '@mui/icons-material/Timer';
 import { LineChart } from '@mui/x-charts/LineChart';
@@ -17,7 +17,7 @@ import CreatorDrilldownDrawer from './creator-drilldown-drawer';
 import { useIsDaily, useDateFilter, useFilterLabel, useFilteredData } from '../date-filter-context';
 import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, getTrendProps, TICK_LABEL_STYLE } from '../chart-config';
 
-export default function TimeToActivationChart() {
+function TimeToActivationChart() {
   const { startDate, endDate } = useDateFilter();
   const isDaily = useIsDaily();
   const chipLabel = useFilterLabel();
@@ -160,3 +160,5 @@ export default function TimeToActivationChart() {
     </ChartCard>
   );
 }
+
+export default memo(TimeToActivationChart);

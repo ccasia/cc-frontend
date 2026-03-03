@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 
 import PaidIcon from '@mui/icons-material/Paid';
 import { Box, Stack, Avatar, Tooltip, Skeleton, Typography } from '@mui/material';
@@ -10,7 +10,7 @@ import { useDateFilter } from '../date-filter-context';
 import { UI_COLORS, CHART_COLORS } from '../chart-config';
 import CreatorEarningsDrawer from './creator-earnings-drawer';
 
-export default function CreatorEarningsChart() {
+function CreatorEarningsChart() {
   const [selectedCreator, setSelectedCreator] = useState(null);
   const { startDate, endDate } = useDateFilter();
 
@@ -165,3 +165,5 @@ export default function CreatorEarningsChart() {
     </ChartCard>
   );
 }
+
+export default memo(CreatorEarningsChart);

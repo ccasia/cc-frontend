@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
+import { memo, useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -139,7 +139,7 @@ SingleMetricChart.propTypes = {
   onAxisClick: PropTypes.func.isRequired,
 };
 
-export default function ResponseTimeCharts() {
+function ResponseTimeCharts() {
   const { startDate, endDate } = useDateFilter();
   const isDaily = useIsDaily();
   const trendLabel = useTrendLabel();
@@ -478,3 +478,5 @@ export default function ResponseTimeCharts() {
     </ChartCard>
   );
 }
+
+export default memo(ResponseTimeCharts);
