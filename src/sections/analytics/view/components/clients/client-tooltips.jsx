@@ -1,23 +1,71 @@
 import React from 'react';
-import PropTypes from 'prop-types'; // 1. Import PropTypes
+import PropTypes from 'prop-types';
 
 import { Box, Typography, Stack, Divider, Avatar } from '@mui/material';
 import Iconify from 'src/components/iconify';
 
-const CHART_COLORS = { success: '#00C49F', error: '#FF8042' };
+// --- Glassmorphism base style ---
+const glassBase = {
+  background: 'rgba(22, 28, 36, 0.7)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+  borderRadius: 2,
+  color: '#fff',
+  p: 2,
+  pointerEvents: 'none',
+};
+
+const glassDivider = {
+  borderColor: 'rgba(255, 255, 255, 0.06)',
+  my: 1,
+};
+
+const glassLabel = {
+  color: 'rgba(255, 255, 255, 0.79)',
+  fontSize: '0.7rem',
+  letterSpacing: 0.5,
+  textTransform: 'uppercase',
+};
+
+const glassValue = {
+  fontWeight: 700,
+  fontSize: '0.8rem',
+  color: '#fff',
+};
+
+const glassTitle = {
+  fontWeight: 700,
+  fontSize: '0.85rem',
+  lineHeight: 1.3,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+};
+
+const glassDot = (color) => ({
+  width: 8,
+  height: 8,
+  borderRadius: '50%',
+  bgcolor: color,
+  boxShadow: `0 0 6px ${color}80`,
+  flexShrink: 0,
+});
+
+// ─────────────────────────────────────────────
+// 1. ClientTooltip
+// ─────────────────────────────────────────────
 
 export function ClientTooltip({ itemData, series, axisValue, dataIndex }) {
   const seriesItem = itemData ? series.find((s) => s.id === itemData.seriesId) : series[0];
-
   if (!seriesItem) return null;
 
   const index = itemData ? itemData.dataIndex : dataIndex;
-
   const dataValue = seriesItem.data[index];
   const friendlyName = seriesItem.dataset?.[index]?.name || axisValue || 'Step';
 
   const lowercaseLabel = seriesItem.label?.toLowerCase() || '';
-
   let unit = '';
   let metric = 'Value';
 
@@ -32,44 +80,18 @@ export function ClientTooltip({ itemData, series, axisValue, dataIndex }) {
   }
 
   return (
-    <Box
-      sx={{
-        bgcolor: '#1C252E',
-        color: '#fff',
-        p: 1.5,
-        borderRadius: 1.5,
-        minWidth: 180,
-        border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 10px 20px rgba(0,0,0,0.5)',
-        pointerEvents: 'none',
-      }}
-    >
-      <Stack spacing={0.5}>
-        <Typography
-          variant="subtitle2"
-          sx={{
-            fontWeight: 700,
-            lineHeight: 1.2,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {friendlyName}
-        </Typography>
-        <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 0.5 }} />
-        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={3}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: seriesItem.color }} />
-            <Typography variant="caption" sx={{ color: 'grey.400' }}>
-              {metric}{' '}
-            </Typography>
-          </Stack>
-          <Typography variant="caption" fontWeight="600">
-            {dataValue}
-            {unit}
-          </Typography>
+    <Box sx={{ ...glassBase, minWidth: 180 }}>
+      <Typography sx={glassTitle}>{friendlyName}</Typography>
+      <Divider sx={glassDivider} />
+      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Box sx={glassDot(seriesItem.color)} />
+          <Typography sx={glassLabel}>{metric}</Typography>
         </Stack>
+        <Typography sx={glassValue}>
+          {dataValue}
+          {unit}
+        </Typography>
       </Stack>
     </Box>
   );
@@ -93,11 +115,14 @@ ClientTooltip.propTypes = {
   ).isRequired,
 };
 
+// ─────────────────────────────────────────────
+// 2. MatrixTooltip
+// ─────────────────────────────────────────────
+
 export function MatrixTooltip({ itemData, series }) {
   if (!itemData || !series || !series.data) return null;
 
   const dataPoint = series.data[itemData.dataIndex];
-
   if (!dataPoint) return null;
 
   const { x, y, campaignName, clientName, image } = dataPoint;
@@ -106,82 +131,74 @@ export function MatrixTooltip({ itemData, series }) {
 
   let color = '#1ABF66';
   let status = 'Healthy Cycle';
+  let statusIcon = 'mdi:check-circle-outline';
 
   if (isHighRisk) {
-    color = '#D4321C';
+    color = '#FF6B6B';
     status = 'High Friction';
+    statusIcon = 'mdi:alert-circle-outline';
   } else if (isWarning) {
-    color = '#FFC702';
+    color = '#FFD666';
     status = 'Moderate Friction';
+    statusIcon = 'mdi:alert-outline';
   }
 
   return (
-    <Box
-      sx={{
-        bgcolor: '#1C252E',
-        color: '#fff',
-        p: 2,
-        borderRadius: 2,
-        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-        minWidth: 240,
-        border: '1px solid rgba(255,255,255,0.1)',
-      }}
-    >
-      <Stack direction="column" spacing={1.5} mb={2}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            variant="subtitle2"
-            sx={{
-              fontWeight: 700,
-              lineHeight: 1.2,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {campaignName || 'Campaign'}
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'grey.400', display: 'block' }}>
-            {clientName || 'Client'}
-          </Typography>
-        </Box>
-        <Avatar
-          src={image}
-          variant="rounded"
-          sx={{ width: 220, height: 140, border: '1px solid rgba(255,255,255,0.2)' }}
-        >
-          {clientName?.charAt(0)}
-        </Avatar>
+    <Box sx={{ ...glassBase, minWidth: 260 }}>
+      {/* Header */}
+      <Stack direction="column" spacing={1} mb={1.5}>
+        <Typography sx={glassTitle}>{campaignName || 'Campaign'}</Typography>
+        <Typography sx={{ ...glassLabel, textTransform: 'none', fontSize: '0.72rem' }}>
+          {clientName || 'Client'}
+        </Typography>
       </Stack>
 
-      <Typography
-        variant="caption"
+      {/* Image */}
+      <Avatar
+        src={image}
+        variant="rounded"
         sx={{
-          color,
-          fontWeight: 700,
-          mb: 1,
-          display: 'block',
+          width: '100%',
+          height: 140,
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: 1.5,
+          mb: 1.5,
         }}
       >
-        {status}
-      </Typography>
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 1 }} />
-      <Stack spacing={0.5}>
+        {clientName?.charAt(0)}
+      </Avatar>
+
+      {/* Status badge */}
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={0.75}
+        sx={{
+          bgcolor: `${color}18`,
+          border: `1px solid ${color}30`,
+          borderRadius: 1,
+          px: 1,
+          py: 0.5,
+          mb: 1,
+        }}
+      >
+        <Iconify icon={statusIcon} width={14} sx={{ color }} />
+        <Typography variant="caption" sx={{ color, fontWeight: 700, fontSize: '0.7rem' }}>
+          {status}
+        </Typography>
+      </Stack>
+
+      <Divider sx={glassDivider} />
+
+      {/* Metrics */}
+      <Stack spacing={0.75}>
         <Stack direction="row" justifyContent="space-between">
-          <Typography variant="caption" sx={{ color: 'grey.400' }}>
-            Avg Review Time:
-          </Typography>
-          <Typography variant="caption" sx={{ fontWeight: 600 }}>
-            {x} hrs
-          </Typography>
+          <Typography sx={glassLabel}>Avg Review Time</Typography>
+          <Typography sx={glassValue}>{x} hrs</Typography>
         </Stack>
         <Stack direction="row" justifyContent="space-between">
-          <Typography variant="caption" sx={{ color: 'grey.400' }}>
-            Avg Rounds:
-          </Typography>
-          <Typography variant="caption" sx={{ fontWeight: 600 }}>
-            {y}
-          </Typography>
+          <Typography sx={glassLabel}>Avg Rounds</Typography>
+          <Typography sx={glassValue}>{y}</Typography>
         </Stack>
       </Stack>
     </Box>
@@ -205,6 +222,12 @@ MatrixTooltip.propTypes = {
   }),
 };
 
+// ─────────────────────────────────────────────
+// 3. RenewalTooltip
+// ─────────────────────────────────────────────
+
+const CHART_COLORS = { success: '#00C49F', error: '#FF8042' };
+
 export function RenewalTooltip({ series, dataIndex }) {
   if (!series || dataIndex === undefined) return null;
 
@@ -215,32 +238,54 @@ export function RenewalTooltip({ series, dataIndex }) {
   const retentionRate =
     total > 0 ? Math.round(((upgrades + renewals + downgrades) / total) * 100) : 0;
 
+  const displaySeries = [...series].reverse();
+
   return (
-    <Box sx={{ bgcolor: '#1C252E', color: '#fff', p: 1.5, borderRadius: 1.5, minWidth: 200 }}>
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-        Package Renewal{' '}
-      </Typography>
-      <Stack spacing={0.5}>
-        {series.map((s, i) => (
-          <Stack key={i} direction="row" justifyContent="space-between">
+    <Box sx={{ ...glassBase, minWidth: 210 }}>
+      <Typography sx={{ ...glassTitle, mb: 0.5 }}>Package Renewal</Typography>
+      <Divider sx={glassDivider} />
+
+      <Stack spacing={0.75}>
+        {displaySeries.map((s, i) => (
+          <Stack key={i} direction="row" justifyContent="space-between" alignItems="center">
             <Stack direction="row" alignItems="center" spacing={1}>
-              <Box sx={{ width: 8, height: 8, bgcolor: s.color, borderRadius: '50%' }} />
-              <Typography variant="caption" color="grey.400">
-                {s.label}
-              </Typography>
+              <Box sx={glassDot(s.color)} />
+              <Typography sx={glassLabel}>{s.label}</Typography>
             </Stack>
-            <Typography variant="caption" fontWeight={600}>
-              {s.data[dataIndex]}
-            </Typography>
+            <Typography sx={glassValue}>{s.data[dataIndex]}</Typography>
           </Stack>
         ))}
       </Stack>
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 1 }} />
-      <Stack direction="row" justifyContent="space-between">
-        <Typography variant="caption" color="grey.400">
-          Retention Rate:
-        </Typography>
-        <Typography variant="subtitle2" color={CHART_COLORS.success} fontWeight={800}>
+
+      <Divider sx={glassDivider} />
+
+      {/* Total row */}
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+        <Typography sx={{ ...glassLabel, textTransform: 'none' }}>Total</Typography>
+        <Typography sx={glassValue}>{total}</Typography>
+      </Stack>
+
+      {/* Retention badge */}
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{
+          bgcolor: `${CHART_COLORS.success}12`,
+          border: `1px solid ${CHART_COLORS.success}25`,
+          borderRadius: 1,
+          px: 1.25,
+          py: 0.75,
+        }}
+      >
+        <Typography sx={{ ...glassLabel, textTransform: 'none' }}>Retention Rate</Typography>
+        <Typography
+          sx={{
+            fontWeight: 800,
+            fontSize: '0.9rem',
+            color: CHART_COLORS.success,
+          }}
+        >
           {retentionRate}%
         </Typography>
       </Stack>
@@ -259,26 +304,27 @@ RenewalTooltip.propTypes = {
   ),
 };
 
+// ─────────────────────────────────────────────
+// 4. TurnaroundTooltip
+// ─────────────────────────────────────────────
+
 export function TurnaroundTooltip(props) {
   const { itemData, series } = props;
 
   if (!itemData || !series || !series.data) return null;
 
   const point = series.data[itemData.dataIndex];
-
   const rowPayload = point?.payload;
-
   if (!rowPayload) return null;
 
   const month = rowPayload.name || 'Month';
-  const color = series.color;
+  const { color } = series;
   const seriesId = series.id;
 
   const fastestCampaign = seriesId === 'fastest';
   const slowestCampaign = seriesId === 'slowest';
 
   let title = '';
-  let metricLabel = 'Avg Time';
   let value = 0;
   let details = null;
   let icon = '';
@@ -305,93 +351,76 @@ export function TurnaroundTooltip(props) {
   }
 
   return (
-    <Box
-      sx={{
-        bgcolor: '#1C252E',
-        color: '#fff',
-        p: 1.5,
-        borderRadius: 1.5,
-        minWidth: 200,
-        border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 10px 20px rgba(0,0,0,0.5)',
-        pointerEvents: 'none',
-        zIndex: 9999,
-      }}
-    >
-      <Stack spacing={0.5}>
-        <Typography variant="caption" sx={{ color: 'grey.400' }}>
-          {month}
-        </Typography>
-        <Stack direction="column" spacing={1.5} mb={1}>
-          <Stack direction="row" spacing={1}>
-            {(slowestCampaign || fastestCampaign) && (
-              <Iconify icon={icon} width={18} sx={{ color }} />
-            )}
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: color,
-                fontWeight: 700,
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {title}
-            </Typography>
-          </Stack>
-          {(slowestCampaign || fastestCampaign) && (
-            <>
-              <Typography variant="caption" sx={{ color: 'grey.400', display: 'block' }}>
-                {clientName || 'Client'}
-              </Typography>
-              <Avatar
-                src={image}
-                variant="rounded"
-                sx={{ width: 220, height: 140, border: '1px solid rgba(255,255,255,0.2)' }}
-              >
-                {clientName?.charAt(0)}
-              </Avatar>
-            </>
-          )}
-        </Stack>
+    <Box sx={{ ...glassBase, minWidth: 220, zIndex: 9999 }}>
+      {/* Month label */}
+      <Typography sx={{ ...glassLabel, textTransform: 'none', mb: 0.5 }}>{month}</Typography>
 
-        <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', mb: 0.5 }} />
-
-        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={3}>
-          <Typography variant="caption" sx={{ color: 'grey.400' }}>
-            {metricLabel}:
-          </Typography>
-          <Typography variant="caption" fontWeight="700" color="white">
-            {value} hrs
-          </Typography>
-        </Stack>
-
-        {details && (
-          <Box sx={{ bgcolor: 'rgba(0,0,0,0.2)', p: 1, borderRadius: 1, mt: 1 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Typography variant="caption" sx={{ color: 'grey.500' }}>
-                Fastest Pitch:
-              </Typography>
-              <Typography variant="caption" color="grey.300">
-                {details.min} hrs
-              </Typography>
-            </Stack>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mt={0.5}>
-              <Typography variant="caption" sx={{ color: 'grey.500' }}>
-                Slowest Pitch:
-              </Typography>
-              <Typography variant="caption" color="grey.300">
-                {details.max} hrs
-              </Typography>
-            </Stack>
-          </Box>
-        )}
+      {/* Title row */}
+      <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+        {(slowestCampaign || fastestCampaign) && <Iconify icon={icon} width={18} sx={{ color }} />}
+        <Typography sx={{ ...glassTitle, color }}>{title}</Typography>
       </Stack>
+
+      {/* Campaign image */}
+      {(slowestCampaign || fastestCampaign) && (
+        <>
+          <Typography sx={{ ...glassLabel, textTransform: 'none', mb: 1 }}>
+            {clientName || 'Client'}
+          </Typography>
+          <Avatar
+            src={image}
+            variant="rounded"
+            sx={{
+              width: '100%',
+              height: 140,
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 1.5,
+              mb: 1.5,
+            }}
+          >
+            {clientName?.charAt(0)}
+          </Avatar>
+        </>
+      )}
+
+      <Divider sx={glassDivider} />
+
+      {/* Main metric */}
+      <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Typography sx={glassLabel}>Avg Time</Typography>
+        <Typography sx={glassValue}>{value} hrs</Typography>
+      </Stack>
+
+      {/* Detail card */}
+      {details && (
+        <Box
+          sx={{
+            bgcolor: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+            borderRadius: 1.5,
+            p: 1.25,
+            mt: 1.5,
+          }}
+        >
+          <Stack spacing={0.5}>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography sx={{ ...glassLabel, textTransform: 'none' }}>Fastest Pitch</Typography>
+              <Typography sx={{ ...glassValue, fontSize: '0.75rem' }}>{details.min} hrs</Typography>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography sx={{ ...glassLabel, textTransform: 'none' }}>Slowest Pitch</Typography>
+              <Typography sx={{ ...glassValue, fontSize: '0.75rem' }}>{details.max} hrs</Typography>
+            </Stack>
+          </Stack>
+        </Box>
+      )}
     </Box>
   );
 }
+
+// ─────────────────────────────────────────────
+// 5. PieTooltip
+// ─────────────────────────────────────────────
 
 export function PieTooltip(props) {
   const { series, itemData } = props;
@@ -399,31 +428,34 @@ export function PieTooltip(props) {
   if (!series || itemData?.dataIndex === undefined) return null;
 
   const pieItem = series.data[itemData.dataIndex];
-
   if (!pieItem) return null;
 
+  // Safely resolve in case objects leak through
+  const displayLabel =
+    typeof pieItem.label === 'object' && pieItem.label !== null
+      ? (pieItem.label?.label ?? pieItem.label?.text ?? String(pieItem.label))
+      : (pieItem.label ?? '');
+
+  const displayValue =
+    typeof pieItem.value === 'object' && pieItem.value !== null
+      ? (pieItem.value?.value ?? 0)
+      : (pieItem.value ?? 0);
+
+  const displayColor =
+    typeof pieItem.color === 'object' && pieItem.color !== null
+      ? (pieItem.color?.value ?? '#000')
+      : (pieItem.color ?? '#000');
+
   return (
-    <Box
-      sx={{
-        bgcolor: '#1C252E', 
-        color: '#fff',
-        p: 1.5,
-        borderRadius: 1.5,
-        boxShadow: 3,
-        border: '1px solid rgba(255,255,255,0.1)',
-        minWidth: 160,
-      }}
-    >
+    <Box sx={{ ...glassBase, minWidth: 170 }}>
       <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
-        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: pieItem.color }} />
-        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-          {pieItem.label}
-        </Typography>
+        <Box sx={glassDot(displayColor)} />
+        <Typography sx={glassTitle}>{displayLabel}</Typography>
       </Stack>
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 1 }} />
-      <Stack direction="row" justifyContent="space-between">
-        <Typography variant="caption" sx={{ color: 'grey.400' }}>Count:</Typography>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{pieItem.value}</Typography>
+      <Divider sx={glassDivider} />
+      <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Typography sx={glassLabel}>Count</Typography>
+        <Typography sx={{ ...glassValue, fontSize: '0.9rem' }}>{displayValue}</Typography>
       </Stack>
     </Box>
   );

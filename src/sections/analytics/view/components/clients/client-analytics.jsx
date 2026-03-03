@@ -106,29 +106,35 @@ export default function AnalyticsDashboard({ packageType }) {
 
       {/* ROW 4: Submission Review Efficiency (Full Width) */}
       <Grid container spacing={2} mb={3}>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} md={2}>
           <Grid direction="column" container spacing={2}>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
               <SimpleMetricCard
                 title="Campaign creation rate"
                 value={`${campaign?.campaignCreationRate || 0}%`}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
               <SimpleMetricCard
                 title="Average campaigns"
                 value={`${campaign?.avgCampaignsPerBrand || 0} campaigns`}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
               <SimpleMetricCard
                 title="Time to first campaign"
                 value={`${campaign?.avgTimeToFirstCampaign || 0} days`}
               />
             </Grid>
+            <Grid item xs={12} md={3}>
+              <SimpleMetricCard
+                title="Bugs Reported"
+                // value={`${campaign?.avgTimeToFirstCampaign || 0} days`}
+              />
+            </Grid>
           </Grid>
         </Grid>
-        <Grid item xs={12} md={9}>
+        <Grid item xs={12} md={10}>
           <ReviewEfficiencyScatter data={approval} />
         </Grid>
       </Grid>
