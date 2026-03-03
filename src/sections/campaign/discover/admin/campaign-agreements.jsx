@@ -1218,50 +1218,6 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
               <MenuItem value="approved">{`Approved (${filterCounts.approved})`}</MenuItem>
             </Select>
           )}
-
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', flex: 1 }}>
-            <TextField
-              placeholder="Search creators..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{
-                width: { xs: '100%', sm: 300 },
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: '#FFFFFF',
-                  border: '1.5px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1.15,
-                  height: 44,
-                  fontSize: '0.85rem',
-                  '& fieldset': {
-                    border: 'none',
-                  },
-                  '&.Mui-focused': {
-                    border: '1.5px solid #e7e7e7',
-                    borderBottom: '3px solid #e7e7e7',
-                  },
-                },
-                '& .MuiOutlinedInput-input': {
-                  py: 1.25,
-                  px: 0,
-                  color: '#637381',
-                  fontWeight: 600,
-                  '&::placeholder': {
-                    color: '#637381',
-                    opacity: 1,
-                    fontWeight: 400,
-                  },
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
         </Stack>
 
         {!filteredData || filteredData.length < 1 ? (
