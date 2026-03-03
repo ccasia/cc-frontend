@@ -83,11 +83,11 @@ function RejectionRateCard() {
   );
 
   const { filteredAvgRate, totalRejected, totalSubmissions } = useMemo(() => {
-    const rej = filteredBreakdown.reduce((sum, r) => sum + r.rejected, 0);
-    const tot = filteredBreakdown.reduce((sum, r) => sum + r.total, 0);
+    const rej = filteredTrend.reduce((sum, t) => sum + t.rejected, 0);
+    const tot = filteredTrend.reduce((sum, t) => sum + t.total, 0);
     const rate = tot > 0 ? Math.round((rej / tot) * 1000) / 10 : 0;
     return { filteredAvgRate: rate, totalRejected: rej, totalSubmissions: tot };
-  }, [filteredBreakdown]);
+  }, [filteredTrend]);
 
   // -- Chart data -----------------------------------------------------------
 
