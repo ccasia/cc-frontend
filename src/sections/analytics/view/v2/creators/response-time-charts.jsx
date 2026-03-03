@@ -37,7 +37,7 @@ const METRIC_TOOLTIPS = {
   'Avg Submission Response': 'Average time for creators to submit their first draft after the agreement is approved.',
 };
 
-function SingleMetricChart({ title, numericData, color, months, latestValue, trend, trendLabel, fmtHours, onAxisClick }) {
+function SingleMetricChart({ title, numericData, color, months, latestValue, trend, trendLabel, fmtHours, fmtShort: fmtShortProp, onAxisClick }) {
   const indices = useMemo(() => months.map((_, i) => i), [months]);
   const clickStartRef = useRef(null);
 
@@ -94,12 +94,12 @@ function SingleMetricChart({ title, numericData, color, months, latestValue, tre
           </Tooltip>
         )}
         <Typography sx={{ fontWeight: 700, fontSize: '1.25rem', lineHeight: 1.2 }}>
-          {latestValue}h
+          {fmtShortProp(latestValue)}
         </Typography>
         <Stack direction="row" alignItems="center" sx={{ bgcolor: tp.bg, borderRadius: 0.75, px: 0.5, py: 0.25 }}>
           <TrendIcon sx={{ fontSize: tp.iconSize, color: tp.color, ml: -0.25 }} />
           <Typography variant="caption" sx={{ fontWeight: 600, color: tp.color, fontSize: '0.75rem', mr: 0.25 }}>
-            {isNeutral ? '0h' : `${trend > 0 ? '+' : ''}${trend}h`}
+            {isNeutral ? '0h' : `${trend > 0 ? '+' : '-'}${fmtShortProp(Math.abs(trend))}`}
           </Typography>
         </Stack>
         <Typography variant="caption" sx={{ color: '#919EAB', fontSize: '0.75rem' }}>
@@ -149,6 +149,7 @@ SingleMetricChart.propTypes = {
   trend: PropTypes.number,
   trendLabel: PropTypes.string,
   fmtHours: PropTypes.func.isRequired,
+  fmtShort: PropTypes.func.isRequired,
   onAxisClick: PropTypes.func.isRequired,
 };
 
@@ -231,6 +232,16 @@ function ResponseTimeCharts() {
     const mins = Math.floor(totalSecs / 60);
     const secs = totalSecs % 60;
     return `${val}h (${mins}m ${secs}s)`;
+  }, []);
+
+  const fmtShort = useCallback((val) => {
+    if (val == null) return '—';
+    const h = Number(val);
+    const totalSecs = Math.round(h * 3600);
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    if (h >= 1) return `${h}h`;
+    return `${mins}m ${secs}s`;
   }, []);
 
   const allSeries = useMemo(() => [
@@ -326,17 +337,17 @@ function ResponseTimeCharts() {
   const metrics = [
     {
       title: 'Avg Agreement Response',
-      value: `${latestAgreement}h`,
+      value: fmtShort(latestAgreement),
       trend: agreementTrend,
     },
     {
       title: 'Avg Time to 1st Accepted Campaign',
-      value: `${latestCampaign}h`,
+      value: fmtShort(latestCampaign),
       trend: campaignTrend,
     },
     {
       title: 'Avg Submission Response',
-      value: `${latestSubmission}h`,
+      value: fmtShort(latestSubmission),
       trend: submissionTrend,
     },
   ];
@@ -427,7 +438,7 @@ function ResponseTimeCharts() {
                           >
                             <TrendIcon sx={{ fontSize: tp.iconSize, color: tp.color, ml: -0.25 }} />
                             <Typography variant="caption" sx={{ fontWeight: 600, color: tp.color, fontSize: '0.75rem', mr: 0.25 }}>
-                              {isNeutral ? '0h' : `${metric.trend > 0 ? '+' : ''}${metric.trend}h`}
+                              {isNeutral ? '0h' : `${metric.trend > 0 ? '+' : '-'}${fmtShort(Math.abs(metric.trend))}`}
                             </Typography>
                           </Stack>
                           <Typography variant="caption" sx={{ color: '#919EAB', fontSize: '0.75rem' }}>
@@ -491,6 +502,7 @@ function ResponseTimeCharts() {
                   trend={cfg.trend}
                   trendLabel={trendLabel}
                   fmtHours={fmtHours}
+                  fmtShort={fmtShort}
                   onAxisClick={(dataIndex) => {
                     const month = months[dataIndex];
                     if (month) {
