@@ -14,19 +14,20 @@ export default function ChartItemTooltip() {
       sx={{
         p: 1.5,
         borderRadius: 1,
-        minWidth: 140,
+        minWidth: 120,
         boxShadow: '0 4px 16px rgba(0,0,0,0.1), 0 0 1px rgba(0,0,0,0.05)',
         border: '1px solid #E8ECEE',
         pointerEvents: 'none',
-        whiteSpace: 'nowrap',
       }}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-        <Stack direction="row" alignItems="center" spacing={0.75}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: color, display: 'inline-block', flexShrink: 0 }} />
-          <Typography variant="caption" sx={{ color: '#666', whiteSpace: 'nowrap' }}>{label}</Typography>
-        </Stack>
-        <Typography variant="caption" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{formattedValue}</Typography>
+      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.75 }}>
+        {label}
+      </Typography>
+      <Stack direction="row" alignItems="center" spacing={0.75}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: color, display: 'inline-block', flexShrink: 0 }} />
+        <Typography variant="caption" sx={{ color: '#444' }}>
+          {formattedValue}
+        </Typography>
       </Stack>
     </Paper>
   );

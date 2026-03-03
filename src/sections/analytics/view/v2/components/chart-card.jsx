@@ -27,10 +27,23 @@ export default function ChartCard({ title, icon: Icon, subtitle, children, toolt
         flexDirection: 'column',
       }}
     >
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, pt: 3, pb: 1 }}>
-        <Stack direction="row" alignItems="center" spacing={0.75}>
-          {Icon && <Icon sx={{ fontSize: 18, color: '#919EAB', mr: 0.5 }} />}
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: '1.05rem', color: colors.secondary }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ px: 3, py: 2, minHeight: 40 }}
+      >
+        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ minHeight: 24 }}>
+          {Icon && <Icon sx={{ fontSize: 18, color: '#919EAB' }} />}
+          <Typography
+            variant="subtitle1"
+            sx={{
+              fontWeight: 700,
+              fontSize: '1.05rem',
+              lineHeight: 1.35,
+              color: colors.secondary,
+            }}
+          >
             {title}
           </Typography>
         {subtitle && (
@@ -70,7 +83,9 @@ export default function ChartCard({ title, icon: Icon, subtitle, children, toolt
           </AnalyticsTooltip>
         )}
         </Stack>
-        {headerRight}
+        {headerRight != null ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', minHeight: 24 }}>{headerRight}</Box>
+        ) : null}
       </Stack>
 
       <Box sx={{ px: 1, pb: 1, pt: 0.5, flex: 1, minHeight: height || 'auto', display: 'flex', flexDirection: 'column' }}>

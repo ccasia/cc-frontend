@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { Avatar, Box, Skeleton, Stack, Typography } from '@mui/material';
@@ -12,164 +12,202 @@ import { UI_COLORS, CHART_COLORS } from '../chart-config';
 const APPROVED_COLOR = CHART_COLORS.success;
 const REJECTED_COLOR = CHART_COLORS.error;
 
+const SCROLL_SX = {
+  '&::-webkit-scrollbar': { width: '3px' },
+  '&::-webkit-scrollbar-track': { background: 'transparent' },
+  '&::-webkit-scrollbar-thumb': { background: 'transparent', borderRadius: '1.5px' },
+  '&:hover::-webkit-scrollbar-thumb': { background: '#D0D5DA' },
+  scrollbarWidth: 'thin',
+  scrollbarColor: 'transparent transparent',
+  '&:hover': { scrollbarColor: '#D0D5DA transparent' },
+};
+
 function TopShortlistedCreatorsChart() {
   const { startDate, endDate } = useDateFilter();
   const { creators, isLoading } = useGetTopShortlistedCreators({ startDate, endDate });
 
-  const totalShortlists = useMemo(
-    () => creators.reduce((sum, c) => sum + c.count, 0),
-    [creators]
-  );
+  const renderContent = () => {
+    const fullWidthSx = { mx: -1, mb: -1, mt: -0.5, flex: 1, display: 'flex', flexDirection: 'column' };
 
-  const maxCount = creators[0]?.count || 1;
+    if (isLoading) {
+      return (
+        <Box sx={fullWidthSx}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            sx={{
+              px: 2.5,
+              py: 1,
+              borderTop: '1px solid #E8ECEE',
+              borderBottom: '1px solid #E8ECEE',
+              bgcolor: '#F9FAFB',
+            }}
+          >
+            <Skeleton variant="text" width="100%" height={18} />
+          </Stack>
+          <Box sx={{ px: 2.5, pt: 0.5 }}>
+            {[...Array(5)].map((_, i) => (
+              <Stack key={i} direction="row" alignItems="center" spacing={1.5} sx={{ py: 1 }}>
+                <Skeleton variant="text" width={20} height={18} />
+                <Skeleton variant="circular" width={32} height={32} sx={{ flexShrink: 0 }} />
+                <Skeleton variant="text" height={18} sx={{ flex: 1 }} />
+                <Skeleton variant="text" width={80} height={18} />
+              </Stack>
+            ))}
+          </Box>
+        </Box>
+      );
+    }
+
+    if (creators.length === 0) {
+      return (
+        <Stack alignItems="center" justifyContent="center" sx={{ py: 6, flex: 1 }}>
+          <Typography variant="body2" sx={{ color: UI_COLORS.textMuted }}>
+            No shortlisted creators found
+          </Typography>
+        </Stack>
+      );
+    }
+
+    return (
+      <Box sx={fullWidthSx}>
+        {/* Table header */}
+        <Stack
+          direction="row"
+          alignItems="center"
+          sx={{
+            px: 2.5,
+            py: 1,
+            borderTop: '1px solid #E8ECEE',
+            borderBottom: '1px solid #E8ECEE',
+            bgcolor: '#F9FAFB',
+          }}
+        >
+          <Typography sx={{ width: 28, flexShrink: 0, fontSize: 12, fontWeight: 600, color: UI_COLORS.textMuted }}>
+            #
+          </Typography>
+          <Typography sx={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: UI_COLORS.textMuted, pl: 0.5 }}>
+            Creator
+          </Typography>
+          <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+            <Typography sx={{ width: 44, fontSize: 12, fontWeight: 600, color: UI_COLORS.textMuted, textAlign: 'right' }}>
+              Total
+            </Typography>
+            <Typography sx={{ width: 60, fontSize: 12, fontWeight: 600, color: APPROVED_COLOR, textAlign: 'right' }}>
+              Approved
+            </Typography>
+            <Typography sx={{ width: 60, fontSize: 12, fontWeight: 600, color: REJECTED_COLOR, textAlign: 'right' }}>
+              Rejected
+            </Typography>
+          </Stack>
+        </Stack>
+
+        {/* Table rows */}
+        <Box sx={{ flex: 1, overflow: 'auto', ...SCROLL_SX }}>
+          <Stack spacing={0} sx={{ py: 0.5 }}>
+            {creators.map((creator, index) => (
+              <Stack
+                key={creator.userId}
+                direction="row"
+                alignItems="center"
+                sx={{
+                  py: 1.25,
+                  px: 2.5,
+                  transition: 'background-color 0.15s',
+                  '&:hover': { bgcolor: UI_COLORS.backgroundHover },
+                  borderBottom: index < creators.length - 1 ? '1px solid #F0F2F4' : 'none',
+                }}
+              >
+                {/* Rank */}
+                <Typography
+                  sx={{
+                    width: 28,
+                    flexShrink: 0,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: UI_COLORS.textMuted,
+                  }}
+                >
+                  {index + 1}
+                </Typography>
+
+                {/* Avatar + Name */}
+                <Stack direction="row" alignItems="center" spacing={1.25} sx={{ flex: 1, minWidth: 0 }}>
+                  <Avatar
+                    src={creator.avatar}
+                    alt={creator.name}
+                    sx={{ width: 32, height: 32, flexShrink: 0 }}
+                  />
+                  <Typography
+                    title={creator.name}
+                    sx={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontWeight: 500,
+                      fontSize: 13,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {creator.name || 'Unknown'}
+                  </Typography>
+                </Stack>
+
+                {/* Total / Approved / Rejected counts */}
+                <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                  <Typography
+                    sx={{
+                      width: 44,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: UI_COLORS.text,
+                      textAlign: 'right',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {creator.count}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      width: 60,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: APPROVED_COLOR,
+                      textAlign: 'right',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {creator.approved}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      width: 60,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: REJECTED_COLOR,
+                      textAlign: 'right',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {creator.rejected}
+                  </Typography>
+                </Stack>
+              </Stack>
+            ))}
+          </Stack>
+        </Box>
+      </Box>
+    );
+  };
 
   return (
     <ChartCard
       title="Top Shortlisted Creators"
       icon={PersonAddAlt1Icon}
       subtitle="Top 10 creators most frequently shortlisted by CS admins"
-      headerRight={
-        !isLoading && (
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: UI_COLORS.textSecondary }}>
-            {totalShortlists} total
-          </Typography>
-        )
-      }
     >
-      {isLoading && (
-        <Box sx={{ px: 2, pb: 1 }}>
-          {[...Array(5)].map((_, i) => (
-            <Stack key={i} direction="row" alignItems="center" spacing={1.5} sx={{ py: 1, px: 1 }}>
-              <Skeleton variant="text" width={28} height={20} />
-              <Skeleton variant="circular" width={32} height={32} sx={{ flexShrink: 0 }} />
-              <Skeleton variant="text" width={100} height={20} />
-              <Box sx={{ flex: 1 }}>
-                <Skeleton variant="rectangular" height={20} sx={{ borderRadius: 0.75 }} />
-              </Box>
-              <Skeleton variant="text" width={60} height={20} />
-            </Stack>
-          ))}
-        </Box>
-      )}
-
-      {!isLoading && creators.length === 0 && (
-        <Stack alignItems="center" justifyContent="center" sx={{ py: 4 }}>
-          <PersonAddAlt1Icon sx={{ fontSize: 28, color: UI_COLORS.textMuted, mb: 1 }} />
-          <Typography variant="body2" sx={{ color: UI_COLORS.textMuted }}>
-            No shortlisted creators found
-          </Typography>
-        </Stack>
-      )}
-
-      {!isLoading && creators.length > 0 && (
-      <Stack spacing={0} sx={{ px: 2, pb: 1 }}>
-        {creators.map((creator, index) => (
-          <Stack
-            key={creator.userId}
-            direction="row"
-            alignItems="center"
-            spacing={1.5}
-            sx={{
-              py: 1,
-              px: 1,
-              borderRadius: 1,
-              transition: 'background-color 0.15s',
-              '&:hover': { bgcolor: UI_COLORS.backgroundHover },
-            }}
-          >
-            {/* Rank */}
-            <Typography
-              sx={{
-                width: 28,
-                flexShrink: 0,
-                fontSize: 12,
-                fontWeight: 600,
-                color: UI_COLORS.textMuted,
-                textAlign: 'right',
-              }}
-            >
-              #{index + 1}
-            </Typography>
-
-            {/* Avatar */}
-            <Avatar
-              src={creator.avatar}
-              alt={creator.name}
-              sx={{ width: 32, height: 32, flexShrink: 0 }}
-            />
-
-            {/* Creator Name */}
-            <Typography
-              sx={{
-                width: 120,
-                flexShrink: 0,
-                fontSize: 13,
-                fontWeight: 500,
-                color: UI_COLORS.text,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {creator.name || 'Unknown'}
-            </Typography>
-
-            {/* Segmented Bar (Approved + Rejected) */}
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Stack
-                direction="row"
-                sx={{
-                  height: 20,
-                  width: `${(creator.count / maxCount) * 100}%`,
-                  minWidth: 4,
-                  borderRadius: 0.75,
-                  overflow: 'hidden',
-                  transition: 'width 0.3s ease',
-                }}
-              >
-                <Box
-                  sx={{
-                    height: '100%',
-                    flexBasis: `${(creator.approved / creator.count) * 100}%`,
-                    bgcolor: APPROVED_COLOR,
-                  }}
-                />
-                <Box
-                  sx={{
-                    height: '100%',
-                    flexBasis: `${(creator.rejected / creator.count) * 100}%`,
-                    bgcolor: REJECTED_COLOR,
-                  }}
-                />
-              </Stack>
-            </Box>
-
-            {/* Approved / Rejected counts */}
-            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexShrink: 0, minWidth: 72, justifyContent: 'flex-end' }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: APPROVED_COLOR }}>
-                {creator.approved}
-              </Typography>
-              <Typography sx={{ fontSize: 11, color: UI_COLORS.textMuted }}>/</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: REJECTED_COLOR }}>
-                {creator.rejected}
-              </Typography>
-            </Stack>
-          </Stack>
-        ))}
-      </Stack>
-      )}
-
-      {/* Legend */}
-      <Stack direction="row" gap={2} sx={{ px: 3, pb: 2, pt: 1 }}>
-        <Stack direction="row" alignItems="center" spacing={0.75}>
-          <Box sx={{ width: 10, height: 10, borderRadius: 0.5, bgcolor: APPROVED_COLOR }} />
-          <Typography sx={{ fontSize: 11, color: UI_COLORS.textSecondary, fontWeight: 500 }}>Approved</Typography>
-        </Stack>
-        <Stack direction="row" alignItems="center" spacing={0.75}>
-          <Box sx={{ width: 10, height: 10, borderRadius: 0.5, bgcolor: REJECTED_COLOR }} />
-          <Typography sx={{ fontSize: 11, color: UI_COLORS.textSecondary, fontWeight: 500 }}>Rejected</Typography>
-        </Stack>
-      </Stack>
+      {renderContent()}
     </ChartCard>
   );
 }
