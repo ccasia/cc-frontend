@@ -8,16 +8,25 @@ import {
   useTheme,
   useMediaQuery,
   LinearProgress,
+  CircularProgress,
 } from '@mui/material';
-import { PieChart, BarChart, axisClasses, ScatterChart, ChartsReferenceLine } from '@mui/x-charts';
+import {
+  PieChart,
+  BarChart,
+  axisClasses,
+  ScatterChart,
+  ChartsReferenceLine,
+  legendClasses,
+} from '@mui/x-charts';
 
 import {
-  ClientTooltip,
-  MatrixTooltip,
-  PieTooltip,
-  RenewalTooltip,
-  TurnaroundTooltip,
-} from './client-tooltips';
+  ClientItemTooltipSlot,
+  MatrixTooltipSlot,
+  RenewalTooltipSlot,
+  TurnaroundTooltipSlot,
+  PieTooltipSlot,
+} from './client-tooltip-wrappers';
+
 import Iconify from 'src/components/iconify';
 
 // Your Brand Colors
@@ -25,7 +34,7 @@ const COLORS = {
   blue: '#1340FF',
   green: '#1ABF66',
   orange: '#FFC702',
-  red: '#D4321C',
+  red: '#FF6B6B',
   purple: '#8A5AFE',
   lightGreen: '#A7F3D0',
 };
@@ -45,9 +54,7 @@ const cleanChartSettings = {
     [`.${axisClasses.bottom} .${axisClasses.line}`]: { stroke: 'transparent' },
     [`.${axisClasses.left} .${axisClasses.tick}`]: { display: 'none' },
     [`.${axisClasses.bottom} .${axisClasses.tick}`]: { display: 'none' },
-    [`.${axisClasses.root}`]: {
-      padding: '5px',
-    },
+    [`.${legendClasses.root}`]: { display: 'none' },
   },
 };
 
@@ -63,13 +70,32 @@ const STEP_CONFIG = [
   { key: 'ADDITIONAL_DETAILS_2', title: 'Additional Details 2', color: '#D8FF01' },
 ];
 
+function EmptyState({ message = 'No data found for the selected period.' }) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        width: '100%',
+        flexGrow: 1,
+      }}
+    >
+      <Typography variant="body2" sx={{ color: '#919EAB', fontStyle: 'italic' }}>
+        {message}
+      </Typography>
+    </Box>
+  );
+}
+
 // --- 1. Top KPI Cards (Unchanged, just layout) ---
 export function TopKPICard({ title, mainValue, children }) {
   return (
     <Card
-      sx={{ p: 2, borderRadius: 3, border: '1px solid #E5E7EB', boxShadow: 'none', height: '100%' }}
+      sx={{ p: 3, borderRadius: 2, border: '1px solid #E5E7EB', boxShadow: 'none', height: '100%' }}
     >
-      <Typography variant="subtitle2" color="text.secondary" mb={1}>
+      <Typography variant="subtitle2" color="text.secondary" mb={0}>
         {title}
       </Typography>
       <Typography
@@ -96,6 +122,24 @@ TopKPICard.propTypes = {
 
 // --- 2. Row 2: Time Spent (Horizontal Bar) ---
 export function TimeSpentChart({ data }) {
+  if (!data) {
+    return (
+      <Card
+        sx={{
+          p: 3,
+          borderRadius: 2,
+          border: '1px solid #E5E7EB',
+          height: 350,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress size={25} />
+      </Card>
+    );
+  }
+
   const dataset = STEP_CONFIG.map((config) => {
     const dbMatch = data?.find((item) => item.name === config.key);
 
@@ -105,11 +149,15 @@ export function TimeSpentChart({ data }) {
     };
   });
 
+  const totalMinutes = dataset.reduce((sum, d) => sum + d.minutes, 0);
+  const hasData = dataset.some((d) => d.minutes > 0);
+
   return (
     <Card
       sx={{
         p: 3,
-        borderRadius: 3,
+        pb: 1,
+        borderRadius: 2,
         border: '1px solid #E5E7EB',
         boxShadow: 'none',
         height: 350,
@@ -117,8 +165,8 @@ export function TimeSpentChart({ data }) {
         flexDirection: 'column',
       }}
     >
-      <Stack direction="row" justifyContent="space-between" mb={1}>
-        <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" justifyContent="space-between">
+        <Stack direction="row" spacing={1} alignItems="center" mb={2}>
           <Iconify icon="mdi:access-time" width={20} color="grey.500" />
           <Typography variant="subtitle1" fontWeight="bold">
             Time Spent per Step
@@ -128,25 +176,57 @@ export function TimeSpentChart({ data }) {
           In Minutes
         </Typography>
       </Stack>
-      <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
-        <BarChart
-          dataset={dataset}
-          yAxis={[{ scaleType: 'band', dataKey: 'name', categoryGapRatio: 0.5 }]}
-          xAxis={[{ ...hiddenAxisSettings }]}
-          series={[
-            {
-              dataKey: 'minutes',
-              label: 'Time Spent',
-              borderRadius: 6,
-            },
-          ]}
-          layout="horizontal"
-          margin={{ left: 110, right: 40, top: 10, bottom: 10 }}
-          {...cleanChartSettings}
-          slots={{ axisContent: ClientTooltip }}
-          slotProps={{ legend: { hidden: true }, tooltip: { trigger: 'item' } }}
-        />
-      </Box>
+      {hasData ? (
+        <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
+          <BarChart
+            dataset={dataset}
+            yAxis={[
+              {
+                scaleType: 'band',
+                dataKey: 'name',
+                categoryGapRatio: 0.35,
+                tickLabelStyle: { fontSize: 12 },
+              },
+            ]}
+            xAxis={[
+              { ...hiddenAxisSettings, max: Math.max(...dataset.map((d) => d.minutes)) * 1.2 },
+            ]}
+            series={[
+              {
+                dataKey: 'minutes',
+                label: 'Time Spent',
+                color: COLORS.green,
+                barLabelPlacement: 'outside',
+                valueFormatter: (value) => {
+                  const pct = totalMinutes > 0 ? ((value / totalMinutes) * 100).toFixed(0) : 0;
+                  return `${value} (${pct}%)`;
+                },
+              },
+            ]}
+            barLabel={(item) => {
+              const value = item.value ?? 0;
+              if (value === 0) return '';
+              const percentage = totalMinutes > 0 ? ((value / totalMinutes) * 100).toFixed(0) : 0;
+              return `${value} (${percentage}%)`;
+            }}
+            borderRadius={4}
+            layout="horizontal"
+            margin={{ left: 80, right: 0, top: 10, bottom: 0 }}
+            sx={{
+              ...cleanChartSettings.sx,
+              '& .MuiBarLabel-root': {
+                fill: '#637381',
+                fontSize: 11,
+                fontWeight: 600,
+              },
+            }}
+            slots={{ tooltip: () => null }}
+            // slots={{ tooltip: ClientItemTooltipSlot }}
+          />
+        </Box>
+      ) : (
+        <EmptyState />
+      )}
     </Card>
   );
 }
@@ -174,11 +254,15 @@ export function SkippedFieldsChart({ journey, campaign }) {
       .join(' '),
   }));
 
+  const totalSkips = dataset.reduce((sum, d) => sum + d.value, 0);
+  const hasData = dataset.length > 0 && dataset.some((d) => d.value > 0);
+
   return (
     <Card
       sx={{
         p: 3,
-        borderRadius: 3,
+        pb: 1,
+        borderRadius: 2,
         border: '1px solid #E5E7EB',
         boxShadow: 'none',
         height: 350,
@@ -186,8 +270,8 @@ export function SkippedFieldsChart({ journey, campaign }) {
         flexDirection: 'column',
       }}
     >
-      <Stack direction="row" justifyContent="space-between" mb={1}>
-        <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" justifyContent="space-between">
+        <Stack direction="row" spacing={1} alignItems="center" mb={2}>
           <Iconify icon="raphael:no" width={20} color="grey.500" />
           <Typography variant="subtitle1" fontWeight="bold">
             Most skipped fields (Top 5)
@@ -198,49 +282,60 @@ export function SkippedFieldsChart({ journey, campaign }) {
         </Typography>
       </Stack>
 
-      <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
-        <BarChart
-          dataset={dataset}
-          yAxis={[
-            {
-              scaleType: 'band',
-              dataKey: 'name',
-              categoryGapRatio: 0.4,
-              disableLine: true,
-              disableTicks: true,
-              tickLabelStyle: { fontSize: 11 },
-            },
-          ]}
-          xAxis={[{ ...hiddenAxisSettings }]}
-          series={[
-            {
-              dataKey: 'value',
-              color: COLORS.purple,
-              label: 'Total Skips',
-              borderRadius: 6,
-            },
-          ]}
-          layout="horizontal"
-          margin={{ left: 120, right: 40, top: 10, bottom: 10 }}
-          {...cleanChartSettings}
-          slots={{ axisContent: ClientTooltip }}
-          slotProps={{
-            legend: { hidden: true },
-            tooltip: {
-              slotProps: {
-                root: {
-                  style: {
-                    padding: 0,
-                    background: 'transparent',
-                    border: 'none',
-                    boxShadow: 'none',
-                  },
+      {hasData ? (
+        <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
+          <BarChart
+            dataset={dataset}
+            yAxis={[
+              {
+                scaleType: 'band',
+                dataKey: 'name',
+                categoryGapRatio: 0.4,
+                disableLine: true,
+                disableTicks: true,
+                tickLabelStyle: { fontSize: 12 },
+              },
+            ]}
+            xAxis={[{ ...hiddenAxisSettings, max: Math.max(...dataset.map((d) => d.value)) * 1.2 }]}
+            series={[
+              {
+                dataKey: 'value',
+                color: COLORS.purple,
+                label: 'Total Skips',
+                barLabelPlacement: 'outside',
+                valueFormatter: (value) => {
+                  const percentage = totalSkips > 0 ? ((value / totalSkips) * 100).toFixed(0) : 0;
+                  return `${value} (${percentage}%)`;
                 },
               },
-            },
-          }}
-        />
-      </Box>
+            ]}
+            barLabel={(item) => {
+              const value = item.value ?? 0;
+              if (value === 0) return '';
+              const percentage = totalSkips > 0 ? ((value / totalSkips) * 100).toFixed(0) : 0;
+              return `${value} (${percentage}%)`;
+            }}
+            borderRadius={4}
+            layout="horizontal"
+            margin={{ left: 80, right: 20, top: 10, bottom: 0 }}
+            sx={{
+              ...cleanChartSettings.sx,
+              '& .MuiBarElement-root': {
+                pointerEvents: 'none',
+              },
+              '& .MuiBarLabel-root': {
+                fill: '#637381',
+                fontSize: 11,
+                fontWeight: 600,
+              },
+            }}
+            // slots={{ tooltip: ClientItemTooltipSlot }}
+            slots={{ tooltip: () => null }}
+          />
+        </Box>
+      ) : (
+        <EmptyState />
+      )}
     </Card>
   );
 }
@@ -262,11 +357,15 @@ export function DropOffChart({ data }) {
     };
   }).filter((item) => item.value >= 0);
 
+  const totalDropoffs = dataset.reduce((sum, d) => sum + d.value, 0);
+  const hasData = dataset.some((d) => d.value > 0);
+
   return (
     <Card
       sx={{
         p: 3,
-        borderRadius: 3,
+        pb: 1,
+        borderRadius: 2,
         border: '1px solid #E5E7EB',
         boxShadow: 'none',
         height: 350,
@@ -274,8 +373,8 @@ export function DropOffChart({ data }) {
         flexDirection: 'column',
       }}
     >
-      <Stack direction="row" justifyContent="space-between" mb={1}>
-        <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" justifyContent="space-between">
+        <Stack direction="row" spacing={1} alignItems="center" mb={2}>
           <Iconify icon="mdi:location-remove-outline" width={20} color="grey.500" />
           <Typography variant="subtitle1" fontWeight="bold">
             Drop off Location
@@ -285,27 +384,58 @@ export function DropOffChart({ data }) {
           Abandoned setups
         </Typography>
       </Stack>
-      <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
-        <BarChart
-          dataset={dataset}
-          yAxis={[{ scaleType: 'band', dataKey: 'name', categoryGapRatio: 0.5 }]}
-          xAxis={[{ ...hiddenAxisSettings }]}
-          series={[
-            {
-              dataKey: 'value',
-              label: 'Drop Off',
-              dataset,
-              borderRadius: 6,
-              color: '#1340FF',
-            },
-          ]}
-          layout="horizontal"
-          margin={{ left: 110, right: 40, top: 10, bottom: 10 }}
-          {...cleanChartSettings}
-          slotProps={{ legend: { hidden: true }, tooltip: { trigger: 'item' } }}
-          slots={{ axisContent: ClientTooltip }}
-        />
-      </Box>
+
+      {hasData ? (
+        <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
+          <BarChart
+            dataset={dataset}
+            yAxis={[
+              {
+                scaleType: 'band',
+                dataKey: 'name',
+                categoryGapRatio: 0.35,
+                tickLabelStyle: { fontSize: 12 },
+              },
+            ]}
+            xAxis={[{ ...hiddenAxisSettings, max: Math.max(...dataset.map((d) => d.value)) * 1.2 }]}
+            series={[
+              {
+                dataKey: 'value',
+                label: 'Drop Off',
+                dataset,
+                color: COLORS.blue,
+                barLabelPlacement: 'outside',
+                valueFormatter: (value) => {
+                  const percentage =
+                    totalDropoffs > 0 ? ((value / totalDropoffs) * 100).toFixed(0) : 0;
+                  return `${value} (${percentage}%)`;
+                },
+              },
+            ]}
+            barLabel={(item) => {
+              const value = item.value ?? 0;
+              if (value === 0) return '';
+              const percentage = totalDropoffs > 0 ? ((value / totalDropoffs) * 100).toFixed(0) : 0;
+              return `${value} (${percentage}%)`;
+            }}
+            borderRadius={4}
+            layout="horizontal"
+            margin={{ left: 80, right: 40, top: 10, bottom: 0 }}
+            sx={{
+              ...cleanChartSettings.sx,
+              '& .MuiBarLabel-root': {
+                fill: '#637381',
+                fontSize: 11,
+                fontWeight: 600,
+              },
+            }}
+            slots={{ tooltip: () => null }}
+            // slots={{ tooltip: ClientItemTooltipSlot }}
+          />
+        </Box>
+      ) : (
+        <EmptyState />
+      )}
     </Card>
   );
 }
@@ -323,11 +453,15 @@ DropOffChart.propTypes = {
 export function RenewalChart({ data }) {
   const chartData = data?.monthlyRenewals || [];
 
+  const hasData =
+    chartData.length > 0 &&
+    chartData.some((d) => (d.Upgrades || 0) + (d.Renewals || 0) + (d.Downgrades || 0) > 0);
+
   return (
     <Card
       sx={{
         p: 3,
-        borderRadius: 3,
+        borderRadius: 2,
         border: '1px solid #E5E7EB',
         boxShadow: 'none',
         height: 350,
@@ -335,32 +469,38 @@ export function RenewalChart({ data }) {
         flexDirection: 'column',
       }}
     >
-      <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" spacing={1} alignItems="center" mb={2}>
         <Iconify icon="material-symbols:package-2-outline" width={20} color="grey.500" />
         <Typography variant="subtitle1" fontWeight="bold">
           Package Renewal
         </Typography>
       </Stack>
-      <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
-        <BarChart
-          dataset={chartData}
-          xAxis={[
-            {
-              scaleType: 'band',
-              dataKey: 'name',
-              valueFormatter: (value) => (typeof value === 'string' ? value.split(' ')[0] : value),
-            },
-          ]}
-          series={[
-            { dataKey: 'Upgrades', stack: 'A', color: COLORS.green, label: 'Upgrades' },
-            { dataKey: 'Renewals', stack: 'A', color: COLORS.blue, label: 'Renewals' },
-            { dataKey: 'Downgrades', stack: 'A', color: COLORS.orange, label: 'Downgrades' },
-          ]}
-          {...cleanChartSettings}
-          slots={{ axisContent: RenewalTooltip }}
-          slotProps={{ legend: { hidden: true } }}
-        />
-      </Box>
+
+      {hasData ? (
+        <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
+          <BarChart
+            dataset={chartData}
+            xAxis={[
+              {
+                scaleType: 'band',
+                dataKey: 'name',
+                valueFormatter: (value) =>
+                  typeof value === 'string' ? value.split(' ')[0] : value,
+              },
+            ]}
+            series={[
+              { dataKey: 'Downgrades', stack: 'A', color: COLORS.orange, label: 'Downgrades' },
+              { dataKey: 'Renewals', stack: 'A', color: COLORS.blue, label: 'Renewals' },
+              { dataKey: 'Upgrades', stack: 'A', color: COLORS.green, label: 'Upgrades' },
+            ]}
+            borderRadius={4}
+            {...cleanChartSettings}
+            slots={{ tooltip: RenewalTooltipSlot }}
+          />
+        </Box>
+      ) : (
+        <EmptyState />
+      )}
     </Card>
   );
 }
@@ -377,6 +517,8 @@ export function ReviewEfficiencyScatter({ data }) {
     { x: data?.avgReviewTimeHours || 0, y: data?.avgRoundsToApproval || 0, id: 1 },
   ];
 
+  const hasData = allPoints && allPoints.length > 0 && allPoints.some((p) => p.x > 0 || p.y > 0);
+
   const healthyPoints = allPoints
     .filter((p) => p.x <= 24 && p.y <= 2)
     .map((p, i) => ({ ...p, id: `h-${i}` }));
@@ -391,16 +533,16 @@ export function ReviewEfficiencyScatter({ data }) {
     <Card
       sx={{
         p: 3,
-        borderRadius: 3,
+        borderRadius: 2,
         border: '1px solid #E5E7EB',
         boxShadow: 'none',
-        height: 400,
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      <Stack direction="row" justifyContent="space-between" mb={-2}>
-        <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" justifyContent="space-between">
+        <Stack direction="row" spacing={1} alignItems="center" mb={2}>
           <Iconify
             icon="material-symbols:rate-review-outline-rounded"
             width={20}
@@ -420,43 +562,75 @@ export function ReviewEfficiencyScatter({ data }) {
         </Stack>
       </Stack>
 
-      <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
-        <ScatterChart
-          series={[
-            { data: healthyPoints, color: COLORS.blue, label: 'Within 2 rounds', id: 'healthy' },
-            { data: riskPoints, color: COLORS.red, label: 'High Friction', id: 'risk' },
-            { data: warningPoints, color: COLORS.orange, label: 'Warning', id: 'warning' },
-          ]}
-          voronoiMaxRadius={40}
-          margin={{ left: 40, bottom: 40, right: 60 }}
-          xAxis={[{ label: 'Hours', min: 0 }]}
-          yAxis={[{ label: 'Rounds', min: 0 }]}
-          grid={{ horizontal: true, vertical: true }}
-          sx={{
-            ...cleanChartSettings,
-            '& .MuiChartsGrid-line': {
-              strokeDasharray: '5 5',
-              stroke: '#E5E7EB',
-            },
-          }}
-          slots={{ itemContent: MatrixTooltip }}
-          slotProps={{ legend: { hidden: true } }}
-        >
-          {typeof data?.avgReviewTimeHours === 'number' && (
-            <ChartsReferenceLine
-              x={data.avgReviewTimeHours}
-              lineStyle={{ stroke: COLORS.red, strokeDasharray: '4 4', strokeWidth: 2 }}
-            />
-          )}
+      {hasData ? (
+        <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
+          <ScatterChart
+            key={`scatter-${allPoints.length}`}
+            series={[
+              {
+                data: healthyPoints,
+                color: COLORS.blue,
+                label: 'Within 2 rounds',
+                id: 'healthy',
+                markerSize: 6,
+              },
+              {
+                data: riskPoints,
+                color: COLORS.red,
+                label: 'High Friction',
+                id: 'risk',
+                markerSize: 6,
+              },
+              {
+                data: warningPoints,
+                color: COLORS.orange,
+                label: 'Warning',
+                id: 'warning',
+                markerSize: 6,
+              },
+            ].filter((s) => s.data.length > 0)}
+            voronoiMaxRadius="item"
+            margin={{ left: 10, bottom: 0, right: 60 }}
+            xAxis={[{ label: 'Hours', min: 0 }]}
+            yAxis={[{ label: 'Rounds', min: 0 }]}
+            grid={{ horizontal: true, vertical: true }}
+            sx={{
+              ...cleanChartSettings.sx,
+              '& .MuiChartsGrid-line': {
+                strokeDasharray: '5 5',
+                stroke: '#E5E7EB',
+              },
+            }}
+            slots={{ tooltip: MatrixTooltipSlot }}
+          >
+            {typeof data?.avgReviewTimeHours === 'number' && (
+              <ChartsReferenceLine
+                x={data.avgReviewTimeHours}
+                lineStyle={{
+                  stroke: COLORS.red,
+                  strokeDasharray: '4 4',
+                  strokeWidth: 1.5,
+                  opacity: 0.4,
+                }}
+              />
+            )}
 
-          {typeof data?.avgRoundsToApproval === 'number' && (
-            <ChartsReferenceLine
-              y={data.avgRoundsToApproval}
-              lineStyle={{ stroke: COLORS.red, strokeDasharray: '4 4', strokeWidth: 2 }}
-            />
-          )}
-        </ScatterChart>
-      </Box>
+            {typeof data?.avgRoundsToApproval === 'number' && (
+              <ChartsReferenceLine
+                y={data.avgRoundsToApproval}
+                lineStyle={{
+                  stroke: COLORS.red,
+                  strokeDasharray: '4 4',
+                  strokeWidth: 1.5,
+                  opacity: 0.4,
+                }}
+              />
+            )}
+          </ScatterChart>
+        </Box>
+      ) : (
+        <EmptyState />
+      )}
     </Card>
   );
 }
@@ -473,6 +647,10 @@ ReviewEfficiencyScatter.propTypes = {
 export function TurnaroundChart({ data }) {
   const trendData = data?.trendData || [];
 
+  const hasData =
+    trendData.length > 0 &&
+    trendData.some((d) => (d.slowestAvg || 0) + (d.average || 0) + (d.fastestAvg || 0) > 0);
+
   const seriesData = {
     slowest: trendData.map((d, i) => ({ x: i, y: d.slowestAvg, id: i, payload: d })),
     average: trendData.map((d, i) => ({ x: i, y: d.average, id: i, payload: d })),
@@ -483,59 +661,65 @@ export function TurnaroundChart({ data }) {
     <Card
       sx={{
         p: 3,
-        borderRadius: 3,
+        borderRadius: 2,
         border: '1px solid #E5E7EB',
         boxShadow: 'none',
-        height: 400,
+        height: 360,
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" spacing={1} alignItems="center" mb={2}>
         <Iconify icon="mdi:timer-outline" width={20} color="grey.500" />
         <Typography variant="subtitle1" fontWeight="bold">
           Shortlist Turnaround Time
         </Typography>
       </Stack>
-      <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
-        <ScatterChart
-          xAxis={[{ valueFormatter: (v) => trendData[v]?.name?.split(' ')[0] || '' }]}
-          series={[
-            {
-              id: 'slowest',
-              data: seriesData.slowest,
-              color: '#D4321C',
-              label: 'Slowest',
-            },
-            {
-              id: 'average',
-              data: seriesData.average,
-              color: '#FFC702',
-              label: 'Average',
-            },
-            {
-              id: 'fastest',
-              data: seriesData.fastest,
-              color: '#1ABF66',
-              label: 'Fastest',
-            },
-          ]}
-          voronoiMaxRadius={50}
-          slots={{
-            itemContent: TurnaroundTooltip,
-          }}
-          slotProps={{
-            legend: { hidden: true },
-            popper: {
-              sx: {
-                pointerEvents: 'none',
-                zIndex: 1300,
+
+      {hasData ? (
+        <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
+          <ScatterChart
+            xAxis={[{ valueFormatter: (v) => trendData[v]?.name?.split(' ')[0] || '' }]}
+            yAxis={[{ label: 'Avg Hours', min: 0 }]}
+            series={[
+              {
+                id: 'slowest',
+                data: seriesData.slowest,
+                color: '#FF6B6B',
+                label: 'Slowest',
+                markerSize: 6,
               },
-            },
-          }}
-          {...cleanChartSettings}
-        ></ScatterChart>
-      </Box>
+              {
+                id: 'average',
+                data: seriesData.average,
+                color: '#FFC702',
+                label: 'Average',
+                markerSize: 6,
+              },
+              {
+                id: 'fastest',
+                data: seriesData.fastest,
+                color: '#1ABF66',
+                label: 'Fastest',
+                markerSize: 6,
+              },
+            ]}
+            margin={{ left: 10, bottom: 0, right: 60 }}
+            voronoiMaxRadius="item"
+            grid={{ horizontal: true, vertical: true }}
+            sx={{
+              ...cleanChartSettings.sx,
+              '& .MuiChartsGrid-line': {
+                strokeDasharray: '5 5',
+                stroke: '#E5E7EB',
+              },
+            }}
+            slots={{ tooltip: TurnaroundTooltipSlot }}
+          />
+        </Box>
+      ) : (
+        <EmptyState />
+      )}
     </Card>
   );
 }
@@ -561,146 +745,157 @@ export function RejectionDonut({ data }) {
     color: DONUT_COLORS[i % DONUT_COLORS.length],
   }));
 
+  const hasData = total > 0;
+
   return (
     <Card
       sx={{
         p: 3,
-        borderRadius: 3,
+        borderRadius: 2,
         border: '1px solid #E5E7EB',
         boxShadow: 'none',
         height: '100%',
       }}
     >
-      <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" spacing={1} alignItems="center" mb={2}>
         <Iconify icon="fluent:text-change-reject-24-filled" width={20} color="grey.500" />
         <Typography variant="subtitle1" fontWeight="bold">
           Shortlist Rejection Reasons
         </Typography>
       </Stack>
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center" sx={{ py: 1 }}>
-        <Box sx={{ position: 'relative', flexShrink: 0, width: donutSize, height: donutSize }}>
-          {total > 0 ? (
-            <PieChart
-              series={[
-                {
-                  data: pieData,
-                  innerRadius: '55%',
-                  outerRadius: '90%',
-                  paddingAngle: 2,
-                  cornerRadius: 3,
-                  valueFormatter: (item) => `${item.value} rejections`,
-                  highlightScope: { faded: 'global', highlighted: 'item' },
-                },
-              ]}
-              height={donutSize}
-              width={donutSize}
-              margin={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              slotProps={{ legend: { hidden: true } }}
-              slots={{ itemContent: PieTooltip }}
-            />
-          ) : (
+      {hasData ? (
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={3}
+          alignItems="center"
+          sx={{ py: 1 }}
+        >
+          <Box sx={{ position: 'relative', flexShrink: 0, width: donutSize, height: donutSize }}>
+            {total > 0 ? (
+              <PieChart
+                series={[
+                  {
+                    data: pieData,
+                    innerRadius: '55%',
+                    outerRadius: '90%',
+                    paddingAngle: 2,
+                    cornerRadius: 3,
+                    valueFormatter: (item) => `${item.value} rejections`,
+                    highlightScope: { faded: 'global', highlighted: 'item' },
+                  },
+                ]}
+                height={donutSize}
+                width={donutSize}
+                margin={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                {...cleanChartSettings}
+                slots={{ tooltip: PieTooltipSlot }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  border: '8px solid #F4F6F8',
+                }}
+              />
+            )}
+
             <Box
               sx={{
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                border: '8px solid #F4F6F8',
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                textAlign: 'center',
+                pointerEvents: 'none',
               }}
-            />
-          )}
-
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              textAlign: 'center',
-              pointerEvents: 'none',
-            }}
-          >
-            <Typography
-              variant="caption"
-              sx={{ color: '#919EAB', fontSize: '0.7rem', lineHeight: 1 }}
             >
-              Total
-            </Typography>
-            <Typography
-              sx={{ fontWeight: 700, fontSize: '1.5rem', lineHeight: 1.2, color: '#333' }}
-            >
-              {total}
-            </Typography>
+              <Typography
+                variant="caption"
+                sx={{ color: '#919EAB', fontSize: '0.7rem', lineHeight: 1 }}
+              >
+                Total
+              </Typography>
+              <Typography
+                sx={{ fontWeight: 700, fontSize: '1.5rem', lineHeight: 1.2, color: '#333' }}
+              >
+                {total}
+              </Typography>
+            </Box>
           </Box>
-        </Box>
 
-        <Stack spacing={2} sx={{ flex: 1, width: '100%', pr: { sm: 1 } }}>
-          {safeData.map((d, i) => {
-            const percentage = total > 0 ? ((d.value / total) * 100).toFixed(1) : 0;
-            const barColor = DONUT_COLORS[i % DONUT_COLORS.length];
+          <Stack spacing={2} sx={{ flex: 1, width: '100%', pr: { sm: 1 } }}>
+            {safeData.map((d, i) => {
+              const percentage = total > 0 ? ((d.value / total) * 100).toFixed(1) : 0;
+              const barColor = DONUT_COLORS[i % DONUT_COLORS.length];
 
-            return (
-              <Box key={d?.name || i}>
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ mb: 0.75 }}
-                >
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Box
-                      sx={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        bgcolor: barColor,
-                        flexShrink: 0,
-                      }}
-                    />
+              return (
+                <Box key={d?.name || i}>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{ mb: 0.75 }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Box
+                        sx={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          bgcolor: barColor,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <Typography
+                        variant="body2"
+                        sx={{ color: '#333', fontWeight: 500, fontSize: '0.85rem' }}
+                      >
+                        {d?.name}
+                      </Typography>
+                    </Stack>
                     <Typography
                       variant="body2"
-                      sx={{ color: '#333', fontWeight: 500, fontSize: '0.85rem' }}
+                      sx={{
+                        color: '#666',
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        whiteSpace: 'nowrap',
+                        ml: 1,
+                      }}
                     >
-                      {d?.name}
+                      {d?.value}
+                      <Typography
+                        component="span"
+                        sx={{ color: '#919EAB', fontWeight: 500, fontSize: '0.75rem', ml: 0.5 }}
+                      >
+                        ({percentage}%)
+                      </Typography>
                     </Typography>
                   </Stack>
-                  <Typography
-                    variant="body2"
+                  <LinearProgress
+                    variant="determinate"
+                    value={((d?.value || 0) / maxCount) * 100}
                     sx={{
-                      color: '#666',
-                      fontWeight: 600,
-                      fontSize: '0.85rem',
-                      whiteSpace: 'nowrap',
-                      ml: 1,
+                      height: 6,
+                      borderRadius: 2,
+                      bgcolor: '#F4F6F8',
+                      '& .MuiLinearProgress-bar': {
+                        borderRadius: 2,
+                        bgcolor: barColor,
+                      },
                     }}
-                  >
-                    {d?.value}
-                    <Typography
-                      component="span"
-                      sx={{ color: '#919EAB', fontWeight: 500, fontSize: '0.75rem', ml: 0.5 }}
-                    >
-                      ({percentage}%)
-                    </Typography>
-                  </Typography>
-                </Stack>
-                <LinearProgress
-                  variant="determinate"
-                  value={((d?.value || 0) / maxCount) * 100}
-                  sx={{
-                    height: 6,
-                    borderRadius: 3,
-                    bgcolor: '#F4F6F8',
-                    '& .MuiLinearProgress-bar': {
-                      borderRadius: 3,
-                      bgcolor: barColor,
-                    },
-                  }}
-                />
-              </Box>
-            );
-          })}
+                  />
+                </Box>
+              );
+            })}
+          </Stack>
         </Stack>
-      </Stack>
+      ) : (
+        <EmptyState />
+      )}
     </Card>
   );
 }
@@ -720,20 +915,19 @@ export function SimpleMetricCard({ title, value }) {
     <Card
       sx={{
         p: 3,
-        borderRadius: 3,
+        borderRadius: 2,
         border: '1px solid #E5E7EB',
         boxShadow: 'none',
         height: '100%',
         minHeight: 120,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
       }}
     >
       <Typography variant="subtitle2" color="text.secondary" mb={1}>
         {title}
       </Typography>
-      <Typography variant="h4" fontWeight="bold">
+      <Typography variant="h5" fontWeight="bold">
         {value}
       </Typography>
     </Card>
