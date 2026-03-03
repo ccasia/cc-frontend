@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { memo, useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LineChart } from '@mui/x-charts/LineChart';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -33,7 +33,7 @@ const PITCH_DRAWER_CONFIG = {
   emptySubtitle: 'No first pitches recorded in this period',
 };
 
-export default function PitchRateChart() {
+function PitchRateChart() {
   const { startDate, endDate } = useDateFilter();
   const isDaily = useIsDaily();
   const chipLabel = useFilterLabel();
@@ -166,3 +166,5 @@ export default function PitchRateChart() {
     </ChartCard>
   );
 }
+
+export default memo(PitchRateChart);

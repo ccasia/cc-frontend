@@ -1,5 +1,5 @@
 
-import { useRef, useMemo, useState, useEffect, useContext, useCallback, createContext } from 'react';
+import { memo, useRef, useMemo, useState, useEffect, useContext, useCallback, createContext } from 'react';
 import PropTypes from 'prop-types';
 
 import { BarChart } from '@mui/x-charts/BarChart';
@@ -291,7 +291,7 @@ DemographicsPanel.propTypes = {
   }),
 };
 
-export default function CreatorGrowthChart() {
+function CreatorGrowthChart() {
   const { startDate, endDate } = useDateFilter();
   const isDaily = useIsDaily();
 
@@ -508,3 +508,5 @@ export default function CreatorGrowthChart() {
     </GrowthDataContext.Provider>
   );
 }
+
+export default memo(CreatorGrowthChart);

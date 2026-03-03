@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { memo, useState, useMemo, useCallback } from 'react';
 
 import EditIcon from '@mui/icons-material/Edit';
 import { Stack, Skeleton, Typography } from '@mui/material';
@@ -17,7 +17,7 @@ const LEGEND_ITEMS = [
   { label: 'V4 Campaigns', color: CHART_COLORS.primary },
 ];
 
-export default function RequireChangesChart() {
+function RequireChangesChart() {
   const { v2, v4, isLoading } = useGetRequireChangesRate();
 
   const filteredV2 = useFilteredData(v2);
@@ -96,3 +96,5 @@ export default function RequireChangesChart() {
     </ChartCard>
   );
 }
+
+export default memo(RequireChangesChart);

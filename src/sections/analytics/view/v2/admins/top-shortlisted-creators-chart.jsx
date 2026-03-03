@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { Avatar, Box, Skeleton, Stack, Typography } from '@mui/material';
@@ -12,7 +12,7 @@ import { UI_COLORS, CHART_COLORS } from '../chart-config';
 const APPROVED_COLOR = CHART_COLORS.success;
 const REJECTED_COLOR = CHART_COLORS.error;
 
-export default function TopShortlistedCreatorsChart() {
+function TopShortlistedCreatorsChart() {
   const { startDate, endDate } = useDateFilter();
   const { creators, isLoading } = useGetTopShortlistedCreators({ startDate, endDate });
 
@@ -173,3 +173,5 @@ export default function TopShortlistedCreatorsChart() {
     </ChartCard>
   );
 }
+
+export default memo(TopShortlistedCreatorsChart);

@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import { Box, Stack, Skeleton, Typography, LinearProgress, useTheme, useMediaQuery } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
@@ -10,7 +12,7 @@ import ChartItemTooltip from '../components/chart-item-tooltip';
 
 const DONUT_COLORS = ['#EF4444', '#F59E0B', '#1340FF', '#8E33FF', '#10B981', '#00B8D9', '#919EAB'];
 
-export default function RejectionReasonsChart() {
+function RejectionReasonsChart() {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
   const donutSize = isSmall ? 180 : 220;
@@ -155,3 +157,5 @@ export default function RejectionReasonsChart() {
     </ChartCard>
   );
 }
+
+export default memo(RejectionReasonsChart);

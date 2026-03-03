@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react';
+import { memo, useMemo, useEffect } from 'react';
 
 import { LineChart } from '@mui/x-charts/LineChart';
 import { Chip, Stack, Typography } from '@mui/material';
@@ -16,7 +16,7 @@ import ZoomableChart from '../components/zoomable-chart';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
 import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, TICK_LABEL_STYLE, getTrendProps } from '../chart-config';
 
-export default function ActivationRateChart() {
+function ActivationRateChart() {
   const { startDate, endDate } = useDateFilter();
   const isDaily = useIsDaily();
   const chipLabel = useFilterLabel();
@@ -112,3 +112,5 @@ export default function ActivationRateChart() {
     </ChartCard>
   );
 }
+
+export default memo(ActivationRateChart);

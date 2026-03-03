@@ -1,7 +1,9 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { memo, useMemo, useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
 
-import { Box, Stack, Skeleton, Typography } from '@mui/material';
+import { Box, Stack, Avatar, Skeleton, Typography } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
+import { useDrawingArea, useXScale, useYScale } from '@mui/x-charts/hooks';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 
 import useGetCreditsPerCS from 'src/hooks/use-get-credits-per-cs';
@@ -27,7 +29,76 @@ const ALL_SERIES = [
   { key: 'custom', label: 'Custom', color: CHART_COLORS.warning },
 ];
 
-export default function CreditsPerCSChart() {
+const AVATAR_SIZE = 28;
+
+function getInitials(name) {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function AvatarOverlay({ data, visibleKeys }) {
+  const { top } = useDrawingArea();
+  const xScale = useXScale();
+  const yScale = useYScale();
+
+  if (!xScale?.bandwidth || !yScale) return null;
+
+  const bandwidth = xScale.bandwidth();
+
+  return (
+    <g>
+      {data.map((d) => {
+        const x = xScale(d.csName);
+        if (x == null) return null;
+
+        const stackTotal = visibleKeys.reduce((sum, key) => sum + (d[key] || 0), 0);
+        const barTopY = yScale(stackTotal) ?? top;
+
+        const cx = x + bandwidth / 2;
+        const avatarY = barTopY - AVATAR_SIZE - 4;
+
+        return (
+          <foreignObject
+            key={d.csName}
+            x={cx - AVATAR_SIZE / 2}
+            y={Math.max(avatarY, 0)}
+            width={AVATAR_SIZE}
+            height={AVATAR_SIZE}
+            style={{ overflow: 'visible' }}
+          >
+            <Avatar
+              src={d.csPhoto || undefined}
+              alt={d.csName}
+              sx={{
+                width: AVATAR_SIZE,
+                height: AVATAR_SIZE,
+                fontSize: 10,
+                fontWeight: 700,
+                bgcolor: `${CHART_COLORS.primary}18`,
+                color: CHART_COLORS.primary,
+                border: `1.5px solid ${CHART_COLORS.primary}40`,
+              }}
+            >
+              {getInitials(d.csName)}
+            </Avatar>
+          </foreignObject>
+        );
+      })}
+    </g>
+  );
+}
+
+AvatarOverlay.propTypes = {
+  data: PropTypes.array.isRequired,
+  visibleKeys: PropTypes.array.isRequired,
+};
+
+function CreditsPerCSChart() {
   const [hiddenSeries, setHiddenSeries] = useState([]);
   const [selectedCS, setSelectedCS] = useState(null);
   const { startDate, endDate } = useDateFilter();
@@ -49,17 +120,22 @@ export default function CreditsPerCSChart() {
     [csAdmins]
   );
 
+  const activeSeries = useMemo(
+    () => ALL_SERIES.filter((s) => !hiddenSeries.includes(s.label)),
+    [hiddenSeries]
+  );
+
+  const visibleKeys = useMemo(() => activeSeries.map((s) => s.key), [activeSeries]);
+
   const visibleSeries = useMemo(
-    () => ALL_SERIES
-      .filter((s) => !hiddenSeries.includes(s.label))
-      .map((s) => ({
+    () => activeSeries.map((s) => ({
         data: sorted.map((d) => d[s.key]),
         label: s.label,
         color: s.color,
         stack: 'total',
         valueFormatter: (val) => `${val} credits`,
       })),
-    [hiddenSeries, sorted]
+    [activeSeries, sorted]
   );
 
   const handleAxisClick = useCallback((_event, data) => {
@@ -95,14 +171,16 @@ export default function CreditsPerCSChart() {
           xAxis={[{ scaleType: 'band', data: sorted.map((d) => d.csName), tickLabelStyle: { ...TICK_LABEL_STYLE, angle: -45 }, tickLabelInterval: () => true, height: 80 }]}
           yAxis={[{ tickLabelStyle: TICK_LABEL_STYLE }]}
           height={420}
-          margin={CHART_MARGIN}
+          margin={{ ...CHART_MARGIN, top: AVATAR_SIZE + 8 }}
           grid={CHART_GRID}
           hideLegend
           tooltip={{ trigger: 'axis' }}
           slots={{ axisContent: ChartAxisTooltip }}
           onAxisClick={handleAxisClick}
           sx={{ ...CHART_SX, cursor: 'pointer' }}
-        />
+        >
+          <AvatarOverlay data={sorted} visibleKeys={visibleKeys} />
+        </BarChart>
       </Stack>
     );
   };
@@ -131,3 +209,5 @@ export default function CreditsPerCSChart() {
     </ChartCard>
   );
 }
+
+export default memo(CreditsPerCSChart);

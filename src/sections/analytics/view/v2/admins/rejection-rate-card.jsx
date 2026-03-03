@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { memo, useState, useMemo, useCallback } from 'react';
 
 import {
   Box,
@@ -61,7 +61,7 @@ const SCROLL_SX = {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function RejectionRateCard() {
+function RejectionRateCard() {
   const router = useRouter();
   const { startDate, endDate } = useDateFilter();
   const { breakdown, trend, isLoading } = useGetClientRejectionRate({ startDate, endDate });
@@ -553,3 +553,5 @@ export default function RejectionRateCard() {
     </>
   );
 }
+
+export default memo(RejectionRateCard);

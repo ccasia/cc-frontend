@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 import PropTypes from 'prop-types';
 
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
@@ -15,7 +17,7 @@ const colors = {
   background: '#FFFFFF',
 };
 
-export default function KpiCard({ title, value, subtitle, trend, trendLabel, trendSuffix, color, tooltipKey, sparklineData, sparklineColor, headerExtra, valueRef, onValueMouseEnter, onValueMouseLeave, valueStyles }) {
+function KpiCard({ title, value, subtitle, trend, trendLabel, trendSuffix, color, tooltipKey, sparklineData, sparklineColor, headerExtra, valueRef, onValueMouseEnter, onValueMouseLeave, valueStyles }) {
   const trendColor = trend >= 0 ? colors.success : colors.error;
   const trendBg = trend >= 0 ? '#ECFDF5' : '#FEF2F2';
   const TrendIcon = trend >= 0 ? ArrowDropUpIcon : ArrowDropDownIcon;
@@ -134,3 +136,5 @@ KpiCard.propTypes = {
   onValueMouseLeave: PropTypes.func,
   valueStyles: PropTypes.object,
 };
+
+export default memo(KpiCard);

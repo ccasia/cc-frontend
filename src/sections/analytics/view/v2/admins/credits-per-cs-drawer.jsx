@@ -1,6 +1,10 @@
+import { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Stack, Avatar, Drawer, IconButton, Typography } from '@mui/material';
+import { Box, Stack, Avatar, Drawer, IconButton, Typography, ButtonBase, Tooltip } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import Iconify from 'src/components/iconify';
 
@@ -16,7 +20,61 @@ const PACKAGE_COLORS = {
 const PACKAGES = ['Basic', 'Essential', 'Pro', 'Custom'];
 const PACKAGE_KEYS = { Basic: 'basic', Essential: 'essential', Pro: 'pro', Custom: 'custom' };
 
+function getInitials(name) {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function StatTile({ label, value, accent }) {
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        py: 1,
+        px: 1.25,
+        bgcolor: accent ? `${accent}0A` : '#F4F6F8',
+        borderRadius: '8px',
+      }}
+    >
+      <Typography
+        sx={{
+          fontSize: 11,
+          fontWeight: 600,
+          color: UI_COLORS.textMuted,
+          letterSpacing: 0.2,
+          mb: 0.25,
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontSize: 18,
+          fontWeight: 700,
+          color: accent || UI_COLORS.text,
+          lineHeight: 1.2,
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  );
+}
+
+StatTile.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  accent: PropTypes.string,
+};
+
 export default function CreditsPerCSDrawer({ selectedCS, csAdmins, onClose, onNavigate }) {
+  const router = useRouter();
   const open = !!selectedCS;
 
   const currentIndex = open ? csAdmins.findIndex((c) => c.csName === selectedCS.csName) : -1;
@@ -31,7 +89,20 @@ export default function CreditsPerCSDrawer({ selectedCS, csAdmins, onClose, onNa
     ? selectedCS.basic + selectedCS.essential + selectedCS.pro + selectedCS.custom
     : 0;
 
-  const campaigns = open ? [...selectedCS.campaigns].sort((a, b) => b.credits - a.credits) : [];
+  const totalUtilized = selectedCS?.totalCreditsUtilized || 0;
+  const remaining = Math.max(total - totalUtilized, 0);
+
+  const [sortByLeastPending, setSortByLeastPending] = useState(true);
+
+  const campaigns = useMemo(() => {
+    if (!open || !selectedCS?.campaigns?.length) return [];
+    const list = [...selectedCS.campaigns];
+    return list.sort((a, b) => {
+      const pendingA = a.creditsPending ?? 0;
+      const pendingB = b.creditsPending ?? 0;
+      return sortByLeastPending ? pendingA - pendingB : pendingB - pendingA;
+    });
+  }, [open, selectedCS?.campaigns, sortByLeastPending]);
 
   const v2 = selectedCS?.v2Credits || 0;
   const v4 = selectedCS?.v4Credits || 0;
@@ -66,70 +137,73 @@ export default function CreditsPerCSDrawer({ selectedCS, csAdmins, onClose, onNa
           flexShrink: 0,
         }}
       >
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ pt: 2, px: 2.5 }}
-        >
-          <Box>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                {selectedCS?.csName}
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ pt: 2.5, px: 2.5 }}>
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Avatar
+              src={selectedCS?.csPhoto || undefined}
+              alt={selectedCS?.csName}
+              sx={{
+                width: 48,
+                height: 48,
+                fontSize: 16,
+                fontWeight: 700,
+                bgcolor: `${CHART_COLORS.primary}18`,
+                color: CHART_COLORS.primary,
+                border: `2px solid ${CHART_COLORS.primary}30`,
+              }}
+            >
+              {getInitials(selectedCS?.csName)}
+            </Avatar>
+            <Box>
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+                  {selectedCS?.csName}
+                </Typography>
+                <Box
+                  sx={{
+                    bgcolor: CHART_COLORS.primary,
+                    color: '#fff',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    px: 0.75,
+                    py: 0.125,
+                    borderRadius: '4px',
+                    lineHeight: '16px',
+                    letterSpacing: 0.3,
+                  }}
+                >
+                  #{rank}
+                </Box>
+              </Stack>
+              <Typography sx={{ fontSize: 12, color: UI_COLORS.textMuted, mt: 0.125 }}>
+                CS Admin
               </Typography>
-              <Box
-                sx={{
-                  bgcolor: CHART_COLORS.primary,
-                  color: '#fff',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  px: 1,
-                  py: 0.25,
-                  borderRadius: 0.75,
-                  lineHeight: '18px',
-                }}
-              >
-                #{rank}
-              </Box>
-            </Stack>
-            <Typography variant="body2" sx={{ color: UI_COLORS.textMuted, mt: 0.25 }}>
-              {total} total credits
-            </Typography>
-          </Box>
-          <IconButton onClick={onClose}>
-            <Iconify icon="eva:close-fill" sx={{ height: 24, width: 24 }} />
+            </Box>
+          </Stack>
+          <IconButton onClick={onClose} sx={{ mt: -1 }}>
+            <Iconify icon="eva:close-fill" sx={{ height: 22, width: 22 }} />
           </IconButton>
         </Stack>
 
-        {/* Stacked distribution bar — visual summary right in the header */}
-        <Stack
-          direction="row"
-          sx={{ mx: 2.5, mt: 1.5, mb: 2, height: 8, borderRadius: 1, overflow: 'hidden' }}
-        >
-          {total > 0 &&
-            PACKAGES.map((pkg) => {
-              const val = selectedCS?.[PACKAGE_KEYS[pkg]] || 0;
-              if (val === 0) return null;
-              return (
-                <Box
-                  key={pkg}
-                  sx={{
-                    height: '100%',
-                    width: `${(val / total) * 100}%`,
-                    bgcolor: PACKAGE_COLORS[pkg],
-                    transition: 'width 0.3s ease',
-                  }}
-                />
-              );
-            })}
+        {/* Credit summary tiles */}
+        <Stack direction="row" spacing={1} sx={{ mx: 2.5, mt: 2, mb: 1.5 }}>
+          <StatTile label="Total Credits" value={total} />
+          <StatTile label="Used Credits" value={totalUtilized} />
+          <StatTile label="Pending Credits" value={remaining} />
         </Stack>
       </Box>
 
       {/* ── Scrollable Content ── */}
-      <Box sx={{ flex: 1, overflow: 'auto', px: 2.5, py: 2.5, bgcolor: '#F4F6F8' }}>
+      <Box sx={{ flex: 1, overflow: 'auto', p: 1.5, bgcolor: '#F4F6F8' }}>
         {/* Section 1: Package Distribution */}
         <Box
-          sx={{ bgcolor: '#fff', border: '1px solid #E8ECEE', borderRadius: '12px', p: 2, mb: 2 }}
+          sx={{
+            bgcolor: '#fff',
+            border: '1px solid #E8ECEE',
+            borderRadius: '12px',
+            p: 1.5,
+            mb: 1.5,
+          }}
         >
           <Typography
             variant="caption"
@@ -138,7 +212,7 @@ export default function CreditsPerCSDrawer({ selectedCS, csAdmins, onClose, onNa
             Credits By Package
           </Typography>
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.25, mt: 1.5 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.25, mt: 1.25 }}>
             {PACKAGES.map((pkg) => {
               const val = selectedCS?.[PACKAGE_KEYS[pkg]] || 0;
               const pct = total > 0 ? Math.round((val / total) * 100) : 0;
@@ -146,32 +220,43 @@ export default function CreditsPerCSDrawer({ selectedCS, csAdmins, onClose, onNa
                 <Box
                   key={pkg}
                   sx={{
-                    bgcolor: PACKAGE_COLORS[pkg],
+                    bgcolor: `${PACKAGE_COLORS[pkg]}10`,
+                    border: `1px solid ${PACKAGE_COLORS[pkg]}20`,
                     borderRadius: '10px',
-                    px: 2,
-                    py: 1.5,
+                    p: 1.5,
                   }}
                 >
-                  <Typography
-                    sx={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: 'rgba(255,255,255,0.8)',
-                      lineHeight: 1,
-                    }}
-                  >
-                    {pkg}
-                  </Typography>
+                  <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
+                    <Typography
+                      sx={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: PACKAGE_COLORS[pkg],
+                        lineHeight: 1,
+                      }}
+                    >
+                      {pkg}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: PACKAGE_COLORS[pkg],
+                        bgcolor: `${PACKAGE_COLORS[pkg]}20`,
+                        px: 0.75,
+                        py: 0.25,
+                        borderRadius: '6px',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {pct}%
+                    </Typography>
+                  </Stack>
                   <Typography
                     variant="h4"
-                    sx={{ fontWeight: 800, color: '#fff', lineHeight: 1.3, mt: 0.5 }}
+                    sx={{ fontWeight: 800, color: UI_COLORS.text, lineHeight: 1 }}
                   >
                     {val}
-                  </Typography>
-                  <Typography
-                    sx={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}
-                  >
-                    {pct}%
                   </Typography>
                 </Box>
               );
@@ -179,67 +264,7 @@ export default function CreditsPerCSDrawer({ selectedCS, csAdmins, onClose, onNa
           </Box>
         </Box>
 
-        {/* Section 2: V2 vs V4 */}
-        <Box
-          sx={{ bgcolor: '#fff', border: '1px solid #E8ECEE', borderRadius: '12px', p: 2, mb: 2 }}
-        >
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 600,
-              color: UI_COLORS.textMuted,
-              fontSize: 12,
-              letterSpacing: 0.5,
-              mb: 1.5,
-              display: 'block',
-            }}
-          >
-            Campaign Version
-          </Typography>
-
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-            <Stack direction="row" alignItems="center" spacing={0.75}>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: CHART_COLORS.grey }} />
-              <Typography variant="body2" sx={{ fontWeight: 600, color: UI_COLORS.text }}>
-                V2
-              </Typography>
-              <Typography variant="caption" sx={{ color: UI_COLORS.textMuted }}>
-                {v2} ({Math.round((v2 / versionTotal) * 100)}%)
-              </Typography>
-            </Stack>
-            <Stack direction="row" alignItems="center" spacing={0.75}>
-              <Typography variant="caption" sx={{ color: UI_COLORS.textMuted }}>
-                {v4} ({Math.round((v4 / versionTotal) * 100)}%)
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: UI_COLORS.text }}>
-                V4
-              </Typography>
-              <Box
-                sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: CHART_COLORS.primary }}
-              />
-            </Stack>
-          </Stack>
-          <Stack direction="row" sx={{ height: 10, borderRadius: 1, overflow: 'hidden' }}>
-            <Box
-              sx={{
-                height: '100%',
-                width: `${(v2 / versionTotal) * 100}%`,
-                bgcolor: CHART_COLORS.grey,
-                transition: 'width 0.3s ease',
-              }}
-            />
-            <Box
-              sx={{
-                height: '100%',
-                width: `${(v4 / versionTotal) * 100}%`,
-                bgcolor: CHART_COLORS.primary,
-                transition: 'width 0.3s ease',
-              }}
-            />
-          </Stack>
-        </Box>
-
-        {/* Section 3: Campaign Breakdown */}
+        {/* Campaigns + Version (combined) */}
         <Box
           sx={{
             bgcolor: '#fff',
@@ -248,39 +273,127 @@ export default function CreditsPerCSDrawer({ selectedCS, csAdmins, onClose, onNa
             overflow: 'hidden',
           }}
         >
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            sx={{ px: 2, pt: 2, pb: 1.5 }}
-          >
-            <Typography
-              variant="caption"
-              sx={{ fontWeight: 600, color: UI_COLORS.textMuted, fontSize: 12, letterSpacing: 0.5 }}
+          {/* Campaign list header + version breakdown */}
+          <Box sx={{ px: 2, pt: 2, pb: 1.5, borderBottom: '1px solid #E8ECEE' }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ mb: 1.5 }}
             >
-              Campaigns
-            </Typography>
-            <Typography variant="caption" sx={{ color: UI_COLORS.textMuted }}>
-              {campaigns.length} campaigns
-            </Typography>
-          </Stack>
-          {campaigns.map((camp, i) => {
-            const pct = total > 0 ? Math.round((camp.credits / total) * 100) : 0;
-            const color = PACKAGE_COLORS[camp.package];
-            return (
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 600,
+                    color: UI_COLORS.textMuted,
+                    fontSize: 12,
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Campaigns
+                </Typography>
+                <Tooltip
+                  title={sortByLeastPending ? 'Sort by most pending' : 'Sort by least pending'}
+                >
+                  <IconButton
+                    size="small"
+                    onClick={() => setSortByLeastPending((v) => !v)}
+                    sx={{
+                      p: 0.5,
+                      color: UI_COLORS.textMuted,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: '6px',
+                      '&:hover': {
+                        color: CHART_COLORS.primary,
+                        bgcolor: `${CHART_COLORS.primary}08`,
+                        borderColor: `${CHART_COLORS.primary}40`,
+                      },
+                    }}
+                  >
+                    <Iconify
+                      icon={
+                        sortByLeastPending ? 'eva:arrow-upward-fill' : 'eva:arrow-downward-fill'
+                      }
+                      sx={{ width: 16, height: 16 }}
+                    />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+              <Typography variant="caption" sx={{ color: UI_COLORS.textMuted }}>
+                {campaigns.length} campaigns
+              </Typography>
+            </Stack>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <Box
+                  sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: CHART_COLORS.grey }}
+                />
+                <Typography variant="body2" sx={{ fontWeight: 600, color: UI_COLORS.text }}>
+                  V2
+                </Typography>
+                <Typography variant="caption" sx={{ color: UI_COLORS.textMuted, fontWeight: 500 }}>
+                  {v2} credits
+                </Typography>
+              </Stack>
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <Typography variant="caption" sx={{ color: UI_COLORS.textMuted, fontWeight: 500 }}>
+                  {v4} credits
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: UI_COLORS.text }}>
+                  V4
+                </Typography>
+                <Box
+                  sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: CHART_COLORS.primary }}
+                />
+              </Stack>
+            </Stack>
+            <Stack direction="row" sx={{ height: 10, borderRadius: 1, overflow: 'hidden' }}>
               <Box
-                key={camp.name}
                 sx={{
+                  height: '100%',
+                  width: `${(v2 / versionTotal) * 100}%`,
+                  bgcolor: CHART_COLORS.grey,
+                  transition: 'width 0.3s ease',
+                }}
+              />
+              <Box
+                sx={{
+                  height: '100%',
+                  width: `${(v4 / versionTotal) * 100}%`,
+                  bgcolor: CHART_COLORS.primary,
+                  transition: 'width 0.3s ease',
+                }}
+              />
+            </Stack>
+          </Box>
+          {campaigns.map((camp, i) => {
+            const color = PACKAGE_COLORS[camp.package];
+            const used = camp.creditsUtilized ?? 0;
+            const pending = camp.creditsPending ?? 0;
+            return (
+              <ButtonBase
+                key={camp.campaignId}
+                onClick={() => router.push(paths.dashboard.campaign.details(camp.campaignId))}
+                sx={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
                   px: 2,
                   py: 1.5,
-                  borderLeft: `3px solid ${color}`,
                   ...(i < campaigns.length - 1 && { borderBottom: '1px solid #E8ECEE' }),
                   transition: 'background-color 0.15s',
-                  '&:hover': { bgcolor: UI_COLORS.backgroundHover },
+                  '&:hover': {
+                    bgcolor: UI_COLORS.backgroundHover,
+                    '& .campaign-chevron': {
+                      transform: 'translateX(2px)',
+                      opacity: 1,
+                    },
+                  },
                 }}
               >
-                <Stack direction="row" alignItems="center" spacing={1.5}>
-                  {/* Campaign image */}
+                <Stack direction="row" spacing={1.5} alignItems="center">
                   <Avatar
                     src={camp.campaignImage || undefined}
                     alt={camp.name}
@@ -288,85 +401,91 @@ export default function CreditsPerCSDrawer({ selectedCS, csAdmins, onClose, onNa
                     sx={{ width: 40, height: 40, flexShrink: 0, borderRadius: '8px' }}
                   />
 
-                  {/* Name + bar + meta */}
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Stack
-                      direction="row"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      spacing={1}
-                    >
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 600,
-                          color: UI_COLORS.text,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          flex: 1,
-                          minWidth: 0,
-                        }}
-                      >
-                        {camp.name}
-                      </Typography>
-                      <Box
-                        sx={{
-                          flexShrink: 0,
-                          bgcolor: `${color}14`,
-                          color,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          px: 1,
-                          py: 0.25,
-                          borderRadius: '6px',
-                          lineHeight: '20px',
-                        }}
-                      >
-                        {camp.credits} credits
-                      </Box>
-                    </Stack>
-
-                    {/* Progress bar */}
-                    <Box
+                    <Typography
+                      variant="body2"
                       sx={{
-                        mt: 0.75,
-                        height: 6,
-                        borderRadius: '3px',
-                        bgcolor: '#F0F2F4',
+                        fontWeight: 600,
+                        color: UI_COLORS.text,
                         overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      <Box
-                        sx={{
-                          height: '100%',
-                          width: `${pct}%`,
-                          minWidth: pct > 0 ? 4 : 0,
-                          bgcolor: color,
-                          borderRadius: '3px',
-                          transition: 'width 0.3s ease',
-                        }}
-                      />
-                    </Box>
+                      {camp.name}
+                    </Typography>
 
-                    <Stack
-                      direction="row"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      sx={{ mt: 0.5 }}
-                    >
-                      <Typography sx={{ fontSize: 11, color: UI_COLORS.textMuted }}>
-                        {camp.package} · {camp.version}
-                      </Typography>
-                      <Typography
-                        sx={{ fontSize: 11, fontWeight: 600, color: UI_COLORS.textMuted }}
-                      >
-                        {pct}%
-                      </Typography>
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+                      <Stack direction="row" alignItems="baseline" spacing={0.5}>
+                        <Typography
+                          sx={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: CHART_COLORS.primary,
+                            lineHeight: 1,
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {used}
+                        </Typography>
+                        <Typography sx={{ fontSize: 11, color: UI_COLORS.textMuted, lineHeight: 1 }}>
+                          used
+                        </Typography>
+                      </Stack>
+                      <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: '#919EAB66' }} />
+                      <Stack direction="row" alignItems="baseline" spacing={0.5}>
+                        <Typography
+                          sx={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: CHART_COLORS.warning,
+                            lineHeight: 1,
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {pending}
+                        </Typography>
+                        <Typography sx={{ fontSize: 11, color: UI_COLORS.textMuted, lineHeight: 1 }}>
+                          pending
+                        </Typography>
+                      </Stack>
                     </Stack>
                   </Box>
+
+                  <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexShrink: 0 }}>
+                    <Box
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color,
+                        bgcolor: `${color}14`,
+                        px: 0.75,
+                        py: 0.25,
+                        borderRadius: '4px',
+                        lineHeight: 1,
+                        letterSpacing: 0.3,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {camp.package} · {camp.version}
+                    </Box>
+                    <Iconify
+                      icon="eva:chevron-right-fill"
+                      className="campaign-chevron"
+                      sx={{
+                        width: 18,
+                        height: 18,
+                        color: UI_COLORS.textMuted,
+                        opacity: 0.4,
+                        transition: 'transform 0.2s ease, opacity 0.2s ease',
+                      }}
+                    />
+                  </Stack>
                 </Stack>
-              </Box>
+              </ButtonBase>
             );
           })}
         </Box>
