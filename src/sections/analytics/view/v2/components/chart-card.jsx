@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import PropTypes from 'prop-types';
 
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
@@ -13,9 +14,9 @@ const colors = {
   background: '#FFFFFF',
 };
 
-export default function ChartCard({ title, icon: Icon, subtitle, children, tooltipKey, height, headerRight }) {
-  return (
+const ChartCard = forwardRef(({ title, icon: Icon, subtitle, children, tooltipKey, height, headerRight }, ref) => (
     <Card
+      ref={ref}
       sx={{
         border: `1px solid ${colors.border}`,
         borderRadius: 2,
@@ -92,8 +93,9 @@ export default function ChartCard({ title, icon: Icon, subtitle, children, toolt
         {children}
       </Box>
     </Card>
-  );
-}
+));
+
+ChartCard.displayName = 'ChartCard';
 
 ChartCard.propTypes = {
   title: PropTypes.string.isRequired,
@@ -104,3 +106,5 @@ ChartCard.propTypes = {
   height: PropTypes.number,
   headerRight: PropTypes.node,
 };
+
+export default ChartCard;
