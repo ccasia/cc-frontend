@@ -392,3 +392,39 @@ export function TurnaroundTooltip(props) {
     </Box>
   );
 }
+
+export function PieTooltip(props) {
+  const { series, itemData } = props;
+
+  if (!series || itemData?.dataIndex === undefined) return null;
+
+  const pieItem = series.data[itemData.dataIndex];
+
+  if (!pieItem) return null;
+
+  return (
+    <Box
+      sx={{
+        bgcolor: '#1C252E', 
+        color: '#fff',
+        p: 1.5,
+        borderRadius: 1.5,
+        boxShadow: 3,
+        border: '1px solid rgba(255,255,255,0.1)',
+        minWidth: 160,
+      }}
+    >
+      <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
+        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: pieItem.color }} />
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          {pieItem.label}
+        </Typography>
+      </Stack>
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 1 }} />
+      <Stack direction="row" justifyContent="space-between">
+        <Typography variant="caption" sx={{ color: 'grey.400' }}>Count:</Typography>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{pieItem.value}</Typography>
+      </Stack>
+    </Box>
+  );
+}
