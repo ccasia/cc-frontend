@@ -4,6 +4,8 @@ import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { Avatar, Box, Skeleton, Stack, Typography } from '@mui/material';
 
 import useGetTopShortlistedCreators from 'src/hooks/use-get-top-shortlisted-creators';
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
 
 import ChartCard from '../components/chart-card';
 import { useDateFilter } from '../date-filter-context';
@@ -23,6 +25,7 @@ const SCROLL_SX = {
 };
 
 function TopShortlistedCreatorsChart() {
+  const router = useRouter();
   const { startDate, endDate, creditTiers } = useDateFilter();
 
   const hookOptions = useMemo(() => {
@@ -118,9 +121,11 @@ function TopShortlistedCreatorsChart() {
                 key={creator.userId}
                 direction="row"
                 alignItems="center"
+                onClick={() => router.push(paths.dashboard.creator.profile(creator.userId))}
                 sx={{
                   py: 1.25,
                   px: 2.5,
+                  cursor: 'pointer',
                   transition: 'background-color 0.15s',
                   '&:hover': { bgcolor: UI_COLORS.backgroundHover },
                   borderBottom: index < creators.length - 1 ? '1px solid #F0F2F4' : 'none',
