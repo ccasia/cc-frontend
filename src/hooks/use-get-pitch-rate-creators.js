@@ -4,15 +4,16 @@ import { useMemo } from 'react';
 import { fetcher, endpoints } from 'src/utils/axios';
 
 
-const useGetPitchRateCreators = ({ startDate, endDate } = {}) => {
+const useGetPitchRateCreators = ({ startDate, endDate, creditTiers = [] } = {}) => {
   const url = useMemo(() => {
     if (!startDate || !endDate) return null;
     const params = new URLSearchParams({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
     });
+    creditTiers.forEach((t) => params.append('creditTiers', t));
     return `${endpoints.analytics.pitchRateCreators}?${params}`;
-  }, [startDate, endDate]);
+  }, [startDate, endDate, creditTiers]);
 
   const { data, error, isLoading } = useSWR(url, fetcher, {
     revalidateOnFocus: false,

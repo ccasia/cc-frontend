@@ -14,9 +14,16 @@ import CreatorEarningsDrawer from './creator-earnings-drawer';
 
 function CreatorEarningsChart() {
   const [selectedCreator, setSelectedCreator] = useState(null);
-  const { startDate, endDate } = useDateFilter();
+  const { startDate, endDate, creditTiers } = useDateFilter();
 
-  const { creators, isLoading } = useGetCreatorEarnings({ startDate, endDate });
+  const hookOptions = useMemo(() => {
+    const opts = {};
+    if (startDate && endDate) { opts.startDate = startDate; opts.endDate = endDate; }
+    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
+    return opts;
+  }, [startDate, endDate, creditTiers]);
+
+  const { creators, isLoading } = useGetCreatorEarnings(hookOptions);
 
   const sorted = useMemo(
     () => [...creators].sort((a, b) => b.totalEarnings - a.totalEarnings),

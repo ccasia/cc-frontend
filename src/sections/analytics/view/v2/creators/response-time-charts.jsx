@@ -140,14 +140,16 @@ SingleMetricChart.propTypes = {
 };
 
 function ResponseTimeCharts() {
-  const { startDate, endDate } = useDateFilter();
+  const { startDate, endDate, creditTiers } = useDateFilter();
   const isDaily = useIsDaily();
   const trendLabel = useTrendLabel();
 
   const hookOptions = useMemo(() => {
-    if (isDaily && startDate && endDate) return { granularity: 'daily', startDate, endDate };
-    return {};
-  }, [isDaily, startDate, endDate]);
+    const opts = {};
+    if (isDaily && startDate && endDate) Object.assign(opts, { granularity: 'daily', startDate, endDate });
+    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
+    return opts;
+  }, [isDaily, startDate, endDate, creditTiers]);
 
   const { avgAgreementResponse, periodComparison: agreementComparison } = useGetAvgAgreementResponse(hookOptions);
   const { avgFirstCampaign, periodComparison: campaignComparison } = useGetAvgFirstCampaign(hookOptions);

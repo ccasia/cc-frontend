@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { Avatar, Box, Skeleton, Stack, Typography } from '@mui/material';
@@ -23,8 +23,16 @@ const SCROLL_SX = {
 };
 
 function TopShortlistedCreatorsChart() {
-  const { startDate, endDate } = useDateFilter();
-  const { creators, isLoading } = useGetTopShortlistedCreators({ startDate, endDate });
+  const { startDate, endDate, creditTiers } = useDateFilter();
+
+  const hookOptions = useMemo(() => {
+    const opts = {};
+    if (startDate && endDate) { opts.startDate = startDate; opts.endDate = endDate; }
+    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
+    return opts;
+  }, [startDate, endDate, creditTiers]);
+
+  const { creators, isLoading } = useGetTopShortlistedCreators(hookOptions);
 
   const renderContent = () => {
     const fullWidthSx = { mx: -1, mb: -1, mt: -0.5, flex: 1, display: 'flex', flexDirection: 'column' };

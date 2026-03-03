@@ -9,12 +9,13 @@ const DateFilterContext = createContext({
   dateFilter: 'all',
   startDate: null,
   endDate: null,
+  creditTiers: [],
 });
 
-export function DateFilterProvider({ dateFilter, startDate, endDate, children }) {
+export function DateFilterProvider({ dateFilter, startDate, endDate, creditTiers, children }) {
   const value = useMemo(
-    () => ({ dateFilter, startDate, endDate }),
-    [dateFilter, startDate, endDate]
+    () => ({ dateFilter, startDate, endDate, creditTiers }),
+    [dateFilter, startDate, endDate, creditTiers]
   );
   return <DateFilterContext.Provider value={value}>{children}</DateFilterContext.Provider>;
 }
@@ -23,7 +24,12 @@ DateFilterProvider.propTypes = {
   dateFilter: PropTypes.string.isRequired,
   startDate: PropTypes.instanceOf(Date),
   endDate: PropTypes.instanceOf(Date),
+  creditTiers: PropTypes.arrayOf(PropTypes.string),
   children: PropTypes.node.isRequired,
+};
+
+DateFilterProvider.defaultProps = {
+  creditTiers: [],
 };
 
 export function useDateFilter() {

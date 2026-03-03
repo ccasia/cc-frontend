@@ -17,16 +17,18 @@ import ChartAxisTooltip from '../components/chart-axis-tooltip';
 import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, TICK_LABEL_STYLE, getTrendProps } from '../chart-config';
 
 function ActivationRateChart() {
-  const { startDate, endDate } = useDateFilter();
+  const { startDate, endDate, creditTiers } = useDateFilter();
   const isDaily = useIsDaily();
   const chipLabel = useFilterLabel();
 
   const hookOptions = useMemo(() => {
+    const opts = {};
     if (isDaily && startDate && endDate) {
-      return { granularity: 'daily', startDate, endDate };
+      Object.assign(opts, { granularity: 'daily', startDate, endDate });
     }
-    return {};
-  }, [isDaily, startDate, endDate]);
+    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
+    return opts;
+  }, [isDaily, startDate, endDate, creditTiers]);
 
   const { activationRate, periodComparison } = useGetActivationRate(hookOptions);
 

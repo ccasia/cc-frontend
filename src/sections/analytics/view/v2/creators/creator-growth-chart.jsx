@@ -137,7 +137,8 @@ function DemographicsPanel({ chipLabel, total, growthRate, trend, TrendIcon, isN
   const donutSize = isSmall ? 160 : 180;
 
   const { gender, ageGroups } = demographics;
-  const genderTotal = gender.reduce((sum, d) => sum + d.value, 0) || 1;
+  const genderSum = gender.reduce((sum, d) => sum + d.value, 0);
+  const genderTotal = genderSum || 1; // avoid division by zero for percentages
 
   const pieData = gender.map((d, i) => ({
     id: i,
@@ -191,7 +192,7 @@ function DemographicsPanel({ chipLabel, total, growthRate, trend, TrendIcon, isN
                 Total
               </Typography>
               <Typography sx={{ fontWeight: 700, fontSize: '1.35rem', lineHeight: 1.2, color: '#333' }}>
-                {genderTotal.toLocaleString()}
+                {genderSum.toLocaleString()}
               </Typography>
             </Box>
           </Box>
@@ -292,15 +293,17 @@ DemographicsPanel.propTypes = {
 };
 
 function CreatorGrowthChart() {
-  const { startDate, endDate } = useDateFilter();
+  const { startDate, endDate, creditTiers } = useDateFilter();
   const isDaily = useIsDaily();
 
   const hookOptions = useMemo(() => {
+    const opts = {};
     if (isDaily && startDate && endDate) {
-      return { granularity: 'daily', startDate, endDate };
+      Object.assign(opts, { granularity: 'daily', startDate, endDate });
     }
-    return {};
-  }, [isDaily, startDate, endDate]);
+    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
+    return opts;
+  }, [isDaily, startDate, endDate, creditTiers]);
 
   const { creatorGrowth, demographics } = useGetCreatorGrowth(hookOptions);
 

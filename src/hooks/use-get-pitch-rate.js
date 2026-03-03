@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { fetcher, endpoints } from 'src/utils/axios';
 
 
-const useGetPitchRate = ({ granularity, startDate, endDate } = {}) => {
+const useGetPitchRate = ({ granularity, startDate, endDate, creditTiers = [] } = {}) => {
   const url = useMemo(() => {
     const base = endpoints.analytics.pitchRate;
     if (granularity === 'daily' && startDate && endDate) {
@@ -13,10 +13,16 @@ const useGetPitchRate = ({ granularity, startDate, endDate } = {}) => {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
       });
+      creditTiers.forEach((t) => params.append('creditTiers', t));
+      return `${base}?${params}`;
+    }
+    if (creditTiers.length > 0) {
+      const params = new URLSearchParams();
+      creditTiers.forEach((t) => params.append('creditTiers', t));
       return `${base}?${params}`;
     }
     return base;
-  }, [granularity, startDate, endDate]);
+  }, [granularity, startDate, endDate, creditTiers]);
 
   const { data, error, isLoading } = useSWR(url, fetcher, {
     revalidateOnFocus: false,
