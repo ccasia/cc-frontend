@@ -1,22 +1,24 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Card, Box, Grid, Typography, Stack, Tooltip } from '@mui/material';
 import {
-  PieChart,
-  BarChart,
-  LineChart,
-  axisClasses,
-  ScatterChart,
-  ChartsReferenceLine,
-  ChartContainer,
-  LinePlot,
-  ScatterPlot,
-  ChartsXAxis,
-  ChartsYAxis,
-  ChartsTooltip,
-} from '@mui/x-charts';
+  Card,
+  Box,
+  Typography,
+  Stack,
+  useTheme,
+  useMediaQuery,
+  LinearProgress,
+} from '@mui/material';
+import { PieChart, BarChart, axisClasses, ScatterChart, ChartsReferenceLine } from '@mui/x-charts';
 
-import { ClientTooltip, MatrixTooltip, RenewalTooltip, TurnaroundTooltip } from './client-tooltips';
+import {
+  ClientTooltip,
+  MatrixTooltip,
+  PieTooltip,
+  RenewalTooltip,
+  TurnaroundTooltip,
+} from './client-tooltips';
+import Iconify from 'src/components/iconify';
 
 // Your Brand Colors
 const COLORS = {
@@ -116,14 +118,17 @@ export function TimeSpentChart({ data }) {
       }}
     >
       <Stack direction="row" justifyContent="space-between" mb={1}>
-        <Typography variant="subtitle1" fontWeight="bold">
-          Time Spent per Step
-        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Iconify icon="mdi:access-time" width={20} color="grey.500" />
+          <Typography variant="subtitle1" fontWeight="bold">
+            Time Spent per Step
+          </Typography>
+        </Stack>
         <Typography variant="caption" color="text.secondary">
           In Minutes
         </Typography>
       </Stack>
-      <Box sx={{ flexGrow: 1 }}>
+      <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
         <BarChart
           dataset={dataset}
           yAxis={[{ scaleType: 'band', dataKey: 'name', categoryGapRatio: 0.5 }]}
@@ -136,7 +141,7 @@ export function TimeSpentChart({ data }) {
             },
           ]}
           layout="horizontal"
-          margin={{ left: 140, right: 40, top: 10, bottom: 10 }}
+          margin={{ left: 110, right: 40, top: 10, bottom: 10 }}
           {...cleanChartSettings}
           slots={{ axisContent: ClientTooltip }}
           slotProps={{ legend: { hidden: true }, tooltip: { trigger: 'item' } }}
@@ -182,15 +187,18 @@ export function SkippedFieldsChart({ journey, campaign }) {
       }}
     >
       <Stack direction="row" justifyContent="space-between" mb={1}>
-        <Typography variant="subtitle1" fontWeight="bold">
-          Most skipped fields (Top 5)
-        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Iconify icon="raphael:no" width={20} color="grey.500" />
+          <Typography variant="subtitle1" fontWeight="bold">
+            Most skipped fields (Top 5)
+          </Typography>
+        </Stack>
         <Typography variant="caption" color="text.secondary">
           Campaigns Analyzed: {campaign || 0}
         </Typography>
       </Stack>
 
-      <Box sx={{ flexGrow: 1, minHeight: 0, width: '100%' }}>
+      <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
         <BarChart
           dataset={dataset}
           yAxis={[
@@ -213,7 +221,7 @@ export function SkippedFieldsChart({ journey, campaign }) {
             },
           ]}
           layout="horizontal"
-          margin={{ left: 150, right: 40, top: 10, bottom: 10 }}
+          margin={{ left: 120, right: 40, top: 10, bottom: 10 }}
           {...cleanChartSettings}
           slots={{ axisContent: ClientTooltip }}
           slotProps={{
@@ -267,14 +275,17 @@ export function DropOffChart({ data }) {
       }}
     >
       <Stack direction="row" justifyContent="space-between" mb={1}>
-        <Typography variant="subtitle1" fontWeight="bold">
-          Drop off Location
-        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Iconify icon="mdi:location-remove-outline" width={20} color="grey.500" />
+          <Typography variant="subtitle1" fontWeight="bold">
+            Drop off Location
+          </Typography>
+        </Stack>
         <Typography variant="caption" color="text.secondary">
           Abandoned setups
         </Typography>
       </Stack>
-      <Box sx={{ flexGrow: 1 }}>
+      <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
         <BarChart
           dataset={dataset}
           yAxis={[{ scaleType: 'band', dataKey: 'name', categoryGapRatio: 0.5 }]}
@@ -289,7 +300,7 @@ export function DropOffChart({ data }) {
             },
           ]}
           layout="horizontal"
-          margin={{ left: 140, right: 40, top: 10, bottom: 10 }}
+          margin={{ left: 110, right: 40, top: 10, bottom: 10 }}
           {...cleanChartSettings}
           slotProps={{ legend: { hidden: true }, tooltip: { trigger: 'item' } }}
           slots={{ axisContent: ClientTooltip }}
@@ -310,17 +321,6 @@ DropOffChart.propTypes = {
 
 // --- 5. Row 3: Package Renewal (Stacked Bar) ---
 export function RenewalChart({ data }) {
-  // const chartData =
-  //   data?.monthlyRenewals?.length > 0
-  //     ? data.monthlyRenewals
-  //     : [
-  //         {
-  //           name: 'Total Cohort',
-  //           Upgrades: data?.upgrades || 0,
-  //           Renewals: data?.renewals || 0,
-  //           Downgrades: data?.downgrades || 0,
-  //         },
-  //       ];
   const chartData = data?.monthlyRenewals || [];
 
   return (
@@ -335,10 +335,13 @@ export function RenewalChart({ data }) {
         flexDirection: 'column',
       }}
     >
-      <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-        Package Renewal
-      </Typography>
-      <Box sx={{ flexGrow: 1 }}>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Iconify icon="material-symbols:package-2-outline" width={20} color="grey.500" />
+        <Typography variant="subtitle1" fontWeight="bold">
+          Package Renewal
+        </Typography>
+      </Stack>
+      <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
         <BarChart
           dataset={chartData}
           xAxis={[
@@ -397,9 +400,16 @@ export function ReviewEfficiencyScatter({ data }) {
       }}
     >
       <Stack direction="row" justifyContent="space-between" mb={-2}>
-        <Typography variant="subtitle1" fontWeight="bold">
-          Submission Review Efficiency
-        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Iconify
+            icon="material-symbols:rate-review-outline-rounded"
+            width={20}
+            color="grey.500"
+          />
+          <Typography variant="subtitle1" fontWeight="bold">
+            Submission Review Efficiency
+          </Typography>
+        </Stack>
         <Stack alignItems="flex-end">
           <Typography variant="caption" color="text.secondary">
             Avg Review Time: {data?.avgReviewTimeHours}h
@@ -410,7 +420,7 @@ export function ReviewEfficiencyScatter({ data }) {
         </Stack>
       </Stack>
 
-      <Box sx={{ flexGrow: 1 }}>
+      <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
         <ScatterChart
           series={[
             { data: healthyPoints, color: COLORS.blue, label: 'Within 2 rounds', id: 'healthy' },
@@ -481,10 +491,13 @@ export function TurnaroundChart({ data }) {
         flexDirection: 'column',
       }}
     >
-      <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-        Shortlist Turnaround Time
-      </Typography>
-      <Box sx={{ flexGrow: 1 }}>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Iconify icon="mdi:timer-outline" width={20} color="grey.500" />
+        <Typography variant="subtitle1" fontWeight="bold">
+          Shortlist Turnaround Time
+        </Typography>
+      </Stack>
+      <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
         <ScatterChart
           xAxis={[{ valueFormatter: (v) => trendData[v]?.name?.split(' ')[0] || '' }]}
           series={[
@@ -507,39 +520,46 @@ export function TurnaroundChart({ data }) {
               label: 'Fastest',
             },
           ]}
-          voronoiMaxRadius={50} // Magnetic dots
+          voronoiMaxRadius={50}
           slots={{
             itemContent: TurnaroundTooltip,
           }}
           slotProps={{
             legend: { hidden: true },
-            // Ensure pointer events are enabled for tooltips
             popper: {
               sx: {
                 pointerEvents: 'none',
-                zIndex: 1300, // Force it above everything
+                zIndex: 1300,
               },
             },
           }}
           {...cleanChartSettings}
-        >
-          {/* THIS IS THE TRICK: Draw lines manually using SVG paths if you really want lines */}
-          {/* But honestly, for "Turnaround Time per Month", just 3 colored dots per column looks very clean too. */}
-        </ScatterChart>
+        ></ScatterChart>
       </Box>
     </Card>
   );
 }
 
 // --- 8. Row 5: Rejection Donut ---
+
+const DONUT_COLORS = ['#EF4444', '#F59E0B', '#1340FF', '#8E33FF', '#10B981', '#00B8D9', '#919EAB'];
+
 export function RejectionDonut({ data }) {
-  const pieData =
-    data?.map((item, index) => ({
-      id: index,
-      value: item.value,
-      label: item.name,
-      color: Object.values(COLORS)[index % 5],
-    })) || [];
+  const safeData = Array.isArray(data) ? data : [];
+
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
+  const donutSize = isSmall ? 180 : 220;
+
+  const total = safeData.reduce((sum, d) => sum + (d?.value || 0), 0);
+  const maxCount = safeData.length > 0 ? Math.max(...safeData.map((d) => d?.value || 0)) : 1;
+
+  const pieData = safeData.map((d, i) => ({
+    id: i,
+    value: d?.value || 0,
+    label: d?.name || 'Unknown',
+    color: DONUT_COLORS[i % DONUT_COLORS.length],
+  }));
 
   return (
     <Card
@@ -548,29 +568,139 @@ export function RejectionDonut({ data }) {
         borderRadius: 3,
         border: '1px solid #E5E7EB',
         boxShadow: 'none',
-        height: 350,
-        display: 'flex',
-        flexDirection: 'column',
+        height: '100%',
       }}
     >
-      <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-        Shortlist Rejection Reasons
-      </Typography>
-      <Box sx={{ flexGrow: 1 }}>
-        <PieChart
-          series={[
-            {
-              data: pieData,
-              innerRadius: 60,
-              outerRadius: 90,
-              paddingAngle: 2,
-              cornerRadius: 4,
-              highlightScope: { faded: 'global', highlighted: 'item' },
-            },
-          ]}
-          slotProps={{ legend: { hidden: true } }} // Hiding legend to look like your drawing
-        />
-      </Box>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Iconify icon="fluent:text-change-reject-24-filled" width={20} color="grey.500" />
+        <Typography variant="subtitle1" fontWeight="bold">
+          Shortlist Rejection Reasons
+        </Typography>
+      </Stack>
+
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center" sx={{ py: 1 }}>
+        <Box sx={{ position: 'relative', flexShrink: 0, width: donutSize, height: donutSize }}>
+          {total > 0 ? (
+            <PieChart
+              series={[
+                {
+                  data: pieData,
+                  innerRadius: '55%',
+                  outerRadius: '90%',
+                  paddingAngle: 2,
+                  cornerRadius: 3,
+                  valueFormatter: (item) => `${item.value} rejections`,
+                  highlightScope: { faded: 'global', highlighted: 'item' },
+                },
+              ]}
+              height={donutSize}
+              width={donutSize}
+              margin={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              slotProps={{ legend: { hidden: true } }}
+              slots={{ itemContent: PieTooltip }}
+            />
+          ) : (
+            <Box
+              sx={{
+                width: '100%',
+                height: '100%',
+                borderRadius: '50%',
+                border: '8px solid #F4F6F8',
+              }}
+            />
+          )}
+
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center',
+              pointerEvents: 'none',
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{ color: '#919EAB', fontSize: '0.7rem', lineHeight: 1 }}
+            >
+              Total
+            </Typography>
+            <Typography
+              sx={{ fontWeight: 700, fontSize: '1.5rem', lineHeight: 1.2, color: '#333' }}
+            >
+              {total}
+            </Typography>
+          </Box>
+        </Box>
+
+        <Stack spacing={2} sx={{ flex: 1, width: '100%', pr: { sm: 1 } }}>
+          {safeData.map((d, i) => {
+            const percentage = total > 0 ? ((d.value / total) * 100).toFixed(1) : 0;
+            const barColor = DONUT_COLORS[i % DONUT_COLORS.length];
+
+            return (
+              <Box key={d?.name || i}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ mb: 0.75 }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Box
+                      sx={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        bgcolor: barColor,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{ color: '#333', fontWeight: 500, fontSize: '0.85rem' }}
+                    >
+                      {d?.name}
+                    </Typography>
+                  </Stack>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#666',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      whiteSpace: 'nowrap',
+                      ml: 1,
+                    }}
+                  >
+                    {d?.value}
+                    <Typography
+                      component="span"
+                      sx={{ color: '#919EAB', fontWeight: 500, fontSize: '0.75rem', ml: 0.5 }}
+                    >
+                      ({percentage}%)
+                    </Typography>
+                  </Typography>
+                </Stack>
+                <LinearProgress
+                  variant="determinate"
+                  value={((d?.value || 0) / maxCount) * 100}
+                  sx={{
+                    height: 6,
+                    borderRadius: 3,
+                    bgcolor: '#F4F6F8',
+                    '& .MuiLinearProgress-bar': {
+                      borderRadius: 3,
+                      bgcolor: barColor,
+                    },
+                  }}
+                />
+              </Box>
+            );
+          })}
+        </Stack>
+      </Stack>
     </Card>
   );
 }
