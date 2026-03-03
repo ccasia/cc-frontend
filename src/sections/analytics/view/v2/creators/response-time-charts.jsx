@@ -93,6 +93,7 @@ function SingleMetricChart({ title, numericData, color, months, latestValue, tre
             <InfoOutlinedIcon sx={{ fontSize: 15, color: '#919EAB', cursor: 'help' }} />
           </Tooltip>
         )}
+        <Box sx={{ flex: 1, minWidth: 0 }} />
         <Typography sx={{ fontWeight: 700, fontSize: '1.25rem', lineHeight: 1.2 }}>
           {fmtShortProp(latestValue)}
         </Typography>
