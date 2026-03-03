@@ -138,8 +138,6 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
                   // Access day by index: weekData[0] = Monday, weekData[1] = Tuesday, etc.
                   const cell = weekData[displayRow] || { date: null, engagementRate: null };
 
-                  console.log(heatmapGrid)
-
                   return (
                     <Tooltip
                       key={`${weekIndex}-${displayRow}`}
