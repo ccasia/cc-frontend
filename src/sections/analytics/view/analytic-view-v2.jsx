@@ -34,6 +34,7 @@ import {
   useIsDaily,
   useTrendLabel,
 } from './v2/date-filter-context';
+import PackageFilterSelect from './v2/components/package-filter';
 
 const CreatorsTabContent = lazy(() => import('./v2/creators-tab-content'));
 const AdminsTabContent = lazy(() => import('./v2/admins-tab-content'));
@@ -335,6 +336,7 @@ export default function AnalyticViewV2() {
   const [dateFilter, setDateFilter] = useState('all');
   const [filterStartDate, setFilterStartDate] = useState(null);
   const [filterEndDate, setFilterEndDate] = useState(null);
+  const [filterPackageType, setFilterPackageType] = useState('ALL');
   const [creditTiers, setCreditTiers] = useState([]);
 
   const handleDateFilterChange = useCallback(({ preset, startDate, endDate }) => {
