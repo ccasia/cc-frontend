@@ -1,8 +1,10 @@
 import { memo, useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { m, AnimatePresence } from 'framer-motion';
 
 import RemoveIcon from '@mui/icons-material/Remove';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SplitscreenIcon from '@mui/icons-material/Splitscreen';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -28,6 +30,12 @@ const LEGEND_ITEMS = [
   { label: 'Time to 1st Accepted Campaign', color: CHART_COLORS.warning },
   { label: 'Submission Response', color: CHART_COLORS.success },
 ];
+
+const METRIC_TOOLTIPS = {
+  'Avg Agreement Response': 'Average time for creators to sign and submit the agreement after it\u2019s sent by CS.',
+  'Avg Time to 1st Accepted Campaign': 'Average time from a creator\u2019s pitch to being shortlisted for their first campaign.',
+  'Avg Submission Response': 'Average time for creators to submit their first draft after the agreement is approved.',
+};
 
 function SingleMetricChart({ title, numericData, color, months, latestValue, trend, trendLabel, fmtHours, onAxisClick }) {
   const indices = useMemo(() => months.map((_, i) => i), [months]);
@@ -80,6 +88,11 @@ function SingleMetricChart({ title, numericData, color, months, latestValue, tre
         <Typography variant="caption" sx={{ color: '#637381', fontWeight: 600, fontSize: '0.8125rem' }}>
           {title}
         </Typography>
+        {METRIC_TOOLTIPS[title] && (
+          <Tooltip title={METRIC_TOOLTIPS[title]} arrow placement="top" slotProps={{ tooltip: { sx: { fontSize: '0.75rem', maxWidth: 260 } } }}>
+            <InfoOutlinedIcon sx={{ fontSize: 15, color: '#919EAB', cursor: 'help' }} />
+          </Tooltip>
+        )}
         <Typography sx={{ fontWeight: 700, fontSize: '1.25rem', lineHeight: 1.2 }}>
           {latestValue}h
         </Typography>
@@ -231,6 +244,7 @@ function ResponseTimeCharts() {
   const [viewMode, setViewMode] = useState('combined');
   const [activeMetric, setActiveMetric] = useState(null);
   const clickStartRef = useRef(null);
+  const cardRef = useRef(null);
 
   const handleToggle = useCallback((label) => {
     setHiddenSeries((prev) =>
@@ -361,113 +375,135 @@ function ResponseTimeCharts() {
   ];
 
   return (
-    <ChartCard title="Response Times" icon={AccessTimeIcon} subtitle="Monthly avg response times across key workflow stages" headerRight={headerToggle}>
-      {isCombined ? (
-        <>
-          <Box sx={{ border: '1px solid #E8ECEE', borderRadius: 1.5, mx: 2.5, mb: 2 }}>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              divider={<Divider orientation="vertical" flexItem sx={{ borderColor: '#E8ECEE', display: { xs: 'none', sm: 'block' } }} />}
-              spacing={{ xs: 2, sm: 0 }}
-              sx={{ py: 2 }}
-            >
-              {metrics.map((m) => {
-                const isNeutral = m.trend == null || m.trend === 0;
-                const isGood = !isNeutral && m.trend < 0;
-                const tp = getTrendProps(isNeutral, isGood);
-                let TrendIcon = RemoveIcon;
-                if (!isNeutral) TrendIcon = m.trend < 0 ? ArrowDropDownIcon : ArrowDropUpIcon;
-                return (
-                  <Stack key={m.title} spacing={0.75} sx={{ flex: 1, px: 2 }}>
-                    <Typography variant="caption" sx={{ color: '#637381', fontWeight: 600, fontSize: '0.8125rem' }}>
-                      {m.title}
-                    </Typography>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Typography sx={{ fontWeight: 700, fontSize: '1.5rem', lineHeight: 1.2 }}>
-                        {m.value}
-                      </Typography>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        sx={{ bgcolor: tp.bg, borderRadius: 0.75, px: 0.5, py: 0.25 }}
-                      >
-                        <TrendIcon sx={{ fontSize: tp.iconSize, color: tp.color, ml: -0.25 }} />
-                        <Typography variant="caption" sx={{ fontWeight: 600, color: tp.color, fontSize: '0.75rem', mr: 0.25 }}>
-                          {isNeutral ? '0h' : `${m.trend > 0 ? '+' : ''}${m.trend}h`}
-                        </Typography>
+    <ChartCard ref={cardRef} title="Response Times" icon={AccessTimeIcon} subtitle="Monthly avg response times across key workflow stages" headerRight={headerToggle}>
+      <AnimatePresence mode="wait">
+        <m.div
+          key={viewMode}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: [0.43, 0.13, 0.23, 0.96] }}
+          onAnimationComplete={() => {
+            if (!isCombined && cardRef.current) {
+              cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+          }}
+        >
+          {isCombined ? (
+            <>
+              <Box sx={{ border: '1px solid #E8ECEE', borderRadius: 1.5, mx: 2.5, mb: 2 }}>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  divider={<Divider orientation="vertical" flexItem sx={{ borderColor: '#E8ECEE', display: { xs: 'none', sm: 'block' } }} />}
+                  spacing={{ xs: 2, sm: 0 }}
+                  sx={{ py: 2 }}
+                >
+                  {metrics.map((metric) => {
+                    const isNeutral = metric.trend == null || metric.trend === 0;
+                    const isGood = !isNeutral && metric.trend < 0;
+                    const tp = getTrendProps(isNeutral, isGood);
+                    let TrendIcon = RemoveIcon;
+                    if (!isNeutral) TrendIcon = metric.trend < 0 ? ArrowDropDownIcon : ArrowDropUpIcon;
+                    return (
+                      <Stack key={metric.title} spacing={0.75} sx={{ flex: 1, px: 2 }}>
+                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                          <Typography variant="caption" sx={{ color: '#637381', fontWeight: 600, fontSize: '0.8125rem' }}>
+                            {metric.title}
+                          </Typography>
+                          {METRIC_TOOLTIPS[metric.title] && (
+                            <Tooltip title={METRIC_TOOLTIPS[metric.title]} arrow placement="top" slotProps={{ tooltip: { sx: { fontSize: '0.75rem', maxWidth: 260 } } }}>
+                              <InfoOutlinedIcon sx={{ fontSize: 15, color: '#919EAB', cursor: 'help' }} />
+                            </Tooltip>
+                          )}
+                        </Stack>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Typography sx={{ fontWeight: 700, fontSize: '1.5rem', lineHeight: 1.2 }}>
+                            {metric.value}
+                          </Typography>
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            sx={{ bgcolor: tp.bg, borderRadius: 0.75, px: 0.5, py: 0.25 }}
+                          >
+                            <TrendIcon sx={{ fontSize: tp.iconSize, color: tp.color, ml: -0.25 }} />
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: tp.color, fontSize: '0.75rem', mr: 0.25 }}>
+                              {isNeutral ? '0h' : `${metric.trend > 0 ? '+' : ''}${metric.trend}h`}
+                            </Typography>
+                          </Stack>
+                          <Typography variant="caption" sx={{ color: '#919EAB', fontSize: '0.75rem' }}>
+                            {trendLabel}
+                          </Typography>
+                        </Stack>
                       </Stack>
-                      <Typography variant="caption" sx={{ color: '#919EAB', fontSize: '0.75rem' }}>
-                        {trendLabel}
-                      </Typography>
-                    </Stack>
-                  </Stack>
-                );
-              })}
+                    );
+                  })}
+                </Stack>
+              </Box>
+              <Stack spacing={1} sx={{ px: 2.5 }}>
+                <ChartLegend
+                  items={LEGEND_ITEMS}
+                  interactive
+                  hiddenSeries={hiddenSeries}
+                  onToggle={handleToggle}
+                />
+                <ZoomableChart
+                  containerProps={{
+                    ...containerProps,
+                    onMouseDown: (e) => {
+                      clickStartRef.current = { x: e.clientX, y: e.clientY };
+                      containerProps.onMouseDown(e);
+                    },
+                  }}
+                  isZoomed={isZoomed}
+                  resetZoom={resetZoom}
+                >
+                  <LineChart
+                    series={visibleSeries}
+                    xAxis={xAxisConfig}
+                    yAxis={[{ ...yDomain, tickLabelStyle: TICK_LABEL_STYLE, valueFormatter: (val) => `${val}h` }]}
+                    height={CHART_HEIGHT}
+                    margin={CHART_MARGIN}
+                    grid={CHART_GRID}
+                    tooltip={{ trigger: 'axis' }}
+                    slots={{ axisContent: ChartAxisTooltip }}
+                    onAxisClick={handleAxisClick}
+                    skipAnimation={isZoomed}
+                    hideLegend
+                    sx={{
+                      ...CHART_SX,
+                      cursor: 'pointer',
+                      '& .MuiMarkElement-root': { display: 'initial' },
+                    }}
+                  />
+                </ZoomableChart>
+              </Stack>
+            </>
+          ) : (
+            <Stack spacing={2} sx={{ px: 2.5 }}>
+              {separateConfigs.map((cfg) => (
+                <SingleMetricChart
+                  key={cfg.metricKey}
+                  title={cfg.title}
+                  numericData={cfg.data}
+                  color={cfg.color}
+                  months={months}
+                  latestValue={cfg.value}
+                  trend={cfg.trend}
+                  trendLabel={trendLabel}
+                  fmtHours={fmtHours}
+                  onAxisClick={(dataIndex) => {
+                    const month = months[dataIndex];
+                    if (month) {
+                      setActiveMetric(cfg.metricKey);
+                      setSelectedMonth(month);
+                    }
+                  }}
+                />
+              ))}
             </Stack>
-          </Box>
-          <Stack spacing={1} sx={{ px: 2.5 }}>
-            <ChartLegend
-              items={LEGEND_ITEMS}
-              interactive
-              hiddenSeries={hiddenSeries}
-              onToggle={handleToggle}
-            />
-            <ZoomableChart
-              containerProps={{
-                ...containerProps,
-                onMouseDown: (e) => {
-                  clickStartRef.current = { x: e.clientX, y: e.clientY };
-                  containerProps.onMouseDown(e);
-                },
-              }}
-              isZoomed={isZoomed}
-              resetZoom={resetZoom}
-            >
-              <LineChart
-                series={visibleSeries}
-                xAxis={xAxisConfig}
-                yAxis={[{ ...yDomain, tickLabelStyle: TICK_LABEL_STYLE, valueFormatter: (val) => `${val}h` }]}
-                height={CHART_HEIGHT}
-                margin={CHART_MARGIN}
-                grid={CHART_GRID}
-                tooltip={{ trigger: 'axis' }}
-                slots={{ axisContent: ChartAxisTooltip }}
-                onAxisClick={handleAxisClick}
-                skipAnimation={isZoomed}
-                hideLegend
-                sx={{
-                  ...CHART_SX,
-                  cursor: 'pointer',
-                  '& .MuiMarkElement-root': { display: 'initial' },
-                }}
-              />
-            </ZoomableChart>
-          </Stack>
-        </>
-      ) : (
-        <Stack spacing={2} sx={{ px: 2.5 }}>
-          {separateConfigs.map((cfg) => (
-            <SingleMetricChart
-              key={cfg.metricKey}
-              title={cfg.title}
-              numericData={cfg.data}
-              color={cfg.color}
-              months={months}
-              latestValue={cfg.value}
-              trend={cfg.trend}
-              trendLabel={trendLabel}
-              fmtHours={fmtHours}
-              onAxisClick={(dataIndex) => {
-                const month = months[dataIndex];
-                if (month) {
-                  setActiveMetric(cfg.metricKey);
-                  setSelectedMonth(month);
-                }
-              }}
-            />
-          ))}
-        </Stack>
-      )}
+          )}
+        </m.div>
+      </AnimatePresence>
       <ResponseTimeDrawer
         selectedMonth={selectedMonth}
         months={months}
