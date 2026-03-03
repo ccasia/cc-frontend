@@ -18,16 +18,18 @@ import { useIsDaily, useDateFilter, useFilterLabel, useFilteredData } from '../d
 import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, getTrendProps, TICK_LABEL_STYLE } from '../chart-config';
 
 function TimeToActivationChart() {
-  const { startDate, endDate } = useDateFilter();
+  const { startDate, endDate, creditTiers } = useDateFilter();
   const isDaily = useIsDaily();
   const chipLabel = useFilterLabel();
 
   const hookOptions = useMemo(() => {
+    const opts = {};
     if (isDaily && startDate && endDate) {
-      return { granularity: 'daily', startDate, endDate };
+      Object.assign(opts, { granularity: 'daily', startDate, endDate });
     }
-    return {};
-  }, [isDaily, startDate, endDate]);
+    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
+    return opts;
+  }, [isDaily, startDate, endDate, creditTiers]);
 
   const { timeToActivation, periodComparison } = useGetTimeToActivation(hookOptions);
 

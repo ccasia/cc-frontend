@@ -19,7 +19,7 @@ import useGetTimeToActivationCreators from 'src/hooks/use-get-time-to-activation
 import Iconify from 'src/components/iconify';
 
 import { CHART_COLORS } from '../chart-config';
-import { parseMonthStr } from '../date-filter-context';
+import { useDateFilter, parseMonthStr } from '../date-filter-context';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -261,9 +261,16 @@ export default function CreatorDrilldownDrawer({
     return { startDate: start, endDate: end, displayTitle: formatFullMonth(selectedPoint) };
   }, [selectedPoint, isDaily, points, data]);
 
-  const hookData = config.useCreatorsHook(
-    startDate && endDate ? { startDate, endDate } : {}
-  );
+  const { creditTiers } = useDateFilter();
+
+  const drawerHookOptions = useMemo(() => {
+    if (!startDate || !endDate) return {};
+    const opts = { startDate, endDate };
+    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
+    return opts;
+  }, [startDate, endDate, creditTiers]);
+
+  const hookData = config.useCreatorsHook(drawerHookOptions);
   const { creators, avgDays, count, isLoading } = hookData;
 
   const isSimple = config.variant === 'simple';

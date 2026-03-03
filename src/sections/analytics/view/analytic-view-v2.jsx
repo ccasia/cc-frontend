@@ -14,6 +14,7 @@ import useGetActivationRate from 'src/hooks/use-get-activation-rate';
 import useGetCreatorSatisfaction from 'src/hooks/use-get-creator-satisfaction';
 import useGetPitchRate from 'src/hooks/use-get-pitch-rate';
 
+import CreditTierFilterSelect from './v2/components/credit-tier-filter-select';
 import KpiCard from './v2/components/kpi-card';
 import { CHART_COLORS } from './v2/chart-config';
 import { DateFilterProvider, useDateFilter, useFilteredData, useIsDaily, useTrendLabel } from './v2/date-filter-context';
@@ -43,15 +44,17 @@ function TabSkeleton() {
 
 function KpiCards() {
   const trendLabel = useTrendLabel();
-  const { startDate, endDate } = useDateFilter();
+  const { startDate, endDate, creditTiers } = useDateFilter();
   const isDaily = useIsDaily();
 
   const hookOptions = useMemo(() => {
+    const opts = {};
     if (isDaily && startDate && endDate) {
-      return { granularity: 'daily', startDate, endDate };
+      Object.assign(opts, { granularity: 'daily', startDate, endDate });
     }
-    return {};
-  }, [isDaily, startDate, endDate]);
+    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
+    return opts;
+  }, [isDaily, startDate, endDate, creditTiers]);
 
   const { creatorGrowth, periodComparison } = useGetCreatorGrowth(hookOptions);
   const { activationRate, periodComparison: activationPeriodComparison } = useGetActivationRate(hookOptions);
@@ -65,7 +68,7 @@ function KpiCards() {
   const filteredActivation = isDaily ? activationRate : monthlyFilteredActivation;
   const monthlyFilteredPitch = useFilteredData(pitchRate);
   const filteredPitch = isDaily ? pitchRate : monthlyFilteredPitch;
-  const { trend: npsTrend, overall: npsOverall } = useGetCreatorSatisfaction();
+  const { trend: npsTrend, overall: npsOverall } = useGetCreatorSatisfaction(hookOptions);
   const filteredNpsTrend = useFilteredData(npsTrend);
 
   const latestCreators = filteredGrowth[filteredGrowth.length - 1] || {};
@@ -265,11 +268,16 @@ export default function AnalyticViewV2() {
   const [dateFilter, setDateFilter] = useState('all');
   const [filterStartDate, setFilterStartDate] = useState(null);
   const [filterEndDate, setFilterEndDate] = useState(null);
+  const [creditTiers, setCreditTiers] = useState([]);
 
   const handleDateFilterChange = useCallback(({ preset, startDate, endDate }) => {
     setDateFilter(preset);
     setFilterStartDate(startDate);
     setFilterEndDate(endDate);
+  }, []);
+
+  const handleCreditTiersChange = useCallback((tiers) => {
+    setCreditTiers(tiers);
   }, []);
 
   return (
@@ -347,19 +355,20 @@ export default function AnalyticViewV2() {
               ))}
             </Stack>
 
-            {/* Date filter — right */}
-            <Box sx={{ ml: { xs: 0, sm: 'auto' }, pb: 0.5, mt: { xs: 1, sm: 0 } }}>
+            {/* Filters — right */}
+            <Stack direction="row" spacing={1} sx={{ ml: { xs: 0, sm: 'auto' }, pb: 0.5, mt: { xs: 1, sm: 0 } }}>
+              <CreditTierFilterSelect value={creditTiers} onChange={handleCreditTiersChange} />
               <DateFilterSelect
                 value={dateFilter}
                 startDate={filterStartDate}
                 endDate={filterEndDate}
                 onChange={handleDateFilterChange}
               />
-            </Box>
+            </Stack>
           </Stack>
         </Box>
 
-        <DateFilterProvider dateFilter={dateFilter} startDate={filterStartDate} endDate={filterEndDate}>
+        <DateFilterProvider dateFilter={dateFilter} startDate={filterStartDate} endDate={filterEndDate} creditTiers={creditTiers}>
           {/* Top-Level KPI Cards */}
           <KpiCards />
 

@@ -10,7 +10,7 @@ import useGetAvgFirstCampaignDetails from 'src/hooks/use-get-avg-first-campaign-
 import useGetAvgSubmissionResponseDetails from 'src/hooks/use-get-avg-submission-response-details';
 
 import { CHART_COLORS } from '../chart-config';
-import { parseMonthStr } from '../date-filter-context';
+import { useDateFilter, parseMonthStr } from '../date-filter-context';
 
 const MONTH_NAMES = {
   Jan: 'January', Feb: 'February', Mar: 'March', Apr: 'April',
@@ -248,23 +248,32 @@ export default function ResponseTimeDrawer({ selectedMonth, months, data, isDail
     return { startDate: start, endDate: end, displayTitle: formatFullMonth(selectedMonth) };
   }, [selectedMonth, isDaily, months, data]);
 
+  const { creditTiers } = useDateFilter();
+
+  const drawerHookOptions = useMemo(() => {
+    if (!startDate || !endDate) return {};
+    const opts = { startDate, endDate };
+    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
+    return opts;
+  }, [startDate, endDate, creditTiers]);
+
   const {
     avg: agreementAvg,
     fastest: agreementFastest,
     slowest: agreementSlowest,
-  } = useGetAvgAgreementResponseDetails(startDate && endDate ? { startDate, endDate } : {});
+  } = useGetAvgAgreementResponseDetails(drawerHookOptions);
 
   const {
     avg: campaignAvg,
     fastest: campaignFastest,
     slowest: campaignSlowest,
-  } = useGetAvgFirstCampaignDetails(startDate && endDate ? { startDate, endDate } : {});
+  } = useGetAvgFirstCampaignDetails(drawerHookOptions);
 
   const {
     avg: submissionAvg,
     fastest: submissionFastest,
     slowest: submissionSlowest,
-  } = useGetAvgSubmissionResponseDetails(startDate && endDate ? { startDate, endDate } : {});
+  } = useGetAvgSubmissionResponseDetails(drawerHookOptions);
 
   const details = useMemo(() => {
     if (!selectedMonth) return null;

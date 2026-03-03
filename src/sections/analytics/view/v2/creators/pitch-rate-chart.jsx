@@ -34,16 +34,18 @@ const PITCH_DRAWER_CONFIG = {
 };
 
 function PitchRateChart() {
-  const { startDate, endDate } = useDateFilter();
+  const { startDate, endDate, creditTiers } = useDateFilter();
   const isDaily = useIsDaily();
   const chipLabel = useFilterLabel();
 
   const hookOptions = useMemo(() => {
+    const opts = {};
     if (isDaily && startDate && endDate) {
-      return { granularity: 'daily', startDate, endDate };
+      Object.assign(opts, { granularity: 'daily', startDate, endDate });
     }
-    return {};
-  }, [isDaily, startDate, endDate]);
+    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
+    return opts;
+  }, [isDaily, startDate, endDate, creditTiers]);
 
   const { pitchRate, periodComparison } = useGetPitchRate(hookOptions);
 

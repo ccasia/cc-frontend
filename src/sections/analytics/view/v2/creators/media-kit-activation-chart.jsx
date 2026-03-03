@@ -45,13 +45,15 @@ function MediaKitActivationChart() {
   const innerR = isSmall ? 30 : 40;
   const outerR = isSmall ? 55 : 70;
 
-  const { startDate, endDate } = useDateFilter();
+  const { startDate, endDate, creditTiers } = useDateFilter();
   const chipLabel = useFilterLabel();
 
   const hookOptions = useMemo(() => {
-    if (startDate && endDate) return { startDate, endDate };
-    return {};
-  }, [startDate, endDate]);
+    const opts = {};
+    if (startDate && endDate) { opts.startDate = startDate; opts.endDate = endDate; }
+    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
+    return opts;
+  }, [startDate, endDate, creditTiers]);
 
   const { platforms, uniqueConnected, isLoading } = useGetMediaKitActivation(hookOptions);
 

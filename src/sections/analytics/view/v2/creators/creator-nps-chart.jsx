@@ -15,7 +15,7 @@ import Iconify from 'src/components/iconify';
 import useChartZoom from 'src/hooks/use-chart-zoom';
 import useGetCreatorSatisfaction from 'src/hooks/use-get-creator-satisfaction';
 
-import { useFilteredData, useFilterLabel } from '../date-filter-context';
+import { useDateFilter, useFilteredData, useFilterLabel } from '../date-filter-context';
 import ChartCard from '../components/chart-card';
 import ZoomableChart from '../components/zoomable-chart';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
@@ -25,7 +25,15 @@ const AMBER = '#FFAB00';
 const BAR_BG = '#F4F6F8';
 
 function CreatorNpsChart() {
-  const { trend: trendData, overall } = useGetCreatorSatisfaction();
+  const { creditTiers } = useDateFilter();
+
+  const hookOptions = useMemo(() => {
+    const opts = {};
+    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
+    return opts;
+  }, [creditTiers]);
+
+  const { trend: trendData, overall } = useGetCreatorSatisfaction(hookOptions);
   const { averageRating, totalResponses, distribution } = overall;
   const filtered = useFilteredData(trendData);
   const chipLabel = useFilterLabel();
