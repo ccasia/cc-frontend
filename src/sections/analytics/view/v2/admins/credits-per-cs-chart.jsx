@@ -1,4 +1,4 @@
-import { memo, useMemo, useState, useEffect, useCallback } from 'react';
+import { memo, useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
 
 import { Box, Stack, Avatar, Skeleton, Typography } from '@mui/material';
@@ -30,6 +30,7 @@ const ALL_SERIES = [
 ];
 
 const AVATAR_SIZE = 28;
+const MIN_CHART_HEIGHT = 420;
 
 function getInitials(name) {
   if (!name) return '?';
@@ -101,10 +102,23 @@ AvatarOverlay.propTypes = {
 function CreditsPerCSChart() {
   const [hiddenSeries, setHiddenSeries] = useState([]);
   const [selectedCS, setSelectedCS] = useState(null);
+  const chartContainerRef = useRef(null);
+  const [chartHeight, setChartHeight] = useState(MIN_CHART_HEIGHT);
   const { startDate, endDate } = useDateFilter();
   const { csAdmins, isLoading } = useGetCreditsPerCS({ startDate, endDate });
 
   useEffect(() => setSelectedCS(null), [startDate, endDate]);
+
+  useEffect(() => {
+    const el = chartContainerRef.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(([entry]) => {
+      const h = Math.floor(entry.contentRect.height);
+      if (h > 0) setChartHeight((prev) => Math.max(MIN_CHART_HEIGHT, h));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const handleToggle = useCallback((label) => {
     setHiddenSeries((prev) =>
@@ -165,12 +179,12 @@ function CreditsPerCSChart() {
     }
 
     return (
-      <Stack spacing={1}>
+      <Box ref={chartContainerRef} sx={{ flex: 1 }}>
         <BarChart
           series={visibleSeries}
           xAxis={[{ scaleType: 'band', data: sorted.map((d) => d.csName), tickLabelStyle: { ...TICK_LABEL_STYLE, angle: -45 }, tickLabelInterval: () => true, height: 80 }]}
           yAxis={[{ tickLabelStyle: TICK_LABEL_STYLE }]}
-          height={420}
+          height={chartHeight}
           margin={{ ...CHART_MARGIN, top: AVATAR_SIZE + 8 }}
           grid={CHART_GRID}
           hideLegend
@@ -181,7 +195,7 @@ function CreditsPerCSChart() {
         >
           <AvatarOverlay data={sorted} visibleKeys={visibleKeys} />
         </BarChart>
-      </Stack>
+      </Box>
     );
   };
 
