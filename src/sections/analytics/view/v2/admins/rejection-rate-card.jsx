@@ -176,7 +176,7 @@ function RejectionRateCard() {
           direction={{ xs: 'column', md: 'row' }}
           sx={{ height: '100%', flex: 1 }}
         >
-          {/* ============ Left Panel: Header + Chart ============ */}
+          {/* Left Panel: Header + Chart */}
           <Box sx={{ flex: { md: 3 }, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
             {/* Header — inline stats like Creator Growth */}
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, pt: 3, pb: 1 }}>
@@ -255,13 +255,15 @@ function RejectionRateCard() {
             )}
           </Box>
 
-          {/* ============ Right Panel: Campaign Breakdown List ============ */}
+          {/* Right Panel: Campaign Breakdown List */}
           <Stack
             sx={{
               flex: { md: 2 },
               borderLeft: { md: '1px solid #E8ECEE' },
               borderTop: { xs: '1px solid #E8ECEE', md: 'none' },
               minWidth: 0,
+              overflow: 'hidden',
+              minHeight: 0,
             }}
           >
             {/* Right panel header — pt matches left panel for alignment */}
