@@ -1,6 +1,4 @@
-import { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { useForm } from 'react-hook-form';
 
 import {
   Box,
@@ -9,7 +7,9 @@ import {
   Button,
   Dialog,
   Divider,
+  Select,
   MenuItem,
+  FormControl,
   Typography,
   DialogTitle,
   DialogContent,
@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
-import FormProvider, { RHFSelectV2 } from 'src/components/hook-form';
 
 const InviteCreatorsDialog = ({
   open,
@@ -25,6 +24,7 @@ const InviteCreatorsDialog = ({
   onCancel,
   selectedCreatorsCount,
   creators,
+  existingCreatorIds,
   onRemoveCreator,
   campaigns,
   campaignId,
@@ -33,24 +33,10 @@ const InviteCreatorsDialog = ({
   isSubmitting,
   onSubmit,
 }) => {
-  const methods = useForm({
-    defaultValues: {
-      campaignId: campaignId || '',
-    },
-  });
-
-  const { watch, setValue } = methods;
-  const selectedCampaignId = watch('campaignId');
-
-  useEffect(() => {
-    setValue('campaignId', campaignId || '');
-  }, [campaignId, setValue]);
-
-  useEffect(() => {
-    if ((selectedCampaignId || '') !== (campaignId || '')) {
-      onCampaignChange(selectedCampaignId || '');
-    }
-  }, [campaignId, onCampaignChange, selectedCampaignId]);
+  const selectedCampaignId = campaignId || '';
+  const hasSelectedCreatorsAlreadyInCampaign =
+    Boolean(selectedCampaignId) &&
+    creators.some((creator) => existingCreatorIds.includes(creator?.userId));
 
   const getCreatorHandle = (creator) => {
     if (creator?.platform === 'instagram' && creator?.handles?.instagram) {
@@ -79,72 +65,95 @@ const InviteCreatorsDialog = ({
       <Divider sx={{ mx: 3, mb: 2, mt: -1 }} />
 
       <DialogContent>
-        <FormProvider methods={methods}>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Box display="flex" flexWrap="wrap" gap={0.5}>
-              {creators.map((creator, index) => {
-                const { platform, handle } = getCreatorHandle(creator);
+        <Stack spacing={2} sx={{ mt: 1 }}>
+          <Box display="flex" flexWrap="wrap" gap={0.5}>
+            {creators.map((creator, index) => {
+              const { platform, handle } = getCreatorHandle(creator);
+              const isAlreadyInCampaign = existingCreatorIds.includes(creator?.userId);
 
-                return (
-                  <Chip
-                    key={`${creator?.rowId || creator?.userId || creator?.id || index}`}
-                    onDelete={() =>
-                      onRemoveCreator(creator?.rowId || creator?.userId || creator?.id || null)
-                    }
-										deleteIcon={<Iconify icon='streamline:delete-1-solid' width={8} />}
-                    variant="outlined"
-                    label={
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                          {creator?.name || 'Creator'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          |
-                        </Typography>
-                        {platform && (
-                          <Iconify
-                            icon={platform === 'instagram' ? 'mdi:instagram' : 'ic:baseline-tiktok'}
-                            sx={{ width: 14, height: 14 }}
-														color='text.secondary'
-                          />
-                        )}
-                        <Typography variant="caption" color="text.secondary" mr={1}>
-                          {handle}
-                        </Typography>
-                      </Box>
-                    }
-                    sx={{
-                      height: 28,
-                      borderColor: 'divider',
-                      bgcolor: 'background.paper',
-											boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-											pb: 0.2,
-											pr: 0.5,
-											borderRadius: 0.8
-                    }}
-                  />
-                );
-              })}
-            </Box>
+              return (
+                <Chip
+                  key={`${creator?.rowId || creator?.userId || creator?.id || index}`}
+                  onDelete={() =>
+                    onRemoveCreator(creator?.rowId || creator?.userId || creator?.id || null)
+                  }
+                  deleteIcon={<Iconify icon="streamline:delete-1-solid" width={8} />}
+                  variant="outlined"
+                  label={
+                    <Box display="flex" alignItems="center" gap={0.5}>
+                      <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                        {creator?.name || 'Creator'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        |
+                      </Typography>
+                      {platform && (
+                        <Iconify
+                          icon={platform === 'instagram' ? 'mdi:instagram' : 'ic:baseline-tiktok'}
+                          sx={{ width: 14, height: 14 }}
+                          color="text.secondary"
+                        />
+                      )}
+                      <Typography variant="caption" color="text.secondary" mr={1}>
+                        {handle}
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{
+                    height: 28,
+                    borderColor: isAlreadyInCampaign ? 'error.main' : 'divider',
+                    bgcolor: 'background.paper',
+                    boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                    pb: 0.2,
+                    pr: 0.5,
+                    borderRadius: 0.8,
+                    '& .MuiChip-deleteIcon': {
+                      color: isAlreadyInCampaign ? 'error.main' : undefined,
+                    },
+                  }}
+                />
+              );
+            })}
+          </Box>
 
-            <RHFSelectV2
-              name="campaignId"
-              placeholder="Select Campaign"
+          <FormControl fullWidth>
+            <Select
+              value={selectedCampaignId}
+              onChange={(event) => onCampaignChange(event.target.value)}
+              displayEmpty
               disabled={isLoadingCampaigns || isSubmitting}
-              sx={{ bgcolor: '#fff' }}
+              sx={{
+                bgcolor: '#fff',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: hasSelectedCreatorsAlreadyInCampaign ? 'error.main' : undefined,
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: hasSelectedCreatorsAlreadyInCampaign ? 'error.main' : undefined,
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: hasSelectedCreatorsAlreadyInCampaign ? 'error.main' : undefined,
+                },
+              }}
+              renderValue={(selected) => {
+                if (!selected) {
+                  return <Box sx={{ color: 'text.disabled' }}>Select Campaign</Box>;
+                }
+
+                return campaigns.find((campaign) => campaign.id === selected)?.name || selected;
+              }}
             >
               {campaigns.map((campaign) => (
                 <MenuItem key={campaign.id} value={campaign.id}>
                   {campaign.name}
                 </MenuItem>
               ))}
-            </RHFSelectV2>
-          </Stack>
-        </FormProvider>
+            </Select>
+          </FormControl>
+        </Stack>
       </DialogContent>
       <DialogActions>
         <Button
-					variant='contained'
+          variant="contained"
           sx={{
             color: '#231F20',
             bgcolor: '#FFFFFF',
@@ -167,7 +176,7 @@ const InviteCreatorsDialog = ({
           Cancel
         </Button>
         <Button
-					variant='contained'
+          variant="contained"
           onClick={onSubmit}
           disabled={isSubmitting || !selectedCampaignId}
           sx={{
@@ -180,7 +189,7 @@ const InviteCreatorsDialog = ({
             borderRadius: 1,
             border: !selectedCampaignId ? 'none' : '1px solid #3A3A3C',
             boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-						'&:hover': {
+            '&:hover': {
               bgcolor: 'rgba(58, 58, 60, 0.9)',
               border: '1px solid #3A3A3C',
               boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
@@ -200,6 +209,7 @@ InviteCreatorsDialog.propTypes = {
   onCancel: PropTypes.func,
   selectedCreatorsCount: PropTypes.number,
   creators: PropTypes.array,
+  existingCreatorIds: PropTypes.array,
   onRemoveCreator: PropTypes.func,
   campaigns: PropTypes.array,
   campaignId: PropTypes.string,
@@ -207,6 +217,10 @@ InviteCreatorsDialog.propTypes = {
   isLoadingCampaigns: PropTypes.bool,
   isSubmitting: PropTypes.bool,
   onSubmit: PropTypes.func,
+};
+
+InviteCreatorsDialog.defaultProps = {
+  existingCreatorIds: [],
 };
 
 export default InviteCreatorsDialog;

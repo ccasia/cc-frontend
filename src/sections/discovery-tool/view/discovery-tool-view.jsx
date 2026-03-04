@@ -120,6 +120,8 @@ const DiscoveryToolView = () => {
 	const [inviteCampaignId, setInviteCampaignId] = useState('');
 	const [inviteLoadingCampaigns, setInviteLoadingCampaigns] = useState(false);
 	const [inviteSubmitting, setInviteSubmitting] = useState(false);
+	const inviteCampaignsLoadedRef = useRef(false);
+	const inviteCampaignsRequestRef = useRef(null);
 
 	const handleSelectCreator = useCallback((rowId) => {
 		setSelectedCreatorIds((prev) =>
@@ -136,11 +138,27 @@ const DiscoveryToolView = () => {
 		[selectedCreatorIds, creators]
 	);
 
+	const selectedCampaignExistingCreatorIds = useMemo(() => {
+		if (!inviteCampaignId) return [];
+		const selectedCampaign = inviteCampaigns.find((campaign) => campaign.id === inviteCampaignId);
+		return selectedCampaign?.existingCreatorIds || [];
+	}, [inviteCampaignId, inviteCampaigns]);
+
 	const handleCompare = useCallback(() => {
 		setCompareOpen(true);
 	}, []);
 
-	const loadInviteCampaigns = useCallback(async () => {
+	const loadInviteCampaigns = useCallback(async (force = false) => {
+		if (!force && inviteCampaignsLoadedRef.current) {
+			return;
+		}
+
+		if (inviteCampaignsRequestRef.current) {
+			await inviteCampaignsRequestRef.current;
+			return;
+		}
+
+		const request = (async () => {
 		try {
 			setInviteLoadingCampaigns(true);
 			const response = await axiosInstance.get(endpoints.campaign.getAllActiveCampaign, {
@@ -167,13 +185,25 @@ const DiscoveryToolView = () => {
 						id: campaign.id,
 						name: campaign.name,
 						submissionVersion: campaign.submissionVersion,
+						existingCreatorIds: Array.from(
+							new Set((campaign?.pitch || []).map((pitch) => pitch?.userId).filter(Boolean))
+						),
 					}))
 			);
+			inviteCampaignsLoadedRef.current = true;
 		} catch (error) {
 			console.error('Failed to load campaigns for invite:', error);
 			enqueueSnackbar('Failed to load campaigns', { variant: 'error' });
 		} finally {
 			setInviteLoadingCampaigns(false);
+		}
+		})();
+
+		inviteCampaignsRequestRef.current = request;
+		try {
+			await request;
+		} finally {
+			inviteCampaignsRequestRef.current = null;
 		}
 	}, [enqueueSnackbar]);
 
@@ -183,13 +213,13 @@ const DiscoveryToolView = () => {
 			return;
 		}
 
-		if (!inviteCampaigns.length) {
-			await loadInviteCampaigns();
-		}
-
 		setInviteCampaignId('');
 		setInviteOpen(true);
-	}, [enqueueSnackbar, inviteCampaigns.length, loadInviteCampaigns, selectedCreatorIds.length]);
+
+		if (!inviteCampaignsLoadedRef.current && !inviteCampaignsRequestRef.current) {
+			await loadInviteCampaigns();
+		}
+	}, [enqueueSnackbar, loadInviteCampaigns, selectedCreatorIds.length]);
 
 	const handleInviteClose = useCallback(() => {
 		if (inviteSubmitting) return;
@@ -212,6 +242,9 @@ const DiscoveryToolView = () => {
 		const selectedCreatorUserIds = Array.from(
 			new Set(selectedCreators.map((creator) => creator?.userId).filter(Boolean))
 		);
+		const invitableCreatorUserIds = selectedCreatorUserIds.filter(
+			(userId) => !selectedCampaignExistingCreatorIds.includes(userId)
+		);
 
 		if (!inviteCampaignId) {
 			enqueueSnackbar('Select a campaign first', { variant: 'warning' });
@@ -223,14 +256,19 @@ const DiscoveryToolView = () => {
 			return;
 		}
 
+		if (!invitableCreatorUserIds.length) {
+			enqueueSnackbar('Selected creators are already in this campaign', { variant: 'warning' });
+			return;
+		}
+
 		try {
 			setInviteSubmitting(true);
 			const response = await axiosInstance.post(endpoints.discovery.inviteCreators, {
 				campaignId: inviteCampaignId,
-				creatorIds: selectedCreatorUserIds,
+				creatorIds: invitableCreatorUserIds,
 			});
 
-			const invitedCount = response?.data?.invitedCount ?? selectedCreatorUserIds.length;
+			const invitedCount = response?.data?.invitedCount ?? invitableCreatorUserIds.length;
 			enqueueSnackbar(`${invitedCount} creator${invitedCount === 1 ? '' : 's'} invited`, {
 				variant: 'success',
 			});
@@ -244,7 +282,7 @@ const DiscoveryToolView = () => {
 		} finally {
 			setInviteSubmitting(false);
 		}
-	}, [enqueueSnackbar, inviteCampaignId, selectedCreators]);
+	}, [enqueueSnackbar, inviteCampaignId, selectedCampaignExistingCreatorIds, selectedCreators]);
 
 	// Log results only when they actually change
 	useEffect(() => {
@@ -313,6 +351,7 @@ const DiscoveryToolView = () => {
 				onCancel={handleInviteCancel}
 				selectedCreatorsCount={selectedCreators.length}
 				creators={selectedCreators}
+				existingCreatorIds={selectedCampaignExistingCreatorIds}
 				onRemoveCreator={handleRemoveInvitedCreator}
 				campaigns={inviteCampaigns}
 				campaignId={inviteCampaignId}
