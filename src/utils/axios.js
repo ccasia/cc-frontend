@@ -59,6 +59,15 @@ export const endpoints = {
     rejectionReasons: '/api/analytics/v2/rejection-reasons',
     requireChangesRate: '/api/analytics/v2/require-changes-rate',
     topShortlistedCreators: '/api/analytics/v2/top-shortlisted-creators',
+    tracker: '/api/analytics/tracker',
+    client: {
+      brands: '/api/analytics/client/brands',
+      campaigns: '/api/analytics/client/campaigns',
+      approve: '/api/analytics/client/approve',
+      journey: '/api/analytics/client/journey',
+      support: '/api/analytics/client/support',
+      shortlist: '/api/analytics/client/shortlist',
+    },
   },
   overview: {
     root: (userId) => `/api/user/overview/${userId}`,
