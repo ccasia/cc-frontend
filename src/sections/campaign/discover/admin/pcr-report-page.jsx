@@ -640,38 +640,29 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return combined;
   }, [postingSubmissions, manualSubmissions]);
 
-  // Calculate unique creators count (based on pitch approvals and shortlisted creators)
   const uniqueCreatorsCount = useMemo(() => {
     const uniqueCreatorIds = new Set();
     
-    // Collect approved user IDs from pitches
-    if (Array.isArray(campaign?.pitch)) {
-      campaign.pitch
-        .filter(
-          (pitchItem) =>
-            pitchItem?.status === 'APPROVED' ||
-            pitchItem?.status === 'AGREEMENT_SUBMITTED' ||
-            pitchItem?.status === 'AGREEMENT_PENDING' ||
-            pitchItem?.status === 'approved'
-        )
-        .forEach((pitchItem) => {
-          if (pitchItem?.userId) {
-            uniqueCreatorIds.add(pitchItem.userId);
-          }
-        });
-    }
+    const allSubmissions = campaign?.submission || [];
     
-    // Also include shortlisted creators
-    if (Array.isArray(campaign?.shortlisted)) {
-      campaign.shortlisted.forEach((shortlistedItem) => {
-        if (shortlistedItem?.userId) {
-          uniqueCreatorIds.add(shortlistedItem.userId);
-        }
-      });
-    }
+    const approvedAgreements = allSubmissions.filter((sub) => {
+      const isAgreement = sub.submissionType?.type === 'AGREEMENT_FORM';
+      const isApproved = sub.status === 'APPROVED';
+      return isAgreement && isApproved;
+    });
+    
+    approvedAgreements.forEach((sub) => {
+      const userId = sub.userId || 
+                     sub.creatorId || 
+                     (typeof sub.user === 'string' ? sub.user : sub.user?.id);
+      
+      if (userId) {
+        uniqueCreatorIds.add(userId);
+      }
+    });
     
     return uniqueCreatorIds.size;
-  }, [campaign?.pitch, campaign?.shortlisted]);
+  }, [campaign?.submission]);
 
   const summaryStats = useMemo(() => {
     console.log('=== Calculating Summary Stats ===');
