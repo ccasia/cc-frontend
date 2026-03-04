@@ -31,6 +31,18 @@ const ALL_SERIES = [
 
 const AVATAR_SIZE = 28;
 const MIN_CHART_HEIGHT = 420;
+const MIN_BAR_WIDTH = 48;
+const AXIS_MARGIN_H = CHART_MARGIN.left + CHART_MARGIN.right;
+
+const SCROLL_SX_HORIZONTAL = {
+  '&::-webkit-scrollbar': { height: '3px' },
+  '&::-webkit-scrollbar-track': { background: 'transparent' },
+  '&::-webkit-scrollbar-thumb': { background: 'transparent', borderRadius: '1.5px' },
+  '&:hover::-webkit-scrollbar-thumb': { background: '#D0D5DA' },
+  scrollbarWidth: 'thin',
+  scrollbarColor: 'transparent transparent',
+  '&:hover': { scrollbarColor: '#D0D5DA transparent' },
+};
 
 function getInitials(name) {
   if (!name) return '?';
@@ -103,7 +115,11 @@ function CreditsPerCSChart() {
   const [hiddenSeries, setHiddenSeries] = useState([]);
   const [selectedCS, setSelectedCS] = useState(null);
   const chartContainerRef = useRef(null);
+  const scrollRef = useRef(null);
   const [chartHeight, setChartHeight] = useState(MIN_CHART_HEIGHT);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   const { startDate, endDate } = useDateFilter();
   const { csAdmins, isLoading } = useGetCreditsPerCS({ startDate, endDate });
 
@@ -113,11 +129,20 @@ function CreditsPerCSChart() {
     const el = chartContainerRef.current;
     if (!el) return undefined;
     const ro = new ResizeObserver(([entry]) => {
-      const h = Math.floor(entry.contentRect.height);
-      if (h > 0) setChartHeight((prev) => Math.max(MIN_CHART_HEIGHT, h));
+      const { width, height } = entry.contentRect;
+      if (height > 0) setChartHeight((prev) => Math.max(MIN_CHART_HEIGHT, Math.floor(height)));
+      if (width > 0) setContainerWidth(Math.floor(width));
     });
     ro.observe(el);
     return () => ro.disconnect();
+  }, []);
+
+  const updateScrollIndicators = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const threshold = 4;
+    setCanScrollLeft(el.scrollLeft > threshold);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - threshold);
   }, []);
 
   const handleToggle = useCallback((label) => {
@@ -152,6 +177,18 @@ function CreditsPerCSChart() {
     [activeSeries, sorted]
   );
 
+  const chartWidth = useMemo(() => {
+    if (sorted.length === 0 || containerWidth === 0) return undefined;
+    const computed = sorted.length * MIN_BAR_WIDTH + AXIS_MARGIN_H;
+    return Math.max(computed, containerWidth);
+  }, [sorted.length, containerWidth]);
+
+  const needsScroll = containerWidth > 0 && chartWidth !== undefined && chartWidth > containerWidth;
+
+  useEffect(() => {
+    updateScrollIndicators();
+  }, [needsScroll, sorted.length, containerWidth, updateScrollIndicators]);
+
   const handleAxisClick = useCallback((_event, data) => {
     if (!data || data.dataIndex == null) return;
     setSelectedCS(sorted[data.dataIndex]);
@@ -178,23 +215,64 @@ function CreditsPerCSChart() {
       );
     }
 
+    const fadeSx = {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      width: 32,
+      pointerEvents: 'none',
+      zIndex: 1,
+      transition: 'opacity 0.2s',
+    };
+
     return (
-      <Box ref={chartContainerRef} sx={{ flex: 1 }}>
-        <BarChart
-          series={visibleSeries}
-          xAxis={[{ scaleType: 'band', data: sorted.map((d) => d.csName), tickLabelStyle: { ...TICK_LABEL_STYLE, angle: -45 }, tickLabelInterval: () => true, height: 80 }]}
-          yAxis={[{ tickLabelStyle: TICK_LABEL_STYLE }]}
-          height={chartHeight}
-          margin={{ ...CHART_MARGIN, top: AVATAR_SIZE + 8 }}
-          grid={CHART_GRID}
-          hideLegend
-          tooltip={{ trigger: 'axis' }}
-          slots={{ axisContent: ChartAxisTooltip }}
-          onAxisClick={handleAxisClick}
-          sx={{ ...CHART_SX, cursor: 'pointer' }}
+      <Box ref={chartContainerRef} sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        {needsScroll && (
+          <Box
+            sx={{
+              ...fadeSx,
+              left: 0,
+              background: 'linear-gradient(to right, #fff 0%, transparent 100%)',
+              opacity: canScrollLeft ? 1 : 0,
+            }}
+          />
+        )}
+        {needsScroll && (
+          <Box
+            sx={{
+              ...fadeSx,
+              right: 0,
+              background: 'linear-gradient(to left, #fff 0%, transparent 100%)',
+              opacity: canScrollRight ? 1 : 0,
+            }}
+          />
+        )}
+        <Box
+          ref={scrollRef}
+          onScroll={updateScrollIndicators}
+          sx={{
+            overflowX: needsScroll ? 'auto' : 'visible',
+            overflowY: 'visible',
+            ...(needsScroll ? SCROLL_SX_HORIZONTAL : {}),
+          }}
         >
-          <AvatarOverlay data={sorted} visibleKeys={visibleKeys} />
-        </BarChart>
+          <BarChart
+            series={visibleSeries}
+            xAxis={[{ scaleType: 'band', data: sorted.map((d) => d.csName), tickLabelStyle: { ...TICK_LABEL_STYLE, angle: -45 }, tickLabelInterval: () => true, height: 80 }]}
+            yAxis={[{ tickLabelStyle: TICK_LABEL_STYLE }]}
+            height={chartHeight}
+            width={needsScroll ? chartWidth : undefined}
+            margin={{ ...CHART_MARGIN, top: AVATAR_SIZE + 8 }}
+            grid={CHART_GRID}
+            hideLegend
+            tooltip={{ trigger: 'axis' }}
+            slots={{ axisContent: ChartAxisTooltip }}
+            onAxisClick={handleAxisClick}
+            sx={{ ...CHART_SX, cursor: 'pointer' }}
+          >
+            <AvatarOverlay data={sorted} visibleKeys={visibleKeys} />
+          </BarChart>
+        </Box>
       </Box>
     );
   };
