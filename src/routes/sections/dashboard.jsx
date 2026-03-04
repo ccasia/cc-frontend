@@ -29,7 +29,7 @@ const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
 const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));
 
 // Analytics
-const AnalyticsView = lazy(() => import('src/sections/analytics/view/analytic-view'));
+const AnalyticsView = lazy(() => import('src/sections/analytics/view/analytic-view-v2'));
 
 // Campaign
 const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCampaign'));

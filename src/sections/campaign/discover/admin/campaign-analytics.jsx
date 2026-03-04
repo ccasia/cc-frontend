@@ -1944,7 +1944,7 @@ ManualCreatorCard.propTypes = {
 // Helper function to get localStorage key for this campaign
 const getReportStorageKey = (id) => `campaign-report-generated-${id}`;
 
-const CampaignAnalytics = ({ campaign, isDisabled = false }) => {
+const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => {
   const { user } = useAuthContext();
   const campaignId = campaign?.id;
   const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
@@ -3164,6 +3164,14 @@ const CampaignAnalytics = ({ campaign, isDisabled = false }) => {
         <PCRReportPage 
           campaign={campaign} 
           onBack={() => setShowReportPage(false)} 
+          isClientView={isClient}
+          onCampaignUpdate={(updatedCampaign) => {
+            if (updatedCampaign && campaignMutate) {
+              campaignMutate(updatedCampaign, { revalidate: true });
+            } else if (campaignMutate) {
+              campaignMutate();
+            }
+          }}
         />
       ) : (
         <>
@@ -3182,7 +3190,7 @@ const CampaignAnalytics = ({ campaign, isDisabled = false }) => {
         Performance Summary
       </Typography>
         
-        {/* Generate Report Button - Hidden for clients */}
+        {/* Generate Report Button - Admin only */}
         {!isClient && (
         <Button
           disabled={reportState === 'loading'}
@@ -3243,6 +3251,35 @@ const CampaignAnalytics = ({ campaign, isDisabled = false }) => {
           {reportState === 'generate' && 'Generate Report'}
           {reportState === 'loading' && 'Generating...'}
           {reportState === 'view' && 'View Report'}
+        </Button>
+        )}
+        {/* View Report Button - Client only, when PCR is ready */}
+        {isClient && campaign?.isPCRReady && (
+        <Button
+          sx={{
+            width: '186.07px',
+            height: '44px',
+            borderRadius: '8px',
+            gap: '6px',
+            padding: '10px 16px 13px 16px',
+            background: 'linear-gradient(90deg, #8A5AFE 0%, #1340FF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
+            color: '#FFFFFF',
+            fontWeight: 600,
+            fontSize: '14px',
+            textTransform: 'none',
+            '&:hover': {
+              background: 'linear-gradient(90deg, #7A4AEE 0%, #0330EF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+            },
+            '&:active': {
+              boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.1) inset',
+              transform: 'translateY(1px)',
+            },
+          }}
+          onClick={() => setShowReportPage(true)}
+        >
+          View Report
         </Button>
         )}
       </Box>
@@ -3850,6 +3887,7 @@ CampaignAnalytics.propTypes = {
       })
     ),
   }),
+  campaignMutate: PropTypes.func,
   isDisabled: PropTypes.bool,
 };
 
