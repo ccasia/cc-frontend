@@ -640,6 +640,39 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return combined;
   }, [postingSubmissions, manualSubmissions]);
 
+  // Calculate unique creators count (based on pitch approvals and shortlisted creators)
+  const uniqueCreatorsCount = useMemo(() => {
+    const uniqueCreatorIds = new Set();
+    
+    // Collect approved user IDs from pitches
+    if (Array.isArray(campaign?.pitch)) {
+      campaign.pitch
+        .filter(
+          (pitchItem) =>
+            pitchItem?.status === 'APPROVED' ||
+            pitchItem?.status === 'AGREEMENT_SUBMITTED' ||
+            pitchItem?.status === 'AGREEMENT_PENDING' ||
+            pitchItem?.status === 'approved'
+        )
+        .forEach((pitchItem) => {
+          if (pitchItem?.userId) {
+            uniqueCreatorIds.add(pitchItem.userId);
+          }
+        });
+    }
+    
+    // Also include shortlisted creators
+    if (Array.isArray(campaign?.shortlisted)) {
+      campaign.shortlisted.forEach((shortlistedItem) => {
+        if (shortlistedItem?.userId) {
+          uniqueCreatorIds.add(shortlistedItem.userId);
+        }
+      });
+    }
+    
+    return uniqueCreatorIds.size;
+  }, [campaign?.pitch, campaign?.shortlisted]);
+
   const summaryStats = useMemo(() => {
     console.log('=== Calculating Summary Stats ===');
     console.log('filteredInsightsData length:', filteredInsightsData.length);
@@ -4210,7 +4243,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               mb: 0.5
             }}
           >
-            {formatNumber(filteredSubmissions?.length || 0)}
+            {formatNumber(uniqueCreatorsCount || 0)}
           </Typography>
           <Typography 
             variant="body2" 
@@ -10150,523 +10183,547 @@ const PCRReportPage = ({ campaign, onBack }) => {
       )}
     </Box>
 
-    <Grid container spacing={3} sx={{ mb: 6 }}>
-      {/* What Worked Well - Purple */}
+    {/* Headers Row */}
+    <Grid container spacing={3} sx={{ mb: 2 }}>
       <Grid item xs={12} md={4}>
-        <Box sx={{ height: '100%' }}>
-          {/* Header */}
-      <Box
-        sx={{
-              background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
-              borderRadius: '12px 12px 0 0',
-              p: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1
-            }}
-          >
-            <Box
-              component="img"
-              src="/assets/icons/pcr/rewarded_ads.svg"
-              alt="Rewarded ads icon"
-              sx={{ width: '24px', height: '24px' }}
-            />
-            <Typography 
-              sx={{ 
-                fontFamily: 'Aileron',
-                fontWeight: 700,
-                fontSize: '18px',
-                color: 'white',
-                textAlign: 'center'
-              }}
-            >
-              What Worked Well
-      </Typography>
-          </Box>
-          
-          {/* Content Boxes */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
-            {editableContent.workedWellInsights.length === 0 && !isEditMode && (
-              <Box className="hide-in-pdf" sx={{ 
-                background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)', 
-                p: 3, 
-                color: 'white', 
-                height: '120px', 
-                display: 'flex', 
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '0 0 12px 12px',
-              }}>
-                <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.8 }}>
-                  Click Edit Report to edit What Worked Well
-                </Typography>
-              </Box>
-            )}
-            {editableContent.workedWellInsights.map((insight, index) => (
-      <Box
-                key={index}
-        sx={{
-                  background: getWorkedWellInsightBgColor(index),
-                  opacity: getWorkedWellOpacity(index),
-                  px: 2,
-                  py: 1.5, 
-                  color: 'white', 
-                  height: '120px', 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderRadius: index === editableContent.workedWellInsights.length - 1 ? '0 0 12px 12px' : 0,
-                  position: 'relative',
-                }}
-              >
-                {isEditMode && !sectionEditStates.recommendations ? (
-                  <Box sx={{ 
-                    bgcolor: '#E5E7EB', 
-          borderRadius: '12px',
-                    p: 2,
-                    flex: 1,
-                    display: 'flex',
-                    gap: 0.5,
-                  }}>
-                    <Box sx={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          mb: 0.5,
-                        }}
-                      >
-                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
-                          Editable
-        </Typography>
-      </Box>
-                      <TextField
-                        value={insight}
-                        onChange={(e) => {
-                          const newInsights = [...editableContent.workedWellInsights];
-                          newInsights[index] = e.target.value;
-                          setEditableContent({ ...editableContent, workedWellInsights: newInsights });
-                        }}
-                        fullWidth
-                        multiline
-                        rows={2}
-                        inputProps={{
-                          maxLength: 200,
-                        }}
-                        sx={{
-                          '& .MuiInputBase-root': {
-                            fontFamily: 'Aileron',
-                            fontSize: '12px',
-                            lineHeight: '18px',
-                            color: '#000000',
-                            padding: 0,
-                          },
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            border: 'none',
-                          },
-                        }}
-                      />
-    </Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        const newInsights = editableContent.workedWellInsights.filter((_, i) => i !== index);
-                        setEditableContent({ ...editableContent, workedWellInsights: newInsights });
-                      }}
-                      sx={{ color: '#000000', alignSelf: 'flex-start' }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                ) : (
-                  <Typography sx={{ 
-                    fontFamily: 'Aileron', 
-                    fontSize: '14px', 
-                    lineHeight: '20px',
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-line',
-                  }}>
-                    {insight}
-                  </Typography>
-                )}
-              </Box>
-            ))}
-            
-            {isEditMode && editableContent.workedWellInsights.length < 3 && (
-              <IconButton
-                onClick={() => {
-                  setEditableContent({
-                    ...editableContent,
-                    workedWellInsights: [...editableContent.workedWellInsights, ''],
-                  });
-                }}
-                sx={{
-                  background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
-          color: 'white',
-                  '&:hover': { background: 'linear-gradient(0deg, #7A4AEE, #7A4AEE)' },
-                  borderRadius: '12px',
-                  width: '44px',
-                  height: '44px',
-                  fontSize: '36px',
-                  fontWeight: 300,
-                }}
-              >
-                +
-              </IconButton>
-            )}
-          </Box>
-        </Box>
-      </Grid>
-
-      {/* What Could Be Improved - Blue */}
-      <Grid item xs={12} md={4}>
-        <Box sx={{ height: '100%' }}>
-          {/* Header */}
-          <Box 
+        <Box
+          sx={{
+            background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
+            borderRadius: '12px 12px 0 0',
+            p: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1
+          }}
+        >
+          <Box
+            component="img"
+            src="/assets/icons/pcr/rewarded_ads.svg"
+            alt="Rewarded ads icon"
+            sx={{ width: '24px', height: '24px' }}
+          />
+          <Typography 
             sx={{ 
-              bgcolor: '#1340FF',
-              borderRadius: '12px 12px 0 0',
-              p: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1
+              fontFamily: 'Aileron',
+              fontWeight: 700,
+              fontSize: '18px',
+              color: 'white',
+              textAlign: 'center'
             }}
           >
-            <Box
-              component="img"
-              src="/assets/icons/pcr/problem.svg"
-              alt="Problem icon"
-              sx={{ width: '24px', height: '24px' }}
-            />
-            <Typography 
-              sx={{ 
-                fontFamily: 'Aileron',
-                fontWeight: 700,
-                fontSize: '18px',
-                color: 'white',
-                textAlign: 'center'
-              }}
-            >
-              What Could Be Improved
-      </Typography>
-          </Box>
-          
-          {/* Content Boxes */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
-            {editableContent.improvedInsights.length === 0 && !isEditMode && (
-              <Box className="hide-in-pdf" sx={{ 
-                bgcolor: '#1340FFD9', 
-                p: 3, 
-                color: 'white', 
-                height: '120px', 
-                display: 'flex', 
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '0 0 12px 12px',
-              }}>
-                <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.8 }}>
-                  Click Edit Report to edit What Can Be Improved
-                </Typography>
-              </Box>
-            )}
-            {editableContent.improvedInsights.map((insight, index) => (
-      <Box
-                key={index}
-        sx={{
-                  bgcolor: getImprovedInsightBgColor(index),
-                  px: 2, // Changed from p: 1.5 to px: 2 for consistent horizontal padding
-                  py: 1.5, // Kept vertical padding
-                  color: 'white', 
-                  height: '120px', 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderRadius: index === editableContent.workedWellInsights.length - 1 ? '0 0 12px 12px' : 0,
-                  position: 'relative',
-                }}
-              >
-                {isEditMode && !sectionEditStates.recommendations ? (
-                  <Box sx={{ 
-                    bgcolor: '#E5E7EB', 
-          borderRadius: '12px',
-                    p: 2,
-                    flex: 1,
-                    display: 'flex',
-                    gap: 0.5,
-                  }}>
-                    <Box sx={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          mb: 0.5,
-                        }}
-                      >
-                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
-                          Editable
-        </Typography>
-      </Box>
-                      <TextField
-                        value={insight}
-                        onChange={(e) => {
-                          const newInsights = [...editableContent.improvedInsights];
-                          newInsights[index] = e.target.value;
-                          setEditableContent({ ...editableContent, improvedInsights: newInsights });
-                        }}
-                        fullWidth
-                        multiline
-                        rows={2}
-                        inputProps={{
-                          maxLength: 200,
-                        }}
-                        sx={{
-                          '& .MuiInputBase-root': {
-                            fontFamily: 'Aileron',
-                            fontSize: '12px',
-                            lineHeight: '18px',
-                            color: '#000000',
-                            padding: 0,
-                          },
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            border: 'none',
-                          },
-                        }}
-                      />
-    </Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        const newInsights = editableContent.improvedInsights.filter((_, i) => i !== index);
-                        setEditableContent({ ...editableContent, improvedInsights: newInsights });
-                      }}
-                      sx={{ color: '#000000', alignSelf: 'flex-start' }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                ) : (
-                  <Typography sx={{ 
-                    fontFamily: 'Aileron', 
-                    fontSize: '14px', 
-                    lineHeight: '20px',
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-line',
-                  }}>
-                    {insight}
-                  </Typography>
-                )}
-              </Box>
-            ))}
-            
-            {isEditMode && editableContent.improvedInsights.length < 3 && (
-              <IconButton
-                onClick={() => {
-                  setEditableContent({
-                    ...editableContent,
-                    improvedInsights: [...editableContent.improvedInsights, ''],
-                  });
-                }}
-                sx={{
-                  bgcolor: '#1340FF',
-                  color: 'white',
-                  '&:hover': { bgcolor: '#0D2FCC' },
-                  borderRadius: '12px',
-                  width: '44px',
-                  height: '44px',
-                  fontSize: '36px',
-                  fontWeight: 300,
-                }}
-              >
-                +
-              </IconButton>
-            )}
-          </Box>
+            What Worked Well
+          </Typography>
         </Box>
       </Grid>
 
-      {/* What To Do Next - Green */}
       <Grid item xs={12} md={4}>
-        <Box sx={{ height: '100%' }}>
-          {/* Header */}
-      <Box
-        sx={{
-              bgcolor: '#026D54',
-              borderRadius: '12px 12px 0 0',
-              p: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1
+        <Box 
+          sx={{ 
+            bgcolor: '#1340FF',
+            borderRadius: '12px 12px 0 0',
+            p: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1
+          }}
+        >
+          <Box
+            component="img"
+            src="/assets/icons/pcr/problem.svg"
+            alt="Problem icon"
+            sx={{ width: '24px', height: '24px' }}
+          />
+          <Typography 
+            sx={{ 
+              fontFamily: 'Aileron',
+              fontWeight: 700,
+              fontSize: '18px',
+              color: 'white',
+              textAlign: 'center'
             }}
           >
-            <Box
-              component="img"
-              src="/assets/icons/pcr/ads_click.svg"
-              alt="Ads click icon"
-              sx={{ width: '24px', height: '24px' }}
-            />
-            <Typography 
-              sx={{ 
-                fontFamily: 'Aileron',
-          fontWeight: 700,
-                fontSize: '18px',
-                color: 'white',
-                textAlign: 'center'
-        }}
-      >
-              What To Do Next
-            </Typography>
-      </Box>
-          
-          {/* Content Boxes */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
-            {editableContent.nextStepsInsights.length === 0 && !isEditMode && (
-              <Box className="hide-in-pdf" sx={{ 
-                bgcolor: '#026D54D9',
-                p: 3, 
-                color: 'white', 
-                height: '120px', 
-                display: 'flex', 
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '0 0 12px 12px',
-              }}>
-                <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.9 }}>
-                  Click Edit Report to edit Next Steps
-                </Typography>
-    </Box>
-            )}
-            {editableContent.nextStepsInsights.map((insight, index) => (
-              <Box 
-                key={index}
-                sx={{ 
-                  bgcolor: index === 0 ? '#026D54D9' : '#026D54BF',
-                  px: 2, // Changed from p: 1 to px: 2 for consistent horizontal padding
-                  py: 1.5, // Added vertical padding
-                  color: 'white', 
-                  height: '120px', 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderRadius: index === editableContent.nextStepsInsights.length - 1 ? '0 0 12px 12px' : 0,
-                  position: 'relative',
-                }}
-              >
-                {isEditMode && !sectionEditStates.recommendations ? (
-                  <Box sx={{ 
-                    bgcolor: '#E5E7EB', 
-                    borderRadius: '12px', 
-                    p: 2.5,
-                    px: 1,
-                    flex: 1,
-                    display: 'flex',
-                    gap: 0.5,
-                  }}>
-                    <Box sx={{ position: 'relative', flex: 1 }}>
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          zIndex: 1,
-                        }}
-                      >
-                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
-                          Editable
-                        </Typography>
-    </Box>
-                      <TextField
-                        value={insight}
-                        onChange={(e) => {
-                          const newInsights = [...editableContent.nextStepsInsights];
-                          newInsights[index] = e.target.value;
-                          setEditableContent({ ...editableContent, nextStepsInsights: newInsights });
-                        }}
-                        fullWidth
-                        multiline
-                        rows={2}
-                        inputProps={{
-                          maxLength: 200,
-                        }}
-                        sx={{
-                          mt: 1.5,
-                          '& .MuiInputBase-root': {
-                            fontFamily: 'Aileron',
-                            fontSize: '12px',
-                            lineHeight: '18px',
-                            color: '#000000',
-                            padding: 0,
-                          },
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            border: 'none',
-                          },
-                        }}
-                      />
-    </Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        const newInsights = editableContent.nextStepsInsights.filter((_, i) => i !== index);
-                        setEditableContent({ ...editableContent, nextStepsInsights: newInsights });
-                      }}
-                      sx={{ color: '#000000', alignSelf: 'flex-start' }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                ) : (
-                  <Typography sx={{ 
-                    fontFamily: 'Aileron', 
-                    fontSize: '14px', 
-                    lineHeight: '20px',
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-line',
-                  }}>
-                    {insight}
-                  </Typography>
-                )}
-              </Box>
-            ))}
-            
-            {isEditMode && editableContent.nextStepsInsights.length < 3 && (
-              <IconButton
-                onClick={() => {
-                  setEditableContent({
-                    ...editableContent,
-                    nextStepsInsights: [...editableContent.nextStepsInsights, ''],
-                  });
-                }}
-                sx={{
-                  bgcolor: '#026D54',
-                  color: 'white',
-                  '&:hover': { bgcolor: '#015D44' },
-                  borderRadius: '12px',
-                  width: '44px',
-                  height: '44px',
-                  fontSize: '36px',
-                  fontWeight: 300,
-                }}
-              >
-                +
-              </IconButton>
-            )}
-          </Box>
+            What Could Be Improved
+          </Typography>
+        </Box>
+      </Grid>
+
+      <Grid item xs={12} md={4}>
+        <Box
+          sx={{
+            bgcolor: '#026D54',
+            borderRadius: '12px 12px 0 0',
+            p: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1
+          }}
+        >
+          <Box
+            component="img"
+            src="/assets/icons/pcr/ads_click.svg"
+            alt="Ads click icon"
+            sx={{ width: '24px', height: '24px' }}
+          />
+          <Typography 
+            sx={{ 
+              fontFamily: 'Aileron',
+              fontWeight: 700,
+              fontSize: '18px',
+              color: 'white',
+              textAlign: 'center'
+            }}
+          >
+            What To Do Next
+          </Typography>
         </Box>
       </Grid>
     </Grid>
+
+    {/* Empty State Row */}
+    {editableContent.workedWellInsights.length === 0 && 
+     editableContent.improvedInsights.length === 0 && 
+     editableContent.nextStepsInsights.length === 0 && 
+     !isEditMode && (
+      <Grid container spacing={3} sx={{ mb: 2 }}>
+        <Grid item xs={12} md={4}>
+          <Box className="hide-in-pdf" sx={{ 
+            background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)', 
+            p: 3, 
+            color: 'white', 
+            height: '120px', 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '0 0 12px 12px',
+          }}>
+            <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.8 }}>
+              Click Edit Report to edit What Worked Well
+            </Typography>
+          </Box>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Box className="hide-in-pdf" sx={{ 
+            bgcolor: '#1340FFD9', 
+            p: 3, 
+            color: 'white', 
+            height: '120px', 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '0 0 12px 12px',
+          }}>
+            <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.8 }}>
+              Click Edit Report to edit What Can Be Improved
+            </Typography>
+          </Box>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Box className="hide-in-pdf" sx={{ 
+            bgcolor: '#026D54D9',
+            p: 3, 
+            color: 'white', 
+            height: '120px', 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '0 0 12px 12px',
+          }}>
+            <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.9 }}>
+              Click Edit Report to edit Next Steps
+            </Typography>
+          </Box>
+        </Grid>
+      </Grid>
+    )}
+
+    {/* Insight Rows */}
+    {Array.from({ 
+      length: Math.max(
+        editableContent.workedWellInsights.length,
+        editableContent.improvedInsights.length,
+        editableContent.nextStepsInsights.length
+      ) 
+    }).map((_, rowIndex) => (
+      <Grid container spacing={3} sx={{ mb: 1 }} key={`row-${rowIndex}`}>
+        {/* Left Column - What Worked Well */}
+        <Grid item xs={12} md={4}>
+          {editableContent.workedWellInsights[rowIndex] !== undefined && (
+            <Box
+              sx={{
+                background: getWorkedWellInsightBgColor(rowIndex),
+                opacity: getWorkedWellOpacity(rowIndex),
+                px: 2,
+                py: 1.5, 
+                color: 'white', 
+                minHeight: '120px',
+                height: '100%',
+                display: 'flex', 
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderRadius: rowIndex === editableContent.workedWellInsights.length - 1 ? '0 0 12px 12px' : 0,
+                position: 'relative',
+              }}
+            >
+              {isEditMode && !sectionEditStates.recommendations ? (
+                <Box sx={{ 
+                  bgcolor: '#E5E7EB', 
+                  borderRadius: '12px',
+                  p: 2,
+                  flex: 1,
+                  display: 'flex',
+                  gap: 0.5,
+                }}>
+                  <Box sx={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        mb: 0.5,
+                      }}
+                    >
+                      <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                        Editable
+                      </Typography>
+                    </Box>
+                    <TextField
+                      value={editableContent.workedWellInsights[rowIndex]}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        const newInsights = [...editableContent.workedWellInsights];
+                        newInsights[rowIndex] = newValue;
+                        setEditableContent((prev) => ({ ...prev, workedWellInsights: newInsights }));
+                      }}
+                      onPaste={(e) => {
+                        e.stopPropagation();
+                      }}
+                      fullWidth
+                      multiline
+                      minRows={2}
+                      maxRows={10}
+                      sx={{
+                        '& .MuiInputBase-root': {
+                          fontFamily: 'Aileron',
+                          fontSize: '12px',
+                          lineHeight: '18px',
+                          color: '#000000',
+                          padding: 0,
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      }}
+                    />
+                  </Box>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const newInsights = editableContent.workedWellInsights.filter((__, i) => i !== rowIndex);
+                      setEditableContent({ ...editableContent, workedWellInsights: newInsights });
+                    }}
+                    sx={{ color: '#000000', alignSelf: 'flex-start' }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              ) : (
+                <Typography sx={{ 
+                  fontFamily: 'Aileron', 
+                  fontSize: '14px', 
+                  lineHeight: '20px',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-line',
+                }}>
+                  {editableContent.workedWellInsights[rowIndex]}
+                </Typography>
+              )}
+            </Box>
+          )}
+        </Grid>
+
+        {/* Middle Column - What Could Be Improved */}
+        <Grid item xs={12} md={4}>
+          {editableContent.improvedInsights[rowIndex] !== undefined && (
+            <Box
+              sx={{
+                bgcolor: getImprovedInsightBgColor(rowIndex),
+                px: 2,
+                py: 1.5,
+                color: 'white', 
+                minHeight: '120px',
+                height: '100%',
+                display: 'flex', 
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderRadius: rowIndex === editableContent.improvedInsights.length - 1 ? '0 0 12px 12px' : 0,
+                position: 'relative',
+              }}
+            >
+              {isEditMode && !sectionEditStates.recommendations ? (
+                <Box sx={{ 
+                  bgcolor: '#E5E7EB', 
+                  borderRadius: '12px',
+                  p: 2,
+                  flex: 1,
+                  display: 'flex',
+                  gap: 0.5,
+                }}>
+                  <Box sx={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        mb: 0.5,
+                      }}
+                    >
+                      <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                        Editable
+                      </Typography>
+                    </Box>
+                    <TextField
+                      value={editableContent.improvedInsights[rowIndex]}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        const newInsights = [...editableContent.improvedInsights];
+                        newInsights[rowIndex] = newValue;
+                        setEditableContent((prev) => ({ ...prev, improvedInsights: newInsights }));
+                      }}
+                      onPaste={(e) => {
+                        e.stopPropagation();
+                      }}
+                      fullWidth
+                      multiline
+                      minRows={2}
+                      maxRows={10}
+                      sx={{
+                        '& .MuiInputBase-root': {
+                          fontFamily: 'Aileron',
+                          fontSize: '12px',
+                          lineHeight: '18px',
+                          color: '#000000',
+                          padding: 0,
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      }}
+                    />
+                  </Box>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const newInsights = editableContent.improvedInsights.filter((__, i) => i !== rowIndex);
+                      setEditableContent({ ...editableContent, improvedInsights: newInsights });
+                    }}
+                    sx={{ color: '#000000', alignSelf: 'flex-start' }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              ) : (
+                <Typography sx={{ 
+                  fontFamily: 'Aileron', 
+                  fontSize: '14px', 
+                  lineHeight: '20px',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-line',
+                }}>
+                  {editableContent.improvedInsights[rowIndex]}
+                </Typography>
+              )}
+            </Box>
+          )}
+        </Grid>
+
+        {/* Right Column - What To Do Next */}
+        <Grid item xs={12} md={4}>
+          {editableContent.nextStepsInsights[rowIndex] !== undefined && (
+            <Box 
+              sx={{ 
+                bgcolor: rowIndex === 0 ? '#026D54D9' : '#026D54BF',
+                px: 2,
+                py: 1.5,
+                color: 'white', 
+                minHeight: '120px',
+                height: '100%',
+                display: 'flex', 
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderRadius: rowIndex === editableContent.nextStepsInsights.length - 1 ? '0 0 12px 12px' : 0,
+                position: 'relative',
+              }}
+            >
+              {isEditMode && !sectionEditStates.recommendations ? (
+                <Box sx={{ 
+                  bgcolor: '#E5E7EB', 
+                  borderRadius: '12px', 
+                  p: 2.5,
+                  px: 1,
+                  flex: 1,
+                  display: 'flex',
+                  gap: 0.5,
+                }}>
+                  <Box sx={{ position: 'relative', flex: 1 }}>
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        zIndex: 1,
+                      }}
+                    >
+                      <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                        Editable
+                      </Typography>
+                    </Box>
+                    <TextField
+                      value={editableContent.nextStepsInsights[rowIndex]}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        const newInsights = [...editableContent.nextStepsInsights];
+                        newInsights[rowIndex] = newValue;
+                        setEditableContent((prev) => ({ ...prev, nextStepsInsights: newInsights }));
+                      }}
+                      onPaste={(e) => {
+                        e.stopPropagation();
+                      }}
+                      fullWidth
+                      multiline
+                      minRows={2}
+                      maxRows={10}
+                      sx={{
+                        mt: 1.5,
+                        '& .MuiInputBase-root': {
+                          fontFamily: 'Aileron',
+                          fontSize: '12px',
+                          lineHeight: '18px',
+                          color: '#000000',
+                          padding: 0,
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      }}
+                    />
+                  </Box>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const newInsights = editableContent.nextStepsInsights.filter((__, i) => i !== rowIndex);
+                      setEditableContent({ ...editableContent, nextStepsInsights: newInsights });
+                    }}
+                    sx={{ color: '#000000', alignSelf: 'flex-start' }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              ) : (
+                <Typography sx={{ 
+                  fontFamily: 'Aileron', 
+                  fontSize: '14px', 
+                  lineHeight: '20px',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-line',
+                }}>
+                  {editableContent.nextStepsInsights[rowIndex]}
+                </Typography>
+              )}
+            </Box>
+          )}
+        </Grid>
+      </Grid>
+    ))}
+
+    {/* Add Buttons Row */}
+    {isEditMode && (
+      <Grid container spacing={3} sx={{ mb: 6 }}>
+        <Grid item xs={12} md={4}>
+          {editableContent.workedWellInsights.length < 3 && (
+            <IconButton
+              onClick={() => {
+                setEditableContent({
+                  ...editableContent,
+                  workedWellInsights: [...editableContent.workedWellInsights, ''],
+                });
+              }}
+              sx={{
+                background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
+                color: 'white',
+                '&:hover': { background: 'linear-gradient(0deg, #7A4AEE, #7A4AEE)' },
+                borderRadius: '12px',
+                width: '44px',
+                height: '44px',
+                fontSize: '36px',
+                fontWeight: 300,
+              }}
+            >
+              +
+            </IconButton>
+          )}
+        </Grid>
+        <Grid item xs={12} md={4}>
+          {editableContent.improvedInsights.length < 3 && (
+            <IconButton
+              onClick={() => {
+                setEditableContent({
+                  ...editableContent,
+                  improvedInsights: [...editableContent.improvedInsights, ''],
+                });
+              }}
+              sx={{
+                bgcolor: '#1340FF',
+                color: 'white',
+                '&:hover': { bgcolor: '#0D2FCC' },
+                borderRadius: '12px',
+                width: '44px',
+                height: '44px',
+                fontSize: '36px',
+                fontWeight: 300,
+              }}
+            >
+              +
+            </IconButton>
+          )}
+        </Grid>
+        <Grid item xs={12} md={4}>
+          {editableContent.nextStepsInsights.length < 3 && (
+            <IconButton
+              onClick={() => {
+                setEditableContent({
+                  ...editableContent,
+                  nextStepsInsights: [...editableContent.nextStepsInsights, ''],
+                });
+              }}
+              sx={{
+                bgcolor: '#026D54',
+                color: 'white',
+                '&:hover': { bgcolor: '#015D44' },
+                borderRadius: '12px',
+                width: '44px',
+                height: '44px',
+                fontSize: '36px',
+                fontWeight: 300,
+              }}
+            >
+              +
+            </IconButton>
+          )}
+        </Grid>
+      </Grid>
+    )}
     </Box>
     </Box>
                 </SortableSection>
@@ -10826,6 +10883,7 @@ PCRReportPage.propTypes = {
       postingEndDate: PropTypes.string,
     }),
     submission: PropTypes.array,
+    pitch: PropTypes.array,
     shortlisted: PropTypes.arrayOf(
       PropTypes.shape({
         creditTier: PropTypes.string,
