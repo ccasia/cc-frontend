@@ -41,21 +41,35 @@ const createManualCreatorSchema = (selectedPlatform) => Yup.object().shape({
       },
     }),
   views: Yup.number()
+    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Views must be a number')
     .min(0, 'Views cannot be negative')
-    .required('Views is required'),
+    .nullable()
+    .notRequired(),
   likes: Yup.number()
+    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Likes must be a number')
     .min(0, 'Likes cannot be negative')
-    .required('Likes is required'),
+    .nullable()
+    .notRequired(),
+  comments: Yup.number()
+    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
+    .typeError('Comments must be a number')
+    .min(0, 'Comments cannot be negative')
+    .nullable()
+    .notRequired(),
   shares: Yup.number()
+    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Shares must be a number')
     .min(0, 'Shares cannot be negative')
-    .required('Shares is required'),
+    .nullable()
+    .notRequired(),
   saved: Yup.number()
+    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Saves must be a number')
     .min(0, 'Saves cannot be negative')
-    .nullable(),
+    .nullable()
+    .notRequired(),
 });
 
 // Common input field style matching Figma design
@@ -104,6 +118,12 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
   const [detectedPlatform, setDetectedPlatform] = useState(initialPlatform);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const toNumberOrZero = (value) => {
+    if (value === '' || value === undefined || value === null) return 0;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
   // Create schema based on selected platform
   const validationSchema = useMemo(() => {
     const platformForValidation = selectedPlatform && selectedPlatform !== 'ALL' ? selectedPlatform : null;
@@ -118,6 +138,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
       postUrl: editingEntry?.postUrl || '',
       views: editingEntry?.views ?? '',
       likes: editingEntry?.likes ?? '',
+      comments: editingEntry?.comments ?? '',
       shares: editingEntry?.shares ?? '',
       saved: editingEntry?.saved ?? '',
     },
@@ -132,7 +153,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
     formState: { isValid },
   } = methods;
 
-  const watchedValues = watch(['views', 'likes', 'shares', 'saved']);
+  const watchedValues = watch(['views', 'likes', 'comments', 'shares', 'saved']);
   const watchedUrl = watch('postUrl');
 
   // Re-validate form when selectedPlatform changes
@@ -167,13 +188,13 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
 
   // Real-time engagement rate calculation
   const engagementRate = useMemo(() => {
-    const [views, likes, shares, saved] = watchedValues.map((v) => Number(v) || 0);
+    const [views, likes, comments, shares, saved] = watchedValues.map((v) => Number(v) || 0);
     if (!views || views === 0) return '0.00';
 
     if (detectedPlatform === 'Instagram') {
-      return (((likes + shares + saved) / views) * 100).toFixed(2);
+      return (((likes + comments + shares + saved) / views) * 100).toFixed(2);
     }
-    return (((likes + shares) / views) * 100).toFixed(2);
+    return (((likes + comments + shares) / views) * 100).toFixed(2);
   }, [watchedValues, detectedPlatform]);
 
   // Form submission
@@ -183,10 +204,11 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
       const payload = {
         ...data,
         platform: detectedPlatform,
-        views: Number(data.views),
-        likes: Number(data.likes),
-        shares: Number(data.shares),
-        saved: data.saved ? Number(data.saved) : undefined,
+        views: toNumberOrZero(data.views),
+        likes: toNumberOrZero(data.likes),
+        comments: toNumberOrZero(data.comments),
+        shares: toNumberOrZero(data.shares),
+        saved: detectedPlatform === 'Instagram' ? toNumberOrZero(data.saved) : undefined,
       };
 
       if (isEditMode) {
@@ -204,11 +226,12 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
 
   // Check if form is complete for button state
   const isFormComplete = useMemo(() => {
-    const [views, likes, shares] = watchedValues;
     const creatorName = watch('creatorName');
     const creatorUsername = watch('creatorUsername');
-    return creatorName && creatorUsername && views && likes && shares !== undefined;
-  }, [watchedValues, watch]);
+
+    const hasRequiredText = Boolean(creatorName?.trim()) && Boolean(creatorUsername?.trim());
+    return hasRequiredText;
+  }, [watch]);
 
   // Expose submit function and state to parent
   useImperativeHandle(ref, () => ({
@@ -345,7 +368,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                   flex={1}
                   justifyContent="space-between"
                   sx={{ 
-                    mx: { md: 0.75, lg: 1.5, xl: 2 }, 
+                    mx: 0.5, 
                     minWidth: 0, 
                     overflow: 'hidden', 
                     flexWrap: 'nowrap',
@@ -365,7 +388,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                         Engagement Rate
                       </Box>
                       <Box component="span" sx={{ display: { md: 'inline', xl: 'none' } }}>
-                        Engage. Rate
+                        Eng. Rate
                       </Box>
                     </Typography>
                     <Typography
@@ -386,7 +409,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                       minWidth: '1px',
                       height: '71px', 
                       backgroundColor: '#1340FF', 
-                      mx: { md: 1, lg: 1.5, xl: 2 }, 
+                      mx: 1, 
                       flexShrink: 0,
                       alignSelf: 'stretch'
                     }}
@@ -423,7 +446,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                       minWidth: '1px',
                       height: '71px', 
                       backgroundColor: '#1340FF', 
-                      mx: { md: 1, lg: 1.5 }, 
+                      mx: 1, 
                       flexShrink: 0,
                       alignSelf: 'stretch'
                     }}
@@ -460,7 +483,44 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                       minWidth: '1px',
                       height: '71px', 
                       backgroundColor: '#1340FF', 
-                      mx: { md: 1, lg: 1.5 }, 
+                      mx: 1, 
+                      flexShrink: 0,
+                      alignSelf: 'stretch'
+                    }}
+                  />
+
+                  {/* Comments - bordered input field */}
+                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                    <Typography
+                      fontFamily="Aileron"
+                      fontSize={{ md: 14, lg: 16, xl: 18 }}
+                      fontWeight={600}
+                      color="#636366"
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      Comments
+                    </Typography>
+                    <RHFTextField
+                      name="comments"
+                      placeholder="Comments"
+                      type="text"
+                      size="small"
+                      inputProps={{ min: 0 }}
+                      fullWidth={false}
+                      sx={inputFieldStyle}
+                      value={formatNumberWithCommas(watch('comments') || '')}
+                      onChange={(e) => handleFormattedNumberChange('comments', e.target.value)}
+                    />
+                  </Box>
+
+                  <Divider
+                    orientation="vertical"
+                    sx={{ 
+                      width: '1px', 
+                      minWidth: '1px',
+                      height: '71px', 
+                      backgroundColor: '#1340FF', 
+                      mx: 1, 
                       flexShrink: 0,
                       alignSelf: 'stretch'
                     }}
@@ -500,7 +560,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                           minWidth: '1px',
                           height: '71px', 
                           backgroundColor: '#1340FF', 
-                          mx: { md: 1, lg: 1.5 }, 
+                          mx: 1, 
                           flexShrink: 0,
                           alignSelf: 'stretch'
                         }}
@@ -537,7 +597,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                       minWidth: '1px',
                       height: '71px', 
                       backgroundColor: '#1340FF', 
-                      mx: { md: 1, lg: 1.5 }, 
+                      mx: 1, 
                       flexShrink: 0,
                       alignSelf: 'stretch'
                     }}
@@ -732,6 +792,45 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                   </Grid>
                   <Grid item xs={6}>
                     <Typography fontSize={12} color="text.secondary">
+                      Comments
+                    </Typography>
+                    <RHFTextField
+                      name="comments"
+                      placeholder="0"
+                      type="text"
+                      size="small"
+                      inputProps={{ min: 0 }}
+                      value={formatNumberWithCommas(watch('comments') || '')}
+                      onChange={(e) => handleFormattedNumberChange('comments', e.target.value)}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '&.Mui-focused': {
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#1340FF',
+                              borderWidth: '1.5px',
+                            },
+                          },
+                          '&:hover': {
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#1340FF',
+                            },
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#e7e7e7',
+                          },
+                        },
+                        '& .MuiInputBase-input': {
+                          color: '#000000',
+                          '&::placeholder': {
+                            color: '#9E9E9E',
+                            opacity: 1,
+                          },
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography fontSize={12} color="text.secondary">
                       Shares
                     </Typography>
                     <RHFTextField
@@ -858,6 +957,7 @@ ManualCreatorEntryForm.propTypes = {
     postUrl: PropTypes.string,
     views: PropTypes.number,
     likes: PropTypes.number,
+    comments: PropTypes.number,
     shares: PropTypes.number,
     saved: PropTypes.number,
   }),
