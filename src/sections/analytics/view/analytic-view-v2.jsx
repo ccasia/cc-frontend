@@ -333,7 +333,7 @@ function KpiCards() {
 }
 
 export default function AnalyticViewV2() {
-  const [currentTab, setCurrentTab] = useState('clients'); // change back to 'creators'
+  const [currentTab, setCurrentTab] = useState('creators');
   const [dateFilter, setDateFilter] = useState('all');
   const [filterStartDate, setFilterStartDate] = useState(null);
   const [filterEndDate, setFilterEndDate] = useState(null);
