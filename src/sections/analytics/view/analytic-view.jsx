@@ -13,6 +13,7 @@ import CreatorSendPosting from './components/creators/posting';
 import TotalCreators from './components/creators/totalcreators';
 import CreatorSendAgreement from './components/creators/agreements';
 import PostingAnalytics from './components/admins/PostingAnalytics';
+import LanguageAnalytics from './components/creators/language-analytics';
 import ApproveDraftsAnalytics from './components/admins/DraftsAnalytics';
 import ShortlistedCreators from './components/creators/shortlisted-creators';
 import CampaignParticipation from './components/creators/campaign-participants';
@@ -83,14 +84,24 @@ export default function AnalyticsView() {
              ) : (
                <>
                  <Grid container spacing={3}>
-                   {/* Total Creators Analytics */}
+                   {/* Total Creators Analytics - Left Column */}
                    <Grid item xs={12} md={6}>
                      <TotalCreators creators={creatorsData} />
                    </Grid>
 
-                   {/* Shortlisted Creators */}
+                   {/* Right Column - Shortlisted Creators and Language Analytics stacked */}
                    <Grid item xs={12} md={6}>
-                     <ShortlistedCreators creators={creatorsData} />
+                     <Grid container spacing={3}>
+                       {/* Shortlisted Creators */}
+                       <Grid item xs={12}>
+                         <ShortlistedCreators creators={creatorsData} />
+                       </Grid>
+
+                       {/* Language Analytics - Below Shortlisted Creators */}
+                       <Grid item xs={12}>
+                         <LanguageAnalytics creators={creatorsData} />
+                       </Grid>
+                     </Grid>
                    </Grid>
 
                    {/* Total Pitches */}
