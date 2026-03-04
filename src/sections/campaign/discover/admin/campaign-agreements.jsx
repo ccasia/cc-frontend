@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
+import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -15,6 +16,7 @@ import {
   Avatar,
   Select,
   Tooltip,
+  Divider,
   TableRow,
   MenuItem,
   TableCell,
@@ -23,7 +25,6 @@ import {
   TextField,
   IconButton,
   Typography,
-  TableFooter,
   DialogTitle,
   DialogContent,
   DialogActions,
@@ -40,6 +41,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
@@ -447,6 +449,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
   const [rejectLoading, setRejectLoading] = useState(false);
 
   const { user } = useAuthContext();
+  const { mainRef } = useMainContext();
 
   const smUp = useResponsive('up', 'sm');
   const mdUp = useResponsive('up', 'md');
@@ -1229,7 +1232,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
               overflow: 'auto',
             }}
           >
-            <Table size={smUp ? 'medium' : 'small'}>
+            <Table size="small">
               <TableHead>
                 <TableRow>
                   <TableCell
@@ -1822,77 +1825,6 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                   );
                 })}
               </TableBody>
-              <TableFooter
-                sx={{ position: 'sticky', bottom: 0, zIndex: 2, bgcolor: 'background.paper' }}
-              >
-                <TableRow>
-                  <TableCell
-                    colSpan={smUp ? 2 : 1}
-                    sx={{
-                      py: { xs: 0.5, sm: 1 },
-                      px: { xs: 1, sm: 2 },
-                      fontSize: '0.875rem',
-                      fontWeight: 600,
-                      borderRadius: '10px 0 0 10px',
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                      borderBottom: 'none',
-                    }}
-                  >
-                    <Box component="span" sx={{ color: '#8e8e93' }}>
-                      Total Creators:{' '}
-                    </Box>
-                    <Box component="span" sx={{ color: '#221f20' }}>
-                      {footerTotals.totalCreators}
-                    </Box>
-                  </TableCell>
-                  <TableCell
-                    colSpan={2}
-                    sx={{
-                      py: { xs: 0.5, sm: 1 },
-                      px: { xs: 1, sm: 2 },
-                      fontSize: '0.875rem',
-                      fontWeight: 600,
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                      borderBottom: 'none',
-                    }}
-                  >
-                    <Box component="span" sx={{ color: '#8e8e93' }}>
-                      Total Credits:{' '}
-                    </Box>
-                    <Box component="span" sx={{ color: '#221f20' }}>
-                      {`${footerTotals.creditsUsed}/${footerTotals.creditsTotal}`}
-                    </Box>
-                    <Box component="span" sx={{ color: footerTotals.creditsRemainingColor }}>
-                      {` (${footerTotals.creditsRemaining} remaining)`}
-                    </Box>
-                  </TableCell>
-                  {campaign?.isCreditTier && (
-                    <TableCell sx={{ bgcolor: '#f5f5f5', borderBottom: 'none' }} />
-                  )}
-                  <TableCell
-                    colSpan={2}
-                    sx={{
-                      py: { xs: 0.5, sm: 1 },
-                      px: { xs: 1, sm: 2 },
-                      fontSize: '0.875rem',
-                      fontWeight: 600,
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                      borderBottom: 'none',
-                      borderRadius: '0 10px 10px 0',
-                    }}
-                  >
-                    <Box component="span" sx={{ color: '#8e8e93' }}>
-                      Total:{' '}
-                    </Box>
-                    <Box component="span" sx={{ color: '#221f20' }}>
-                      {formattedAmounts}
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
             </Table>
           </TableContainer>
         )}
@@ -2001,6 +1933,72 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
         agreement={selectedAgreement}
         campaign={campaign}
       />
+
+      {/* Summary bar: portalled to layout wrapper, absolute-positioned at bottom */}
+      {mainRef?.current?.parentElement &&
+        createPortal(
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 10,
+              bgcolor: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(8px)',
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              py: { xs: 0.75, sm: 1.25 },
+              px: { xs: 1.5, sm: 3 },
+              boxShadow: '0 -1px 4px rgba(0,0,0,0.04)',
+            }}
+          >
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="center"
+              spacing={{ xs: 1.5, sm: 3 }}
+              divider={<Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />}
+              sx={{
+                maxWidth: 1200,
+                mx: 'auto',
+                flexWrap: 'wrap',
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <Iconify icon="mdi:account-group-outline" width={18} sx={{ color: '#8e8e93' }} />
+                <Typography variant="body2" sx={{ color: '#8e8e93', fontWeight: 500 }}>
+                  Creators:
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 700 }}>
+                  {footerTotals.totalCreators}
+                </Typography>
+              </Stack>
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <Iconify icon="mdi:star-four-points-outline" width={18} sx={{ color: '#8e8e93' }} />
+                <Typography variant="body2" sx={{ color: '#8e8e93', fontWeight: 500 }}>
+                  Credits:
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 700 }}>
+                  {`${footerTotals.creditsUsed}/${footerTotals.creditsTotal}`}
+                </Typography>
+                <Typography variant="body2" sx={{ color: footerTotals.creditsRemainingColor, fontWeight: 500 }}>
+                  ({footerTotals.creditsRemaining} left)
+                </Typography>
+              </Stack>
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <Iconify icon="mdi:wallet-outline" width={18} sx={{ color: '#8e8e93' }} />
+                <Typography variant="body2" sx={{ color: '#8e8e93', fontWeight: 500 }}>
+                  Total:
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 700 }}>
+                  {formattedAmounts}
+                </Typography>
+              </Stack>
+            </Stack>
+          </Box>,
+          mainRef.current.parentElement
+        )}
     </Box>
   );
 };
