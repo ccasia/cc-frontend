@@ -910,7 +910,7 @@ RejectionDonut.propTypes = {
 };
 
 // --- 9. Simple Metrics ---
-export function SimpleMetricCard({ title, value }) {
+export function SimpleMetricCard({ title, value, icon }) {
   return (
     <Card
       sx={{
@@ -924,9 +924,12 @@ export function SimpleMetricCard({ title, value }) {
         flexDirection: 'column',
       }}
     >
-      <Typography variant="subtitle2" color="text.secondary" mb={1}>
-        {title}
-      </Typography>
+      <Stack direction="row" alignItems="flex-start" spacing={1} mb={1}>
+        <Iconify icon={icon} width={18} color="text.secondary" />
+        <Typography variant="subtitle2" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+          {title}
+        </Typography>
+      </Stack>
       <Typography variant="h5" fontWeight="bold">
         {value}
       </Typography>

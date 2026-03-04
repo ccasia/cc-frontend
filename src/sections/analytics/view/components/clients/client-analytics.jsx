@@ -19,7 +19,7 @@ import {
   SimpleMetricCard,
 } from './client-widgets';
 
-export default function AnalyticsDashboard({ packageType }) {
+export default function ClientsTabContent({ packageType }) {
   const { startDate, endDate } = useDateFilter();
 
   const params = new URLSearchParams();
@@ -106,35 +106,39 @@ export default function AnalyticsDashboard({ packageType }) {
 
       {/* ROW 4: Submission Review Efficiency (Full Width) */}
       <Grid container spacing={2} mb={3}>
-        <Grid item xs={12} md={2}>
+        <Grid item xs={12} md={2.5}>
           <Grid direction="column" container spacing={2}>
             <Grid item xs={12} md={3}>
               <SimpleMetricCard
                 title="Campaign creation rate"
                 value={`${campaign?.campaignCreationRate || 0}%`}
+                icon="mi:megaphone"
               />
             </Grid>
             <Grid item xs={12} md={3}>
               <SimpleMetricCard
                 title="Average campaigns"
                 value={`${campaign?.avgCampaignsPerBrand || 0} campaigns`}
+                icon="streamline-ultimate:align-middle"
               />
             </Grid>
             <Grid item xs={12} md={3}>
               <SimpleMetricCard
                 title="Time to first campaign"
                 value={`${campaign?.avgTimeToFirstCampaign || 0} days`}
+                icon="material-symbols:looks-one-outline-rounded"
               />
             </Grid>
             <Grid item xs={12} md={3}>
               <SimpleMetricCard
                 title="Bugs Reported"
-                // value={`${campaign?.avgTimeToFirstCampaign || 0} days`}
+                value={`${support?.totalTickets || 0}`}
+                icon="solar:bug-linear"
               />
             </Grid>
           </Grid>
         </Grid>
-        <Grid item xs={12} md={10}>
+        <Grid item xs={12} md={9.5}>
           <ReviewEfficiencyScatter data={approval} />
         </Grid>
       </Grid>
@@ -152,6 +156,6 @@ export default function AnalyticsDashboard({ packageType }) {
   );
 }
 
-AnalyticsDashboard.propTypes = {
+ClientsTabContent.propTypes = {
   packageType: PropTypes.string,
 };
