@@ -114,7 +114,7 @@ function TopShortlistedCreatorsChart() {
         </Stack>
 
         {/* Table rows */}
-        <Box sx={{ flex: 1, overflow: 'auto', ...SCROLL_SX }}>
+        <Box sx={{ flex: 1 }}>
           <Stack spacing={0} sx={{ py: 0.5 }}>
             {creators.map((creator, index) => (
               <Stack
