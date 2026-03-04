@@ -257,7 +257,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           }}
           IconComponent={() => null}
           endAdornment={
-            <Iconify icon="line-md:chevron-down" width={30} height={30} color="#231F20" />
+            <Iconify icon="line-md:chevron-down" width={40} height={40} color="#231F20" />
           }
           renderValue={(selected) => {
             if (!selected || selected.length === 0) {
