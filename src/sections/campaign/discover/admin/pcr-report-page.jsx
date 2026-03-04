@@ -640,6 +640,39 @@ const PCRReportPage = ({ campaign, onBack }) => {
     return combined;
   }, [postingSubmissions, manualSubmissions]);
 
+  // Calculate unique creators count (based on pitch approvals and shortlisted creators)
+  const uniqueCreatorsCount = useMemo(() => {
+    const uniqueCreatorIds = new Set();
+    
+    // Collect approved user IDs from pitches
+    if (Array.isArray(campaign?.pitch)) {
+      campaign.pitch
+        .filter(
+          (pitchItem) =>
+            pitchItem?.status === 'APPROVED' ||
+            pitchItem?.status === 'AGREEMENT_SUBMITTED' ||
+            pitchItem?.status === 'AGREEMENT_PENDING' ||
+            pitchItem?.status === 'approved'
+        )
+        .forEach((pitchItem) => {
+          if (pitchItem?.userId) {
+            uniqueCreatorIds.add(pitchItem.userId);
+          }
+        });
+    }
+    
+    // Also include shortlisted creators
+    if (Array.isArray(campaign?.shortlisted)) {
+      campaign.shortlisted.forEach((shortlistedItem) => {
+        if (shortlistedItem?.userId) {
+          uniqueCreatorIds.add(shortlistedItem.userId);
+        }
+      });
+    }
+    
+    return uniqueCreatorIds.size;
+  }, [campaign?.pitch, campaign?.shortlisted]);
+
   const summaryStats = useMemo(() => {
     console.log('=== Calculating Summary Stats ===');
     console.log('filteredInsightsData length:', filteredInsightsData.length);
@@ -4210,7 +4243,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               mb: 0.5
             }}
           >
-            {formatNumber(filteredSubmissions?.length || 0)}
+            {formatNumber(uniqueCreatorsCount || 0)}
           </Typography>
           <Typography 
             variant="body2" 
@@ -10850,6 +10883,7 @@ PCRReportPage.propTypes = {
       postingEndDate: PropTypes.string,
     }),
     submission: PropTypes.array,
+    pitch: PropTypes.array,
     shortlisted: PropTypes.arrayOf(
       PropTypes.shape({
         creditTier: PropTypes.string,
