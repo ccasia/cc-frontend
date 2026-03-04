@@ -2,6 +2,8 @@ import PropTypes from 'prop-types';
 
 import { Box, Stack, Button, Divider, Skeleton, Typography } from '@mui/material';
 
+import Iconify from 'src/components/iconify';
+
 import CreatorCard from './CreatorCard';
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
@@ -85,9 +87,12 @@ const CreatorList = ({
   isLoading,
   isError,
   pagination,
+  sortByFollowers,
+  onToggleFollowersSort,
   selectedIds,
   onSelect,
   onCompare,
+  onInvite,
 }) => {
   if (isError) {
     return (
@@ -118,43 +123,101 @@ const CreatorList = ({
 
   // Compute viewedCount and total for results info
   const total = pagination?.total ?? creators.length;
-  const viewedCount = pagination?.limit && pagination?.page
-    ? Math.min(pagination.page * pagination.limit, total)
-    : creators.length;
+  const viewedCount =
+    pagination?.limit && pagination?.page
+      ? Math.min(pagination.page * pagination.limit, total)
+      : creators.length;
 
   return (
     <Box sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', mb: 1.5, gap: 2 }}>
-        <Typography sx={{ fontSize: 14, color: 'text.secondary', mr: 2 }}>
+      <Button
+        onClick={onToggleFollowersSort}
+        variant="text"
+        disableRipple
+        sx={{
+          color: sortByFollowers ? '#1340FF' : '#231F20',
+          fontWeight: 400,
+          fontSize: 14,
+          p: 0,
+          cursor: 'pointer',
+          '&:hover': {
+            bgcolor: 'transparent',
+          },
+        }}
+        endIcon={<Iconify icon="fluent:arrow-sort-down-lines-24-regular" width={18} ml={-0.5} />}
+      >
+        Total Followers
+      </Button>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          mb: 1.5,
+          gap: 2,
+        }}
+      >
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', mr: 2 }}>
           {`${viewedCount} of ${total} creator${total === 1 ? '' : 's'}`}
         </Typography>
-        <Button
-          onClick={() => onCompare?.(selectedIds)}
-          disabled={selectedIds?.length !== 2}
-          sx={{
-            color: '#231F20',
-            bgcolor: '#FFFFFF',
-            textTransform: 'none',
-            fontWeight: 600,
-            fontSize: 14,
-            pb: 1,
-            borderRadius: 1,
-            border: '1px solid #E7E7E7',
-            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-            '&:hover': {
-              bgcolor: 'rgba(0, 0, 0, 0.03)',
-              border: '1px solid #E7E7E7',
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-            },
-            ':disabled': {
-              bgcolor: 'rgba(0, 0, 0, 0.05)',
-              border: '1px solid rgba(0, 0, 0, 0.05)',
-              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.05) inset'
-            }
-          }}
-        >
-          Compare Creators
-        </Button>
+        <Box>
+          <Stack direction="row" spacing={1}>
+            <Button
+              onClick={() => onInvite?.(selectedIds)}
+              disabled={!selectedIds?.length}
+              sx={{
+                color: '#ffffff',
+                bgcolor: 'rgba(58, 58, 60, 1)',
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: 14,
+                pb: 1,
+                borderRadius: 1,
+                border: '1px solid #3A3A3C',
+                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                '&:hover': {
+                  bgcolor: 'rgba(58, 58, 60, 0.9)',
+                  border: '1px solid #3A3A3C',
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.3) inset',
+                },
+                ':disabled': {
+                  bgcolor: 'rgba(0, 0, 0, 0.05)',
+                  border: '1px solid rgba(0, 0, 0, 0.05)',
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.05) inset',
+                },
+              }}
+            >
+              Invite Creators
+            </Button>
+            <Button
+              onClick={() => onCompare?.(selectedIds)}
+              disabled={selectedIds?.length !== 2}
+              sx={{
+                color: '#231F20',
+                bgcolor: '#FFFFFF',
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: 14,
+                pb: 1,
+                borderRadius: 1,
+                border: '1px solid #E7E7E7',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  bgcolor: 'rgba(0, 0, 0, 0.03)',
+                  border: '1px solid #E7E7E7',
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                },
+                ':disabled': {
+                  bgcolor: 'rgba(0, 0, 0, 0.05)',
+                  border: '1px solid rgba(0, 0, 0, 0.05)',
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.05) inset',
+                },
+              }}
+            >
+              Compare Creators
+            </Button>
+          </Stack>
+        </Box>
       </Box>
 
       {/* Creator rows */}
@@ -193,9 +256,12 @@ CreatorList.propTypes = {
     limit: PropTypes.number,
     total: PropTypes.number,
   }),
+  sortByFollowers: PropTypes.bool,
+  onToggleFollowersSort: PropTypes.func,
   selectedIds: PropTypes.arrayOf(PropTypes.string),
   onSelect: PropTypes.func,
   onCompare: PropTypes.func,
+  onInvite: PropTypes.func,
 };
 
 CreatorList.defaultProps = {
@@ -203,9 +269,12 @@ CreatorList.defaultProps = {
   isLoading: false,
   isError: null,
   pagination: null,
+  sortByFollowers: false,
+  onToggleFollowersSort: undefined,
   selectedIds: [],
   onSelect: undefined,
   onCompare: undefined,
+  onInvite: undefined,
 };
 
 export default CreatorList;

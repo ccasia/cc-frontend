@@ -138,6 +138,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const sentToClientCount = countPitchesByStatus(mergedPitchesAndShortlisted, [
     'SENT_TO_CLIENT',
     'SENT_TO_CLIENT_WITH_COMMENTS',
+    'INVITED',
   ]);
 
   const maybeCount = countPitchesByStatus(mergedPitchesAndShortlisted, ['MAYBE']);
@@ -205,7 +206,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
 
       // Define status checks
       const isPending = ['PENDING_REVIEW'].includes(status);
-      const sentToClient = ['SENT_TO_CLIENT'].includes(status);
+      const sentToClient = ['SENT_TO_CLIENT', 'INVITED'].includes(status);
       const sentToClientWithComments = ['SENT_TO_CLIENT_WITH_COMMENTS'].includes(status);
       const isMaybe = ['MAYBE'].includes(status);
       const isApproved = [
@@ -238,7 +239,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         (pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW'
       );
     } else if (selectedFilter === 'SENT_TO_CLIENT') {
-      const sentToClientStatuses = ['SENT_TO_CLIENT'];
+      const sentToClientStatuses = ['SENT_TO_CLIENT', 'INVITED'];
       if (isV4) sentToClientStatuses.push('SENT_TO_CLIENT_WITH_COMMENTS');
       filtered = filtered?.filter((pitch) =>
         sentToClientStatuses.includes(pitch.displayStatus || pitch.status)
@@ -416,7 +417,15 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
     handleClosePitchModal();
   };
 
-  const getStatusInfo = (status) => {
+  const getStatusInfo = (status, pitch) => {
+    if ((status === 'APPROVED' || status === 'approved') && pitch?.isInvited === true) {
+      return {
+        color: '#FFC702',
+        borderColor: '#FFC702',
+        tooltip: 'Invited creator approved by client',
+      };
+    }
+
     // Check for AGREEMENT_PENDING status with PENDING_REVIEW agreement form
     if (status === 'AGREEMENT_PENDING' && campaign?.submission) {
       const agreementFormSubmission = campaign.submission.find(
@@ -449,6 +458,11 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         tooltip: 'Pitch is pending admin review',
       },
       SENT_TO_CLIENT: {
+        color: '#8A5AFE',
+        borderColor: '#8A5AFE',
+        tooltip: 'Pitch has been sent to client for review',
+      },
+      INVITED: {
         color: '#8A5AFE',
         borderColor: '#8A5AFE',
         tooltip: 'Pitch has been sent to client for review',
@@ -1241,8 +1255,9 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
             <TableBody>
               {filteredPitches?.map((pitch) => {
                 const displayStatus = pitch.displayStatus || pitch.status;
-                const statusInfo = getStatusInfo(displayStatus);
+                const statusInfo = getStatusInfo(displayStatus, pitch);
                 const isGuestCreator = pitch.user?.creator?.isGuest;
+                const isInvitedCreator = pitch.status === 'INVITED' || pitch.isInvited;
 
                 return (
                   <PitchRow
@@ -1250,6 +1265,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                     pitch={pitch}
                     displayStatus={displayStatus}
                     statusInfo={statusInfo}
+                    isInvitedCreator={isInvitedCreator}
                     isGuestCreator={isGuestCreator}
                     campaign={campaign}
                     isCreditTier={campaign?.isCreditTier}
@@ -1366,7 +1382,7 @@ export function AddCreatorModal({ open, onClose, onSelect, campaign }) {
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="xs"
+      maxWidth="sm"
       fullWidth
       PaperProps={{
         sx: {
@@ -1410,8 +1426,8 @@ export function AddCreatorModal({ open, onClose, onSelect, campaign }) {
                 bgcolor: '#fff',
                 border: '1px solid #E7E7E7',
                 borderRadius: 1,
-                px: 1.5,
-                py: 0.75,
+                px: 1,
+                py: 1,
               }}
             >
               <Typography

@@ -262,6 +262,7 @@ export const endpoints = {
         submitAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/submit-agreement`,
         withdraw: (pitchId) => `/api/pitch/v3/${pitchId}/withdraw`,
         outreachStatus: (pitchId) => `/api/pitch/v3/${pitchId}/outreach-status`,
+        acceptInvite: (pitchId) => `/api/pitch/v3/${pitchId}/accept-invite`,
       },
     },
     draft: {
@@ -385,6 +386,7 @@ export const endpoints = {
   },
   discovery: {
     creators: '/api/discovery/creators',
+    inviteCreators: '/api/discovery/invite-creators',
   },
   invoice: {
     getAll: '/api/invoice/',

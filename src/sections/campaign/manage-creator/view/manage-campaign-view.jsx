@@ -15,6 +15,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { useSearchParams } from 'src/routes/hooks';
+
 import { useGetMyCampaign } from 'src/hooks/use-get-my-campaign';
 import { useCheckCreatorNps } from 'src/hooks/use-get-nps-feedback';
 
@@ -35,6 +37,9 @@ const ManageCampaignView = () => {
 
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
+  const searchParams = useSearchParams();
+  const targetTab = searchParams.get('tab');
+  const targetCampaignId = searchParams.get('campaignId');
 
   const { user } = useAuthContext();
   const { data: campaigns, isLoading, mutate } = useGetMyCampaign(user?.id);
@@ -63,6 +68,12 @@ const ManageCampaignView = () => {
     };
   }, [socket, mutate]);
 
+  useEffect(() => {
+    if (targetTab === 'pending') {
+      setCurrentTab('applied');
+    }
+  }, [targetTab]);
+
   // const { campaigns } = useGetCampaigns('creator');
   const settings = useSettingsContext();
   const theme = useTheme();
@@ -71,7 +82,10 @@ const ManageCampaignView = () => {
   const filteredData = useMemo(() => {
     let filteredCampaigns = campaigns;
 
-    console.log('My Campaigns - Raw campaigns:', campaigns?.map(c => ({ id: c.id, name: c.name, createdAt: c.createdAt, origin: c.origin })));
+    console.log(
+      'My Campaigns - Raw campaigns:',
+      campaigns?.map((c) => ({ id: c.id, name: c.name, createdAt: c.createdAt, origin: c.origin }))
+    );
 
     // Apply sorting - default to newest first
     if (sortBy === 'Most matched') {
@@ -85,33 +99,50 @@ const ManageCampaignView = () => {
 
     return {
       active:
-        filteredCampaigns?.filter(
-          (campaign) => {
-            // Campaigns that are shortlisted and active
-            if (campaign.shortlisted && campaign.status === 'ACTIVE' && !campaign.shortlisted?.isCampaignDone) {
-              return true;
-            }
+        filteredCampaigns?.filter((campaign) => {
+          // Campaigns that are shortlisted and active
+          if (campaign?.pitch?.isInvited) {
             return false;
           }
-        ) || [],
+          if (
+            campaign.shortlisted &&
+            campaign.status === 'ACTIVE' &&
+            !campaign.shortlisted?.isCampaignDone
+          ) {
+            return true;
+          }
+          return false;
+        }) || [],
       pending:
-        filteredCampaigns?.filter(
-          (campaign) => {
-            // For campaigns: PENDING_REVIEW should be in pending
-            if (campaign?.pitch?.status === 'PENDING_REVIEW') {
-              return true;
-            }
-            // For V2 campaigns: undecided status should be in pending
-            if (campaign?.pitch?.status === 'undecided') {
-              return true;
-            }
-            // Campaigns that are not shortlisted and don't have approved pitches
-            if (!campaign.shortlisted && campaign?.pitch?.status !== 'APPROVED' && campaign?.pitch?.status !== 'approved') {
-              return true;
-            }
-            return false;
+        filteredCampaigns?.filter((campaign) => {
+          // For campaigns: PENDING_REVIEW should be in pending
+          if (campaign?.pitch?.status === 'PENDING_REVIEW') {
+            return true;
           }
-        ) || [],
+          if (
+            (campaign?.pitch?.status === 'INVITED' ||
+              campaign?.pitch?.status === 'MAYBE' ||
+              campaign?.pitch?.status === 'SENT_TO_CLIENT') &&
+            campaign.pitch.isInvited
+          ) {
+            return false;
+          } if (campaign?.pitch?.status === 'APPROVED' && campaign.pitch.isInvited) {
+            return true;
+          }
+          // For V2 campaigns: undecided status should be in pending
+          if (campaign?.pitch?.status === 'undecided') {
+            return true;
+          }
+          // Campaigns that are not shortlisted and don't have approved pitches
+          if (
+            !campaign.shortlisted &&
+            campaign?.pitch?.status !== 'APPROVED' &&
+            campaign?.pitch?.status !== 'approved'
+          ) {
+            return true;
+          }
+          return false;
+        }) || [],
       completed:
         filteredCampaigns?.filter((campaign) => campaign?.shortlisted?.isCampaignDone) || [],
     };
@@ -499,7 +530,11 @@ const ManageCampaignView = () => {
             <ActiveCampaignView searchQuery={query} campaigns={filteredData.active} />
           )}
           {currentTab === 'applied' && (
-            <AppliedCampaignView searchQuery={query} campaigns={filteredData.pending} />
+            <AppliedCampaignView
+              searchQuery={query}
+              campaigns={filteredData.pending}
+              autoOpenCampaignId={targetCampaignId}
+            />
           )}
           {currentTab === 'completed' && (
             <CompletedCampaignView searchQuery={query} campaigns={filteredData.completed} />

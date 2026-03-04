@@ -1,15 +1,25 @@
+import { useSnackbar } from 'notistack';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Container, Pagination, Typography } from '@mui/material';
+import {
+	Box,
+	Container,
+	Pagination,
+	Typography,
+} from '@mui/material';
 
 import useGetDiscoveryCreators from 'src/hooks/use-get-discovery-creators';
 
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import InviteCreatorsDialog from './invite-creators-dialog';
 import CompareCreatorsDialog from './compare-creators-dialog';
 import { CreatorList, DiscoveryFilterBar } from '../components';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const DiscoveryToolView = () => {
+	const { enqueueSnackbar } = useSnackbar();
 	const [filters, setFilters] = useState({
 		platform: 'all',
 		debouncedKeyword: '',
@@ -19,6 +29,7 @@ const DiscoveryToolView = () => {
 		city: null,
 		gender: '',
 		creditTier: '',
+		languages: [],
 		interests: [],
 	});
 
@@ -26,6 +37,7 @@ const DiscoveryToolView = () => {
 	const [showResults, setShowResults] = useState(true);
 	const isInitialMount = useRef(true);
 	const [currentPage, setCurrentPage] = useState(1);
+	const [sortByFollowers, setSortByFollowers] = useState(false);
 
 	// All filters are now server-side — pass them all to the SWR hook
 	const { creators, pagination, availableLocations, isLoading, isError } = useGetDiscoveryCreators({
@@ -35,9 +47,12 @@ const DiscoveryToolView = () => {
 		country: filters.country || undefined,
 		city: filters.city || undefined,
 		creditTier: filters.creditTier || undefined,
+		languages: filters.languages?.length ? filters.languages : undefined,
 		interests: filters.interests?.length ? filters.interests : undefined,
 		keyword: filters.debouncedKeyword || undefined,
 		hashtag: filters.debouncedHashtag || undefined,
+		sortBy: sortByFollowers ? 'followers' : 'name',
+		sortDirection: sortByFollowers ? 'desc' : 'asc',
 		page: currentPage,
 		limit: 20,
 	});
@@ -53,6 +68,7 @@ const DiscoveryToolView = () => {
 			filters.city !== null ||
 			filters.gender !== '' ||
 			filters.creditTier !== '' ||
+			filters.languages.length > 0 ||
 			filters.interests.length > 0,
 		[filters]
 	);
@@ -91,9 +107,21 @@ const DiscoveryToolView = () => {
 		setCurrentPage(nextPage);
 	}, []);
 
+	const handleToggleFollowersSort = useCallback(() => {
+		setSortByFollowers((prev) => !prev);
+		setCurrentPage(1);
+	}, []);
+
 	// Creator selection & comparison
 	const [selectedCreatorIds, setSelectedCreatorIds] = useState([]);
 	const [compareOpen, setCompareOpen] = useState(false);
+	const [inviteOpen, setInviteOpen] = useState(false);
+	const [inviteCampaigns, setInviteCampaigns] = useState([]);
+	const [inviteCampaignId, setInviteCampaignId] = useState('');
+	const [inviteLoadingCampaigns, setInviteLoadingCampaigns] = useState(false);
+	const [inviteSubmitting, setInviteSubmitting] = useState(false);
+	const inviteCampaignsLoadedRef = useRef(false);
+	const inviteCampaignsRequestRef = useRef(null);
 
 	const handleSelectCreator = useCallback((rowId) => {
 		setSelectedCreatorIds((prev) =>
@@ -110,9 +138,151 @@ const DiscoveryToolView = () => {
 		[selectedCreatorIds, creators]
 	);
 
+	const selectedCampaignExistingCreatorIds = useMemo(() => {
+		if (!inviteCampaignId) return [];
+		const selectedCampaign = inviteCampaigns.find((campaign) => campaign.id === inviteCampaignId);
+		return selectedCampaign?.existingCreatorIds || [];
+	}, [inviteCampaignId, inviteCampaigns]);
+
 	const handleCompare = useCallback(() => {
 		setCompareOpen(true);
 	}, []);
+
+	const loadInviteCampaigns = useCallback(async (force = false) => {
+		if (!force && inviteCampaignsLoadedRef.current) {
+			return;
+		}
+
+		if (inviteCampaignsRequestRef.current) {
+			await inviteCampaignsRequestRef.current;
+			return;
+		}
+
+		const request = (async () => {
+		try {
+			setInviteLoadingCampaigns(true);
+			const response = await axiosInstance.get(endpoints.campaign.getAllActiveCampaign, {
+				params: {
+					status: 'ACTIVE',
+					limit: 100,
+				},
+			});
+
+			const payload = response?.data;
+			let campaignRows = [];
+			if (Array.isArray(payload)) {
+				campaignRows = payload;
+			} else if (Array.isArray(payload?.campaigns)) {
+				campaignRows = payload.campaigns;
+			} else if (Array.isArray(payload?.data)) {
+				campaignRows = payload.data;
+			}
+
+			setInviteCampaigns(
+				campaignRows
+					.filter((campaign) => campaign?.id && campaign?.name)
+					.map((campaign) => ({
+						id: campaign.id,
+						name: campaign.name,
+						submissionVersion: campaign.submissionVersion,
+						existingCreatorIds: Array.from(
+							new Set((campaign?.pitch || []).map((pitch) => pitch?.userId).filter(Boolean))
+						),
+					}))
+			);
+			inviteCampaignsLoadedRef.current = true;
+		} catch (error) {
+			console.error('Failed to load campaigns for invite:', error);
+			enqueueSnackbar('Failed to load campaigns', { variant: 'error' });
+		} finally {
+			setInviteLoadingCampaigns(false);
+		}
+		})();
+
+		inviteCampaignsRequestRef.current = request;
+		try {
+			await request;
+		} finally {
+			inviteCampaignsRequestRef.current = null;
+		}
+	}, [enqueueSnackbar]);
+
+	const handleInviteOpen = useCallback(async () => {
+		if (!selectedCreatorIds.length) {
+			enqueueSnackbar('Select at least one creator to invite', { variant: 'warning' });
+			return;
+		}
+
+		setInviteCampaignId('');
+		setInviteOpen(true);
+
+		if (!inviteCampaignsLoadedRef.current && !inviteCampaignsRequestRef.current) {
+			await loadInviteCampaigns();
+		}
+	}, [enqueueSnackbar, loadInviteCampaigns, selectedCreatorIds.length]);
+
+	const handleInviteClose = useCallback(() => {
+		if (inviteSubmitting) return;
+		setInviteOpen(false);
+	}, [inviteSubmitting]);
+
+	const handleInviteCancel = useCallback(() => {
+		if (inviteSubmitting) return;
+		setSelectedCreatorIds([]);
+		setInviteCampaignId('');
+		setInviteOpen(false);
+	}, [inviteSubmitting]);
+
+	const handleRemoveInvitedCreator = useCallback((creatorIdentifier) => {
+		if (!creatorIdentifier) return;
+		setSelectedCreatorIds((prev) => prev.filter((id) => id !== creatorIdentifier));
+	}, []);
+
+	const handleInviteSubmit = useCallback(async () => {
+		const selectedCreatorUserIds = Array.from(
+			new Set(selectedCreators.map((creator) => creator?.userId).filter(Boolean))
+		);
+		const invitableCreatorUserIds = selectedCreatorUserIds.filter(
+			(userId) => !selectedCampaignExistingCreatorIds.includes(userId)
+		);
+
+		if (!inviteCampaignId) {
+			enqueueSnackbar('Select a campaign first', { variant: 'warning' });
+			return;
+		}
+
+		if (!selectedCreatorUserIds.length) {
+			enqueueSnackbar('No valid creators selected', { variant: 'warning' });
+			return;
+		}
+
+		if (!invitableCreatorUserIds.length) {
+			enqueueSnackbar('Selected creators are already in this campaign', { variant: 'warning' });
+			return;
+		}
+
+		try {
+			setInviteSubmitting(true);
+			const response = await axiosInstance.post(endpoints.discovery.inviteCreators, {
+				campaignId: inviteCampaignId,
+				creatorIds: invitableCreatorUserIds,
+			});
+
+			const invitedCount = response?.data?.invitedCount ?? invitableCreatorUserIds.length;
+			enqueueSnackbar(`${invitedCount} creator${invitedCount === 1 ? '' : 's'} invited`, {
+				variant: 'success',
+			});
+			setSelectedCreatorIds([]);
+			setInviteOpen(false);
+		} catch (error) {
+			console.error('Failed to invite creators:', error);
+			enqueueSnackbar(error?.response?.data?.message || 'Failed to invite creators', {
+				variant: 'error',
+			});
+		} finally {
+			setInviteSubmitting(false);
+		}
+	}, [enqueueSnackbar, inviteCampaignId, selectedCampaignExistingCreatorIds, selectedCreators]);
 
 	// Log results only when they actually change
 	useEffect(() => {
@@ -147,9 +317,12 @@ const DiscoveryToolView = () => {
 					isLoading={isLoading}
 					isError={isError}
 					pagination={pagination}
+					sortByFollowers={sortByFollowers}
+					onToggleFollowersSort={handleToggleFollowersSort}
 					selectedIds={selectedCreatorIds}
 					onSelect={handleSelectCreator}
 					onCompare={handleCompare}
+					onInvite={handleInviteOpen}
 				/>
 			)}
 
@@ -170,6 +343,22 @@ const DiscoveryToolView = () => {
 				open={compareOpen}
 				onClose={() => setCompareOpen(false)}
 				creators={selectedCreators}
+			/>
+
+			<InviteCreatorsDialog
+				open={inviteOpen}
+				onClose={handleInviteClose}
+				onCancel={handleInviteCancel}
+				selectedCreatorsCount={selectedCreators.length}
+				creators={selectedCreators}
+				existingCreatorIds={selectedCampaignExistingCreatorIds}
+				onRemoveCreator={handleRemoveInvitedCreator}
+				campaigns={inviteCampaigns}
+				campaignId={inviteCampaignId}
+				onCampaignChange={setInviteCampaignId}
+				isLoadingCampaigns={inviteLoadingCampaigns}
+				isSubmitting={inviteSubmitting}
+				onSubmit={handleInviteSubmit}
 			/>
 		</Container>
 	);
