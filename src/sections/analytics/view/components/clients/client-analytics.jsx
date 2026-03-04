@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types'; // 1. Import PropTypes
 
 import { Grid, Typography, Stack, Rating } from '@mui/material';
 import useSWR from 'swr';
 import { fetcher, endpoints } from 'src/utils/axios';
-import { useDateFilter } from '../../v2/date-filter-context';
+import { useDateFilter, useTrendLabel } from '../../v2/date-filter-context';
 
 // Import all your meticulously crafted widgets
 import {
@@ -18,9 +18,12 @@ import {
   RejectionDonut,
   SimpleMetricCard,
 } from './client-widgets';
+import InactiveBrandsDrawer from './client-inactive-company-drawer';
 
 export default function ClientsTabContent({ packageType }) {
   const { startDate, endDate } = useDateFilter();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const trendLabel = useTrendLabel();
 
   const params = new URLSearchParams();
   if (packageType !== 'ALL') params.append('packageType', packageType);
@@ -42,14 +45,15 @@ export default function ClientsTabContent({ packageType }) {
       {/* ROW 1: Top KPI Cards */}
       <Grid container spacing={2} mb={3}>
         <Grid item xs={12} sm={6} md={3}>
-          <TopKPICard title="Total Brands" mainValue={brands?.totalCompanies || '-'}>
-            <Stack spacing={0.5}>
-              <Typography variant="caption" color="success.main">
-                ● on platform (v4) {brands?.v4Companies || '-'}
-              </Typography>
-              <Typography variant="caption" color="success.main">
-                ● not on platform (v2) {brands?.v2Companies || '-'}
-              </Typography>
+          <TopKPICard
+            title="Total Brands"
+            mainValue={brands?.totalCompanies ?? '-'}
+            trend={brands?.totalCompaniesTrend}
+            trendLabel={trendLabel}
+            onClick={() => setDrawerOpen(true)}
+            clickable
+          >
+            <Stack spacing={0.2}>
               <Typography variant="caption" color="error.main">
                 ● inactive {brands?.inactiveCompanies || '-'}
               </Typography>
@@ -57,25 +61,39 @@ export default function ClientsTabContent({ packageType }) {
           </TopKPICard>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <TopKPICard title="Activation Rate" mainValue={`${brands?.activationRate || '-'}%`}>
+          <TopKPICard
+            title="Activation Rate"
+            mainValue={`${brands?.activationRate ?? '-'}%`}
+            trend={brands?.activationRateTrend}
+            trendLabel={trendLabel}
+          >
             <Typography variant="caption" color="success.main">
               ▲ {brands?.rateUnder24h || 0}% under 24h
             </Typography>
           </TopKPICard>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <TopKPICard title="Retention Rate" mainValue={`${support?.retentionRate || '-'}%`}>
+          <TopKPICard
+            title="Retention Rate"
+            mainValue={`${support?.retentionRate ?? '-'}%`}
+            trend={support?.retentionRateTrend}
+            trendLabel={trendLabel}
+          >
             <Typography variant="caption" color="success.main">
               ▲ {support?.upgradeRate || 0}% upsell rate
             </Typography>
           </TopKPICard>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <TopKPICard title="NPS Feedback rating" mainValue={`${support?.npsScore || '-'}`}>
+          <TopKPICard
+            title="NPS Feedback Rating"
+            mainValue={`${support?.npsScore ?? '-'}`}
+            trend={support?.npsScoreTrend}
+            trendLabel={trendLabel}
+          >
             <Typography variant="caption" display="block" color="text.secondary" mb={0.5}>
               From {support?.totalNpsReports || 0} reports{' '}
             </Typography>
-            {/* MUI Rating component looks exactly like the stars in your drawing */}
             <Rating value={support?.npsScore || 0} precision={0.5} readOnly size="small" />
           </TopKPICard>
         </Grid>
@@ -152,6 +170,13 @@ export default function ClientsTabContent({ packageType }) {
           <RejectionDonut data={shortlist?.rejectionReasons} />
         </Grid>
       </Grid>
+
+      <InactiveBrandsDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        brands={brands}
+        query={query}
+      />
     </>
   );
 }
