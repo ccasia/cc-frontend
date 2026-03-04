@@ -8,7 +8,6 @@ import {
   useTheme,
   useMediaQuery,
   LinearProgress,
-  CircularProgress,
 } from '@mui/material';
 import {
   PieChart,
@@ -122,24 +121,6 @@ TopKPICard.propTypes = {
 
 // --- 2. Row 2: Time Spent (Horizontal Bar) ---
 export function TimeSpentChart({ data }) {
-  if (!data) {
-    return (
-      <Card
-        sx={{
-          p: 3,
-          borderRadius: 2,
-          border: '1px solid #E5E7EB',
-          height: 350,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <CircularProgress size={25} />
-      </Card>
-    );
-  }
-
   const dataset = STEP_CONFIG.map((config) => {
     const dbMatch = data?.find((item) => item.name === config.key);
 
@@ -221,11 +202,10 @@ export function TimeSpentChart({ data }) {
               },
             }}
             slots={{ tooltip: () => null }}
-            // slots={{ tooltip: ClientItemTooltipSlot }}
           />
         </Box>
       ) : (
-        <EmptyState />
+        <EmptyState message="No campaign brief time spend data found" />
       )}
     </Card>
   );
@@ -334,7 +314,7 @@ export function SkippedFieldsChart({ journey, campaign }) {
           />
         </Box>
       ) : (
-        <EmptyState />
+        <EmptyState message="No campaign brief skipped field data found" />
       )}
     </Card>
   );
@@ -434,7 +414,7 @@ export function DropOffChart({ data }) {
           />
         </Box>
       ) : (
-        <EmptyState />
+        <EmptyState message="No campaign brief dropoff data found" />
       )}
     </Card>
   );
@@ -499,7 +479,7 @@ export function RenewalChart({ data }) {
           />
         </Box>
       ) : (
-        <EmptyState />
+        <EmptyState message="No package renewal data found" />
       )}
     </Card>
   );
@@ -629,7 +609,7 @@ export function ReviewEfficiencyScatter({ data }) {
           </ScatterChart>
         </Box>
       ) : (
-        <EmptyState />
+        <EmptyState message="No submission review process data found" />
       )}
     </Card>
   );
@@ -718,7 +698,7 @@ export function TurnaroundChart({ data }) {
           />
         </Box>
       ) : (
-        <EmptyState />
+        <EmptyState message="No creator shortlisting turnaround data found" />
       )}
     </Card>
   );
@@ -894,7 +874,7 @@ export function RejectionDonut({ data }) {
           </Stack>
         </Stack>
       ) : (
-        <EmptyState />
+        <EmptyState message="No creator shortlisting rejection reason data found" />
       )}
     </Card>
   );
@@ -931,7 +911,7 @@ export function SimpleMetricCard({ title, value, icon }) {
         </Typography>
       </Stack>
       <Typography variant="h5" fontWeight="bold">
-        {value}
+        {value || '-'}
       </Typography>
     </Card>
   );
