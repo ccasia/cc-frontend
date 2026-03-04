@@ -41,22 +41,27 @@ const createManualCreatorSchema = (selectedPlatform) => Yup.object().shape({
       },
     }),
   views: Yup.number()
+    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Views must be a number')
     .min(0, 'Views cannot be negative')
     .required('Views is required'),
   likes: Yup.number()
+    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Likes must be a number')
     .min(0, 'Likes cannot be negative')
     .required('Likes is required'),
   comments: Yup.number()
+    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Comments must be a number')
     .min(0, 'Comments cannot be negative')
     .required('Comments is required'),
   shares: Yup.number()
+    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Shares must be a number')
     .min(0, 'Shares cannot be negative')
     .required('Shares is required'),
   saved: Yup.number()
+    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Saves must be a number')
     .min(0, 'Saves cannot be negative')
     .nullable(),
@@ -107,6 +112,12 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
     : (editingEntry?.platform || 'Instagram');
   const [detectedPlatform, setDetectedPlatform] = useState(initialPlatform);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const toNumberOrZero = (value) => {
+    if (value === '' || value === undefined || value === null) return 0;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
 
   // Create schema based on selected platform
   const validationSchema = useMemo(() => {
@@ -188,11 +199,11 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
       const payload = {
         ...data,
         platform: detectedPlatform,
-        views: Number(data.views),
-        likes: Number(data.likes),
-        comments: Number(data.comments),
-        shares: Number(data.shares),
-        saved: data.saved ? Number(data.saved) : undefined,
+        views: toNumberOrZero(data.views),
+        likes: toNumberOrZero(data.likes),
+        comments: toNumberOrZero(data.comments),
+        shares: toNumberOrZero(data.shares),
+        saved: detectedPlatform === 'Instagram' ? toNumberOrZero(data.saved) : undefined,
       };
 
       if (isEditMode) {
@@ -210,10 +221,11 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
 
   // Check if form is complete for button state
   const isFormComplete = useMemo(() => {
-    const [views, likes, comments, shares] = watchedValues;
     const creatorName = watch('creatorName');
     const creatorUsername = watch('creatorUsername');
-    return creatorName && creatorUsername && views && likes && comments && shares !== undefined;
+
+    const hasRequiredText = Boolean(creatorName?.trim()) && Boolean(creatorUsername?.trim());
+    return hasRequiredText;
   }, [watchedValues, watch]);
 
   // Expose submit function and state to parent
