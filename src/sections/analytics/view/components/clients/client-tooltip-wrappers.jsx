@@ -1,14 +1,14 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Popper } from '@mui/material';
-import { useItemTooltip, useMouseTracker, useAxisTooltip } from '@mui/x-charts/ChartsTooltip';
+import { useSeries, useItemTooltip, useMouseTracker, useAxisTooltip } from '@mui/x-charts';
 import {
+  PieTooltip,
   ClientTooltip,
   MatrixTooltip,
   RenewalTooltip,
   TurnaroundTooltip,
-  PieTooltip,
 } from './client-tooltips';
-import { useSeries } from '@mui/x-charts';
 
 function generateVirtualElement(mousePosition) {
   return {
@@ -50,6 +50,16 @@ function TooltipPopper({ children, mousePosition }) {
   );
 }
 
+TooltipPopper.propTypes = {
+  children: PropTypes.node,
+  mousePosition: PropTypes.shape({
+    x: PropTypes.number,
+    y: PropTypes.number,
+    pointerType: PropTypes.string,
+    height: PropTypes.number,
+  }),
+};
+
 function ItemTooltipWrapper({ Content }) {
   const tooltipData = useItemTooltip();
   const mousePosition = useMouseTracker();
@@ -65,6 +75,10 @@ function ItemTooltipWrapper({ Content }) {
   );
 }
 
+ItemTooltipWrapper.propTypes = {
+  Content: PropTypes.elementType.isRequired,
+};
+
 function AxisTooltipWrapper({ Content }) {
   const tooltipData = useAxisTooltip();
   const mousePosition = useMouseTracker();
@@ -79,6 +93,9 @@ function AxisTooltipWrapper({ Content }) {
     </TooltipPopper>
   );
 }
+AxisTooltipWrapper.propTypes = {
+  Content: PropTypes.elementType.isRequired,
+};
 
 // --- Helper to safely resolve label ---
 function resolveLabel(label) {
@@ -208,6 +225,10 @@ function ClientTooltipAdapter({ tooltipData }) {
   );
 }
 
+ClientTooltipAdapter.propTypes = {
+  tooltipData: PropTypes.object,
+};
+
 function ClientAxisTooltipAdapter({ tooltipData }) {
   const { axisValue, seriesItems } = tooltipData;
 
@@ -231,6 +252,10 @@ function ClientAxisTooltipAdapter({ tooltipData }) {
   );
 }
 
+ClientAxisTooltipAdapter.propTypes = {
+  tooltipData: PropTypes.object,
+};
+
 function MatrixTooltipAdapter({ tooltipData }) {
   const { identifier, value, color } = tooltipData;
 
@@ -250,104 +275,9 @@ function MatrixTooltipAdapter({ tooltipData }) {
   return <MatrixTooltip itemData={{ dataIndex: 0 }} series={series} />;
 }
 
-// function RenewalAxisAdapter({ tooltipData }) {
-//   const { seriesItems } = tooltipData;
-
-//   if (!seriesItems || seriesItems.length === 0) return null;
-
-//   const series = seriesItems
-//     .filter((item) => item.value != null)
-//     .map((item) => ({
-//       color: item.color,
-//       label: resolveLabel(item.label),
-//       data: [resolveValue(item.value)],
-//     }));
-
-//   if (series.length === 0) return null;
-
-//   return <RenewalTooltip series={series} dataIndex={0} />;
-// }
-function RenewalAxisAdapter({ tooltipData }) {
-  const { axisValue, seriesItems } = tooltipData;
-
-  if (!seriesItems || seriesItems.length === 0) return null;
-
-  const series = seriesItems
-    .filter((item) => item.value != null)
-    .map((item) => {
-      let resolvedLabel = item.label;
-      if (typeof resolvedLabel === 'function') {
-        try {
-          resolvedLabel = resolvedLabel('tooltip');
-        } catch {
-          resolvedLabel = '';
-        }
-      }
-      if (typeof resolvedLabel === 'object' && resolvedLabel !== null) {
-        resolvedLabel = resolvedLabel?.text ?? resolvedLabel?.label ?? String(resolvedLabel);
-      }
-
-      const resolvedValue =
-        typeof item.value === 'object' && item.value !== null
-          ? (item.value?.value ?? 0)
-          : (item.value ?? 0);
-
-      return {
-        color: item.color,
-        label: resolvedLabel ?? '',
-        data: [resolvedValue],
-      };
-    });
-
-  if (series.length === 0) return null;
-
-  const resolvedAxisValue = typeof axisValue === 'object' ? String(axisValue) : axisValue;
-
-  return <RenewalTooltip series={series} dataIndex={0} axisValue={resolvedAxisValue} />;
-}
-
-// function RenewalItemAdapter({ tooltipData }) {
-//   const { value, label, color } = tooltipData;
-
-//   const series = [
-//     {
-//       color,
-//       label: resolveLabel(label),
-//       data: [resolveValue(value)],
-//     },
-//   ];
-
-//   return <RenewalTooltip series={series} dataIndex={0} />;
-// }
-function RenewalItemAdapter({ tooltipData }) {
-  const { value, label, color } = tooltipData;
-
-  const resolvedLabel =
-    typeof label === 'function'
-      ? (() => {
-          try {
-            return label('tooltip');
-          } catch {
-            return '';
-          }
-        })()
-      : typeof label === 'object' && label !== null
-        ? (label?.text ?? label?.label ?? String(label))
-        : (label ?? '');
-
-  const resolvedValue =
-    typeof value === 'object' && value !== null ? (value?.value ?? 0) : (value ?? 0);
-
-  const series = [
-    {
-      color,
-      label: resolvedLabel,
-      data: [resolvedValue],
-    },
-  ];
-
-  return <RenewalTooltip series={series} dataIndex={0} />;
-}
+MatrixTooltipAdapter.propTypes = {
+  tooltipData: PropTypes.object,
+};
 
 function TurnaroundTooltipAdapter({ tooltipData }) {
   const { identifier, value, color } = tooltipData;
@@ -366,6 +296,10 @@ function TurnaroundTooltipAdapter({ tooltipData }) {
 
   return <TurnaroundTooltip itemData={{ dataIndex: 0 }} series={series} />;
 }
+
+TurnaroundTooltipAdapter.propTypes = {
+  tooltipData: PropTypes.object,
+};
 
 function PieTooltipAdapter({ tooltipData }) {
   const safeValue = resolveValue(tooltipData.value);
@@ -387,3 +321,7 @@ function PieTooltipAdapter({ tooltipData }) {
 
   return <PieTooltip itemData={{ dataIndex: 0 }} series={series} />;
 }
+
+PieTooltipAdapter.propTypes = {
+  tooltipData: PropTypes.object,
+};

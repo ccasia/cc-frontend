@@ -17,6 +17,7 @@ import {
   ChartsReferenceLine,
   legendClasses,
 } from '@mui/x-charts';
+import Iconify from 'src/components/iconify';
 
 import {
   ClientItemTooltipSlot,
@@ -25,8 +26,6 @@ import {
   TurnaroundTooltipSlot,
   PieTooltipSlot,
 } from './client-tooltip-wrappers';
-
-import Iconify from 'src/components/iconify';
 
 // Your Brand Colors
 const COLORS = {
@@ -87,6 +86,10 @@ function EmptyState({ message = 'No data found for the selected period.' }) {
     </Box>
   );
 }
+
+EmptyState.propTypes = {
+  message: PropTypes.string,
+};
 
 // --- 1. Top KPI Cards (Unchanged, just layout) ---
 export function TopKPICard({ title, mainValue, children }) {
@@ -425,6 +428,7 @@ DropOffChart.propTypes = {
     PropTypes.shape({
       name: PropTypes.string,
       value: PropTypes.number,
+      color: PropTypes.string,
     })
   ),
 };
@@ -704,6 +708,9 @@ export function TurnaroundChart({ data }) {
   );
 }
 
+TurnaroundChart.propTypes = {
+  data: PropTypes.object,
+};
 // --- 8. Row 5: Rejection Donut ---
 
 const DONUT_COLORS = ['#EF4444', '#F59E0B', '#1340FF', '#8E33FF', '#10B981', '#00B8D9', '#919EAB'];
@@ -920,4 +927,5 @@ export function SimpleMetricCard({ title, value, icon }) {
 SimpleMetricCard.propTypes = {
   title: PropTypes.string.isRequired,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  icon: PropTypes.string,
 };

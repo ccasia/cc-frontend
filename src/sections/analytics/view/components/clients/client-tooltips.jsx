@@ -418,6 +418,23 @@ export function TurnaroundTooltip(props) {
   );
 }
 
+TurnaroundTooltip.propTypes = {
+  itemData: PropTypes.shape({
+    dataIndex: PropTypes.number,
+  }),
+  series: PropTypes.shape({
+    id: PropTypes.string,
+    color: PropTypes.string,
+    data: PropTypes.arrayOf(
+      PropTypes.shape({
+        x: PropTypes.number,
+        y: PropTypes.number,
+        payload: PropTypes.object,
+      })
+    ),
+  }),
+};
+
 // ─────────────────────────────────────────────
 // 5. PieTooltip
 // ─────────────────────────────────────────────
@@ -460,3 +477,18 @@ export function PieTooltip(props) {
     </Box>
   );
 }
+
+PieTooltip.propTypes = {
+  series: PropTypes.shape({
+    data: PropTypes.arrayOf(
+      PropTypes.shape({
+        value: PropTypes.oneOfType([PropTypes.number, PropTypes.object]),
+        label: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+        color: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+      })
+    ),
+  }),
+  itemData: PropTypes.shape({
+    dataIndex: PropTypes.number,
+  }),
+};
