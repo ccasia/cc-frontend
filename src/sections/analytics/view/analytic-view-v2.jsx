@@ -35,6 +35,7 @@ import {
   useTrendLabel,
 } from './v2/date-filter-context';
 import PackageFilterSelect from './v2/components/package-filter';
+import ClientsTabContent from './components/clients/client-analytics';
 
 const CreatorsTabContent = lazy(() => import('./v2/creators-tab-content'));
 const AdminsTabContent = lazy(() => import('./v2/admins-tab-content'));
@@ -468,15 +469,10 @@ export default function AnalyticViewV2() {
               <Suspense fallback={<TabSkeleton />}>
                 {currentTab === 'creators' && <CreatorsTabContent />}
                 {currentTab === 'admins' && <AdminsTabContent />}
+                {currentTab === 'clients' && <ClientsTabContent packageType={filterPackageType} />}
               </Suspense>
             </m.div>
           </AnimatePresence>
-
-          <Fade in={currentTab === 'clients'} timeout={200} unmountOnExit>
-            <Grid>
-              <ClientAnalytics packageType={filterPackageType} />
-            </Grid>
-          </Fade>
         </DateFilterProvider>
       </Container>
     </>
