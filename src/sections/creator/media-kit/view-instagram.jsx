@@ -336,13 +336,12 @@ TopContentGrid.propTypes = {
       image_url: PropTypes.string.isRequired,
     })
   ).isRequired,
-  mobileCarousel: PropTypes.bool,
 };
 
 const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
   const { user } = useAuthContext();
   const instagramData = useSocialMediaData((state) => state.instagram);
-  const { isMobile, isTablet, theme } = useMediaKitResponsive(forceDesktop);
+  const { isMobile, isTablet } = useMediaKitResponsive(forceDesktop);
 
   const [showOAuthWarning, setShowOAuthWarning] = useState(false);
 
