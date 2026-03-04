@@ -163,7 +163,7 @@ const getAllAvailableFields = (step) => {
         'productImage2',
       ];
     case 8: // Additional Details 2
-      [
+      return [
         'hashtagsToUse',
         'mentionsTagsRequired',
         'creatorCompensation',
