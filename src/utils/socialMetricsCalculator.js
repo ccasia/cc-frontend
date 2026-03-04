@@ -11,9 +11,9 @@ export const formatNumber = (num) => {
     const value = rounded / 1000000;
     // Show no decimal if exact million
     return value % 1 === 0 ? `${value}M` : `${value.toFixed(1)}M`;
+  }
   if (rounded >= 100000) return `${(rounded / 100000).toFixed(1)  }K`;
   if (rounded >= 10000) return `${(rounded / 10000).toFixed(1)  }K`;
-  }
   if (rounded >= 1000) {
     const value = rounded / 1000;
     // Show no decimal if exact thousand
