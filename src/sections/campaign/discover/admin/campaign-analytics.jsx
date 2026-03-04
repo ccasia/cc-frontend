@@ -1145,7 +1145,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
                   color="#636366"
                   sx={{ whiteSpace: 'nowrap' }}
                 >
-                  <Box component="span" sx={{ display: { xs: 'none', xl: 'inline' } }}>
+                  <Box component="span" pr={1.5} sx={{ display: { xs: 'none', xl: 'inline' } }}>
                     Engagement Rate
                   </Box>
                   <Box component="span" sx={{ display: { xs: 'inline', xl: 'none' } }}>
@@ -1246,7 +1246,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
               />
 
               {/* Comments */}
-              <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1, }}>
+              <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
                 <Typography
                   fontFamily="Aileron"
                   fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -2360,7 +2360,11 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                 direction="row"
                 spacing={1.5}
                 alignItems="center"
-                sx={{ width: 200, flexShrink: 0 }}
+                sx={{ 
+                  width: 200,
+                  flexShrink: 0,
+                  overflow: 'hidden',
+                }}
               >
                 <Avatar
                   src={creator?.user?.photoURL}
@@ -2429,10 +2433,10 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                     alignItems="center"
                     flex={1}
                     justifyContent="space-between"
-                    sx={{ mx: { md: 0.75, lg: 1.5, xl: 2 }, minWidth: 0, overflow: 'hidden' }}
+                    sx={{ mx: 1, minWidth: 0, overflow: 'hidden' }}
                   >
                     {/* Engagement Rate */}
-                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, maxWidth: { md: 140, lg: 160, xl: 'none' }, pr: 2 }}>
+                    <Box sx={{ textAlign: 'left', minWidth: 110, }}>
                       <Typography
                         fontFamily="Aileron"
                         fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -2440,7 +2444,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                         color="#636366"
                         sx={{ whiteSpace: 'nowrap' }}
                       >
-                        <Box component="span" sx={{ display: { xs: 'none', xl: 'inline' } }}>
+                        <Box component="span" pr={1.5} sx={{ display: { xs: 'none', xl: 'inline' } }}>
                           Engagement Rate
                         </Box>
                         <Box component="span" sx={{ display: { xs: 'inline', xl: 'none' } }}>
@@ -2464,11 +2468,11 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
 
                     {/* Divider */}
                     <Divider
-                      sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', mx: 0.5, flexShrink: 0 }}
+                      sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }}
                     />
 
                     {/* Views */}
-                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
+                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
                       <Typography
                         fontFamily="Aileron"
                         fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -2494,11 +2498,11 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
 
                     {/* Divider */}
                     <Divider
-                      sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', mx: 0.5, flexShrink: 0 }}
+                      sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }}
                     />
 
                     {/* Likes */}
-                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
+                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
                       <Typography
                         fontFamily="Aileron"
                         fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -2524,11 +2528,41 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
 
                     {/* Divider */}
                     <Divider
-                      sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', mx: 0.5, flexShrink: 0 }}
+                      sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }}
+                    />
+
+                    {/* Comments */}
+                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontSize={{ md: 14, lg: 16, xl: 18 }}
+                        fontWeight={600}
+                        color="#636366"
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        Comments
+                      </Typography>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontSize={{ md: 28, lg: 36, xl: 40 }}
+                        fontWeight={400}
+                        color="#1340FF"
+                        lineHeight={1.1}
+                      >
+                        <AnimatedNumber
+                          value={getMetricValue(insightData.insight, 'comments')}
+                          formatFn={formatNumber}
+                        />
+                      </Typography>
+                    </Box>
+
+                    {/* Divider */}
+                    <Divider
+                      sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0, ml: 2 }}
                     />
 
                     {/* Shares */}
-                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
+                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden' , px: 1 }}>
                       <Typography
                         fontFamily="Aileron"
                         fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -2557,11 +2591,11 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                       <>
                         {/* Divider */}
                         <Divider
-                          sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', mx: 0.5, flexShrink: 0 }}
+                          sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }}
                         />
 
                         {/* Saves */}
-                        <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
+                        <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
                           <Typography
                             fontFamily="Aileron"
                             fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -2592,8 +2626,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                           sx={{ 
                             width: '1px', 
                             height: '55px', 
-                            backgroundColor: 'transparent', 
-                            mx: 0.5, 
+                            backgroundColor: 'transparent',  
                             flexShrink: 0 
                           }}
                         />
@@ -2925,6 +2958,34 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                       sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }}
                     />
 
+                    {/* Comments */}
+                    <Box sx={{ flex: 1, textAlign: 'left' }}>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontSize={11}
+                        fontWeight={700}
+                        color="#636366"
+                      >
+                        Comments
+                      </Typography>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontSize={24}
+                        fontWeight={400}
+                        color="#1340FF"
+                      >
+                        <AnimatedNumber
+                          value={getMetricValue(insightData.insight, 'comments')}
+                          formatFn={formatNumber}
+                        />
+                      </Typography>
+                    </Box>
+
+                    {/* Divider */}
+                    <Divider
+                      sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }}
+                    />
+
                     {/* Shares */}
                     <Box sx={{ flex: 1, textAlign: 'left' }}>
                       <Typography
@@ -2987,10 +3048,9 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                             width: '1px', 
                             height: '40px', 
                             backgroundColor: 'transparent', 
-                            mx: 1 
                           }}
                         />
-                        <Box sx={{ flex: 1, textAlign: 'left' }}>
+                        <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
                           <Box sx={{ height: 16 }} />
                           <Box sx={{ height: 24 }} />
                         </Box>
