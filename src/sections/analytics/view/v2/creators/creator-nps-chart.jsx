@@ -25,6 +25,20 @@ const AMBER = '#FFAB00';
 const BAR_BG = '#F4F6F8';
 
 function CreatorNpsChart() {
+  const chartContainerRef = useRef(null);
+  const [chartHeight, setChartHeight] = useState(CHART_HEIGHT);
+
+  useEffect(() => {
+    const el = chartContainerRef.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(([entry]) => {
+      const h = Math.floor(entry.contentRect.height);
+      if (h > 0) setChartHeight(Math.max(h, CHART_HEIGHT));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const { creditTiers } = useDateFilter();
 
   const hookOptions = useMemo(() => {
@@ -239,21 +253,23 @@ function CreatorNpsChart() {
       </Popover>
 
       {/* Line chart */}
-      <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
-        <LineChart
-          series={[{ data: ratings, label: 'Avg Rating', color: AMBER, area: true, curve: 'linear', connectNulls: true, valueFormatter: (val) => val != null ? `${val} / 5` : 'No data' }]}
-          xAxis={xAxisConfig}
-          yAxis={[{ ...yDomain, valueFormatter: (val) => `${val}`, tickLabelStyle: TICK_LABEL_STYLE }]}
-          height={CHART_HEIGHT}
-          margin={CHART_MARGIN}
-          grid={CHART_GRID}
-          tooltip={{ trigger: 'axis' }}
-          slots={{ axisContent: ChartAxisTooltip }}
-          skipAnimation={isZoomed}
-          hideLegend
-          sx={CHART_SX}
-        />
-      </ZoomableChart>
+      <Box ref={chartContainerRef} sx={{ flex: 1, minHeight: CHART_HEIGHT }}>
+        <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
+          <LineChart
+            series={[{ data: ratings, label: 'Avg Rating', color: AMBER, area: true, curve: 'linear', connectNulls: true, valueFormatter: (val) => val != null ? `${val} / 5` : 'No data' }]}
+            xAxis={xAxisConfig}
+            yAxis={[{ ...yDomain, valueFormatter: (val) => `${val}`, tickLabelStyle: TICK_LABEL_STYLE }]}
+            height={chartHeight}
+            margin={CHART_MARGIN}
+            grid={CHART_GRID}
+            tooltip={{ trigger: 'axis' }}
+            slots={{ axisContent: ChartAxisTooltip }}
+            skipAnimation={isZoomed}
+            hideLegend
+            sx={CHART_SX}
+          />
+        </ZoomableChart>
+      </Box>
     </ChartCard>
   );
 }
