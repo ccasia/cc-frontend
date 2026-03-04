@@ -3473,11 +3473,11 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                       onClick={() => formRef.current?.submit()}
                       disabled={!formState.isValid || formState.isSubmitting}
                       sx={{
-                        bgcolor: formState.isValid && formState.isFormComplete ? '#1340FF' : '#B0B0B1',
+                        bgcolor: formState.isValid && !formState.isSubmitting ? '#1340FF' : '#B0B0B1',
                         border: '1.5px solid',
-                        borderColor: formState.isValid && formState.isFormComplete ? '#1340FF' : '#B0B0B1',
+                        borderColor: formState.isValid && !formState.isSubmitting ? '#1340FF' : '#B0B0B1',
                         borderBottom: '3px solid',
-                        borderBottomColor: formState.isValid && formState.isFormComplete ? '#0D2BA8' : '#9E9E9F',
+                        borderBottomColor: formState.isValid && !formState.isSubmitting ? '#0D2BA8' : '#9E9E9F',
                         borderRadius: 1.15,
                         color: '#FFFFFF',
                         height: 44,
@@ -3487,7 +3487,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                         fontSize: '1rem',
                         textTransform: 'none',
                         '&:hover': {
-                          bgcolor: formState.isValid && formState.isFormComplete ? '#0D2BA8' : '#B0B0B1',
+                          bgcolor: formState.isValid && !formState.isSubmitting ? '#0D2BA8' : '#B0B0B1',
                           color: '#FFFFFF',
                         },
                         '&.Mui-disabled': {
