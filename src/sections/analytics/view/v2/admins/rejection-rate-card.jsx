@@ -174,7 +174,7 @@ function RejectionRateCard() {
       >
         <Stack
           direction={{ xs: 'column', md: 'row' }}
-          sx={{ height: '100%', flex: 1 }}
+          sx={{ height: 620}}
         >
           {/* Left Panel: Header + Chart */}
           <Box sx={{ flex: { md: 3 }, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
@@ -263,7 +263,6 @@ function RejectionRateCard() {
               borderTop: { xs: '1px solid #E8ECEE', md: 'none' },
               minWidth: 0,
               overflow: 'hidden',
-              minHeight: 0,
             }}
           >
             {/* Right panel header — pt matches left panel for alignment */}
@@ -338,6 +337,7 @@ function RejectionRateCard() {
               <Box
                 sx={{
                   flex: 1,
+                  minHeight: 0,
                   overflow: 'auto',
                   ...SCROLL_SX,
                 }}
