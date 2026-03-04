@@ -2051,8 +2051,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     clearCache,
   } = useSocialInsights(postingSubmissions, campaignId);
 
-  console.log('Here is insight data: ', insightsData)
-
   // Filter insights data based on selected platform
   const filteredInsightsData = useMemo(() => {
     if (selectedPlatform === 'ALL') {
