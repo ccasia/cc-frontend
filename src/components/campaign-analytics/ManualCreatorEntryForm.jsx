@@ -44,27 +44,32 @@ const createManualCreatorSchema = (selectedPlatform) => Yup.object().shape({
     .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Views must be a number')
     .min(0, 'Views cannot be negative')
-    .required('Views is required'),
+    .nullable()
+    .notRequired(),
   likes: Yup.number()
     .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Likes must be a number')
     .min(0, 'Likes cannot be negative')
-    .required('Likes is required'),
+    .nullable()
+    .notRequired(),
   comments: Yup.number()
     .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Comments must be a number')
     .min(0, 'Comments cannot be negative')
-    .required('Comments is required'),
+    .nullable()
+    .notRequired(),
   shares: Yup.number()
     .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Shares must be a number')
     .min(0, 'Shares cannot be negative')
-    .required('Shares is required'),
+    .nullable()
+    .notRequired(),
   saved: Yup.number()
     .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
     .typeError('Saves must be a number')
     .min(0, 'Saves cannot be negative')
-    .nullable(),
+    .nullable()
+    .notRequired(),
 });
 
 // Common input field style matching Figma design
