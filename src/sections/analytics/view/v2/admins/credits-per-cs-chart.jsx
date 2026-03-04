@@ -101,10 +101,35 @@ AvatarOverlay.propTypes = {
 function CreditsPerCSChart() {
   const [hiddenSeries, setHiddenSeries] = useState([]);
   const [selectedCS, setSelectedCS] = useState(null);
+  const containerRef = useRef(null);
+  const scrollRef = useRef(null);
+  const [chartHeight, setChartHeight] = useState(MIN_CHART_HEIGHT);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   const { startDate, endDate } = useDateFilter();
   const { csAdmins, isLoading } = useGetCreditsPerCS({ startDate, endDate });
 
   useEffect(() => setSelectedCS(null), [startDate, endDate]);
+
+  // Track container height — ref is on an always-rendered Box so it fires reliably
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(([entry]) => {
+      const h = Math.floor(entry.contentRect.height);
+      if (h > 0) setChartHeight((prev) => Math.max(MIN_CHART_HEIGHT, h));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const updateScrollIndicators = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const threshold = 4;
+    setCanScrollLeft(el.scrollLeft > threshold);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - threshold);
+  }, []);
 
   const handleToggle = useCallback((label) => {
     setHiddenSeries((prev) =>
@@ -138,51 +163,28 @@ function CreditsPerCSChart() {
     [activeSeries, sorted]
   );
 
+  // Minimum width the chart needs to prevent avatar overlap
+  const chartMinWidth = sorted.length * MIN_BAR_WIDTH + AXIS_MARGIN_H;
+
+  // Update scroll indicators after data changes (wait one frame for DOM to settle)
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => updateScrollIndicators());
+    return () => cancelAnimationFrame(raf);
+  }, [sorted.length, updateScrollIndicators]);
+
   const handleAxisClick = useCallback((_event, data) => {
     if (!data || data.dataIndex == null) return;
     setSelectedCS(sorted[data.dataIndex]);
   }, [sorted]);
 
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <Stack spacing={1} sx={{ px: 3, pb: 2 }}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} variant="rounded" height={36} />
-          ))}
-        </Stack>
-      );
-    }
-
-    if (sorted.length === 0) {
-      return (
-        <Box sx={{ px: 3, pb: 3, pt: 1 }}>
-          <Typography variant="body2" sx={{ color: UI_COLORS.textMuted }}>
-            No CS admin data found for this period.
-          </Typography>
-        </Box>
-      );
-    }
-
-    return (
-      <Stack spacing={1}>
-        <BarChart
-          series={visibleSeries}
-          xAxis={[{ scaleType: 'band', data: sorted.map((d) => d.csName), tickLabelStyle: { ...TICK_LABEL_STYLE, angle: -45 }, tickLabelInterval: () => true, height: 80 }]}
-          yAxis={[{ tickLabelStyle: TICK_LABEL_STYLE }]}
-          height={420}
-          margin={{ ...CHART_MARGIN, top: AVATAR_SIZE + 8 }}
-          grid={CHART_GRID}
-          hideLegend
-          tooltip={{ trigger: 'axis' }}
-          slots={{ axisContent: ChartAxisTooltip }}
-          onAxisClick={handleAxisClick}
-          sx={{ ...CHART_SX, cursor: 'pointer' }}
-        >
-          <AvatarOverlay data={sorted} visibleKeys={visibleKeys} />
-        </BarChart>
-      </Stack>
-    );
+  const fadeSx = {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 32,
+    pointerEvents: 'none',
+    zIndex: 1,
+    transition: 'opacity 0.2s',
   };
 
   return (
@@ -198,7 +200,70 @@ function CreditsPerCSChart() {
         />
       }
     >
-      {renderContent()}
+      {/* Always-rendered container so ResizeObserver reliably tracks height */}
+      <Box ref={containerRef} sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        {isLoading && (
+          <Stack spacing={1} sx={{ px: 3, pb: 2 }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} variant="rounded" height={36} />
+            ))}
+          </Stack>
+        )}
+
+        {!isLoading && sorted.length === 0 && (
+          <Box sx={{ px: 3, pb: 3, pt: 1 }}>
+            <Typography variant="body2" sx={{ color: UI_COLORS.textMuted }}>
+              No CS admin data found for this period.
+            </Typography>
+          </Box>
+        )}
+
+        {!isLoading && sorted.length > 0 && (
+          <>
+            <Box
+              sx={{
+                ...fadeSx,
+                left: 0,
+                background: 'linear-gradient(to right, #fff 0%, transparent 100%)',
+                opacity: canScrollLeft ? 1 : 0,
+              }}
+            />
+            <Box
+              sx={{
+                ...fadeSx,
+                right: 0,
+                background: 'linear-gradient(to left, #fff 0%, transparent 100%)',
+                opacity: canScrollRight ? 1 : 0,
+              }}
+            />
+            <Box
+              ref={scrollRef}
+              onScroll={updateScrollIndicators}
+              sx={{
+                overflowX: 'auto',
+                ...SCROLL_SX_HORIZONTAL,
+              }}
+            >
+              <BarChart
+                series={visibleSeries}
+                xAxis={[{ scaleType: 'band', data: sorted.map((d) => d.csName), tickLabelStyle: { ...TICK_LABEL_STYLE, angle: -45 }, tickLabelInterval: () => true, height: 80 }]}
+                yAxis={[{ tickLabelStyle: TICK_LABEL_STYLE }]}
+                height={chartHeight}
+                width={chartMinWidth}
+                margin={{ ...CHART_MARGIN, top: AVATAR_SIZE + 8 }}
+                grid={CHART_GRID}
+                hideLegend
+                tooltip={{ trigger: 'axis' }}
+                slots={{ axisContent: ChartAxisTooltip }}
+                onAxisClick={handleAxisClick}
+                sx={{ ...CHART_SX, cursor: 'pointer' }}
+              >
+                <AvatarOverlay data={sorted} visibleKeys={visibleKeys} />
+              </BarChart>
+            </Box>
+          </>
+        )}
+      </Box>
 
       <CreditsPerCSDrawer
         selectedCS={selectedCS}
