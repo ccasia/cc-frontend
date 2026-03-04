@@ -377,7 +377,7 @@ FormattedTextField.propTypes = {
   sx: PropTypes.object,
 };
 
-const PCRReportPage = ({ campaign, onBack }) => {
+const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdate }) => {
   // Helper function to format campaign period (matching campaign detail view format)
   const formatCampaignPeriod = () => {
     const startDate = campaign?.startDate || campaign?.campaignBrief?.startDate;
@@ -397,6 +397,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isPCRReady, setIsPCRReady] = useState(campaign?.isPCRReady || false);
+  
+  // When client view, always show read-only (no editing)
+  const effectiveEditMode = isClientView ? false : isEditMode;
   
   // Individual section edit states
   const [sectionEditStates, setSectionEditStates] = useState({
@@ -1561,6 +1565,40 @@ const PCRReportPage = ({ campaign, onBack }) => {
     } catch (error) {
       console.error('Error refreshing insights:', error);
       alert(`Failed to refresh insights: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  const handleMarkAsReady = async () => {
+    try {
+      const response = await axios.patch(`/api/campaign/${campaign.id}/pcr-ready`, {
+        isPCRReady: true
+      });
+      
+      if (response.data.success) {
+        setIsPCRReady(true);
+        onCampaignUpdate?.({ ...campaign, isPCRReady: true });
+        enqueueSnackbar('PCR Report marked as ready for client view', { variant: 'success' });
+      }
+    } catch (error) {
+      console.error('Error marking PCR as ready:', error);
+      enqueueSnackbar('Failed to mark PCR as ready', { variant: 'error' });
+    }
+  };
+
+  const handleMarkAsUnready = async () => {
+    try {
+      const response = await axios.patch(`/api/campaign/${campaign.id}/pcr-ready`, {
+        isPCRReady: false
+      });
+      
+      if (response.data.success) {
+        setIsPCRReady(false);
+        onCampaignUpdate?.({ ...campaign, isPCRReady: false });
+        enqueueSnackbar('PCR Report marked as not ready', { variant: 'success' });
+      }
+    } catch (error) {
+      console.error('Error marking PCR as unready:', error);
+      enqueueSnackbar('Failed to mark PCR as unready', { variant: 'error' });
     }
   };
 
@@ -3472,6 +3510,59 @@ const PCRReportPage = ({ campaign, onBack }) => {
           }
         `}
       </style>
+
+    {/* Top bar - Ready/Unready - above the PCR blue border */}
+    {!isClientView && (
+      <Box
+        sx={{
+          width: '1078px',
+          margin: '0 auto',
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          mb: 2,
+        }}
+      >
+        <Button
+          sx={{
+            width: 260,
+            height: 40,
+            pt: '6px',
+            pr: '12px',
+            pb: '9px',
+            pl: '12px',
+            gap: '6px',
+            borderRadius: '8px',
+            background: '#FFFFFF',
+            border: '1px solid #E7E7E7',
+            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            color: isPCRReady ? '#1ABF66' : '#8E8E93',
+            textTransform: 'none',
+            fontFamily: 'Inter Display, sans-serif',
+            fontWeight: 600,
+            fontSize: '14px',
+            whiteSpace: 'nowrap',
+            '& .MuiButton-startIcon': { color: 'inherit', flexShrink: 0 },
+            '& .MuiButton-startIcon *': { color: 'inherit' },
+            '&:hover': {
+              background: '#F9FAFB',
+              border: '1px solid #E7E7E7',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            },
+          }}
+          onClick={isPCRReady ? handleMarkAsUnready : handleMarkAsReady}
+          startIcon={
+            isPCRReady ? (
+              <Box component="img" src="/assets/greentick.svg" alt="" sx={{ width: 24, height: 24 }} />
+            ) : (
+              <Box component="img" src="/assets/greentick.svg" alt="" sx={{ width: 24, height: 24, filter: 'brightness(0) saturate(100%) invert(55%) sepia(8%) saturate(1200%) hue-rotate(200deg) brightness(92%) contrast(88%)' }} />
+            )
+          }
+        >
+          Ready for Client Viewing
+        </Button>
+      </Box>
+    )}
       
   <Box
     id="pcr-report-main"
@@ -3609,8 +3700,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
         Back
       </Button>
       
+      {!isClientView && (
       <Box sx={{ display: 'flex', gap: 2 }}>
-        {isEditMode ? (
+        {effectiveEditMode ? (
           <>
             <Button
               sx={{
@@ -3880,10 +3972,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </>
         )}
       </Box>
+      )}
       </Box>
       
       {/* Add Section Buttons - Only show in edit mode */}
-      {isEditMode && (
+      {effectiveEditMode && (
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           {!sectionVisibility.engagement && (
             <Button
@@ -4078,7 +4171,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       </Box>
       
       {(() => {
-        if (isEditMode) {
+        if (effectiveEditMode) {
           return (
         <Box sx={{ position: 'relative', mb: 2 }}>
           <Box sx={{ 
@@ -4150,7 +4243,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 color: '#9CA3AF',
               }}
             >
-              Click Edit Report to edit Campaign Description
+              {isClientView ? 'No content' : 'Click Edit Report to edit Campaign Description'}
       </Typography>
           </Box>
         );
@@ -4412,7 +4505,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           switch (sectionId) {
               case 'engagement':
                 return (
-                 <SortableSection key="engagement" id="engagement" isEditMode={isEditMode}>
+                 <SortableSection key="engagement" id="engagement" isEditMode={effectiveEditMode}>
     {/* Engagement & Interactions Section */}
      <Box 
        className="pcr-section"
@@ -4448,7 +4541,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             background: '#231F20',
           }} 
         />
-        {isEditMode && !sectionEditStates.engagement && (
+        {effectiveEditMode && !sectionEditStates.engagement && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={async () => {
@@ -4505,7 +4598,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </IconButton>
           </Box>
         )}
-        {isEditMode && sectionEditStates.engagement && (
+        {effectiveEditMode && sectionEditStates.engagement && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={() => {
@@ -4551,7 +4644,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       </Box>
       
       {(() => {
-        if (isEditMode && !sectionEditStates.engagement) {
+        if (effectiveEditMode && !sectionEditStates.engagement) {
           return (
         <Box sx={{ position: 'relative', mb: 3 }}>
           <Box sx={{ 
@@ -4633,7 +4726,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 color: '#9CA3AF',
               }}
             >
-              Click Edit Report to edit Engagement
+              {isClientView ? 'No content' : 'Click Edit Report to edit Engagement'}
       </Typography>
           </Box>
         );
@@ -4658,7 +4751,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
               case 'platformBreakdown':
                 return (
-                 <SortableSection key="platformBreakdown" id="platformBreakdown" isEditMode={isEditMode}>
+                 <SortableSection key="platformBreakdown" id="platformBreakdown" isEditMode={effectiveEditMode}>
      {/* Platform Breakdown Section */}
      <Box 
        className="pcr-section"
@@ -4694,7 +4787,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             background: '#231F20',
           }} 
         />
-        {isEditMode && !sectionEditStates.platformBreakdown && (
+        {effectiveEditMode && !sectionEditStates.platformBreakdown && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={async () => {
@@ -4751,7 +4844,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </IconButton>
           </Box>
         )}
-        {isEditMode && sectionEditStates.platformBreakdown && (
+        {effectiveEditMode && sectionEditStates.platformBreakdown && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={() => {
@@ -4798,7 +4891,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       </Box>
       
       {(() => {
-        if (isEditMode && !sectionEditStates.platformBreakdown) {
+        if (effectiveEditMode && !sectionEditStates.platformBreakdown) {
           return (
         <Box sx={{ position: 'relative', mb: 3 }}>
           <Box sx={{ 
@@ -4872,7 +4965,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 color: '#9CA3AF',
               }}
             >
-              Click Edit Report to edit Platform Breakdown
+              {isClientView ? 'No content' : 'Click Edit Report to edit Platform Breakdown'}
         </Typography>
           </Box>
         );
@@ -5251,7 +5344,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
               case 'views':
                 return (
-                 <SortableSection key="views" id="views" isEditMode={isEditMode}>
+                 <SortableSection key="views" id="views" isEditMode={effectiveEditMode}>
     {/* Views Section */}
      <Box 
        className="pcr-section"
@@ -5287,7 +5380,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               background: '#231F20',
             }} 
           />
-        {isEditMode && !sectionEditStates.views && (
+        {effectiveEditMode && !sectionEditStates.views && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={async () => {
@@ -5344,7 +5437,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </IconButton>
           </Box>
         )}
-        {isEditMode && sectionEditStates.views && (
+        {effectiveEditMode && sectionEditStates.views && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={() => {
@@ -5390,7 +5483,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Box>
       
       {(() => {
-        if (isEditMode && !sectionEditStates.views) {
+        if (effectiveEditMode && !sectionEditStates.views) {
           return (
         <Box sx={{ position: 'relative', mb: 3 }}>
           <Box sx={{ 
@@ -5464,7 +5557,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 color: '#9CA3AF',
           }}
         >
-              Click Edit Report to edit Views
+              {isClientView ? 'No content' : 'Click Edit Report to edit Views'}
         </Typography>
       </Box>
         );
@@ -5489,7 +5582,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
               case 'audienceSentiment':
                 return (
-                 <SortableSection key="audienceSentiment" id="audienceSentiment" isEditMode={isEditMode}>
+                 <SortableSection key="audienceSentiment" id="audienceSentiment" isEditMode={effectiveEditMode}>
     {/* Audience Sentiment */}
      <Box 
        className="pcr-section"
@@ -5525,7 +5618,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             background: '#231F20',
           }} 
         />
-        {isEditMode && !sectionEditStates.audienceSentiment && (
+        {effectiveEditMode && !sectionEditStates.audienceSentiment && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={async () => {
@@ -5582,7 +5675,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </IconButton>
       </Box>
         )}
-        {isEditMode && sectionEditStates.audienceSentiment && (
+        {effectiveEditMode && sectionEditStates.audienceSentiment && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={() => {
@@ -5628,7 +5721,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       </Box>
       
       {(() => {
-        if (isEditMode && !sectionEditStates.audienceSentiment) {
+        if (effectiveEditMode && !sectionEditStates.audienceSentiment) {
           return (
             <Box sx={{ position: 'relative', mb: 3 }}>
           <Box sx={{ 
@@ -5702,14 +5795,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 color: '#9CA3AF',
               }}
             >
-              Click Edit Report to edit Audience Sentiment
+              {isClientView ? 'No content' : 'Click Edit Report to edit Audience Sentiment'}
         </Typography>
           </Box>
         );
       })()}
       
       {/* Positive Comments */}
-      {(isEditMode || editableContent.positiveComments.length > 0) && (
+      {(effectiveEditMode || editableContent.positiveComments.length > 0) && (
       <Box sx={{ mb: 3, position: 'relative', mt: 3 }}>
       <Box
         sx={{
@@ -5743,7 +5836,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             Positive Comments
           </Typography>
       </Box>
-          {isEditMode && !sectionEditStates.audienceSentiment ? (
+          {effectiveEditMode && !sectionEditStates.audienceSentiment ? (
             <>
               <Grid container spacing={2}>
                 {editableContent.positiveComments.map((comment, index) => (
@@ -5941,7 +6034,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       )}
 
       {/* Neutral Comments */}
-      {(isEditMode || editableContent.neutralComments.length > 0) && (
+      {(effectiveEditMode || editableContent.neutralComments.length > 0) && (
       <Box sx={{ mb: 3, position: 'relative', mt: 3 }}>
       <Box
         sx={{
@@ -5975,7 +6068,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             Neutral Comments
         </Typography>
       </Box>
-          {isEditMode && !sectionEditStates.audienceSentiment ? (
+          {effectiveEditMode && !sectionEditStates.audienceSentiment ? (
             <>
               <Grid container spacing={2}>
                 {editableContent.neutralComments.map((comment, index) => (
@@ -6178,7 +6271,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
               case 'creatorTiers':
                 return (
-                 <SortableSection key="creatorTiers" id="creatorTiers" isEditMode={isEditMode}>
+                 <SortableSection key="creatorTiers" id="creatorTiers" isEditMode={effectiveEditMode}>
                    {/* Creator Tiers */}
                    <Box 
        className="pcr-section"
@@ -6214,7 +6307,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               background: '#231F20',
             }} 
           />
-        {isEditMode && !sectionEditStates.creatorTiers && (
+        {effectiveEditMode && !sectionEditStates.creatorTiers && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={async () => {
@@ -6271,7 +6364,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </IconButton>
           </Box>
         )}
-        {isEditMode && sectionEditStates.creatorTiers && (
+        {effectiveEditMode && sectionEditStates.creatorTiers && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={() => {
@@ -6316,7 +6409,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           )}
         </Box>
         {(() => {
-          if (isEditMode && !sectionEditStates.creatorTiers) {
+          if (effectiveEditMode && !sectionEditStates.creatorTiers) {
             return (
               <Box sx={{ position: 'relative', mb: 4 }}>
                 <Box
@@ -6533,7 +6626,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   color: '#9CA3AF',
                 }}
               >
-                Click Edit Report to edit Creator Tiers
+                {isClientView ? 'No content' : 'Click Edit Report to edit Creator Tiers'}
               </Typography>
             </Box>
           );
@@ -6713,7 +6806,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
               case 'strategies':
                 return (
-                 <SortableSection key="strategies" id="strategies" isEditMode={isEditMode}>
+                 <SortableSection key="strategies" id="strategies" isEditMode={effectiveEditMode}>
                    {/* Strategies Utilised */}
      <Box 
        className="pcr-section"
@@ -6749,7 +6842,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             background: '#231F20',
           }} 
         />
-        {isEditMode && !sectionEditStates.strategies && (
+        {effectiveEditMode && !sectionEditStates.strategies && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={async () => {
@@ -6806,7 +6899,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </IconButton>
           </Box>
         )}
-        {isEditMode && sectionEditStates.strategies && (
+        {effectiveEditMode && sectionEditStates.strategies && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={() => {
@@ -6851,7 +6944,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         )}
       </Box>
       {(() => {
-        if (isEditMode && !sectionEditStates.strategies) {
+        if (effectiveEditMode && !sectionEditStates.strategies) {
           return (
         <Box sx={{ position: 'relative', mb: 4 }}>
           <Box
@@ -6928,13 +7021,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 color: '#9CA3AF',
               }}
             >
-              Click Edit Report to edit Creator Personas
+              {isClientView ? 'No content' : 'Click Edit Report to edit Creator Personas'}
             </Typography>
           </Box>
         );
       })()}
       {/* Creator Persona Cards */}
-      {isEditMode && !sectionEditStates.strategies ? (
+      {effectiveEditMode && !sectionEditStates.strategies ? (
         // Edit Mode: Grid layout with cards on left, chart on right
       <Grid container spacing={2}>
         {/* Left side - Persona Cards stacked vertically */}
@@ -6946,7 +7039,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <Box
             sx={{
               width: '480px',
-              height: isEditMode ? '280px' : '189px',
+              height: effectiveEditMode ? '280px' : '189px',
               borderRadius: '20px',
               background: '#F5F5F5',
               border: '10px solid #FFFFFF',
@@ -6976,7 +7069,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }}
           >
             {/* Editable label for emoji */}
-            {isEditMode && (
+            {effectiveEditMode && (
               <Box
                 sx={{
                   position: 'absolute',
@@ -7001,7 +7094,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             {/* Inner gradient circle */}
             <Box
               onClick={(e) => {
-                if (isEditMode) {
+                if (effectiveEditMode) {
                   setEmojiPickerAnchor(e.currentTarget);
                   setEmojiPickerType('comic');
                 }
@@ -7015,8 +7108,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '32px',
-                cursor: isEditMode ? 'pointer' : 'default',
-                '&:hover': isEditMode ? {
+                cursor: effectiveEditMode ? 'pointer' : 'default',
+                '&:hover': effectiveEditMode ? {
                   opacity: 0.8,
                 } : {},
               }}
@@ -7031,13 +7124,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
               position: 'absolute',
               right: '24px',
               left: '82px', // Space for circle + padding
-              top: isEditMode ? '20px' : '50%',
-              transform: isEditMode ? 'none' : 'translateY(-50%)',
+              top: effectiveEditMode ? '20px' : '50%',
+              transform: effectiveEditMode ? 'none' : 'translateY(-50%)',
                maxWidth: 'calc(480px - 106px)', // Card width minus circle space and padding
               transition: 'top 0.3s ease, transform 0.3s ease',
             }}
           >
-            {isEditMode ? (
+            {effectiveEditMode ? (
               <Box sx={{ position: 'relative', mb: 0.75 }}>
                 <Box
                   sx={{
@@ -7109,7 +7202,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Typography>
             )}
             
-            {isEditMode && (
+            {effectiveEditMode && (
               <>
                 <Box sx={{ position: 'relative', mb: 0.75 }}>
                   <Box
@@ -7211,7 +7304,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <Box
                 sx={{
               width: '480px',
-              height: isEditMode ? '280px' : '189px',
+              height: effectiveEditMode ? '280px' : '189px',
               borderRadius: '20px',
               background: '#F5F5F5',
               border: '10px solid #FFFFFF',
@@ -7241,7 +7334,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }}
           >
             {/* Editable label for emoji */}
-            {isEditMode && (
+            {effectiveEditMode && (
               <Box
                 sx={{
                   position: 'absolute',
@@ -7266,7 +7359,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             {/* Inner gradient circle */}
             <Box
               onClick={(e) => {
-                if (isEditMode) {
+                if (effectiveEditMode) {
                   setEmojiPickerAnchor(e.currentTarget);
                   setEmojiPickerType('educator');
                 }
@@ -7280,8 +7373,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '32px',
-                cursor: isEditMode ? 'pointer' : 'default',
-                '&:hover': isEditMode ? {
+                cursor: effectiveEditMode ? 'pointer' : 'default',
+                '&:hover': effectiveEditMode ? {
                   opacity: 0.8,
                 } : {},
               }}
@@ -7296,13 +7389,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
               position: 'absolute',
               right: '24px',
               left: '82px', // Space for circle + padding
-              top: isEditMode ? '20px' : '50%',
-              transform: isEditMode ? 'none' : 'translateY(-50%)',
+              top: effectiveEditMode ? '20px' : '50%',
+              transform: effectiveEditMode ? 'none' : 'translateY(-50%)',
                maxWidth: 'calc(480px - 106px)', // Card width minus circle space and padding
               transition: 'top 0.3s ease, transform 0.3s ease',
             }}
           >
-              {isEditMode ? (
+              {effectiveEditMode ? (
               <Box sx={{ position: 'relative', mb: 0.75 }}>
                   <Box
                     sx={{
@@ -7374,7 +7467,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </Typography>
               )}
             
-            {isEditMode && (
+            {effectiveEditMode && (
               <>
                 <Box sx={{ position: 'relative', mb: 0.75 }}>
                   <Box
@@ -7510,10 +7603,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
           {/* Card */}
           <Box
             sx={{
-              width: isEditMode ? '910px' : '860px',
+              width: effectiveEditMode ? '910px' : '860px',
               minWidth: '470px',
               flexShrink: 0,
-              height: isEditMode ? '280px' : '189px',
+              height: effectiveEditMode ? '280px' : '189px',
               borderRadius: '20px',
               background: '#F5F5F5',
               border: '10px solid #FFFFFF',
@@ -7543,7 +7636,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }}
           >
             {/* Editable label for emoji */}
-            {isEditMode && (
+            {effectiveEditMode && (
               <Box
                 sx={{
                   position: 'absolute',
@@ -7568,7 +7661,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             {/* Inner gradient circle */}
             <Box
               onClick={(e) => {
-                if (isEditMode) {
+                if (effectiveEditMode) {
                   setEmojiPickerAnchor(e.currentTarget);
                   setEmojiPickerType('third');
                 }
@@ -7582,8 +7675,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '32px',
-                cursor: isEditMode ? 'pointer' : 'default',
-                '&:hover': isEditMode ? {
+                cursor: effectiveEditMode ? 'pointer' : 'default',
+                '&:hover': effectiveEditMode ? {
                   opacity: 0.8,
                 } : {},
               }}
@@ -7598,14 +7691,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
               position: 'absolute',
               right: '12px',
               left: '70px', // Space for circle
-              top: isEditMode ? '20px' : '50%',
-              transform: isEditMode ? 'none' : 'translateY(-50%)',
-               maxWidth: isEditMode ? 'calc(920px - 82px)' : 'calc(860px - 82px)', // Card width minus circle space
+              top: effectiveEditMode ? '20px' : '50%',
+              transform: effectiveEditMode ? 'none' : 'translateY(-50%)',
+               maxWidth: effectiveEditMode ? 'calc(920px - 82px)' : 'calc(860px - 82px)', // Card width minus circle space
               transition: 'top 0.3s ease, transform 0.3s ease',
               overflow: 'visible',
             }}
           >
-            {isEditMode ? (
+            {effectiveEditMode ? (
               <Box sx={{ position: 'relative', mb: 0.75 }}>
                 <Box
                   sx={{
@@ -7677,7 +7770,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Typography>
             )}
             
-            {isEditMode && (
+            {effectiveEditMode && (
               <>
                 <Box sx={{ position: 'relative', mb: 0.75 }}>
                   <Box
@@ -7796,10 +7889,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
           {/* Card */}
           <Box
             sx={{
-              width: isEditMode ? '910px' : '860px',
+              width: effectiveEditMode ? '910px' : '860px',
               minWidth: '470px',
               flexShrink: 0,
-              height: isEditMode ? '280px' : '189px',
+              height: effectiveEditMode ? '280px' : '189px',
               borderRadius: '20px',
               background: '#F5F5F5',
               border: '10px solid #FFFFFF',
@@ -7829,7 +7922,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }}
           >
             {/* Editable label for emoji */}
-            {isEditMode && (
+            {effectiveEditMode && (
               <Box
                 sx={{
                   position: 'absolute',
@@ -7854,7 +7947,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             {/* Inner gradient circle */}
             <Box
               onClick={(e) => {
-                if (isEditMode) {
+                if (effectiveEditMode) {
                   setEmojiPickerAnchor(e.currentTarget);
                   setEmojiPickerType('fourth');
                 }
@@ -7868,8 +7961,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '32px',
-                cursor: isEditMode ? 'pointer' : 'default',
-                '&:hover': isEditMode ? {
+                cursor: effectiveEditMode ? 'pointer' : 'default',
+                '&:hover': effectiveEditMode ? {
                   opacity: 0.8,
                 } : {},
               }}
@@ -7884,14 +7977,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
               position: 'absolute',
               right: '12px',
               left: '70px', // Space for circle
-              top: isEditMode ? '20px' : '50%',
-              transform: isEditMode ? 'none' : 'translateY(-50%)',
-               maxWidth: isEditMode ? 'calc(920px - 82px)' : 'calc(860px - 82px)', // Card width minus circle space
+              top: effectiveEditMode ? '20px' : '50%',
+              transform: effectiveEditMode ? 'none' : 'translateY(-50%)',
+               maxWidth: effectiveEditMode ? 'calc(920px - 82px)' : 'calc(860px - 82px)', // Card width minus circle space
               transition: 'top 0.3s ease, transform 0.3s ease',
               overflow: 'visible',
             }}
           >
-            {isEditMode ? (
+            {effectiveEditMode ? (
               <Box sx={{ position: 'relative', mb: 0.75 }}>
                 <Box
                   sx={{
@@ -7963,7 +8056,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Typography>
             )}
             
-            {isEditMode && (
+            {effectiveEditMode && (
               <>
                 <Box sx={{ position: 'relative', mb: 0.75 }}>
                   <Box
@@ -8095,10 +8188,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
           {/* Card */}
           <Box
             sx={{
-              width: isEditMode ? '910px' : '860px',
+              width: effectiveEditMode ? '910px' : '860px',
               minWidth: '470px',
               flexShrink: 0,
-              height: isEditMode ? '280px' : '189px',
+              height: effectiveEditMode ? '280px' : '189px',
               borderRadius: '20px',
               background: '#F5F5F5',
               border: '10px solid #FFFFFF',
@@ -8128,7 +8221,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }}
           >
             {/* Editable label for emoji */}
-            {isEditMode && (
+            {effectiveEditMode && (
               <Box
                 sx={{
                   position: 'absolute',
@@ -8153,7 +8246,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             {/* Inner gradient circle */}
             <Box
               onClick={(e) => {
-                if (isEditMode) {
+                if (effectiveEditMode) {
                   setEmojiPickerAnchor(e.currentTarget);
                   setEmojiPickerType('fifth');
                 }
@@ -8167,8 +8260,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '32px',
-                cursor: isEditMode ? 'pointer' : 'default',
-                '&:hover': isEditMode ? {
+                cursor: effectiveEditMode ? 'pointer' : 'default',
+                '&:hover': effectiveEditMode ? {
                   opacity: 0.8,
                 } : {},
               }}
@@ -8183,14 +8276,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
               position: 'absolute',
               right: '12px',
               left: '70px', // Space for circle
-              top: isEditMode ? '20px' : '50%',
-              transform: isEditMode ? 'none' : 'translateY(-50%)',
-               maxWidth: isEditMode ? 'calc(920px - 82px)' : 'calc(860px - 82px)', // Card width minus circle space
+              top: effectiveEditMode ? '20px' : '50%',
+              transform: effectiveEditMode ? 'none' : 'translateY(-50%)',
+               maxWidth: effectiveEditMode ? 'calc(920px - 82px)' : 'calc(860px - 82px)', // Card width minus circle space
               transition: 'top 0.3s ease, transform 0.3s ease',
               overflow: 'visible',
             }}
           >
-            {isEditMode ? (
+            {effectiveEditMode ? (
               <Box sx={{ position: 'relative', mb: 0.75 }}>
                 <Box
                   sx={{
@@ -8262,7 +8355,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               </Typography>
             )}
             
-            {isEditMode && (
+            {effectiveEditMode && (
               <>
                 <Box sx={{ position: 'relative', mb: 0.75 }}>
                   <Box
@@ -10044,7 +10137,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
               case 'recommendations':
                 return (
-                 <SortableSection key="recommendations" id="recommendations" isEditMode={isEditMode}>
+                 <SortableSection key="recommendations" id="recommendations" isEditMode={effectiveEditMode}>
                    {/* Recommendations Section */}
      <Box 
        className="pcr-section"
@@ -10080,7 +10173,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             background: '#231F20',
           }} 
         />
-        {isEditMode && !sectionEditStates.recommendations && (
+        {effectiveEditMode && !sectionEditStates.recommendations && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={async () => {
@@ -10137,7 +10230,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </IconButton>
           </Box>
         )}
-        {isEditMode && sectionEditStates.recommendations && (
+        {effectiveEditMode && sectionEditStates.recommendations && (
           <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
             <IconButton
               onClick={() => {
@@ -10285,7 +10378,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
     {editableContent.workedWellInsights.length === 0 && 
      editableContent.improvedInsights.length === 0 && 
      editableContent.nextStepsInsights.length === 0 && 
-     !isEditMode && (
+     !effectiveEditMode && (
       <Grid container spacing={3} sx={{ mb: 2 }}>
         <Grid item xs={12} md={4}>
           <Box className="hide-in-pdf" sx={{ 
@@ -10299,7 +10392,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             borderRadius: '0 0 12px 12px',
           }}>
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.8 }}>
-              Click Edit Report to edit What Worked Well
+              {isClientView ? 'No content' : 'Click Edit Report to edit What Worked Well'}
             </Typography>
           </Box>
         </Grid>
@@ -10315,7 +10408,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             borderRadius: '0 0 12px 12px',
           }}>
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.8 }}>
-              Click Edit Report to edit What Can Be Improved
+              {isClientView ? 'No content' : 'Click Edit Report to edit What Can Be Improved'}
             </Typography>
           </Box>
         </Grid>
@@ -10331,7 +10424,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
             borderRadius: '0 0 12px 12px',
           }}>
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.9 }}>
-              Click Edit Report to edit Next Steps
+              {isClientView ? 'No content' : 'Click Edit Report to edit Next Steps'}
             </Typography>
           </Box>
         </Grid>
@@ -10366,7 +10459,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 position: 'relative',
               }}
             >
-              {isEditMode && !sectionEditStates.recommendations ? (
+              {effectiveEditMode && !sectionEditStates.recommendations ? (
                 <Box sx={{ 
                   bgcolor: '#E5E7EB', 
                   borderRadius: '12px',
@@ -10463,7 +10556,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 position: 'relative',
               }}
             >
-              {isEditMode && !sectionEditStates.recommendations ? (
+              {effectiveEditMode && !sectionEditStates.recommendations ? (
                 <Box sx={{ 
                   bgcolor: '#E5E7EB', 
                   borderRadius: '12px',
@@ -10560,7 +10653,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 position: 'relative',
               }}
             >
-              {isEditMode && !sectionEditStates.recommendations ? (
+              {effectiveEditMode && !sectionEditStates.recommendations ? (
                 <Box sx={{ 
                   bgcolor: '#E5E7EB', 
                   borderRadius: '12px', 
@@ -10647,7 +10740,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
     ))}
 
     {/* Add Buttons Row */}
-    {isEditMode && (
+    {effectiveEditMode && (
       <Grid container spacing={3} sx={{ mb: 6 }}>
         <Grid item xs={12} md={4}>
           {editableContent.workedWellInsights.length < 3 && (
@@ -10875,6 +10968,7 @@ PCRReportPage.propTypes = {
     startDate: PropTypes.string,
     endDate: PropTypes.string,
     isCreditTier: PropTypes.bool,
+    isPCRReady: PropTypes.bool,
     campaignBrief: PropTypes.shape({
       startDate: PropTypes.string,
       endDate: PropTypes.string,
@@ -10890,6 +10984,8 @@ PCRReportPage.propTypes = {
     ),
   }),
   onBack: PropTypes.func.isRequired,
+  isClientView: PropTypes.bool,
+  onCampaignUpdate: PropTypes.func,
 };
 
 export default PCRReportPage;
