@@ -11,6 +11,8 @@ export const formatNumber = (num) => {
     const value = rounded / 1000000;
     // Show no decimal if exact million
     return value % 1 === 0 ? `${value}M` : `${value.toFixed(1)}M`;
+  if (rounded >= 100000) return `${(rounded / 100000).toFixed(1)  }K`;
+  if (rounded >= 10000) return `${(rounded / 10000).toFixed(1)  }K`;
   }
   if (rounded >= 1000) {
     const value = rounded / 1000;
@@ -62,7 +64,7 @@ export const transformManualEntryToInsight = (entry) => ({
     insight: [
       { name: 'views', value: entry.views },
       { name: 'likes', value: entry.likes },
-      { name: 'comments', value: 0 }, // Manual entries don't have comments
+      { name: 'comments', value: entry.comments || 0 },
       { name: 'shares', value: entry.shares },
       { name: 'saved', value: entry.saved || 0 },
       { name: 'reach', value: 0 }, // Manual entries don't have reach
