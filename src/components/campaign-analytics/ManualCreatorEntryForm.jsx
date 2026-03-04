@@ -226,7 +226,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
 
     const hasRequiredText = Boolean(creatorName?.trim()) && Boolean(creatorUsername?.trim());
     return hasRequiredText;
-  }, [watchedValues, watch]);
+  }, [watch]);
 
   // Expose submit function and state to parent
   useImperativeHandle(ref, () => ({
