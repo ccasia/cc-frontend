@@ -6,11 +6,11 @@ import {
   Stack,
   Button,
   Dialog,
-  Divider,
   Select,
+  Divider,
   MenuItem,
-  FormControl,
   Typography,
+  FormControl,
   DialogTitle,
   DialogContent,
   DialogActions,
@@ -101,14 +101,13 @@ const InviteCreatorsDialog = ({
                   }
                   sx={{
                     height: 28,
-                    borderColor: isAlreadyInCampaign ? 'error.main' : 'divider',
+                    borderColor: isAlreadyInCampaign ? '#D4321C' : 'divider',
                     bgcolor: 'background.paper',
                     boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                    pb: 0.2,
                     pr: 0.5,
                     borderRadius: 0.8,
                     '& .MuiChip-deleteIcon': {
-                      color: isAlreadyInCampaign ? 'error.main' : undefined,
+                      color: isAlreadyInCampaign ? '#D4321C' : undefined,
                     },
                   }}
                 />
@@ -125,13 +124,16 @@ const InviteCreatorsDialog = ({
               sx={{
                 bgcolor: '#fff',
                 '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: hasSelectedCreatorsAlreadyInCampaign ? 'error.main' : undefined,
+                  borderColor: hasSelectedCreatorsAlreadyInCampaign ? '#D4321C' : undefined,
+                  borderWidth: 1
                 },
                 '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: hasSelectedCreatorsAlreadyInCampaign ? 'error.main' : undefined,
+                  borderColor: hasSelectedCreatorsAlreadyInCampaign ? '#D4321C' : undefined,
+                  borderWidth: 1
                 },
                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: hasSelectedCreatorsAlreadyInCampaign ? 'error.main' : undefined,
+                  borderColor: hasSelectedCreatorsAlreadyInCampaign ? '#D4321C' : undefined,
+                  borderWidth: 1,
                 },
               }}
               renderValue={(selected) => {
@@ -148,6 +150,7 @@ const InviteCreatorsDialog = ({
                 </MenuItem>
               ))}
             </Select>
+            {hasSelectedCreatorsAlreadyInCampaign && <Typography variant='caption' mt={0.5} color="#D4321C">Creator(s) Already in Campaign</Typography>}
           </FormControl>
         </Stack>
       </DialogContent>
