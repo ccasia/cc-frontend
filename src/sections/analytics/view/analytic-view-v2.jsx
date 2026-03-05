@@ -337,7 +337,7 @@ export default function AnalyticViewV2() {
   const [dateFilter, setDateFilter] = useState('all');
   const [filterStartDate, setFilterStartDate] = useState(null);
   const [filterEndDate, setFilterEndDate] = useState(null);
-  const [filterPackageType, setFilterPackageType] = useState('ALL');
+  const [filterPackageTypes, setFilterPackageTypes] = useState([]);
   const [creditTiers, setCreditTiers] = useState([]);
 
   const handleDateFilterChange = useCallback(({ preset, startDate, endDate }) => {
@@ -348,6 +348,10 @@ export default function AnalyticViewV2() {
 
   const handleCreditTiersChange = useCallback((tiers) => {
     setCreditTiers(tiers);
+  }, []);
+
+  const handlePackageTypesChange = useCallback((types) => {
+    setFilterPackageTypes(types);
   }, []);
 
   return (
@@ -435,7 +439,10 @@ export default function AnalyticViewV2() {
                 <CreditTierFilterSelect value={creditTiers} onChange={handleCreditTiersChange} />
               )}
               {currentTab === 'clients' && (
-                <PackageFilterSelect value={filterPackageType} onChange={setFilterPackageType} />
+                <PackageFilterSelect
+                  value={filterPackageTypes}
+                  onChange={handlePackageTypesChange}
+                />
               )}
               <DateFilterSelect
                 value={dateFilter}
@@ -469,7 +476,7 @@ export default function AnalyticViewV2() {
               <Suspense fallback={<TabSkeleton />}>
                 {currentTab === 'creators' && <CreatorsTabContent />}
                 {currentTab === 'admins' && <AdminsTabContent />}
-                {currentTab === 'clients' && <ClientsTabContent packageType={filterPackageType} />}
+                {currentTab === 'clients' && <ClientsTabContent packageTypes={filterPackageTypes} />}
               </Suspense>
             </m.div>
           </AnimatePresence>

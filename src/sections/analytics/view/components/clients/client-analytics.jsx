@@ -20,25 +20,47 @@ import {
 } from './client-widgets';
 import InactiveBrandsDrawer from './client-inactive-company-drawer';
 
-export default function ClientsTabContent({ packageType }) {
+export default function ClientsTabContent({ packageTypes }) {
   const { startDate, endDate } = useDateFilter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const trendLabel = useTrendLabel();
 
+  const noPackagesSelected = !packageTypes || packageTypes.length === 0;
+
   const params = new URLSearchParams();
-  if (packageType !== 'ALL') params.append('packageType', packageType);
+  if (packageTypes && packageTypes.length > 0) {
+    packageTypes.forEach((pt) => params.append('packageTypes', pt));
+  }
   if (startDate) params.append('startDate', startDate.toISOString());
   if (endDate) params.append('endDate', endDate.toISOString());
 
   const query = `?${params.toString()}`;
 
   // Data Fetching based on your Backend
-  const { data: brands } = useSWR(`${endpoints.analytics.client.brands}${query}`, fetcher);
-  const { data: campaign } = useSWR(`${endpoints.analytics.client.campaigns}${query}`, fetcher);
-  const { data: approval } = useSWR(`${endpoints.analytics.client.approve}${query}`, fetcher);
-  const { data: support } = useSWR(`${endpoints.analytics.client.support}${query}`, fetcher);
-  const { data: journey } = useSWR(`${endpoints.analytics.client.journey}${query}`, fetcher);
-  const { data: shortlist } = useSWR(`${endpoints.analytics.client.shortlist}${query}`, fetcher);
+  const { data: brands } = useSWR(
+    noPackagesSelected ? null : `${endpoints.analytics.client.brands}${query}`,
+    fetcher
+  );
+  const { data: campaign } = useSWR(
+    noPackagesSelected ? null : `${endpoints.analytics.client.campaigns}${query}`,
+    fetcher
+  );
+  const { data: approval } = useSWR(
+    noPackagesSelected ? null : `${endpoints.analytics.client.approve}${query}`,
+    fetcher
+  );
+  const { data: support } = useSWR(
+    noPackagesSelected ? null : `${endpoints.analytics.client.support}${query}`,
+    fetcher
+  );
+  const { data: journey } = useSWR(
+    noPackagesSelected ? null : `${endpoints.analytics.client.journey}${query}`,
+    fetcher
+  );
+  const { data: shortlist } = useSWR(
+    noPackagesSelected ? null : `${endpoints.analytics.client.shortlist}${query}`,
+    fetcher
+  );
 
   return (
     <>
@@ -182,5 +204,5 @@ export default function ClientsTabContent({ packageType }) {
 }
 
 ClientsTabContent.propTypes = {
-  packageType: PropTypes.string,
+  packageTypes: PropTypes.arrayOf(PropTypes.string),
 };
