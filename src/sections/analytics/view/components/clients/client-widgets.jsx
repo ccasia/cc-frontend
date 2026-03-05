@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   Card,
@@ -92,26 +92,86 @@ EmptyState.propTypes = {
 };
 
 // --- 1. Top KPI Cards (Unchanged, just layout) ---
-export function TopKPICard({ title, mainValue, children }) {
+export function TopKPICard({
+  title,
+  mainValue,
+  trend,
+  trendLabel,
+  trendSuffix,
+  color,
+  children,
+  onClick,
+  clickable,
+}) {
+  const trendColor = trend >= 0 ? '#10B981' : '#EF4444';
+  const trendBg = trend >= 0 ? '#ECFDF5' : '#FEF2F2';
+
   return (
     <Card
-      sx={{ p: 3, borderRadius: 2, border: '1px solid #E5E7EB', boxShadow: 'none', height: '100%' }}
+      onClick={clickable ? onClick : undefined}
+      sx={{
+        p: 3,
+        borderRadius: 2,
+        border: '1px solid #E8ECEE',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+        bgcolor: '#FFFFFF',
+        height: '100%',
+        ...(clickable && {
+          cursor: 'pointer',
+          transition: 'all 0.2s ease-in-out',
+          '&:hover': {
+            borderColor: '#1340FF',
+            boxShadow: '0 4px 12px rgba(22, 81, 208, 0.08)',
+            transform: 'translateY(-2px)',
+          },
+        }),
+      }}
     >
-      <Typography variant="subtitle2" color="text.secondary" mb={0}>
+      <Typography variant="body2" sx={{ color: '#666666', mb: 1, fontSize: '0.8rem' }}>
         {title}
       </Typography>
       <Typography
         variant="h3"
         sx={{
           fontWeight: 700,
-          color: 'text.primary',
+          color: color || 'text.primary',
           lineHeight: 1.2,
           fontSize: { xs: '1.75rem', sm: '2rem' },
         }}
       >
         {mainValue}
       </Typography>
-      <Box sx={{ mt: 'auto' }}>{children}</Box>
+
+      {/* {trend !== undefined && trend !== null && ( */}
+      <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.75 }}>
+        <Stack
+          direction="row"
+          alignItems="center"
+          sx={{ bgcolor: trendBg, borderRadius: 0.75, px: 0.5, py: 0.25 }}
+        >
+          <Iconify
+            icon={trend >= 0 ? 'mdi:arrow-drop-up' : 'mdi:arrow-drop-down'}
+            width={18}
+            sx={{ color: trendColor, ml: -0.25 }}
+          />
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 600, color: trendColor, fontSize: '0.7rem', mr: 0.25 }}
+          >
+            {trend > 0 ? '+' : '0'}
+            {trend}
+            {trendSuffix ?? '%'}
+          </Typography>
+        </Stack>
+        {trendLabel && (
+          <Typography variant="caption" sx={{ color: '#919EAB', fontSize: '0.7rem' }}>
+            {trendLabel}
+          </Typography>
+        )}
+      </Stack>
+      {/* )} */}
+
+      {children && <Box sx={{ mt: 0.5 }}>{children}</Box>}
     </Card>
   );
 }
@@ -119,6 +179,10 @@ export function TopKPICard({ title, mainValue, children }) {
 TopKPICard.propTypes = {
   title: PropTypes.string.isRequired,
   mainValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  trend: PropTypes.number,
+  trendLabel: PropTypes.string,
+  trendSuffix: PropTypes.string,
+  color: PropTypes.string,
   children: PropTypes.node,
 };
 
@@ -312,7 +376,6 @@ export function SkippedFieldsChart({ journey, campaign }) {
                 fontWeight: 600,
               },
             }}
-            // slots={{ tooltip: ClientItemTooltipSlot }}
             slots={{ tooltip: () => null }}
           />
         </Box>
@@ -513,6 +576,32 @@ export function ReviewEfficiencyScatter({ data }) {
     .filter((p) => (p.x > 24 && p.y <= 2) || (p.x <= 24 && p.y > 2))
     .map((p, i) => ({ ...p, id: `w-${i}` }));
 
+  const ZOOM_PRESETS = {
+    all: { label: 'All', xMax: null, yMax: null },
+    healthy: { label: 'Healthy (≤24h, ≤2 rounds)', xMax: 28, yMax: 3 },
+    warning: { label: 'Warning zone', xMax: 80, yMax: 4 },
+    risk: { label: 'High friction', xMax: null, yMax: null, xMin: 20, yMin: 2 },
+  };
+
+  const [activeZoom, setActiveZoom] = useState('all');
+  const zoom = ZOOM_PRESETS[activeZoom];
+
+  const maxX = allPoints.length ? Math.max(...allPoints.map((p) => p.x)) : 100;
+  const maxY = allPoints.length ? Math.max(...allPoints.map((p) => p.y)) : 10;
+
+  const xAxisMin = zoom.xMin ?? 0;
+  const xAxisMax = zoom.xMax ?? maxX * 1.1;
+  const yAxisMin = zoom.yMin ?? 0;
+  const yAxisMax = zoom.yMax ?? maxY + 1;
+
+  const isVisible = (p) => p.x >= xAxisMin && p.x <= xAxisMax && p.y >= yAxisMin && p.y <= yAxisMax;
+
+  const visibleHealthy = healthyPoints.filter(isVisible);
+  const visibleRisk = riskPoints.filter(isVisible);
+  const visibleWarning = warningPoints.filter(isVisible);
+
+  const totalVisible = visibleHealthy.length + visibleRisk.length + visibleWarning.length;
+
   return (
     <Card
       sx={{
@@ -546,6 +635,53 @@ export function ReviewEfficiencyScatter({ data }) {
         </Stack>
       </Stack>
 
+      {hasData && (
+        <Stack direction="row" spacing={0.75} sx={{ mb: 1.5 }} flexWrap="wrap">
+          {Object.entries(ZOOM_PRESETS).map(([key, preset]) => {
+            const isActive = activeZoom === key;
+            return (
+              <Box
+                key={key}
+                onClick={() => setActiveZoom(key)}
+                sx={{
+                  px: 1.25,
+                  py: 0.5,
+                  borderRadius: '8px',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  border: '1px solid',
+                  borderColor: isActive ? '#1340FF' : '#E8ECEE',
+                  bgcolor: isActive ? '#1340FF0A' : '#FFFFFF',
+                  color: isActive ? '#1340FF' : '#919EAB',
+                  '&:hover': {
+                    borderColor: isActive ? '#1340FF' : '#C4CDD5',
+                    bgcolor: isActive ? '#1340FF0A' : '#F9FAFB',
+                  },
+                }}
+              >
+                {preset.label}
+              </Box>
+            );
+          })}
+
+          {activeZoom !== 'all' && (
+            <Typography
+              variant="caption"
+              sx={{
+                color: '#919EAB',
+                fontSize: '0.65rem',
+                alignSelf: 'center',
+                ml: 0.5,
+              }}
+            >
+              Showing {totalVisible} of {allPoints.length} points
+            </Typography>
+          )}
+        </Stack>
+      )}
+
       {hasData ? (
         <Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, width: '100%' }}>
           <ScatterChart
@@ -575,8 +711,22 @@ export function ReviewEfficiencyScatter({ data }) {
             ].filter((s) => s.data.length > 0)}
             voronoiMaxRadius="item"
             margin={{ left: 10, bottom: 0, right: 60 }}
-            xAxis={[{ label: 'Hours', min: 0 }]}
-            yAxis={[{ label: 'Rounds', min: 0 }]}
+            xAxis={[
+              {
+                label: 'Hours',
+                min: xAxisMin,
+                max: xAxisMax,
+              },
+            ]}
+            yAxis={[
+              {
+                label: 'Rounds',
+                min: yAxisMin,
+                max: yAxisMax,
+                tickNumber: Math.min(Math.ceil(yAxisMax - yAxisMin), 10),
+                valueFormatter: (v) => (Number.isInteger(v) ? `${v}` : ''),
+              },
+            ]}
             grid={{ horizontal: true, vertical: true }}
             sx={{
               ...cleanChartSettings.sx,
@@ -587,7 +737,7 @@ export function ReviewEfficiencyScatter({ data }) {
             }}
             slots={{ tooltip: MatrixTooltipSlot }}
           >
-            {typeof data?.avgReviewTimeHours === 'number' && (
+            {typeof data?.avgReviewTimeHours === 'number' && activeZoom === 'all' && (
               <ChartsReferenceLine
                 x={data.avgReviewTimeHours}
                 lineStyle={{
@@ -599,7 +749,7 @@ export function ReviewEfficiencyScatter({ data }) {
               />
             )}
 
-            {typeof data?.avgRoundsToApproval === 'number' && (
+            {typeof data?.avgRoundsToApproval === 'number' && activeZoom === 'all' && (
               <ChartsReferenceLine
                 y={data.avgRoundsToApproval}
                 lineStyle={{
@@ -656,7 +806,7 @@ export function TurnaroundChart({ data }) {
       <Stack direction="row" spacing={1} alignItems="center" mb={2}>
         <Iconify icon="mdi:timer-outline" width={20} color="grey.500" />
         <Typography variant="subtitle1" fontWeight="bold">
-          Shortlist Turnaround Time
+          Creator Selection Turnaround Time
         </Typography>
       </Stack>
 
