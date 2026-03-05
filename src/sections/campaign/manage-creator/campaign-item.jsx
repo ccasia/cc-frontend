@@ -13,6 +13,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Image from 'src/components/image';
@@ -33,6 +35,7 @@ export default function CampaignItem({ campaign, user, autoOpen = false }) {
   // const { socket } = useSocketContext();
   // const router = useRouter();
   const theme = useTheme();
+  const router = useRouter();
 
   // const [bookMark, setBookMark] = useState(
   //   campaign?.bookMarkCampaign?.some((item) => item.userId === user?.id) || false
@@ -137,7 +140,17 @@ export default function CampaignItem({ campaign, user, autoOpen = false }) {
     if (autoOpen) {
       campaignInfo.onTrue();
     }
-  }, [autoOpen, campaignInfo]);
+  }, [campaignInfo, autoOpen]);
+
+  const handleModalClose = () => {
+    campaignInfo.onFalse();
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('campaignId')) {
+      url.searchParams.delete('campaignId');
+      router.replace(`${url.pathname}${url.search}`);
+    }
+  };
 
   const handleCardClick = () => {
     campaignInfo.onTrue();
@@ -341,7 +354,7 @@ export default function CampaignItem({ campaign, user, autoOpen = false }) {
 
       <CampaignModal
         open={campaignInfo.value}
-        handleClose={campaignInfo.onFalse}
+        handleClose={handleModalClose}
         campaign={campaign}
       />
     </>
