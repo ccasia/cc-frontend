@@ -69,7 +69,7 @@ export default function ClientsTabContent({ packageTypes }) {
         <Grid item xs={12} sm={6} md={3}>
           <TopKPICard
             title="Total Brands"
-            mainValue={brands?.totalCompanies ?? '-'}
+            mainValue={brands?.totalCompanies ?? '–'}
             trend={brands?.totalCompaniesTrend}
             trendLabel={trendLabel}
             onClick={() => setDrawerOpen(true)}
@@ -77,7 +77,7 @@ export default function ClientsTabContent({ packageTypes }) {
           >
             <Stack spacing={0.2}>
               <Typography variant="caption" color="error.main">
-                ● inactive {brands?.inactiveCompanies || '-'}
+                ● inactive {brands?.inactiveCompanies || '–'}
               </Typography>
             </Stack>
           </TopKPICard>
@@ -85,38 +85,40 @@ export default function ClientsTabContent({ packageTypes }) {
         <Grid item xs={12} sm={6} md={3}>
           <TopKPICard
             title="Activation Rate"
-            mainValue={`${brands?.activationRate ?? '-'}%`}
+            mainValue={`${brands?.activationRate ?? '–'} %`}
             trend={brands?.activationRateTrend}
             trendLabel={trendLabel}
           >
             <Typography variant="caption" color="success.main">
-              ▲ {brands?.rateUnder24h || 0}% under 24h
+              ▲ {brands?.rateUnder24h || '–'} % under 24h
             </Typography>
           </TopKPICard>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <TopKPICard
             title="Retention Rate"
-            mainValue={`${support?.retentionRate ?? '-'}%`}
+            mainValue={`${support?.retentionRate ?? '–'} %`}
             trend={support?.retentionRateTrend}
             trendLabel={trendLabel}
           >
             <Typography variant="caption" color="success.main">
-              ▲ {support?.upgradeRate || 0}% upsell rate
+              ▲ {support?.upgradeRate || '–'} % upsell rate
             </Typography>
           </TopKPICard>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <TopKPICard
             title="NPS Feedback Rating"
-            mainValue={`${support?.npsScore ?? '-'}`}
+            mainValue={`${support?.npsScore ?? '–'}`}
             trend={support?.npsScoreTrend}
             trendLabel={trendLabel}
           >
-            <Typography variant="caption" display="block" color="text.secondary" mb={0.5}>
-              From {support?.totalNpsReports || 0} reports{' '}
-            </Typography>
-            <Rating value={support?.npsScore || 0} precision={0.5} readOnly size="small" />
+            <Stack direction="row" justifyContent="space-between">
+              <Rating value={support?.npsScore || 0} precision={0.5} readOnly size="small" />
+              <Typography variant="caption" display="block" color="text.secondary" mb={0.5}>
+                From {support?.totalNpsReports || 0} reports{' '}
+              </Typography>
+            </Stack>
           </TopKPICard>
         </Grid>
       </Grid>
