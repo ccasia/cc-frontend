@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Popper } from '@mui/material';
-import { useSeries, useItemTooltip, useMouseTracker, useAxisTooltip } from '@mui/x-charts';
+import { useItemTooltip, useMouseTracker, useAxesTooltip } from '@mui/x-charts';
 import {
   PieTooltip,
   ClientTooltip,
@@ -80,16 +80,16 @@ ItemTooltipWrapper.propTypes = {
 };
 
 function AxisTooltipWrapper({ Content }) {
-  const tooltipData = useAxisTooltip();
+  const tooltipData = useAxesTooltip();
   const mousePosition = useMouseTracker();
 
-  if (!tooltipData || !mousePosition) {
+  if (!tooltipData || tooltipData.length === 0 || !mousePosition) {
     return null;
   }
 
   return (
     <TooltipPopper mousePosition={mousePosition}>
-      <Content tooltipData={tooltipData} />
+      <Content tooltipData={tooltipData[0]} />
     </TooltipPopper>
   );
 }
@@ -135,8 +135,7 @@ export function MatrixTooltipSlot() {
 }
 
 export function RenewalTooltipSlot() {
-  // Try axis tooltip first, fall back to item tooltip
-  return <RenewalTooltipInner />;
+  return <AxisTooltipWrapper Content={RenewalTooltipAdapter} />;
 }
 
 export function TurnaroundTooltipSlot() {
@@ -145,60 +144,6 @@ export function TurnaroundTooltipSlot() {
 
 export function PieTooltipSlot() {
   return <ItemTooltipWrapper Content={PieTooltipAdapter} />;
-}
-
-// --- Renewal uses a combined approach since axis trigger may not propagate ---
-function RenewalTooltipInner() {
-  const itemData = useItemTooltip();
-  const mousePosition = useMouseTracker();
-  const allSeries = useSeries();
-
-  if (!mousePosition || !itemData) return null;
-
-  // itemData gives us the hovered item's identifier
-  // We use it to find the dataIndex, then pull values from ALL bar series
-  const { identifier } = itemData;
-  const dataIndex = identifier?.dataIndex;
-
-  if (dataIndex == null) return null;
-
-  const barSeries = allSeries?.bar;
-  if (!barSeries?.series || !barSeries?.seriesOrder) return null;
-
-  const series = barSeries.seriesOrder.map((seriesId) => {
-    const s = barSeries.series[seriesId];
-    const value = s?.data?.[dataIndex] ?? 0;
-    let label = s?.label ?? '';
-
-    if (typeof label === 'function') {
-      try {
-        label = label('tooltip');
-      } catch {
-        label = '';
-      }
-    }
-    if (typeof label === 'object' && label !== null) {
-      label = label?.text ?? label?.label ?? String(label);
-    }
-
-    return {
-      color: s?.color ?? '#000',
-      label,
-      data: [typeof value === 'object' ? (value?.value ?? 0) : value],
-    };
-  });
-
-  // Get the axis value (month name) from the dataset
-  const firstSeriesId = barSeries.seriesOrder[0];
-  const firstSeries = barSeries.series[firstSeriesId];
-  const dataset = firstSeries?.dataset;
-  const axisValue = dataset?.[dataIndex]?.name ?? '';
-
-  return (
-    <TooltipPopper mousePosition={mousePosition}>
-      <RenewalTooltip series={series} dataIndex={0} axisValue={resolveLabel(axisValue)} />
-    </TooltipPopper>
-  );
 }
 
 // --- Adapters ---
@@ -230,7 +175,8 @@ ClientTooltipAdapter.propTypes = {
 };
 
 function ClientAxisTooltipAdapter({ tooltipData }) {
-  const { axisValue, seriesItems } = tooltipData;
+  const axisValue = tooltipData?.axisValue;
+  const seriesItems = tooltipData?.seriesItems;
 
   if (!seriesItems || seriesItems.length === 0) return null;
 
@@ -276,6 +222,30 @@ function MatrixTooltipAdapter({ tooltipData }) {
 }
 
 MatrixTooltipAdapter.propTypes = {
+  tooltipData: PropTypes.object,
+};
+
+function RenewalTooltipAdapter({ tooltipData }) {
+  const axisValue = tooltipData?.axisValue;
+  const seriesItems = tooltipData?.seriesItems;
+
+  if (!seriesItems || seriesItems.length === 0) return null;
+
+  const series = seriesItems.map((item) => ({
+    color: item.color,
+    label: item.formattedLabel || resolveLabel(item.label) || item.seriesId || '',
+    value: resolveValue(item.value),
+  }));
+
+  return (
+    <RenewalTooltip
+      series={series}
+      axisValue={typeof axisValue === 'string' ? axisValue : String(axisValue ?? '')}
+    />
+  );
+}
+
+RenewalTooltipAdapter.propTypes = {
   tooltipData: PropTypes.object,
 };
 

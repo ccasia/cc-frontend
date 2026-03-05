@@ -21,6 +21,7 @@ import Iconify from 'src/components/iconify';
 
 import {
   ClientItemTooltipSlot,
+  ClientAxisTooltipSlot,
   MatrixTooltipSlot,
   RenewalTooltipSlot,
   TurnaroundTooltipSlot,
@@ -103,6 +104,8 @@ export function TopKPICard({
   onClick,
   clickable,
 }) {
+  const hasTrend = trend !== undefined && trend !== null && !Number.isNaN(trend);
+  const displayTrend = hasTrend ? trend : 0;
   const trendColor = trend >= 0 ? '#10B981' : '#EF4444';
   const trendBg = trend >= 0 ? '#ECFDF5' : '#FEF2F2';
 
@@ -150,7 +153,7 @@ export function TopKPICard({
           sx={{ bgcolor: trendBg, borderRadius: 0.75, px: 0.5, py: 0.25 }}
         >
           <Iconify
-            icon={trend >= 0 ? 'mdi:arrow-drop-up' : 'mdi:arrow-drop-down'}
+            icon={!hasTrend || displayTrend >= 0 ? 'mdi:arrow-drop-up' : 'mdi:arrow-drop-down'}
             width={18}
             sx={{ color: trendColor, ml: -0.25 }}
           />
@@ -158,9 +161,9 @@ export function TopKPICard({
             variant="caption"
             sx={{ fontWeight: 600, color: trendColor, fontSize: '0.7rem', mr: 0.25 }}
           >
-            {trend > 0 ? '+' : '0'}
-            {trend}
-            {trendSuffix ?? '%'}
+            {hasTrend
+              ? `${displayTrend > 0 ? '+' : ''}${displayTrend}${trendSuffix ?? '%'}`
+              : `– ${trendSuffix ?? '%'}`}
           </Typography>
         </Stack>
         {trendLabel && (
@@ -268,7 +271,7 @@ export function TimeSpentChart({ data }) {
                 fontWeight: 600,
               },
             }}
-            slots={{ tooltip: () => null }}
+            slots={{ tooltip: ClientAxisTooltipSlot }}
           />
         </Box>
       ) : (
@@ -337,10 +340,10 @@ export function SkippedFieldsChart({ journey, campaign }) {
               {
                 scaleType: 'band',
                 dataKey: 'name',
-                categoryGapRatio: 0.4,
                 disableLine: true,
                 disableTicks: true,
-                tickLabelStyle: { fontSize: 12 },
+                valueFormatter: (value) => (value.length > 18 ? `${value.slice(0, 18)}…` : value),
+                tickLabelStyle: { fontSize: 12, textAnchor: 'start' },
               },
             ]}
             xAxis={[{ ...hiddenAxisSettings, max: Math.max(...dataset.map((d) => d.value)) * 1.2 }]}
@@ -364,9 +367,12 @@ export function SkippedFieldsChart({ journey, campaign }) {
             }}
             borderRadius={4}
             layout="horizontal"
-            margin={{ left: 80, right: 20, top: 10, bottom: 0 }}
+            margin={{ left: 90, right: 0, top: 10, bottom: 0 }}
             sx={{
               ...cleanChartSettings.sx,
+              [`& .${axisClasses.left} .${axisClasses.tickLabel}`]: {
+                transform: `translate(-120px, 0)`,
+              },
               '& .MuiBarElement-root': {
                 pointerEvents: 'none',
               },
@@ -376,7 +382,7 @@ export function SkippedFieldsChart({ journey, campaign }) {
                 fontWeight: 600,
               },
             }}
-            slots={{ tooltip: () => null }}
+            slots={{ tooltip: ClientAxisTooltipSlot }}
           />
         </Box>
       ) : (
@@ -475,8 +481,7 @@ export function DropOffChart({ data }) {
                 fontWeight: 600,
               },
             }}
-            slots={{ tooltip: () => null }}
-            // slots={{ tooltip: ClientItemTooltipSlot }}
+            slots={{ tooltip: ClientAxisTooltipSlot }}
           />
         </Box>
       ) : (
@@ -560,6 +565,9 @@ RenewalChart.propTypes = {
 
 // --- 6. Row 4: Submission Review Efficiency (Scatter Plot) ---
 export function ReviewEfficiencyScatter({ data }) {
+  const ROUND_THRESHOLD = 2;
+  const HOUR_THRESHOLD = 24;
+
   const allPoints = data?.scatterPoints || [
     { x: data?.avgReviewTimeHours || 0, y: data?.avgRoundsToApproval || 0, id: 1 },
   ];
@@ -567,40 +575,81 @@ export function ReviewEfficiencyScatter({ data }) {
   const hasData = allPoints && allPoints.length > 0 && allPoints.some((p) => p.x > 0 || p.y > 0);
 
   const healthyPoints = allPoints
-    .filter((p) => p.x <= 24 && p.y <= 2)
+    .filter((p) => p.x <= HOUR_THRESHOLD && p.y <= ROUND_THRESHOLD)
     .map((p, i) => ({ ...p, id: `h-${i}` }));
   const riskPoints = allPoints
-    .filter((p) => p.x > 24 && p.y > 2)
+    .filter((p) => p.x > HOUR_THRESHOLD && p.y > ROUND_THRESHOLD)
     .map((p, i) => ({ ...p, id: `r-${i}` }));
-  const warningPoints = allPoints
-    .filter((p) => (p.x > 24 && p.y <= 2) || (p.x <= 24 && p.y > 2))
-    .map((p, i) => ({ ...p, id: `w-${i}` }));
+  const warningRoundsPoints = allPoints
+    .filter((p) => p.x <= HOUR_THRESHOLD && p.y > ROUND_THRESHOLD)
+    .map((p, i) => ({ ...p, id: `wr-${i}` }));
+  const warningHoursPoints = allPoints
+    .filter((p) => p.x > HOUR_THRESHOLD && p.y <= ROUND_THRESHOLD)
+    .map((p, i) => ({ ...p, id: `wh-${i}` }));
+
+  const boundsOf = (points, padX = 2, padY = 1) => {
+    if (!points.length) return { xMin: 0, xMax: 10, yMin: 0, yMax: 5 };
+    const xs = points.map((p) => p.x);
+    const ys = points.map((p) => p.y);
+
+    return {
+      xMin: Math.max(0, Math.floor(Math.min(...xs) - padX)),
+      xMax: Math.ceil(Math.max(...xs) + padX),
+      yMin: Math.max(0, Math.floor(Math.min(...ys) - padY)),
+      yMax: Math.ceil(Math.max(...ys) + padX),
+    };
+  };
+
+  const maxX = allPoints.length ? Math.max(...allPoints.map((p) => p.x)) : 100;
+  const maxY = allPoints.length ? Math.max(...allPoints.map((p) => p.y)) : 10;
+
+  const healthyBounds = boundsOf(healthyPoints);
+  const riskBounds = boundsOf(riskPoints);
+  const warningRoundsBounds = boundsOf(warningRoundsPoints);
+  const warningHoursBounds = boundsOf(warningHoursPoints);
 
   const ZOOM_PRESETS = {
-    all: { label: 'All', xMax: null, yMax: null },
-    healthy: { label: 'Healthy (≤24h, ≤2 rounds)', xMax: 28, yMax: 3 },
-    warning: { label: 'Warning zone', xMax: 80, yMax: 4 },
-    risk: { label: 'High friction', xMax: null, yMax: null, xMin: 20, yMin: 2 },
+    all: { label: 'All', xMin: 0, xMax: Math.ceil(maxX * 1.1), yMin: 0, yMax: maxY + 1 },
+    healthy: { label: 'Healthy', ...healthyBounds },
+    warningRounds: { label: 'Risky Rounds', ...warningRoundsBounds },
+    warningHours: { label: 'Risky Hours', ...warningHoursBounds },
+    risk: { label: 'High Friction', ...riskBounds },
   };
 
   const [activeZoom, setActiveZoom] = useState('all');
   const zoom = ZOOM_PRESETS[activeZoom];
 
-  const maxX = allPoints.length ? Math.max(...allPoints.map((p) => p.x)) : 100;
-  const maxY = allPoints.length ? Math.max(...allPoints.map((p) => p.y)) : 10;
+  const xAxisMin = zoom.xMin;
+  const xAxisMax = zoom.xMax;
+  const yAxisMin = zoom.yMin;
+  const yAxisMax = zoom.yMax;
 
-  const xAxisMin = zoom.xMin ?? 0;
-  const xAxisMax = zoom.xMax ?? maxX * 1.1;
-  const yAxisMin = zoom.yMin ?? 0;
-  const yAxisMax = zoom.yMax ?? maxY + 1;
+  const getVisibleSeries = () => {
+    switch (activeZoom) {
+      case 'healthy':
+        return { healthy: healthyPoints, warningRounds: [], warningHours: [], risk: [] };
+      case 'warningRounds':
+        return { healthy: [], warningRounds: warningRoundsPoints, warningHours: [], risk: [] };
+      case 'warningHours':
+        return { healthy: [], warningRounds: [], warningHours: warningHoursPoints, risk: [] };
+      case 'risk':
+        return { healthy: [], warningRounds: [], warningHours: [], risk: riskPoints };
+      default:
+        return {
+          healthy: healthyPoints,
+          warningRounds: warningRoundsPoints,
+          warningHours: warningHoursPoints,
+          risk: riskPoints,
+        };
+    }
+  };
 
-  const isVisible = (p) => p.x >= xAxisMin && p.x <= xAxisMax && p.y >= yAxisMin && p.y <= yAxisMax;
-
-  const visibleHealthy = healthyPoints.filter(isVisible);
-  const visibleRisk = riskPoints.filter(isVisible);
-  const visibleWarning = warningPoints.filter(isVisible);
-
-  const totalVisible = visibleHealthy.length + visibleRisk.length + visibleWarning.length;
+  const visible = getVisibleSeries();
+  const totalVisible =
+    visible.healthy.length +
+    visible.warningRounds.length +
+    visible.warningHours.length +
+    visible.risk.length;
 
   return (
     <Card
@@ -639,6 +688,13 @@ export function ReviewEfficiencyScatter({ data }) {
         <Stack direction="row" spacing={0.75} sx={{ mb: 1.5 }} flexWrap="wrap">
           {Object.entries(ZOOM_PRESETS).map(([key, preset]) => {
             const isActive = activeZoom === key;
+
+            let count = 0;
+            if (key === 'healthy') count = healthyPoints.length;
+            else if (key === 'warningRounds') count = warningRoundsPoints.length;
+            else if (key === 'warningHours') count = warningHoursPoints.length;
+            else if (key === 'risk') count = riskPoints.length;
+
             return (
               <Box
                 key={key}
@@ -662,6 +718,19 @@ export function ReviewEfficiencyScatter({ data }) {
                 }}
               >
                 {preset.label}
+                {key !== 'all' && (
+                  <Typography
+                    component="span"
+                    sx={{
+                      ml: 0.5,
+                      fontSize: '0.6rem',
+                      fontWeight: 700,
+                      color: isActive ? '#1340FF' : '#B0B8C1',
+                    }}
+                  >
+                    ({count})
+                  </Typography>
+                )}
               </Box>
             );
           })}
@@ -688,25 +757,32 @@ export function ReviewEfficiencyScatter({ data }) {
             key={`scatter-${allPoints.length}`}
             series={[
               {
-                data: healthyPoints,
+                data: visible.healthy,
                 color: COLORS.blue,
-                label: 'Within 2 rounds',
+                label: 'Healthy',
                 id: 'healthy',
-                markerSize: 6,
+                markerSize: activeZoom === 'all' ? 6 : 8,
               },
               {
-                data: riskPoints,
+                data: visible.warningRounds,
+                color: COLORS.orange,
+                label: 'Risky Rounds',
+                id: 'warningRounds',
+                markerSize: activeZoom === 'all' ? 6 : 8,
+              },
+              {
+                data: visible.warningHours,
+                color: COLORS.orange,
+                label: 'Risky Hours',
+                id: 'warningHours',
+                markerSize: activeZoom === 'all' ? 6 : 8,
+              },
+              {
+                data: visible.risk,
                 color: COLORS.red,
                 label: 'High Friction',
                 id: 'risk',
-                markerSize: 6,
-              },
-              {
-                data: warningPoints,
-                color: COLORS.orange,
-                label: 'Warning',
-                id: 'warning',
-                markerSize: 6,
+                markerSize: activeZoom === 'all' ? 6 : 8,
               },
             ].filter((s) => s.data.length > 0)}
             voronoiMaxRadius="item"
@@ -723,7 +799,6 @@ export function ReviewEfficiencyScatter({ data }) {
                 label: 'Rounds',
                 min: yAxisMin,
                 max: yAxisMax,
-                tickNumber: Math.min(Math.ceil(yAxisMax - yAxisMin), 10),
                 valueFormatter: (v) => (Number.isInteger(v) ? `${v}` : ''),
               },
             ]}

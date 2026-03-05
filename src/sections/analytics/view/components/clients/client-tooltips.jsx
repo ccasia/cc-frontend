@@ -229,12 +229,12 @@ MatrixTooltip.propTypes = {
 const CHART_COLORS = { success: '#00C49F', error: '#FF8042' };
 
 export function RenewalTooltip({ series, dataIndex }) {
-  if (!series || dataIndex === undefined) return null;
+  if (!series || series.length === 0) return null;
 
-  const total = series.reduce((sum, s) => sum + (s.data[dataIndex] || 0), 0);
-  const upgrades = series.find((s) => s.label === 'Upgrades')?.data[dataIndex] || 0;
-  const renewals = series.find((s) => s.label === 'Renewals')?.data[dataIndex] || 0;
-  const downgrades = series.find((s) => s.label === 'Downgrades')?.data[dataIndex] || 0;
+  const total = series.reduce((sum, s) => sum + (s.value || 0), 0);
+  const upgrades = series.find((s) => s.label === 'Upgrades')?.value || 0;
+  const renewals = series.find((s) => s.label === 'Renewals')?.value || 0;
+  const downgrades = series.find((s) => s.label === 'Downgrades')?.value || 0;
   const retentionRate =
     total > 0 ? Math.round(((upgrades + renewals + downgrades) / total) * 100) : 0;
 
@@ -252,7 +252,7 @@ export function RenewalTooltip({ series, dataIndex }) {
               <Box sx={glassDot(s.color)} />
               <Typography sx={glassLabel}>{s.label}</Typography>
             </Stack>
-            <Typography sx={glassValue}>{s.data[dataIndex]}</Typography>
+            <Typography sx={glassValue}>{s.value ?? 0}</Typography>
           </Stack>
         ))}
       </Stack>
@@ -294,7 +294,7 @@ export function RenewalTooltip({ series, dataIndex }) {
 }
 
 RenewalTooltip.propTypes = {
-  dataIndex: PropTypes.number,
+  axisValue: PropTypes.string,
   series: PropTypes.arrayOf(
     PropTypes.shape({
       color: PropTypes.string,
