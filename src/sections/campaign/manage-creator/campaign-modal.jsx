@@ -205,14 +205,19 @@ const CampaignModal = ({ open, handleClose, campaign, mutate }) => {
     setJoinDialogOpen(true);
   };
 
+  const handleCloseAllModals = () => {
+    setJoinDialogOpen(false);
+    setFullImageOpen(false);
+    if (handleClose) handleClose();
+  };
+
   const handleJoinConfirm = async () => {
     if (!invitedCreator?.id) return;
     try {
       setIsJoining(true);
       await axiosInstance.patch(endpoints.campaign.pitch.v3.acceptInvite(invitedCreator.id));
       if (mutate) mutate();
-      handleClose();
-      setJoinDialogOpen(false);
+      handleCloseAllModals();
       handleManageClick(campaign.id);
     } catch (error) {
       console.error('Error joining campaign:', error);
@@ -222,8 +227,7 @@ const CampaignModal = ({ open, handleClose, campaign, mutate }) => {
   };
 
   const handleJoinDialogClose = () => {
-    setJoinDialogOpen(false);
-    handleClose();
+    handleCloseAllModals();
   };
 
   // const handleDraftClick = () => {
@@ -275,7 +279,7 @@ const CampaignModal = ({ open, handleClose, campaign, mutate }) => {
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" scroll="body">
+    <Dialog open={open} onClose={handleCloseAllModals} fullWidth maxWidth="md" scroll="body">
       <DialogContent sx={{ p: 0 }}>
         {/* Campaign image */}
         <Box
@@ -297,7 +301,7 @@ const CampaignModal = ({ open, handleClose, campaign, mutate }) => {
           onClick={handleImageClick}
         >
           <IconButton
-            onClick={handleClose}
+            onClick={handleCloseAllModals}
             sx={{
               position: 'absolute',
               top: 8,
@@ -1388,7 +1392,7 @@ const CampaignModal = ({ open, handleClose, campaign, mutate }) => {
       {/* Join Campaign Confirmation Dialog */}
       <Dialog
         open={joinDialogOpen}
-        onClose={() => setJoinDialogOpen(false)}
+        onClose={handleJoinDialogClose}
         maxWidth="xs"
         fullWidth
         PaperProps={{
