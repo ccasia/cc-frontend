@@ -1095,7 +1095,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
               spacing={1.5}
               alignItems="center"
               sx={{ 
-                width: 200,
+                width: 210,
                 flexShrink: 0,
                 overflow: 'hidden',
               }}
@@ -1137,7 +1137,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
               sx={{ mx: 1, minWidth: 0, overflow: 'hidden' }}
             >
               {/* Engagement Rate - always display only */}
-              <Box sx={{ textAlign: 'left', minWidth: 110, }}>
+              <Box sx={{ textAlign: 'left', minWidth: { md: 0, lg: 110 }, pr: { md: 1, lg: 1.5 } }}>
                 <Typography
                   fontFamily="Aileron"
                   fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -1246,7 +1246,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
               />
 
               {/* Comments */}
-              <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
+              <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
                 <Typography
                   fontFamily="Aileron"
                   fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -2357,8 +2357,9 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                 direction="row"
                 spacing={1.5}
                 alignItems="center"
+                flex={1}
                 sx={{ 
-                  width: 200,
+                  maxWidth: 210,
                   flexShrink: 0,
                   overflow: 'hidden',
                 }}
@@ -2433,7 +2434,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                     sx={{ mx: 1, minWidth: 0, overflow: 'hidden' }}
                   >
                     {/* Engagement Rate */}
-                    <Box sx={{ textAlign: 'left', minWidth: 110, }}>
+                    <Box sx={{ textAlign: 'left', minWidth: { md: 0, lg: 110 }, pr: { md: 1, lg: 1.5 } }}>
                       <Typography
                         fontFamily="Aileron"
                         fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -2529,7 +2530,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                     />
 
                     {/* Comments */}
-                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
+                    <Box sx={{ textAlign: 'left', flex: 1, overflow: 'hidden', minWidth: 0, px: 1 }}>
                       <Typography
                         fontFamily="Aileron"
                         fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -2788,10 +2789,10 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                       <Iconify icon="mdi:image-off-outline" width={24} sx={{ color: '#BDBDBD' }} />
                     </Box>
                   )}
-                </AnimatePresence>
 
-                {/* Spacer to maintain same layout spacing as manual entries */}
-                <Box sx={{ width: 36 }} />
+                  {/* Spacer to maintain same layout spacing as manual entries */}
+                  <Box sx={{ width: 36 }} />
+                </AnimatePresence>
               </Stack>
             </Box>
 

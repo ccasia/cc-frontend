@@ -233,14 +233,10 @@ const getCreatorAvatarBg = (creator) => {
 
 // Common input field style matching Figma design
 const inputFieldStyle = {
-  width: '100%',
-  minWidth: 0,
   maxWidth: '100%',
   '& .MuiOutlinedInput-root': {
     borderRadius: 1,
     bgcolor: 'white',
-    width: '100%',
-    maxWidth: '100%',
     '&.Mui-focused': {
       '& .MuiOutlinedInput-notchedOutline': {
         borderColor: '#1340FF',
@@ -444,7 +440,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
             <Box sx={{ py: 1.5 }}>
               {/* Desktop Layout */}
               <Box
-                px={{ xs: 0, sm: 2, lg: 3 }}
+                px={2}
                 display={{ xs: 'none', md: 'flex' }}
                 alignItems="center"
                 gap={{ md: 1, lg: 1.5 }}
@@ -453,12 +449,12 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                 {/* Left Side: Creator Info */}
                 <Stack
                   direction="row"
-                  spacing={1.5}
+                  spacing={1}
                   alignItems="center"
-                  sx={{
-                    minWidth: { md: showCreatorDropdown ? 180 : 160, lg: 200 },
-                    maxWidth: { md: showCreatorDropdown ? 240 : 180, lg: showCreatorDropdown ? 280 : 200 },
+                  sx={{ 
+                    minWidth: 220,
                     flexShrink: 0,
+                    overflow: 'hidden',
                   }}
                 >
                   <Avatar
@@ -579,16 +575,10 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                   alignItems="center"
                   flex={1}
                   justifyContent="space-between"
-                  sx={{ 
-                    mx: 0.5, 
-                    minWidth: 0, 
-                    overflow: 'hidden', 
-                    flexWrap: 'nowrap',
-                    position: 'relative'
-                  }}
+                  sx={{ minWidth: 0, overflow: 'hidden' }}
                 >
                   {/* Engagement Rate (auto-calculated, read-only display) */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, maxWidth: { md: 120, lg: 140, xl: 160 }, pr: { md: 1, lg: 1.5, xl: 2 } }}>
+                  <Box sx={{ textAlign: 'left', pr: { md: 1, lg: 1.5 } }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -614,21 +604,10 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                     </Typography>
                   </Box>
 
-                  <Divider
-                    orientation="vertical"
-                    sx={{ 
-                      width: '1px', 
-                      minWidth: '1px',
-                      height: '71px', 
-                      backgroundColor: '#1340FF', 
-                      mx: 1, 
-                      flexShrink: 0,
-                      alignSelf: 'stretch'
-                    }}
-                  />
+                  <Divider sx={{ width: '1px', height: '72px', backgroundColor: '#1340FF', flexShrink: 0 }} />
 
                   {/* Views - bordered input field */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -651,21 +630,10 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                     />
                   </Box>
 
-                  <Divider
-                    orientation="vertical"
-                    sx={{ 
-                      width: '1px', 
-                      minWidth: '1px',
-                      height: '71px', 
-                      backgroundColor: '#1340FF', 
-                      mx: 1, 
-                      flexShrink: 0,
-                      alignSelf: 'stretch'
-                    }}
-                  />
+                  <Divider sx={{ width: '1px', height: '72px', backgroundColor: '#1340FF', flexShrink: 0 }} />
 
                   {/* Likes - bordered input field */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -688,21 +656,10 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                     />
                   </Box>
 
-                  <Divider
-                    orientation="vertical"
-                    sx={{ 
-                      width: '1px', 
-                      minWidth: '1px',
-                      height: '71px', 
-                      backgroundColor: '#1340FF', 
-                      mx: 1, 
-                      flexShrink: 0,
-                      alignSelf: 'stretch'
-                    }}
-                  />
+                  <Divider sx={{ width: '1px', height: '72px', backgroundColor: '#1340FF', flexShrink: 0 }} />
 
                   {/* Comments - bordered input field */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -725,21 +682,10 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                     />
                   </Box>
 
-                  <Divider
-                    orientation="vertical"
-                    sx={{ 
-                      width: '1px', 
-                      minWidth: '1px',
-                      height: '71px', 
-                      backgroundColor: '#1340FF', 
-                      mx: 1, 
-                      flexShrink: 0,
-                      alignSelf: 'stretch'
-                    }}
-                  />
+                  <Divider sx={{ width: '1px', height: '72px', backgroundColor: '#1340FF', flexShrink: 0 }} />
 
                   {/* Shares - bordered input field */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -765,19 +711,8 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                   {/* Saves - Instagram only */}
                   {detectedPlatform === 'Instagram' && (
                     <>
-                      <Divider
-                        orientation="vertical"
-                        sx={{ 
-                          width: '1px', 
-                          minWidth: '1px',
-                          height: '71px', 
-                          backgroundColor: '#1340FF', 
-                          mx: 1, 
-                          flexShrink: 0,
-                          alignSelf: 'stretch'
-                        }}
-                      />
-                      <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                      <Divider sx={{ width: '1px', height: '72px', backgroundColor: '#1340FF', flexShrink: 0 }} />
+                      <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
                         <Typography
                           fontFamily="Aileron"
                           fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -802,21 +737,10 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                     </>
                   )}
 
-                  <Divider
-                    orientation="vertical"
-                    sx={{ 
-                      width: '1px', 
-                      minWidth: '1px',
-                      height: '71px', 
-                      backgroundColor: '#1340FF', 
-                      mx: 1, 
-                      flexShrink: 0,
-                      alignSelf: 'stretch'
-                    }}
-                  />
+                  <Divider sx={{ width: '1px', height: '72px', backgroundColor: '#1340FF', flexShrink: 0 }} />
 
                   {/* Post Link - bordered input field */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', pl: { md: 1, lg: 1.5 } }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -830,8 +754,8 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                       name="postUrl"
                       placeholder="Post Link"
                       size="small"
-                      fullWidth={false}
-                      sx={inputFieldStyle}
+                      fullWidth={true}
+                      sx={{ ...inputFieldStyle }}
                     />
                   </Box>
                 </Box>
