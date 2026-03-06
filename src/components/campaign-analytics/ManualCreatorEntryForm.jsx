@@ -17,6 +17,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 
+import { extractHandle } from 'src/utils/extractHandle';
 import { parseFormattedNumber, formatNumberWithCommas } from 'src/utils/socialMetricsCalculator';
 
 import { validateUrl, detectPlatformFromUrl, createManualCreatorEntry, updateManualCreatorEntry } from 'src/api/manual-creator';
@@ -27,7 +28,7 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 // Validation schema factory - creates schema based on selected platform
 const createManualCreatorSchema = (selectedPlatform) => Yup.object().shape({
   creatorName: Yup.string().required('Creator name is required'),
-  creatorUsername: Yup.string().required('Username is required'),
+  creatorUsername: Yup.string().nullable().notRequired(),
   postUrl: Yup.string()
     .nullable()
     .test({
@@ -79,16 +80,19 @@ const createManualCreatorSchema = (selectedPlatform) => Yup.object().shape({
 
 // Resolves creator data for a single submission (uses hooks, must be a component)
 const CreatorOptionResolver = ({ submission, onResolved }) => {
-  const { data: creator, isLoading } = useGetCreatorById(submission?.user);
+  const { data: creator, isLoading } = useGetCreatorById(submission?.user)
 
   useEffect(() => {
     if (!isLoading && creator?.user) {
+      const c = creator.user?.creator;
+      const profileLink =
+        c?.instagramProfileLink || c?.tiktokProfileLink || c?.profileLink;
+      const extracted = extractHandle(profileLink);
+      const username = c?.instagram || c?.tiktok || extracted?.handle || '';
+
       onResolved(submission.id, {
         name: creator.user?.name || '',
-        username:
-          creator.user?.creator?.instagram ||
-          creator.user?.creator?.tiktok ||
-          '',
+        username,
         postUrl: submission.postUrl || '',
         platform: submission.platform,
         photoURL: creator.user?.photoURL || '',
@@ -388,6 +392,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
         comments: toNumberOrZero(data.comments),
         shares: toNumberOrZero(data.shares),
         saved: detectedPlatform === 'Instagram' ? toNumberOrZero(data.saved) : undefined,
+        photoURL: selectedCreator?.photoURL || editingEntry?.photoURL || undefined,
       };
 
       if (isEditMode) {
@@ -406,10 +411,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
   // Check if form is complete for button state
   const isFormComplete = useMemo(() => {
     const creatorName = watch('creatorName');
-    const creatorUsername = watch('creatorUsername');
-
-    const hasRequiredText = Boolean(creatorName?.trim()) && Boolean(creatorUsername?.trim());
-    return hasRequiredText;
+    return Boolean(creatorName?.trim());
   }, [watch]);
 
   // Expose submit function and state to parent
@@ -482,15 +484,27 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                         value={selectedCreator}
                         onChange={handleCreatorSelected}
                       />
-                      {selectedCreator && (
-                        <Typography
-                          fontSize="0.8rem"
-                          color="#636366"
-                          sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', pl: 0.5 }}
-                        >
-                          {selectedCreator.username} · {selectedCreator.platform}
-                        </Typography>
-                      )}
+                      <RHFTextField
+                        name="creatorUsername"
+                        placeholder="Username (optional)"
+                        size="small"
+                        sx={{
+                          width: '100%',
+                          maxWidth: '100%',
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 1,
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1340FF', borderWidth: '1.5px' },
+                            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#1340FF' },
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e7e7e7' },
+                          },
+                          '& .MuiInputBase-input': {
+                            py: 0.75,
+                            fontSize: '0.875rem',
+                            color: '#000000',
+                            '&::placeholder': { color: '#B0B0B0', opacity: 1 },
+                          },
+                        }}
+                      />
                     </Stack>
                   ) : (
                     <Stack direction="column" spacing={0.5} sx={{ minWidth: 0, flex: 1, maxWidth: '100%' }}>
@@ -754,7 +768,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                       name="postUrl"
                       placeholder="Post Link"
                       size="small"
-                      fullWidth={true}
+                      fullWidth
                       sx={{ ...inputFieldStyle }}
                     />
                   </Box>
@@ -788,15 +802,22 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                         value={selectedCreator}
                         onChange={handleCreatorSelected}
                       />
-                      {selectedCreator && (
-                        <Typography
-                          fontSize={11}
-                          color="#636366"
-                          sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', pl: 0.5 }}
-                        >
-                          {selectedCreator.username} · {selectedCreator.platform}
-                        </Typography>
-                      )}
+                      <RHFTextField
+                        name="creatorUsername"
+                        placeholder="Username (optional)"
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1340FF', borderWidth: '1.5px' },
+                            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#1340FF' },
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e7e7e7' },
+                          },
+                          '& .MuiInputBase-input': {
+                            color: '#000000',
+                            '&::placeholder': { color: '#B0B0B0', opacity: 1 },
+                          },
+                        }}
+                      />
                     </Stack>
                   ) : (
                   <Stack direction="column" spacing={0.5} sx={{ flex: 1 }}>
@@ -1116,6 +1137,7 @@ ManualCreatorEntryForm.propTypes = {
     creatorUsername: PropTypes.string,
     platform: PropTypes.string,
     postUrl: PropTypes.string,
+    photoURL: PropTypes.string,
     views: PropTypes.number,
     likes: PropTypes.number,
     comments: PropTypes.number,
