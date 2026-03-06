@@ -110,22 +110,24 @@ function ActivationRateChart() {
 
   return (
     <ChartCard title="Activation Rate" icon={BoltIcon} subtitle="Users who completed payment form divided by total users" headerRight={headerRight}>
-      <Box ref={fillRef} sx={{ flex: 1, minHeight: CHART_HEIGHT }}>
-        <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
-          <LineChart
-            series={[{ data: rates, label: 'Activation Rate', color: CHART_COLORS.success, curve: 'linear', area: true, valueFormatter: (val) => `${val}%` }]}
-            xAxis={xAxisConfig}
-            yAxis={[{ ...yDomain, valueFormatter: (val) => `${val}%`, tickLabelStyle: TICK_LABEL_STYLE }]}
-            height={chartHeight}
-            margin={CHART_MARGIN}
-            grid={CHART_GRID}
-            tooltip={{ trigger: 'axis' }}
-            slots={{ axisContent: ChartAxisTooltip }}
-            skipAnimation={isZoomed}
-            hideLegend
-            sx={CHART_SX}
-          />
-        </ZoomableChart>
+      <Box ref={fillRef} sx={{ flex: 1, position: 'relative', minHeight: CHART_HEIGHT }}>
+        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
+            <LineChart
+              series={[{ data: rates, label: 'Activation Rate', color: CHART_COLORS.success, curve: 'linear', area: true, valueFormatter: (val) => `${val}%` }]}
+              xAxis={xAxisConfig}
+              yAxis={[{ ...yDomain, valueFormatter: (val) => `${val}%`, tickLabelStyle: TICK_LABEL_STYLE }]}
+              height={chartHeight}
+              margin={CHART_MARGIN}
+              grid={CHART_GRID}
+              tooltip={{ trigger: 'axis' }}
+              slots={{ axisContent: ChartAxisTooltip }}
+              skipAnimation={isZoomed}
+              hideLegend
+              sx={CHART_SX}
+            />
+          </ZoomableChart>
+        </Box>
       </Box>
     </ChartCard>
   );
