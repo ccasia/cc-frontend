@@ -3,14 +3,19 @@ import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useMemo, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useMemo, useState, useEffect, forwardRef, useCallback, useImperativeHandle } from 'react';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import Autocomplete from '@mui/material/Autocomplete';
+import CircularProgress from '@mui/material/CircularProgress';
+
+import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 
 import { parseFormattedNumber, formatNumberWithCommas } from 'src/utils/socialMetricsCalculator';
 
@@ -72,16 +77,166 @@ const createManualCreatorSchema = (selectedPlatform) => Yup.object().shape({
     .notRequired(),
 });
 
+// Resolves creator data for a single submission (uses hooks, must be a component)
+const CreatorOptionResolver = ({ submission, onResolved }) => {
+  const { data: creator, isLoading } = useGetCreatorById(submission?.user);
+
+  useEffect(() => {
+    if (!isLoading && creator?.user) {
+      onResolved(submission.id, {
+        name: creator.user?.name || '',
+        username:
+          creator.user?.creator?.instagram ||
+          creator.user?.creator?.tiktok ||
+          '',
+        postUrl: submission.postUrl || '',
+        platform: submission.platform,
+        photoURL: creator.user?.photoURL || '',
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [creator, isLoading]);
+
+  return null;
+};
+
+CreatorOptionResolver.propTypes = {
+  submission: PropTypes.shape({
+    id: PropTypes.string,
+    user: PropTypes.string,
+    postUrl: PropTypes.string,
+    platform: PropTypes.string,
+  }).isRequired,
+  onResolved: PropTypes.func.isRequired,
+};
+
+// Dropdown component listing creators whose postings have no insight data
+const CreatorDropdownSelect = ({ submissions, value, onChange }) => {
+  const [resolvedCreators, setResolvedCreators] = useState({});
+
+  const handleResolved = useCallback((submissionId, data) => {
+    setResolvedCreators((prev) => ({ ...prev, [submissionId]: { submissionId, ...data } }));
+  }, []);
+
+  const options = useMemo(() => Object.values(resolvedCreators), [resolvedCreators]);
+  const isResolving = options.length < submissions.length;
+
+  return (
+    <>
+      {submissions.map((sub) => (
+        <CreatorOptionResolver key={sub.id} submission={sub} onResolved={handleResolved} />
+      ))}
+      <Autocomplete
+        options={options}
+        getOptionLabel={(option) => option.name || ''}
+        value={value}
+        onChange={(_, newValue) => onChange(newValue)}
+        loading={isResolving}
+        isOptionEqualToValue={(option, val) => option.submissionId === val?.submissionId}
+        componentsProps={{ paper: { sx: { minWidth: 250 } } }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            placeholder="Select creator..."
+            size="small"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 1,
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#1340FF',
+                  borderWidth: '1.5px',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#1340FF',
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#e7e7e7',
+                },
+              },
+              '& .MuiInputBase-input': {
+                py: 0.75,
+                fontSize: '0.875rem',
+                color: '#000000',
+                '&::placeholder': { color: '#B0B0B0', opacity: 1 },
+              },
+            }}
+            // eslint-disable-next-line react/jsx-no-duplicate-props
+            InputProps={{
+              ...params.InputProps,
+              endAdornment: (
+                <>
+                  {isResolving && <CircularProgress size={14} sx={{ mr: 0.5 }} />}
+                  {params.InputProps.endAdornment}
+                </>
+              ),
+            }}
+          />
+        )}
+        renderOption={(props, option) => (
+          <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Avatar
+              src={option.photoURL}
+              sx={{
+                width: 28,
+                height: 28,
+                bgcolor: option.platform === 'Instagram' ? '#E4405F' : '#000000',
+                fontSize: 12,
+                flexShrink: 0,
+              }}
+            >
+              {option.name?.charAt(0)}
+            </Avatar>
+            <Box>
+              <Typography fontSize={13} fontWeight={600}>
+                {option.name}
+              </Typography>
+              <Typography fontSize={11} color="text.secondary">
+                {option.username} · {option.platform}
+              </Typography>
+            </Box>
+          </Box>
+        )}
+      />
+    </>
+  );
+};
+
+CreatorDropdownSelect.propTypes = {
+  submissions: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string,
+      user: PropTypes.string,
+      postUrl: PropTypes.string,
+      platform: PropTypes.string,
+    })
+  ).isRequired,
+  value: PropTypes.shape({
+    submissionId: PropTypes.string,
+    name: PropTypes.string,
+    username: PropTypes.string,
+    platform: PropTypes.string,
+    postUrl: PropTypes.string,
+    photoURL: PropTypes.string,
+  }),
+  onChange: PropTypes.func.isRequired,
+};
+
+CreatorDropdownSelect.defaultProps = {
+  value: null,
+};
+
+// Helper to get platform-appropriate avatar background colour
+const getCreatorAvatarBg = (creator) => {
+  if (!creator) return '#D3D3D3';
+  return creator.platform === 'Instagram' ? '#E4405F' : '#000000';
+};
+
 // Common input field style matching Figma design
 const inputFieldStyle = {
-  width: '100%',
-  minWidth: 0,
   maxWidth: '100%',
   '& .MuiOutlinedInput-root': {
     borderRadius: 1,
     bgcolor: 'white',
-    width: '100%',
-    maxWidth: '100%',
     '&.Mui-focused': {
       '& .MuiOutlinedInput-notchedOutline': {
         borderColor: '#1340FF',
@@ -109,7 +264,7 @@ const inputFieldStyle = {
   },
 };
 
-const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess, onFormStateChange, selectedPlatform }, ref) => {
+const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess, onFormStateChange, selectedPlatform, submissionsWithoutInsights }, ref) => {
   const isEditMode = Boolean(editingEntry);
   // Use selectedPlatform if provided, otherwise default to editingEntry platform or Instagram
   const initialPlatform = selectedPlatform && selectedPlatform !== 'ALL' 
@@ -117,6 +272,13 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
     : (editingEntry?.platform || 'Instagram');
   const [detectedPlatform, setDetectedPlatform] = useState(initialPlatform);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCreator, setSelectedCreator] = useState(null);
+
+  // Show dropdown when there are untracked submissions and we're not in edit mode
+  const showCreatorDropdown =
+    !isEditMode &&
+    Array.isArray(submissionsWithoutInsights) &&
+    submissionsWithoutInsights.length > 0;
 
   const toNumberOrZero = (value) => {
     if (value === '' || value === undefined || value === null) return 0;
@@ -178,6 +340,23 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
       setDetectedPlatform(selectedPlatform);
     }
   }, [watchedUrl, selectedPlatform]);
+
+  // Populate form fields when a creator is selected from the dropdown
+  const handleCreatorSelected = useCallback(
+    (creator) => {
+      setSelectedCreator(creator);
+      if (creator) {
+        setValue('creatorName', creator.name, { shouldValidate: true });
+        setValue('creatorUsername', creator.username, { shouldValidate: true });
+        setValue('postUrl', creator.postUrl, { shouldValidate: true });
+      } else {
+        setValue('creatorName', '', { shouldValidate: true });
+        setValue('creatorUsername', '', { shouldValidate: true });
+        setValue('postUrl', '', { shouldValidate: true });
+      }
+    },
+    [setValue]
+  );
 
   // Handler for formatted number inputs
   const handleFormattedNumberChange = (fieldName, value) => {
@@ -261,7 +440,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
             <Box sx={{ py: 1.5 }}>
               {/* Desktop Layout */}
               <Box
-                px={{ xs: 0, sm: 2, lg: 3 }}
+                px={2}
                 display={{ xs: 'none', md: 'flex' }}
                 alignItems="center"
                 gap={{ md: 1, lg: 1.5 }}
@@ -270,95 +449,124 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                 {/* Left Side: Creator Info */}
                 <Stack
                   direction="row"
-                  spacing={1.5}
+                  spacing={1}
                   alignItems="center"
-                  sx={{ minWidth: { md: 160, lg: 180 }, maxWidth: { md: 180, lg: 200 }, flexShrink: 0 }}
+                  sx={{ 
+                    minWidth: 220,
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                  }}
                 >
                   <Avatar
+                    src={selectedCreator?.photoURL}
                     sx={{
                       width: 44,
                       height: 44,
-                      bgcolor: '#D3D3D3',
+                      bgcolor: getCreatorAvatarBg(selectedCreator),
                       border: '1px solid #EBEBEB',
                       flexShrink: 0,
                       color: '#FFFFFF',
                     }}
                   >
-                    <Iconify icon="mdi:account" width={32} sx={{ color: '#FFFFFF' }} />
+                    {selectedCreator ? (
+                      selectedCreator.name?.charAt(0) || 'U'
+                    ) : (
+                      <Iconify icon="mdi:account" width={32} sx={{ color: '#FFFFFF' }} />
+                    )}
                   </Avatar>
-                  <Stack direction="column" spacing={0.5} sx={{ minWidth: 0, flex: 1, maxWidth: '100%' }}>
-                    <RHFTextField
-                      name="creatorName"
-                      placeholder="Creator Name"
-                      size="small"
-                      sx={{
-                        width: '100%',
-                        maxWidth: '100%',
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                          '&.Mui-focused': {
+
+                  {showCreatorDropdown ? (
+                    <Stack direction="column" spacing={0.5} sx={{ minWidth: 0, flex: 1, maxWidth: '100%' }}>
+                      <CreatorDropdownSelect
+                        submissions={submissionsWithoutInsights}
+                        value={selectedCreator}
+                        onChange={handleCreatorSelected}
+                      />
+                      {selectedCreator && (
+                        <Typography
+                          fontSize="0.8rem"
+                          color="#636366"
+                          sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', pl: 0.5 }}
+                        >
+                          {selectedCreator.username} · {selectedCreator.platform}
+                        </Typography>
+                      )}
+                    </Stack>
+                  ) : (
+                    <Stack direction="column" spacing={0.5} sx={{ minWidth: 0, flex: 1, maxWidth: '100%' }}>
+                      <RHFTextField
+                        name="creatorName"
+                        placeholder="Creator Name"
+                        size="small"
+                        sx={{
+                          width: '100%',
+                          maxWidth: '100%',
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 1,
+                            '&.Mui-focused': {
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: '#1340FF',
+                                borderWidth: '1.5px',
+                              },
+                            },
+                            '&:hover': {
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: '#1340FF',
+                              },
+                            },
                             '& .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#1340FF',
-                              borderWidth: '1.5px',
+                              borderColor: '#e7e7e7',
                             },
                           },
-                          '&:hover': {
-                            '& .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#1340FF',
+                          '& .MuiInputBase-input': {
+                            py: 0.75,
+                            fontSize: '0.95rem',
+                            fontWeight: 400,
+                            color: '#000000',
+                            '&::placeholder': {
+                              color: '#B0B0B0',
+                              opacity: 1,
                             },
                           },
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            borderColor: '#e7e7e7',
-                          },
-                        },
-                        '& .MuiInputBase-input': {
-                          py: 0.75,
-                          fontSize: '0.95rem',
-                          fontWeight: 400,
-                          color: '#000000',
-                          '&::placeholder': {
-                            color: '#B0B0B0',
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                    />
-                    <RHFTextField
-                      name="creatorUsername"
-                      placeholder="Creator Username"
-                      size="small"
-                      sx={{
-                        width: '100%',
-                        maxWidth: '100%',
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                          '&.Mui-focused': {
+                        }}
+                      />
+                      <RHFTextField
+                        name="creatorUsername"
+                        placeholder="Creator Username"
+                        size="small"
+                        sx={{
+                          width: '100%',
+                          maxWidth: '100%',
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 1,
+                            '&.Mui-focused': {
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: '#1340FF',
+                                borderWidth: '1.5px',
+                              },
+                            },
+                            '&:hover': {
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: '#1340FF',
+                              },
+                            },
                             '& .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#1340FF',
-                              borderWidth: '1.5px',
+                              borderColor: '#e7e7e7',
                             },
                           },
-                          '&:hover': {
-                            '& .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#1340FF',
+                          '& .MuiInputBase-input': {
+                            py: 0.75,
+                            fontSize: '0.875rem',
+                            color: '#000000',
+                            '&::placeholder': {
+                              color: '#B0B0B0',
+                              opacity: 1,
                             },
                           },
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            borderColor: '#e7e7e7',
-                          },
-                        },
-                        '& .MuiInputBase-input': {
-                          py: 0.75,
-                          fontSize: '0.875rem',
-                          color: '#000000',
-                          '&::placeholder': {
-                            color: '#B0B0B0',
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                    />
-                  </Stack>
+                        }}
+                      />
+                    </Stack>
+                  )}
                 </Stack>
 
                 {/* Center: Metrics - same divider style as saved entries */}
@@ -367,16 +575,10 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                   alignItems="center"
                   flex={1}
                   justifyContent="space-between"
-                  sx={{ 
-                    mx: 0.5, 
-                    minWidth: 0, 
-                    overflow: 'hidden', 
-                    flexWrap: 'nowrap',
-                    position: 'relative'
-                  }}
+                  sx={{ minWidth: 0, overflow: 'hidden' }}
                 >
                   {/* Engagement Rate (auto-calculated, read-only display) */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, maxWidth: { md: 120, lg: 140, xl: 160 }, pr: { md: 1, lg: 1.5, xl: 2 } }}>
+                  <Box sx={{ textAlign: 'left', pr: { md: 1, lg: 1.5 } }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -402,21 +604,10 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                     </Typography>
                   </Box>
 
-                  <Divider
-                    orientation="vertical"
-                    sx={{ 
-                      width: '1px', 
-                      minWidth: '1px',
-                      height: '71px', 
-                      backgroundColor: '#1340FF', 
-                      mx: 1, 
-                      flexShrink: 0,
-                      alignSelf: 'stretch'
-                    }}
-                  />
+                  <Divider sx={{ width: '1px', height: '72px', backgroundColor: '#1340FF', flexShrink: 0 }} />
 
                   {/* Views - bordered input field */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -439,21 +630,10 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                     />
                   </Box>
 
-                  <Divider
-                    orientation="vertical"
-                    sx={{ 
-                      width: '1px', 
-                      minWidth: '1px',
-                      height: '71px', 
-                      backgroundColor: '#1340FF', 
-                      mx: 1, 
-                      flexShrink: 0,
-                      alignSelf: 'stretch'
-                    }}
-                  />
+                  <Divider sx={{ width: '1px', height: '72px', backgroundColor: '#1340FF', flexShrink: 0 }} />
 
                   {/* Likes - bordered input field */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -476,21 +656,10 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                     />
                   </Box>
 
-                  <Divider
-                    orientation="vertical"
-                    sx={{ 
-                      width: '1px', 
-                      minWidth: '1px',
-                      height: '71px', 
-                      backgroundColor: '#1340FF', 
-                      mx: 1, 
-                      flexShrink: 0,
-                      alignSelf: 'stretch'
-                    }}
-                  />
+                  <Divider sx={{ width: '1px', height: '72px', backgroundColor: '#1340FF', flexShrink: 0 }} />
 
                   {/* Comments - bordered input field */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -513,21 +682,10 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                     />
                   </Box>
 
-                  <Divider
-                    orientation="vertical"
-                    sx={{ 
-                      width: '1px', 
-                      minWidth: '1px',
-                      height: '71px', 
-                      backgroundColor: '#1340FF', 
-                      mx: 1, 
-                      flexShrink: 0,
-                      alignSelf: 'stretch'
-                    }}
-                  />
+                  <Divider sx={{ width: '1px', height: '72px', backgroundColor: '#1340FF', flexShrink: 0 }} />
 
                   {/* Shares - bordered input field */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -553,19 +711,8 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                   {/* Saves - Instagram only */}
                   {detectedPlatform === 'Instagram' && (
                     <>
-                      <Divider
-                        orientation="vertical"
-                        sx={{ 
-                          width: '1px', 
-                          minWidth: '1px',
-                          height: '71px', 
-                          backgroundColor: '#1340FF', 
-                          mx: 1, 
-                          flexShrink: 0,
-                          alignSelf: 'stretch'
-                        }}
-                      />
-                      <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                      <Divider sx={{ width: '1px', height: '72px', backgroundColor: '#1340FF', flexShrink: 0 }} />
+                      <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
                         <Typography
                           fontFamily="Aileron"
                           fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -590,21 +737,10 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                     </>
                   )}
 
-                  <Divider
-                    orientation="vertical"
-                    sx={{ 
-                      width: '1px', 
-                      minWidth: '1px',
-                      height: '71px', 
-                      backgroundColor: '#1340FF', 
-                      mx: 1, 
-                      flexShrink: 0,
-                      alignSelf: 'stretch'
-                    }}
-                  />
+                  <Divider sx={{ width: '1px', height: '72px', backgroundColor: '#1340FF', flexShrink: 0 }} />
 
                   {/* Post Link - bordered input field */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', pl: { md: 1, lg: 1.5 } }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -618,8 +754,8 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                       name="postUrl"
                       placeholder="Post Link"
                       size="small"
-                      fullWidth={false}
-                      sx={inputFieldStyle}
+                      fullWidth={true}
+                      sx={{ ...inputFieldStyle }}
                     />
                   </Box>
                 </Box>
@@ -629,16 +765,40 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
               <Box display={{ xs: 'block', md: 'none' }} px={2} py={1}>
                 <Stack direction="row" spacing={1.5} alignItems="center" mb={2}>
                   <Avatar
+                    src={selectedCreator?.photoURL}
                     sx={{
                       width: 44,
                       height: 44,
-                      bgcolor: '#D3D3D3',
+                      bgcolor: getCreatorAvatarBg(selectedCreator),
                       border: '1px solid #EBEBEB',
                       color: '#FFFFFF',
+                      flexShrink: 0,
                     }}
                   >
-                    <Iconify icon="mdi:account" width={32} sx={{ color: '#FFFFFF' }} />
+                    {selectedCreator ? (
+                      selectedCreator.name?.charAt(0) || 'U'
+                    ) : (
+                      <Iconify icon="mdi:account" width={32} sx={{ color: '#FFFFFF' }} />
+                    )}
                   </Avatar>
+                  {showCreatorDropdown ? (
+                    <Stack direction="column" spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+                      <CreatorDropdownSelect
+                        submissions={submissionsWithoutInsights}
+                        value={selectedCreator}
+                        onChange={handleCreatorSelected}
+                      />
+                      {selectedCreator && (
+                        <Typography
+                          fontSize={11}
+                          color="#636366"
+                          sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', pl: 0.5 }}
+                        >
+                          {selectedCreator.username} · {selectedCreator.platform}
+                        </Typography>
+                      )}
+                    </Stack>
+                  ) : (
                   <Stack direction="column" spacing={0.5} sx={{ flex: 1 }}>
                     <RHFTextField
                       name="creatorName"
@@ -702,6 +862,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                       }}
                     />
                   </Stack>
+                  )}
                 </Stack>
                 <Grid container spacing={1}>
                   <Grid item xs={6}>
@@ -964,6 +1125,14 @@ ManualCreatorEntryForm.propTypes = {
   onSuccess: PropTypes.func,
   onFormStateChange: PropTypes.func,
   selectedPlatform: PropTypes.oneOf(['ALL', 'Instagram', 'TikTok']),
+  submissionsWithoutInsights: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string,
+      user: PropTypes.string,
+      platform: PropTypes.string,
+      postUrl: PropTypes.string,
+    })
+  ),
 };
 
 export default ManualCreatorEntryForm;
