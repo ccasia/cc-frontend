@@ -1,7 +1,7 @@
-import { memo, useMemo, useEffect } from 'react';
+import { memo, useRef, useMemo, useState, useEffect } from 'react';
 
 import { LineChart } from '@mui/x-charts/LineChart';
-import { Chip, Stack, Typography } from '@mui/material';
+import { Box, Chip, Stack, Typography } from '@mui/material';
 import BoltIcon from '@mui/icons-material/Bolt';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
@@ -94,23 +94,39 @@ function ActivationRateChart() {
     </Stack>
   );
 
+  const fillRef = useRef(null);
+  const [chartHeight, setChartHeight] = useState(CHART_HEIGHT);
+
+  useEffect(() => {
+    const el = fillRef.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(([entry]) => {
+      const h = Math.max(CHART_HEIGHT, Math.floor(entry.contentRect.height));
+      setChartHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <ChartCard title="Activation Rate" icon={BoltIcon} subtitle="Users who completed payment form divided by total users" headerRight={headerRight}>
-      <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
-        <LineChart
-          series={[{ data: rates, label: 'Activation Rate', color: CHART_COLORS.success, curve: 'linear', area: true, valueFormatter: (val) => `${val}%` }]}
-          xAxis={xAxisConfig}
-          yAxis={[{ ...yDomain, valueFormatter: (val) => `${val}%`, tickLabelStyle: TICK_LABEL_STYLE }]}
-          height={CHART_HEIGHT}
-          margin={CHART_MARGIN}
-          grid={CHART_GRID}
-          tooltip={{ trigger: 'axis' }}
-          slots={{ axisContent: ChartAxisTooltip }}
-          skipAnimation={isZoomed}
-          hideLegend
-          sx={CHART_SX}
-        />
-      </ZoomableChart>
+      <Box ref={fillRef} sx={{ flex: 1, minHeight: CHART_HEIGHT }}>
+        <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
+          <LineChart
+            series={[{ data: rates, label: 'Activation Rate', color: CHART_COLORS.success, curve: 'linear', area: true, valueFormatter: (val) => `${val}%` }]}
+            xAxis={xAxisConfig}
+            yAxis={[{ ...yDomain, valueFormatter: (val) => `${val}%`, tickLabelStyle: TICK_LABEL_STYLE }]}
+            height={chartHeight}
+            margin={CHART_MARGIN}
+            grid={CHART_GRID}
+            tooltip={{ trigger: 'axis' }}
+            slots={{ axisContent: ChartAxisTooltip }}
+            skipAnimation={isZoomed}
+            hideLegend
+            sx={CHART_SX}
+          />
+        </ZoomableChart>
+      </Box>
     </ChartCard>
   );
 }
