@@ -752,6 +752,8 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
     postUrl: entry.postUrl || '',
   });
 
+  console.log(entry)
+
   // Calculate engagement rate based on edited values
   const calculatedEngagementRate = useMemo(() => {
     const { views, likes, comments, shares, saved } = editValues;
@@ -864,6 +866,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
               }}
             >
               <Avatar
+                src={entry.photoUrl || null}
                 sx={{
                   width: 44,
                   height: 44,
@@ -1441,6 +1444,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
             <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between" mb={2}>
               <Stack direction="row" spacing={1.5} alignItems="center">
                 <Avatar
+                  src={entry.photoUrl}
                   sx={{
                     width: 44,
                     height: 44,
