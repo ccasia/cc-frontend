@@ -195,7 +195,7 @@ const CreatorDropdownSelect = ({ submissions, value, onChange }) => {
                 {option.name}
               </Typography>
               <Typography fontSize={11} color="text.secondary">
-                {option.username} · {option.platform}
+                {option.username}
               </Typography>
             </Box>
           </Box>
