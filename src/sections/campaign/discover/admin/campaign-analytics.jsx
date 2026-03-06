@@ -410,7 +410,7 @@ const AnimatedNumber = ({ value, suffix = '', formatFn }) => {
       const easeOut = 1 - (1 - progress) ** 3;
       const currentValue = startValueRef.current + (value - startValueRef.current) * easeOut;
 
-      setDisplayValue(Math.round(currentValue));
+      setDisplayValue(currentValue);
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(animate);
