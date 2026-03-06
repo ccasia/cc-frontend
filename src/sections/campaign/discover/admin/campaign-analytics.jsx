@@ -2046,7 +2046,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     data: insightsData,
     isLoading: loadingInsights,
     error: insightsError,
-    loadingProgress,
     mutate: refreshInsights,
     clearCache,
   } = useSocialInsights(postingSubmissions, campaignId);
@@ -3511,6 +3510,13 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                     ref={formRef}
                     campaignId={campaignId}
                     selectedPlatform={selectedPlatform !== 'ALL' ? selectedPlatform : null}
+                    submissionsWithoutInsights={
+                      !loadingInsights
+                        ? filteredSubmissions.filter(
+                            (sub) => !insightsData.find((d) => d.submissionId === sub.id)
+                          )
+                        : []
+                    }
                     onSuccess={() => {
                       setShowAddCreatorForm(false);
                       mutateManualEntries();
@@ -3542,6 +3548,9 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                 {paginationData.displayedSubmissions.map((submission) => {
                   const insightData = insightsData.find((data) => data.submissionId === submission.id);
                   const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
+
+                  // Don't render card when there's definitively no insight data (after loading)
+                  if (!insightData && !loadingInsights) return null;
 
                   return (
                     <UserPerformanceCard
