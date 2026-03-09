@@ -274,7 +274,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       'Beneficiary Business Registration',
       'Beneficiary Others',
       'Payment Advice Indicator',
-      'Mobile Phone No',
+      // 'Mobile Phone No',
       'Beneficiary Email 1',
       'Beneficiary Email 2',
       'Generic Payment Information',
@@ -335,7 +335,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         invoice?.task?.service || invoice?.task?.description || 'Content Creation';
       const campaignName = invoice?.campaign?.name || '';
       const paymentRef = campaignName.replace(/\s/g, '').substring(0, 20);
-      const phone = invoice?.creator?.user?.phoneNumber || '';
+      // const phone = invoice?.creator?.user?.phoneNumber || '';
       const email = invoice?.creator?.user?.email || '';
 
       return [
@@ -351,7 +351,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         '', // Beneficiary Business Registration
         '', // Beneficiary Others
         'E', // Payment Advice Indicator
-        phone,
+        // phone,
         email,
         '', // Beneficiary Email 2
         'Email For Notification', // Generic Payment Information
@@ -469,7 +469,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       'Beneficiary Business Registration',
       'Beneficiary Others',
       'Payment Advice Indicator',
-      'Mobile Phone No',
+      // 'Mobile Phone No',
       'Beneficiary Email 1',
       'Beneficiary Email 2',
       'Generic Payment Information',
@@ -538,7 +538,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         invoice?.task?.service || invoice?.task?.description || 'Content Creation';
       const campaignName = invoice?.campaign?.name || '';
       const paymentRef = campaignName.replace(/\s/g, '').substring(0, 20);
-      const phone = invoice?.creator?.user?.phoneNumber || '';
+      // const phone = invoice?.creator?.user?.phoneNumber || '';
       const email = invoice?.creator?.user?.email || '';
 
       return [
@@ -554,7 +554,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         '',
         '',
         'E',
-        phone,
+        // phone,
         email,
         '',
         'Email For Notification',
@@ -1296,7 +1296,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                     'Beneficiary Business Registration',
                     'Beneficiary Others',
                     'Payment Advice Indicator',
-                    'Mobile Phone No',
+                    // 'Mobile Phone No',
                     'Beneficiary Email 1',
                     'Batch Reference No.',
                     'Payment Date',
@@ -1420,7 +1420,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                         {/* 12. Payment Advice Indicator */}
                         <TableCell sx={cellSx}>E</TableCell>
                         {/* 13. Mobile Phone No */}
-                        <TableCell sx={cellSx}>{inv?.creator?.user?.phoneNumber || '-'}</TableCell>
+                        {/* <TableCell sx={cellSx}>{inv?.creator?.user?.phoneNumber || '-'}</TableCell> */}
                         {/* 14. Beneficiary Email 1 */}
                         <TableCell sx={{ ...cellSx, maxWidth: 200 }}>
                           <Typography variant="inherit" noWrap>
