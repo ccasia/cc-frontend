@@ -910,10 +910,10 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           try {
             const queryParams = new URLSearchParams();
             queryParams.append('limit', '10000');
-            const response = await axiosInstance.get(
+            const pollRes = await axiosInstance.get(
               `${endpoints.invoice.getAll}?${queryParams.toString()}`
             );
-            const updatedInvoices = response.data?.data || [];
+            const updatedInvoices = pollRes.data?.data || [];
 
             setInvoices(updatedInvoices);
 
