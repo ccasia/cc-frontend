@@ -12,6 +12,7 @@ import Iconify from 'src/components/iconify';
 import usePopover from 'src/components/custom-popover/use-popover';
 import CustomPopover from 'src/components/custom-popover/custom-popover';
 import InlineDateRangePicker from 'src/components/custom-date-range-picker/inline-date-range-picker';
+import { CURRENCY_PREFIXES } from 'src/utils/currency';
 
 // ----------------------------------------------------------------------
 
@@ -45,6 +46,7 @@ function InvoiceTableToolbar({
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [campaignSearch, setCampaignSearch] = useState('');
   const campaignPopover = usePopover();
+  const currencyPopover = usePopover();
 
   // Date picker anchor
   const [dateAnchorEl, setDateAnchorEl] = useState(null);
@@ -138,6 +140,75 @@ function InvoiceTableToolbar({
             }}
           />
         </Box>
+
+        {/* Currency Filter Button */}
+        <Button
+          onClick={currencyPopover.onOpen}
+          sx={{
+            ...filterButtonSx,
+            ...(filters.currency && {
+              borderColor: '#1340ff',
+              color: '#1340ff',
+            }),
+          }}
+          startIcon={<Iconify icon="solar:dollar-minimalistic-bold" width={18} />}
+        >
+          {filters.currency || 'Currency'}
+        </Button>
+
+        <CustomPopover
+          open={currencyPopover.open}
+          onClose={currencyPopover.onClose}
+          arrow="top-right"
+          sx={{ width: 200, p: 0 }}
+        >
+          <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
+            {Object.entries(CURRENCY_PREFIXES).map(([code, { prefix }]) => (
+              <Box
+                key={code}
+                onClick={() => {
+                  onFilters('currency', filters.currency === code ? '' : code);
+                  currencyPopover.onClose();
+                }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  px: 2,
+                  py: 1,
+                  cursor: 'pointer',
+                  bgcolor: filters.currency === code ? '#1340ff14' : 'transparent',
+                  '&:hover': { bgcolor: filters.currency === code ? '#1340ff22' : 'action.hover' },
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontSize: '0.85rem',
+                    fontWeight: filters.currency === code ? 700 : 400,
+                    color: filters.currency === code ? '#1340ff' : 'text.primary',
+                  }}
+                >
+                  {code} ({prefix})
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+
+          {!!filters.currency && (
+            <Box sx={{ p: 1, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                size="small"
+                color="error"
+                onClick={() => {
+                  onFilters('currency', '');
+                  currencyPopover.onClose();
+                }}
+              >
+                Clear
+              </Button>
+            </Box>
+          )}
+        </CustomPopover>
 
         {/* Campaign Filter Button */}
         <Button

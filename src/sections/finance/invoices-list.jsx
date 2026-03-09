@@ -131,6 +131,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const {
     data: invoicesData,
     pagination,
+    statusCounts: apiStatusCounts,
     isLoading: invoicesLoading,
     error: invoicesError,
     mutate: mutateInvoices,
@@ -141,8 +142,8 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     currency: filters.currency || undefined,
     search: filters.name || undefined,
     campaignName: filters.campaignName || undefined,
-    startDate: dateRange.startDate ? dayjs(dateRange.startDate).toISOString() : undefined,
-    endDate: dateRange.endDate ? dayjs(dateRange.endDate).toISOString() : undefined,
+    startDate: dateRange.startDate ? dayjs(dateRange.startDate).startOf('day').toISOString() : undefined,
+    endDate: dateRange.endDate ? dayjs(dateRange.endDate).add(1, 'day').startOf('day').toISOString() : undefined,
   });
 
   // Debug: Log error if API call fails
@@ -282,7 +283,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       'Beneficiary Business Registration',
       'Beneficiary Others',
       'Payment Advice Indicator',
-      'Mobile Phone No',
+      // 'Mobile Phone No',
       'Beneficiary Email 1',
       'Beneficiary Email 2',
       'Generic Payment Information',
@@ -340,10 +341,10 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       const beneficiaryAccount = paymentForm?.bankAccountNumber || '';
       const amount = invoice?.amount != null ? Number(invoice.amount).toFixed(2) : '0.00';
       const description =
-        invoice?.task?.service || invoice?.task?.description || 'Content Creation';
+        invoice?.campaign?.company?.name || invoice?.campaign?.brand?.name || '';
       const campaignName = invoice?.campaign?.name || '';
       const paymentRef = campaignName.replace(/\s/g, '').substring(0, 20);
-      const phone = invoice?.creator?.user?.phoneNumber || '';
+      // const phone = invoice?.creator?.user?.phoneNumber || '';
       const email = invoice?.creator?.user?.email || '';
 
       return [
@@ -354,12 +355,12 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         amount,
         description,
         paymentRef,
-        paymentForm?.icNumber || '', // Beneficiary New IC No
+        paymentForm?.icNumber?.replaceAll('-', '') || '', // Beneficiary New IC No
         '', // Beneficiary Old IC No
         '', // Beneficiary Business Registration
         '', // Beneficiary Others
         'E', // Payment Advice Indicator
-        phone,
+        // phone,
         email,
         '', // Beneficiary Email 2
         'Email For Notification', // Generic Payment Information
@@ -404,7 +405,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         '',
         '', // Invoice Date 10, Invoice Amount 10, Payment Amount 10, Payment Description 10
         '', // Batch Reference No.
-        '', // Payment Date
+        invoice.dueDate ? dayjs(invoice.dueDate).format('DD/MM/YYYY') : '', // Payment Date
         '', // Beneficiary Address
       ];
     });
@@ -477,7 +478,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       'Beneficiary Business Registration',
       'Beneficiary Others',
       'Payment Advice Indicator',
-      'Mobile Phone No',
+      // 'Mobile Phone No',
       'Beneficiary Email 1',
       'Beneficiary Email 2',
       'Generic Payment Information',
@@ -543,10 +544,10 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       const beneficiaryAccount = paymentForm?.bankAccountNumber || '';
       const amount = invoice?.amount != null ? Number(invoice.amount).toFixed(2) : '0.00';
       const description =
-        invoice?.task?.service || invoice?.task?.description || 'Content Creation';
+        invoice?.campaign?.company?.name || invoice?.campaign?.brand?.name || '';
       const campaignName = invoice?.campaign?.name || '';
       const paymentRef = campaignName.replace(/\s/g, '').substring(0, 20);
-      const phone = invoice?.creator?.user?.phoneNumber || '';
+      // const phone = invoice?.creator?.user?.phoneNumber || '';
       const email = invoice?.creator?.user?.email || '';
 
       return [
@@ -557,50 +558,58 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         amount,
         description,
         paymentRef,
-        paymentForm?.icNumber || '',
+        paymentForm?.icNumber?.replaceAll('-', '') || '',
         '',
         '',
         '',
         'E',
-        phone,
+        // phone,
         email,
         '',
         'Email For Notification',
         '',
         '',
         '',
+        '', // Invoice Date 1, Invoice Amount 1, Payment Amount 1, Payment Description 1
         '',
         '',
         '',
+        '', // Invoice Date 2, Invoice Amount 2, Payment Amount 2, Payment Description 2
         '',
         '',
         '',
+        '', // Invoice Date 3, Invoice Amount 3, Payment Amount 3, Payment Description 3
         '',
         '',
         '',
+        '', // Invoice Date 4, Invoice Amount 4, Payment Amount 4, Payment Description 4
         '',
         '',
         '',
+        '', // Invoice Date 5, Invoice Amount 5, Payment Amount 5, Payment Description 5
         '',
         '',
         '',
+        '', // Invoice Date 6, Invoice Amount 6, Payment Amount 6, Payment Description 6
         '',
         '',
         '',
+        '', // Invoice Date 7, Invoice Amount 7, Payment Amount 7, Payment Description 7
         '',
         '',
         '',
+        '', // Invoice Date 8, Invoice Amount 8, Payment Amount 8, Payment Description 8
         '',
         '',
         '',
+        '', // Invoice Date 9, Invoice Amount 9, Payment Amount 9, Payment Description 9
         '',
         '',
         '',
-        '',
-        '',
-        '',
-        '',
-        '',
+        '', // Invoice Date 10, Invoice Amount 10, Payment Amount 10, Payment Description 10
+        '', // Batch Reference No.
+        invoice.dueDate ? dayjs(invoice.dueDate).format('DD/MM/YYYY') : '', // Payment Date
+        '', // Beneficiary Address
       ];
     });
 
@@ -777,9 +786,10 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   // Create TABS array using backend stats - always use backend stats for accuracy
   const TABS = useMemo(() => {
-    // Check if stats are loaded and have counts
-    if (invoiceStats && invoiceStats.counts) {
-      const { counts } = invoiceStats;
+    // Prefer statusCounts from the filtered getAllInvoices response when non-status filters are active
+    // Fall back to invoiceStats (global stats endpoint) when no filters are applied
+    const counts = apiStatusCounts || (invoiceStats && invoiceStats.counts);
+    if (counts) {
       return [
         { value: 'all', label: 'All', count: counts.total ?? 0 },
         { value: 'paid', label: 'Paid', count: counts.paid ?? 0 },
@@ -802,7 +812,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       { value: 'rejected', label: 'Rejected', count: 0 },
       { value: 'failed', label: 'Failed', count: 0 },
     ];
-  }, [invoiceStats]);
+  }, [apiStatusCounts, invoiceStats]);
 
   const openEditInvoice = useCallback(
     (id, data) => {
@@ -1335,7 +1345,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                     'Beneficiary Business Registration',
                     'Beneficiary Others',
                     'Payment Advice Indicator',
-                    'Mobile Phone No',
+                    // 'Mobile Phone No',
                     'Beneficiary Email 1',
                     'Batch Reference No.',
                     'Payment Date',
@@ -1439,7 +1449,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                         {/* 6. Payment Description */}
                         <TableCell sx={{ ...cellSx, maxWidth: 180 }}>
                           <Typography variant="inherit" noWrap>
-                            {inv?.task?.service || inv?.task?.description || 'Content Creation'}
+                            {inv?.campaign?.company?.name || inv?.campaign?.brand?.name || ''}
                           </Typography>
                         </TableCell>
                         {/* 7. Payment Reference */}
@@ -1449,7 +1459,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                           </Typography>
                         </TableCell>
                         {/* 8. Beneficiary New IC No */}
-                        <TableCell sx={cellSx}>{paymentForm?.icNumber || '-'}</TableCell>
+                        <TableCell sx={cellSx}>{paymentForm?.icNumber?.replaceAll('-', '') || '-'}</TableCell>
                         {/* 9. Beneficiary Old IC No */}
                         <TableCell sx={cellSx}>-</TableCell>
                         {/* 10. Beneficiary Business Registration */}
@@ -1459,7 +1469,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                         {/* 12. Payment Advice Indicator */}
                         <TableCell sx={cellSx}>E</TableCell>
                         {/* 13. Mobile Phone No */}
-                        <TableCell sx={cellSx}>{inv?.creator?.user?.phoneNumber || '-'}</TableCell>
+                        {/* <TableCell sx={cellSx}>{inv?.creator?.user?.phoneNumber || '-'}</TableCell> */}
                         {/* 14. Beneficiary Email 1 */}
                         <TableCell sx={{ ...cellSx, maxWidth: 200 }}>
                           <Typography variant="inherit" noWrap>
@@ -1469,7 +1479,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                         {/* 15. Batch Reference No. */}
                         <TableCell sx={cellSx}>-</TableCell>
                         {/* 16. Payment Date */}
-                        <TableCell sx={cellSx}>-</TableCell>
+                        <TableCell sx={cellSx}>{inv.dueDate ? dayjs(inv.dueDate).format('DD/MM/YYYY') : '-'}</TableCell>
                         {/* 17. Beneficiary Address */}
                         <TableCell sx={cellSx}>-</TableCell>
                       </TableRow>

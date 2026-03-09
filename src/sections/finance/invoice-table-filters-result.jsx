@@ -62,6 +62,15 @@ export default function InvoiceTableFiltersResult({
         />
       )}
 
+      {!!filters.currency && (
+        <FilterChip
+          label={filters.currency}
+          prefix="Currency"
+          color="#00B8D9"
+          onDelete={() => onFilters('currency', '')}
+        />
+      )}
+
       {!!filters.campaigns?.length &&
         filters.campaigns.map((campaign) => (
           <FilterChip
