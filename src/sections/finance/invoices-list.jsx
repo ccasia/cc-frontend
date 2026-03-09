@@ -128,6 +128,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const {
     data: invoicesData,
     pagination,
+    statusCounts: apiStatusCounts,
     isLoading: invoicesLoading,
     error: invoicesError,
     mutate: mutateInvoices,
@@ -757,9 +758,10 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const changeInvoiceStatus = useCallback(() => {}, []);
 
   const TABS = useMemo(() => {
-    // Check if stats are loaded and have counts
-    if (invoiceStats && invoiceStats.counts) {
-      const { counts } = invoiceStats;
+    // Prefer statusCounts from the filtered getAllInvoices response when non-status filters are active
+    // Fall back to invoiceStats (global stats endpoint) when no filters are applied
+    const counts = apiStatusCounts || (invoiceStats && invoiceStats.counts);
+    if (counts) {
       return [
         { value: 'all', label: 'All', count: counts.total ?? 0 },
         { value: 'paid', label: 'Paid', count: counts.paid ?? 0 },
@@ -782,7 +784,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       { value: 'rejected', label: 'Rejected', count: 0 },
       { value: 'failed', label: 'Failed', count: 0 },
     ];
-  }, [invoiceStats]);
+  }, [apiStatusCounts, invoiceStats]);
 
   const openEditInvoice = useCallback(
     (id, data) => {
