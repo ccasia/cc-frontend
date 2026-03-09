@@ -64,6 +64,21 @@ function CreatorNpsChart() {
   let TrendIcon = RemoveIcon;
   if (!isNeutral) TrendIcon = isUp ? ArrowDropUpIcon : ArrowDropDownIcon;
 
+  // Dynamic height: grow to match adjacent sibling (e.g. Top Creator Earnings)
+  const fillRef = useRef(null);
+  const [chartHeight, setChartHeight] = useState(CHART_HEIGHT);
+
+  useEffect(() => {
+    const el = fillRef.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(([entry]) => {
+      const h = Math.max(CHART_HEIGHT, Math.floor(entry.contentRect.height));
+      setChartHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const { min: xMin, max: xMax } = xDomain;
   const xAxisConfig = useMemo(() => [{
     scaleType: 'linear',
@@ -239,21 +254,25 @@ function CreatorNpsChart() {
       </Popover>
 
       {/* Line chart */}
-      <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
-        <LineChart
-          series={[{ data: ratings, label: 'Avg Rating', color: AMBER, area: true, curve: 'linear', connectNulls: true, valueFormatter: (val) => val != null ? `${val} / 5` : 'No data' }]}
-          xAxis={xAxisConfig}
-          yAxis={[{ ...yDomain, valueFormatter: (val) => `${val}`, tickLabelStyle: TICK_LABEL_STYLE }]}
-          height={CHART_HEIGHT}
-          margin={CHART_MARGIN}
-          grid={CHART_GRID}
-          tooltip={{ trigger: 'axis' }}
-          slots={{ axisContent: ChartAxisTooltip }}
-          skipAnimation={isZoomed}
-          hideLegend
-          sx={CHART_SX}
-        />
-      </ZoomableChart>
+      <Box ref={fillRef} sx={{ flex: 1, position: 'relative', minHeight: CHART_HEIGHT }}>
+        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
+            <LineChart
+              series={[{ data: ratings, label: 'Avg Rating', color: AMBER, area: true, curve: 'linear', connectNulls: true, valueFormatter: (val) => val != null ? `${val} / 5` : 'No data' }]}
+              xAxis={xAxisConfig}
+              yAxis={[{ ...yDomain, valueFormatter: (val) => `${val}`, tickLabelStyle: TICK_LABEL_STYLE }]}
+              height={chartHeight}
+              margin={CHART_MARGIN}
+              grid={CHART_GRID}
+              tooltip={{ trigger: 'axis' }}
+              slots={{ axisContent: ChartAxisTooltip }}
+              skipAnimation={isZoomed}
+              hideLegend
+              sx={CHART_SX}
+            />
+          </ZoomableChart>
+        </Box>
+      </Box>
     </ChartCard>
   );
 }
