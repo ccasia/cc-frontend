@@ -33,6 +33,7 @@ export const useGetAllInvoices = (options = {}) => {
     () => ({
       data: data?.data || [],
       pagination: data?.pagination,
+      statusCounts: data?.statusCounts || null,
       isLoading,
       error,
       mutate,
