@@ -354,7 +354,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         amount,
         description,
         paymentRef,
-        paymentForm?.icNumber || '', // Beneficiary New IC No
+        paymentForm?.icNumber?.replaceAll('-', '') || '', // Beneficiary New IC No
         '', // Beneficiary Old IC No
         '', // Beneficiary Business Registration
         '', // Beneficiary Others
@@ -557,7 +557,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         amount,
         description,
         paymentRef,
-        paymentForm?.icNumber || '',
+        paymentForm?.icNumber?.replaceAll('-', '') || '',
         '',
         '',
         '',
@@ -1457,7 +1457,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                           </Typography>
                         </TableCell>
                         {/* 8. Beneficiary New IC No */}
-                        <TableCell sx={cellSx}>{paymentForm?.icNumber || '-'}</TableCell>
+                        <TableCell sx={cellSx}>{paymentForm?.icNumber?.replaceAll('-', '') || '-'}</TableCell>
                         {/* 9. Beneficiary Old IC No */}
                         <TableCell sx={cellSx}>-</TableCell>
                         {/* 10. Beneficiary Business Registration */}
