@@ -167,17 +167,11 @@ export function useNavData() {
             icon: ICONS.clients,
           },
           {
-            roles: ['superadmin', 'CSM', 'CSL', 'client', 'god'],
+            roles: ['superadmin', 'god'],
             title: 'Creator Discovery Tool',
             path: paths.dashboard.discoveryTool,
             icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
           },
-          // {
-          //   roles: ['superadmin', 'CSM', 'CSL', 'client', 'god'],
-          //   title: 'Creator Discovery Tool',
-          //   path: paths.dashboard.discoveryTool,
-          //   icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
-          // },
           // {
           //   title: 'My Tasks',
           //   path: paths.dashboard.kanban,
