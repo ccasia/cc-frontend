@@ -332,7 +332,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       const beneficiaryAccount = paymentForm?.bankAccountNumber || '';
       const amount = invoice?.amount != null ? Number(invoice.amount).toFixed(2) : '0.00';
       const description =
-        invoice?.task?.service || invoice?.task?.description || 'Content Creation';
+        invoice?.campaign?.company?.name || invoice?.campaign?.brand?.name || '';
       const campaignName = invoice?.campaign?.name || '';
       const paymentRef = campaignName.replace(/\s/g, '').substring(0, 20);
       // const phone = invoice?.creator?.user?.phoneNumber || '';
@@ -535,7 +535,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       const beneficiaryAccount = paymentForm?.bankAccountNumber || '';
       const amount = invoice?.amount != null ? Number(invoice.amount).toFixed(2) : '0.00';
       const description =
-        invoice?.task?.service || invoice?.task?.description || 'Content Creation';
+        invoice?.campaign?.company?.name || invoice?.campaign?.brand?.name || '';
       const campaignName = invoice?.campaign?.name || '';
       const paymentRef = campaignName.replace(/\s/g, '').substring(0, 20);
       // const phone = invoice?.creator?.user?.phoneNumber || '';
@@ -1408,7 +1408,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                         {/* 6. Payment Description */}
                         <TableCell sx={{ ...cellSx, maxWidth: 180 }}>
                           <Typography variant="inherit" noWrap>
-                            {inv?.task?.service || inv?.task?.description || 'Content Creation'}
+                            {inv?.campaign?.company?.name || inv?.campaign?.brand?.name || ''}
                           </Typography>
                         </TableCell>
                         {/* 7. Payment Reference */}
