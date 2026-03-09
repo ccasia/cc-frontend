@@ -143,6 +143,9 @@ export const paths = {
     overview: {
       root: `${ROOTS.DASHBOARD}/overview`,
     },
+    reportAi: {
+      root: `${ROOTS.DASHBOARD}/report-ai`,
+    },
   },
   public: {
     creator: {
