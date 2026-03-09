@@ -1,4 +1,4 @@
-import { memo, useMemo, useState, useEffect, useCallback } from 'react';
+import { memo, useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 import { Box, Stack, Avatar, Skeleton, Typography } from '@mui/material';
@@ -14,6 +14,18 @@ import ChartLegend from '../components/chart-legend';
 import CreditsPerCSDrawer from './credits-per-cs-drawer';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
 import { UI_COLORS, CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, TICK_LABEL_STYLE } from '../chart-config';
+
+const MIN_CHART_HEIGHT = 300;
+const MIN_BAR_WIDTH = 80;
+const AXIS_MARGIN_H = 60;
+
+const SCROLL_SX_HORIZONTAL = {
+  '&::-webkit-scrollbar': { height: '3px' },
+  '&::-webkit-scrollbar-track': { background: 'transparent' },
+  '&::-webkit-scrollbar-thumb': { background: 'transparent', borderRadius: '1.5px' },
+  '&:hover::-webkit-scrollbar-thumb': { background: '#D0D5DA' },
+  scrollbarWidth: 'thin',
+};
 
 const LEGEND_ITEMS = [
   { label: 'Basic', color: CHART_COLORS.primary },
