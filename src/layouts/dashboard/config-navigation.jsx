@@ -130,7 +130,6 @@ export function useNavData() {
         ],
       },
       {
-        // subheader: 'Management',
         items: [
           {
             roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
@@ -208,6 +207,12 @@ export function useNavData() {
             title: 'Feedback',
             path: paths.dashboard.feedback.root,
             icon: <Iconify icon="material-symbols:rate-review-outline" width={25} />,
+          },
+          {
+            roles: ['superadmin', 'god'],
+            title: 'AI Report Configurations',
+            path: paths.dashboard.reportAi.root,
+            icon: <Iconify icon="mingcute:ai-line" width={25} />,
           },
         ],
       },
@@ -404,9 +409,7 @@ export function useNavData() {
       items: [
         {
           title: (
-            <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-              FAQ
-            </span>
+            <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>FAQ</span>
           ),
           path: paths.dashboard.faq,
           icon: <Iconify icon="material-symbols:help-outline" width={25} />,
