@@ -17,7 +17,15 @@ import useGetPitchRate from 'src/hooks/use-get-pitch-rate';
 import CreditTierFilterSelect from './v2/components/credit-tier-filter-select';
 import KpiCard from './v2/components/kpi-card';
 import { CHART_COLORS } from './v2/chart-config';
-import { DateFilterProvider, useDateFilter, useFilteredData, useIsDaily, useTrendLabel } from './v2/date-filter-context';
+import {
+  DateFilterProvider,
+  useDateFilter,
+  useFilteredData,
+  useIsDaily,
+  useTrendLabel,
+} from './v2/date-filter-context';
+import PackageFilterSelect from './v2/components/package-filter';
+import ClientsTabContent from './components/clients/client-analytics';
 
 const CreatorsTabContent = lazy(() => import('./v2/creators-tab-content'));
 const AdminsTabContent = lazy(() => import('./v2/admins-tab-content'));
@@ -28,6 +36,7 @@ const BAR_BG = '#F4F6F8';
 const TABS = [
   { value: 'creators', label: 'Creators' },
   { value: 'admins', label: 'Admins' },
+  { value: 'clients', label: 'Clients' },
 ];
 
 function TabSkeleton() {
@@ -75,9 +84,8 @@ function KpiCards() {
   const prevCreators = filteredGrowth[filteredGrowth.length - 2];
 
   // For daily mode, use period comparison from backend; for monthly, use growthRate
-  const creatorTrend = isDaily && periodComparison
-    ? periodComparison.percentChange
-    : (latestCreators.growthRate ?? 0);
+  const creatorTrend =
+    isDaily && periodComparison ? periodComparison.percentChange : (latestCreators.growthRate ?? 0);
 
   const latestActivation = filteredActivation[filteredActivation.length - 1] || {};
   const prevActivation = filteredActivation[filteredActivation.length - 2];
@@ -268,6 +276,7 @@ export default function AnalyticViewV2() {
   const [dateFilter, setDateFilter] = useState('all');
   const [filterStartDate, setFilterStartDate] = useState(null);
   const [filterEndDate, setFilterEndDate] = useState(null);
+  const [filterPackageTypes, setFilterPackageTypes] = useState([]);
   const [creditTiers, setCreditTiers] = useState([]);
 
   const handleDateFilterChange = useCallback(({ preset, startDate, endDate }) => {
@@ -278,6 +287,10 @@ export default function AnalyticViewV2() {
 
   const handleCreditTiersChange = useCallback((tiers) => {
     setCreditTiers(tiers);
+  }, []);
+
+  const handlePackageTypesChange = useCallback((types) => {
+    setFilterPackageTypes(types);
   }, []);
 
   return (
@@ -356,8 +369,20 @@ export default function AnalyticViewV2() {
             </Stack>
 
             {/* Filters — right */}
-            <Stack direction="row" spacing={1} sx={{ ml: { xs: 0, sm: 'auto' }, pb: 0.5, mt: { xs: 1, sm: 0 } }}>
-              <CreditTierFilterSelect value={creditTiers} onChange={handleCreditTiersChange} />
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ ml: { xs: 0, sm: 'auto' }, pb: 0.5, mt: { xs: 1, sm: 0 } }}
+            >
+              {(currentTab === 'creators' || currentTab === 'admins') && (
+                <CreditTierFilterSelect value={creditTiers} onChange={handleCreditTiersChange} />
+              )}
+              {currentTab === 'clients' && (
+                <PackageFilterSelect
+                  value={filterPackageTypes}
+                  onChange={handlePackageTypesChange}
+                />
+              )}
               <DateFilterSelect
                 value={dateFilter}
                 startDate={filterStartDate}
@@ -368,9 +393,15 @@ export default function AnalyticViewV2() {
           </Stack>
         </Box>
 
-        <DateFilterProvider dateFilter={dateFilter} startDate={filterStartDate} endDate={filterEndDate} creditTiers={creditTiers}>
+        <DateFilterProvider
+          dateFilter={dateFilter}
+          startDate={filterStartDate}
+          endDate={filterEndDate}
+          creditTiers={creditTiers}
+        >
           {/* Top-Level KPI Cards */}
-          <KpiCards />
+          {(currentTab === 'creators' || currentTab === 'admins') && <KpiCards />}
+          {/* {currentTab === 'client' && } */}
 
           {/* Tab Content */}
           <AnimatePresence mode="wait">
@@ -384,6 +415,7 @@ export default function AnalyticViewV2() {
               <Suspense fallback={<TabSkeleton />}>
                 {currentTab === 'creators' && <CreatorsTabContent />}
                 {currentTab === 'admins' && <AdminsTabContent />}
+                {currentTab === 'clients' && <ClientsTabContent packageTypes={filterPackageTypes} />}
               </Suspense>
             </m.div>
           </AnimatePresence>

@@ -34,6 +34,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { NextStepsIcon } from 'src/assets/icons';
+import { useJourneyTracker } from 'src/hooks/use-journey-tracker';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
@@ -91,6 +92,93 @@ const frontSectionIndicatorToStepMap = {
   1: 8, // Additional Details 2
 };
 
+const getAnalyticsStepName = (stepIndex, showAdditional) => {
+  const allSteps = getSteps(showAdditional);
+  const stepObj = allSteps[stepIndex];
+
+  if (!stepObj) return `UNKNOWN_STEP_${stepIndex}`;
+
+  return stepObj.title.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+};
+
+const getAllAvailableFields = (step) => {
+  switch (step) {
+    case 0:
+      return [
+        'campaignTitle',
+        'campaignDescription',
+        'brandAbout',
+        'campaignIndustries',
+        'campaignCredits',
+        'campaignImages',
+        'campaignStartDate',
+        'campaignEndDate',
+        'postingStartDate',
+        'postingEndDate',
+        'productName',
+        'websiteLink',
+      ];
+    case 1: // Objective
+      return [
+        'campaignObjectives',
+        'secondaryObjectives',
+        'boostContent',
+        'primaryKPI',
+        'performanceBaseline',
+      ];
+    case 2: // Audience
+      return [
+        'audienceGender',
+        'audienceAge',
+        'country',
+        'audienceLanguage',
+        'audienceCreatorPersona',
+        'audienceUserPersona',
+        'geographicFocus',
+        'secondaryAudienceGender',
+        'secondaryAudienceAge',
+        'secondaryCountry',
+        'secondaryAudienceLanguage',
+        'secondaryAudienceCreatorPersona',
+        'secondaryAudienceUserPersona',
+      ];
+    case 3: // Logistics
+      return [
+        'logisticsType',
+        'products',
+        'locations',
+        'allowMultipleBookings',
+        'schedulingOption',
+      ];
+    case 7: // Additional Details 1
+      return [
+        'socialMediaPlatform',
+        'contentFormat',
+        'mainMessage',
+        'keyPoints',
+        'toneAndStyle',
+        'brandGuidelines',
+        'referenceContent',
+        'productImage1',
+        'productImage2',
+      ];
+    case 8: // Additional Details 2
+      return [
+        'hashtagsToUse',
+        'mentionsTagsRequired',
+        'creatorCompensation',
+        'ctaDesiredAction',
+        'ctaLinkUrl',
+        'ctaPromoCode',
+        'ctaLinkInBioRequirements',
+        'specialNotesInstructions',
+        'needAds',
+      ];
+    default:
+      return [];
+  }
+};
+
 // Determine if we're in back section (steps 0-6) or front section (steps 7-8)
 const isInFrontSection = (activeStep) => activeStep >= 7;
 const isInBackSection = (activeStep) => activeStep <= 6;
@@ -119,6 +207,11 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
+
+  const { markCompleted } = useJourneyTracker(
+    'CAMPAIGN_CREATION',
+    getAnalyticsStepName(activeStep, showAdditionalDetails)
+  );
 
   const handleOpenConfirm = () => setConfirmOpen(true);
   const handleCloseConfirm = () => setConfirmOpen(false);
@@ -414,6 +507,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     // Only validate fields for the current step
     const fieldsToValidate = getFieldsForStep(activeStep);
     const result = fieldsToValidate.length > 0 ? await trigger(fieldsToValidate) : true;
+    const allFields = getAllAvailableFields(activeStep);
     window.removeEventListener('client-campaign-credits-error', listener);
 
     // Also validate locally: if availableCredits is 0 and step is General Campaign Information
@@ -425,6 +519,25 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       (availableCredits <= 0 || requestedCredits <= 0 || requestedCredits > availableCredits);
 
     if (result && !creditsErrorRef.current && !isExceed) {
+      const skippedFields = allFields.filter((fieldName) => {
+        const value = values[fieldName];
+
+        // A field is "skipped" if it's null, undefined, empty string, or an empty array
+        return (
+          value === null ||
+          value === undefined ||
+          value === '' ||
+          (Array.isArray(value) && value.length === 0)
+        );
+      });
+
+      markCompleted({
+        totalFieldsInStep: allFields.length,
+        skippedCount: skippedFields.length,
+        skippedFields,
+        isStepPerfect: skippedFields.length === 0,
+      });
+
       const logisticsType = getValues('logisticsType');
       let nextStep = activeStep + 1;
 
@@ -510,9 +623,20 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
   // Handle clicking "Continue Additional Details" on Next Steps
   const handleContinueAdditionalDetails = () => {
+    markCompleted({ action: 'continue_to_additional_details' });
     setShowAdditionalDetails(true);
     setActiveStep(7); // Go to Additional Details 1
     localStorage.setItem('clientActiveStep', 7);
+  };
+
+  const handleManualClose = () => {
+    markCompleted({
+      status: 'ABANDONED',
+      // skippedFields: getAllAvailableFields(activeStep),
+      reason: 'Manual Close',
+    });
+
+    onClose();
   };
 
   const onSubmit = handleSubmit(async (data, stage) => {
@@ -663,6 +787,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         'Campaign submitted successfully! CSM will review and activate your campaign.',
         { variant: 'success' }
       );
+      markCompleted({ action: 'final_submit', campaignId: res.data.campaign.id });
 
       // Revalidate client credits so dashboard reflects deduction immediately
       try {
@@ -846,7 +971,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             }}
             size="large"
             disabled={isLoading}
-            onClick={onClose}
+            onClick={handleManualClose}
           >
             <Iconify icon="material-symbols:close" width={20} color="#231F20" />
           </IconButton>

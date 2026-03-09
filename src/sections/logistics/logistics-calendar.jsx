@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { endOfDay, format, isWithinInterval, startOfDay } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
@@ -39,9 +39,9 @@ function ServerDay(props) {
 
   const hasConfig = useMemo(() => {
     if (isReservation) {
-    const availabilityRules = reservationConfig?.availabilityRules;
+      const availabilityRules = reservationConfig?.availabilityRules;
 
-    if (!isReservation || !availabilityRules) return true;
+      if (!isReservation || !availabilityRules) return true;
 
       return availabilityRules.some((rule) =>
         rule.dates?.some((d) => {
@@ -66,7 +66,7 @@ function ServerDay(props) {
       }
     }
     return true;
-  }, [isReservation, reservationConfig, dateString, campaignBrief, day]);
+  }, [isReservation, reservationConfig, dateString, campaignBrief, day, outsideCurrentMonth]);
 
   const dayLogistics = logistics.filter((logistic) => {
     if (isReservation) {
