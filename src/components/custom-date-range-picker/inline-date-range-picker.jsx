@@ -113,11 +113,12 @@ function InlineDateRangePicker({ anchorEl, open, onClose, startDate, endDate, on
   }, []);
 
   const handleApply = useCallback(() => {
-    if (localStart && localEnd) {
+    if (localStart) {
       const presetLabel = activePreset
         ? PRESETS.find((p) => p.key === activePreset)?.label || null
         : null;
-      onApply(localStart.toDate(), localEnd.toDate(), presetLabel);
+      const effectiveEnd = localEnd || localStart;
+      onApply(localStart.toDate(), effectiveEnd.toDate(), presetLabel);
     }
     onClose();
   }, [localStart, localEnd, activePreset, onApply, onClose]);
@@ -133,8 +134,11 @@ function InlineDateRangePicker({ anchorEl, open, onClose, startDate, endDate, on
   }, [onClear, onClose]);
 
   // Summary label
-  const summaryLabel =
-    localStart && localEnd ? shortDateLabel(localStart.toDate(), localEnd.toDate()) : null;
+  const summaryLabel = localStart
+    ? localEnd
+      ? shortDateLabel(localStart.toDate(), localEnd.toDate())
+      : shortDateLabel(localStart.toDate(), localStart.toDate())
+    : null;
 
   const calendarSlots = { day: RangeDay };
 
@@ -221,7 +225,7 @@ function InlineDateRangePicker({ anchorEl, open, onClose, startDate, endDate, on
       }}
     >
       <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-        {summaryLabel || 'Select a date range'}
+        {summaryLabel || 'Select a date or range'}
       </Typography>
       <Stack direction="row" spacing={1}>
         <Button
@@ -235,7 +239,7 @@ function InlineDateRangePicker({ anchorEl, open, onClose, startDate, endDate, on
         <Button
           size="small"
           variant="contained"
-          disabled={!localStart || !localEnd}
+          disabled={!localStart}
           onClick={handleApply}
           sx={{
             textTransform: 'none',

@@ -141,8 +141,8 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     currency: filters.currency || undefined,
     search: filters.name || undefined,
     campaignName: filters.campaignName || undefined,
-    startDate: dateRange.startDate ? dayjs(dateRange.startDate).toISOString() : undefined,
-    endDate: dateRange.endDate ? dayjs(dateRange.endDate).toISOString() : undefined,
+    startDate: dateRange.startDate ? dayjs(dateRange.startDate).startOf('day').toISOString() : undefined,
+    endDate: dateRange.endDate ? dayjs(dateRange.endDate).add(1, 'day').startOf('day').toISOString() : undefined,
   });
 
   // Debug: Log error if API call fails
@@ -404,7 +404,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         '',
         '', // Invoice Date 10, Invoice Amount 10, Payment Amount 10, Payment Description 10
         '', // Batch Reference No.
-        '', // Payment Date
+        invoice.dueDate ? dayjs(invoice.dueDate).format('DD/MM/YYYY') : '', // Payment Date
         '', // Beneficiary Address
       ];
     });
@@ -569,38 +569,46 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         '',
         '',
         '',
+        '', // Invoice Date 1, Invoice Amount 1, Payment Amount 1, Payment Description 1
         '',
         '',
         '',
+        '', // Invoice Date 2, Invoice Amount 2, Payment Amount 2, Payment Description 2
         '',
         '',
         '',
+        '', // Invoice Date 3, Invoice Amount 3, Payment Amount 3, Payment Description 3
         '',
         '',
         '',
+        '', // Invoice Date 4, Invoice Amount 4, Payment Amount 4, Payment Description 4
         '',
         '',
         '',
+        '', // Invoice Date 5, Invoice Amount 5, Payment Amount 5, Payment Description 5
         '',
         '',
         '',
+        '', // Invoice Date 6, Invoice Amount 6, Payment Amount 6, Payment Description 6
         '',
         '',
         '',
+        '', // Invoice Date 7, Invoice Amount 7, Payment Amount 7, Payment Description 7
         '',
         '',
         '',
+        '', // Invoice Date 8, Invoice Amount 8, Payment Amount 8, Payment Description 8
         '',
         '',
         '',
+        '', // Invoice Date 9, Invoice Amount 9, Payment Amount 9, Payment Description 9
         '',
         '',
         '',
-        '',
-        '',
-        '',
-        '',
-        '',
+        '', // Invoice Date 10, Invoice Amount 10, Payment Amount 10, Payment Description 10
+        '', // Batch Reference No.
+        invoice.dueDate ? dayjs(invoice.dueDate).format('DD/MM/YYYY') : '', // Payment Date
+        '', // Beneficiary Address
       ];
     });
 
@@ -1469,7 +1477,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                         {/* 15. Batch Reference No. */}
                         <TableCell sx={cellSx}>-</TableCell>
                         {/* 16. Payment Date */}
-                        <TableCell sx={cellSx}>-</TableCell>
+                        <TableCell sx={cellSx}>{inv.dueDate ? dayjs(inv.dueDate).format('DD/MM/YYYY') : '-'}</TableCell>
                         {/* 17. Beneficiary Address */}
                         <TableCell sx={cellSx}>-</TableCell>
                       </TableRow>
