@@ -134,10 +134,9 @@ function InlineDateRangePicker({ anchorEl, open, onClose, startDate, endDate, on
   }, [onClear, onClose]);
 
   // Summary label
+  const summaryEnd = localEnd || localStart;
   const summaryLabel = localStart
-    ? localEnd
-      ? shortDateLabel(localStart.toDate(), localEnd.toDate())
-      : shortDateLabel(localStart.toDate(), localStart.toDate())
+    ? shortDateLabel(localStart.toDate(), summaryEnd.toDate())
     : null;
 
   const calendarSlots = { day: RangeDay };
