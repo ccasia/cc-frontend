@@ -59,6 +59,30 @@ const CREATOR_NAME_PATTERNS = [
   // Outreach status for "Name" updated to STATUS
   /[Oo]utreach status for\s+"?([^"]+?)"?\s+updated to/,
 
+  // Reservation logistics patterns
+  /"?([^"]+?)"?\s+completed their visit at/i,
+  /"?([^"]+?)"?\s+checked in at/i,
+  /"?([^"]+?)"?\s+reported an issue with their reservation at/i,
+  /Reservation issue resolved for\s+"?([^"]+?)"?\s+at/i,
+
+  // Logistics patterns
+  /Logistics assigned to\s+"?([^"]+?)"?\s*$/i,
+  /Logistics for\s+"?([^"]+?)"?\s+marked as shipped/i,
+  /Scheduled product delivery for\s+"?([^"]+?)"?\s*$/i,
+  /"?([^"]+?)"?\s+marked logistics as (?:received|completed)/i,
+  /"?([^"]+?)"?\s+reported a logistics issue/i,
+  /Logistics issue resolved for\s+"?([^"]+?)"?\s*$/i,
+  /Logistics delivery retry scheduled for\s+"?([^"]+?)"?\s*$/i,
+  /Expected delivery date for\s+"?([^"]+?)"?\s+changed from/i,
+  /Logistics details updated for\s+"?([^"]+?)"?\s*$/i,
+  /Logistics status for\s+"?([^"]+?)"?\s+changed to/i,
+  /"?([^"]+?)"?\s+updated delivery details/i,
+  /"?([^"]+?)"?\s+submitted logistics information/i,
+  /"?([^"]+?)"?\s+submitted reservation details/i,
+  /[Rr]eservation details updated for\s+"?([^"]+?)"?\s*$/i,
+  /[Rr]eservation (?:confirmed|rescheduled) for\s+"?([^"]+?)"?\s*$/i,
+  /Admin (?:re)?scheduled reservation for\s+"?([^"]+?)"?\s*$/i,
+
   // Admin "X" approved/requested changes ... for creator Name (unquoted)
   /for creator\s+([A-Z][a-z]+(?: [A-Z][a-z]+)+)\s*$/,
 
@@ -209,11 +233,40 @@ const CREATOR_CATEGORIES = new Set([
   'First Draft', 'Final Draft', 'Posting',
   'Draft Approved', 'Changes Requested', 'Draft Rejected',
   'Outreach',
+  'Logistics', 'Logistics Shipped', 'Logistics Received', 'Logistics Completed', 'Logistics Issue', 'Logistics Resolved',
 ]);
 
 const CAMPAIGN_CATEGORIES = new Set([
   'Campaign', 'Campaign Edit',
 ]);
+
+const LOGISTICS_CATEGORIES = new Set([
+  'Logistics', 'Logistics Shipped', 'Logistics Received', 'Logistics Completed', 'Logistics Issue', 'Logistics Resolved',
+]);
+
+// Classify the specific logistics action for context-aware detail rendering
+function classifyLogisticsAction(rawMessage) {
+  if (!rawMessage) return 'general';
+  const m = rawMessage.toLowerCase();
+  if (m.includes('logistics assigned to') || m.includes('logistics bulk assigned')) return 'assigned';
+  if (m.includes('submitted logistics information')) return 'creator_info';
+  if (m.includes('updated delivery details')) return 'creator_details_updated';
+  if (m.includes('scheduled product delivery') || m.includes('marked as shipped')) return 'shipped';
+  if (m.includes('marked logistics as received') || m.includes('checked in at')) return 'received';
+  if (m.includes('marked logistics as completed') || m.includes('completed their visit at')) return 'completed';
+  if (m.includes('reported a logistics issue') || m.includes('reported an issue with their reservation')) return 'issue';
+  if (m.includes('logistics issue resolved') || m.includes('reservation issue resolved')) return 'resolved';
+  if (m.includes('logistics delivery retry')) return 'retry';
+  if (m.includes('expected delivery date for') && m.includes('changed from')) return 'date_change';
+  if (m.includes('logistics details updated')) return 'details_updated';
+  if (m.includes('logistics status for') && m.includes('changed to')) return 'status_change';
+  if (m.includes('reservation details updated for')) return 'reservation_details_updated';
+  if (m.includes('submitted reservation details')) return 'reservation_submitted';
+  if (m.includes('admin rescheduled reservation')) return 'admin_reschedule';
+  if (m.includes('admin scheduled reservation')) return 'admin_schedule';
+  if (m.includes('reservation confirmed') || m.includes('reservation rescheduled')) return 'reservation';
+  return 'general';
+}
 
 // ---------------------------------------------------------------------------
 // 6. Master function: builds context object for a log entry
@@ -227,6 +280,9 @@ export function extractLogContext(log, campaign) {
     amountChange: null,
     editSection: null,
     changes: null,
+    isLogistics: false,
+    logisticsCreatorName: null,
+    logisticsAction: null,
   };
 
   if (!log) return ctx;
@@ -267,6 +323,18 @@ export function extractLogContext(log, campaign) {
   // Amount change context
   if (category === 'Amount Changed') {
     ctx.amountChange = extractAmountChangeInfo(action);
+  }
+
+  // Logistics context
+  if (LOGISTICS_CATEGORIES.has(category)) {
+    ctx.isLogistics = true;
+    ctx.logisticsCreatorName = extractCreatorNameFromLog(action);
+    ctx.logisticsAction = classifyLogisticsAction(action);
+
+    if (ctx.logisticsAction === 'reservation_details_updated' && Array.isArray(log.metadata?.changes)) {
+      ctx.changes = log.metadata.changes;
+      ctx.editSection = 'Reservation Details';
+    }
   }
 
   return ctx;

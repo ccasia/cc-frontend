@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import useSWR from 'swr';
 import { useMemo, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -10,6 +11,8 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
+
+import { fetcher } from 'src/utils/axios';
 
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 
@@ -38,6 +41,7 @@ const TABS = [
   { value: 'creator', label: 'Creator' },
   { value: 'client', label: 'Client' },
   { value: 'invoice', label: 'Invoice' },
+  { value: 'logistics', label: 'Logistics' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -159,6 +163,14 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
   const { campaigns: invoices, isLoading: invoicesLoading } = useGetInvoicesByCampId(
     open && invoiceCategories ? campaign?.id : null,
     selectedInvoiceNumber ? { search: selectedInvoiceNumber } : {}
+  );
+
+  // Fetch logistics when a logistics log is selected
+  const isLogisticsLog = selectedLog?.groups?.includes('logistics');
+  const { data: logistics, isLoading: logisticsLoading } = useSWR(
+    open && isLogisticsLog && campaign?.id ? `/api/logistics/campaign/${campaign.id}` : null,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 30000 }
   );
 
   const handleTabChange = useCallback((v) => {
@@ -492,6 +504,8 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
             photoMap={photoMap}
             invoices={invoices}
             invoicesLoading={invoicesLoading}
+            logistics={logistics}
+            logisticsLoading={logisticsLoading}
           />
         </Box>
       </DialogContent>

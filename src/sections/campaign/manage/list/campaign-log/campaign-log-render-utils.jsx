@@ -57,6 +57,11 @@ export const ACTION_CHIP_MAP = {
   maybe:              { label: 'Maybe',             color: '#F59E0B' },
   paid:               { label: 'Paid',              color: '#1340FF' },
   draft:              { label: 'Draft',             color: '#8E8E93' },
+  shipped:            { label: 'Shipped',           color: '#1340FF' },
+  received:           { label: 'Received',          color: '#22C55E' },
+  completed:          { label: 'Completed',         color: '#22C55E' },
+  issue:              { label: 'Issue',             color: '#FF5630' },
+  resolved:           { label: 'Resolved',          color: '#22C55E' },
 };
 
 // ---------------------------------------------------------------------------
