@@ -151,7 +151,6 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
 
   // Handle video click to open modal
   const handleVideoClick = useCallback(() => {
-    // Only open modal if there's a submitted video (not in reupload mode or selecting new files)
     if (submittedVideo && !isReuploadMode && selectedFiles.length === 0) {
       setShowNewCommentBorders(!feedbackViewed);
       setIsModalOpen(true);
@@ -166,8 +165,6 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
     setFeedbackViewed(true);
   }, [feedbackViewed]);
 
-  // Determine if "View Feedback" button should show
-  // Show when there's feedback and a video - including after reupload (so user can view feedback & previous drafts)
   const showViewFeedbackButton = useMemo(
     () => relevantFeedback && relevantFeedback.length > 0 && submittedVideo,
     [relevantFeedback, submittedVideo]
