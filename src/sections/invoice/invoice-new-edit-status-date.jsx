@@ -4,14 +4,21 @@ import Stack from '@mui/material/Stack';
 import MenuItem from '@mui/material/MenuItem';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
+import { useAuthContext } from 'src/auth/hooks';
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
 export default function InvoiceNewEditStatusDate() {
   const { control, watch } = useFormContext();
+  const { user } = useAuthContext();
 
   const values = watch();
+
+  const canChangeStatus =
+    user?.role === 'superadmin' ||
+    user?.admin?.mode === 'god' ||
+    user?.admin?.role?.name === 'Finance';
 
   return (
     <Stack
@@ -32,7 +39,7 @@ export default function InvoiceNewEditStatusDate() {
         label="Status"
         InputLabelProps={{ shrink: true }}
         PaperPropsSx={{ textTransform: 'capitalize' }}
-        // disabled={values.status === 'approved'}
+        disabled={!canChangeStatus}
       >
         {['approved', 'paid', 'draft', 'rejected'].map((option) => (
           <MenuItem
