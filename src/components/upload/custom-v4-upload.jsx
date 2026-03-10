@@ -24,6 +24,7 @@ const CustomV4Upload = ({
   height = 160, // Compressed height
   uploading = false, // NEW: Track if upload is in progress
   hasSubmitted = false, // NEW: Track if content has been submitted
+  onVideoClick, // NEW: Handler for video click
 }) => {
   const handleDrop = (e) => {
     e.preventDefault();
@@ -94,6 +95,9 @@ const CustomV4Upload = ({
   }, [files, submittedVideo, uploading, hasSubmitted]);
 
   const { hasVideo, isLocalVideo, videoUrl } = videoDisplayData;
+
+  // Determine if video should be clickable (submitted video, not local selection)
+  const isVideoClickable = submittedVideo && !isLocalVideo && onVideoClick;
 
   // Cleanup object URLs to prevent memory leaks
   useEffect(() => () => {
@@ -192,6 +196,20 @@ const CustomV4Upload = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            cursor: isVideoClickable ? 'pointer' : 'default',
+            '&:hover': isVideoClickable ? {
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                bgcolor: 'rgba(0, 0, 0, 0.05)',
+                borderRadius: 2,
+                pointerEvents: 'none',
+              },
+            } : {},
             // Ensure the container doesn't interfere with video controls
             '& video': {
               '&::-webkit-media-controls': {
@@ -212,6 +230,7 @@ const CustomV4Upload = ({
               },
             },
           }}
+          onClick={isVideoClickable ? onVideoClick : undefined}
         >
           {/* Show loading state if uploading/submitted but no video URL yet */}
           {(uploading || hasSubmitted) && !videoUrl ? (
@@ -236,6 +255,12 @@ const CustomV4Upload = ({
                 controlsList="nodownload"
                 preload="metadata"
                 playsInline
+                onClick={(e) => {
+                  // Stop propagation to prevent triggering parent onClick when interacting with controls
+                  if (isVideoClickable) {
+                    e.stopPropagation();
+                  }
+                }}
                 style={{
                   width: '100%',
                   height: '100%',
@@ -305,6 +330,7 @@ CustomV4Upload.propTypes = {
   height: PropTypes.number,
   uploading: PropTypes.bool,
   hasSubmitted: PropTypes.bool,
+  onVideoClick: PropTypes.func,
 };
 
 export default React.memo(CustomV4Upload);

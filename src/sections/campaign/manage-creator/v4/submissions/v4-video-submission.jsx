@@ -1,10 +1,12 @@
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 
 import { Box } from '@mui/material';
 
 import CustomV4Upload from 'src/components/upload/custom-v4-upload';
+import VideoSubmissionModal from './VideoSubmissionModal';
+import { CreatorFeedbackModal } from './feeedback-component';
 
 import {
   getButtonStates,
@@ -17,7 +19,12 @@ import {
   getSubmissionStatusFlags,
 } from './shared';
 
-const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange }) => {
+const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange, creator }) => {
+  // State for modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [feedbackViewed, setFeedbackViewed] = useState(false);
+  const [showNewCommentBorders, setShowNewCommentBorders] = useState(false);
+
   // Use shared hook with video-specific configuration
   const {
     uploading,
@@ -142,6 +149,30 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
     [handleSubmit]
   );
 
+  // Handle video click to open modal
+  const handleVideoClick = useCallback(() => {
+    // Only open modal if there's a submitted video (not in reupload mode or selecting new files)
+    if (submittedVideo && !isReuploadMode && selectedFiles.length === 0) {
+      setShowNewCommentBorders(!feedbackViewed);
+      setIsModalOpen(true);
+      setFeedbackViewed(true);
+    }
+  }, [submittedVideo, isReuploadMode, selectedFiles.length, feedbackViewed]);
+
+  // Handle view feedback button click
+  const handleViewFeedback = useCallback(() => {
+    setShowNewCommentBorders(!feedbackViewed);
+    setIsModalOpen(true);
+    setFeedbackViewed(true);
+  }, [feedbackViewed]);
+
+  // Determine if "View Feedback" button should show
+  // Show when there's feedback and a video - including after reupload (so user can view feedback & previous drafts)
+  const showViewFeedbackButton = useMemo(
+    () => relevantFeedback && relevantFeedback.length > 0 && submittedVideo,
+    [relevantFeedback, submittedVideo]
+  );
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
       <Box
@@ -182,6 +213,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
             height={450}
             uploading={uploading}
             hasSubmitted={hasSubmitted}
+            onVideoClick={handleVideoClick}
           />
         </Box>
 
@@ -226,6 +258,30 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
         isPostingLinkEditable={isPostingLinkEditable}
         reuploadText="Reupload Draft"
         uploadingText="Uploading videos..."
+        showViewFeedbackButton={showViewFeedbackButton}
+        onViewFeedback={handleViewFeedback}
+        hasNewFeedback={!feedbackViewed}
+      />
+
+      {/* VIDEO SUBMISSION MODAL */}
+      <VideoSubmissionModal
+        open={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setShowNewCommentBorders(false);
+        }}
+        submission={submission}
+        creator={creator}
+        showNewCommentBorders={showNewCommentBorders}
+        rightSideContent={({ videoPage, setVideoPage, videoCount, showNewCommentBorders: showBorders, submission: freshSubmission }) => (
+          <CreatorFeedbackModal
+            submission={freshSubmission || submission}
+            videoPage={videoPage}
+            setVideoPage={setVideoPage}
+            videoCount={videoCount}
+            showNewCommentBorders={showBorders}
+          />
+        )}
       />
     </Box>
   );
@@ -236,6 +292,7 @@ V4VideoSubmission.propTypes = {
   onUpdate: PropTypes.func.isRequired,
   campaign: PropTypes.object,
   onUploadStateChange: PropTypes.func,
+  creator: PropTypes.object,
 };
 
 // Memoize component with custom comparison to prevent unnecessary re-renders
