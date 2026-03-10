@@ -741,7 +741,6 @@ const CampaignDetailView = ({ id }) => {
 
   const isPendingCampaign = useMemo(
     () =>
-      campaign?.status === 'SCHEDULED' ||
       campaign?.status === 'PENDING_CSM_REVIEW' ||
       campaign?.status === 'PENDING_ADMIN_ACTIVATION',
     [campaign]
@@ -760,7 +759,7 @@ const CampaignDetailView = ({ id }) => {
               // For superadmin on pending campaigns: use initial activation (admin assignment only)
               if (
                 canInitialActivate &&
-                (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')
+                (campaign?.status === 'PENDING_CSM_REVIEW')
               ) {
                 console.log('Opening InitialActivateDialog (admin assignment only)');
                 setInitialActivateDialogOpen(true);
