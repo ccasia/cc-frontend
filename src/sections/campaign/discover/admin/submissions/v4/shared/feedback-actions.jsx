@@ -14,8 +14,12 @@ import {
   Typography,
   FormControl,
 } from '@mui/material';
+import Iconify from 'src/components/iconify';
+
 
 import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
+import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
+import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissions/admin-feedback-modal';
 
 import { options_changes } from '../constants';
 import { getFeedbackActionsVisibility } from './feedback-utils';
@@ -41,6 +45,7 @@ export default function FeedbackActions({
   isDisabled = false,
 }) {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   if (
     (submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || hasPostingLink) &&
     campaign?.campaignType === 'normal'
@@ -80,19 +85,39 @@ export default function FeedbackActions({
           justifyContent={{ xs: 'space-between', sm: "flex-end"}}
         >
           {visibility.showRequestChangeButton && (
-            <Button
-              variant="contained"
-              color="warning"
-              size="small"
-              onClick={() => setAction('request_revision')}
-              disabled={loading || isDisabled}
-              sx={{
-                ...BUTTON_STYLES.base,
-                ...BUTTON_STYLES.warning,
-              }}
-            >
-              {loading ? 'Processing...' : 'Request a Change'}
-            </Button>
+            <>
+              <Typography
+                component="span"
+                onClick={() => setReviewModalOpen(true)}
+                sx={{
+                  fontSize: { xs: 11, sm: 12 },
+                  fontWeight: 600,
+                  color: '#919191',
+                  cursor: 'pointer',
+                  textTransform: 'none',
+                  alignSelf: 'center',
+                  mr: 'auto',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                Review Submission
+              </Typography>
+              <Button
+                variant="contained"
+                color="warning"
+                size="small"
+                onClick={() => setAction('request_revision')}
+                disabled={loading || isDisabled}
+                sx={{
+                  ...BUTTON_STYLES.base,
+                  ...BUTTON_STYLES.warning,
+                }}
+              >
+                {loading ? 'Processing...' : 'Request a Change'}
+              </Button>
+            </>
           )}
 
           {visibility.showChangeRequestForm && (
@@ -443,6 +468,15 @@ export default function FeedbackActions({
             },
           }}
           size="large"
+        />
+
+        <VideoSubmissionModal
+          open={reviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
+          submission={submission}
+          rightSideContent={({ currentTime, onSeek }) => (
+            <AdminFeedbackPanel currentTime={currentTime} onSeek={onSeek} />
+          )}
         />
 
         <ConfirmDialogV2
