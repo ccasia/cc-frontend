@@ -5,7 +5,7 @@ import CampaignLogDetailContent from './campaign-log-detail-content';
 
 // ---------------------------------------------------------------------------
 
-export default function CampaignLogDetailPanel({ log, allLogs, campaign, photoMap, invoices, invoicesLoading }) {
+export default function CampaignLogDetailPanel({ log, allLogs, campaign, photoMap, invoices, invoicesLoading, logistics, logisticsLoading }) {
   if (!log) return <CampaignLogDetailEmpty />;
 
   return (
@@ -16,6 +16,8 @@ export default function CampaignLogDetailPanel({ log, allLogs, campaign, photoMa
       photoMap={photoMap}
       invoices={invoices}
       invoicesLoading={invoicesLoading}
+      logistics={logistics}
+      logisticsLoading={logisticsLoading}
     />
   );
 }
@@ -27,4 +29,6 @@ CampaignLogDetailPanel.propTypes = {
   photoMap: PropTypes.instanceOf(Map),
   invoices: PropTypes.array,
   invoicesLoading: PropTypes.bool,
+  logistics: PropTypes.array,
+  logisticsLoading: PropTypes.bool,
 };
