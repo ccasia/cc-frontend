@@ -55,6 +55,13 @@ export const ACTION_CHIP_MAP = {
   changes_requested:  { label: 'Changes Requested', color: '#FFAB00' },
   shortlisted:        { label: 'Shortlisted',       color: '#8E33FF' },
   maybe:              { label: 'Maybe',             color: '#F59E0B' },
+  paid:               { label: 'Paid',              color: '#1340FF' },
+  draft:              { label: 'Draft',             color: '#8E8E93' },
+  shipped:            { label: 'Shipped',           color: '#1340FF' },
+  received:           { label: 'Received',          color: '#22C55E' },
+  completed:          { label: 'Completed',         color: '#22C55E' },
+  issue:              { label: 'Issue',             color: '#FF5630' },
+  resolved:           { label: 'Resolved',          color: '#22C55E' },
 };
 
 // ---------------------------------------------------------------------------
@@ -163,7 +170,8 @@ export function renderActionParts(formattedMessage, photoMap, avatarSize) {
       if (config) {
         result.push(renderChip(`a${chipIdx}`, config.label, config.color));
       } else {
-        result.push(<span key={`a${chipIdx}`}>{match[1]}</span>);
+        const label = match[1].replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        result.push(<span key={`a${chipIdx}`}>{label}</span>);
       }
     } else if (match[2]) {
       // [outreach:STATUS]
