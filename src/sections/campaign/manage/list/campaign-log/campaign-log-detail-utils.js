@@ -40,10 +40,14 @@ const CREATOR_NAME_PATTERNS = [
   // "Name" submitted agreement/first draft/final draft/posting link
   /"([^"]+)"\s+submitted\s+(?:the\s+)?(?:agreement|first draft|final draft|posting link)/i,
 
-  // Invoice INV-123 for "Name" was generated / Deleted invoice / Approved invoice
+  // Invoice INV-123 for "Name" was generated / Deleted invoice / Approved invoice / Rejected / Bulk approved / Paid / Status changed
   /[Ii]nvoice\s+[\w-]+\s+for\s+"?([^"]+?)"?\s+was generated/,
   /[Dd]eleted invoice\s+[\w-]+\s+for\s+(?:creator\s+)?"?([^"]+?)"?\s*$/,
   /[Aa]pproved invoice\s+[\w-]+\s+for\s+"?([^"]+?)"?\s*$/,
+  /[Rr]ejected invoice\s+[\w-]+\s+for\s+"?([^"]+?)"?\s*$/,
+  /[Bb]ulk approved invoice\s+[\w-]+\s+for\s+"?([^"]+?)"?\s*$/,
+  /[Ii]nvoice\s+[\w-]+\s+for\s+"?([^"]+?)"?\s+was marked as paid/,
+  /[Ii]nvoice\s+[\w-]+\s+for\s+"?([^"]+?)"?\s+status changed to/,
 
   // changed the amount from X to Y for "Name"
   /changed the amount from .+? to .+? for\s+"?([^"]+?)"?\s*$/i,
@@ -153,6 +157,22 @@ export function extractInvoiceInfo(rawMessage) {
   m = rawMessage.match(/[Aa]pproved invoice\s+([\w-]+)\s+for\s+"?(.+?)"?\s*$/);
   if (m) return { invoiceNumber: m[1], creatorName: m[2].trim() };
 
+  // "Rejected invoice INV-123 for Name"
+  m = rawMessage.match(/[Rr]ejected invoice\s+([\w-]+)\s+for\s+"?(.+?)"?\s*$/);
+  if (m) return { invoiceNumber: m[1], creatorName: m[2].trim() };
+
+  // "Bulk approved invoice INV-123 for Name"
+  m = rawMessage.match(/[Bb]ulk approved invoice\s+([\w-]+)\s+for\s+"?(.+?)"?\s*$/);
+  if (m) return { invoiceNumber: m[1], creatorName: m[2].trim() };
+
+  // "Invoice INV-123 for Name was marked as paid"
+  m = rawMessage.match(/[Ii]nvoice\s+([\w-]+)\s+for\s+"?(.+?)"?\s+was marked as paid/);
+  if (m) return { invoiceNumber: m[1], creatorName: m[2].trim() };
+
+  // "Invoice INV-123 for Name status changed to STATUS"
+  m = rawMessage.match(/[Ii]nvoice\s+([\w-]+)\s+for\s+"?(.+?)"?\s+status changed to/);
+  if (m) return { invoiceNumber: m[1], creatorName: m[2].trim() };
+
   return null;
 }
 
@@ -214,7 +234,7 @@ export function extractLogContext(log, campaign) {
   const { action, category } = log;
 
   // Creator context
-  if (CREATOR_CATEGORIES.has(category) || category === 'Invoice' || category === 'Amount Changed') {
+  if (CREATOR_CATEGORIES.has(category) || category === 'Invoice' || category === 'Invoice Rejected' || category === 'Invoice Paid' || category === 'Amount Changed') {
     const name = extractCreatorNameFromLog(action);
     if (name) {
       ctx.creator = findCreatorData(name, campaign);
@@ -240,7 +260,7 @@ export function extractLogContext(log, campaign) {
   }
 
   // Invoice context
-  if (category === 'Invoice') {
+  if (category === 'Invoice' || category === 'Invoice Rejected' || category === 'Invoice Paid') {
     ctx.invoice = extractInvoiceInfo(action);
   }
 

@@ -93,7 +93,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .map((log) => {
         const { category, groups } = classifyLog(log.message);
-        const performedBy = log.admin?.name || 'System';
+        const performedBy = log.admin?.name || (log.metadata?.systemLabel ? `${log.metadata.systemLabel} System` : 'System');
         return {
           id: log.id,
           createdAt: log.createdAt,
@@ -102,7 +102,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
           formattedSummary: formatLogSummary(log.message, performedBy),
           metadata: log.metadata || null,
           performedBy,
-          performerRole: log.admin?.role || '',
+          performerRole: log.admin?.role || (log.admin ? 'admin' : 'system'),
           category,
           groups,
         };
@@ -154,7 +154,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
   );
 
   // Fetch the specific invoice when an invoice log is selected
-  const invoiceCategories = selectedLog?.category === 'Invoice' || selectedLog?.category === 'Amount Changed';
+  const invoiceCategories = ['Invoice', 'Invoice Rejected', 'Invoice Paid', 'Amount Changed'].includes(selectedLog?.category);
   const selectedInvoiceNumber = invoiceCategories ? extractInvoiceInfo(selectedLog?.action)?.invoiceNumber : null;
   const { campaigns: invoices, isLoading: invoicesLoading } = useGetInvoicesByCampId(
     open && invoiceCategories ? campaign?.id : null,

@@ -73,10 +73,14 @@ const RULES = [
   // V4 draft rejection
   { test: (m) => m.includes('draft rejected by'), category: 'Draft Rejected', groups: ['admin'] },
 
-  // Invoice
+  // Invoice — expanded status logging
   { test: (m) => m.includes('invoice') && m.includes('was generated'), category: 'Invoice', groups: ['invoice'] },
   { test: (m) => m.includes('deleted invoice'), category: 'Invoice', groups: ['invoice'] },
+  { test: (m) => m.includes('rejected invoice') || (m.includes('invoice') && m.includes('status changed to rejected')), category: 'Invoice Rejected', groups: ['invoice'] },
+  { test: (m) => m.includes('was marked as paid') || (m.includes('invoice') && m.includes('status changed to paid')), category: 'Invoice Paid', groups: ['invoice'] },
+  { test: (m) => m.includes('bulk approved invoice'), category: 'Invoice', groups: ['invoice'] },
   { test: (m) => m.includes('approved invoice'), category: 'Invoice', groups: ['invoice'] },
+  { test: (m) => m.includes('invoice') && m.includes('status changed to'), category: 'Invoice', groups: ['invoice'] },
 
   // Amount change
   { test: (m) => m.includes('changed the amount'), category: 'Amount Changed', groups: ['admin'] },
@@ -154,6 +158,8 @@ const CATEGORY_META = {
   'Draft Rejected':   { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:close-circle-bold' },
   'Amount Changed':   { color: '#FFAB00', bg: '#FFF8E6', icon: 'solar:tag-price-bold' },
   Invoice:            { color: '#8E33FF', bg: '#F3E8FF', icon: 'solar:bill-list-bold' },
+  'Invoice Rejected': { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:bill-cross-bold' },
+  'Invoice Paid':     { color: '#22C55E', bg: '#E8FAF0', icon: 'solar:bill-check-bold' },
   Login:              { color: '#00B8D9', bg: '#E6F9FD', icon: 'solar:login-2-bold' },
   Analytics:          { color: '#00B8D9', bg: '#E6F9FD', icon: 'solar:chart-bold' },
   Activity:           { color: '#8E8E93', bg: '#F4F4F5', icon: 'solar:info-circle-bold' },
@@ -264,9 +270,29 @@ export function formatLogMessage(msg, performer) {
   if (m) return `${p} deleted invoice ${m[1]} for ${qn(m[2])}`;
   if (/deleted invoice/i.test(msg)) return `${p} deleted an invoice`;
 
+  // Rejected
+  m = msg.match(/Rejected invoice\s+([\w-]+)\s+for\s+(.+)$/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('rejected')} by ${p}`;
+
+  // Bulk approved (before generic approved — "bulk approved" contains "approved")
+  m = msg.match(/Bulk approved invoice\s+([\w-]+)\s+for\s+(.+)$/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('approved')} (bulk) by ${p}`;
+
   m = msg.match(/Approved invoice\s+([\w-]+)\s+for\s+(.+)$/i);
   if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('approved')} by ${p}`;
   if (/approved invoice/i.test(msg)) return `Invoice has been ${a('approved')} by ${p}`;
+
+  // Paid (Xero webhook format)
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+was marked as paid/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been marked as ${a('paid')}`;
+
+  // Paid (generic status change format)
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+status changed to paid/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been marked as ${a('paid')} by ${p}`;
+
+  // Generic status change (non-paid)
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+status changed to\s+(\w[\w_]*)/i);
+  if (m) return `${p} changed invoice ${m[1]} for ${qn(m[2])} to ${a(m[3])}`;
 
   // Amount change
   m = msg.match(/changed the amount from (.+?) to (.+?) for (.+)$/i);
@@ -408,10 +434,30 @@ export function formatLogSummary(msg, performer) {
   if (m) return `Invoice ${m[1]} deleted for ${qn(m[2])}`;
   if (/deleted invoice/i.test(msg)) return `Invoice deleted`;
 
+  // Invoice rejected
+  m = msg.match(/Rejected invoice\s+([\w-]+)\s+for\s+(.+)$/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('rejected')}`;
+
+  // Invoice bulk approved
+  m = msg.match(/Bulk approved invoice\s+([\w-]+)\s+for\s+(.+)$/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('approved')} (bulk)`;
+
   // Invoice approved
   m = msg.match(/Approved invoice\s+([\w-]+)\s+for\s+(.+)$/i);
   if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('approved')}`;
   if (/approved invoice/i.test(msg)) return `Invoice has been ${a('approved')}`;
+
+  // Invoice paid (Xero webhook format)
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+was marked as paid/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} marked as ${a('paid')}`;
+
+  // Invoice paid (generic status change format)
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+status changed to paid/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} marked as ${a('paid')}`;
+
+  // Invoice generic status change (non-paid)
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+status changed to\s+(\w[\w_]*)/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} changed to ${a(m[3])}`;
 
   // Amount change
   m = msg.match(/changed the amount from (.+?) to (.+?) for (.+)$/i);
@@ -615,6 +661,7 @@ export function formatLogTime(createdAt, { relative = false, detailed = false } 
 export function getPerformerBadge(role) {
   if (!role) return null;
   const r = role.toLowerCase();
+  if (r === 'system') return { label: 'System', color: '#00B8D9', bg: '#E6F9FD' };
   if (r === 'client') return { label: 'Client', color: '#F59E0B', bg: '#FFF8E6' };
   if (r !== 'creator') return { label: 'Admin', color: '#1340FF', bg: '#EBF0FF' };
   return null;
