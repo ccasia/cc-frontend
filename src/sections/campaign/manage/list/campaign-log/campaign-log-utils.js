@@ -101,6 +101,7 @@ const RULES = [
   { test: (m) => m.includes('admin scheduled reservation for') || m.includes('admin rescheduled reservation for'), category: 'Logistics', groups: ['logistics'] },
 
   // Amount change
+  { test: (m) => m.includes('changed the amount') && m.includes('invoice'), category: 'Amount Changed', groups: ['admin', 'invoice'] },
   { test: (m) => m.includes('changed the amount'), category: 'Amount Changed', groups: ['admin'] },
 
   // Client misc
@@ -275,9 +276,9 @@ export function formatLogMessage(msg, performer) {
 
   // Withdrawn / removed
   m = msg.match(/(.+?) (?:has been )?withdrawn from the campaign/i);
-  if (m) return `${qn(m[1])} withdrew from campaign`;
+  if (m) return `${qn(m[1])} withdrew from the campaign`;
   m = msg.match(/(.+?) (?:has been )?removed from the campaign/i);
-  if (m) return `${p} removed ${qn(m[1])} from campaign`;
+  if (m) return `${p} removed ${qn(m[1])} from the campaign`;
 
   // Draft submissions by creator
   m = msg.match(/(.+?) submitted [Ff]irst [Dd]raft/i);
@@ -320,8 +321,11 @@ export function formatLogMessage(msg, performer) {
   m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+status changed to\s+(\w[\w_]*)/i);
   if (m) return `${p} changed invoice ${m[1]} for ${qn(m[2])} to ${a(m[3])}`;
 
-  // Amount change
-  m = msg.match(/changed the amount from (.+?) to (.+?) for (.+)$/i);
+  // Amount change (invoice)
+  m = msg.match(/changed the amount\s+on\s+invoice\s+[\w-]+\s+from\s+(.+?)\s+to\s+(.+?)\s+for\s+(.+)$/i);
+  if (m) return `${p} changed ${qn(m[3])}'s invoice amount from ${m[1]} to ${m[2]}`;
+  // Amount change (agreement)
+  m = msg.match(/changed the amount\s+from\s+(.+?)\s+to\s+(.+?)\s+for\s+(.+)$/i);
   if (m) return `${p} changed ${qn(m[3])}'s amount from ${m[1]} to ${m[2]}`;
   if (/changed the amount/i.test(msg)) return `${p} updated payment amount`;
 
@@ -553,8 +557,11 @@ export function formatLogSummary(msg, performer) {
   m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+status changed to\s+(\w[\w_]*)/i);
   if (m) return `Invoice ${m[1]} for ${qn(m[2])} changed to ${a(m[3])}`;
 
-  // Amount change
-  m = msg.match(/changed the amount from (.+?) to (.+?) for (.+)$/i);
+  // Amount change (invoice)
+  m = msg.match(/changed the amount\s+on\s+invoice\s+[\w-]+\s+from\s+(.+?)\s+to\s+(.+?)\s+for\s+(.+)$/i);
+  if (m) return `${qn(m[3])}'s invoice amount changed from ${m[1]} to ${m[2]}`;
+  // Amount change (agreement)
+  m = msg.match(/changed the amount\s+from\s+(.+?)\s+to\s+(.+?)\s+for\s+(.+)$/i);
   if (m) return `${qn(m[3])}'s amount changed from ${m[1]} to ${m[2]}`;
   if (/changed the amount/i.test(msg)) return `Payment amount updated`;
 

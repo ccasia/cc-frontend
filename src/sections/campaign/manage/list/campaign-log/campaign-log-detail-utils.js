@@ -206,9 +206,9 @@ export function extractInvoiceInfo(rawMessage) {
 
 export function extractAmountChangeInfo(rawMessage) {
   if (!rawMessage) return null;
-  const m = rawMessage.match(/changed the amount from (.+?) to (.+?) for\s+"?(.+?)"?\s*$/i);
+  const m = rawMessage.match(/changed the amount(?:\s+on\s+invoice\s+([\w-]+))?\s+from\s+(.+?)\s+to\s+(.+?)\s+for\s+"?(.+?)"?\s*$/i);
   if (!m) return null;
-  return { oldAmount: m[1], newAmount: m[2], creatorName: m[3].trim() };
+  return { invoiceNumber: m[1] || null, oldAmount: m[2], newAmount: m[3], creatorName: m[4].trim() };
 }
 
 // ---------------------------------------------------------------------------
