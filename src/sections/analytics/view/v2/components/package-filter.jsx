@@ -31,8 +31,11 @@ function PackageFilterSelect({ value, onChange }) {
 
   // Re-sync selected packages when packageTypes changes (e.g. on initial load)
   useEffect(() => {
-    if (!initialized && packageTypes.length > 0 && value.length === 0) {
-      onChange(packageTypes);
+    if (!initialized && packages !== undefined) {
+      // Only set to "All" if the current value is empty (initial state)
+      if (value.length === 0) {
+        onChange(packageTypes);
+      }
       setInitialized(true);
     }
   }, [initialized, packageTypes, value.length, onChange]);
@@ -52,10 +55,20 @@ function PackageFilterSelect({ value, onChange }) {
     onChange(value.length === packageTypes.length ? [] : [...packageTypes]);
   }, [value, packageTypes, onChange]);
 
-  // Label
-  let filterLabel = `${value.length} of ${packageTypes.length}`;
-  if (value.length === packageTypes.length) filterLabel = 'All Packages';
-  else if (value.length === 0) filterLabel = 'No Packages';
+  const isLoading = packages === undefined;
+
+  // Label Logic
+  let filterLabel = '';
+
+  if (isLoading || (!initialized && value.length === 0)) {
+    filterLabel = 'All Packages';
+  } else if (value.length === packageTypes.length) {
+    filterLabel = 'All Packages';
+  } else if (value.length === 0) {
+    filterLabel = 'No Packages';
+  } else {
+    filterLabel = `${value.length} of ${packageTypes.length}`;
+  }
 
   return (
     <>
@@ -71,7 +84,7 @@ function PackageFilterSelect({ value, onChange }) {
           bgcolor: menuOpen ? '#F4F6F8' : 'transparent',
           border: '1px solid',
           borderColor: menuOpen ? '#C4CDD5' : UI_COLORS.border,
-          borderRadius: 1,
+          borderRadius: 1.5,
           px: 1.5,
           py: 0.5,
           minWidth: 0,
