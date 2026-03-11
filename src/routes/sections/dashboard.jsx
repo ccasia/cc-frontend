@@ -43,8 +43,12 @@ const AdminCampaignDetail = lazy(
 const AdminCamapaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-detail-manage')
 );
-const PostingLinkCSMView = lazy(() => import('src/pages/dashboard/campaign/admin/posting-link-csm'));
-const PostingLinkSuperadminView = lazy(() => import('src/pages/dashboard/campaign/admin/posting-link-superadmin'));
+const PostingLinkCSMView = lazy(
+  () => import('src/pages/dashboard/campaign/admin/posting-link-csm')
+);
+const PostingLinkSuperadminView = lazy(
+  () => import('src/pages/dashboard/campaign/admin/posting-link-superadmin')
+);
 const AdminEditCampaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
 );
@@ -122,6 +126,9 @@ const CreatorProfile = lazy(() => import('src/pages/dashboard/creator/profile'))
 
 // FAQ
 const FaqPage = lazy(() => import('src/pages/faq'));
+
+// Report AI Configuration Page
+const ReportAiConfiguration = lazy(() => import('src/pages/dashboard/report-ai-configuration'));
 
 // ----------------------------------------------------------------------
 
@@ -392,7 +399,10 @@ export const dashboardRoutes = [
           {
             index: true,
             element: (
-              <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator', 'Client', 'client']}>
+              <RoleBasedGuard
+                hasContent
+                roles={['admin', 'superadmin', 'creator', 'Client', 'client']}
+              >
                 <ViewCampaign />
               </RoleBasedGuard>
             ),
@@ -456,7 +466,10 @@ export const dashboardRoutes = [
               {
                 index: true,
                 element: (
-                  <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator', 'Client', 'client']}>
+                  <RoleBasedGuard
+                    hasContent
+                    roles={['admin', 'superadmin', 'creator', 'Client', 'client']}
+                  >
                     <ViewCampaign />
                   </RoleBasedGuard>
                 ),
@@ -647,6 +660,10 @@ export const dashboardRoutes = [
       {
         path: 'faq',
         element: <FaqPage />,
+      },
+      {
+        path: 'report-ai',
+        element: <ReportAiConfiguration />,
       },
     ],
   },

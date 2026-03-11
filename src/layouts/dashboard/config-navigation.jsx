@@ -130,7 +130,6 @@ export function useNavData() {
         ],
       },
       {
-        // subheader: 'Management',
         items: [
           {
             roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
@@ -207,6 +206,12 @@ export function useNavData() {
             title: 'Feedback',
             path: paths.dashboard.feedback.root,
             icon: <Iconify icon="material-symbols:rate-review-outline" width={25} />,
+          },
+          {
+            roles: ['superadmin', 'god'],
+            title: 'AI Report Configurations',
+            path: paths.dashboard.reportAi.root,
+            icon: <Iconify icon="mingcute:ai-line" width={25} />,
           },
         ],
       },
