@@ -235,6 +235,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
     ) {
       console.log('Auto-selecting POSTING stage');
       setSelectedStage('POSTING');
+      
     }
   }, [submissions, selectedStage]);
 

@@ -47,9 +47,9 @@ import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import InvoicePDF from './invoice-pdf';
-import InvoiceNewEditDetails from './invoice-new-edit-details';
 import InvoiceNewEditAddress from './invoice-new-edit-address';
 import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
+import InvoiceNewEditDetails from './invoice-new-edit-details';
 
 // ----------------------------------------------------------------------
 
@@ -274,7 +274,7 @@ export default function InvoiceNewEditForm({ id, creators, onClose, mutateInvoic
     const formData = new FormData();
 
     const pdfBlob = await pdf(<InvoicePDF invoice={invoice} />).toBlob();
-    
+
     formData.append('file', pdfBlob, `Invoice-${id}.pdf`);
     formData.append(
       'data',

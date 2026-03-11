@@ -136,7 +136,6 @@ export function useNavData() {
             roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
             title: 'Campaigns',
             path: paths.dashboard.campaign.view,
-            path: paths.dashboard.campaign.view,
             icon: ICONS.mycampaigns,
           },
           {
@@ -404,9 +403,7 @@ export function useNavData() {
       items: [
         {
           title: (
-            <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-              FAQ
-            </span>
+            <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>FAQ</span>
           ),
           path: paths.dashboard.faq,
           icon: <Iconify icon="material-symbols:help-outline" width={25} />,

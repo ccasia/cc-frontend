@@ -483,8 +483,8 @@ const DashboardSuperadmin = () => {
     [dashboardStats]
   );
 
-  const totalRejectedPitches = useMemo(
-    () => dashboardStats?.data?.rejectedPitches || 0,
+  const totalCreatorsIncludingAll = useMemo(
+    () => dashboardStats?.data?.totalCreatorsIncludingAll || 0,
     [dashboardStats]
   );
 
@@ -538,9 +538,9 @@ const DashboardSuperadmin = () => {
     },
     {
       title: 'Total Creators',
-      value: totalCreators,
-      color: colors.primary,
-      icon: icon('ic_creators'),
+      value: totalCreatorsIncludingAll,
+      color: '#8b5cf6',
+      icon: <Iconify icon="mdi:account-group-outline" width={20} />,
     },
     {
       title: 'Total Pitches',
@@ -561,10 +561,10 @@ const DashboardSuperadmin = () => {
       icon: <Iconify icon="mdi:check-decagram-outline" width={20} />,
     },
     {
-      title: 'Rejected Pitches',
-      value: totalRejectedPitches,
-      color: '#ef4444',
-      icon: <Iconify icon="mdi:close-octagon-outline" width={20} />,
+      title: 'Active Creators',
+      value: totalCreators,
+      color: colors.primary,
+      icon: icon('ic_creators'),
     },
     {
       title: 'Media Kits Connected',

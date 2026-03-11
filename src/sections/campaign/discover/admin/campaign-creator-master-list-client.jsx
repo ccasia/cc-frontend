@@ -146,37 +146,39 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     if (!campaign) return [];
 
     if (campaign.submissionVersion === 'v4' && v3Pitches) {
-      return v3Pitches
-        .map((pitch) => ({
-          pitchId: pitch.id,
-          user: {
-            id: pitch.userId || pitch.user?.id,
-            name: pitch.user?.name,
-            email: pitch.user?.email,
-            ig_username: pitch.user?.creator?.instagramUser?.username,
-            tiktok_username: pitch.user?.creator?.tiktokUser?.username,
-            photoURL: pitch.user?.photoURL,
-            status: pitch.user?.status || 'active',
-            creator: pitch.user?.creator,
-            engagementRate: pitch.user?.instagramUser?.engagement_rate,
-            followerCount: pitch.user?.instagramUser?.followers_count,
-            profileLink: pitch.user?.creator?.profileLink,
-          },
-          status: pitch.displayStatus || pitch.status || 'undecided',
-          displayStatus: pitch.displayStatus || pitch.status || 'undecided',
-          createdAt: pitch.createdAt || new Date().toISOString(),
-          type: pitch.type || 'text',
-          content: pitch.content || pitch.user?.creator?.about || 'No content available',
-          adminComments: pitch.adminComments,
-          rejectionReason: pitch.rejectionReason,
-          customRejectionText: pitch.customRejectionText,
-          followerCount: pitch.followerCount,
-          engagementRate: pitch.engagementRate,
-          isShortlisted: false,
-          outreachStatus: pitch.outreachStatus,
-        }))
-        .filter((creator) => !!creator.user && !!creator.user.id)
-        .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT');
+      return (
+        v3Pitches
+          .map((pitch) => ({
+              pitchId: pitch.id,
+              user: {
+                id: pitch.userId || pitch.user?.id,
+                name: pitch.user?.name,
+                email: pitch.user?.email,
+                ig_username: pitch.user?.creator?.instagramUser?.username,
+                tiktok_username: pitch.user?.creator?.tiktokUser?.username,
+                photoURL: pitch.user?.photoURL,
+                status: pitch.user?.status || 'active',
+                creator: pitch.user?.creator,
+                engagementRate: pitch.user?.instagramUser?.engagement_rate,
+                followerCount: pitch.user?.instagramUser?.followers_count,
+                profileLink: pitch.user?.creator?.profileLink,
+              },
+              status: pitch.displayStatus || pitch.status || 'undecided',
+              displayStatus: pitch.displayStatus || pitch.status || 'undecided',
+              createdAt: pitch.createdAt || new Date().toISOString(),
+              type: pitch.type || 'text',
+              content: pitch.content || pitch.user?.creator?.about || 'No content available',
+              adminComments: pitch.adminComments,
+              rejectionReason: pitch.rejectionReason,
+              customRejectionText: pitch.customRejectionText,
+              followerCount: pitch.followerCount,
+              engagementRate: pitch.engagementRate,
+              isShortlisted: false,
+              outreachStatus: pitch.outreachStatus,
+            }))
+          .filter((creator) => !!creator.user && !!creator.user.id)
+          .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT')
+      );
     }
 
     // Get creators from shortlisted

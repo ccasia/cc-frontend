@@ -256,9 +256,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
                 <Text style={styles.h4}>Total</Text>
               </View>
               <View style={[styles.tableCell_2, styles.alignRight]}>
-                <Text
-                  style={styles.h4}
-                >{`${invoice.task?.currencySymbol || invoice.task?.currency || invoice.campaign?.creatorAgreement?.[0]?.currency || 'RM'} ${invoice?.amount}`}</Text>
+                <Text style={styles.h4}>{`${invoice.task?.currencySymbol || invoice.task?.currency || invoice.campaign?.creatorAgreement?.[0]?.currency || 'RM'} ${invoice?.amount}`}</Text>
               </View>
             </View>
           </View>

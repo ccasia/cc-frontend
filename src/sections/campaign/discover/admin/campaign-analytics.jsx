@@ -860,7 +860,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
               spacing={1.5}
               alignItems="center"
               sx={{ 
-                width: 210,
+                width: 200,
                 flexShrink: 0,
                 overflow: 'hidden',
               }}
@@ -903,7 +903,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
               sx={{ mx: 1, minWidth: 0, overflow: 'hidden' }}
             >
               {/* Engagement Rate - always display only */}
-              <Box sx={{ textAlign: 'left', minWidth: { md: 0, lg: 110 }, pr: { md: 1, lg: 1.5 } }}>
+              <Box sx={{ textAlign: 'left', minWidth: 110, }}>
                 <Typography
                   fontFamily="Aileron"
                   fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -1012,7 +1012,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
               />
 
               {/* Comments */}
-              <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
+              <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
                 <Typography
                   fontFamily="Aileron"
                   fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -2098,6 +2098,888 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     return topPerformer;
   };
 
+  // eslint-disable-next-line react/no-unstable-nested-components
+  const UserPerformanceCard = ({
+    engagementRate,
+    submission,
+    insightData,
+    loadingInsights: isLoadingInsights,
+  }) => {
+    const { data: creator, isLoading: loadingCreator } = useGetCreatorById(submission.user);
+
+    return (
+      <Grid item xs={12}>
+        <Box borderRadius={1} border="2px solid #F5F5F5">
+          <Box sx={{ py: 0.5 }}>
+            {/* Desktop Layout (md+) */}
+            <Box
+              px={2}
+              display={{ xs: 'none', md: 'flex' }}
+              alignItems="center"
+              gap={{ md: 1, lg: 1.5 }}
+              sx={{ minWidth: 0, overflow: 'hidden' }}
+            >
+              {/* Left Side: Creator Info */}
+              <Stack
+                direction="row"
+                spacing={1.5}
+                alignItems="center"
+                sx={{ 
+                  width: 200,
+                  flexShrink: 0,
+                  overflow: 'hidden',
+                }}
+              >
+                <Avatar
+                  src={creator?.user?.photoURL}
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    bgcolor:
+                      submission && submission.platform === 'Instagram' ? '#E4405F' : '#000000',
+                    border: '1px solid #EBEBEB',
+                  }}
+                >
+                  {loadingCreator ? (
+                    <CircularProgress size={18} />
+                  ) : (
+                    creator?.user?.name?.charAt(0) || 'U'
+                  )}
+                </Avatar>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  {loadingCreator ? (
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      Loading...
+                    </Typography>
+                  ) : (
+                    <ScrollingName name={creator?.user?.name || 'Unknown Creator'} />
+                  )}
+                  {(creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok) && (
+                    <Link
+                      href={
+                        creator?.user?.creator?.instagram
+                          ? `https://instagram.com/${creator.user.creator.instagram.replace('@', '')}`
+                          : `https://tiktok.com/@${creator.user.creator.tiktok.replace('@', '')}`
+                      }
+                      target="_blank"
+                      rel="noopener"
+                      underline="hover"
+                      sx={{
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        color: '#636366',
+                        fontSize: '0.875rem',
+                        '&:hover': {
+                          color: '#1340FF',
+                        },
+                      }}
+                    >
+                      {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok}
+                    </Link>
+                  )}
+                </Box>
+              </Stack>
+
+              {/* Center: Metrics Display */}
+              <AnimatePresence mode="wait">
+                {/* Metrics content when data is loaded */}
+                {insightData && (
+                  <Box
+                    component={m.div}
+                    key="metrics-content"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    display="flex"
+                    alignItems="center"
+                    flex={1}
+                    justifyContent="space-between"
+                    sx={{ mx: 1, minWidth: 0, overflow: 'hidden' }}
+                  >
+                    {/* Engagement Rate */}
+                    <Box sx={{ textAlign: 'left', minWidth: 110, }}>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontSize={{ md: 14, lg: 16, xl: 18 }}
+                        fontWeight={600}
+                        color="#636366"
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        <Box component="span" pr={1.5} sx={{ display: { xs: 'none', xl: 'inline' } }}>
+                          Engagement Rate
+                        </Box>
+                        <Box component="span" sx={{ display: { xs: 'inline', xl: 'none' } }}>
+                          Eng. Rate
+                        </Box>
+                      </Typography>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontSize={{ md: 28, lg: 36, xl: 40 }}
+                        fontWeight={400}
+                        color="#1340FF"
+                        lineHeight={1.1}
+                      >
+                        <AnimatedNumber
+                          value={parseFloat(engagementRate) || 0}
+                          suffix="%"
+                          formatFn={(val) => val.toFixed(2)}
+                        />
+                      </Typography>
+                    </Box>
+
+                    {/* Divider */}
+                    <Divider
+                      sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }}
+                    />
+
+                    {/* Views */}
+                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontSize={{ md: 14, lg: 16, xl: 18 }}
+                        fontWeight={600}
+                        color="#636366"
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        Views
+                      </Typography>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontSize={{ md: 28, lg: 36, xl: 40 }}
+                        fontWeight={400}
+                        color="#1340FF"
+                        lineHeight={1.1}
+                      >
+                        <AnimatedNumber
+                          value={getMetricValue(insightData.insight, 'views')}
+                          formatFn={formatNumber}
+                        />
+                      </Typography>
+                    </Box>
+
+                    {/* Divider */}
+                    <Divider
+                      sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }}
+                    />
+
+                    {/* Likes */}
+                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontSize={{ md: 14, lg: 16, xl: 18 }}
+                        fontWeight={600}
+                        color="#636366"
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        Likes
+                      </Typography>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontSize={{ md: 28, lg: 36, xl: 40 }}
+                        fontWeight={400}
+                        color="#1340FF"
+                        lineHeight={1.1}
+                      >
+                        <AnimatedNumber
+                          value={getMetricValue(insightData.insight, 'likes')}
+                          formatFn={formatNumber}
+                        />
+                      </Typography>
+                    </Box>
+
+                    {/* Divider */}
+                    <Divider
+                      sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }}
+                    />
+
+                    {/* Comments */}
+                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontSize={{ md: 14, lg: 16, xl: 18 }}
+                        fontWeight={600}
+                        color="#636366"
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        Comments
+                      </Typography>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontSize={{ md: 28, lg: 36, xl: 40 }}
+                        fontWeight={400}
+                        color="#1340FF"
+                        lineHeight={1.1}
+                      >
+                        <AnimatedNumber
+                          value={getMetricValue(insightData.insight, 'comments')}
+                          formatFn={formatNumber}
+                        />
+                      </Typography>
+                    </Box>
+
+                    {/* Divider */}
+                    <Divider
+                      sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0, ml: 2 }}
+                    />
+
+                    {/* Shares */}
+                    <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden' , px: 1 }}>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontSize={{ md: 14, lg: 16, xl: 18 }}
+                        fontWeight={600}
+                        color="#636366"
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        Shares
+                      </Typography>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontSize={{ md: 28, lg: 36, xl: 40 }}
+                        fontWeight={400}
+                        color="#1340FF"
+                        lineHeight={1.1}
+                      >
+                        <AnimatedNumber
+                          value={getMetricValue(insightData.insight, 'shares')}
+                          formatFn={formatNumber}
+                        />
+                      </Typography>
+                    </Box>
+
+                    {/* Saves - Instagram only, or placeholder for TikTok to maintain alignment */}
+                    {submission && submission.platform === 'Instagram' ? (
+                      <>
+                        {/* Divider */}
+                        <Divider
+                          sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }}
+                        />
+
+                        {/* Saves */}
+                        <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
+                          <Typography
+                            fontFamily="Aileron"
+                            fontSize={{ md: 14, lg: 16, xl: 18 }}
+                            fontWeight={600}
+                            color="#636366"
+                            sx={{ whiteSpace: 'nowrap' }}
+                          >
+                            Saves
+                          </Typography>
+                          <Typography
+                            fontFamily="Instrument Serif"
+                            fontSize={{ md: 28, lg: 36, xl: 40 }}
+                            fontWeight={400}
+                            color="#1340FF"
+                            lineHeight={1.1}
+                          >
+                            <AnimatedNumber
+                              value={getMetricValue(insightData.insight, 'saved')}
+                              formatFn={formatNumber}
+                            />
+                          </Typography>
+                        </Box>
+                      </>
+                    ) : (
+                      // Empty placeholder for TikTok to maintain alignment with Instagram card
+                      <>
+                        <Divider
+                          sx={{ 
+                            width: '1px', 
+                            height: '55px', 
+                            backgroundColor: 'transparent',  
+                            flexShrink: 0 
+                          }}
+                        />
+                        <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
+                          <Box sx={{ height: { md: 20, lg: 22, xl: 24 } }} />
+                          <Box sx={{ position: 'relative', minHeight: 44, display: 'flex', alignItems: 'center' }}>
+                            <Box sx={{ height: { md: 28, lg: 36, xl: 40 } }} />
+                          </Box>
+                        </Box>
+                      </>
+                    )}
+                  </Box>
+                )}
+
+                {/* Skeleton when loading */}
+                {!insightData && isLoadingInsights && (
+                  <Box
+                    component={m.div}
+                    key="metrics-skeleton"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <MetricsSkeleton showSaves={submission?.platform === 'Instagram'} />
+                  </Box>
+                )}
+
+                {/* Empty state when no data and not loading */}
+                {!insightData && !isLoadingInsights && (
+                  <Box
+                    component={m.div}
+                    key="metrics-empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    flex={1}
+                    sx={{ mx: { md: 2, lg: 4 } }}
+                  >
+                    <Alert severity="info" sx={{ m: 1 }}>
+                      Analytics data not available for this post.
+                    </Alert>
+                  </Box>
+                )}
+              </AnimatePresence>
+
+              {/* Right Side: Thumbnail and Action Icons */}
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, minWidth: 0 }}>
+                <AnimatePresence mode="wait">
+                  {/* Thumbnail when data is loaded */}
+                  {insightData && (
+                    <Box
+                      component={m.div}
+                      key="thumbnail-content"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                      sx={{ flexShrink: 0 }}
+                    >
+                      <Link
+                        href={insightData.postUrl}
+                        target="_blank"
+                        rel="noopener"
+                        sx={{
+                          display: 'block',
+                          textDecoration: 'none',
+                          position: 'relative',
+                          '&:hover .play-overlay': {
+                            bgcolor: 'rgba(176, 176, 176, 1)',
+                          },
+                          '&:hover img': {
+                            filter: 'brightness(1)',
+                            opacity: 1,
+                          },
+                        }}
+                      >
+                        <Box
+                          component="img"
+                          src={insightData.thumbnail || insightData.video?.media_url}
+                          alt="Post thumbnail"
+                          sx={{
+                            width: 140,
+                            height: 80,
+                            borderRadius: 2,
+                            objectFit: 'cover',
+                            border: '1px solid #e0e0e0',
+                            filter: 'brightness(0.95)',
+                            opacity: 0.9,
+                            transition: 'filter 0.3s ease, opacity 0.3s ease',
+                          }}
+                        />
+                        {/* Play Button Overlay */}
+                        <Box
+                          className="play-overlay"
+                          sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: 28,
+                            height: 28,
+                            borderRadius: '50%',
+                            bgcolor: 'rgba(176, 176, 176, 0.85)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'background-color 0.2s ease',
+                          }}
+                        >
+                          <Iconify
+                            icon="solar:play-bold"
+                            sx={{ color: '#FFFFFF', width: 14, height: 14, ml: 0.2 }}
+                          />
+                        </Box>
+                      </Link>
+                    </Box>
+                  )}
+
+                  {/* Thumbnail skeleton when loading */}
+                  {!insightData && isLoadingInsights && (
+                    <Box
+                      component={m.div}
+                      key="thumbnail-skeleton"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      sx={{ flexShrink: 0 }}
+                    >
+                      <Skeleton
+                        animation="wave"
+                        variant="rounded"
+                        sx={{
+                          width: 140,
+                          height: 80,
+                          borderRadius: 2,
+                          bgcolor: 'rgba(0, 0, 0, 0.08)',
+                        }}
+                      />
+                    </Box>
+                  )}
+
+                  {/* Fallback link when no data and not loading */}
+                  {!insightData && !isLoadingInsights && (
+                    <Box
+                      component={m.div}
+                      key="thumbnail-fallback"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      sx={{
+                        width: 140,
+                        height: 80,
+                        borderRadius: 2,
+                        bgcolor: '#F5F5F5',
+                        border: '1px dashed #BDBDBD',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Iconify icon="mdi:image-off-outline" width={24} sx={{ color: '#BDBDBD' }} />
+                    </Box>
+                  )}
+                </AnimatePresence>
+
+                {/* Spacer to maintain same layout spacing as manual entries */}
+                <Box sx={{ width: 36 }} />
+              </Stack>
+            </Box>
+
+            {/* Mobile Layout (xs) */}
+            <Box display={{ xs: 'flex', md: 'none' }} flexDirection="column" alignItems="center" sx={{ py: 1.5 }}>
+              {/* Top: Creator Info */}
+              <Box display="flex" mb={1.5} width={300}>
+                <Avatar
+                  src={creator?.user?.photoURL}
+                  sx={{
+                    width: 38,
+                    height: 38,
+                    bgcolor:
+                    submission && submission.platform === 'Instagram' ? '#E4405F' : '#000000',
+                    mr: 1.5,
+                  }}
+                >
+                  {loadingCreator ? (
+                    <CircularProgress size={16} />
+                  ) : (
+                    creator?.user?.name?.charAt(0) || 'U'
+                  )}
+                </Avatar>
+                <Box sx={{ minWidth: 0 }}>
+                  {loadingCreator ? (
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      Loading...
+                    </Typography>
+                  ) : (
+                    <ScrollingName name={creator?.user?.name || 'Unknown Creator'} variant="subtitle2" />
+                  )}
+                  {(creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok) && (
+                    <Link
+                      href={
+                        creator?.user?.creator?.instagram
+                          ? `https://instagram.com/${creator.user.creator.instagram.replace('@', '')}`
+                          : `https://tiktok.com/@${creator.user.creator.tiktok.replace('@', '')}`
+                      }
+                      target="_blank"
+                      rel="noopener"
+                      underline="hover"
+                      sx={{
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '200px',
+                        color: '#636366',
+                        fontSize: '0.75rem',
+                        '&:hover': {
+                          color: '#1340FF',
+                        },
+                      }}
+                    >
+                      {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok}
+                    </Link>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Middle: Metrics */}
+              <AnimatePresence mode="wait">
+                {/* Mobile metrics content when data is loaded */}
+                {insightData && (
+                  <Box
+                    component={m.div}
+                    key="mobile-metrics-content"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    display="flex"
+                    justifyContent="space-between"
+                    width="100%"
+                    maxWidth={340}
+                    mb={1.5}
+                    px={1}
+                  >
+                    {/* Engagement Rate */}
+                    <Box sx={{ flex: 1, textAlign: 'left' }}>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontSize={11}
+                        fontWeight={700}
+                        color="#636366"
+                      >
+                        Engage.
+                      </Typography>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontSize={24}
+                        fontWeight={400}
+                        color="#1340FF"
+                      >
+                        <AnimatedNumber
+                          value={parseFloat(engagementRate) || 0}
+                          suffix="%"
+                          formatFn={(val) => val.toFixed(2)}
+                        />
+                      </Typography>
+                    </Box>
+
+                    {/* Divider */}
+                    <Divider
+                      sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }}
+                    />
+
+                    {/* Views */}
+                    <Box sx={{ flex: 1, textAlign: 'left' }}>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontSize={11}
+                        fontWeight={700}
+                        color="#636366"
+                      >
+                        Views
+                      </Typography>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontSize={24}
+                        fontWeight={400}
+                        color="#1340FF"
+                      >
+                        <AnimatedNumber
+                          value={getMetricValue(insightData.insight, 'views')}
+                          formatFn={formatNumber}
+                        />
+                      </Typography>
+                    </Box>
+
+                    {/* Divider */}
+                    <Divider
+                      sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }}
+                    />
+
+                    {/* Likes */}
+                    <Box sx={{ flex: 1, textAlign: 'left' }}>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontSize={11}
+                        fontWeight={700}
+                        color="#636366"
+                      >
+                        Likes
+                      </Typography>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontSize={24}
+                        fontWeight={400}
+                        color="#1340FF"
+                      >
+                        <AnimatedNumber
+                          value={getMetricValue(insightData.insight, 'likes')}
+                          formatFn={formatNumber}
+                        />
+                      </Typography>
+                    </Box>
+
+                    {/* Divider */}
+                    <Divider
+                      sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }}
+                    />
+
+                    {/* Comments */}
+                    <Box sx={{ flex: 1, textAlign: 'left' }}>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontSize={11}
+                        fontWeight={700}
+                        color="#636366"
+                      >
+                        Comments
+                      </Typography>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontSize={24}
+                        fontWeight={400}
+                        color="#1340FF"
+                      >
+                        <AnimatedNumber
+                          value={getMetricValue(insightData.insight, 'comments')}
+                          formatFn={formatNumber}
+                        />
+                      </Typography>
+                    </Box>
+
+                    {/* Divider */}
+                    <Divider
+                      sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }}
+                    />
+
+                    {/* Shares */}
+                    <Box sx={{ flex: 1, textAlign: 'left' }}>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontSize={11}
+                        fontWeight={700}
+                        color="#636366"
+                      >
+                        Shares
+                      </Typography>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontSize={24}
+                        fontWeight={400}
+                        color="#1340FF"
+                      >
+                        <AnimatedNumber
+                          value={getMetricValue(insightData.insight, 'shares')}
+                          formatFn={formatNumber}
+                        />
+                      </Typography>
+                    </Box>
+
+                    {/* Saves - Instagram only, or placeholder for TikTok to maintain alignment */}
+                    {submission && submission.platform === 'Instagram' ? (
+                      <>
+                        {/* Divider */}
+                        <Divider
+                          sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }}
+                        />
+
+                        {/* Saves */}
+                        <Box sx={{ flex: 1, textAlign: 'left' }}>
+                          <Typography
+                            fontFamily="Aileron"
+                            fontSize={11}
+                            fontWeight={700}
+                            color="#636366"
+                          >
+                            Saves
+                          </Typography>
+                          <Typography
+                            fontFamily="Instrument Serif"
+                            fontSize={24}
+                            fontWeight={400}
+                            color="#1340FF"
+                          >
+                            <AnimatedNumber
+                              value={getMetricValue(insightData.insight, 'saved')}
+                              formatFn={formatNumber}
+                            />
+                          </Typography>
+                        </Box>
+                      </>
+                    ) : (
+                      // Empty placeholder for TikTok to maintain alignment with Instagram card
+                      <>
+                        <Divider
+                          sx={{ 
+                            width: '1px', 
+                            height: '40px', 
+                            backgroundColor: 'transparent', 
+                          }}
+                        />
+                        <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
+                          <Box sx={{ height: 16 }} />
+                          <Box sx={{ height: 24 }} />
+                        </Box>
+                      </>
+                    )}
+                  </Box>
+                )}
+
+                {/* Mobile skeleton when loading */}
+                {!insightData && isLoadingInsights && (
+                  <Box
+                    component={m.div}
+                    key="mobile-metrics-skeleton"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <MetricsSkeleton showSaves={submission?.platform === 'Instagram'} isMobile />
+                  </Box>
+                )}
+
+                {/* Mobile empty state when no data and not loading */}
+                {!insightData && !isLoadingInsights && (
+                  <Box
+                    component={m.div}
+                    key="mobile-metrics-empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <Alert severity="info" sx={{ my: 1.5 }}>
+                      Analytics data not available for this post.
+                    </Alert>
+                  </Box>
+                )}
+              </AnimatePresence>
+
+              {/* Bottom: Thumbnail */}
+              <AnimatePresence mode="wait">
+                {/* Mobile thumbnail when data is loaded */}
+                {insightData && (
+                  <Box
+                    component={m.div}
+                    key="mobile-thumbnail-content"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    display="flex"
+                    justifyContent="center"
+                  >
+                    <Link
+                      href={insightData.postUrl}
+                      target="_blank"
+                      rel="noopener"
+                      sx={{
+                        display: 'block',
+                        textDecoration: 'none',
+                        position: 'relative',
+                        '&:hover .play-overlay': {
+                          bgcolor: 'rgba(176, 176, 176, 1)',
+                        },
+                        '&:hover img': {
+                          filter: 'brightness(1)',
+                          opacity: 1,
+                        },
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={insightData.thumbnail || insightData.video?.media_url}
+                        alt="Post thumbnail"
+                        sx={{
+                          width: 280,
+                          height: 80,
+                          borderRadius: 2,
+                          objectFit: 'cover',
+                          border: '1px solid #e0e0e0',
+                          filter: 'brightness(0.95)',
+                          opacity: 0.9,
+                          transition: 'filter 0.3s ease, opacity 0.3s ease',
+                        }}
+                      />
+                      {/* Play Button Overlay */}
+                      <Box
+                        className="play-overlay"
+                        sx={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          bgcolor: 'rgba(176, 176, 176, 0.85)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'background-color 0.2s ease',
+                        }}
+                      >
+                        <Iconify
+                          icon="solar:play-bold"
+                          sx={{ color: '#FFFFFF', width: 14, height: 14, ml: 0.2 }}
+                        />
+                      </Box>
+                    </Link>
+                  </Box>
+                )}
+
+                {/* Mobile thumbnail skeleton when loading */}
+                {!insightData && isLoadingInsights && (
+                  <Box
+                    component={m.div}
+                    key="mobile-thumbnail-skeleton"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    display="flex"
+                    justifyContent="center"
+                  >
+                    <Skeleton
+                      animation="wave"
+                      variant="rounded"
+                      sx={{
+                        width: 280,
+                        height: 80,
+                        borderRadius: 2,
+                        bgcolor: 'rgba(0, 0, 0, 0.08)',
+                      }}
+                    />
+                  </Box>
+                )}
+
+                {/* Mobile fallback link when no data and not loading */}
+                {!insightData && !isLoadingInsights && (
+                  <Box
+                    component={m.div}
+                    key="mobile-thumbnail-fallback"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    display="flex"
+                    justifyContent="center"
+                  >
+                    <Tooltip title="View Post">
+                      <IconButton
+                        component={Link}
+                        href={submission.postUrl}
+                        target="_blank"
+                        rel="noopener"
+                        size="small"
+                      >
+                        <Iconify icon="solar:external-link-outline" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                )}
+              </AnimatePresence>
+            </Box>
+          </Box>
+        </Box>
+      </Grid>
+    );
+  };
 
   return (
     <Box>

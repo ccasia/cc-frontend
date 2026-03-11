@@ -30,7 +30,8 @@ import FirstDraft from './creator-stuff/submissions/firstDraft';
 import FinalDraft from './creator-stuff/submissions/finalDraft';
 import Posting from './creator-stuff/submissions/posting/posting';
 
-const getEffectiveSubmissionStatus = (submission) => submission?.displayStatus || submission?.status;
+const getEffectiveSubmissionStatus = (submission) =>
+  submission?.displayStatus || submission?.status;
 
 const isNotStartedStatus = (status) => !status || status === 'NOT_STARTED';
 
