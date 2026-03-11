@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { PDFViewer } from '@react-pdf/renderer';
 
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Dialog from '@mui/material/Dialog';
 import Collapse from '@mui/material/Collapse';
@@ -526,23 +527,126 @@ DetailChangesSection.propTypes = {
 
 // ---------------------------------------------------------------------------
 
-function DetailAmountSection({ amountChange }) {
+function DetailAmountSection({ amountChange, invoices, invoicesLoading }) {
+  const [pdfOpen, setPdfOpen] = useState(false);
+
+  const targetNum = amountChange.invoiceNumber?.trim()?.toUpperCase();
+  const matchedInvoice = targetNum
+    ? invoices?.find((inv) => inv.invoiceNumber?.trim()?.toUpperCase() === targetNum)
+    : null;
+  const isLoading = invoicesLoading && !matchedInvoice;
+
+  const { invoice: fullInvoice, isLoading: fullInvoiceLoading } = useGetInvoiceById(
+    pdfOpen && matchedInvoice?.id ? matchedInvoice.id : null
+  );
+
   return (
-    <DetailCard icon="solar:tag-price-bold" iconColor="#FFAB00" headerBg="#FFF8E6" label="Amount Change">
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-        <Typography sx={{ fontSize: 14, color: '#FF5630', textDecoration: 'line-through', fontWeight: 500 }}>
-          {amountChange.oldAmount}
-        </Typography>
-        <Iconify icon="eva:arrow-forward-fill" width={16} sx={{ color: '#C7C7CC' }} />
-        <Typography sx={{ fontSize: 14, color: '#22C55E', fontWeight: 700 }}>
-          {amountChange.newAmount}
-        </Typography>
-      </Box>
-    </DetailCard>
+    <>
+      <DetailCard icon="solar:tag-price-bold" iconColor="#FFAB00" headerBg="#FFF8E6" label="Amount Change">
+        <Stack spacing={1.25}>
+          {amountChange.invoiceNumber && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <Iconify icon="iconamoon:invoice-light" width={14} sx={{ color: '#8e8e93' }} />
+              <Typography sx={{ fontSize: 12, color: '#8e8e93', fontWeight: 600 }}>
+                {amountChange.invoiceNumber}
+              </Typography>
+            </Box>
+          )}
+
+          <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1.5 }}>
+            {/* From */}
+            <Box sx={{ flex: 1, bgcolor: '#FFF', borderRadius: 1, px: 1.25, py: 1 }}>
+              <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#8e8e93', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.25 }}>
+                From
+              </Typography>
+              <Typography sx={{ fontSize: 15, color: '#FF5630', fontWeight: 600 }}>
+                {amountChange.oldAmount}
+              </Typography>
+            </Box>
+
+            {/* Arrow */}
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Iconify icon="eva:arrow-forward-fill" width={16} sx={{ color: '#C7C7CC' }} />
+            </Box>
+
+            {/* To */}
+            <Box sx={{ flex: 1, bgcolor: '#FFF', borderRadius: 1, px: 1.25, py: 1 }}>
+              <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#8e8e93', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.25 }}>
+                To
+              </Typography>
+              <Typography sx={{ fontSize: 15, color: '#22C55E', fontWeight: 700 }}>
+                {amountChange.newAmount}
+              </Typography>
+            </Box>
+          </Box>
+
+          {amountChange.invoiceNumber && !isLoading && matchedInvoice && (
+            <Box
+              component="button"
+              onClick={() => setPdfOpen(true)}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 0.75,
+                width: '100%',
+                mt: 0.25,
+                py: 0.625,
+                border: '1px dashed #E7E7E7',
+                borderRadius: 1,
+                bgcolor: 'transparent',
+                color: '#636366',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                '&:hover': { borderColor: '#636366', color: '#221F20', bgcolor: '#F4F4F5' },
+              }}
+            >
+              <Iconify icon="solar:eye-bold" width={15} />
+              View Invoice
+            </Box>
+          )}
+        </Stack>
+      </DetailCard>
+
+      <Dialog
+        open={pdfOpen}
+        onClose={() => setPdfOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: { bgcolor: '#F4F4F4', borderRadius: 2, height: '90vh', overflow: 'hidden' },
+        }}
+      >
+        <IconButton
+          onClick={() => setPdfOpen(false)}
+          sx={{ position: 'absolute', right: 12, top: 12, color: '#636366', zIndex: 1 }}
+        >
+          <Iconify icon="eva:close-fill" width={22} />
+        </IconButton>
+        <Box sx={{ height: 1, pt: 6, pb: 2, px: 2 }}>
+          {pdfOpen && fullInvoiceLoading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+              <Typography sx={{ color: '#8e8e93' }}>Loading invoice...</Typography>
+            </Box>
+          )}
+          {pdfOpen && fullInvoice && (
+            <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
+              <InvoicePDF invoice={fullInvoice} currentStatus={fullInvoice.status} />
+            </PDFViewer>
+          )}
+        </Box>
+      </Dialog>
+    </>
   );
 }
 
-DetailAmountSection.propTypes = { amountChange: PropTypes.object.isRequired };
+DetailAmountSection.propTypes = {
+  amountChange: PropTypes.object.isRequired,
+  invoices: PropTypes.array,
+  invoicesLoading: PropTypes.bool,
+};
 
 // ---------------------------------------------------------------------------
 
@@ -1125,7 +1229,7 @@ export default function CampaignLogDetailContent({ log, allLogs, campaign, photo
           )}
 
           {context.amountChange && (
-            <DetailAmountSection amountChange={context.amountChange} />
+            <DetailAmountSection amountChange={context.amountChange} invoices={invoices} invoicesLoading={invoicesLoading} />
           )}
 
           {context.isLogistics && (
