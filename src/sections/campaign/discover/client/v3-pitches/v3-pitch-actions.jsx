@@ -304,8 +304,7 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
               loading={loading}
               onClick={(e) => {
                 e.stopPropagation();
-                // eslint-disable-next-line no-unused-expressions
-                isApproved ? handleWithdrawCreator() : handleRemoveCreator();
+                if (isApproved) { handleWithdrawCreator(); } else { handleRemoveCreator(); }
               }}
               sx={{
                 bgcolor: isApproved ? '#D4321C' : '#3A3A3C',

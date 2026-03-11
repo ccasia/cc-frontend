@@ -41,9 +41,11 @@ export const calculateEngagementRate = (insight) => {
   const views = getMetricValue(insight, 'views');
   const likes = getMetricValue(insight, 'likes');
   const comments = getMetricValue(insight, 'comments');
+  const shares = getMetricValue(insight, 'shares');
+  const saved = getMetricValue(insight, 'saved');
   
   if (views === 0) return 0;
-  return (((likes + comments) / views) * 100).toFixed(2);
+  return (((likes + comments + shares + (saved || 0)) / views) * 100).toFixed(2);
 };
 
 /**

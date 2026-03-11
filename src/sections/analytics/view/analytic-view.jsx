@@ -19,8 +19,7 @@ import ShortlistedCreators from './components/creators/shortlisted-creators';
 import CampaignParticipation from './components/creators/campaign-participants';
 import SendAgreementsAnalytics from './components/admins/SendAgreementsAnalytics';
 import ApproveAgreementsAnalytics from './components/admins/ApproveAgreementsAnalytics';
-
-
+import ClientAnalytics from './components/clients/client-analytics';
 
 export default function AnalyticsView() {
   const [activeTab, setActiveTab] = useState(0);
@@ -71,6 +70,7 @@ export default function AnalyticsView() {
         <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
           <Tab label="Creators Analytics" />
           <Tab label="Admin Analytics" />
+          <Tab label="Client" />
         </Tabs>
 
         {/* Tab Content */}
@@ -127,11 +127,17 @@ export default function AnalyticsView() {
 
           {activeTab === 1 && (
             <>
-              <ApprovePitch/>
-              <SendAgreementsAnalytics/>
-              <ApproveAgreementsAnalytics/>
-              <ApproveDraftsAnalytics/>
-              <PostingAnalytics/>
+              <ApprovePitch />
+              <SendAgreementsAnalytics />
+              <ApproveAgreementsAnalytics />
+              <ApproveDraftsAnalytics />
+              <PostingAnalytics />
+            </>
+          )}
+
+          {activeTab === 2 && (
+            <>
+              <ClientAnalytics />
             </>
           )}
         </Box>

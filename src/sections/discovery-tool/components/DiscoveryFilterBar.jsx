@@ -13,6 +13,8 @@ import {
   Autocomplete,
 } from '@mui/material';
 
+import { formatNumber } from 'src/utils/socialMetricsCalculator'
+
 import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
@@ -20,6 +22,7 @@ import Iconify from 'src/components/iconify';
 import FilterPills from './FilterPills';
 import {
   GENDERS,
+  LANGUAGES,
   PLATFORMS,
   AGE_RANGES,
   CREDIT_TIERS,
@@ -59,6 +62,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
       city: state.city,
       gender: state.gender,
       creditTier: state.creditTier,
+      languages: state.languages,
       interests: state.interests,
     });
   }, [
@@ -70,6 +74,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
     state.city,
     state.gender,
     state.creditTier,
+    state.languages,
     state.interests,
     onFiltersChange,
   ]);
@@ -119,15 +124,21 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
     dispatch({ type: 'SET_INTERESTS', payload: value });
   }, []);
 
+  const handleLanguages = useCallback((_e, value) => {
+    dispatch({ type: 'SET_LANGUAGES', payload: value });
+  }, []);
+
   const handleRemoveFilter = useCallback(
     (type, value) => {
       if (type === 'REMOVE_INTEREST') {
         dispatch({ type: 'SET_INTERESTS', payload: state.interests.filter((i) => i !== value) });
+      } else if (type === 'REMOVE_LANGUAGE') {
+        dispatch({ type: 'SET_LANGUAGES', payload: state.languages.filter((language) => language !== value) });
       } else {
         dispatch({ type, payload: value });
       }
     },
-    [state.interests]
+    [state.interests, state.languages]
   );
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -142,7 +153,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           onChange={handlePlatform}
           size="medium"
           displayEmpty
-          sx={{ minWidth: 180 }}
+          sx={{ maxWidth: 160 }}
           IconComponent={() => null}
           endAdornment={
             <Iconify icon='line-md:chevron-down' width={40} height={40} color='#231F20' />
@@ -205,7 +216,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           onChange={handleGender}
           size="medium"
           displayEmpty
-          sx={{ minWidth: 170 }}
+          sx={{ maxWidth: 150 }}
           IconComponent={() => null}
           endAdornment={
             <Iconify icon='line-md:chevron-down' width={40} height={40} color='#231F20' />
@@ -222,19 +233,59 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           ))}
         </Select>
 
+        {/* Languages */}
+        <Select
+          multiple
+          value={state.languages}
+          onChange={(e) => handleLanguages(null, e.target.value)}
+          size="medium"
+          displayEmpty
+          fullWidth
+          sx={{
+            maxWidth: 145,
+            maxHeight: 53.5,
+            '& .MuiSelect-select': {
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            },
+          }}
+          MenuProps={{
+            style: {
+              maxHeight: 500,
+            }
+          }}
+          IconComponent={() => null}
+          endAdornment={
+            <Iconify icon="line-md:chevron-down" width={40} height={40} color="#231F20" />
+          }
+          renderValue={(selected) => {
+            if (!selected || selected.length === 0) {
+              return <Typography sx={{ color: 'text.disabled', fontSize: 14 }}>Language</Typography>;
+            }
+            return selected.join(', ');
+          }}
+        >
+          {LANGUAGES.map((language) => (
+            <MenuItem key={language} value={language} sx={{ height: 50 }}>
+              {language}
+            </MenuItem>
+          ))}
+        </Select>
+
         {/* Age Range */}
         <Select
           value={state.ageRange}
           onChange={handleAgeRange}
           size="medium"
           displayEmpty
-          sx={{ minWidth: 170 }}
+          sx={{ minWidth: 150 }}
           IconComponent={() => null}
           endAdornment={
             <Iconify icon='line-md:chevron-down' width={40} height={40} color='#231F20' />
           }
           renderValue={(selected) => {
-            if (!selected) return <Typography sx={{ color: 'text.disabled', fontSize: 14 }}>Age Range</Typography>;
+            if (!selected) return <Typography sx={{ color: 'text.disabled', fontSize: 14 }}>Age</Typography>;
             return selected;
           }}
         >
@@ -287,18 +338,16 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           displayEmpty
           fullWidth
           sx={{
-            minWidth: 240,
-            flex: 1,
+            maxWidth: 200,
             maxHeight: 53.5,
             '& .MuiSelect-select': {
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis'
             },
           }}
           MenuProps={{
             style: {
-              maxHeight: 500
+              maxHeight: 500,
             }
           }}  
           IconComponent={() => null}
@@ -325,7 +374,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
           onChange={handleCreditTier}
           size="medium"
           displayEmpty
-          sx={{ minWidth: 170 }}
+          sx={{ minWidth: 150 }}
           IconComponent={() => null}
           endAdornment={
             <Iconify icon='line-md:chevron-down' width={40} height={40} color='#231F20' />
@@ -350,16 +399,17 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
             variant="contained"
             onClick={onShowResults}
             disabled={isCountLoading}
+            fullWidth
             sx={{
-              minWidth: 170,
+              maxWidth: 160,
               bgcolor: '#1340FF',
               '&:hover': { bgcolor: '#0F30D4' },
               textTransform: 'none',
               borderRadius: 1,
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: 600,
               minHeight: 53.5,
-              boxShadow: '0px -3px 0px 0px #00000073 inset'
+              boxShadow: '0px -3px 0px 0px #00000073 inset',
             }}
           >
             {(() => {
@@ -367,7 +417,7 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
                 return 'Searching creators...';
               }
               if (resultCount != null) {
-                return `Show ${resultCount} Creator${resultCount !== 1 ? 's' : ''}`;
+                return `Show ${formatNumber(resultCount)} Creator${resultCount !== 1 ? 's' : ''}`;
               }
               return 'Show Results';
             })()}

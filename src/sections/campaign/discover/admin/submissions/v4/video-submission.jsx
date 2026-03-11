@@ -103,6 +103,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           feedback: feedback.trim() || '',
           reasons: reasons || [],
           caption: caption.trim() || undefined,
+          videoId: video?.id,
         });
 
         enqueueSnackbar('Video approved successfully', { variant: 'success' });
@@ -165,6 +166,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           feedback: hasContent ? currentFeedback.trim() : '',
           reasons: currentReasons || [],
           caption: caption.trim() || undefined,
+          videoId: video?.id,
         });
 
         enqueueSnackbar('Changes requested successfully', { variant: 'success' });

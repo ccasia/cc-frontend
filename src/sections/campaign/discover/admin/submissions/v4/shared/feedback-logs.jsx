@@ -439,6 +439,34 @@ export default function FeedbackLogs({ submission, onClose }) {
                   >
                     {log.content || ''}
                   </Typography>
+
+                  {/* Creator replies (Frame.io-style thread) */}
+                  {log.replies && log.replies.length > 0 && (
+                    <Box sx={{ mt: 1.5, pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
+                      <Typography fontSize={11} fontWeight="bold" color="#1340FF" sx={{ mb: 0.5 }}>
+                        Creator replies ({log.replies.length})
+                      </Typography>
+                      <Stack spacing={1}>
+                        {log.replies.map((reply) => (
+                          <Box key={reply.id}>
+                            <Typography fontSize={10} color="text.secondary">
+                              {reply.user?.name || 'Creator'} · {formatDateTime(reply.createdAt)}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                whiteSpace: 'pre-wrap',
+                                fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                                lineHeight: 1.4,
+                              }}
+                            >
+                              {reply.content || reply.text || ''}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
                 </Box>
               ))}
               </Stack>

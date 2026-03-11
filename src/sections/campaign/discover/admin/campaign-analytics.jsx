@@ -13,12 +13,10 @@ import {
   Avatar,
   Button,
   Dialog,
-  Tooltip,
   Divider,
   Skeleton,
   TextField,
   Typography,
-  IconButton,
   CircularProgress,
 } from '@mui/material';
 
@@ -44,104 +42,16 @@ import { deleteManualCreatorEntry, updateManualCreatorEntry } from 'src/api/manu
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 import { TopCreatorsLineChart, EngagementRateHeatmap } from 'src/components/trend-analysis';
-import PlatformOverviewMobile from 'src/components/campaign-analytics/PlatformOverviewMobile';
-import ManualCreatorEntryForm from 'src/components/campaign-analytics/ManualCreatorEntryForm';
-import PlatformOverviewDesktop from 'src/components/campaign-analytics/PlatformOverviewDesktop';
+import {
+  ScrollingName,
+  AnimatedNumber,
+  UserPerformanceCard,
+  PlatformOverviewMobile,
+  ManualCreatorEntryForm,
+  PlatformOverviewDesktop,
+} from 'src/components/campaign-analytics';
 
 import PCRReportPage from './pcr-report-page';
-
-// ----------------------------------------------------------------------
-
-function ScrollingName({ name, variant = 'subtitle1', fontWeight = 600, ...other }) {
-  const containerRef = useRef(null);
-  const textRef = useRef(null);
-  const [shouldScroll, setShouldScroll] = useState(false);
-  const [scrollDistance, setScrollDistance] = useState(0);
-
-  useEffect(() => {
-    const checkOverflow = () => {
-      if (containerRef.current && textRef.current) {
-        const containerWidth = containerRef.current.offsetWidth;
-        const textWidth = textRef.current.scrollWidth;
-        const needsScroll = textWidth > containerWidth;
-        setShouldScroll(needsScroll);
-        if (needsScroll) {
-          setScrollDistance(textWidth - containerWidth);
-        } else {
-          setScrollDistance(0);
-        }
-      }
-    };
-
-    // Use a small delay to ensure layout is complete
-    const timeoutId = setTimeout(checkOverflow, 0);
-    window.addEventListener('resize', checkOverflow);
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('resize', checkOverflow);
-    };
-  }, [name]);
-
-  // Create keyframes dynamically - using a unique name based on distance
-  const animationName = `scroll-${scrollDistance}`;
-
-  return (
-    <>
-      {shouldScroll && scrollDistance > 0 && (
-        <style>
-          {`
-            @keyframes ${animationName} {
-              0%, 25% {
-                transform: translateX(0);
-              }
-              50%, 75% {
-                transform: translateX(-${scrollDistance}px);
-              }
-              100% {
-                transform: translateX(0);
-              }
-            }
-          `}
-        </style>
-      )}
-      <Box
-        ref={containerRef}
-        sx={{
-          width: '100%',
-          maxWidth: '100%',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
-        <Tooltip title={name} arrow>
-          <Typography
-            ref={textRef}
-            variant={variant}
-            fontWeight={fontWeight}
-            {...other}
-            sx={{
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              display: 'inline-block',
-              ...(shouldScroll && scrollDistance > 0 && {
-                animation: `${animationName} 8s ease-in-out infinite`,
-              }),
-              ...other.sx,
-            }}
-          >
-            {name}
-          </Typography>
-        </Tooltip>
-      </Box>
-    </>
-  );
-}
-
-ScrollingName.propTypes = {
-  name: PropTypes.string.isRequired,
-  variant: PropTypes.string,
-  fontWeight: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-};
 
 // Stagger animation configuration for skeleton to content transitions
 
@@ -373,153 +283,6 @@ const RenderEngagementCard = ({
           </Typography>
         </Box>
       </Box>
-    </Box>
-  );
-};
-
-// Animated number component with count-up effect
-const AnimatedNumber = ({ value, suffix = '', formatFn }) => {
-  const [displayValue, setDisplayValue] = useState(value);
-  const rafRef = useRef(null);
-  const startTimeRef = useRef(null);
-  const startValueRef = useRef(value);
-  const prevValueRef = useRef(value);
-  const hasAnimatedRef = useRef(false);
-
-  useEffect(() => {
-    // Skip animation if value hasn't changed or if we've already animated to this value
-    if (prevValueRef.current === value && hasAnimatedRef.current) {
-      return undefined;
-    }
-
-    const duration = 1200; // ms
-    startValueRef.current = displayValue;
-    startTimeRef.current = null;
-    prevValueRef.current = value;
-    hasAnimatedRef.current = true;
-
-    const animate = (timestamp) => {
-      if (!startTimeRef.current) {
-        startTimeRef.current = timestamp;
-      }
-
-      const elapsed = timestamp - startTimeRef.current;
-      const progress = Math.min(elapsed / duration, 1);
-
-      // Ease-out cubic
-      const easeOut = 1 - (1 - progress) ** 3;
-      const currentValue = startValueRef.current + (value - startValueRef.current) * easeOut;
-
-      setDisplayValue(Math.round(currentValue));
-
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    rafRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
-  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const formatted = formatFn ? formatFn(displayValue) : displayValue;
-
-  return (
-    <span>
-      {formatted}
-      {suffix}
-    </span>
-  );
-};
-
-// Skeleton loader for metrics with shimmer effect
-const MetricsSkeleton = ({ showSaves = false, isMobile = false }) => {
-  const metricCount = showSaves ? 5 : 4;
-
-  if (isMobile) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        width="100%"
-        maxWidth={340}
-        mb={1.5}
-        px={1}
-      >
-        {Array.from({ length: metricCount }).map((_, i) => (
-          <React.Fragment key={i}>
-            <Box sx={{ flex: 1, textAlign: 'left' }}>
-              <Skeleton
-                animation="wave"
-                variant="text"
-                width={i === 0 ? 50 : 40}
-                height={16}
-                sx={{ bgcolor: 'rgba(99, 99, 102, 0.1)' }}
-              />
-              <Skeleton
-                animation="wave"
-                variant="text"
-                width={45}
-                height={32}
-                sx={{ bgcolor: 'rgba(19, 64, 255, 0.1)' }}
-              />
-            </Box>
-            {i < metricCount - 1 && (
-              <Skeleton
-                animation="wave"
-                variant="rectangular"
-                width={1}
-                height={40}
-                sx={{ mx: 1, bgcolor: 'rgba(19, 64, 255, 0.15)' }}
-              />
-            )}
-          </React.Fragment>
-        ))}
-      </Box>
-    );
-  }
-
-  return (
-    <Box
-      display="flex"
-      alignItems="center"
-      flex={1}
-      justifyContent="space-between"
-      sx={{ mx: { md: 2, lg: 4, xl: 6 } }}
-    >
-      {Array.from({ length: metricCount }).map((_, i) => (
-        <React.Fragment key={i}>
-          <Box sx={{ textAlign: 'left', flex: 1 }}>
-            <Skeleton
-              animation="wave"
-              variant="text"
-              width={i === 0 ? 110 : 60}
-              height={22}
-              sx={{ bgcolor: 'rgba(99, 99, 102, 0.1)' }}
-            />
-            <Skeleton
-              animation="wave"
-              variant="text"
-              width={70}
-              height={48}
-              sx={{ bgcolor: 'rgba(19, 64, 255, 0.1)' }}
-            />
-          </Box>
-          {i < metricCount - 1 && (
-            <Skeleton
-              animation="wave"
-              variant="rectangular"
-              width={1}
-              height={55}
-              sx={{ mx: { md: 1.5, lg: 2.5 }, bgcolor: 'rgba(19, 64, 255, 0.15)' }}
-            />
-          )}
-        </React.Fragment>
-      ))}
     </Box>
   );
 };
@@ -989,6 +752,8 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
     postUrl: entry.postUrl || '',
   });
 
+  console.log(entry)
+
   // Calculate engagement rate based on edited values
   const calculatedEngagementRate = useMemo(() => {
     const { views, likes, comments, shares, saved } = editValues;
@@ -1101,6 +866,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
               }}
             >
               <Avatar
+                src={entry.photoUrl || null}
                 sx={{
                   width: 44,
                   height: 44,
@@ -1678,6 +1444,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
             <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between" mb={2}>
               <Stack direction="row" spacing={1.5} alignItems="center">
                 <Avatar
+                  src={entry.photoUrl}
                   sx={{
                     width: 44,
                     height: 44,
@@ -2046,7 +1813,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     data: insightsData,
     isLoading: loadingInsights,
     error: insightsError,
-    loadingProgress,
     mutate: refreshInsights,
     clearCache,
   } = useSocialInsights(postingSubmissions, campaignId);
@@ -3511,6 +3277,13 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                     ref={formRef}
                     campaignId={campaignId}
                     selectedPlatform={selectedPlatform !== 'ALL' ? selectedPlatform : null}
+                    submissionsWithoutInsights={
+                      !loadingInsights
+                        ? filteredSubmissions.filter(
+                            (sub) => !insightsData.find((d) => d.submissionId === sub.id)
+                          )
+                        : []
+                    }
                     onSuccess={() => {
                       setShowAddCreatorForm(false);
                       mutateManualEntries();
@@ -3542,6 +3315,9 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                 {paginationData.displayedSubmissions.map((submission) => {
                   const insightData = insightsData.find((data) => data.submissionId === submission.id);
                   const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
+
+                  // Don't render card when there's definitively no insight data (after loading)
+                  if (!insightData && !loadingInsights) return null;
 
                   return (
                     <UserPerformanceCard
