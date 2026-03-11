@@ -49,6 +49,9 @@ const CREATOR_NAME_PATTERNS = [
   /[Ii]nvoice\s+[\w-]+\s+for\s+"?([^"]+?)"?\s+was marked as paid/,
   /[Ii]nvoice\s+[\w-]+\s+for\s+"?([^"]+?)"?\s+status changed to/,
 
+  // "Invoice details updated on INV-123 for Name"
+  /[Ii]nvoice details updated on\s+[\w-]+\s+for\s+"?([^"]+?)"?\s*$/,
+
   // changed the amount from X to Y for "Name"
   /changed the amount from .+? to .+? for\s+"?([^"]+?)"?\s*$/i,
 
@@ -197,6 +200,10 @@ export function extractInvoiceInfo(rawMessage) {
   m = rawMessage.match(/[Ii]nvoice\s+([\w-]+)\s+for\s+"?(.+?)"?\s+status changed to/);
   if (m) return { invoiceNumber: m[1], creatorName: m[2].trim() };
 
+  // "Invoice details updated on INV-123 for Name"
+  m = rawMessage.match(/[Ii]nvoice details updated on\s+([\w-]+)\s+for\s+"?(.+?)"?\s*$/);
+  if (m) return { invoiceNumber: m[1], creatorName: m[2].trim() };
+
   return null;
 }
 
@@ -206,9 +213,9 @@ export function extractInvoiceInfo(rawMessage) {
 
 export function extractAmountChangeInfo(rawMessage) {
   if (!rawMessage) return null;
-  const m = rawMessage.match(/changed the amount from (.+?) to (.+?) for\s+"?(.+?)"?\s*$/i);
+  const m = rawMessage.match(/changed the amount(?:\s+on\s+invoice\s+([\w-]+))?\s+from\s+(.+?)\s+to\s+(.+?)\s+for\s+"?(.+?)"?\s*$/i);
   if (!m) return null;
-  return { oldAmount: m[1], newAmount: m[2], creatorName: m[3].trim() };
+  return { invoiceNumber: m[1] || null, oldAmount: m[2], newAmount: m[3], creatorName: m[4].trim() };
 }
 
 // ---------------------------------------------------------------------------
@@ -290,7 +297,7 @@ export function extractLogContext(log, campaign) {
   const { action, category } = log;
 
   // Creator context
-  if (CREATOR_CATEGORIES.has(category) || category === 'Invoice' || category === 'Invoice Rejected' || category === 'Invoice Paid' || category === 'Amount Changed') {
+  if (CREATOR_CATEGORIES.has(category) || category === 'Invoice' || category === 'Invoice Rejected' || category === 'Invoice Paid' || category === 'Invoice Details Updated' || category === 'Amount Changed') {
     const name = extractCreatorNameFromLog(action);
     if (name) {
       ctx.creator = findCreatorData(name, campaign);
@@ -318,6 +325,13 @@ export function extractLogContext(log, campaign) {
   // Invoice context
   if (category === 'Invoice' || category === 'Invoice Rejected' || category === 'Invoice Paid') {
     ctx.invoice = extractInvoiceInfo(action);
+  }
+
+  // Invoice details updated (field changes with before/after diffs)
+  if (category === 'Invoice Details Updated') {
+    ctx.invoice = extractInvoiceInfo(action);
+    ctx.changes = Array.isArray(log.metadata?.changes) ? log.metadata.changes : null;
+    ctx.editSection = log.metadata?.section || 'Invoice Details';
   }
 
   // Amount change context
