@@ -73,6 +73,9 @@ const RULES = [
   // V4 draft rejection
   { test: (m) => m.includes('draft rejected by'), category: 'Draft Rejected', groups: ['admin'] },
 
+  // Invoice details updated (field changes like due date, bank info, etc.)
+  { test: (m) => m.includes('invoice details updated'), category: 'Invoice Details Updated', groups: ['admin', 'invoice'] },
+
   // Invoice — expanded status logging
   { test: (m) => m.includes('invoice') && m.includes('was generated'), category: 'Invoice', groups: ['invoice'] },
   { test: (m) => m.includes('deleted invoice'), category: 'Invoice', groups: ['invoice'] },
@@ -179,6 +182,7 @@ const CATEGORY_META = {
   'Draft Rejected':   { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:close-circle-bold' },
   'Amount Changed':   { color: '#FFAB00', bg: '#FFF8E6', icon: 'solar:tag-price-bold' },
   Invoice:            { color: '#8E33FF', bg: '#F3E8FF', icon: 'solar:bill-list-bold' },
+  'Invoice Details Updated': { color: '#FFAB00', bg: '#FFF8E6', icon: 'solar:pen-bold' },
   'Invoice Rejected': { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:bill-cross-bold' },
   'Invoice Paid':     { color: '#22C55E', bg: '#E8FAF0', icon: 'solar:bill-check-bold' },
   'Logistics':           { color: '#00B8D9', bg: '#E6F9FD', icon: 'solar:box-bold' },
@@ -320,6 +324,10 @@ export function formatLogMessage(msg, performer) {
   // Generic status change (non-paid)
   m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+status changed to\s+(\w[\w_]*)/i);
   if (m) return `${p} changed invoice ${m[1]} for ${qn(m[2])} to ${a(m[3])}`;
+
+  // Invoice details updated
+  m = msg.match(/[Ii]nvoice details updated on\s+([\w-]+)\s+for\s+"?(.+?)"?\s*$/);
+  if (m) return `${p} updated invoice ${m[1]} details for ${qn(m[2])}`;
 
   // Amount change (invoice)
   m = msg.match(/changed the amount\s+on\s+invoice\s+[\w-]+\s+from\s+(.+?)\s+to\s+(.+?)\s+for\s+(.+)$/i);
@@ -557,6 +565,10 @@ export function formatLogSummary(msg, performer) {
   m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+status changed to\s+(\w[\w_]*)/i);
   if (m) return `Invoice ${m[1]} for ${qn(m[2])} changed to ${a(m[3])}`;
 
+  // Invoice details updated
+  m = msg.match(/[Ii]nvoice details updated on\s+([\w-]+)\s+for\s+"?(.+?)"?\s*$/);
+  if (m) return `Invoice ${m[1]} details updated for ${qn(m[2])}`;
+
   // Amount change (invoice)
   m = msg.match(/changed the amount\s+on\s+invoice\s+[\w-]+\s+from\s+(.+?)\s+to\s+(.+?)\s+for\s+(.+)$/i);
   if (m) return `${qn(m[3])}'s invoice amount changed from ${m[1]} to ${m[2]}`;
@@ -709,9 +721,8 @@ function extractInvoiceAction(msg) {
 export function deduplicateLogs(classifiedLogs) {
   const groups = new Map();
 
-  classifiedLogs.forEach((log, index) => {
-    // Campaign Edit logs should never be deduplicated — each edit is a distinct action
-    if (log.category === 'Campaign Edit') {
+  classifiedLogs.forEach((log, index) => { 
+    if (log.category === 'Campaign Edit' || log.category === 'Invoice Details Updated') {
       groups.set(`edit_${log.id}`, [{ log, index }]);
       return;
     }
