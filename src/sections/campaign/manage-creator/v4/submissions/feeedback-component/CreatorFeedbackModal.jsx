@@ -454,9 +454,19 @@ FeedbackCard.propTypes = {
 };
 
 // Main Component
-const CreatorFeedbackModal = ({ submission, videoPage = 0, setVideoPage, videoCount = 1, showNewCommentBorders = false }) => {
-  const adminFeedback = submission?.feedback || [];
-  const feedbackToShow = videoPage > 0 ? adminFeedback : [];
+const CreatorFeedbackModal = ({
+  submission,
+  videoPage = 0,
+  setVideoPage,
+  videoCount = 1,
+  currentVideo = null,
+  showNewCommentBorders = false,
+}) => {
+  const allFeedback = submission?.feedback || [];
+  const currentVideoId = currentVideo?.id;
+  const feedbackToShow = currentVideoId
+    ? allFeedback.filter((f) => !f.videoId || f.videoId === currentVideoId)
+    : allFeedback;
   const [replyStates, setReplyStates] = useState({});
   const [replyTexts, setReplyTexts] = useState({});
   const [replies, setReplies] = useState({});
@@ -480,7 +490,7 @@ const CreatorFeedbackModal = ({ submission, videoPage = 0, setVideoPage, videoCo
     const replyText = replyTexts[index];
     if (!replyText?.trim()) return;
 
-    const feedbackId = feedbackToShow[index]?.id || adminFeedback[index]?.id;
+    const feedbackId = feedbackToShow[index]?.id;
     if (!feedbackId) return;
 
     // Optimistic UI
@@ -718,6 +728,10 @@ CreatorFeedbackModal.propTypes = {
   videoPage: PropTypes.number,
   setVideoPage: PropTypes.func,
   videoCount: PropTypes.number,
+  currentVideo: PropTypes.shape({
+    id: PropTypes.string,
+    url: PropTypes.string,
+  }),
   showNewCommentBorders: PropTypes.bool,
 };
 

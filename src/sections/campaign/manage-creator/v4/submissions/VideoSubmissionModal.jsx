@@ -37,7 +37,13 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
 
   const effectiveSubmission = freshSubmission || submission;
 
-  const videos = effectiveSubmission.video || [];
+  const allVideos = effectiveSubmission.video || [];
+  const MAX_VIDEO_PAGES = 3;
+  const latestVideos =
+    allVideos.length <= MAX_VIDEO_PAGES
+      ? [...allVideos].reverse()
+      : allVideos.slice(-MAX_VIDEO_PAGES).reverse();
+  const videos = latestVideos;
   const videoCount = videos.length;
   const currentVideo = videos[videoPage] || videos[0];
   const videoUrl = currentVideo?.url || null;

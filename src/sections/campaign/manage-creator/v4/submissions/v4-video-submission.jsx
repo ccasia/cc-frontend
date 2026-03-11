@@ -273,12 +273,13 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
         submission={submission}
         creator={creator}
         showNewCommentBorders={showNewCommentBorders}
-        rightSideContent={({ videoPage, setVideoPage, videoCount, showNewCommentBorders: showBorders, submission: freshSubmission }) => (
+        rightSideContent={({ videoPage, setVideoPage, videoCount, currentVideo, showNewCommentBorders: showBorders, submission: freshSubmission }) => (
           <CreatorFeedbackModal
             submission={freshSubmission || submission}
             videoPage={videoPage}
             setVideoPage={setVideoPage}
             videoCount={videoCount}
+            currentVideo={currentVideo}
             showNewCommentBorders={showBorders}
           />
         )}
