@@ -679,6 +679,23 @@ function extractCreatorName(msg) {
   // Pattern: X approved Willy Wong's Final Draft
   m = msg.match(/(?:approved|requested changes on) (.+?)(?:'s|'s)/i);
   if (m) return m[1].replace(/^"|"$/g, '').trim();
+  // Pattern: Invoice INV-X for <Name> (status changed to...|was generated|was marked...)
+  // Also: Approved/Rejected/Deleted/Bulk approved invoice INV-X for <Name>
+  m = msg.match(/invoice\s+[\w-]+\s+for\s+(.+?)(?:\s+(?:status changed|was\s)|\s*$)/i);
+  if (m) return m[1].replace(/^"|"$/g, '').trim();
+  return '';
+}
+
+function extractInvoiceAction(msg) {
+  const lower = msg.toLowerCase();
+  const m = lower.match(/status changed to\s+(\w+)/);
+  if (m) return m[1];
+  if (lower.includes('bulk approved invoice')) return 'approved';
+  if (lower.includes('approved invoice')) return 'approved';
+  if (lower.includes('rejected invoice')) return 'rejected';
+  if (lower.includes('deleted invoice')) return 'deleted';
+  if (lower.includes('was marked as paid')) return 'paid';
+  if (lower.includes('was generated')) return 'generated';
   return '';
 }
 
@@ -694,7 +711,8 @@ export function deduplicateLogs(classifiedLogs) {
     // Round timestamp to nearest 60 seconds for grouping
     const ts = Math.floor(new Date(log.createdAt).getTime() / 60000);
     const creator = extractCreatorName(log.action);
-    const key = `${ts}|${log.category}|${log.performedBy}|${creator}`;
+    const invoiceAction = log.category.startsWith('Invoice') ? extractInvoiceAction(log.action) : '';
+    const key = `${ts}|${log.category}|${log.performedBy}|${creator}|${invoiceAction}`;
 
     if (!groups.has(key)) {
       groups.set(key, []);
