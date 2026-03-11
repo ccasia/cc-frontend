@@ -792,12 +792,16 @@ export function ReviewEfficiencyScatter({ data }) {
                 label: 'Hours',
                 min: xAxisMin,
                 max: xAxisMax,
+                tickLabelStyle: {
+                  fontSize: 11,
+                  fontWeight: 500,
+                },
               },
             ]}
             yAxis={[
               {
                 label: 'Rounds',
-                min: yAxisMin,
+                min: 1,
                 max: yAxisMax,
                 valueFormatter: (v) => (Number.isInteger(v) ? `${v}` : ''),
               },
