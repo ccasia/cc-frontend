@@ -60,10 +60,7 @@ const EmptyProfileSvgIcon = ({ size = '100%' }) => (
 );
 
 EmptyProfileSvgIcon.propTypes = {
-  size: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.number,
-  ]),
+  size: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
 const DiscoveryToolNpcView = () => {
@@ -165,6 +162,13 @@ const DiscoveryToolNpcView = () => {
   const isDefaultDisabledState = !hasPendingFilterChanges && !hasAppliedFilters;
 
   const buttonDisabled = !hasPendingFilterChanges || isPreviewCountLoading;
+
+  let searchButtonLabel = `Show ${formatNumber(resultCount)} Creator${resultCount !== 1 ? 's' : ''}`;
+  if (isDefaultDisabledState) {
+    searchButtonLabel = 'Show Results';
+  } else if (isButtonLoading) {
+    searchButtonLabel = 'Searching creators...';
+  }
 
   const activePills = useMemo(() => {
     const pills = [];
@@ -335,15 +339,7 @@ const DiscoveryToolNpcView = () => {
             boxShadow: '0px -3px 0px 0px #00000073 inset',
           }}
         >
-          {(() => {
-            if (isDefaultDisabledState) {
-              return 'Show Results';
-            }
-            if (isButtonLoading) {
-              return 'Searching creators...';
-            }
-            return `Show ${formatNumber(resultCount)} Creator${resultCount !== 1 ? 's' : ''}`;
-          })()}
+          {searchButtonLabel}
         </Button>
       </Stack>
 
