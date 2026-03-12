@@ -391,6 +391,7 @@ export const endpoints = {
   },
   discovery: {
     creators: '/api/discovery/creators',
+    nonPlatformCreators: '/api/discovery/non-platform-creators',
     inviteCreators: '/api/discovery/invite-creators',
   },
   invoice: {
