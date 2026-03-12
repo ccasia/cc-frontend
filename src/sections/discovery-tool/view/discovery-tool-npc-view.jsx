@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react';
 
 import {
   Box,
-  Card,
   Chip,
   Link,
   Stack,
