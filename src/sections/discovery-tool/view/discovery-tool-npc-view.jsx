@@ -1,29 +1,28 @@
+import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 
 import {
-  Avatar,
   Box,
-  Button,
   Card,
-  CardContent,
   Chip,
-  CircularProgress,
+  Link,
+  Stack,
+  Avatar,
+  Button,
+  Select,
+  MenuItem,
   Container,
   InputBase,
-  Link,
-  MenuItem,
   Pagination,
-  Select,
-  Stack,
   Typography,
+  CircularProgress,
 } from '@mui/material';
+
+import useGetDiscoveryNpcCreators from 'src/hooks/use-get-discovery-npc-creators';
 
 import { formatNumber } from 'src/utils/socialMetricsCalculator';
 
 import Iconify from 'src/components/iconify';
-
-import useGetDiscoveryNpcCreators from 'src/hooks/use-get-discovery-npc-creators';
-
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 const formatFollowers = (value) => {
@@ -59,6 +58,10 @@ const EmptyProfileSvgIcon = ({ size = '100%' }) => (
     </g>
   </Box>
 );
+
+EmptyProfileSvgIcon.propTypes = {
+  size: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+};
 
 const DiscoveryToolNpcView = () => {
   const [filters, setFilters] = useState({
@@ -159,6 +162,13 @@ const DiscoveryToolNpcView = () => {
   const isDefaultDisabledState = !hasPendingFilterChanges && !hasAppliedFilters;
 
   const buttonDisabled = !hasPendingFilterChanges || isPreviewCountLoading;
+
+  let searchButtonLabel = `Show ${formatNumber(resultCount)} Creator${resultCount !== 1 ? 's' : ''}`;
+  if (isDefaultDisabledState) {
+    searchButtonLabel = 'Show Results';
+  } else if (isButtonLoading) {
+    searchButtonLabel = 'Searching creators...';
+  }
 
   const activePills = useMemo(() => {
     const pills = [];
@@ -329,11 +339,7 @@ const DiscoveryToolNpcView = () => {
             boxShadow: '0px -3px 0px 0px #00000073 inset',
           }}
         >
-          {isDefaultDisabledState
-            ? 'Show Results'
-            : isButtonLoading
-              ? 'Searching creators...'
-              : `Show ${formatNumber(resultCount)} Creator${resultCount !== 1 ? 's' : ''}`}
+          {searchButtonLabel}
         </Button>
       </Stack>
 
