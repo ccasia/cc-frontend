@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react';
 
 import {
   Box,
-  Card,
   Chip,
   Link,
   Stack,
@@ -457,40 +456,42 @@ const DiscoveryToolNpcView = () => {
             }}
           >
             {sortedCreators.map((creator) => (
-              <Card
+              <Box
                 key={creator.rowId || creator.userId}
-                variant='elevation'
+                variant="elevation"
                 sx={{
                   borderRadius: 2,
                   p: 2,
-                  maxHeight: 200,
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  justifyContent: 'space-between',
                   backgroundColor: '#efeff2',
                   display: 'flex',
                   flexDirection: 'column',
                   borderColor: '#d4d5db',
-                  boxShadow: '4px 4px 4px 0px #8D8D94'
+                  boxShadow: '4px 4px 4px 0px #8D8D94',
                 }}
               >
-
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flex: 1,
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                  }}
+                >
                   <Avatar
                     sx={{
                       width: 60,
                       height: 60,
                       padding: 0,
                       backgroundColor: '#D3D3D3',
-                      fontSize: 30,
-                      overflow: 'hidden',
-                      justifySelf: 'center',
                       mb: 1,
                     }}
                   >
                     <EmptyProfileSvgIcon size="100%" />
                   </Avatar>
 
-                  <Typography sx={{ fontSize: 12, fontWeight: 600}}>{creator.name}</Typography>
-
+                  <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{creator.name}</Typography>
                   {/* Refactored to avoid nested ternary */}
                   {(() => {
                     if (creator.profileLink) {
@@ -503,7 +504,7 @@ const DiscoveryToolNpcView = () => {
                           sx={{
                             display: 'block',
                             textAlign: 'center',
-                            fontSize: 14,
+                            fontSize: 13.8,
                             textTransform: 'lowercase',
                             lineHeight: 1.35,
                             whiteSpace: 'normal',
@@ -519,17 +520,28 @@ const DiscoveryToolNpcView = () => {
                     }
                     return <Typography color="text.disabled">No profile link</Typography>;
                   })()}
+                </Box>
 
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: '#1340FF', fontWeight: 700, lineHeight: 1.6 }}>
-                      Followers
-                    </Typography>
-                    <Typography sx={{ lineHeight: 1, color: '#1340FF', fontFamily: 'Instrument Serif', fontSize: 32 }}>
-                      {formatFollowers(creator.followers)}
-                    </Typography>
-                  </Box>
-
-              </Card>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: 12, color: '#1340FF', fontWeight: 700 }}>
+                    Followers
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: '#1340FF',
+                      fontFamily: 'Instrument Serif',
+                      fontSize: 32,
+                      lineHeight: 1,
+                      display: 'block',
+                      margin: 0,
+                      padding: 0,
+                      mt: 0.5
+                    }}
+                  >
+                    {formatFollowers(creator.followers)}
+                  </Typography>
+                </Box>
+              </Box>
             ))}
           </Box>
         </Box>
