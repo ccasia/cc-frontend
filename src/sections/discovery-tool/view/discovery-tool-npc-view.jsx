@@ -491,30 +491,34 @@ const DiscoveryToolNpcView = () => {
 
                   <Typography sx={{ fontSize: 12, fontWeight: 600}}>{creator.name}</Typography>
 
-                  {creator.profileLink ? (
-                    <Link
-                      href={creator.profileLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      underline="hover"
-                      sx={{
-                        display: 'block',
-                        textAlign: 'center',
-                        fontSize: 14,
-                        textTransform: 'lowercase',
-                        lineHeight: 1.35,
-                        whiteSpace: 'normal',
-                        overflowWrap: 'anywhere',
-                        wordBreak: 'break-word',
-                        color: '#1340FF',
-                        mb: 1,
-                      }}
-                    >
-                      {creator.profileLink.replace(/^https?:\/\//, '')}
-                    </Link>
-                  ) : (
-                    <Typography color="text.disabled">No profile link</Typography>
-                  )}
+                  {/* Refactored to avoid nested ternary */}
+                  {(() => {
+                    if (creator.profileLink) {
+                      return (
+                        <Link
+                          href={creator.profileLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          underline="hover"
+                          sx={{
+                            display: 'block',
+                            textAlign: 'center',
+                            fontSize: 14,
+                            textTransform: 'lowercase',
+                            lineHeight: 1.35,
+                            whiteSpace: 'normal',
+                            overflowWrap: 'anywhere',
+                            wordBreak: 'break-word',
+                            color: '#1340FF',
+                            mb: 1,
+                          }}
+                        >
+                          {creator.profileLink.replace(/^https?:\/\//, '')}
+                        </Link>
+                      );
+                    }
+                    return <Typography color="text.disabled">No profile link</Typography>;
+                  })()}
 
                   <Box>
                     <Typography sx={{ fontSize: 12, color: '#1340FF', fontWeight: 700, lineHeight: 1.6 }}>
