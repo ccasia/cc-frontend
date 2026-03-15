@@ -871,7 +871,11 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       const selectedInvoices = dataFiltered.filter((row) => table.selected.includes(row.id));
 
       const actionableInvoices = selectedInvoices.filter(
-        (invoice) => invoice.status === 'pending' || invoice.status === 'draft'
+        (invoice) =>
+          invoice.status === 'pending' ||
+          invoice.status === 'draft' ||
+          invoice.status === 'processing' ||
+          invoice.status === 'failed'
       );
       const actionableIds = actionableInvoices.map((invoice) => invoice.id);
 
