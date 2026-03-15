@@ -142,8 +142,12 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     currency: filters.currency || undefined,
     search: filters.name || undefined,
     campaignName: filters.campaignName || undefined,
-    startDate: dateRange.startDate ? dayjs(dateRange.startDate).startOf('day').toISOString() : undefined,
-    endDate: dateRange.endDate ? dayjs(dateRange.endDate).add(1, 'day').startOf('day').toISOString() : undefined,
+    startDate: dateRange.startDate
+      ? dayjs(dateRange.startDate).startOf('day').toISOString()
+      : undefined,
+    endDate: dateRange.endDate
+      ? dayjs(dateRange.endDate).add(1, 'day').startOf('day').toISOString()
+      : undefined,
   });
 
   // Debug: Log error if API call fails
@@ -340,8 +344,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       const beneficiaryName = paymentForm?.bankAccountName || invoice?.creator?.user?.name || '';
       const beneficiaryAccount = paymentForm?.bankAccountNumber || '';
       const amount = invoice?.amount != null ? Number(invoice.amount).toFixed(2) : '0.00';
-      const description =
-        invoice?.campaign?.company?.name || invoice?.campaign?.brand?.name || '';
+      const description = invoice?.campaign?.company?.name || invoice?.campaign?.brand?.name || '';
       const campaignName = invoice?.campaign?.name || '';
       const paymentRef = campaignName.replace(/\s/g, '').substring(0, 20);
       // const phone = invoice?.creator?.user?.phoneNumber || '';
@@ -543,8 +546,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       const beneficiaryName = paymentForm?.bankAccountName || invoice?.creator?.user?.name || '';
       const beneficiaryAccount = paymentForm?.bankAccountNumber || '';
       const amount = invoice?.amount != null ? Number(invoice.amount).toFixed(2) : '0.00';
-      const description =
-        invoice?.campaign?.company?.name || invoice?.campaign?.brand?.name || '';
+      const description = invoice?.campaign?.company?.name || invoice?.campaign?.brand?.name || '';
       const campaignName = invoice?.campaign?.name || '';
       const paymentRef = campaignName.replace(/\s/g, '').substring(0, 20);
       // const phone = invoice?.creator?.user?.phoneNumber || '';
@@ -1459,7 +1461,9 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                           </Typography>
                         </TableCell>
                         {/* 8. Beneficiary New IC No */}
-                        <TableCell sx={cellSx}>{paymentForm?.icNumber?.replaceAll('-', '') || '-'}</TableCell>
+                        <TableCell sx={cellSx}>
+                          {paymentForm?.icNumber?.replaceAll('-', '') || '-'}
+                        </TableCell>
                         {/* 9. Beneficiary Old IC No */}
                         <TableCell sx={cellSx}>-</TableCell>
                         {/* 10. Beneficiary Business Registration */}
@@ -1479,7 +1483,9 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                         {/* 15. Batch Reference No. */}
                         <TableCell sx={cellSx}>-</TableCell>
                         {/* 16. Payment Date */}
-                        <TableCell sx={cellSx}>{inv.dueDate ? dayjs(inv.dueDate).format('DD/MM/YYYY') : '-'}</TableCell>
+                        <TableCell sx={cellSx}>
+                          {inv.dueDate ? dayjs(inv.dueDate).format('DD/MM/YYYY') : '-'}
+                        </TableCell>
                         {/* 17. Beneficiary Address */}
                         <TableCell sx={cellSx}>-</TableCell>
                       </TableRow>
