@@ -290,12 +290,6 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
     return Number.isNaN(parsed) ? 0 : parsed;
   };
 
-  const toNumberOrZero = (value) => {
-    if (value === '' || value === undefined || value === null) return 0;
-    const parsed = Number(value);
-    return Number.isNaN(parsed) ? 0 : parsed;
-  };
-
   // Create schema based on selected platform
   const validationSchema = useMemo(() => {
     const platformForValidation = selectedPlatform && selectedPlatform !== 'ALL' ? selectedPlatform : null;
