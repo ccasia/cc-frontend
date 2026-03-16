@@ -82,7 +82,7 @@ const CommentCard = ({
 
   // Display forwardedBy name if set, otherwise user name
   const displayName = comment.forwardedBy?.name || comment.user?.name || 'Unknown';
-  const displayPhoto = comment.forwardedBy?.photoURL || comment.user?.photoURL || null;
+  const displayPhoto = comment.forwardedBy?.photoURL || comment.user?.photoURL || comment?.user?.client?.company?.logo || null;
   const displayRole = comment.forwardedBy
     ? 'Admin'
     : comment.user?.role?.charAt(0).toUpperCase() + comment.user?.role?.slice(1) || '';
