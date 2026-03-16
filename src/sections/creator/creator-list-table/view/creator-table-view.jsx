@@ -139,7 +139,10 @@ function CreatorTableView() {
           // Provide URL in console for manual copying
           console.log('Spreadsheet URL:', response.data.url);
         } else {
-          enqueueSnackbar('Creators exported to spreadsheet successfully', { variant: 'success' });
+          enqueueSnackbar(
+            'Creators and Media Kit Status exported successfully! Check the tabs in the spreadsheet.',
+            { variant: 'success', autoHideDuration: 5000 }
+          );
         }
       } else {
         throw new Error('Invalid response from server');
