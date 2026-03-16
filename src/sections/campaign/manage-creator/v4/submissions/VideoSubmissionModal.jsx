@@ -1,19 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Box, Typography, Avatar, IconButton, Modal, Backdrop } from '@mui/material';
 import Iconify from 'src/components/iconify';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideContent, showNewCommentBorders = false }) => {
+const formatTime = (timeInSeconds) => {
+  if (!timeInSeconds) return '0:00';
+  const m = Math.floor(timeInSeconds / 60);
+  const s = Math.floor(timeInSeconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
+const parseTimeToSeconds = (timeStr) => {
+  if (!timeStr) return 0;
+  const parts = timeStr.split(':').map(Number);
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return 0;
+};
+
+const VideoSubmissionModal = ({
+  open,
+  onClose,
+  submission,
+  creator,
+  rightSideContent,
+  showNewCommentBorders = false,
+}) => {
   const [videoPage, setVideoPage] = useState(0);
   const [freshSubmission, setFreshSubmission] = useState(submission);
 
-  // Reset to page 1 (latest) when modal opens or submission changes
+  const modalVideoRef = useRef(null);
+  const [modalCurrentTime, setModalCurrentTime] = useState(0);
+
+  const handleModalSeek = (timeStr) => {
+    if (modalVideoRef.current) {
+      const seconds = parseTimeToSeconds(timeStr);
+      modalVideoRef.current.currentTime = seconds;
+      modalVideoRef.current.play();
+    }
+  };
+
   useEffect(() => {
     if (open) setVideoPage(0);
   }, [open, submission?.id]);
 
-  // Fetch latest submission (includes feedback replies) on open
+  useEffect(() => {
+    setModalCurrentTime(0);
+  }, [videoPage]);
+
   useEffect(() => {
     let isMounted = true;
     const run = async () => {
@@ -47,25 +82,18 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
   const videoCount = videos.length;
   const currentVideo = videos[videoPage] || videos[0];
   const videoUrl = currentVideo?.url || null;
-  
+
   const captionText = effectiveSubmission.caption || '';
-  
-  // Get creator info from props or submission object
-  // Note: submission.user contains the creator info
+
   const creatorInfo = creator || effectiveSubmission.user || effectiveSubmission.creator || {};
-  const creatorName = creatorInfo.name || creatorInfo.firstName || effectiveSubmission.creatorName || 'Creator';
-  const creatorPhoto = creatorInfo?.photoURL || 
-                      creatorInfo?.photoUrl || 
-                      creatorInfo?.photo ||
-                      creatorInfo?.image ||
-                      null;
-  
-  // Debug: Log the data structure
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Modal Data:', { submission: effectiveSubmission, creator, creatorInfo, creatorName, creatorPhoto });
-    console.log('submission.user:', effectiveSubmission.user);
-    console.log('submission.admin:', effectiveSubmission.admin);
-  }
+  const creatorName =
+    creatorInfo.name || creatorInfo.firstName || effectiveSubmission.creatorName || 'Creator';
+  const creatorPhoto =
+    creatorInfo?.photoURL ||
+    creatorInfo?.photoUrl ||
+    creatorInfo?.photo ||
+    creatorInfo?.image ||
+    null;
 
   return (
     <Modal
@@ -268,11 +296,13 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
               {videoUrl ? (
                 <video
                   key={currentVideo?.id}
+                  ref={modalVideoRef}
                   src={videoUrl}
                   controls
                   controlsList="nodownload"
                   preload="metadata"
                   playsInline
+                  onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)} // <--- YOUR TIME TRACKER ATTACHED
                   style={{
                     width: '100%',
                     height: '100%',
@@ -304,8 +334,27 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
                 videos,
                 showNewCommentBorders,
                 submission: effectiveSubmission,
+                submissionId: effectiveSubmission.id,
+                videoId: currentVideo?.id,
+                isPastVideo: videoPage !== 0,
+                currentVideoTime: formatTime(modalCurrentTime),
+                onSeekTo: handleModalSeek,
               })
-            : rightSideContent) || (
+            : React.isValidElement(rightSideContent)
+              ? React.cloneElement(rightSideContent, {
+                  submissionId: effectiveSubmission.id,
+                  videoId: currentVideo?.id,
+                  isLocked:
+                    !['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(effectiveSubmission.status) ||
+                    videoPage !== 0,
+                  isPastVideo: videoPage !== 0,
+                  currentVideoTime: formatTime(modalCurrentTime),
+                  onSeekTo: handleModalSeek,
+                  videoPage: videoPage,
+                  setVideoPage: setVideoPage,
+                  videoCount: videoCount,
+                })
+              : rightSideContent) || (
             <Box
               sx={{
                 flex: { xs: '1 1 auto', md: '0 0 calc(40% - 20px)' },

@@ -32,6 +32,8 @@ import useCaptionOverflow from './shared/use-caption-overflow';
 import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
 import { VideoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
+import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
+import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
 
 export default function V4VideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
@@ -75,6 +77,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const captionMeasureRef = useRef(null);
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
+  const [videoSubmissionModalOpen, setVideoSubmissionModalOpen] = useState(false);
 
   const captionOverflows = useCaptionOverflow(captionMeasureRef, submission.caption);
 
@@ -192,17 +195,56 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     }
   }, [feedback, reasons, caption, submission.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
 
-  const videoControls = useMemo(() => ({
-    togglePlay: () => {
-      if (videoRef.current) {
-        if (isPlaying) {
-          videoRef.current.pause();
-        } else {
-          videoRef.current.play();
+  const handleSendComments = useCallback(
+    async (videoIdToPublish) => {
+      try {
+        setLoading(true);
+        setLocalActionInProgress(true);
+
+        const response = await axiosInstance.post('/api/submissions/v4/approve/client', {
+          submissionId: submission.id,
+          action: 'request_changes',
+          videoId: videoIdToPublish,
+          feedback: 'Client left detailed feedback via the threaded video comments.',
+          reasons: [],
+        });
+
+        enqueueSnackbar('Feedback sent to Admin successfully', { variant: 'success' });
+
+        if (response.data?.showNPS) {
+          showNpsModal();
         }
-        setIsPlaying(!isPlaying);
+
+        setTimeout(() => {
+          onUpdate?.(true);
+          setTimeout(() => {
+            setLocalActionInProgress(false);
+          }, 500);
+        }, 200);
+      } catch (error) {
+        enqueueSnackbar(error.message || 'Failed to send feedback', { variant: 'error' });
+      } finally {
+        setLoading(false);
+        if (localActionInProgress) {
+          setTimeout(() => setLocalActionInProgress(false), 300);
+        }
       }
     },
+    [submission.id, onUpdate, showNpsModal, localActionInProgress]
+  );
+
+  const videoControls = useMemo(
+    () => ({
+      togglePlay: () => {
+        if (videoRef.current) {
+          if (isPlaying) {
+            videoRef.current.pause();
+          } else {
+            videoRef.current.play();
+          }
+          setIsPlaying(!isPlaying);
+        }
+      },
 
     handleTimeUpdate: () => {
       if (videoRef.current) {
@@ -273,6 +315,14 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     localActionInProgress,
     userId: user?.id
   });
+
+  const handleCloseModal = useCallback(() => {
+    if (submission?.id && video?.id && user?.id) {
+      const storageKey = `lastViewed_sub_${submission.id}_vid_${video?.id}_user${user?.id}`;
+      localStorage.setItem(storageKey, new Date().toISOString());
+    }
+    setVideoSubmissionModalOpen(false);
+  }, [submission?.id, video?.id, user?.id]);
 
   return (
     <Box sx={{
@@ -452,26 +502,48 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           />
                         )}
                       </Box>
-
-                      <FeedbackActions
-                        submission={submission}
-                        campaign={campaign}
-                        isClient={isClient}
-                        clientVisible={clientVisible}
-                        isClientFeedback={isClientFeedback}
-                        action={action}
-                        setAction={setAction}
-                        reasons={reasons}
-                        setReasons={setReasons}
-                        feedback={feedback}
-                        setFeedback={setFeedback}
-                        loading={loading}
-                        handleApprove={handleApprove}
-                        handleRequestChanges={handleRequestChanges}
-                        hasPostingLink={hasPostingLink}
-                        onViewLogs={() => setShowFeedbackLogs(true)}
-                        isDisabled={isDisabled}
-                      />
+                      {isClient && (
+                        <Box sx={{ mt: 2 }}>
+                          <button
+                            type="button"
+                            style={{
+                              padding: '12px 24px',
+                              background: 'none',
+                              color: '#1340FF',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontWeight: 600,
+                              fontSize: '1rem',
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => setVideoSubmissionModalOpen(true)}
+                            disabled={isDisabled}
+                          >
+                            Review Submission
+                          </button>
+                        </Box>
+                      )}
+                      {!isClient && (
+                        <FeedbackActions
+                          submission={submission}
+                          campaign={campaign}
+                          isClient={isClient}
+                          clientVisible={clientVisible}
+                          isClientFeedback={isClientFeedback}
+                          action={action}
+                          setAction={setAction}
+                          reasons={reasons}
+                          setReasons={setReasons}
+                          feedback={feedback}
+                          setFeedback={setFeedback}
+                          loading={loading}
+                          handleApprove={handleApprove}
+                          handleRequestChanges={handleRequestChanges}
+                          hasPostingLink={hasPostingLink}
+                          onViewLogs={() => setShowFeedbackLogs(true)}
+                          isDisabled={isDisabled}
+                        />
+                      )}
                     </>
                   )}
                 </Box>
@@ -783,6 +855,21 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           );
         })()}
       </Box>
+
+      <VideoSubmissionModal
+        open={videoSubmissionModalOpen}
+        onClose={handleCloseModal}
+        submission={submission}
+        creator={submission.user}
+        rightSideContent={
+          <ClientFeedbackModal
+            submissionId={submission.id}
+            videoId={video?.id}
+            onSendToAdmin={handleSendComments}
+            isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
+          />
+        }
+      />
 
       {video?.url && (
         <VideoModal
