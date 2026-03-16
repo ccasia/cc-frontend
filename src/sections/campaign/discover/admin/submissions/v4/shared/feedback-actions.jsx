@@ -87,19 +87,22 @@ export default function FeedbackActions({
         >
           {(visibility.showRequestChangeButton || submission.status === 'CHANGES_REQUIRED' || submission.status === 'SENT_TO_CLIENT' || submission.status === 'CLIENT_FEEDBACK') && (
             <Typography
-              component="span"
+              component="button"
               onClick={() => setReviewModalOpen(true)}
               sx={{
-                fontSize: { xs: 12, sm: 13 },
-                fontWeight: 600,
-                color: '#919191',
+                px: 2,
+                py: 1,
+                bgcolor: 'transparent',
+                fontWeight: 800,
+                fontSize: 14,
+                color: submission.status === 'CLIENT_FEEDBACK' ? '#1340FF' : '#919191',
+                border: 'none',
                 cursor: 'pointer',
-                textTransform: 'none',
-                alignSelf: 'center',
+                outline: 'none',
+                transition: 'all 0.2s ease',
                 mr: 'auto',
-                ml: { xs: 0.5, sm: 1 },
                 '&:hover': {
-                  textDecoration: 'underline',
+                  opacity: 0.8,
                 },
               }}
             >
