@@ -33,6 +33,8 @@ import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
 import { VideoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
 import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
+import AdminVideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/AdminVideoSubmissionModal';
+import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissions/admin-feedback-modal';
 import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
 
 export default function V4VideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
@@ -78,6 +80,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   const captionMeasureRef = useRef(null);
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
   const [videoSubmissionModalOpen, setVideoSubmissionModalOpen] = useState(false);
+  const [adminReviewModalOpen, setAdminReviewModalOpen] = useState(false);
 
   const captionOverflows = useCaptionOverflow(captionMeasureRef, submission.caption);
 
@@ -300,10 +303,13 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
   const handleVideoClick = useCallback(() => {
     if (video?.url) {
-      setCurrentVideoIndex(0);
-      setVideoModalOpen(true);
+      if (isClient) {
+        setVideoSubmissionModalOpen(true);
+      } else {
+        setAdminReviewModalOpen(true);
+      }
     }
-  }, [video?.url]);
+  }, [video?.url, isClient]);
 
   const { togglePlay, handleTimeUpdate, handleLoadedMetadata, handleSeek, handleVolumeChange, toggleMute, formatTime } = videoControls;
 
@@ -871,6 +877,22 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         }
       />
 
+      <AdminVideoSubmissionModal
+        open={adminReviewModalOpen}
+        onClose={() => setAdminReviewModalOpen(false)}
+        submission={submission}
+        rightSideContent={({ currentTime, onSeek }) => (
+          <AdminFeedbackPanel
+            currentTime={currentTime}
+            onSeek={onSeek}
+            submission={submission}
+            videoId={video?.id}
+            onFeedbackSent={() => setAdminReviewModalOpen(false)}
+          />
+        )}
+      />
+
+      {/* VideoModal replaced by AdminVideoSubmissionModal (Review Submission modal)
       {video?.url && (
         <VideoModal
           open={videoModalOpen}
@@ -884,6 +906,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           title="Video Submission"
         />
       )}
+      */}
 
     </Box>
   );

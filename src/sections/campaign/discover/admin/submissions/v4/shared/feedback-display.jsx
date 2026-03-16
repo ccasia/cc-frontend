@@ -13,78 +13,24 @@ export default function FeedbackDisplay({ feedback, submission, isClient, onView
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', mb: { xs: 0.8, sm: 1 } }}>
       {(!isClient && (hasContent || hasReasons) && submission.status === 'CHANGES_REQUIRED') && (
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'row', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          flexWrap: { xs: 'wrap', sm: 'nowrap' },
-          gap: { xs: 0.5, sm: 0 }
-        }}>
-          <Typography 
-            variant='caption' 
-            fontWeight="bold" 
-            color="#636366"
-            sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
-          >
-            CS Feedback
-          </Typography>
-          <Button
-            size="small"
-            variant="text"
-            onClick={onViewLogs}
-            sx={{
-              fontSize: { xs: 11, sm: 12 },
-              color: '#919191',
-              p: 0,
-              minWidth: 'auto',
-              textTransform: 'none',
-              '&:hover': {
-                backgroundColor: 'transparent',
-              },
-            }}
-          >
-            view logs
-          </Button>
-        </Box>
+        <Typography
+          variant='caption'
+          fontWeight="bold"
+          color="#636366"
+          sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+        >
+          CS Feedback
+        </Typography>
       )}
-      {(!isClient && submission.status === 'SENT_TO_CLIENT') && (
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'row', 
-          alignItems: 'center', 
-          justifyContent: hasContent ? 'space-between' : 'flex-end',
-          flexWrap: { xs: 'wrap', sm: 'nowrap' },
-          gap: { xs: 0.5, sm: 0 }
-        }}>
-          {hasContent && 
-            <Typography 
-              variant='caption' 
-              fontWeight="bold" 
-              color="#636366"
-              sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
-            >
-              CS Comments
-            </Typography>
-          }
-          <Button
-            size="small"
-            variant="text"
-            onClick={onViewLogs}
-            sx={{
-              fontSize: { xs: 11, sm: 12 },
-              color: '#919191',
-              p: 0,
-              minWidth: 'auto',
-              textTransform: 'none',
-              '&:hover': {
-                backgroundColor: 'transparent',
-              },
-            }}
-          >
-            view logs
-          </Button>
-        </Box>
+      {(!isClient && hasContent && submission.status === 'SENT_TO_CLIENT') && (
+        <Typography
+          variant='caption'
+          fontWeight="bold"
+          color="#636366"
+          sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+        >
+          CS Comments
+        </Typography>
       )}
       {hasReasons && submission.status !== 'CLIENT_FEEDBACK' && (
         <Box sx={{ 

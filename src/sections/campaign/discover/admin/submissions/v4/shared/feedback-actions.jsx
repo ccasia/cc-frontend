@@ -110,6 +110,26 @@ export default function FeedbackActions({
             </Typography>
           )}
 
+          {!isClient && (
+            <Button
+              size="small"
+              variant="text"
+              onClick={onViewLogs}
+              sx={{
+                fontSize: { xs: 11, sm: 12 },
+                color: '#919191',
+                p: 0,
+                minWidth: 'auto',
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                },
+              }}
+            >
+              view logs
+            </Button>
+          )}
+
           {visibility.showChangeRequestForm && (
             <Box
               display="flex"
@@ -318,27 +338,7 @@ export default function FeedbackActions({
           )}
         </Stack>
 
-        {!isClient && submission.status !== 'CLIENT_FEEDBACK' && submission.status !== 'SENT_TO_CLIENT' && (
-          <Box display="flex" justifyContent="flex-end">
-            <Button
-              size="small"
-              variant="text"
-              onClick={onViewLogs}
-              sx={{
-                fontSize: { xs: 11, sm: 12 },
-                color: '#919191',
-                p: 0,
-                minWidth: 'auto',
-                textTransform: 'none',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                },
-              }}
-            >
-              view logs
-            </Button>
-          </Box>
-        )}
+        {/* view logs moved into the Review Submission row */}
 
         {visibility.showReasonsDropdown && (
           <FormControl
@@ -422,37 +422,7 @@ export default function FeedbackActions({
                 gap: { xs: 0.5, sm: 0 },
               }}
             >
-              {!isClient &&
-                latestRelevantFeedback.type === 'REQUEST' &&
-                latestRelevantFeedback.admin?.role === 'client' && (
-                  <>
-                    <Typography
-                      variant="caption"
-                      fontWeight="bold"
-                      color="#636366"
-                      sx={{ fontSize: { xs: 11, sm: 12 }, }}
-                    >
-                      Client Feedback
-                    </Typography>
-                    <Button
-                      size="small"
-                      variant="text"
-                      onClick={onViewLogs}
-                      sx={{
-                        fontSize: { xs: 11, sm: 12 },
-                        color: '#919191',
-                        p: 0,
-                        minWidth: 'auto',
-                        textTransform: 'none',
-                        '&:hover': {
-                          backgroundColor: 'transparent',
-                        },
-                      }}
-                    >
-                      view logs
-                    </Button>
-                  </>
-                )}
+              {/* view logs moved to top row */}
             </Box>
           );
         })()}

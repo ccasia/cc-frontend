@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Box, Typography, Avatar, IconButton, Button, TextField, CircularProgress } from '@mui/material';
+import { Box, Typography, Avatar, IconButton, Button, TextField, CircularProgress, Tooltip } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
+import { AnimatePresence, m } from 'framer-motion';
 
 import Iconify from 'src/components/iconify';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -42,6 +43,16 @@ const parseTimestamp = (timestampStr) => {
   return 0;
 };
 
+// Extract a leading timestamp from text, returning { timestamp, text }
+// Matches: "0:12 ...", "00:20 ...", "1:30:00 ...", "00:01:12 ..."
+const extractTimestamp = (input) => {
+  const match = input.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s+([\s\S]*)$/);
+  if (match) {
+    return { timestamp: formatTime(parseTimestamp(match[1])), text: match[2].trim() };
+  }
+  return { timestamp: null, text: input };
+};
+
 // ---------------------------------------------------------------------------
 // CommentCard
 // ---------------------------------------------------------------------------
@@ -50,6 +61,7 @@ const CommentCard = ({
   comment,
   onTimestampClick,
   onReply,
+  isReply = false,
   onEdit,
   onToggleResolve,
   editTarget,
@@ -63,7 +75,7 @@ const CommentCard = ({
   onSendInlineReply,
   onCancelInlineReply,
 }) => {
-  const isClientComment = comment.user?.role === 'client';
+  const isClientComment = comment.user?.role === 'client' && !comment.forwardedBy;
   const hasAgreed = comment.agreedBy?.length > 0;
   const isResolved = !!comment.resolvedByUserId;
 
@@ -75,20 +87,28 @@ const CommentCard = ({
     : comment.user?.role?.charAt(0).toUpperCase() + comment.user?.role?.slice(1) || '';
 
   const isEditing = editTarget?.commentId === comment.id;
+  const editFocusedRef = useRef(false);
+  const prevEditingRef = useRef(false);
+
+  // Reset the focus flag when entering/exiting edit mode
+  if (isEditing && !prevEditingRef.current) {
+    editFocusedRef.current = false;
+  }
+  prevEditingRef.current = isEditing;
+
+  const hasLeftActions = (!isReply && isClientComment) || (isClientComment && !comment.forwardedBy && !!onEdit);
 
   return (
     <Box
       sx={{
         bgcolor: 'white',
-        p: 2,
+        p: hasLeftActions ? 2 : 1.5,
         borderRadius: 2,
-        border: isClientComment && !comment.forwardedBy ? '1px solid #2563EB' : '1px solid transparent',
-        boxShadow: isClientComment && !comment.forwardedBy
-          ? 'none'
-          : '0px 2px 4px rgba(0, 0, 0, 0.02), 0px 1px 2px rgba(0, 0, 0, 0.04)',
+        border: isClientComment && !comment.forwardedBy ? '1px solid #2563EB' : '1px solid #EBEBEB',
+        boxShadow: 'none',
         display: 'flex',
         flexDirection: 'column',
-        gap: 1.5,
+        gap: hasLeftActions ? 1.5 : 0.75,
         position: 'relative',
         zIndex: 1,
       }}
@@ -128,26 +148,77 @@ const CommentCard = ({
       {/* Body */}
       <Box sx={{ pl: 0.5 }}>
         {isEditing ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box
+            sx={{
+              border: '1px solid #E7E7E7',
+              borderRadius: '8px',
+              bgcolor: '#FFFFFF',
+              p: 1.5,
+            }}
+          >
             <TextField
+              inputRef={(input) => {
+                if (input && !editFocusedRef.current) {
+                  editFocusedRef.current = true;
+                  input.focus();
+                  const { length } = input.value;
+                  input.setSelectionRange(length, length);
+                }
+              }}
               multiline
-              minRows={2}
+              minRows={1}
               maxRows={6}
               value={editText}
               onChange={(e) => onEditTextChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  onSaveEdit(comment.id);
+                }
+              }}
               size="small"
               fullWidth
               sx={{
-                '& .MuiOutlinedInput-root': { fontSize: '0.875rem' },
+                '& .MuiOutlinedInput-root': {
+                  border: 'none',
+                  '& fieldset': { border: 'none' },
+                  p: 0,
+                },
+                '& .MuiInputBase-input': {
+                  fontSize: '0.875rem',
+                  fontFamily: 'Inter, sans-serif',
+                  p: 0,
+                  lineHeight: 1.4,
+                },
               }}
             />
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-              <Button size="small" onClick={onCancelEdit} sx={{ fontSize: '0.75rem' }}>
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1 }}>
+              <Button
+                size="small"
+                onClick={onCancelEdit}
+                sx={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: '#1340FF',
+                  bgcolor: 'transparent',
+                  border: '1px solid #E7E7E7',
+                  borderBottom: '3px solid #E7E7E7',
+                  borderRadius: 1,
+                  px: 1.5,
+                  py: 0.5,
+                  '&:hover': {
+                    bgcolor: '#F9F9F9',
+                    border: '1px solid #E7E7E7',
+                    borderBottom: '3px solid #E7E7E7',
+                  },
+                }}
+              >
                 Cancel
               </Button>
               <Button
                 size="small"
                 variant="contained"
+                disabled={!editText?.trim()}
                 onClick={() => onSaveEdit(comment.id)}
                 sx={{
                   bgcolor: '#1340ff',
@@ -159,6 +230,12 @@ const CommentCard = ({
                   px: 1.5,
                   py: 0.5,
                   '&:hover': { bgcolor: '#1a4dff' },
+                  '&.Mui-disabled': {
+                    bgcolor: 'action.disabledBackground',
+                    color: 'action.disabled',
+                    borderBottomColor: 'action.disabledBackground',
+                    boxShadow: 'none',
+                  },
                 }}
               >
                 <Iconify icon="ic:round-send" width={18} sx={{ color: 'white' }} />
@@ -197,20 +274,22 @@ const CommentCard = ({
 
       {/* Footer Actions */}
       {!isEditing && (
-        <Box sx={{ pl: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Typography
-              onClick={() => onReply?.(comment)}
-              sx={{
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                color: '#9CA3AF',
-                cursor: 'pointer',
-                '&:hover': { color: '#6B7280' },
-              }}
-            >
-              Reply
-            </Typography>
+        <Box sx={{ pl: 0.5, display: 'flex', alignItems: 'center', justifyContent: hasLeftActions ? 'space-between' : 'flex-end' }}>
+          {hasLeftActions && <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            {!isReply && isClientComment && (
+              <Typography
+                onClick={() => onReply?.(comment)}
+                sx={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: '#9CA3AF',
+                  cursor: 'pointer',
+                  '&:hover': { color: '#6B7280' },
+                }}
+              >
+                Reply
+              </Typography>
+            )}
             {isClientComment && !comment.forwardedBy && onEdit && (
               <Typography
                 onClick={() => onEdit(comment)}
@@ -225,103 +304,140 @@ const CommentCard = ({
                 Edit
               </Typography>
             )}
-          </Box>
+          </Box>}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-            <IconButton size="small" sx={{ p: 0.5 }}>
-              <Iconify
-                icon={hasAgreed ? 'mdi:thumb-up' : 'mdi-light:thumb-up'}
-                width={20}
-                sx={{
-                  color: hasAgreed ? '#1340FF' : '#9CA3AF',
-                  filter: 'drop-shadow(0px 0px 0.2px #000000)',
-                }}
-              />
-            </IconButton>
-            <IconButton size="small" sx={{ p: 0.5 }} onClick={() => onToggleResolve?.(comment.id)}>
-              <Iconify
-                icon={isResolved ? 'mdi:check-circle' : 'mdi:check-circle-outline'}
-                width={20}
-                sx={{ color: isResolved ? '#00A76F' : '#919191' }}
-              />
-            </IconButton>
+            {hasAgreed && (
+              <IconButton size="small" sx={{ p: 0.5 }}>
+                <Iconify
+                  icon="mdi:thumb-up"
+                  width={20}
+                  sx={{
+                    color: '#1340FF',
+                    filter: 'drop-shadow(0px 0px 0.2px #000000)',
+                  }}
+                />
+              </IconButton>
+            )}
+            <Tooltip title={isResolved ? `Resolved at ${fDateTime(comment.resolvedAt)}` : 'Mark as Resolved'} arrow placement="top">
+              <IconButton size="small" sx={{ p: 0.5 }} onClick={() => onToggleResolve?.(comment.id)}>
+                <Iconify
+                  icon={isResolved ? 'mdi:check-circle' : 'mdi:check-circle-outline'}
+                  width={20}
+                  sx={{ color: isResolved ? '#00A76F' : '#919191' }}
+                />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Box>
       )}
 
       {/* Inline Reply Input */}
-      {inlineReplyTarget === comment.id && (
-        <Box
-          sx={{
-            mt: 1,
-            border: '1px solid #E7E7E7',
-            borderRadius: '8px',
-            bgcolor: '#FFFFFF',
-            p: 1.5,
-          }}
-        >
-          <TextField
-            multiline
-            minRows={1}
-            maxRows={4}
-            placeholder={`Reply to ${comment.forwardedBy?.name || comment.user?.name || 'Unknown'}...`}
-            value={inlineReplyText}
-            onChange={(e) => onInlineReplyTextChange?.(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                onSendInlineReply?.();
-              }
-            }}
-            size="small"
-            fullWidth
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                border: 'none',
-                '& fieldset': { border: 'none' },
-                p: 0,
-              },
-              '& .MuiInputBase-input': {
-                fontSize: 13,
-                fontFamily: 'Inter, sans-serif',
-                p: 0,
-                lineHeight: 1.4,
-                '&::placeholder': {
-                  color: '#B0B0B0',
-                  opacity: 1,
-                },
-              },
-            }}
-          />
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1 }}>
-            <Button
-              size="small"
-              onClick={onCancelInlineReply}
-              sx={{ fontSize: '0.75rem', color: '#9CA3AF' }}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="small"
-              variant="contained"
-              disabled={!inlineReplyText?.trim()}
-              onClick={onSendInlineReply}
+      <AnimatePresence>
+        {inlineReplyTarget === comment.id && (
+          <m.div
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            style={{ overflow: 'hidden' }}
+          >
+            <Box
               sx={{
-                bgcolor: '#1340ff',
-                borderBottom: '2px solid #0A238C',
-                boxShadow: 'inset 0px -2px 0px 0px #0A238C',
-                borderRadius: 1,
-                minWidth: 'unset',
-                minHeight: 28,
-                px: 1.5,
-                py: 0.5,
-                '&:hover': { bgcolor: '#1a4dff' },
+                border: '1px solid #E7E7E7',
+                borderRadius: '8px',
+                bgcolor: '#FFFFFF',
+                p: 1.5,
               }}
             >
-              <Iconify icon="ic:round-send" width={18} sx={{ color: 'white' }} />
-            </Button>
-          </Box>
-        </Box>
-      )}
+              <TextField
+                inputRef={(input) => {
+                  if (input) input.focus();
+                }}
+                multiline
+                minRows={1}
+                maxRows={4}
+                placeholder={`Reply to ${comment.forwardedBy?.name || comment.user?.name || 'Unknown'}...`}
+                value={inlineReplyText}
+                onChange={(e) => onInlineReplyTextChange?.(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    onSendInlineReply?.();
+                  }
+                }}
+                size="small"
+                fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    border: 'none',
+                    '& fieldset': { border: 'none' },
+                    p: 0,
+                  },
+                  '& .MuiInputBase-input': {
+                    fontSize: 13,
+                    fontFamily: 'Inter, sans-serif',
+                    p: 0,
+                    lineHeight: 1.4,
+                    '&::placeholder': {
+                      color: '#B0B0B0',
+                      opacity: 1,
+                    },
+                  },
+                }}
+              />
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1 }}>
+                <Button
+                  size="small"
+                  onClick={onCancelInlineReply}
+                  sx={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: '#1340FF',
+                    bgcolor: 'transparent',
+                    border: '1px solid #E7E7E7',
+                    borderBottom: '3px solid #E7E7E7',
+                    borderRadius: 1,
+                    px: 1.5,
+                    py: 0.5,
+                    '&:hover': {
+                      bgcolor: '#F9F9F9',
+                      border: '1px solid #E7E7E7',
+                      borderBottom: '3px solid #E7E7E7',
+                    },
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="small"
+                  variant="contained"
+                  disabled={!inlineReplyText?.trim()}
+                  onClick={onSendInlineReply}
+                  sx={{
+                    bgcolor: '#1340ff',
+                    borderBottom: '2px solid #0A238C',
+                    boxShadow: 'inset 0px -2px 0px 0px #0A238C',
+                    borderRadius: 1,
+                    minWidth: 'unset',
+                    minHeight: 28,
+                    px: 1.5,
+                    py: 0.5,
+                    '&:hover': { bgcolor: '#1a4dff' },
+                    '&.Mui-disabled': {
+                      bgcolor: 'action.disabledBackground',
+                      color: 'action.disabled',
+                      borderBottomColor: 'action.disabledBackground',
+                      boxShadow: 'none',
+                    },
+                  }}
+                >
+                  <Iconify icon="ic:round-send" width={18} sx={{ color: 'white' }} />
+                </Button>
+              </Box>
+            </Box>
+          </m.div>
+        )}
+      </AnimatePresence>
     </Box>
   );
 };
@@ -330,6 +446,7 @@ CommentCard.propTypes = {
   comment: PropTypes.object.isRequired,
   onTimestampClick: PropTypes.func,
   onReply: PropTypes.func,
+  isReply: PropTypes.bool,
   onEdit: PropTypes.func,
   onToggleResolve: PropTypes.func,
   editTarget: PropTypes.object,
@@ -433,11 +550,14 @@ export default function AdminFeedbackPanel({
     const text = inlineReplyText.trim();
     if (!text || !inlineReplyTarget) return;
 
+    const { timestamp, text: parsedText } = extractTimestamp(text);
+
     try {
       await axiosInstance.post(endpoints.submission.v4.comments(submission.id), {
-        text,
+        text: parsedText,
         videoId,
         parentId: inlineReplyTarget,
+        ...(timestamp && { timestamp }),
       });
       setInlineReplyTarget(null);
       setInlineReplyText('');
@@ -453,16 +573,21 @@ export default function AdminFeedbackPanel({
 
   const handleEdit = (comment) => {
     setEditTarget({ commentId: comment.id, originalText: comment.text });
-    setEditText(comment.text);
+    const ts = comment.timestamp ? formatDisplayTimestamp(parseTimestamp(comment.timestamp)) : '';
+    setEditText(ts ? `${ts} ${comment.text}` : comment.text);
     setInlineReplyTarget(null);
   };
 
   const handleSaveEdit = async (commentId) => {
-    const text = editText.trim();
+    const raw = editText.trim();
+    if (!raw) return;
+
+    const { timestamp, text } = extractTimestamp(raw);
+
     if (!text) return;
 
     try {
-      await axiosInstance.patch(endpoints.submission.v4.updateComment(commentId), { text });
+      await axiosInstance.patch(endpoints.submission.v4.updateComment(commentId), { text, timestamp });
       setEditTarget(null);
       setEditText('');
     } catch (error) {
@@ -568,8 +693,15 @@ export default function AdminFeedbackPanel({
           </Box>
         )}
 
+        <AnimatePresence initial={false}>
         {comments.map((comment) => (
-          <Box key={comment.id}>
+          <m.div
+            key={comment.id}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+          >
             {/* Parent Comment */}
             <CommentCard
               comment={comment}
@@ -582,6 +714,7 @@ export default function AdminFeedbackPanel({
               onCancelEdit={handleCancelEdit}
               editText={editText}
               onEditTextChange={setEditText}
+
               inlineReplyTarget={inlineReplyTarget}
               inlineReplyText={inlineReplyText}
               onInlineReplyTextChange={setInlineReplyText}
@@ -625,6 +758,7 @@ export default function AdminFeedbackPanel({
 
                       <CommentCard
                         comment={reply}
+                        isReply
                         onTimestampClick={onSeek}
                         onReply={handleReply}
                         onEdit={handleEdit}
@@ -634,6 +768,7 @@ export default function AdminFeedbackPanel({
                         onCancelEdit={handleCancelEdit}
                         editText={editText}
                         onEditTextChange={setEditText}
+
                         inlineReplyTarget={inlineReplyTarget}
                         inlineReplyText={inlineReplyText}
                         onInlineReplyTextChange={setInlineReplyText}
@@ -645,8 +780,9 @@ export default function AdminFeedbackPanel({
                 })}
               </Box>
             )}
-          </Box>
+          </m.div>
         ))}
+        </AnimatePresence>
         <div ref={commentsEndRef} />
       </Box>
 
@@ -657,7 +793,7 @@ export default function AdminFeedbackPanel({
           border: '1px solid #E7E7E7',
           borderRadius: '12px',
           bgcolor: '#FFFFFF',
-          mb: 1,
+          mb: 0.5,
         }}
       >
         <Box
@@ -766,8 +902,8 @@ export default function AdminFeedbackPanel({
           justifyContent: 'flex-end',
           alignItems: 'center',
           gap: 1.5,
-          mt: 1.5,
-          mb: 1,
+          mt: 'auto',
+          pt: 1,
         }}
       >
         {showSendToCreator && (
