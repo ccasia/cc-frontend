@@ -138,16 +138,13 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
           <IconButton
             onClick={onClose}
             sx={{
-              width: 32,
-              height: 32,
-              bgcolor: 'white',
-              boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+              p: 0.5,
               '&:hover': {
-                bgcolor: '#F5F5F5',
+                bgcolor: 'rgba(0, 0, 0, 0.04)',
               },
             }}
           >
-            <Iconify icon="eva:close-fill" width={20} color="#636366" />
+            <Iconify icon="eva:close-fill" width={22} color="#636366" />
           </IconButton>
         </Box>
 

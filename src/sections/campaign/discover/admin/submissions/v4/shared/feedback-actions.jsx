@@ -82,42 +82,29 @@ export default function FeedbackActions({
           direction="row"
           spacing={{ xs: 0.8, sm: 1 }}
           width="100%"
-          justifyContent={{ xs: 'space-between', sm: "flex-end"}}
+          justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+          alignItems="center"
         >
-          {visibility.showRequestChangeButton && (
-            <>
-              <Typography
-                component="span"
-                onClick={() => setReviewModalOpen(true)}
-                sx={{
-                  fontSize: { xs: 11, sm: 12 },
-                  fontWeight: 600,
-                  color: '#919191',
-                  cursor: 'pointer',
-                  textTransform: 'none',
-                  alignSelf: 'center',
-                  mr: 'auto',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                Review Submission
-              </Typography>
-              <Button
-                variant="contained"
-                color="warning"
-                size="small"
-                onClick={() => setAction('request_revision')}
-                disabled={loading || isDisabled}
-                sx={{
-                  ...BUTTON_STYLES.base,
-                  ...BUTTON_STYLES.warning,
-                }}
-              >
-                {loading ? 'Processing...' : 'Request a Change'}
-              </Button>
-            </>
+          {(visibility.showRequestChangeButton || submission.status === 'CHANGES_REQUIRED' || submission.status === 'SENT_TO_CLIENT' || submission.status === 'CLIENT_FEEDBACK') && (
+            <Typography
+              component="span"
+              onClick={() => setReviewModalOpen(true)}
+              sx={{
+                fontSize: { xs: 12, sm: 13 },
+                fontWeight: 600,
+                color: '#919191',
+                cursor: 'pointer',
+                textTransform: 'none',
+                alignSelf: 'center',
+                mr: 'auto',
+                ml: { xs: 0.5, sm: 1 },
+                '&:hover': {
+                  textDecoration: 'underline',
+                },
+              }}
+            >
+              Review Submission
+            </Typography>
           )}
 
           {visibility.showChangeRequestForm && (
@@ -163,20 +150,33 @@ export default function FeedbackActions({
           )}
 
           {visibility.showApproveButton && (
-            <Button
-              variant="contained"
-              color="success"
-              size="small"
-              onClick={() => setConfirmDialogOpen(true)}
-              disabled={loading || isDisabled}
-              sx={{
-                ...BUTTON_STYLES.base,
-                ...BUTTON_STYLES.success,
-              }}
-            >
-              {/* eslint-disable-next-line no-nested-ternary */}
-              {loading ? 'Processing...' : !isClient ? 'Send to Client' : 'Approve'}
-            </Button>
+            <Tooltip title={!isClient ? 'Send to Client' : ''} arrow placement="top">
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => setConfirmDialogOpen(true)}
+                disabled={loading || isDisabled}
+                sx={{
+                  borderRadius: 1.15,
+                  border: '1px solid #E7E7E7',
+                  borderBottom: '3px solid #E7E7E7',
+                  backgroundColor: '#FFFFFF',
+                  boxShadow: 'none',
+                  color: '#1ABF66',
+                  fontWeight: 800,
+                  textTransform: 'none',
+                  px: { xs: 1.8, sm: 2.25 },
+                  py: { xs: 0.55, sm: 0.65 },
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  '&:hover': {
+                    backgroundColor: '#F5F5F5',
+                    boxShadow: 'none',
+                  },
+                }}
+              >
+                {loading ? 'Processing...' : 'Approve'}
+              </Button>
+            </Tooltip>
           )}
 
           {visibility.showAdminClientFeedbackActions && (
@@ -315,7 +315,7 @@ export default function FeedbackActions({
           )}
         </Stack>
 
-        {!isClient && submission.status !== 'CLIENT_FEEDBACK' && (
+        {!isClient && submission.status !== 'CLIENT_FEEDBACK' && submission.status !== 'SENT_TO_CLIENT' && (
           <Box display="flex" justifyContent="flex-end">
             <Button
               size="small"
@@ -454,7 +454,7 @@ export default function FeedbackActions({
           );
         })()}
 
-        <TextField
+        {/* <TextField
           multiline
           rows={3}
           fullWidth
@@ -468,14 +468,20 @@ export default function FeedbackActions({
             },
           }}
           size="large"
-        />
+        /> */}
 
         <VideoSubmissionModal
           open={reviewModalOpen}
           onClose={() => setReviewModalOpen(false)}
           submission={submission}
           rightSideContent={({ currentTime, onSeek }) => (
-            <AdminFeedbackPanel currentTime={currentTime} onSeek={onSeek} />
+            <AdminFeedbackPanel
+              currentTime={currentTime}
+              onSeek={onSeek}
+              submission={submission}
+              videoId={submission.video?.[0]?.id}
+              onFeedbackSent={() => setReviewModalOpen(false)}
+            />
           )}
         />
 

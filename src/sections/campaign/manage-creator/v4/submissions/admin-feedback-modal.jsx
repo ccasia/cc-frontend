@@ -1,77 +1,37 @@
-import React, { useState } from 'react';
-import { Box, Typography, Avatar, IconButton, Button, TextField } from '@mui/material';
+import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
+import { Box, Typography, Avatar, IconButton, Button, TextField, CircularProgress } from '@mui/material';
+import { enqueueSnackbar } from 'notistack';
+
 import Iconify from 'src/components/iconify';
+import axiosInstance, { endpoints } from 'src/utils/axios';
+import { fDateTime } from 'src/utils/format-time';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 
-// Mock data based on your screenshots
-const MOCK_COMMENTS = [
-  {
-    id: '1',
-    author: { name: 'Natalie', role: 'Admin' },
-    date: 'May 11, 2025 8:39PM',
-    timestamp: '0:00',
-    text: 'the audio is too low',
-    replies: [
-      {
-        id: '1-2',
-        author: { name: 'Jordan', role: 'Creator' },
-        date: 'May 11, 2025 8:39PM',
-        text: 'Okay will amendkay will amendkay will amendkay will amendkay will amendkay will amendkay willkay will amendkay will amendkay will amendkay will amendkay will amendkay will amendkay will amend amendkay will amendkay will amendOkay will amendkay will amendkay will amendkay will amendkay will amendkay will amendkay willkay will amendkay will amendkay will amendkay will amendkay will amendkay will amendkay will amend amendkay will amendkay will amend',
-      },
-      {
-        id: '1-3',
-        author: { name: 'Jordan', role: 'Client' },
-        date: 'May 11, 2025 8:39PM',
-        text: 'Sike',
-        isClient: true,
-      },
-      {
-        id: '1-4',
-        author: { name: 'Jordan', role: 'Creator' },
-        date: 'May 11, 2025 8:39PM',
-        text: 'Sike',
-      },
-    ],
-  },
-  {
-    id: '2',
-    author: { name: 'Natalie', role: 'Admin' },
-    date: 'May 11, 2025 8:39PM',
-    timestamp: '0:10',
-    text: 'remove this graphic',
-    replies: [
-      {
-        id: '2-1',
-        author: { name: 'Jordan', role: 'Creator' },
-        date: 'May 11, 2025 8:39PM',
-        text: 'Sike',
-      },
-    ],
-  },
-  {
-    id: '3',
-    author: { name: 'Grab', role: 'Client' },
-    date: 'May 11, 2025 8:45PM',
-    timestamp: '0:12',
-    text: 'yeehaw',
-    isClient: true,
-    agreedBy: ['1', '2'], // Used to trigger the blue border
-    replies: [
-      {
-        id: '2-1',
-        author: { name: 'Jordan', role: 'Admin' },
-        date: 'May 11, 2025 8:39PM',
-        text: 'Creator is quite dumb, im sorry',
-      },
-    ],
-  },
-];
+// ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
 
+// Always hh:mm:ss — used for the input chip
 const formatTime = (timeInSeconds) => {
   const totalSeconds = Math.floor(timeInSeconds);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+
+// Dynamic mm:ss or hh:mm:ss — used for displayed comment timestamps
+const formatDisplayTimestamp = (timeInSeconds) => {
+  const totalSeconds = Math.floor(timeInSeconds);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
 const parseTimestamp = (timestampStr) => {
@@ -82,9 +42,39 @@ const parseTimestamp = (timestampStr) => {
   return 0;
 };
 
-const CommentCard = ({ comment, isReply = false, onTimestampClick }) => {
-  const isClient = comment.isClient || comment.replies?.isClient;
+// ---------------------------------------------------------------------------
+// CommentCard
+// ---------------------------------------------------------------------------
+
+const CommentCard = ({
+  comment,
+  onTimestampClick,
+  onReply,
+  onEdit,
+  onToggleResolve,
+  editTarget,
+  onSaveEdit,
+  onCancelEdit,
+  editText,
+  onEditTextChange,
+  inlineReplyTarget,
+  inlineReplyText,
+  onInlineReplyTextChange,
+  onSendInlineReply,
+  onCancelInlineReply,
+}) => {
+  const isClientComment = comment.user?.role === 'client';
   const hasAgreed = comment.agreedBy?.length > 0;
+  const isResolved = !!comment.resolvedByUserId;
+
+  // Display forwardedBy name if set, otherwise user name
+  const displayName = comment.forwardedBy?.name || comment.user?.name || 'Unknown';
+  const displayPhoto = comment.forwardedBy?.photoURL || comment.user?.photoURL || null;
+  const displayRole = comment.forwardedBy
+    ? 'Admin'
+    : comment.user?.role?.charAt(0).toUpperCase() + comment.user?.role?.slice(1) || '';
+
+  const isEditing = editTarget?.commentId === comment.id;
 
   return (
     <Box
@@ -92,8 +82,8 @@ const CommentCard = ({ comment, isReply = false, onTimestampClick }) => {
         bgcolor: 'white',
         p: 2,
         borderRadius: 2,
-        border: isClient ? '1px solid #2563EB' : '1px solid transparent',
-        boxShadow: isClient
+        border: isClientComment && !comment.forwardedBy ? '1px solid #2563EB' : '1px solid transparent',
+        boxShadow: isClientComment && !comment.forwardedBy
           ? 'none'
           : '0px 2px 4px rgba(0, 0, 0, 0.02), 0px 1px 2px rgba(0, 0, 0, 0.04)',
         display: 'flex',
@@ -107,6 +97,8 @@ const CommentCard = ({ comment, isReply = false, onTimestampClick }) => {
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 0.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Avatar
+            src={displayPhoto}
+            alt={displayName}
             sx={{
               width: 36,
               height: 36,
@@ -117,80 +109,418 @@ const CommentCard = ({ comment, isReply = false, onTimestampClick }) => {
               fontWeight: 500,
             }}
           >
-            {comment.author.name.charAt(0)}
+            {!displayPhoto && displayName.charAt(0)}
           </Avatar>
           <Box>
             <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#111827' }}>
-              {comment.author.name}
+              {displayName}
             </Typography>
             <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#9CA3AF' }}>
-              {comment.author.role}
+              {displayRole}
             </Typography>
           </Box>
         </Box>
-        <Typography sx={{ fontSize: '0.75rem', color: '#9CA3AF' }}>{comment.date}</Typography>
+        <Typography sx={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
+          {fDateTime(comment.createdAt)}
+        </Typography>
       </Box>
 
       {/* Body */}
       <Box sx={{ pl: 0.5 }}>
-        <Typography
-          sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#1F2937', wordBreak: 'break-word' }}
-        >
-          {comment.timestamp && (
-            <Typography
-              component="span"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onTimestampClick) {
-                  onTimestampClick(parseTimestamp(comment.timestamp));
-                }
-              }}
+        {isEditing ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <TextField
+              multiline
+              minRows={2}
+              maxRows={6}
+              value={editText}
+              onChange={(e) => onEditTextChange(e.target.value)}
+              size="small"
+              fullWidth
               sx={{
-                color: '#1340FF',
-                fontWeight: 700,
-                fontSize: 'inherit',
-                mr: 0.5,
-                cursor: onTimestampClick ? 'pointer' : 'default',
-                '&:hover': onTimestampClick ? { textDecoration: 'underline' } : {},
+                '& .MuiOutlinedInput-root': { fontSize: '0.875rem' },
               }}
-            >
-              {comment.timestamp}
-            </Typography>
-          )}
-          {comment.text}
-        </Typography>
+            />
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+              <Button size="small" onClick={onCancelEdit} sx={{ fontSize: '0.75rem' }}>
+                Cancel
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                onClick={() => onSaveEdit(comment.id)}
+                sx={{
+                  bgcolor: '#1340ff',
+                  borderBottom: '2px solid #0A238C',
+                  boxShadow: 'inset 0px -2px 0px 0px #0A238C',
+                  borderRadius: 1,
+                  minWidth: 'unset',
+                  minHeight: 28,
+                  px: 1.5,
+                  py: 0.5,
+                  '&:hover': { bgcolor: '#1a4dff' },
+                }}
+              >
+                <Iconify icon="ic:round-send" width={18} sx={{ color: 'white' }} />
+              </Button>
+            </Box>
+          </Box>
+        ) : (
+          <Typography
+            sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#1F2937', wordBreak: 'break-word' }}
+          >
+            {comment.timestamp && (
+              <Typography
+                component="span"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onTimestampClick) {
+                    onTimestampClick(parseTimestamp(comment.timestamp));
+                  }
+                }}
+                sx={{
+                  color: '#1340FF',
+                  fontWeight: 700,
+                  fontSize: 'inherit',
+                  mr: 0.5,
+                  cursor: onTimestampClick ? 'pointer' : 'default',
+                  '&:hover': onTimestampClick ? { textDecoration: 'underline' } : {},
+                }}
+              >
+                {formatDisplayTimestamp(parseTimestamp(comment.timestamp))}
+              </Typography>
+            )}
+            {comment.text}
+          </Typography>
+        )}
       </Box>
 
       {/* Footer Actions */}
-      <Box sx={{ pl: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography
+      {!isEditing && (
+        <Box sx={{ pl: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Typography
+              onClick={() => onReply?.(comment)}
+              sx={{
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: '#9CA3AF',
+                cursor: 'pointer',
+                '&:hover': { color: '#6B7280' },
+              }}
+            >
+              Reply
+            </Typography>
+            {isClientComment && !comment.forwardedBy && onEdit && (
+              <Typography
+                onClick={() => onEdit(comment)}
+                sx={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: '#9CA3AF',
+                  cursor: 'pointer',
+                  '&:hover': { color: '#6B7280' },
+                }}
+              >
+                Edit
+              </Typography>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+            <IconButton size="small" sx={{ p: 0.5 }}>
+              <Iconify
+                icon={hasAgreed ? 'mdi:thumb-up' : 'mdi-light:thumb-up'}
+                width={20}
+                sx={{
+                  color: hasAgreed ? '#1340FF' : '#9CA3AF',
+                  filter: 'drop-shadow(0px 0px 0.2px #000000)',
+                }}
+              />
+            </IconButton>
+            <IconButton size="small" sx={{ p: 0.5 }} onClick={() => onToggleResolve?.(comment.id)}>
+              <Iconify
+                icon={isResolved ? 'mdi:check-circle' : 'mdi:check-circle-outline'}
+                width={20}
+                sx={{ color: isResolved ? '#00A76F' : '#919191' }}
+              />
+            </IconButton>
+          </Box>
+        </Box>
+      )}
+
+      {/* Inline Reply Input */}
+      {inlineReplyTarget === comment.id && (
+        <Box
           sx={{
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            color: '#9CA3AF',
-            cursor: 'pointer',
-            '&:hover': { color: '#6B7280' },
+            mt: 1,
+            border: '1px solid #E7E7E7',
+            borderRadius: '8px',
+            bgcolor: '#FFFFFF',
+            p: 1.5,
           }}
         >
-          Reply
-        </Typography>
-        <IconButton size="small" sx={{ p: 0.5 }}>
-          <Iconify
-            icon={hasAgreed ? 'mdi:thumb-up' : 'mdi-light:thumb-up'}
-            width={20}
+          <TextField
+            multiline
+            minRows={1}
+            maxRows={4}
+            placeholder={`Reply to ${comment.forwardedBy?.name || comment.user?.name || 'Unknown'}...`}
+            value={inlineReplyText}
+            onChange={(e) => onInlineReplyTextChange?.(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                onSendInlineReply?.();
+              }
+            }}
+            size="small"
+            fullWidth
             sx={{
-              color: hasAgreed ? '#1340FF' : '#9CA3AF',
-              filter: 'drop-shadow(0px 0px 0.2px #000000)',
+              '& .MuiOutlinedInput-root': {
+                border: 'none',
+                '& fieldset': { border: 'none' },
+                p: 0,
+              },
+              '& .MuiInputBase-input': {
+                fontSize: 13,
+                fontFamily: 'Inter, sans-serif',
+                p: 0,
+                lineHeight: 1.4,
+                '&::placeholder': {
+                  color: '#B0B0B0',
+                  opacity: 1,
+                },
+              },
             }}
           />
-        </IconButton>
-      </Box>
+          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1 }}>
+            <Button
+              size="small"
+              onClick={onCancelInlineReply}
+              sx={{ fontSize: '0.75rem', color: '#9CA3AF' }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              disabled={!inlineReplyText?.trim()}
+              onClick={onSendInlineReply}
+              sx={{
+                bgcolor: '#1340ff',
+                borderBottom: '2px solid #0A238C',
+                boxShadow: 'inset 0px -2px 0px 0px #0A238C',
+                borderRadius: 1,
+                minWidth: 'unset',
+                minHeight: 28,
+                px: 1.5,
+                py: 0.5,
+                '&:hover': { bgcolor: '#1a4dff' },
+              }}
+            >
+              <Iconify icon="ic:round-send" width={18} sx={{ color: 'white' }} />
+            </Button>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };
 
-export default function AdminFeedbackPanel({ currentTime = 0, onSeek }) {
-  const [feedback, setFeedback] = useState('');
+CommentCard.propTypes = {
+  comment: PropTypes.object.isRequired,
+  onTimestampClick: PropTypes.func,
+  onReply: PropTypes.func,
+  onEdit: PropTypes.func,
+  onToggleResolve: PropTypes.func,
+  editTarget: PropTypes.object,
+  onSaveEdit: PropTypes.func,
+  onCancelEdit: PropTypes.func,
+  editText: PropTypes.string,
+  onEditTextChange: PropTypes.func,
+  inlineReplyTarget: PropTypes.string,
+  inlineReplyText: PropTypes.string,
+  onInlineReplyTextChange: PropTypes.func,
+  onSendInlineReply: PropTypes.func,
+  onCancelInlineReply: PropTypes.func,
+};
+
+// ---------------------------------------------------------------------------
+// AdminFeedbackPanel
+// ---------------------------------------------------------------------------
+
+export default function AdminFeedbackPanel({
+  currentTime = 0,
+  onSeek,
+  submission,
+  videoId,
+  onFeedbackSent,
+}) {
+  const [commentText, setCommentText] = useState('');
+  const [inlineReplyTarget, setInlineReplyTarget] = useState(null); // commentId or null
+  const [inlineReplyText, setInlineReplyText] = useState('');
+  const [editTarget, setEditTarget] = useState(null); // { commentId, originalText }
+  const [editText, setEditText] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const { socket } = useSocketContext();
+  const { comments, commentsLoading, commentsMutate } = useSubmissionComments(
+    submission?.id,
+    videoId
+  );
+
+  const commentsEndRef = useRef(null);
+  const initialLoadDone = useRef(false);
+
+  // Socket listeners for real-time updates
+  useEffect(() => {
+    if (!socket || !submission?.id) return undefined;
+
+    const handleCommentEvent = (data) => {
+      if (data.submissionId === submission.id) {
+        commentsMutate();
+      }
+    };
+
+    socket.on('v4:comment:added', handleCommentEvent);
+    socket.on('v4:comment:updated', handleCommentEvent);
+    socket.on('v4:comment:reply:added', handleCommentEvent);
+    socket.on('v4:comment:deleted', handleCommentEvent);
+
+    return () => {
+      socket.off('v4:comment:added', handleCommentEvent);
+      socket.off('v4:comment:updated', handleCommentEvent);
+      socket.off('v4:comment:reply:added', handleCommentEvent);
+      socket.off('v4:comment:deleted', handleCommentEvent);
+    };
+  }, [socket, submission?.id, commentsMutate]);
+
+  // Scroll to bottom on initial load (instant) and when new comments are added (smooth)
+  useEffect(() => {
+    if (!commentsEndRef.current || !comments?.length) return;
+    if (!initialLoadDone.current) {
+      commentsEndRef.current.scrollIntoView({ behavior: 'instant' });
+      initialLoadDone.current = true;
+      return;
+    }
+    commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, [comments?.length]);
+
+  // ---- Handlers ----
+
+  const handleSendComment = async () => {
+    const text = commentText.trim();
+    if (!text) return;
+
+    try {
+      await axiosInstance.post(endpoints.submission.v4.comments(submission.id), {
+        text,
+        timestamp: formatTime(currentTime),
+        videoId,
+      });
+      setCommentText('');
+    } catch (error) {
+      enqueueSnackbar('Failed to send comment', { variant: 'error' });
+    }
+  };
+
+  const handleReply = (comment) => {
+    setInlineReplyTarget(comment.id);
+    setInlineReplyText('');
+    setEditTarget(null);
+  };
+
+  const handleSendInlineReply = async () => {
+    const text = inlineReplyText.trim();
+    if (!text || !inlineReplyTarget) return;
+
+    try {
+      await axiosInstance.post(endpoints.submission.v4.comments(submission.id), {
+        text,
+        videoId,
+        parentId: inlineReplyTarget,
+      });
+      setInlineReplyTarget(null);
+      setInlineReplyText('');
+    } catch (error) {
+      enqueueSnackbar('Failed to send reply', { variant: 'error' });
+    }
+  };
+
+  const handleCancelInlineReply = () => {
+    setInlineReplyTarget(null);
+    setInlineReplyText('');
+  };
+
+  const handleEdit = (comment) => {
+    setEditTarget({ commentId: comment.id, originalText: comment.text });
+    setEditText(comment.text);
+    setInlineReplyTarget(null);
+  };
+
+  const handleSaveEdit = async (commentId) => {
+    const text = editText.trim();
+    if (!text) return;
+
+    try {
+      await axiosInstance.patch(endpoints.submission.v4.updateComment(commentId), { text });
+      setEditTarget(null);
+      setEditText('');
+    } catch (error) {
+      enqueueSnackbar('Failed to edit comment', { variant: 'error' });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditTarget(null);
+    setEditText('');
+  };
+
+  const handleToggleResolve = async (commentId) => {
+    try {
+      await axiosInstance.patch(endpoints.submission.v4.resolveComment(commentId));
+    } catch (error) {
+      enqueueSnackbar('Failed to update resolve status', { variant: 'error' });
+    }
+  };
+
+  const handleSendToCreator = async () => {
+    setSending(true);
+    try {
+      await axiosInstance.post(endpoints.submission.v4.sendToCreator(submission.id), { videoId });
+      enqueueSnackbar('Feedback sent to creator', { variant: 'success' });
+      onFeedbackSent?.();
+    } catch (error) {
+      enqueueSnackbar(error?.message || 'Failed to send feedback', { variant: 'error' });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleSendToClient = async () => {
+    setSending(true);
+    try {
+      await axiosInstance.post(endpoints.submission.v4.sendToClient(submission.id), { videoId });
+      enqueueSnackbar('Feedback sent to client', { variant: 'success' });
+      onFeedbackSent?.();
+    } catch (error) {
+      enqueueSnackbar(error?.message || 'Failed to send feedback', { variant: 'error' });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // ---- Button visibility ----
+  const isReadOnly = submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'SENT_TO_CLIENT';
+
+  const showSendToClient =
+    submission?.status === 'PENDING_REVIEW' && submission?.campaign?.origin !== 'ADMIN';
+
+  const showSendToCreator =
+    submission?.status === 'PENDING_REVIEW' || submission?.status === 'CLIENT_FEEDBACK';
+
+  const hasComments = comments.length > 0;
+
+  // ---- Render ----
 
   return (
     <Box
@@ -217,10 +547,47 @@ export default function AdminFeedbackPanel({ currentTime = 0, onSeek }) {
           '&::-webkit-scrollbar-thumb': { background: 'rgba(0,0,0,0.1)', borderRadius: '4px' },
         }}
       >
-        {MOCK_COMMENTS.map((comment) => (
+        {commentsLoading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress size={24} />
+          </Box>
+        )}
+
+        {!commentsLoading && comments.length === 0 && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: 1,
+            }}
+          >
+            <Typography sx={{ color: '#636366', fontSize: '1rem', fontWeight: 500 }}>
+              No Comments Currently
+            </Typography>
+          </Box>
+        )}
+
+        {comments.map((comment) => (
           <Box key={comment.id}>
             {/* Parent Comment */}
-            <CommentCard comment={comment} onTimestampClick={onSeek} />
+            <CommentCard
+              comment={comment}
+              onTimestampClick={onSeek}
+              onReply={handleReply}
+              onEdit={handleEdit}
+              onToggleResolve={handleToggleResolve}
+              editTarget={editTarget}
+              onSaveEdit={handleSaveEdit}
+              onCancelEdit={handleCancelEdit}
+              editText={editText}
+              onEditTextChange={setEditText}
+              inlineReplyTarget={inlineReplyTarget}
+              inlineReplyText={inlineReplyText}
+              onInlineReplyTextChange={setInlineReplyText}
+              onSendInlineReply={handleSendInlineReply}
+              onCancelInlineReply={handleCancelInlineReply}
+            />
 
             {/* Threaded Replies */}
             {comment.replies && comment.replies.length > 0 && (
@@ -230,7 +597,7 @@ export default function AdminFeedbackPanel({ currentTime = 0, onSeek }) {
 
                   return (
                     <Box key={reply.id} sx={{ position: 'relative', ml: 12 }}>
-                      {/* The L-shaped connection line */}
+                      {/* Vertical line */}
                       <Box
                         sx={{
                           position: 'absolute',
@@ -241,6 +608,7 @@ export default function AdminFeedbackPanel({ currentTime = 0, onSeek }) {
                           zIndex: 0,
                         }}
                       />
+                      {/* L-shaped connector */}
                       <Box
                         sx={{
                           position: 'absolute',
@@ -255,7 +623,23 @@ export default function AdminFeedbackPanel({ currentTime = 0, onSeek }) {
                         }}
                       />
 
-                      <CommentCard comment={reply} isReply onTimestampClick={onSeek} />
+                      <CommentCard
+                        comment={reply}
+                        onTimestampClick={onSeek}
+                        onReply={handleReply}
+                        onEdit={handleEdit}
+                        onToggleResolve={handleToggleResolve}
+                        editTarget={editTarget}
+                        onSaveEdit={handleSaveEdit}
+                        onCancelEdit={handleCancelEdit}
+                        editText={editText}
+                        onEditTextChange={setEditText}
+                        inlineReplyTarget={inlineReplyTarget}
+                        inlineReplyText={inlineReplyText}
+                        onInlineReplyTextChange={setInlineReplyText}
+                        onSendInlineReply={handleSendInlineReply}
+                        onCancelInlineReply={handleCancelInlineReply}
+                      />
                     </Box>
                   );
                 })}
@@ -263,22 +647,11 @@ export default function AdminFeedbackPanel({ currentTime = 0, onSeek }) {
             )}
           </Box>
         ))}
+        <div ref={commentsEndRef} />
       </Box>
 
-      {/* Bottom Sticky Input Section */}
-      <Box
-        sx={{
-          mt: 'auto',
-          pt: 2,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 1.5,
-          borderTop: '1px solid rgba(0,0,0,0.05)',
-        }}
-      >
-        {/* Input Field */}
-      </Box>
-      <Box
+      {/* Input Section */}
+      {!isReadOnly && <Box
         sx={{
           flexShrink: 0,
           border: '1px solid #E7E7E7',
@@ -299,8 +672,8 @@ export default function AdminFeedbackPanel({ currentTime = 0, onSeek }) {
               border: '1px solid #E7E7E7',
               borderBottom: '2px solid #E7E7E7',
               borderRadius: 0.85,
-              px: 1.5,
-              py: 0.6,
+              px: 1,
+              py: 0.4,
               fontSize: 13,
               fontWeight: 500,
               fontFamily: 'Inter, sans-serif',
@@ -317,12 +690,12 @@ export default function AdminFeedbackPanel({ currentTime = 0, onSeek }) {
             minRows={2}
             maxRows={6}
             placeholder="Leave feedback..."
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                // handleModalAddComment();
+                handleSendComment();
               }
             }}
             sx={{
@@ -338,7 +711,7 @@ export default function AdminFeedbackPanel({ currentTime = 0, onSeek }) {
                 fontSize: 15,
                 fontFamily: 'Inter, sans-serif',
                 p: 0,
-                lineHeight: 1.6,
+                lineHeight: 1.4,
                 '&::placeholder': {
                   color: '#B0B0B0',
                   opacity: 1,
@@ -359,17 +732,17 @@ export default function AdminFeedbackPanel({ currentTime = 0, onSeek }) {
         >
           <Button
             variant="contained"
-            // disabled={!modalCommentText.trim()}
-            // onClick={handleModalAddComment}
+            disabled={!commentText.trim()}
+            onClick={handleSendComment}
             sx={{
               bgcolor: '#1340ff',
               borderBottom: '2px solid #0A238C',
               boxShadow: 'inset 0px -2px 0px 0px #0A238C',
               borderRadius: 1,
-              minWidth: 52,
+              minWidth: 'unset',
               minHeight: 32,
               height: 28,
-              px: 2,
+              px: 1.5,
               py: 0.5,
               '&:hover': {
                 bgcolor: '#1a4dff',
@@ -384,7 +757,9 @@ export default function AdminFeedbackPanel({ currentTime = 0, onSeek }) {
             <Iconify icon="ic:round-send" width={20} sx={{ color: 'white' }} />
           </Button>
         </Box>
-      </Box>
+      </Box>}
+
+      {/* Action Buttons */}
       <Box
         sx={{
           display: 'flex',
@@ -395,67 +770,81 @@ export default function AdminFeedbackPanel({ currentTime = 0, onSeek }) {
           mb: 1,
         }}
       >
-        <Button
-          variant="contained"
-          disableElevation
-          disabled={!feedback.trim()}
-          sx={{
-            fontWeight: 700,
-            fontSize: '0.95rem',
-            borderRadius: '10px',
-            px: 2.5,
-            py: 0.9,
-            boxShadow: 'none',
-            bgcolor: '#3A3A3C',
-            borderBottom: '3px solid #202021',
-            '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: 'none' },
-            '&:active': {
-              borderBottom: '1px solid #202021',
-              transform: 'translateY(1px)',
-            },
-            '&.Mui-disabled': {
-              bgcolor: '#B0B0B1',
-              color: '#FFFFFF',
-              borderBottom: '3px solid #9E9E9F',
-            },
-          }}
-        >
-          Send Feedback to Creator
-        </Button>
-        <Button
-          variant="contained"
-          disableElevation
-          disabled={!feedback.trim()}
-          sx={{
-            fontWeight: 700,
-            fontSize: '0.95rem',
-            borderRadius: '10px',
-            px: 2.5,
-            py: 0.9,
-            color: '#3A3A3C',
-            bgcolor: '#FFFFFF',
-            border: '1px solid #E7E7E7',
-            borderBottom: '3px solid #E7E7E7',
-            boxShadow: 'none',
-            '&:hover': {
-              bgcolor: '#F9F9F9',
+        {showSendToCreator && (
+          <Button
+            variant="contained"
+            disableElevation
+            disabled={!hasComments || sending}
+            onClick={handleSendToCreator}
+            sx={{
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              borderRadius: '10px',
+              px: 2.5,
+              py: 0.9,
               boxShadow: 'none',
-            },
-            '&:active': {
-              borderBottom: '1px solid #E7E7E7',
-              transform: 'translateY(1px)',
-            },
-            '&.Mui-disabled': {
-              bgcolor: '#F2F2F2',
-              color: '#B0B0B1',
-              border: '1px solid #DBDBDB',
+              bgcolor: '#3A3A3C',
+              borderBottom: '3px solid #202021',
+              '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: 'none' },
+              '&:active': {
+                borderBottom: '1px solid #202021',
+                transform: 'translateY(1px)',
+              },
+              '&.Mui-disabled': {
+                bgcolor: '#B0B0B1',
+                color: '#FFFFFF',
+                borderBottom: '3px solid #9E9E9F',
+              },
+            }}
+          >
+            {sending ? 'Sending...' : 'Send Feedback to Creator'}
+          </Button>
+        )}
+        {showSendToClient && (
+          <Button
+            variant="contained"
+            disableElevation
+            disabled={!hasComments || sending}
+            onClick={handleSendToClient}
+            sx={{
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              borderRadius: '10px',
+              px: 2.5,
+              py: 0.9,
+              color: '#3A3A3C',
+              bgcolor: '#FFFFFF',
+              border: '1px solid #E7E7E7',
               borderBottom: '3px solid #E7E7E7',
-            },
-          }}
-        >
-          Send Feedback to Client
-        </Button>
+              boxShadow: 'none',
+              '&:hover': {
+                bgcolor: '#F9F9F9',
+                boxShadow: 'none',
+              },
+              '&:active': {
+                borderBottom: '1px solid #E7E7E7',
+                transform: 'translateY(1px)',
+              },
+              '&.Mui-disabled': {
+                bgcolor: '#F2F2F2',
+                color: '#B0B0B1',
+                border: '1px solid #DBDBDB',
+                borderBottom: '3px solid #E7E7E7',
+              },
+            }}
+          >
+            {sending ? 'Sending...' : 'Send Feedback to Client'}
+          </Button>
+        )}
       </Box>
     </Box>
   );
 }
+
+AdminFeedbackPanel.propTypes = {
+  currentTime: PropTypes.number,
+  onSeek: PropTypes.func,
+  submission: PropTypes.object,
+  videoId: PropTypes.string,
+  onFeedbackSent: PropTypes.func,
+};
