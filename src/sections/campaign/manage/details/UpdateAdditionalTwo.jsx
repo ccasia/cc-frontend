@@ -148,7 +148,7 @@ const UpdateAdditionalTwo = ({ campaign, campaignMutate }) => {
 
             {/* Creator Compensation - Value to Creator */}
             <FormField label="Creator Compensation - Value to Creator">
-              <RHFTextField name="creatorCompensation" placeholder="Creator Compensation" />
+              <RHFTextField name="creatorCompensation" placeholder="Creator Compensation" multiline />
             </FormField>
 
             {/* Call to Action - Desired Action */}
@@ -156,7 +156,7 @@ const UpdateAdditionalTwo = ({ campaign, campaignMutate }) => {
               <Typography variant="caption" color="#8E8E93" sx={{ mt: -0.5, mb: 0.5 }}>
                 [E.g., &quot;Visit website,&quot; &quot;Use promo code,&quot; &quot;Sign up&quot;]
               </Typography>
-              <RHFTextField name="ctaDesiredAction" placeholder="Desired Action" />
+              <RHFTextField name="ctaDesiredAction" placeholder="Desired Action" multiline />
             </FormField>
 
             {/* Call to Action - Link/URL */}
@@ -177,6 +177,7 @@ const UpdateAdditionalTwo = ({ campaign, campaignMutate }) => {
               <RHFTextField
                 name="ctaLinkInBioRequirements"
                 placeholder="Link in Bio Requirements"
+                multiline
               />
             </FormField>
 
@@ -185,6 +186,7 @@ const UpdateAdditionalTwo = ({ campaign, campaignMutate }) => {
               <RHFTextField
                 name="specialNotesInstructions"
                 placeholder="Special Notes/Instructions"
+                multiline
               />
             </FormField>
 
