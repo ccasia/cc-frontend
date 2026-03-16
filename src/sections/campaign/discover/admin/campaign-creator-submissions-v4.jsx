@@ -152,28 +152,12 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
   const { campaignType } = campaign;
 
   // Get V4 submissions for this creator
-  const { submissions, grouped, submissionsLoading, submissionsMutate } = useGetV4Submissions(
-    campaign?.id,
-    creator?.userId
-  );
-
-  // Listen for real-time submission updates for this creator
-  useV4SubmissionListSocket({
-    socket,
-    campaignId: campaign?.id,
-    creatorUserId: creator?.userId,
-    onUpdate: () => submissionsMutate(),
-    userId: user?.id,
-  });
-
-  // Listen for real-time submission updates for this creator
-  useV4SubmissionListSocket({
-    socket,
-    campaignId: campaign?.id,
-    creatorUserId: creator?.userId,
-    onUpdate: () => submissionsMutate(),
-    userId: user?.id,
-  });
+  const {
+    submissions,
+    grouped,
+    submissionsLoading,
+    submissionsMutate
+  } = useGetV4Submissions(campaign?.id, creator?.userId);
 
   // Listen for real-time submission updates for this creator
   useV4SubmissionListSocket({
@@ -263,7 +247,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
         }
       } else if (!isClient) {
         if (status === 'IN_PROGRESS') return 'PROCESSING';
-        return formatStatus(status);
+        return formatStatus(status)
       }
 
       // Client-specific
@@ -394,10 +378,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                 <CircularProgress
                   size={12}
                   thickness={5}
-                  sx={{
-                    color: getClientStatusColor(videoSubmission.status, 'video'),
-                    display: 'flex',
-                  }}
+                  sx={{ color: getClientStatusColor(videoSubmission.status, 'video'), display: 'flex' }}
                 />
               )}
               <Typography
@@ -792,8 +773,20 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
           >
             {creator.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
-          <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden', position: 'relative' }}>
-            <ScrollingName name={creator.user?.name || 'Unknown Creator'} />
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Tooltip title={creator.user?.name || 'Unknown Creator'} arrow>
+              <Typography
+                variant="subtitle1"
+                noWrap
+                sx={{
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden',
+                  fontSize: { xs: '0.9rem', sm: '1rem' },
+                }}
+              >
+                {creator.user?.name || 'Unknown Creator'}
+              </Typography>
+            </Tooltip>
           </Box>
         </Box>
 

@@ -37,6 +37,8 @@ import useGetAllInvoiceStats from 'src/hooks/use-get-all-invoice-stats';
 import { formatCurrencyAmount } from 'src/utils/currency';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+// Add useAuthContext import
+import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllInvoices } from 'src/api/invoices';
 import { getBankCode, getPaymentMode } from 'src/contants/bank-codes';
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
@@ -76,6 +78,7 @@ const TABLE_HEAD = [
 
 const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuthContext(); // Get user from auth context
   const [filters, setFilters] = useState(defaultFilters);
   const [datePresetLabel, setDatePresetLabel] = useState(null);
   const [invoices, setInvoices] = useState([]);
@@ -133,7 +136,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     error: invoicesError,
     mutate: mutateInvoices,
   } = useGetAllInvoices({
-    page: table.page + 1,
+    page: table.page + 1, // API uses 1-based pagination
     limit: table.rowsPerPage,
     status: filters.status !== 'all' ? filters.status : undefined,
     currency: filters.currency || undefined,
@@ -143,6 +146,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     endDate: dateRange.endDate ? dayjs(dateRange.endDate).add(1, 'day').startOf('day').toISOString() : undefined,
   });
 
+  // Debug: Log error if API call fails
   if (invoicesError && process.env.NODE_ENV === 'development') {
     console.error('Error fetching invoices:', invoicesError);
   }
@@ -178,6 +182,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       comparator: getComparator(table.order, table.orderBy),
       filters: {
         ...filters,
+        // Don't re-filter status/currency/search as they're already filtered server-side
         status: 'all',
         currency: '',
         name: '',
@@ -245,8 +250,11 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     (campaignName) => {
       const newCampaigns = filters.campaigns.filter((c) => c !== campaignName);
       handleFilterCampaigns(newCampaigns);
+
+      dateRange.onReset();
+      setDatePresetLabel(null);
     },
-    [filters.campaigns, handleFilterCampaigns]
+    [dateRange, filters.campaigns, handleFilterCampaigns]
   );
 
   const handleResetFilters = useCallback(() => {
@@ -646,7 +654,18 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     } finally {
       setExportLoading(false);
     }
-  }, [dataFiltered, exportPreview, filters, dateRange, enqueueSnackbar]);
+  }, [
+    dataFiltered,
+    exportPreview,
+    filters.status,
+    filters.currency,
+    filters.name,
+    filters.campaignName,
+    filters.campaigns,
+    dateRange.startDate,
+    dateRange.endDate,
+    enqueueSnackbar,
+  ]);
 
   const handleConfirmExport = useCallback(
     async (format = 'xlsx') => {
@@ -668,7 +687,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         setExportStatuses([]);
       }
     },
-    [handleExportCSV, handleExportPlainCSV, exportPreview, enqueueSnackbar]
+    [handleExportPlainCSV, handleExportCSV, enqueueSnackbar, exportPreview]
   );
 
   const handleAddStatus = useCallback(
@@ -712,7 +731,15 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         setExportLoading(false);
       }
     },
-    [filters, dateRange, enqueueSnackbar]
+    [
+      filters.currency,
+      filters.name,
+      filters.campaignName,
+      filters.campaigns,
+      dateRange.startDate,
+      dateRange.endDate,
+      enqueueSnackbar,
+    ]
   );
 
   const handleExportSelectAll = useCallback(
@@ -757,6 +784,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   const changeInvoiceStatus = useCallback(() => {}, []);
 
+  // Create TABS array using backend stats - always use backend stats for accuracy
   const TABS = useMemo(() => {
     // Prefer statusCounts from the filtered getAllInvoices response when non-status filters are active
     // Fall back to invoiceStats (global stats endpoint) when no filters are applied
@@ -788,6 +816,9 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   const openEditInvoice = useCallback(
     (id, data) => {
+      if (mainRef?.current) {
+        savedScrollPos.current = mainRef.current.scrollTop;
+      }
       if (mainRef?.current) {
         savedScrollPos.current = mainRef.current.scrollTop;
       }
@@ -824,13 +855,25 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   }, [xeroLoading, enqueueSnackbar]);
 
   const handleBulkUpdate = useCallback(async () => {
+    if (!user?.admin?.xeroTokenSet) {
+      enqueueSnackbar(`You're not connected to Xero`, {
+        variant: 'error',
+      });
+      xeroDialog.onTrue();
+      return;
+    }
+
     setBulkLoading(true);
 
     try {
       const selectedInvoices = dataFiltered.filter((row) => table.selected.includes(row.id));
 
       const actionableInvoices = selectedInvoices.filter(
-        (invoice) => invoice.status === 'pending' || invoice.status === 'draft'
+        (invoice) =>
+          invoice.status === 'pending' ||
+          invoice.status === 'draft' ||
+          invoice.status === 'processing' ||
+          invoice.status === 'failed'
       );
       const actionableIds = actionableInvoices.map((invoice) => invoice.id);
 
@@ -881,10 +924,10 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           try {
             const queryParams = new URLSearchParams();
             queryParams.append('limit', '10000');
-            const response = await axiosInstance.get(
+            const pollRes = await axiosInstance.get(
               `${endpoints.invoice.getAll}?${queryParams.toString()}`
             );
-            const updatedInvoices = response.data?.data || [];
+            const updatedInvoices = pollRes.data?.data || [];
 
             setInvoices(updatedInvoices);
 
@@ -934,7 +977,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     } finally {
       setBulkLoading(false);
     }
-  }, [dataFiltered, table, enqueueSnackbar, mutateStats, mutateInvoices, xeroDialog]);
+  }, [dataFiltered, table, enqueueSnackbar, mutateStats, mutateInvoices, xeroDialog, user]);
 
   return (
     <Box>

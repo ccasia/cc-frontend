@@ -286,6 +286,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
           <Chip
             label={campaign.status.replace(/_/g, ' ')}
             size="medium"
+            variant='outlined'
             sx={{
               fontWeight: 600,
               fontSize: '0.75rem',

@@ -200,11 +200,6 @@ export default function CampaignItem({
     campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
     isUserAssignedToCampaign;
 
-  const isPendingReview =
-    campaign?.status === 'PENDING_CSM_REVIEW' ||
-    campaign?.status === 'SCHEDULED' ||
-    campaign?.status === 'PENDING_ADMIN_ACTIVATION';
-
   // Determine if the Activate Campaign button should be disabled
   const isDisabled =
     (isCSL || isSuperAdmin) &&
@@ -266,7 +261,6 @@ export default function CampaignItem({
                 <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
                   {formatText(
                     campaign?.status === 'PENDING_CSM_REVIEW' ||
-                      campaign?.status === 'SCHEDULED' ||
                       campaign?.status === 'PENDING_ADMIN_ACTIVATION'
                       ? 'PENDING'
                       : campaign?.status
@@ -643,7 +637,7 @@ export default function CampaignItem({
             // Show button for superadmin/CSL to assign admin (initial activation)
             const showForInitialActivation =
               canInitialActivate &&
-              (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED');
+              (campaign?.status === 'PENDING_CSM_REVIEW');
 
             // Show button for assigned admin/CSM to complete activation
             const showForCompleteActivation =
@@ -712,7 +706,7 @@ export default function CampaignItem({
                 // For superadmin on pending campaigns: use initial activation (admin assignment only)
                 if (
                   canInitialActivate &&
-                  (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')
+                  (campaign?.status === 'PENDING_CSM_REVIEW')
                 ) {
                   console.log('Opening InitialActivateDialog (admin assignment only)');
                   setInitialActivateDialogOpen(true);
@@ -793,9 +787,7 @@ export default function CampaignItem({
 
   return (
     <Card
-      component={Box}
-      id={`campaign-${campaign?.id}`}
-      ref={ref}
+      component={RouterLink}
       href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
       onClick={() => {
         // const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');

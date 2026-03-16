@@ -135,7 +135,6 @@ export function useNavData() {
             roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
             title: 'Campaigns',
             path: paths.dashboard.campaign.view,
-            path: paths.dashboard.campaign.view,
             icon: ICONS.mycampaigns,
           },
           {

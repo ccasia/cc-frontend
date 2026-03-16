@@ -13,6 +13,7 @@ import CreatorSendPosting from './components/creators/posting';
 import TotalCreators from './components/creators/totalcreators';
 import CreatorSendAgreement from './components/creators/agreements';
 import PostingAnalytics from './components/admins/PostingAnalytics';
+import LanguageAnalytics from './components/creators/language-analytics';
 import ApproveDraftsAnalytics from './components/admins/DraftsAnalytics';
 import ShortlistedCreators from './components/creators/shortlisted-creators';
 import CampaignParticipation from './components/creators/campaign-participants';

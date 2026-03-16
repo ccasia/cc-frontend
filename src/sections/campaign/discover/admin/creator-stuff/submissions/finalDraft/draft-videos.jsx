@@ -956,6 +956,7 @@ const VideoCard = ({
           </Stack>
         </Box>
       )}
+
     </Card>
   );
 };
@@ -1747,6 +1748,7 @@ const DraftVideos = ({
           </ConfirmationRequestModal>
         </FormProvider>
       )}
+
     </>
   );
 };

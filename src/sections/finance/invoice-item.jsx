@@ -3,17 +3,19 @@ import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
 import {
+  Box,
   Stack,
   Avatar,
+  Button,
   Checkbox,
   TableRow,
   TableCell,
   Typography,
+  Tooltip,
   CircularProgress,
 } from '@mui/material';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
-
 import { STATUS_COLORS } from './invoice-constants';
 
 const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditInvoice }) => {
@@ -27,6 +29,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
     setValue(invoice?.status);
   }, [setValue, invoice]);
 
+  const isPaid = invoice?.status === 'paid';
   const isProcessing = invoice?.status === 'processing';
 
   return (
@@ -52,7 +55,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       }}
     >
       <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
-        <Checkbox checked={selected} onClick={onSelectRow} disabled={isProcessing} />
+        <Checkbox checked={selected} onClick={onSelectRow} disabled={isPaid} />
       </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>
