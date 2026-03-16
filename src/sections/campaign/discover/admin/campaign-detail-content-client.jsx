@@ -810,7 +810,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   {additionalDetails?.creatorCompensation && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Creator Compensation</Typography>
-                      <Typography sx={SectionBodyStyle}>
+                      <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
                         {additionalDetails.creatorCompensation}
                       </Typography>
                     </Box>
@@ -819,7 +819,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   {additionalDetails?.ctaDesiredAction && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Desired Action</Typography>
-                      <Typography sx={SectionBodyStyle}>
+                      <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
                         {additionalDetails.ctaDesiredAction}
                       </Typography>
                     </Box>
@@ -861,7 +861,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   {additionalDetails?.ctaLinkInBioRequirements && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Link in Bio Requirements</Typography>
-                      <Typography sx={SectionBodyStyle}>
+                      <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
                         {additionalDetails.ctaLinkInBioRequirements}
                       </Typography>
                     </Box>
@@ -870,7 +870,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   {additionalDetails?.specialNotesInstructions && (
                     <Box>
                       <Typography sx={SectionTitleStyle}>Special Notes/Instructions</Typography>
-                      <Typography sx={SectionBodyStyle}>
+                      <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
                         {additionalDetails.specialNotesInstructions}
                       </Typography>
                     </Box>

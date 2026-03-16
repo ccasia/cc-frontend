@@ -77,6 +77,7 @@ export default function AdditionalDetails2() {
             <RHFTextField
               name="creatorCompensation"
               placeholder="Creator Compensation"
+              multiline
             />
           </FormField>
 
@@ -86,6 +87,7 @@ export default function AdditionalDetails2() {
             <RHFTextField
               name="ctaDesiredAction"
               placeholder="Desired Action"
+              multiline
             />
           </FormField>
 
@@ -114,6 +116,7 @@ export default function AdditionalDetails2() {
             <RHFTextField
               name="ctaLinkInBioRequirements"
               placeholder="Link in Bio Requirements"
+              multiline
             />
           </FormField>
 
@@ -122,6 +125,7 @@ export default function AdditionalDetails2() {
             <RHFTextField
               name="specialNotesInstructions"
               placeholder="Special Notes/Instructions"
+              multiline
             />
           </FormField>
 

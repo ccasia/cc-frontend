@@ -96,6 +96,7 @@ export default function AdditionalDetails1() {
             <RHFTextField
               name="mainMessage"
               placeholder="Core Message"
+              multiline
             />
           </FormField>
 
@@ -159,6 +160,7 @@ export default function AdditionalDetails1() {
             <RHFTextField
               name="referenceContent"
               placeholder="references.com"
+              multiline
               size="small"
               sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
             />
