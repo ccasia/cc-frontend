@@ -704,7 +704,7 @@ export default function AdminFeedbackPanel({
           </Box>
         )}
 
-        <AnimatePresence initial={false}>
+        <AnimatePresence initial={false} key={videoId}>
         {comments.map((comment) => (
           <m.div
             key={comment.id}
@@ -908,127 +908,136 @@ export default function AdminFeedbackPanel({
         </Box>
       </Box>}
 
-      {/* Action Buttons + Pagination */}
+      {/* Pagination + Action Buttons — container always rendered with fixed height to prevent jumping */}
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 1.5,
-          mt: 'auto',
+          minHeight: 48,
+          flexShrink: 0,
+          flexWrap: 'wrap',
           pt: 1,
+          pb: 0.5,
         }}
       >
-        {/* Pagination - left side */}
-        {videoCount > 1 ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <IconButton
-              size="small"
-              disabled={videoPage === videoCount - 1}
-              onClick={() => setVideoPage(videoPage + 1)}
-              sx={{ p: 0.25, color: '#231F20', '&.Mui-disabled': { color: '#D1D1D6' } }}
-            >
-              <Iconify icon="eva:chevron-left-fill" width={20} />
-            </IconButton>
-            {Array.from({ length: videoCount }, (_, i) => {
-              const pageIndex = videoCount - 1 - i;
-              return (
-                <Typography
-                  key={pageIndex}
-                  onClick={() => setVideoPage(pageIndex)}
-                  sx={{
-                    fontSize: '0.875rem',
-                    fontWeight: 700,
-                    color: videoPage === pageIndex ? '#231F20' : '#8E8E93',
-                    cursor: 'pointer',
-                    px: 0.5,
-                    userSelect: 'none',
-                  }}
-                >
-                  {i + 1}
-                </Typography>
-              );
-            })}
-            <IconButton
-              size="small"
-              disabled={videoPage === 0}
-              onClick={() => setVideoPage(videoPage - 1)}
-              sx={{ p: 0.25, color: '#231F20', '&.Mui-disabled': { color: '#D1D1D6' } }}
-            >
-              <Iconify icon="eva:chevron-right-fill" width={20} />
-            </IconButton>
-          </Box>
-        ) : <Box />}
+        {/* Pagination - left side (always occupies space) */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+          {videoCount > 1 && (
+            <>
+              <IconButton
+                size="small"
+                disabled={videoPage === videoCount - 1}
+                onClick={() => setVideoPage(videoPage + 1)}
+                sx={{ p: 0.25, color: '#231F20', '&.Mui-disabled': { color: '#D1D1D6' } }}
+              >
+                <Iconify icon="eva:chevron-left-fill" width={20} />
+              </IconButton>
+              {Array.from({ length: videoCount }, (_, i) => {
+                const pageIndex = videoCount - 1 - i;
+                return (
+                  <Typography
+                    key={pageIndex}
+                    onClick={() => setVideoPage(pageIndex)}
+                    sx={{
+                      fontSize: '0.875rem',
+                      fontWeight: 700,
+                      color: videoPage === pageIndex ? '#231F20' : '#8E8E93',
+                      cursor: 'pointer',
+                      px: 0.5,
+                      userSelect: 'none',
+                    }}
+                  >
+                    {i + 1}
+                  </Typography>
+                );
+              })}
+              <IconButton
+                size="small"
+                disabled={videoPage === 0}
+                onClick={() => setVideoPage(videoPage - 1)}
+                sx={{ p: 0.25, color: '#231F20', '&.Mui-disabled': { color: '#D1D1D6' } }}
+              >
+                <Iconify icon="eva:chevron-right-fill" width={20} />
+              </IconButton>
+            </>
+          )}
+        </Box>
 
         {/* Send buttons - right side */}
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
-        {showSendToCreator && !isPastVideo && (
-          <Button
-            variant="contained"
-            disableElevation
-            disabled={!hasComments || sending}
-            onClick={handleSendToCreator}
-            sx={{
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              borderRadius: '10px',
-              px: 2.5,
-              py: 0.9,
-              boxShadow: 'none',
-              bgcolor: '#3A3A3C',
-              borderBottom: '3px solid #202021',
-              '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: 'none' },
-              '&:active': {
-                borderBottom: '1px solid #202021',
-                transform: 'translateY(1px)',
-              },
-              '&.Mui-disabled': {
-                bgcolor: '#B0B0B1',
-                color: '#FFFFFF',
-                borderBottom: '3px solid #9E9E9F',
-              },
-            }}
-          >
-            {sending ? 'Sending...' : 'Send Feedback to Creator'}
-          </Button>
+        {!isPastVideo && (
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {showSendToCreator && (
+              <Button
+                variant="contained"
+                disableElevation
+                disabled={!hasComments || sending}
+                onClick={handleSendToCreator}
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: '0.8rem', md: '0.85rem', lg: '0.95rem' },
+                  borderRadius: '10px',
+                  px: { xs: 1.5, md: 2, lg: 2.5 },
+                  py: 0.9,
+                  whiteSpace: 'nowrap',
+                  boxShadow: 'none',
+                  bgcolor: '#3A3A3C',
+                  borderBottom: '3px solid #202021',
+                  '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: 'none' },
+                  '&:active': {
+                    borderBottom: '1px solid #202021',
+                    transform: 'translateY(1px)',
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: '#B0B0B1',
+                    color: '#FFFFFF',
+                    borderBottom: '3px solid #9E9E9F',
+                  },
+                }}
+              >
+                {sending ? 'Sending...' : 'Send Feedback to Creator'}
+              </Button>
+            )}
+            {showSendToClient && (
+              <Button
+                variant="contained"
+                disableElevation
+                disabled={!hasComments || sending}
+                onClick={handleSendToClient}
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: '0.8rem', md: '0.85rem', lg: '0.95rem' },
+                  borderRadius: '10px',
+                  px: { xs: 1.5, md: 2, lg: 2.5 },
+                  py: 0.9,
+                  whiteSpace: 'nowrap',
+                  color: '#3A3A3C',
+                  bgcolor: '#FFFFFF',
+                  border: '1px solid #E7E7E7',
+                  borderBottom: '3px solid #E7E7E7',
+                  boxShadow: 'none',
+                  '&:hover': {
+                    bgcolor: '#F9F9F9',
+                    boxShadow: 'none',
+                  },
+                  '&:active': {
+                    borderBottom: '1px solid #E7E7E7',
+                    transform: 'translateY(1px)',
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: '#F2F2F2',
+                    color: '#B0B0B1',
+                    border: '1px solid #DBDBDB',
+                    borderBottom: '3px solid #E7E7E7',
+                  },
+                }}
+              >
+                {sending ? 'Sending...' : 'Send Feedback to Client'}
+              </Button>
+            )}
+          </Box>
         )}
-        {showSendToClient && !isPastVideo && (
-          <Button
-            variant="contained"
-            disableElevation
-            disabled={!hasComments || sending}
-            onClick={handleSendToClient}
-            sx={{
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              borderRadius: '10px',
-              px: 2.5,
-              py: 0.9,
-              color: '#3A3A3C',
-              bgcolor: '#FFFFFF',
-              border: '1px solid #E7E7E7',
-              borderBottom: '3px solid #E7E7E7',
-              boxShadow: 'none',
-              '&:hover': {
-                bgcolor: '#F9F9F9',
-                boxShadow: 'none',
-              },
-              '&:active': {
-                borderBottom: '1px solid #E7E7E7',
-                transform: 'translateY(1px)',
-              },
-              '&.Mui-disabled': {
-                bgcolor: '#F2F2F2',
-                color: '#B0B0B1',
-                border: '1px solid #DBDBDB',
-                borderBottom: '3px solid #E7E7E7',
-              },
-            }}
-          >
-            {sending ? 'Sending...' : 'Send Feedback to Client'}
-          </Button>
-        )}
-        </Box>
       </Box>
     </Box>
   );

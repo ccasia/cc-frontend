@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Box, Typography, Avatar, IconButton, Modal, Backdrop } from '@mui/material';
 import Iconify from 'src/components/iconify';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 const MAX_VIDEO_PAGES = 3;
 
@@ -9,6 +10,7 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
   const videoRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [videoPage, setVideoPage] = useState(0);
+  const [freshSubmission, setFreshSubmission] = useState(null);
 
   const handleTimeUpdate = useCallback(() => {
     if (videoRef.current) {
@@ -33,10 +35,32 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
     setCurrentTime(0);
   }, [videoPage]);
 
+  // Fetch fresh submission data on open to get all video versions
+  useEffect(() => {
+    let isMounted = true;
+    if (!open || !submission?.id) return () => { isMounted = false; };
+    setFreshSubmission(null);
+    const fetchFresh = async () => {
+      try {
+        const res = await axiosInstance.get(`${endpoints.submission.v4.getById}/${submission.id}`);
+        if (isMounted) {
+          setFreshSubmission(res?.data?.submission || null);
+        }
+      } catch (e) {
+        if (isMounted) setFreshSubmission(null);
+      }
+    };
+    fetchFresh();
+    return () => { isMounted = false; };
+  }, [open, submission?.id]);
+
   if (!open || !submission) return null;
 
-  // Video pagination: submission.video is ordered createdAt DESC (newest first)
-  const allVideos = submission.video || [];
+  const effectiveSubmission = freshSubmission || submission;
+
+  // Video pagination: submission.video is ordered createdAt DESC (newest first).
+  // slice(0, N) takes the N newest from the DESC array, then reverse to get ASC for display.
+  const allVideos = effectiveSubmission.video || [];
   const latestVideos =
     allVideos.length <= MAX_VIDEO_PAGES
       ? [...allVideos].reverse()
@@ -49,11 +73,11 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
   const videoUrl = currentVideo?.url || null;
   const isPastVideo = effectiveVideoPage !== videoCount - 1;
 
-  const captionText = submission.caption || '';
+  const captionText = effectiveSubmission.caption || '';
 
-  const creatorInfo = creator || submission.user || submission.creator || {};
+  const creatorInfo = creator || effectiveSubmission.user || effectiveSubmission.creator || {};
   const creatorName =
-    creatorInfo.name || creatorInfo.firstName || submission.creatorName || 'Creator';
+    creatorInfo.name || creatorInfo.firstName || effectiveSubmission.creatorName || 'Creator';
   const creatorPhoto =
     creatorInfo?.photoURL ||
     creatorInfo?.photoUrl ||
@@ -82,13 +106,13 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: { xs: '95vw', sm: '90vw', md: '85vw', lg: '95vw' },
+          width: { xs: '95vw', sm: '92vw', md: '88vw', lg: '95vw' },
           maxWidth: '95vw',
-          height: { xs: '95vh', md: '90vh', lg: 950 },
-          maxHeight: 950,
+          height: { xs: '95vh', sm: '92vh', md: '90vh', lg: 950 },
+          maxHeight: '90vh',
           bgcolor: '#F4F4F4',
           borderRadius: '20px',
-          p: 3,
+          p: { xs: 2, sm: 2.5, md: 3 },
           boxShadow: '0px 24px 48px rgba(0, 0, 0, 0.2)',
           outline: 'none',
           display: 'flex',
@@ -102,7 +126,7 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            mb: 2.5,
+            mb: { xs: 1.5, md: 2.5 },
           }}
         >
           {/* User Info */}
@@ -111,8 +135,8 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
               src={creatorPhoto}
               alt={creatorName}
               sx={{
-                width: 40,
-                height: 40,
+                width: { xs: 36, md: 40 },
+                height: { xs: 36, md: 40 },
                 border: '2px solid white',
               }}
             >
@@ -125,7 +149,7 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
                   fontFamily:
                     'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                   fontWeight: 600,
-                  fontSize: '1rem',
+                  fontSize: { xs: '0.875rem', md: '1rem' },
                   color: '#1F2937',
                   lineHeight: 1.2,
                 }}
@@ -138,11 +162,12 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
                   fontFamily:
                     'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                   color: '#8E8E93',
-                  fontSize: '0.75rem',
+                  display: { xs: 'none', sm: 'block' },
+                  fontSize: { xs: '0.688rem', md: '0.75rem' },
                 }}
               >
-                {submission.createdAt
-                  ? new Date(submission.createdAt).toLocaleDateString('en-US', {
+                {effectiveSubmission.createdAt
+                  ? new Date(effectiveSubmission.createdAt).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
@@ -159,8 +184,12 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
             onClick={onClose}
             sx={{
               p: 0.5,
+              width: { xs: 28, md: 32 },
+              height: { xs: 28, md: 32 },
+              bgcolor: 'white',
+              boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.08)',
               '&:hover': {
-                bgcolor: 'rgba(0, 0, 0, 0.04)',
+                bgcolor: 'rgba(255, 255, 255, 0.9)',
               },
             }}
           >
@@ -172,7 +201,7 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
         <Box
           sx={{
             display: 'flex',
-            gap: 2.5,
+            gap: { xs: 2, md: 2.5 },
             flex: 1,
             overflow: 'hidden',
             flexDirection: { xs: 'column', md: 'row' },
@@ -184,7 +213,7 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
               flex: { xs: '1 1 auto', md: '0 0 60%' },
               display: 'flex',
               flexDirection: 'column',
-              gap: 2.5,
+              gap: { xs: 1.5, md: 2.5 },
               minWidth: 0,
             }}
           >
@@ -244,12 +273,12 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
               sx={{
                 flex: 1,
                 bgcolor: '#000',
-                borderRadius: '12px',
+                borderRadius: { xs: '8px', md: '12px' },
                 overflow: 'hidden',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                minHeight: { xs: 300, md: 450 },
+                minHeight: { xs: 200, sm: 280, md: 450 },
                 position: 'relative',
               }}
             >
@@ -295,6 +324,7 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
                 setVideoPage,
                 videoCount,
                 isPastVideo,
+                submission: effectiveSubmission,
               })
             : rightSideContent) || (
             <Box

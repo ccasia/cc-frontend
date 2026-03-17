@@ -881,11 +881,11 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         open={adminReviewModalOpen}
         onClose={() => setAdminReviewModalOpen(false)}
         submission={submission}
-        rightSideContent={({ currentTime, onSeek, videoId: modalVideoId, videoPage, setVideoPage, videoCount, isPastVideo }) => (
+        rightSideContent={({ currentTime, onSeek, videoId: modalVideoId, videoPage, setVideoPage, videoCount, isPastVideo, submission: modalSubmission }) => (
           <AdminFeedbackPanel
             currentTime={currentTime}
             onSeek={onSeek}
-            submission={submission}
+            submission={modalSubmission || submission}
             videoId={modalVideoId || video?.id}
             videoPage={videoPage}
             setVideoPage={setVideoPage}
