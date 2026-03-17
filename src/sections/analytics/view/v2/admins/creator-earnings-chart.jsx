@@ -3,13 +3,13 @@ import { memo, useMemo, useState } from 'react';
 import PaidIcon from '@mui/icons-material/Paid';
 import { Box, Stack, Avatar, Skeleton, Typography } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
-
 import useGetCreatorEarnings from 'src/hooks/use-get-creator-earnings';
 
+import Iconify from 'src/components/iconify';
+
+import { UI_COLORS } from '../chart-config';
 import ChartCard from '../components/chart-card';
 import { useDateFilter } from '../date-filter-context';
-import { UI_COLORS } from '../chart-config';
 import CreatorEarningsDrawer from './creator-earnings-drawer';
 
 function CreatorEarningsChart() {

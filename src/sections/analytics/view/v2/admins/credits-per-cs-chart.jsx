@@ -1,19 +1,19 @@
-import { memo, useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
+import { memo, useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Stack, Avatar, Skeleton, Typography } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { useDrawingArea, useXScale, useYScale } from '@mui/x-charts/hooks';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import { Box, Stack, Avatar, Skeleton, Typography } from '@mui/material';
+import { useXScale, useYScale, useDrawingArea } from '@mui/x-charts/hooks';
 
 import useGetCreditsPerCS from 'src/hooks/use-get-credits-per-cs';
 
 import ChartCard from '../components/chart-card';
-import { useDateFilter } from '../date-filter-context';
 import ChartLegend from '../components/chart-legend';
+import { useDateFilter } from '../date-filter-context';
 import CreditsPerCSDrawer from './credits-per-cs-drawer';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
-import { UI_COLORS, CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, TICK_LABEL_STYLE } from '../chart-config';
+import { CHART_SX, UI_COLORS, CHART_GRID, CHART_COLORS, CHART_MARGIN, TICK_LABEL_STYLE } from '../chart-config';
 
 const LEGEND_ITEMS = [
   { label: 'Basic', color: CHART_COLORS.primary },

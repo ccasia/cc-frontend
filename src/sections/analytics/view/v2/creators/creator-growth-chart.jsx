@@ -1,29 +1,29 @@
 
-import { memo, useRef, useMemo, useState, useEffect, useContext, useCallback, createContext } from 'react';
 import PropTypes from 'prop-types';
+import { memo, useRef, useMemo, useState, useEffect, useContext, useCallback, createContext } from 'react';
 
 import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { LineChart } from '@mui/x-charts/LineChart';
-import WcOutlinedIcon from '@mui/icons-material/WcOutlined';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
 import RemoveIcon from '@mui/icons-material/Remove';
-import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import WcOutlinedIcon from '@mui/icons-material/WcOutlined';
 import { useAxisTooltip } from '@mui/x-charts/ChartsTooltip';
+import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import { Box, Card, Chip, Stack, Paper, Divider, Tooltip, Typography, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Card, Chip, Stack, Paper, Divider, Tooltip, useTheme, Typography, useMediaQuery } from '@mui/material';
 
 import useChartZoom from 'src/hooks/use-chart-zoom';
 import useGetCreatorGrowth from 'src/hooks/use-get-creator-growth';
 import useGetCreatorGrowthCreators from 'src/hooks/use-get-creator-growth-creators';
 
-import ChartItemTooltip from '../components/chart-item-tooltip';
 import ZoomableChart from '../components/zoomable-chart';
+import ChartItemTooltip from '../components/chart-item-tooltip';
 import CreatorDrilldownDrawer from './creator-drilldown-drawer';
-import { useDateFilter, useFilteredData, useFilterLabel, useIsDaily } from '../date-filter-context';
-import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, TICK_LABEL_STYLE, getTrendProps } from '../chart-config';
+import { useIsDaily, useDateFilter, useFilterLabel, useFilteredData } from '../date-filter-context';
+import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, getTrendProps, TICK_LABEL_STYLE } from '../chart-config';
 
 const GrowthDataContext = createContext([]);
 

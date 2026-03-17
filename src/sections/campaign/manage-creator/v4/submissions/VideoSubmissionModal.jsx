@@ -1,19 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
+import React, { useRef, useState, useEffect } from 'react';
+
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
-  Typography,
-  Avatar,
-  IconButton,
   Modal,
-  Backdrop,
+  Avatar,
   Dialog,
   Button,
+  Backdrop,
+  Typography,
+  IconButton,
 } from '@mui/material';
-import Iconify from 'src/components/iconify';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
-import { LoadingButton } from '@mui/lab';
+
+import Iconify from 'src/components/iconify';
 
 const formatTime = (timeInSeconds) => {
   if (!timeInSeconds) return '0:00';
@@ -400,9 +404,9 @@ const VideoSubmissionModal = ({
                     isPastVideo: videoPage !== 0,
                     currentVideoTime: formatTime(modalCurrentTime),
                     onSeekTo: handleModalSeek,
-                    videoPage: videoPage,
-                    setVideoPage: setVideoPage,
-                    videoCount: videoCount,
+                    videoPage,
+                    setVideoPage,
+                    videoCount,
                   })
                 : rightSideContent) || (
               <Box

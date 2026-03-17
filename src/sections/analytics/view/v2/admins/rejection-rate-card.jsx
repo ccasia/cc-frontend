@@ -1,5 +1,9 @@
-import { memo, useState, useMemo, useCallback, useEffect } from 'react';
+import { memo, useMemo, useState, useEffect, useCallback } from 'react';
 
+import BlockIcon from '@mui/icons-material/Block';
+import { LineChart } from '@mui/x-charts/LineChart';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import {
   Box,
   Card,
@@ -14,18 +18,15 @@ import {
   Skeleton,
   Typography,
 } from '@mui/material';
-import { LineChart } from '@mui/x-charts/LineChart';
-import BlockIcon from '@mui/icons-material/Block';
-import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
-import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
-import useGetClientRejectionRate from 'src/hooks/use-get-client-rejection-rate';
-import useGetPackages from 'src/hooks/use-get-packges';
+import { useRouter } from 'src/routes/hooks';
 
-import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, TICK_LABEL_STYLE, UI_COLORS } from '../chart-config';
+import useGetPackages from 'src/hooks/use-get-packges';
+import useGetClientRejectionRate from 'src/hooks/use-get-client-rejection-rate';
+
 import { useDateFilter, useFilteredData } from '../date-filter-context';
+import { CHART_SX, UI_COLORS, CHART_GRID, CHART_COLORS, CHART_MARGIN, TICK_LABEL_STYLE } from '../chart-config';
 
 // ---------------------------------------------------------------------------
 // Constants

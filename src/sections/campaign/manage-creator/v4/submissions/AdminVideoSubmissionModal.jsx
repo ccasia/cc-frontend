@@ -1,8 +1,11 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Box, Typography, Avatar, IconButton, Modal, Backdrop } from '@mui/material';
-import Iconify from 'src/components/iconify';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+
+import { Box, Modal, Avatar, Backdrop, Typography, IconButton } from '@mui/material';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import Iconify from 'src/components/iconify';
 
 const MAX_VIDEO_PAGES = 3;
 

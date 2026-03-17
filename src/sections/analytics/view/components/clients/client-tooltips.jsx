@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Typography, Stack, Divider, Avatar } from '@mui/material';
+import { Box, Stack, Avatar, Divider, Typography } from '@mui/material';
+
 import Iconify from 'src/components/iconify';
 
 // --- Glassmorphism base style ---

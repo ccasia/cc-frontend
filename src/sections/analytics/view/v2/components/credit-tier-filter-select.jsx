@@ -10,6 +10,7 @@ import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 
 import Iconify from 'src/components/iconify';
+
 import { CREDIT_TIERS } from 'src/sections/discovery-tool/constants';
 
 // ----------------------------------------------------------------------

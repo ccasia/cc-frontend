@@ -1,9 +1,9 @@
 import { memo, useRef, useMemo, useState, useEffect } from 'react';
 
-import { LineChart } from '@mui/x-charts/LineChart';
-import { Box, Chip, Stack, Typography } from '@mui/material';
 import BoltIcon from '@mui/icons-material/Bolt';
+import { LineChart } from '@mui/x-charts/LineChart';
 import RemoveIcon from '@mui/icons-material/Remove';
+import { Box, Chip, Stack, Typography } from '@mui/material';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
@@ -11,10 +11,10 @@ import useChartZoom from 'src/hooks/use-chart-zoom';
 import useGetActivationRate from 'src/hooks/use-get-activation-rate';
 
 import ChartCard from '../components/chart-card';
-import { useDateFilter, useFilteredData, useFilterLabel, useIsDaily } from '../date-filter-context';
 import ZoomableChart from '../components/zoomable-chart';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
-import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, TICK_LABEL_STYLE, getTrendProps } from '../chart-config';
+import { useIsDaily, useDateFilter, useFilterLabel, useFilteredData } from '../date-filter-context';
+import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, getTrendProps, TICK_LABEL_STYLE } from '../chart-config';
 
 function ActivationRateChart() {
   const { startDate, endDate, creditTiers } = useDateFilter();

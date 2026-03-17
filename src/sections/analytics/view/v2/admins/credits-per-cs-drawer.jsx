@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 
-import { Box, Stack, Avatar, Drawer, IconButton, Typography, ButtonBase, Tooltip } from '@mui/material';
+import { Box, Stack, Avatar, Drawer, Tooltip, IconButton, Typography, ButtonBase } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';

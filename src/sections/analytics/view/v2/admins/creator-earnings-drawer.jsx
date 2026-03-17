@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import { pdf } from '@react-pdf/renderer';
-import { Page, pdfjs, Document } from 'react-pdf';
-import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { Page, pdfjs, Document } from 'react-pdf';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { Box, Stack, Avatar, Button, Drawer, IconButton, Typography, CircularProgress } from '@mui/material';
 
@@ -13,8 +13,8 @@ import { formatCurrencyAmount } from 'src/utils/currency';
 
 import { useGetCreatorInvoice } from 'src/api/invoices';
 
-import Iconify from 'src/components/iconify';
 import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 
 import InvoicePDF from 'src/sections/creator/invoice/invoice-pdf';
 

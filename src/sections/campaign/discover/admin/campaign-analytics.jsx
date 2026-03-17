@@ -45,7 +45,6 @@ import { TopCreatorsLineChart, EngagementRateHeatmap } from 'src/components/tren
 import {
   ScrollingName,
   AnimatedNumber,
-  UserPerformanceCard,
   PlatformOverviewMobile,
   ManualCreatorEntryForm,
   PlatformOverviewDesktop,

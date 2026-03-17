@@ -1,5 +1,5 @@
-import PropTypes from "prop-types";
 import { useMemo } from "react";
+import PropTypes from "prop-types";
 
 import { BarChart } from '@mui/x-charts';
 import { Box, Card, Typography, CardContent } from '@mui/material';

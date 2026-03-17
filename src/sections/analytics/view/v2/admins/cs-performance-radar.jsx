@@ -1,10 +1,10 @@
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 // eslint-disable-next-line import/no-unresolved
 import { RadarChart } from '@mui/x-charts/RadarChart';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
-import ChartCard from '../components/chart-card';
 import { MOCK_CS_RADAR } from '../mock-data';
 import { CHART_COLORS } from '../chart-config';
+import ChartCard from '../components/chart-card';
 
 const RADAR_COLORS = [CHART_COLORS.primary, CHART_COLORS.secondary, CHART_COLORS.success, CHART_COLORS.warning];
 

@@ -1,5 +1,5 @@
-import { useMemo, useContext, createContext } from 'react';
 import PropTypes from 'prop-types';
+import { useMemo, useContext, createContext } from 'react';
 
 // ---------------------------------------------------------------------------
 // Context

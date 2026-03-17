@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Box, Typography, Avatar, TextField, IconButton } from '@mui/material';
-import Iconify from 'src/components/iconify';
+import React, { useState } from 'react';
+
+import { Box, Avatar, TextField, Typography, IconButton } from '@mui/material';
+
 import axiosInstance from 'src/utils/axios';
+
+import Iconify from 'src/components/iconify';
 
 const COLORS = {
   primary: '#1340FF',

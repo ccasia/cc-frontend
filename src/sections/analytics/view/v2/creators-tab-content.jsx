@@ -4,14 +4,14 @@ import Grid from '@mui/material/Grid';
 
 import { varFade, varContainer } from 'src/components/animate/variants';
 
-import CreatorGrowthChart from './creators/creator-growth-chart';
-import ActivationRateChart from './creators/activation-rate-chart';
-import TimeToActivationChart from './creators/time-to-activation-chart';
-import MediaKitActivationChart from './creators/media-kit-activation-chart';
 import PitchRateChart from './creators/pitch-rate-chart';
 import CreatorNpsChart from './creators/creator-nps-chart';
-import CreatorEarningsChart from './admins/creator-earnings-chart';
+import CreatorGrowthChart from './creators/creator-growth-chart';
 import ResponseTimeCharts from './creators/response-time-charts';
+import ActivationRateChart from './creators/activation-rate-chart';
+import CreatorEarningsChart from './admins/creator-earnings-chart';
+import TimeToActivationChart from './creators/time-to-activation-chart';
+import MediaKitActivationChart from './creators/media-kit-activation-chart';
 
 const containerVariants = varContainer({ staggerIn: 0.08 });
 const itemVariants = varFade({ distance: 24 }).inUp;

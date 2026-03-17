@@ -1,5 +1,5 @@
-import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import { Box, Stack, Typography } from '@mui/material';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
 
 import ChartCard from '../components/chart-card';
 import { MOCK_CREATOR_FUNNEL } from '../mock-data';

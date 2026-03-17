@@ -4,10 +4,11 @@ import PropTypes from 'prop-types';
 
 import { Box, Stack, Avatar, Drawer, IconButton, Typography } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
-import useGetAvgAgreementResponseDetails from 'src/hooks/use-get-avg-agreement-response-details';
 import useGetAvgFirstCampaignDetails from 'src/hooks/use-get-avg-first-campaign-details';
+import useGetAvgAgreementResponseDetails from 'src/hooks/use-get-avg-agreement-response-details';
 import useGetAvgSubmissionResponseDetails from 'src/hooks/use-get-avg-submission-response-details';
+
+import Iconify from 'src/components/iconify';
 
 import { CHART_COLORS } from '../chart-config';
 import { useDateFilter, parseMonthStr } from '../date-filter-context';

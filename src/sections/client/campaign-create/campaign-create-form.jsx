@@ -29,12 +29,12 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useJourneyTracker } from 'src/hooks/use-journey-tracker';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { NextStepsIcon } from 'src/assets/icons';
-import { useJourneyTracker } from 'src/hooks/use-journey-tracker';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';

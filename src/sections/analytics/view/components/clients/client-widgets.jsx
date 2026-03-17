@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
+
 import {
-  Card,
   Box,
-  Typography,
+  Card,
   Stack,
   useTheme,
+  Typography,
   useMediaQuery,
   LinearProgress,
 } from '@mui/material';
@@ -14,18 +15,18 @@ import {
   BarChart,
   axisClasses,
   ScatterChart,
-  ChartsReferenceLine,
   legendClasses,
+  ChartsReferenceLine,
 } from '@mui/x-charts';
+
 import Iconify from 'src/components/iconify';
 
 import {
-  ClientItemTooltipSlot,
-  ClientAxisTooltipSlot,
+  PieTooltipSlot,
   MatrixTooltipSlot,
   RenewalTooltipSlot,
+  ClientAxisTooltipSlot,
   TurnaroundTooltipSlot,
-  PieTooltipSlot,
 } from './client-tooltip-wrappers';
 
 // Your Brand Colors

@@ -1,10 +1,12 @@
-import { memo, useState, useMemo, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { memo, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { Box, Menu, Button, Divider, Checkbox, MenuItem, Typography } from '@mui/material';
-import Iconify from 'src/components/iconify';
 
 import useGetPackages from 'src/hooks/use-get-packges';
+
+import Iconify from 'src/components/iconify';
+
 import { UI_COLORS } from '../chart-config';
 
 const KNOWN_PACKAGE_COLORS = {
