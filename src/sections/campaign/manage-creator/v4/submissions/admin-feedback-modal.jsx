@@ -62,6 +62,7 @@ const CommentCard = ({
   onTimestampClick,
   onReply,
   isReply = false,
+  isPastVideo = false,
   onEdit,
   onToggleResolve,
   editTarget,
@@ -77,7 +78,7 @@ const CommentCard = ({
 }) => {
   const isClientComment = comment.user?.role === 'client' && !comment.forwardedBy;
   const hasAgreed = comment.agreedBy?.length > 0;
-  const isResolved = !!comment.resolvedByUserId;
+  const isResolved = !!comment.resolvedByUserId || isPastVideo;
 
   // Display forwardedBy name if set, otherwise user name
   const displayName = comment.forwardedBy?.name || comment.user?.name || 'Unknown';
@@ -96,7 +97,7 @@ const CommentCard = ({
   }
   prevEditingRef.current = isEditing;
 
-  const hasLeftActions = (!isReply && isClientComment) || (isClientComment && !comment.forwardedBy && !!onEdit);
+  const hasLeftActions = !isPastVideo && ((!isReply && isClientComment) || (isClientComment && !comment.forwardedBy && !!onEdit));
 
   return (
     <Box
@@ -319,7 +320,7 @@ const CommentCard = ({
               </IconButton>
             )}
             <Tooltip title={isResolved ? `Resolved at ${fDateTime(comment.resolvedAt)}` : 'Mark as Resolved'} arrow placement="top">
-              <IconButton size="small" sx={{ p: 0.5 }} onClick={() => onToggleResolve?.(comment.id)}>
+              <IconButton size="small" sx={{ p: 0.5 }} onClick={isPastVideo ? undefined : () => onToggleResolve?.(comment.id)}>
                 <Iconify
                   icon={isResolved ? 'mdi:check-circle' : 'mdi:check-circle-outline'}
                   width={20}
@@ -447,6 +448,7 @@ CommentCard.propTypes = {
   onTimestampClick: PropTypes.func,
   onReply: PropTypes.func,
   isReply: PropTypes.bool,
+  isPastVideo: PropTypes.bool,
   onEdit: PropTypes.func,
   onToggleResolve: PropTypes.func,
   editTarget: PropTypes.object,
@@ -470,6 +472,10 @@ export default function AdminFeedbackPanel({
   onSeek,
   submission,
   videoId,
+  videoPage,
+  setVideoPage,
+  videoCount = 1,
+  isPastVideo = false,
   onFeedbackSent,
 }) {
   const [commentText, setCommentText] = useState('');
@@ -511,16 +517,21 @@ export default function AdminFeedbackPanel({
     };
   }, [socket, submission?.id, commentsMutate]);
 
+  // Reset scroll state on mount (each modal open)
+  useEffect(() => {
+    initialLoadDone.current = false;
+  }, []);
+
   // Scroll to bottom on initial load (instant) and when new comments are added (smooth)
   useEffect(() => {
-    if (!commentsEndRef.current || !comments?.length) return;
+    if (!commentsEndRef.current || !comments?.length || commentsLoading) return;
     if (!initialLoadDone.current) {
       commentsEndRef.current.scrollIntoView({ behavior: 'instant' });
       initialLoadDone.current = true;
       return;
     }
     commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
-  }, [comments?.length]);
+  }, [comments?.length, commentsLoading]);
 
   // ---- Handlers ----
 
@@ -635,7 +646,7 @@ export default function AdminFeedbackPanel({
   };
 
   // ---- Button visibility ----
-  const isReadOnly = submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'SENT_TO_CLIENT';
+  const isReadOnly = isPastVideo || submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'SENT_TO_CLIENT';
 
   const showSendToClient =
     submission?.status === 'PENDING_REVIEW' && submission?.campaign?.origin !== 'ADMIN';
@@ -707,6 +718,7 @@ export default function AdminFeedbackPanel({
               comment={comment}
               onTimestampClick={onSeek}
               onReply={handleReply}
+              isPastVideo={isPastVideo}
               onEdit={handleEdit}
               onToggleResolve={handleToggleResolve}
               editTarget={editTarget}
@@ -759,6 +771,7 @@ export default function AdminFeedbackPanel({
                       <CommentCard
                         comment={reply}
                         isReply
+                        isPastVideo={isPastVideo}
                         onTimestampClick={onSeek}
                         onReply={handleReply}
                         onEdit={handleEdit}
@@ -895,18 +908,61 @@ export default function AdminFeedbackPanel({
         </Box>
       </Box>}
 
-      {/* Action Buttons */}
+      {/* Action Buttons + Pagination */}
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           alignItems: 'center',
           gap: 1.5,
           mt: 'auto',
           pt: 1,
         }}
       >
-        {showSendToCreator && (
+        {/* Pagination - left side */}
+        {videoCount > 1 ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <IconButton
+              size="small"
+              disabled={videoPage === videoCount - 1}
+              onClick={() => setVideoPage(videoPage + 1)}
+              sx={{ p: 0.25, color: '#231F20', '&.Mui-disabled': { color: '#D1D1D6' } }}
+            >
+              <Iconify icon="eva:chevron-left-fill" width={20} />
+            </IconButton>
+            {Array.from({ length: videoCount }, (_, i) => {
+              const pageIndex = videoCount - 1 - i;
+              return (
+                <Typography
+                  key={pageIndex}
+                  onClick={() => setVideoPage(pageIndex)}
+                  sx={{
+                    fontSize: '0.875rem',
+                    fontWeight: 700,
+                    color: videoPage === pageIndex ? '#231F20' : '#8E8E93',
+                    cursor: 'pointer',
+                    px: 0.5,
+                    userSelect: 'none',
+                  }}
+                >
+                  {i + 1}
+                </Typography>
+              );
+            })}
+            <IconButton
+              size="small"
+              disabled={videoPage === 0}
+              onClick={() => setVideoPage(videoPage - 1)}
+              sx={{ p: 0.25, color: '#231F20', '&.Mui-disabled': { color: '#D1D1D6' } }}
+            >
+              <Iconify icon="eva:chevron-right-fill" width={20} />
+            </IconButton>
+          </Box>
+        ) : <Box />}
+
+        {/* Send buttons - right side */}
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+        {showSendToCreator && !isPastVideo && (
           <Button
             variant="contained"
             disableElevation
@@ -936,7 +992,7 @@ export default function AdminFeedbackPanel({
             {sending ? 'Sending...' : 'Send Feedback to Creator'}
           </Button>
         )}
-        {showSendToClient && (
+        {showSendToClient && !isPastVideo && (
           <Button
             variant="contained"
             disableElevation
@@ -972,6 +1028,7 @@ export default function AdminFeedbackPanel({
             {sending ? 'Sending...' : 'Send Feedback to Client'}
           </Button>
         )}
+        </Box>
       </Box>
     </Box>
   );
@@ -982,5 +1039,9 @@ AdminFeedbackPanel.propTypes = {
   onSeek: PropTypes.func,
   submission: PropTypes.object,
   videoId: PropTypes.string,
+  videoPage: PropTypes.number,
+  setVideoPage: PropTypes.func,
+  videoCount: PropTypes.number,
+  isPastVideo: PropTypes.bool,
   onFeedbackSent: PropTypes.func,
 };

@@ -1,11 +1,14 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Box, Typography, Avatar, IconButton, Modal, Backdrop } from '@mui/material';
 import Iconify from 'src/components/iconify';
 
+const MAX_VIDEO_PAGES = 3;
+
 const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideContent }) => {
   const videoRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
+  const [videoPage, setVideoPage] = useState(0);
 
   const handleTimeUpdate = useCallback(() => {
     if (videoRef.current) {
@@ -20,28 +23,43 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
     }
   }, []);
 
+  // Reset to latest video when modal opens or submission changes
+  useEffect(() => {
+    if (open) setVideoPage(-1);
+  }, [open, submission?.id]);
+
+  // Reset time when switching videos
+  useEffect(() => {
+    setCurrentTime(0);
+  }, [videoPage]);
+
   if (!open || !submission) return null;
 
-  const videoUrl = submission.video?.[0]?.url || null;
-  
+  // Video pagination: submission.video is ordered createdAt DESC (newest first)
+  const allVideos = submission.video || [];
+  const latestVideos =
+    allVideos.length <= MAX_VIDEO_PAGES
+      ? [...allVideos].reverse()
+      : allVideos.slice(0, MAX_VIDEO_PAGES).reverse();
+  const videos = latestVideos;
+  const videoCount = videos.length;
+  // Default to latest video (last in reversed array)
+  const effectiveVideoPage = videoPage >= 0 && videoPage < videoCount ? videoPage : videoCount - 1;
+  const currentVideo = videos[effectiveVideoPage] || videos[videoCount - 1] || null;
+  const videoUrl = currentVideo?.url || null;
+  const isPastVideo = effectiveVideoPage !== videoCount - 1;
+
   const captionText = submission.caption || '';
-  
-  // Get creator info from props or submission object
-  // Note: submission.user contains the creator info
+
   const creatorInfo = creator || submission.user || submission.creator || {};
-  const creatorName = creatorInfo.name || creatorInfo.firstName || submission.creatorName || 'Creator';
-  const creatorPhoto = creatorInfo?.photoURL || 
-                      creatorInfo?.photoUrl || 
-                      creatorInfo?.photo ||
-                      creatorInfo?.image ||
-                      null;
-  
-  // Debug: Log the data structure
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Modal Data:', { submission, creator, creatorInfo, creatorName, creatorPhoto });
-    console.log('submission.user:', submission.user);
-    console.log('submission.admin:', submission.admin);
-  }
+  const creatorName =
+    creatorInfo.name || creatorInfo.firstName || submission.creatorName || 'Creator';
+  const creatorPhoto =
+    creatorInfo?.photoURL ||
+    creatorInfo?.photoUrl ||
+    creatorInfo?.photo ||
+    creatorInfo?.image ||
+    null;
 
   return (
     <Modal
@@ -104,7 +122,8 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
               <Typography
                 variant="h6"
                 sx={{
-                  fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontFamily:
+                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                   fontWeight: 600,
                   fontSize: '1rem',
                   color: '#1F2937',
@@ -116,7 +135,8 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
               <Typography
                 variant="caption"
                 sx={{
-                  fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontFamily:
+                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                   color: '#8E8E93',
                   fontSize: '0.75rem',
                 }}
@@ -193,7 +213,8 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
               <Typography
                 variant="body2"
                 sx={{
-                  fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontFamily:
+                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                   fontWeight: 600,
                   fontSize: '0.875rem',
                   color: '#636366',
@@ -205,7 +226,8 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
               <Typography
                 variant="body2"
                 sx={{
-                  fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontFamily:
+                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                   fontSize: '0.875rem',
                   color: '#1F2937',
                   lineHeight: 1.6,
@@ -233,6 +255,7 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
             >
               {videoUrl ? (
                 <video
+                  key={currentVideo?.id}
                   ref={videoRef}
                   src={videoUrl}
                   controls
@@ -252,7 +275,8 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
                 <Typography
                   sx={{
                     color: 'white',
-                    fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    fontFamily:
+                      'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                   }}
                 >
                   No video available
@@ -263,7 +287,15 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
 
           {/* Right Side - Flexible Content (Client/Creator/Admin specific) */}
           {(typeof rightSideContent === 'function'
-            ? rightSideContent({ currentTime, onSeek: handleSeekToTime })
+            ? rightSideContent({
+                currentTime,
+                onSeek: handleSeekToTime,
+                videoId: currentVideo?.id,
+                videoPage: effectiveVideoPage,
+                setVideoPage,
+                videoCount,
+                isPastVideo,
+              })
             : rightSideContent) || (
             <Box
               sx={{
@@ -280,7 +312,8 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
               <Typography
                 variant="body2"
                 sx={{
-                  fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontFamily:
+                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                   textAlign: 'center',
                 }}
               >

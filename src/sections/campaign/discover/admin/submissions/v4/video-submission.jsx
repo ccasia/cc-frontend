@@ -50,7 +50,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
     const hasPostingLink = Boolean(submission.content);
     const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
-    const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
+    const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
 
     return {
       video,
@@ -881,12 +881,16 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         open={adminReviewModalOpen}
         onClose={() => setAdminReviewModalOpen(false)}
         submission={submission}
-        rightSideContent={({ currentTime, onSeek }) => (
+        rightSideContent={({ currentTime, onSeek, videoId: modalVideoId, videoPage, setVideoPage, videoCount, isPastVideo }) => (
           <AdminFeedbackPanel
             currentTime={currentTime}
             onSeek={onSeek}
             submission={submission}
-            videoId={video?.id}
+            videoId={modalVideoId || video?.id}
+            videoPage={videoPage}
+            setVideoPage={setVideoPage}
+            videoCount={videoCount}
+            isPastVideo={isPastVideo}
             onFeedbackSent={() => setAdminReviewModalOpen(false)}
           />
         )}

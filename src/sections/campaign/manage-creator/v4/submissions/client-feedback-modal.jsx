@@ -3,6 +3,7 @@ import { Box, Typography, Avatar, IconButton, Button, TextField, Divider } from 
 import Iconify from 'src/components/iconify';
 import axiosInstance from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { GlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
 const formatCommentDate = (dateString) => {
@@ -274,6 +275,7 @@ export default function ClientFeedbackModal({
   videoCount,
 }) {
   const { user } = useAuthContext();
+  const { socket } = useSocketContext();
   const [comments, setComments] = useState([]);
   const [feedbackText, setFeedbackText] = useState('');
   const [replyingToId, setReplyingToId] = useState(null);
@@ -352,6 +354,46 @@ export default function ClientFeedbackModal({
     }
     return () => clearInterval(timer);
   }, [isCountingDown, timeLeft, onSendToAdmin, videoId]);
+
+  // Real-time: listen for admin replies to client parent comments
+  useEffect(() => {
+    if (!socket || !submissionId) return undefined;
+
+    const handleReplyAdded = (data) => {
+      if (data.submissionId !== submissionId || data.videoId !== videoId) return;
+
+      // Skip if reply is from current user (already added optimistically)
+      if (data.comment?.userId === user.id) return;
+
+      setComments((prev) => {
+        const parent = prev.find((c) => c.id === data.parentCommentId);
+
+        // Only handle replies to client parent comments
+        if (!parent || parent.user?.role !== 'client') return prev;
+
+        // Dedup check
+        if (parent.replies?.some((r) => r.id === data.comment.id)) return prev;
+
+        return prev.map((c) => {
+          if (c.id === data.parentCommentId) {
+            return {
+              ...c,
+              replies: [...(c.replies || []), { ...data.comment, agreedBy: [], isNew: true }],
+            };
+          }
+          return c;
+        });
+      });
+
+      setTimeout(() => scrollToElement(data.comment.id), 100);
+    };
+
+    socket.on('v4:comment:reply:added', handleReplyAdded);
+
+    return () => {
+      socket.off('v4:comment:reply:added', handleReplyAdded);
+    };
+  }, [socket, submissionId, videoId, user.id]);
 
   const scrollToElement = (id) => {
     const element = commentRefs.current[id];
@@ -579,7 +621,7 @@ export default function ClientFeedbackModal({
 
                       <CommentCard
                         comment={reply}
-                        isReply={true}
+                        isReply
                         currentUser={user}
                         isNew={reply.isNew}
                         onReplyClick={(id) => setReplyingToId(id)}
