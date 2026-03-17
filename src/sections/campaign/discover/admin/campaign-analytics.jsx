@@ -1,7 +1,9 @@
 /* eslint-disable react/prop-types */
 import PropTypes from 'prop-types';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useRef, useMemo, useState, useEffect } from 'react';
+
+import Markdown from 'react-markdown';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
