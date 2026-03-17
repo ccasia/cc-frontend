@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import PropTypes from 'prop-types';
-import React, { useMemo, useState } from 'react';
+import Markdown from 'react-markdown';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { PieChart } from '@mui/x-charts';
 import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
@@ -14,6 +15,7 @@ import {
   Button,
   Tooltip,
   Divider,
+  TextField,
   Typography,
   IconButton,
   CircularProgress,
@@ -23,6 +25,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 
+import axiosInstance from 'src/utils/axios';
 import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
 import {
   formatNumber,
@@ -30,6 +33,8 @@ import {
   calculateSummaryStats,
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
+
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 
@@ -241,12 +246,53 @@ const RenderEngagementCard = ({
   );
 };
 
+export function useStreamingText() {
+  const [text, setText] = useState('');
+  const [streaming, setStreaming] = useState(false);
+  const queueRef = useRef([]);
+  const tickingRef = useRef(false);
+  const { socket } = useSocketContext();
+
+  // Drip the queue one char at a time
+  const drip = useCallback(() => {
+    if (queueRef.current.length === 0) {
+      tickingRef.current = false;
+      return;
+    }
+    tickingRef.current = true;
+    const char = queueRef.current.shift();
+    setText((prev) => prev + char);
+    setTimeout(drip, 8);
+  }, []);
+
+  useEffect(() => {
+    socket.on('report', ({ content }) => {
+      setStreaming(true);
+      queueRef.current.push(...content.split(''));
+
+      if (!tickingRef.current) drip();
+    });
+
+    socket.on('report:done', () => setStreaming(false));
+
+    return () => {
+      socket.off('report');
+      socket.off('report:done');
+    };
+  }, [socket, drip]);
+
+  return { text, streaming };
+}
+
 const CampaignAnalytics = ({ campaign }) => {
   const campaignId = campaign?.id;
   const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
   const [selectedPlatform, setSelectedPlatform] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const [message, setMessage] = useState([{ content: null, id: null }]);
+  const [humanMessage, setHumanMessage] = useState('');
+  const { text, streaming } = useStreamingText();
 
   const lgUp = useResponsive('up', 'lg');
 
@@ -1913,10 +1959,112 @@ const CampaignAnalytics = ({ campaign }) => {
         />
       )}
 
+      {!!message.length && (
+        <Markdown
+          components={{
+            h1({ node, children, ...rest }) {
+              return (
+                <Typography {...rest} variant="caption">
+                  {children}
+                </Typography>
+              );
+            },
+            h2({ node, children, ...rest }) {
+              return (
+                <Typography {...rest} variant="caption">
+                  {children}
+                </Typography>
+              );
+            },
+            h3({ node, children, ...rest }) {
+              return (
+                <Typography {...rest} variant="caption">
+                  {children}
+                </Typography>
+              );
+            },
+          }}
+        >
+          {text}
+        </Markdown>
+      )}
+
+      {streaming && (
+        <Stack direction="row" gap={0.5}>
+          <Box
+            sx={{
+              '@keyframes pulse': {
+                '0%, 100%': { transform: 'translateY(1px)' },
+                '50%': { transform: 'translateY(10px)' },
+              },
+              animation: 'pulse 0.8s linear infinite',
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              bgcolor: 'black',
+
+              // transform: 'translateX(10px)',
+            }}
+          />
+          <Box
+            sx={{
+              '@keyframes pulse': {
+                '0%, 100%': { transform: 'translateY(1px)' },
+                '50%': { transform: 'translateY(10px)' },
+              },
+              animation: 'pulse 0.8s linear infinite',
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              bgcolor: 'black',
+              animationDelay: '0.1s',
+              // transform: 'translateX(10px)',
+            }}
+          />
+          <Box
+            sx={{
+              '@keyframes pulse': {
+                '0%, 100%': { transform: 'translateY(1px)' },
+                '50%': { transform: 'translateY(10px)' },
+              },
+              animation: 'pulse 0.8s linear infinite',
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              bgcolor: 'black',
+              animationDelay: '0.2s',
+              // transform: 'translateX(10px)',
+            }}
+          />
+        </Stack>
+      )}
+
+      <Stack direction="row" gap={1} flex={1}>
+        <TextField
+          value={humanMessage}
+          placeholder="Ask me anything! ✨"
+          onChange={(e) => setHumanMessage(e.target.value)}
+          fullWidth
+        />
+        <Button
+          variant="outlined"
+          sx={{ minWidth: 100 }}
+          onClick={async () => {
+            try {
+              await axiosInstance.get(`/api/campaign/${campaign?.id}?message=${humanMessage}`);
+              setHumanMessage('');
+            } catch (error) {
+              console.log(error);
+            }
+          }}
+        >
+          Send
+        </Button>
+      </Stack>
+
       <Typography fontSize={24} fontWeight={600} fontFamily="Aileron" gutterBottom>
         Performance Summary
       </Typography>
-
       {/* Loading state for insights */}
       {loadingInsights && (
         <Box sx={{ mb: 3 }}>
@@ -1958,17 +2106,14 @@ const CampaignAnalytics = ({ campaign }) => {
           )}
         </Box>
       )}
-
       {/* Error Alert */}
       {insightsError && (
         <Alert severity="error" sx={{ mb: 2 }}>
           Error loading insights: {insightsError?.message || 'Unknown error'}
         </Alert>
       )}
-
       {/* Core Metrics Section */}
       <CoreMetricsSection insightsData={filteredInsightsData} summaryStats={summaryStats} />
-
       {/* Platform Overview and Additional Metrics Layout */}
       {availablePlatforms.length > 0 && (
         <PlatformOverviewLayout
@@ -1979,7 +2124,6 @@ const CampaignAnalytics = ({ campaign }) => {
           selectedPlatform={selectedPlatform}
         />
       )}
-
       {/* Creator List Header with Count */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography fontSize={24} fontWeight={600} fontFamily="Aileron">
@@ -1993,7 +2137,6 @@ const CampaignAnalytics = ({ campaign }) => {
           </Typography>
         )}
       </Box>
-
       <Grid container spacing={1}>
         {/* eslint-disable react/prop-types */}
         {paginationData.displayedSubmissions.map((submission) => {
@@ -2058,7 +2201,6 @@ const CampaignAnalytics = ({ campaign }) => {
           </Grid>
         )}
       </Grid>
-
       {/* Pagination Controls */}
       {paginationData.totalPages > 1 && (
         <Box

@@ -125,87 +125,87 @@ const fetchCampaigns = async () => {
   const res = await axiosInstance.get('/api/ai/campaigns');
   return res.data;
 
-  return {
-    data: [
-      {
-        id: '1',
-        name: 'Summer Glow 2024',
-        brand: 'Lumière Beauty',
-        status: 'completed',
-        data: {
-          total_views: 180000,
-          total_engagements: 19000,
-          engagement_rate: 3.2,
-          roas: 4.36,
-          total_posts: 24,
-          credits_utilised: 48,
-          credits_allocated: 50,
-          platforms: {
-            tiktok: { posts: 14, engagements: 12000 },
-            instagram: { posts: 10, engagements: 7000 },
-          },
-          top_creators: [
-            { name: '@glowwithsara', engagement_rate: 6.1, followers: 82000 },
-            { name: '@beautybykim', engagement_rate: 5.4, followers: 120000 },
-            { name: '@lumiere.lovers', engagement_rate: 4.8, followers: 54000 },
-          ],
-          sentiment: { positive: 78, neutral: 14, negative: 8 },
-          weekly_views: [22000, 31000, 48000, 45000, 34000],
-        },
-      },
-      {
-        id: '2',
-        name: 'Fit Life Q1',
-        brand: 'CorePulse',
-        status: 'completed',
-        data: {
-          total_views: 95000,
-          total_engagements: 8200,
-          engagement_rate: 2.7,
-          roas: 2.1,
-          total_posts: 18,
-          credits_utilised: 30,
-          credits_allocated: 40,
-          platforms: {
-            tiktok: { posts: 10, engagements: 5500 },
-            instagram: { posts: 8, engagements: 2700 },
-          },
-          top_creators: [
-            { name: '@fitwithjay', engagement_rate: 4.2, followers: 200000 },
-            { name: '@corewithmel', engagement_rate: 3.9, followers: 88000 },
-          ],
-          sentiment: { positive: 65, neutral: 22, negative: 13 },
-          weekly_views: [14000, 18000, 22000, 25000, 16000],
-        },
-      },
-      {
-        id: '3',
-        name: 'Holiday Spark',
-        brand: 'Sparkle & Co.',
-        status: 'completed',
-        data: {
-          total_views: 320000,
-          total_engagements: 41000,
-          engagement_rate: 4.1,
-          roas: 6.8,
-          total_posts: 36,
-          credits_utilised: 60,
-          credits_allocated: 60,
-          platforms: {
-            tiktok: { posts: 22, engagements: 29000 },
-            instagram: { posts: 14, engagements: 12000 },
-          },
-          top_creators: [
-            { name: '@sparklejess', engagement_rate: 7.2, followers: 310000 },
-            { name: '@glitternights', engagement_rate: 6.5, followers: 145000 },
-            { name: '@festivelooks', engagement_rate: 5.9, followers: 98000 },
-          ],
-          sentiment: { positive: 88, neutral: 9, negative: 3 },
-          weekly_views: [40000, 62000, 95000, 88000, 35000],
-        },
-      },
-    ],
-  };
+  // return {
+  //   data: [
+  //     {
+  //       id: '1',
+  //       name: 'Summer Glow 2024',
+  //       brand: 'Lumière Beauty',
+  //       status: 'completed',
+  //       data: {
+  //         total_views: 180000,
+  //         total_engagements: 19000,
+  //         engagement_rate: 3.2,
+  //         roas: 4.36,
+  //         total_posts: 24,
+  //         credits_utilised: 48,
+  //         credits_allocated: 50,
+  //         platforms: {
+  //           tiktok: { posts: 14, engagements: 12000 },
+  //           instagram: { posts: 10, engagements: 7000 },
+  //         },
+  //         top_creators: [
+  //           { name: '@glowwithsara', engagement_rate: 6.1, followers: 82000 },
+  //           { name: '@beautybykim', engagement_rate: 5.4, followers: 120000 },
+  //           { name: '@lumiere.lovers', engagement_rate: 4.8, followers: 54000 },
+  //         ],
+  //         sentiment: { positive: 78, neutral: 14, negative: 8 },
+  //         weekly_views: [22000, 31000, 48000, 45000, 34000],
+  //       },
+  //     },
+  //     {
+  //       id: '2',
+  //       name: 'Fit Life Q1',
+  //       brand: 'CorePulse',
+  //       status: 'completed',
+  //       data: {
+  //         total_views: 95000,
+  //         total_engagements: 8200,
+  //         engagement_rate: 2.7,
+  //         roas: 2.1,
+  //         total_posts: 18,
+  //         credits_utilised: 30,
+  //         credits_allocated: 40,
+  //         platforms: {
+  //           tiktok: { posts: 10, engagements: 5500 },
+  //           instagram: { posts: 8, engagements: 2700 },
+  //         },
+  //         top_creators: [
+  //           { name: '@fitwithjay', engagement_rate: 4.2, followers: 200000 },
+  //           { name: '@corewithmel', engagement_rate: 3.9, followers: 88000 },
+  //         ],
+  //         sentiment: { positive: 65, neutral: 22, negative: 13 },
+  //         weekly_views: [14000, 18000, 22000, 25000, 16000],
+  //       },
+  //     },
+  //     {
+  //       id: '3',
+  //       name: 'Holiday Spark',
+  //       brand: 'Sparkle & Co.',
+  //       status: 'completed',
+  //       data: {
+  //         total_views: 320000,
+  //         total_engagements: 41000,
+  //         engagement_rate: 4.1,
+  //         roas: 6.8,
+  //         total_posts: 36,
+  //         credits_utilised: 60,
+  //         credits_allocated: 60,
+  //         platforms: {
+  //           tiktok: { posts: 22, engagements: 29000 },
+  //           instagram: { posts: 14, engagements: 12000 },
+  //         },
+  //         top_creators: [
+  //           { name: '@sparklejess', engagement_rate: 7.2, followers: 310000 },
+  //           { name: '@glitternights', engagement_rate: 6.5, followers: 145000 },
+  //           { name: '@festivelooks', engagement_rate: 5.9, followers: 98000 },
+  //         ],
+  //         sentiment: { positive: 88, neutral: 9, negative: 3 },
+  //         weekly_views: [40000, 62000, 95000, 88000, 35000],
+  //       },
+  //     },
+  //   ],
+  // };
 };
 
 const runPromptAgainstCampaign = async (apiKey, prompt, campaignData) => {
