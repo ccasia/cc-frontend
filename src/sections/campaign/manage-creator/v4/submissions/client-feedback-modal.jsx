@@ -302,6 +302,16 @@ CommentCard.propTypes = {
       id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
       name: PropTypes.string,
       role: PropTypes.string,
+      photoURL: PropTypes.string,
+      client: PropTypes.shape({
+        company: PropTypes.shape({
+          logo: PropTypes.string,
+        }),
+      }),
+    }),
+    forwardedBy: PropTypes.shape({
+      name: PropTypes.string,
+      photoURL: PropTypes.string,
     }),
     agreedBy: PropTypes.arrayOf(
       PropTypes.shape({

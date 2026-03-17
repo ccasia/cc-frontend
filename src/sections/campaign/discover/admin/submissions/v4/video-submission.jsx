@@ -134,7 +134,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         setTimeout(() => setLocalActionInProgress(false), 300);
       }
     }
-  }, [feedback, reasons, caption, submission.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
+  }, [feedback, reasons, caption, submission.id, video?.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
 
   const handleRequestChanges = useCallback(async () => {
     const currentFeedback = feedback;
@@ -197,7 +197,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         setTimeout(() => setLocalActionInProgress(false), 300);
       }
     }
-  }, [feedback, reasons, caption, submission.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
+  }, [feedback, reasons, caption, submission.id, video?.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
 
   const handleSendComments = useCallback(
     async (videoIdToPublish) => {
@@ -904,9 +904,9 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         open={adminReviewModalOpen}
         onClose={() => setAdminReviewModalOpen(false)}
         submission={submission}
-        rightSideContent={({ currentTime, onSeek, videoId: modalVideoId, videoPage, setVideoPage, videoCount, isPastVideo, submission: modalSubmission }) => (
+        rightSideContent={({ currentTime: modalCurrentTime, onSeek, videoId: modalVideoId, videoPage, setVideoPage, videoCount, isPastVideo, submission: modalSubmission }) => (
           <AdminFeedbackPanel
-            currentTime={currentTime}
+            currentTime={modalCurrentTime}
             onSeek={onSeek}
             submission={modalSubmission || submission}
             videoId={modalVideoId || video?.id}

@@ -67,16 +67,11 @@ export default function FeedbackActions({
   };
 
   const isVideoSubmission = submission.submissionType?.type === 'VIDEO';
-  const actionText = !isClient
-    ? (isVideoSubmission ? 'Approve Submission?' : 'Send this Submission to Client?')
-    : 'Approve Submission?';
+  const showApproveAction = isClient || isVideoSubmission;
 
-  const modalIconSrc = !isClient
-    ? (isVideoSubmission ? '/assets/images/modals/approve.png' : '/assets/images/modals/send_to_client.png')
-    : '/assets/images/modals/approve.png';
-  const modalIconAlt = !isClient
-    ? (isVideoSubmission ? 'approve' : 'send_to_client')
-    : 'approve';
+  const actionText = showApproveAction ? 'Approve Submission?' : 'Send this Submission to Client?';
+  const modalIconSrc = showApproveAction ? '/assets/images/modals/approve.png' : '/assets/images/modals/send_to_client.png';
+  const modalIconAlt = showApproveAction ? 'approve' : 'send_to_client';
 
   return (
     <Box sx={{ flex: '0 0 auto' }}>

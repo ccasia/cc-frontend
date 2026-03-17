@@ -290,6 +290,11 @@ ReplyItem.propTypes = {
     createdAt: PropTypes.string.isRequired,
     creatorName: PropTypes.string.isRequired,
     creatorPhoto: PropTypes.string,
+    user: PropTypes.shape({
+      name: PropTypes.string,
+      role: PropTypes.string,
+      photoURL: PropTypes.string,
+    }),
   }).isRequired,
 };
 
