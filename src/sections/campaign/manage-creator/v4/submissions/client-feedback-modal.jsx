@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { m, AnimatePresence } from 'framer-motion';
 import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 
 import { LoadingButton } from '@mui/lab';
@@ -19,7 +20,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
-import { GlassTooltip } from 'src/components/tooltip/glass-tooltip';
+import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
 const formatCommentDate = (dateString) => {
   if (!dateString) return '';
@@ -30,6 +31,29 @@ const formatCommentDate = (dateString) => {
     hour: 'numeric',
     minute: '2-digit',
   }).format(new Date(dateString));
+};
+
+const formatDisplayTime = (timeStr) => {
+  if (!timeStr) return '';
+  const parts = timeStr.split(':').map(Number);
+
+  if (parts.some(isNaN)) return timeStr;
+
+  if (parts.length === 3) {
+    const [h, m, s] = parts;
+    if (h > 0) {
+      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+    // Drop the hour if it's 0 (e.g., 00:00:15 becomes 0:15)
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  if (parts.length === 2) {
+    const [m, s] = parts;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  return timeStr;
 };
 
 const CommentCard = ({
@@ -58,6 +82,23 @@ const CommentCard = ({
   const isDisabled = isLocked || isPastVideo;
 
   const [replyText, setReplyText] = useState('');
+  const replyBoxRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (isReplying) {
+      const timeoutId = setTimeout(() => {
+        if (replyBoxRef.current) {
+          replyBoxRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        if (inputRef.current) {
+          inputRef.current.focus({ preventScroll: true });
+        }
+      }, 250);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isReplying]);
 
   const handleReplySubmit = () => {
     if (!replyText.trim()) return;
@@ -116,7 +157,6 @@ const CommentCard = ({
                   fontWeight: 600,
                   fontSize: '0.875rem',
                   color: '#111827',
-                  textTransform: 'capitalize',
                 }}
               >
                 {comment.user?.name || 'User'}
@@ -160,7 +200,7 @@ const CommentCard = ({
                   '&:hover': { textDecoration: 'underline' },
                 }}
               >
-                {comment.timestamp}
+                {formatDisplayTime(comment.timestamp)}
               </Typography>
             )}
             {comment.text}
@@ -180,7 +220,7 @@ const CommentCard = ({
             <Typography
               onClick={() => onReplyClick(comment.id)}
               sx={{
-                fontSize: '0.75rem',
+                fontSize: { xs: '0.813rem', md: '0.875rem' },
                 fontWeight: 600,
                 color: '#9CA3AF',
                 cursor: 'pointer',
@@ -192,102 +232,115 @@ const CommentCard = ({
           )}
 
           {!isUser && (
-            <IconButton
-              size="small"
-              sx={{ p: 0.5 }}
-              onClick={() => onAgree(comment.id)}
-              disabled={isDisabled}
-            >
-              <Iconify
-                icon={hasAgreed ? 'mdi:thumb-up' : 'mdi-light:thumb-up'}
-                width={20}
-                sx={{
-                  color: !isDisabled && hasAgreed ? '#1340FF' : '#9CA3AF',
-                  filter: 'drop-shadow(0px 0px 0.2px #000000)',
-                  opacity: isDisabled && !hasAgreed ? 0.6 : 1,
-                }}
-              />
-            </IconButton>
+            <DarkGlassTooltip title="I agree with this comment" placement="top">
+              <IconButton
+                size="small"
+                sx={{ p: 0.5 }}
+                onClick={() => onAgree(comment.id)}
+                disabled={isDisabled}
+              >
+                <Iconify
+                  icon={hasAgreed ? 'mdi:thumb-up' : 'mdi-light:thumb-up'}
+                  width={20}
+                  sx={{
+                    color: !isDisabled && hasAgreed ? '#1340FF' : '#9CA3AF',
+                    filter: 'drop-shadow(0px 0px 0.2px #000000)',
+                    opacity: isDisabled && !hasAgreed ? 0.6 : 1,
+                  }}
+                />
+              </IconButton>
+            </DarkGlassTooltip>
           )}
         </Box>
       </Box>
 
       {/* --- INLINE REPLY BOX --- */}
-      {isReplying && !isDisabled && (
-        <Box
-          sx={{
-            borderTop: '1px solid #E5E7EB',
-            p: 2,
-            bgcolor: '#FFFFFF',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          <TextField
-            autoFocus
-            multiline
-            minRows={1}
-            maxRows={4}
-            placeholder="Write your reply..."
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleReplySubmit();
-              }
-            }}
-            variant="standard"
-            InputProps={{
-              disableUnderline: true,
-              sx: { fontSize: '0.875rem', color: '#1F2937', lineHeight: 1.5 },
-            }}
-          />
-
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                setReplyText('');
-                onCancelReply();
-              }}
+      <AnimatePresence>
+        {isReplying && !isDisabled && (
+          <m.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            style={{ overflow: 'hidden' }}
+          >
+            <Box
+              ref={replyBoxRef}
               sx={{
-                borderColor: '#E5E7EB',
-                color: '#1340FF',
-                borderRadius: 1.5,
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                py: 0.5,
-                px: 2,
-                height: 32,
-                '&:hover': { borderColor: '#D1D5DB', bgcolor: '#F9FAFB' },
+                borderTop: '1px solid #E5E7EB',
+                p: 2,
+                bgcolor: '#FFFFFF',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
               }}
             >
-              Cancel
-            </Button>
+              <TextField
+                // autoFocus
+                multiline
+                minRows={1}
+                maxRows={4}
+                placeholder="Write your reply..."
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleReplySubmit();
+                  }
+                }}
+                variant="standard"
+                InputProps={{
+                  disableUnderline: true,
+                  sx: { fontSize: '0.875rem', color: '#1F2937', lineHeight: 1.5 },
+                }}
+              />
 
-            <Button
-              variant="contained"
-              disabled={!replyText.trim()}
-              onClick={handleReplySubmit}
-              sx={{
-                bgcolor: '#1340FF',
-                borderRadius: 1.5,
-                minWidth: 48,
-                px: 1,
-                height: 32,
-                boxShadow: 'none',
-                '&:hover': { bgcolor: '#0B2EB5', boxShadow: 'none' },
-                '&.Mui-disabled': { bgcolor: '#9CA3AF', color: 'white' },
-              }}
-            >
-              <Iconify icon="ic:round-send" width={16} />
-            </Button>
-          </Box>
-        </Box>
-      )}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setReplyText('');
+                    onCancelReply();
+                  }}
+                  sx={{
+                    borderColor: '#E5E7EB',
+                    color: '#1340FF',
+                    borderRadius: 1.5,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    py: 0.5,
+                    px: 2,
+                    height: 32,
+                    '&:hover': { borderColor: '#D1D5DB', bgcolor: '#F9FAFB' },
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  variant="contained"
+                  disabled={!replyText.trim()}
+                  onClick={handleReplySubmit}
+                  sx={{
+                    bgcolor: '#1340FF',
+                    borderRadius: 1.5,
+                    minWidth: 48,
+                    px: 1,
+                    height: 32,
+                    boxShadow: 'none',
+                    '&:hover': { bgcolor: '#0B2EB5', boxShadow: 'none' },
+                    '&.Mui-disabled': { bgcolor: '#9CA3AF', color: 'white' },
+                  }}
+                >
+                  <Iconify icon="ic:round-send" width={16} />
+                </Button>
+              </Box>
+            </Box>
+          </m.div>
+        )}
+      </AnimatePresence>
     </Box>
   );
 };
@@ -352,7 +405,7 @@ const ClientFeedbackModal = forwardRef(
   ) => {
     const { user } = useAuthContext();
     const { socket } = useSocketContext();
-  const [comments, setComments] = useState([]);
+    const [comments, setComments] = useState([]);
     const [feedbackText, setFeedbackText] = useState('');
     const [replyingToId, setReplyingToId] = useState(null);
 
@@ -362,16 +415,18 @@ const ClientFeedbackModal = forwardRef(
     const [timeLeft, setTimeLeft] = useState(0);
     const [isCountingDown, setIsCountingDown] = useState(false);
     const STORAGE_KEY_END_TIME = `send_timer_end_${submissionId}`;
-    // const COUNTDOWN_SECONDS = 24 * 60 * 60;
-    const COUNTDOWN_SECONDS = 30;
+    const COUNTDOWN_SECONDS = 24 * 60 * 60;
+    // const COUNTDOWN_SECONDS = 3000; //for testing
 
     const commentRefs = useRef({});
+    const effectiveIsLocked = isLocked && !isCountingDown;
 
     useImperativeHandle(ref, () => ({
       getHasInteracted: () => hasInteracted,
       isLocked,
       isCountingDown,
       startCountdown: () => {
+        if (onSendToAdmin) onSendToAdmin(videoId);
         const endTime = Date.now() + COUNTDOWN_SECONDS * 1000;
         localStorage.setItem(STORAGE_KEY_END_TIME, endTime.toString());
         setTimeLeft(COUNTDOWN_SECONDS);
@@ -440,50 +495,50 @@ const ClientFeedbackModal = forwardRef(
       } else if (isCountingDown && timeLeft === 0) {
         setIsCountingDown(false);
         localStorage.removeItem(STORAGE_KEY_END_TIME);
-        if (onSendToAdmin) onSendToAdmin(videoId);
+        if (onSendToAdmin) onSendToAdmin(videoId, true);
       }
       return () => clearInterval(timer);
     }, [isCountingDown, timeLeft, onSendToAdmin, videoId, STORAGE_KEY_END_TIME]);
 
-  // Real-time: listen for admin replies to client parent comments
-  useEffect(() => {
-    if (!socket || !submissionId) return undefined;
+    // Real-time: listen for admin replies to client parent comments
+    useEffect(() => {
+      if (!socket || !submissionId) return undefined;
 
-    const handleReplyAdded = (data) => {
-      if (data.submissionId !== submissionId || data.videoId !== videoId) return;
+      const handleReplyAdded = (data) => {
+        if (data.submissionId !== submissionId || data.videoId !== videoId) return;
 
-      // Skip if reply is from current user (already added optimistically)
-      if (data.comment?.userId === user.id) return;
+        // Skip if reply is from current user (already added optimistically)
+        if (data.comment?.userId === user.id) return;
 
-      setComments((prev) => {
-        const parent = prev.find((c) => c.id === data.parentCommentId);
+        setComments((prev) => {
+          const parent = prev.find((c) => c.id === data.parentCommentId);
 
-        // Only handle replies to client parent comments
-        if (!parent || parent.user?.role !== 'client') return prev;
+          // Only handle replies to client parent comments
+          if (!parent || parent.user?.role !== 'client') return prev;
 
-        // Dedup check
-        if (parent.replies?.some((r) => r.id === data.comment.id)) return prev;
+          // Dedup check
+          if (parent.replies?.some((r) => r.id === data.comment.id)) return prev;
 
-        return prev.map((c) => {
-          if (c.id === data.parentCommentId) {
-            return {
-              ...c,
-              replies: [...(c.replies || []), { ...data.comment, agreedBy: [], isNew: true }],
-            };
-          }
-          return c;
+          return prev.map((c) => {
+            if (c.id === data.parentCommentId) {
+              return {
+                ...c,
+                replies: [...(c.replies || []), { ...data.comment, agreedBy: [], isNew: true }],
+              };
+            }
+            return c;
+          });
         });
-      });
 
-      setTimeout(() => scrollToElement(data.comment.id), 100);
-    };
+        setTimeout(() => scrollToElement(data.comment.id), 100);
+      };
 
-    socket.on('v4:comment:reply:added', handleReplyAdded);
+      socket.on('v4:comment:reply:added', handleReplyAdded);
 
-    return () => {
-      socket.off('v4:comment:reply:added', handleReplyAdded);
-    };
-  }, [socket, submissionId, videoId, user.id]);
+      return () => {
+        socket.off('v4:comment:reply:added', handleReplyAdded);
+      };
+    }, [socket, submissionId, videoId, user.id]);
 
     const scrollToElement = (id) => {
       const element = commentRefs.current[id];
@@ -541,6 +596,7 @@ const ClientFeedbackModal = forwardRef(
             parentId: rootParentId,
             timestamp: null,
             videoId,
+            isClientDraft: !isCountingDown,
           }
         );
 
@@ -576,6 +632,7 @@ const ClientFeedbackModal = forwardRef(
             timestamp: currentVideoTime,
             parentId: null,
             videoId,
+            isClientDraft: !isCountingDown,
           }
         );
 
@@ -592,21 +649,12 @@ const ClientFeedbackModal = forwardRef(
     };
 
     const handleSendToAdmin = () => {
-      if (isCountingDown) {
-        setIsCountingDown(false);
-        setTimeLeft(0);
-        localStorage.removeItem(STORAGE_KEY_END_TIME);
-      } else {
-        // const endTime = Date.now() + COUNTDOWN_SECONDS * 1000;
-        // localStorage.setItem(STORAGE_KEY_END_TIME, endTime.toString());
-        // setTimeLeft(COUNTDOWN_SECONDS);
-        // setIsCountingDown(true);
-        setIsSendConfirmOpen(true);
-      }
+      setIsSendConfirmOpen(true);
     };
 
     const confirmSendFeedback = () => {
       setIsSendConfirmOpen(false);
+      if (onSendToAdmin) onSendToAdmin(videoId);
       const endTime = Date.now() + COUNTDOWN_SECONDS * 1000;
       localStorage.setItem(STORAGE_KEY_END_TIME, endTime.toString());
       setTimeLeft(COUNTDOWN_SECONDS);
@@ -681,7 +729,7 @@ const ClientFeedbackModal = forwardRef(
                 isReplying={replyingToId === comment.id}
                 onCancelReply={() => setReplyingToId(null)}
                 onSubmitReply={handleInlineReplySubmit}
-                isLocked={isLocked}
+                isLocked={effectiveIsLocked}
                 isPastVideo={isPastVideo}
               />
 
@@ -736,7 +784,7 @@ const ClientFeedbackModal = forwardRef(
                           isReplying={replyingToId === reply.id}
                           onCancelReply={() => setReplyingToId(null)}
                           onSubmitReply={handleInlineReplySubmit}
-                          isLocked={isLocked}
+                          isLocked={effectiveIsLocked}
                           isPastVideo={isPastVideo}
                         />
                       </Box>
@@ -750,7 +798,7 @@ const ClientFeedbackModal = forwardRef(
 
         {/* Bottom Sticky Input Section */}
         <Box sx={{ mt: 'auto', pt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          {isLocked && (
+          {effectiveIsLocked && (
             <Typography
               sx={{
                 fontSize: '0.875rem',
@@ -761,7 +809,7 @@ const ClientFeedbackModal = forwardRef(
                 mb: -0.5, // Pulls it slightly closer to the box below
               }}
             >
-              {isPastVideo ? 'This is an older version' : 'Feedback has been sent'}
+              {isPastVideo ? 'This `is` an older version' : 'Feedback has been sent'}
             </Typography>
           )}
           <Box
@@ -770,11 +818,11 @@ const ClientFeedbackModal = forwardRef(
               border: '1px solid #E7E7E7',
               borderBottom: '2px solid #E7E7E7',
               borderRadius: '12px',
-              bgcolor: isLocked ? '#F4F4F4' : '#FFFFFF',
-              boxShadow: isLocked ? 'none' : '0px 1px 0px 0px #E7E7E7',
+              bgcolor: effectiveIsLocked ? '#F4F4F4' : '#FFFFFF',
+              boxShadow: effectiveIsLocked ? 'none' : '0px 1px 0px 0px #E7E7E7',
               mb: 1,
               transition: 'all 0.2s ease',
-              opacity: isLocked ? 0.7 : 1,
+              opacity: effectiveIsLocked ? 0.7 : 1,
             }}
           >
             <Box
@@ -792,12 +840,12 @@ const ClientFeedbackModal = forwardRef(
                 sx={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  bgcolor: isLocked ? '#E5E7EB' : 'background.paper',
-                  color: isLocked ? '#9CA3AF' : '#1340ff',
+                  bgcolor: effectiveIsLocked ? '#E5E7EB' : 'background.paper',
+                  color: effectiveIsLocked ? '#9CA3AF' : '#1340ff',
                   border: '1px solid',
-                  borderColor: isLocked ? '#D1D5DB' : '#E7E7E7',
+                  borderColor: effectiveIsLocked ? '#D1D5DB' : '#E7E7E7',
                   borderBottom: '2px solid',
-                  borderBottomColor: isLocked ? '#D1D5DB' : '#E7E7E7',
+                  borderBottomColor: effectiveIsLocked ? '#D1D5DB' : '#E7E7E7',
                   borderRadius: 0.85,
                   px: 1.5,
                   py: 0.6,
@@ -806,7 +854,7 @@ const ClientFeedbackModal = forwardRef(
                   fontFamily: 'Inter, sans-serif',
                   lineHeight: 1.4,
                   userSelect: 'none',
-                  boxShadow: isLocked ? 'none' : '0px 1px 0px 0px #E7E7E7',
+                  boxShadow: effectiveIsLocked ? 'none' : '0px 1px 0px 0px #E7E7E7',
                   flexShrink: 0,
                 }}
               >
@@ -815,11 +863,11 @@ const ClientFeedbackModal = forwardRef(
 
               <TextField
                 multiline
-                disabled={isLocked}
+                disabled={effectiveIsLocked}
                 minRows={2}
                 maxRows={6}
-                placeholder={isLocked ? 'Comments are disabled' : 'Leave feedback...'}
-                value={isLocked ? 'Comments are disabled' : feedbackText}
+                placeholder={effectiveIsLocked ? 'Comments are disabled' : 'Leave feedback...'}
+                value={effectiveIsLocked ? 'Comments are disabled' : feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -858,22 +906,30 @@ const ClientFeedbackModal = forwardRef(
                 pb: 1.25,
               }}
             >
-              {isCountingDown && !isLocked && (
-                <GlassTooltip
+              {isCountingDown && !effectiveIsLocked && (
+                <DarkGlassTooltip
                   title="Time left to leave additional feedback for this round of submission"
                   placement="top-start"
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#D4321C' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      cursor: 'default',
+                      gap: 0.5,
+                      color: '#D4321C',
+                    }}
+                  >
                     <Iconify icon="ic:sharp-timer" width={18} />
                     <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
                       {formatTimer(timeLeft)}
                     </Typography>
                   </Box>
-                </GlassTooltip>
+                </DarkGlassTooltip>
               )}
               <Button
                 variant="contained"
-                disabled={!feedbackText.trim() || isLocked}
+                disabled={!feedbackText.trim() || effectiveIsLocked}
                 onClick={handleTopLevelSubmit}
                 sx={{
                   bgcolor: '#1340ff',
@@ -960,30 +1016,32 @@ const ClientFeedbackModal = forwardRef(
                 </IconButton>
               </Box>
             )}
-            <Button
-              variant="contained"
-              disableElevation
-              disabled={isLocked}
-              onClick={handleSendToAdmin}
-              sx={{
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                borderRadius: '8px',
-                boxShadow: '0px -4px 0px 0px #00000073 inset',
-                bgcolor: '#3A3A3C',
-                '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: '0px -4px 0px 0px #000000 inset' },
-                '&:active': {
-                  boxShadow: '0px 0px 0px 0px #000000 inset',
-                  transform: 'translateY(1px)',
-                },
-                '&.Mui-disabled': {
-                  bgcolor: '#E5E7EB',
-                  color: '#9CA3AF',
-                },
-              }}
-            >
-              {isCountingDown ? 'Cancel Sending..' : 'Send Feedback to Admin'}
-            </Button>
+            {!isCountingDown && (
+              <Button
+                variant="contained"
+                disableElevation
+                disabled={effectiveIsLocked}
+                onClick={handleSendToAdmin}
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  borderRadius: '8px',
+                  boxShadow: '0px -4px 0px 0px #00000073 inset',
+                  bgcolor: '#3A3A3C',
+                  '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: '0px -4px 0px 0px #000000 inset' },
+                  '&:active': {
+                    boxShadow: '0px 0px 0px 0px #000000 inset',
+                    transform: 'translateY(1px)',
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: '#E5E7EB',
+                    color: '#9CA3AF',
+                  },
+                }}
+              >
+                Send Feedback to Admin
+              </Button>
+            )}
           </Box>
         </Box>
 

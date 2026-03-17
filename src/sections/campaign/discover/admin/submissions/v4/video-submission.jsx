@@ -200,7 +200,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   }, [feedback, reasons, caption, submission.id, video?.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
 
   const handleSendComments = useCallback(
-    async (videoIdToPublish) => {
+    async (videoIdToPublish, shouldRefresh = false) => {
       try {
         setLoading(true);
         setLocalActionInProgress(true);
@@ -213,18 +213,23 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           reasons: [],
         });
 
-        enqueueSnackbar('Feedback sent to Admin successfully', { variant: 'success' });
+        if (shouldRefresh) {
+          enqueueSnackbar('Feedback for current video locked', { variant: 'success' });
+        } else {
+          enqueueSnackbar('Feedback sent to Admin', { variant: 'success' });
+        }
 
         if (response.data?.showNPS) {
           showNpsModal();
         }
 
-        setTimeout(() => {
+        if (shouldRefresh) {
           onUpdate?.(true);
-          setTimeout(() => {
-            setLocalActionInProgress(false);
-          }, 500);
-        }, 200);
+        }
+
+        setTimeout(() => {
+          setLocalActionInProgress(false);
+        }, 500);
       } catch (error) {
         enqueueSnackbar(error.message || 'Failed to send feedback', { variant: 'error' });
       } finally {
