@@ -209,7 +209,7 @@ const ConnectorLine = ({ isVertical, isSingleReply }) => {
       <Box
         sx={{
           position: 'absolute',
-          left: { xs: 34, md: 42 },
+          left: { xs: 32, md: 42 },
           top: -8,
           ...(isSingleReply ? { height: 50 } : { height: 'calc(100% - 57px)' }),
           width: 2,
@@ -233,7 +233,7 @@ const ConnectorLine = ({ isVertical, isSingleReply }) => {
           left: { xs: -8, md: -10 },
           top: 0,
           width: { xs: 52, md: 60 },
-          height: 24,
+          height: 26,
           borderLeft: `2px solid ${COLORS.connector}`,
           borderBottom: `2px solid ${COLORS.connector}`,
           borderBottomLeftRadius: '10px',
@@ -248,10 +248,10 @@ ConnectorLine.propTypes = {
   isSingleReply: PropTypes.bool,
 };
 
-const ReplyItem = ({ reply }) => (
+const ReplyItem = ({ reply, isParentResolved }) => (
   <Box
     sx={{
-      bgcolor: COLORS.bgPrimary,
+      bgcolor: isParentResolved ? COLORS.resolvedBg : COLORS.bgPrimary,
       border: `1px solid ${COLORS.border}`,
       borderRadius: '16px',
       p: { xs: '12px 16px', md: '16px 24px' },
@@ -288,9 +288,10 @@ ReplyItem.propTypes = {
     creatorName: PropTypes.string.isRequired,
     creatorPhoto: PropTypes.string,
   }).isRequired,
+  isParentResolved: PropTypes.bool,
 };
 
-const RepliesList = ({ replies }) => (
+const RepliesList = ({ replies, isParentResolved }) => (
   <Box sx={{ mt: { xs: 1.5, md: 2 }, position: 'relative' }}>
     <ConnectorLine isVertical isSingleReply={replies.length === 1} />
     {replies.map((reply, replyIndex) => (
@@ -303,7 +304,7 @@ const RepliesList = ({ replies }) => (
         }}
       >
         <ConnectorLine />
-        <ReplyItem reply={reply} />
+        <ReplyItem reply={reply} isParentResolved={isParentResolved} />
       </Box>
     ))}
   </Box>
@@ -311,6 +312,7 @@ const RepliesList = ({ replies }) => (
 
 RepliesList.propTypes = {
   replies: PropTypes.arrayOf(PropTypes.object).isRequired,
+  isParentResolved: PropTypes.bool,
 };
 
 const FeedbackCard = ({
@@ -319,6 +321,8 @@ const FeedbackCard = ({
   index,
   isReplyOpen,
   onToggleReply,
+  isRepliesListOpen,
+  onToggleViewReplies,
   replyText,
   onReplyTextChange,
   onCancelReply,
@@ -329,6 +333,7 @@ const FeedbackCard = ({
 }) => {
   const adminInfo = getAdminInfo(feedbackItem, submission);
   const replyCount = replies?.length ?? 0;
+  const showRepliesList = isResolved ? isRepliesListOpen && replyCount > 0 : replyCount > 0;
 
   return (
     <Box>
@@ -337,7 +342,7 @@ const FeedbackCard = ({
           width: '100%',
           bgcolor: isResolved ? COLORS.resolvedBg : COLORS.bgPrimary,
           border: `1px solid ${isNewAndUnopened ? COLORS.primary : COLORS.border}`,
-          borderRadius: isReplyOpen ? '16px 16px 0 0' : '16px',
+          borderRadius: isReplyOpen || (isResolved && isRepliesListOpen) ? '16px 16px 0 0' : '16px',
           p: { xs: '12px 16px', md: '16px 24px' },
           display: 'flex',
           flexDirection: 'column',
@@ -404,7 +409,7 @@ const FeedbackCard = ({
           {isResolved && replyCount > 0 && (
             <Typography
               component="button"
-              onClick={onToggleReply}
+              onClick={onToggleViewReplies}
               sx={{
                 fontFamily: FONT_FAMILY,
                 fontSize: { xs: '0.813rem', md: '0.875rem' },
@@ -418,13 +423,13 @@ const FeedbackCard = ({
                 '&:hover': { opacity: 0.9 },
               }}
             >
-              View {replyCount} Reply{replyCount !== 1 ? 'ies' : ''}
+              {isRepliesListOpen ? 'Hide' : 'View'} {replyCount} Reply{replyCount !== 1 ? 'ies' : ''}
             </Typography>
           )}
         </Box>
       </Box>
 
-      {isReplyOpen && (
+      {isReplyOpen && !isResolved && (
         <ReplyBox
           value={replyText}
           onChange={onReplyTextChange}
@@ -433,7 +438,9 @@ const FeedbackCard = ({
         />
       )}
 
-      {replies && replies.length > 0 && <RepliesList replies={replies} />}
+      {showRepliesList && replies && replies.length > 0 && (
+        <RepliesList replies={replies} isParentResolved={isResolved} />
+      )}
     </Box>
   );
 };
@@ -444,6 +451,8 @@ FeedbackCard.propTypes = {
   index: PropTypes.number.isRequired,
   isReplyOpen: PropTypes.bool.isRequired,
   onToggleReply: PropTypes.func.isRequired,
+  isRepliesListOpen: PropTypes.bool.isRequired,
+  onToggleViewReplies: PropTypes.func.isRequired,
   replyText: PropTypes.string.isRequired,
   onReplyTextChange: PropTypes.func.isRequired,
   onCancelReply: PropTypes.func.isRequired,
@@ -468,6 +477,7 @@ const CreatorFeedbackModal = ({
     ? allFeedback.filter((f) => !f.videoId || f.videoId === currentVideoId)
     : allFeedback;
   const [replyStates, setReplyStates] = useState({});
+  const [viewRepliesOpen, setViewRepliesOpen] = useState({});
   const [replyTexts, setReplyTexts] = useState({});
   const [replies, setReplies] = useState({});
 
@@ -475,6 +485,10 @@ const CreatorFeedbackModal = ({
 
   const toggleReply = (index) => {
     setReplyStates((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const toggleViewReplies = (index) => {
+    setViewRepliesOpen((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
   const handleCancelReply = (index) => {
@@ -615,6 +629,8 @@ const CreatorFeedbackModal = ({
                 index={index}
                 isReplyOpen={replyStates[index] || false}
                 onToggleReply={() => toggleReply(index)}
+                isRepliesListOpen={viewRepliesOpen[index] || false}
+                onToggleViewReplies={() => toggleViewReplies(index)}
                 replyText={replyTexts[index] || ''}
                 onReplyTextChange={(value) => handleReplyTextChange(index, value)}
                 onCancelReply={() => handleCancelReply(index)}
