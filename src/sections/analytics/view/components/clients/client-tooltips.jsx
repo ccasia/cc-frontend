@@ -295,7 +295,6 @@ export function RenewalTooltip({ series, dataIndex }) {
 }
 
 RenewalTooltip.propTypes = {
-  axisValue: PropTypes.string,
   series: PropTypes.arrayOf(
     PropTypes.shape({
       color: PropTypes.string,
@@ -303,6 +302,7 @@ RenewalTooltip.propTypes = {
       data: PropTypes.arrayOf(PropTypes.number),
     })
   ),
+  dataIndex: PropTypes.number, 
 };
 
 // ─────────────────────────────────────────────

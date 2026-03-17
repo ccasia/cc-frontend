@@ -183,11 +183,13 @@ export function TopKPICard({
 TopKPICard.propTypes = {
   title: PropTypes.string.isRequired,
   mainValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onClick: PropTypes.func,
   trend: PropTypes.number,
   trendLabel: PropTypes.string,
   trendSuffix: PropTypes.string,
   color: PropTypes.string,
   children: PropTypes.node,
+  clickable: PropTypes.bool,
 };
 
 // --- 2. Row 2: Time Spent (Horizontal Bar) ---
@@ -850,6 +852,7 @@ ReviewEfficiencyScatter.propTypes = {
     scatterPoints: PropTypes.array,
     avgReviewTimeHours: PropTypes.number,
     avgRoundsToApproval: PropTypes.number,
+    onClick: PropTypes.func, 
   }),
 };
 

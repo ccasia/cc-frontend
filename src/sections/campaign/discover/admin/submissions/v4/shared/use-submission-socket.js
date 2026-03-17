@@ -21,6 +21,7 @@ export default function useSubmissionSocket({
         const isOwnAction = data.userId === userId;
         const shouldBlock = localActionInProgress || isOwnAction;
 
+        if (isOwnAction) return;
         if (!shouldBlock) {
           setTimeout(() => {
             onUpdate?.(true);
