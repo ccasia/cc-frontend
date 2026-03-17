@@ -39,10 +39,12 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
 
   const allVideos = effectiveSubmission.video || [];
   const MAX_VIDEO_PAGES = 3;
+  // Videos come from backend ordered by createdAt DESC (latest first)
+  // Take the first MAX_VIDEO_PAGES videos (which are already the latest)
   const latestVideos =
     allVideos.length <= MAX_VIDEO_PAGES
-      ? [...allVideos].reverse()
-      : allVideos.slice(-MAX_VIDEO_PAGES).reverse();
+      ? allVideos
+      : allVideos.slice(0, MAX_VIDEO_PAGES);
   const videos = latestVideos;
   const videoCount = videos.length;
   const currentVideo = videos[videoPage] || videos[0];
