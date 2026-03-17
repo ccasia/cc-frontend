@@ -45,7 +45,7 @@ export default function FeedbackActions({
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   if (
-    (submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || hasPostingLink) &&
+    (submission.status === 'APPROVED' || submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || hasPostingLink) &&
     campaign?.campaignType === 'normal'
   ) {
     return null;
@@ -66,12 +66,17 @@ export default function FeedbackActions({
     handleApprove();
   };
 
-  const actionText = !isClient ? 'Send this Submission to Client?' : 'Approve Submission?';
+  const isVideoSubmission = submission.submissionType?.type === 'VIDEO';
+  const actionText = !isClient
+    ? (isVideoSubmission ? 'Approve Submission?' : 'Send this Submission to Client?')
+    : 'Approve Submission?';
 
   const modalIconSrc = !isClient
-    ? '/assets/images/modals/send_to_client.png'
+    ? (isVideoSubmission ? '/assets/images/modals/approve.png' : '/assets/images/modals/send_to_client.png')
     : '/assets/images/modals/approve.png';
-  const modalIconAlt = !isClient ? 'send_to_client' : 'approve';
+  const modalIconAlt = !isClient
+    ? (isVideoSubmission ? 'approve' : 'send_to_client')
+    : 'approve';
 
   return (
     <Box sx={{ flex: '0 0 auto' }}>
@@ -83,7 +88,7 @@ export default function FeedbackActions({
           justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
           alignItems="center"
         >
-          {(visibility.showRequestChangeButton || submission.status === 'CHANGES_REQUIRED' || submission.status === 'SENT_TO_CLIENT' || submission.status === 'CLIENT_FEEDBACK') && (
+          {(visibility.showRequestChangeButton || submission.status === 'CHANGES_REQUIRED' || submission.status === 'SENT_TO_CLIENT' || submission.status === 'CLIENT_FEEDBACK' || submission.status === 'APPROVED') && (
             <Typography
               component="button"
               onClick={() => setReviewModalOpen(true)}
@@ -106,26 +111,6 @@ export default function FeedbackActions({
             >
               Review Submission
             </Typography>
-          )}
-
-          {!isClient && (
-            <Button
-              size="small"
-              variant="text"
-              onClick={onViewLogs}
-              sx={{
-                fontSize: { xs: 11, sm: 12 },
-                color: '#919191',
-                p: 0,
-                minWidth: 'auto',
-                textTransform: 'none',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                },
-              }}
-            >
-              view logs
-            </Button>
           )}
 
           {visibility.showChangeRequestForm && (
@@ -171,7 +156,7 @@ export default function FeedbackActions({
           )}
 
           {visibility.showApproveButton && (
-            <Tooltip title={!isClient ? 'Send to Client' : ''} arrow placement="top">
+            <Tooltip title={!isClient && !isVideoSubmission ? 'Send to Client' : ''} arrow placement="top">
               <Button
                 variant="contained"
                 color="success"

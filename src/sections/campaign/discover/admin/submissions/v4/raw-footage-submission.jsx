@@ -4,6 +4,7 @@ import { useRef, useMemo, useState, useCallback } from 'react';
 
 import {
   Box,
+  Button,
   Card,
   Chip,
   Stack,
@@ -477,6 +478,26 @@ export default function V4RawFootageSubmission({
                           }
                           return null;
                         })()}
+                        {!isClient &&
+                          ['PENDING_REVIEW', 'CLIENT_FEEDBACK', 'CHANGES_REQUIRED', 'SENT_TO_CLIENT', 'APPROVED'].includes(submission.status) && (
+                          <Button
+                            size="small"
+                            variant="text"
+                            onClick={() => setShowFeedbackLogs(true)}
+                            sx={{
+                              fontSize: { xs: 11, sm: 12 },
+                              color: '#919191',
+                              p: 0,
+                              minWidth: 'auto',
+                              textTransform: 'none',
+                              alignSelf: 'flex-start',
+                              mt: 0.5,
+                              '&:hover': { backgroundColor: 'transparent' },
+                            }}
+                          >
+                            view logs
+                          </Button>
+                        )}
                       </Box>
 
                       <Box

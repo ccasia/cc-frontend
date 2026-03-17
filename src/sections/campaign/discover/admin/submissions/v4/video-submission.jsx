@@ -7,6 +7,7 @@ import {
   Card,
   Chip,
   Stack,
+  Button,
   Slider,
   TextField,
   Typography,
@@ -489,14 +490,36 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           }
                           return null;
                         })()}
+                        {!isClient &&
+                          ['PENDING_REVIEW', 'CLIENT_FEEDBACK', 'CHANGES_REQUIRED', 'SENT_TO_CLIENT', 'APPROVED'].includes(submission.status) &&
+                          !(hasPostingLink && campaign?.campaignType === 'normal') && (
+                          <Button
+                            size="small"
+                            variant="text"
+                            onClick={() => setShowFeedbackLogs(true)}
+                            sx={{
+                              fontSize: { xs: 11, sm: 12 },
+                              color: '#919191',
+                              p: 0,
+                              minWidth: 'auto',
+                              textTransform: 'none',
+                              alignSelf: 'flex-start',
+                              mt: 0.5,
+                              '&:hover': { backgroundColor: 'transparent' },
+                            }}
+                          >
+                            view logs
+                          </Button>
+                        )}
                       </Box>
 
                       <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        {!isClient && (submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || submission.status === 'REJECTED') && campaign?.campaignType === 'normal' ? (
+                        {!isClient && (submission.status === 'APPROVED' || submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || submission.status === 'REJECTED') && campaign?.campaignType === 'normal' ? (
                           <PostingLinkSection
                             submission={submission}
                             onUpdate={onUpdate}
                             onViewLogs={() => setShowFeedbackLogs(true)}
+                            onReviewSubmission={() => setAdminReviewModalOpen(true)}
                             isDisabled={isDisabled}
                           />
                         ) : (
