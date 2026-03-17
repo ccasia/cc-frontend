@@ -200,6 +200,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
       // Admin-specific
       if (!isClient) {
         switch (status) {
+          case 'APPROVED':
           case 'CLIENT_APPROVED':
             // Only show PENDING_REVIEW color for video and photo submissions in normal campaigns
             if (
@@ -236,8 +237,9 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
         switch (status) {
           case 'IN_PROGRESS':
             return 'PROCESSING';
+          case 'APPROVED':
           case 'CLIENT_APPROVED':
-            // Only show PENDING POSTING for video and photo submissions, not raw footage
+            // Only show PENDING LINK for video and photo submissions, not raw footage
             if (submissionType === 'video' || submissionType === 'photo') {
               return 'PENDING LINK';
             }

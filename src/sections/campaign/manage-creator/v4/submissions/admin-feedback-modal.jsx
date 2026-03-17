@@ -4,15 +4,14 @@ import { m, AnimatePresence } from 'framer-motion';
 import React, { useRef, useState, useEffect } from 'react';
 
 import { Box, Avatar, Button, Tooltip, TextField, Typography, IconButton, CircularProgress } from '@mui/material';
-
+import Iconify from 'src/components/iconify';
+import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 
 import { fDateTime } from 'src/utils/format-time';
-import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import useSocketContext from 'src/socket/hooks/useSocketContext';
-
-import Iconify from 'src/components/iconify';
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -87,9 +86,8 @@ const CommentCard = ({
   // Display forwardedBy name if set, otherwise user name
   const displayName = comment.forwardedBy?.name || comment.user?.name || 'Unknown';
   const displayPhoto = comment.forwardedBy?.photoURL || comment.user?.photoURL || comment?.user?.client?.company?.logo || null;
-  const displayRole = comment.forwardedBy
-    ? 'Admin'
-    : comment.user?.role?.charAt(0).toUpperCase() + comment.user?.role?.slice(1) || '';
+  const role = comment.user?.role;
+  const displayRole = comment.forwardedBy ? 'Admin' : (role && role.charAt(0).toUpperCase() + role.slice(1)) || '';
 
   const isEditing = editTarget?.commentId === comment.id;
   const editFocusedRef = useRef(false);
@@ -488,6 +486,7 @@ export default function AdminFeedbackPanel({
   const [editTarget, setEditTarget] = useState(null); // { commentId, originalText }
   const [editText, setEditText] = useState('');
   const [sending, setSending] = useState(false);
+  const [confirmSendToClientOpen, setConfirmSendToClientOpen] = useState(false);
 
   const { socket } = useSocketContext();
   const { comments, commentsLoading, commentsMutate } = useSubmissionComments(
@@ -650,7 +649,7 @@ export default function AdminFeedbackPanel({
   };
 
   // ---- Button visibility ----
-  const isReadOnly = isPastVideo || submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'SENT_TO_CLIENT';
+  const isReadOnly = isPastVideo || submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'SENT_TO_CLIENT' || submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED';
 
   const showSendToClient =
     submission?.status === 'PENDING_REVIEW' && submission?.campaign?.origin !== 'ADMIN';
@@ -1008,7 +1007,7 @@ export default function AdminFeedbackPanel({
                 variant="contained"
                 disableElevation
                 disabled={!hasComments || sending}
-                onClick={handleSendToClient}
+                onClick={() => setConfirmSendToClientOpen(true)}
                 sx={{
                   fontWeight: 700,
                   fontSize: { xs: '0.8rem', md: '0.85rem', lg: '0.95rem' },
@@ -1043,6 +1042,33 @@ export default function AdminFeedbackPanel({
           </Box>
         )}
       </Box>
+
+      <ConfirmDialogV2
+        open={confirmSendToClientOpen}
+        onClose={() => setConfirmSendToClientOpen(false)}
+        title="Send this Submission to Client?"
+        emoji={
+          <Avatar
+            src="/assets/images/modals/send_to_client.png"
+            alt="send_to_client"
+            sx={{ width: 80, height: 80 }}
+          />
+        }
+        content=""
+        action={
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => {
+              setConfirmSendToClientOpen(false);
+              handleSendToClient();
+            }}
+            disabled={sending}
+          >
+            Send this Submission to Client?
+          </Button>
+        }
+      />
     </Box>
   );
 }

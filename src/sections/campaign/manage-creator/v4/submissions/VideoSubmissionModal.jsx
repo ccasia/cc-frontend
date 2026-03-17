@@ -86,7 +86,7 @@ const VideoSubmissionModal = ({
     return () => {
       isMounted = false;
     };
-  }, [open, submission?.id]);
+  }, [open, submission]);
 
   if (!open || !submission) return null;
 
@@ -377,8 +377,9 @@ const VideoSubmissionModal = ({
             </Box>
 
             {/* Right Side - Flexible Content (Client/Creator/Admin specific) */}
-            {(typeof rightSideContent === 'function'
-              ? rightSideContent({
+            {(() => {
+              if (typeof rightSideContent === 'function') {
+                return rightSideContent({
                   videoPage,
                   setVideoPage,
                   videoCount,
@@ -392,23 +393,26 @@ const VideoSubmissionModal = ({
                   currentVideoTime: formatTime(modalCurrentTime),
                   onSeekTo: handleModalSeek,
                   ref: feedbackPanelRef,
-                })
-              : React.isValidElement(rightSideContent)
-                ? React.cloneElement(rightSideContent, {
-                    ref: feedbackPanelRef,
-                    submissionId: effectiveSubmission.id,
-                    videoId: currentVideo?.id,
-                    isLocked:
-                      !['SENT_TO_CLIENT'].includes(effectiveSubmission.status) ||
-                      videoPage !== 0,
-                    isPastVideo: videoPage !== 0,
-                    currentVideoTime: formatTime(modalCurrentTime),
-                    onSeekTo: handleModalSeek,
-                    videoPage,
-                    setVideoPage,
-                    videoCount,
-                  })
-                : rightSideContent) || (
+                });
+              }
+              if (React.isValidElement(rightSideContent)) {
+                return React.cloneElement(rightSideContent, {
+                  ref: feedbackPanelRef,
+                  submissionId: effectiveSubmission.id,
+                  videoId: currentVideo?.id,
+                  isLocked:
+                    !['SENT_TO_CLIENT'].includes(effectiveSubmission.status) ||
+                    videoPage !== 0,
+                  isPastVideo: videoPage !== 0,
+                  currentVideoTime: formatTime(modalCurrentTime),
+                  onSeekTo: handleModalSeek,
+                  videoPage,
+                  setVideoPage,
+                  videoCount,
+                });
+              }
+              return rightSideContent;
+            })() || (
               <Box
                 sx={{
                   flex: { xs: '1 1 auto', md: '0 0 calc(40% - 20px)' },
@@ -507,7 +511,7 @@ const VideoSubmissionModal = ({
               },
             }}
           >
-            Yes, I'm done with my feedback
+            Yes, I&apos;m done with my feedback
           </LoadingButton>
           <Button
             fullWidth
@@ -555,6 +559,9 @@ VideoSubmissionModal.propTypes = {
     creator: PropTypes.object,
     admin: PropTypes.object,
     creatorName: PropTypes.string,
+    campaign: PropTypes.shape({
+      name: PropTypes.string,
+    }),
   }),
   creator: PropTypes.shape({
     name: PropTypes.string,
