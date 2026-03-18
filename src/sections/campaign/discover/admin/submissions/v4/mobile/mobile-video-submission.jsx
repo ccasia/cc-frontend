@@ -239,18 +239,18 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate, 
     );
   };
 
-  if (!clientVisible) {
-    return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Stack spacing={2} alignItems="center">
-          <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
-          <Typography variant="body2" color="text.secondary">
-            Video content is being processed.
-          </Typography>
-        </Stack>
-      </Box>
-    );
-  }
+  // if (!clientVisible) {
+  //   return (
+  //     <Box sx={{ p: 3, textAlign: 'center' }}>
+  //       <Stack spacing={2} alignItems="center">
+  //         <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
+  //         <Typography variant="body2" color="text.secondary">
+  //           Video content is being processed.
+  //         </Typography>
+  //       </Stack>
+  //     </Box>
+  //   );
+  // }
 
   if (!video?.url) {
     return (
