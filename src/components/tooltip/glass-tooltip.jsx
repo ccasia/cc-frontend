@@ -15,6 +15,7 @@ export const GlassTooltip = styled(({ className, ...props }) => (
     fontWeight: 500,
     padding: '8px 12px',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+    maxWidth: '600px',
   },
 }));
 

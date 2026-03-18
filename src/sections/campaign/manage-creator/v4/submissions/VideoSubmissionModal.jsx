@@ -11,6 +11,7 @@ import {
   Backdrop,
   Typography,
   IconButton,
+  Collapse,
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -18,6 +19,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import { GlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
 const formatTime = (timeInSeconds) => {
   if (!timeInSeconds) return '0:00';
@@ -45,6 +47,7 @@ const VideoSubmissionModal = ({
   const { user } = useAuthContext();
   const isClient = user?.role === 'client';
   const [videoPage, setVideoPage] = useState(0);
+  const [isCaptionOpen, setIsCaptionOpen] = useState(false);
   const [freshSubmission, setFreshSubmission] = useState(submission);
 
   const modalVideoRef = useRef(null);
@@ -97,9 +100,7 @@ const VideoSubmissionModal = ({
   // Videos come from backend ordered by createdAt DESC (latest first)
   // Take the first MAX_VIDEO_PAGES videos (which are already the latest)
   const latestVideos =
-    allVideos.length <= MAX_VIDEO_PAGES
-      ? allVideos
-      : allVideos.slice(0, MAX_VIDEO_PAGES);
+    allVideos.length <= MAX_VIDEO_PAGES ? allVideos : allVideos.slice(0, MAX_VIDEO_PAGES);
   const videos = latestVideos;
   const videoCount = videos.length;
   const currentVideo = videos[videoPage] || videos[0];
@@ -159,17 +160,34 @@ const VideoSubmissionModal = ({
       >
         <Box
           sx={{
-            position: 'absolute',
+            // position: 'absolute',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: { xs: '92vw', sm: '95vw', md: '90vw', lg: 1397 },
-            maxWidth: { xs: '92vw', sm: '95vw', md: 1397 },
-            height: { xs: '90vh', sm: '92vh', md: '90vh', lg: 855 },
-            maxHeight: { xs: '90vh', sm: '92vh', md: 855 },
-            bgcolor: '#F4F4F4',
+            width: { xs: '95vw', sm: '95vw', md: '90vw', lg: 1397 },
+            // maxWidth: { xs: '92vw', sm: '95vw', md: 1397 },
+            // height: { xs: '90vh', sm: '92vh', md: '90vh', lg: 855 },
+            maxHeight: { xs: '95vh', sm: '92vh', md: 855 },
+            // bgcolor: '#F4F4F4',
             borderRadius: '16px',
-            p: { xs: 2, sm: 2.5, md: 3 },
+            // p: { xs: 2, sm: 2.5, md: 3 },
+            // boxShadow: '0px 24px 48px rgba(0, 0, 0, 0.2)',
+            // outline: 'none',
+            // display: 'flex',
+            // flexDirection: 'column',
+            // overflow: 'hidden',
+            position: 'absolute',
+            // --- NEW RESPONSIVE POSITIONING ---
+            // top: { xs: 0, md: '50%' },
+            // left: { xs: 0, md: '50%' },
+            // transform: { xs: 'none', md: 'translate(-50%, -50%)' },
+            // width: { xs: '90%', md: '90vw', lg: 1397 },
+            height: { xs: '100dvh', md: '90vh', lg: 855 }, // <--- 100dvh handles keyboards perfectly!
+            // maxHeight: { xs: '100dvh', md: 855 },
+            // borderRadius: { xs: 0, md: '16px' }, // Removes rounded corners on mobile for a native app feel
+            p: { xs: 1.5, sm: 2.5, md: 3 },
+            // ----------------------------------
+            bgcolor: '#F4F4F4',
             boxShadow: '0px 24px 48px rgba(0, 0, 0, 0.2)',
             outline: 'none',
             display: 'flex',
@@ -268,7 +286,7 @@ const VideoSubmissionModal = ({
             {/* Left Side - Caption and Video */}
             <Box
               sx={{
-                flex: { xs: '1 1 auto', md: '0 0 60%' },
+                flex: { xs: '0 0 auto', md: '0 0 60%' },
                 display: 'flex',
                 flexDirection: 'column',
                 gap: { xs: 1.5, md: 2.5 },
@@ -280,100 +298,156 @@ const VideoSubmissionModal = ({
               <Box
                 sx={{
                   bgcolor: '#F4F4F4',
-                  maxHeight: { xs: 100, sm: 120, md: 150 },
-                  overflowY: 'auto',
+                  borderRadius: '8px',
+                  px: { xs: 1.0, md: 0 },
                   flexShrink: 0,
-                  '&::-webkit-scrollbar': {
-                    width: '4px',
-                  },
-                  '&::-webkit-scrollbar-track': {
-                    background: 'rgba(0,0,0,0.05)',
-                    borderRadius: '4px',
-                  },
-                  '&::-webkit-scrollbar-thumb': {
-                    background: 'rgba(0,0,0,0.2)',
-                    borderRadius: '4px',
-                    '&:hover': {
-                      background: 'rgba(0,0,0,0.3)',
-                    },
-                  },
                 }}
               >
-                <Typography
-                  variant="body2"
+                {/* Mobile & Desktop Header */}
+                <Box
+                  onClick={() => setIsCaptionOpen(!isCaptionOpen)}
                   sx={{
-                    fontFamily:
-                      'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    fontWeight: 600,
-                    fontSize: { xs: '0.813rem', md: '0.875rem' },
-                    color: '#636366',
-                    mb: 0.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: { xs: 'pointer', md: 'default' },
+                    mb: { xs: 0, md: 0.5 },
                   }}
                 >
-                  Caption
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontFamily:
-                      'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    fontSize: { xs: '0.813rem', md: '0.875rem' },
-                    color: '#1F2937',
-                    lineHeight: 1.6,
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {captionText || 'No caption provided'}
-                </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontFamily: 'Inter Display, Inter, sans-serif',
+                      fontWeight: 600,
+                      fontSize: { xs: '0.75rem', md: '0.875rem' },
+                      color: '#636366',
+                    }}
+                  >
+                    Caption
+                  </Typography>
+                  {/* Dropdown Icon - Only visible on mobile */}
+                  <Iconify
+                    icon={isCaptionOpen ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                    width={18}
+                    sx={{ display: { xs: 'block', md: 'none' }, color: '#636366' }}
+                  />
+                </Box>
+
+                {/* Mobile: Collapsible Content with MAX HEIGHT */}
+                <Collapse in={isCaptionOpen} sx={{ display: { xs: 'block', md: 'none' } }}>
+                  <Box
+                    sx={{
+                      maxHeight: 300, // <--- Lowered from 120 to 100 for better mobile balance
+                      overflowY: 'auto',
+                      mt: 1,
+                      pr: 1, // Prevents text from touching scrollbar
+                      '&::-webkit-scrollbar': { width: '4px' },
+                      '&::-webkit-scrollbar-thumb': {
+                        background: 'rgba(0,0,0,0.2)',
+                        borderRadius: '4px',
+                      },
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontFamily: 'Inter Display, Inter, sans-serif',
+                        fontSize: '0.813rem',
+                        color: '#1F2937',
+                        lineHeight: 1.5,
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {captionText || 'No caption provided'}
+                    </Typography>
+                  </Box>
+                </Collapse>
+
+                {/* Desktop: Always visible scrollable area wrapped in Tooltip */}
+                <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                  <GlassTooltip
+                    title={captionText || 'No caption provided'}
+                    placement="bottom-start"
+                  >
+                    <Box
+                      sx={{
+                        maxHeight: 150,
+                        overflowY: 'auto',
+                        '&::-webkit-scrollbar': { width: '4px' },
+                        '&::-webkit-scrollbar-thumb': {
+                          background: 'rgba(0,0,0,0.2)',
+                          borderRadius: '4px',
+                        },
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontFamily: 'Inter Display, Inter, sans-serif',
+                          fontSize: '0.875rem',
+                          color: '#1F2937',
+                          lineHeight: 1.6,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {captionText || 'No caption provided'}
+                      </Typography>
+                    </Box>
+                  </GlassTooltip>
+                </Box>
               </Box>
 
               {/* Video Player */}
-              <Box
-                sx={{
-                  flex: 1,
-                  bgcolor: '#000',
-                  borderRadius: { xs: '8px', md: '12px' },
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: { xs: 160, sm: 280, md: 450 },
-                  maxHeight: { xs: '32vh', sm: '42vh', md: 'none' },
-                  position: 'relative',
-                }}
-              >
-                {videoUrl ? (
-                  <video
-                    key={currentVideo?.id}
-                    ref={modalVideoRef}
-                    src={videoUrl}
-                    controls
-                    controlsList="nodownload"
-                    preload="metadata"
-                    playsInline
-                    onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)} // <--- YOUR TIME TRACKER ATTACHED
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                    }}
-                  >
-                    <track kind="captions" />
-                  </video>
-                ) : (
-                  <Typography
-                    sx={{
-                      color: 'white',
-                      fontFamily:
-                        'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    }}
-                  >
-                    No video available
-                  </Typography>
-                )}
-              </Box>
+              {!isCaptionOpen && (
+                <Box
+                  sx={{
+                    flex: 1,
+                    bgcolor: '#000',
+                    borderRadius: { xs: '8px', md: '12px' },
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: { xs: 0, sm: 280, md: 450 },
+                    maxHeight: { xs: '33vh', sm: '42vh', md: 'none' },
+                    // maxHeight: { xs: '55vh', sm: '60vh', md: 'none' },
+                    position: 'relative',
+                  }}
+                >
+                  {videoUrl ? (
+                    <video
+                      key={currentVideo?.id}
+                      ref={modalVideoRef}
+                      src={videoUrl}
+                      controls
+                      controlsList="nodownload"
+                      preload="metadata"
+                      playsInline
+                      onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)} // <--- YOUR TIME TRACKER ATTACHED
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                      }}
+                    >
+                      <track kind="captions" />
+                    </video>
+                  ) : (
+                    <Typography
+                      sx={{
+                        color: 'white',
+                        fontFamily:
+                          'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      }}
+                    >
+                      No video available
+                    </Typography>
+                  )}
+                </Box>
+              )}
             </Box>
 
             {/* Right Side - Flexible Content (Client/Creator/Admin specific) */}
@@ -401,8 +475,7 @@ const VideoSubmissionModal = ({
                   submissionId: effectiveSubmission.id,
                   videoId: currentVideo?.id,
                   isLocked:
-                    !['SENT_TO_CLIENT'].includes(effectiveSubmission.status) ||
-                    videoPage !== 0,
+                    !['SENT_TO_CLIENT'].includes(effectiveSubmission.status) || videoPage !== 0,
                   isPastVideo: videoPage !== 0,
                   currentVideoTime: formatTime(modalCurrentTime),
                   onSeekTo: handleModalSeek,
