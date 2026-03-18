@@ -150,15 +150,16 @@ const CommentCard = ({
 
       {/* Body */}
       <Box sx={{ pl: 0.5 }}>
-        {isEditing ? (
-          <Box
-            sx={{
-              border: '1px solid #E7E7E7',
-              borderRadius: '8px',
-              bgcolor: '#FFFFFF',
-              p: 1.5,
-            }}
-          >
+        <m.div
+          animate={{
+            border: isEditing ? '1px solid #E7E7E7' : '1px solid transparent',
+            backgroundColor: isEditing ? '#FFFFFF' : 'transparent',
+            padding: isEditing ? 12 : 0,
+            borderRadius: 8,
+          }}
+          transition={{ duration: 0.25, ease: 'easeInOut' }}
+        >
+          {isEditing ? (
             <TextField
               inputRef={(input) => {
                 if (input && !editFocusedRef.current) {
@@ -195,84 +196,98 @@ const CommentCard = ({
                 },
               }}
             />
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1 }}>
-              <Button
-                size="small"
-                onClick={onCancelEdit}
-                sx={{
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: '#1340FF',
-                  bgcolor: 'transparent',
-                  border: '1px solid #E7E7E7',
-                  borderBottom: '3px solid #E7E7E7',
-                  borderRadius: 1,
-                  px: 1.5,
-                  py: 0.5,
-                  '&:hover': {
-                    bgcolor: '#F9F9F9',
-                    border: '1px solid #E7E7E7',
-                    borderBottom: '3px solid #E7E7E7',
-                  },
-                }}
+          ) : (
+            <Typography
+              sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#1F2937', wordBreak: 'break-word' }}
+            >
+              {comment.timestamp && (
+                <Typography
+                  component="span"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onTimestampClick) {
+                      onTimestampClick(parseTimestamp(comment.timestamp));
+                    }
+                  }}
+                  sx={{
+                    color: '#1340FF',
+                    fontWeight: 700,
+                    fontSize: 'inherit',
+                    mr: 0.5,
+                    cursor: onTimestampClick ? 'pointer' : 'default',
+                    '&:hover': onTimestampClick ? { textDecoration: 'underline' } : {},
+                  }}
+                >
+                  {formatDisplayTimestamp(parseTimestamp(comment.timestamp))}
+                </Typography>
+              )}
+              {comment.text}
+            </Typography>
+          )}
+          <AnimatePresence>
+            {isEditing && (
+              <m.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                style={{ overflow: 'hidden' }}
               >
-                Cancel
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                disabled={!editText?.trim()}
-                onClick={() => onSaveEdit(comment.id)}
-                sx={{
-                  bgcolor: '#1340ff',
-                  borderBottom: '2px solid #0A238C',
-                  boxShadow: 'inset 0px -2px 0px 0px #0A238C',
-                  borderRadius: 1,
-                  minWidth: 'unset',
-                  minHeight: 28,
-                  px: 1.5,
-                  py: 0.5,
-                  '&:hover': { bgcolor: '#1a4dff' },
-                  '&.Mui-disabled': {
-                    bgcolor: 'action.disabledBackground',
-                    color: 'action.disabled',
-                    borderBottomColor: 'action.disabledBackground',
-                    boxShadow: 'none',
-                  },
-                }}
-              >
-                <Iconify icon="ic:round-send" width={18} sx={{ color: 'white' }} />
-              </Button>
-            </Box>
-          </Box>
-        ) : (
-          <Typography
-            sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#1F2937', wordBreak: 'break-word' }}
-          >
-            {comment.timestamp && (
-              <Typography
-                component="span"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onTimestampClick) {
-                    onTimestampClick(parseTimestamp(comment.timestamp));
-                  }
-                }}
-                sx={{
-                  color: '#1340FF',
-                  fontWeight: 700,
-                  fontSize: 'inherit',
-                  mr: 0.5,
-                  cursor: onTimestampClick ? 'pointer' : 'default',
-                  '&:hover': onTimestampClick ? { textDecoration: 'underline' } : {},
-                }}
-              >
-                {formatDisplayTimestamp(parseTimestamp(comment.timestamp))}
-              </Typography>
+                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1 }}>
+                  <Button
+                    size="small"
+                    onClick={onCancelEdit}
+                    sx={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: '#1340FF',
+                      bgcolor: 'transparent',
+                      border: '1px solid #E7E7E7',
+                      borderBottom: '3px solid #E7E7E7',
+                      borderRadius: 1,
+                      px: 1.5,
+                      py: 0.5,
+                      '&:hover': {
+                        bgcolor: '#F9F9F9',
+                        border: '1px solid #E7E7E7',
+                        borderBottom: '3px solid #E7E7E7',
+                      },
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Tooltip title="Update Feedback?" arrow>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      disabled={!editText?.trim()}
+                      onClick={() => onSaveEdit(comment.id)}
+                      sx={{
+                        bgcolor: '#1340ff',
+                        borderBottom: '2px solid #0A238C',
+                        boxShadow: 'inset 0px -2px 0px 0px #0A238C',
+                        borderRadius: 1,
+                        minWidth: 'unset',
+                        minHeight: 28,
+                        px: 1.5,
+                        py: 0.5,
+                        '&:hover': { bgcolor: '#1a4dff' },
+                        '&.Mui-disabled': {
+                          bgcolor: 'action.disabledBackground',
+                          color: 'action.disabled',
+                          borderBottomColor: 'action.disabledBackground',
+                          boxShadow: 'none',
+                        },
+                      }}
+                    >
+                      <Iconify icon="ic:round-send" width={18} sx={{ color: 'white' }} />
+                    </Button>
+                  </Tooltip>
+                </Box>
+              </m.div>
             )}
-            {comment.text}
-          </Typography>
-        )}
+          </AnimatePresence>
+        </m.div>
       </Box>
 
       {/* Footer Actions */}
@@ -310,16 +325,25 @@ const CommentCard = ({
           </Box>}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
             {hasAgreed && (
-              <IconButton size="small" sx={{ p: 0.5 }}>
-                <Iconify
-                  icon="mdi:thumb-up"
-                  width={20}
-                  sx={{
-                    color: '#1340FF',
-                    filter: 'drop-shadow(0px 0px 0.2px #000000)',
-                  }}
-                />
-              </IconButton>
+              <Tooltip
+                title={(() => {
+                  const names = comment.agreedBy?.map((a) => a.user?.name).filter(Boolean).join(', ');
+                  return names ? `Agreed by ${names}` : 'Agreed';
+                })()}
+                arrow
+                placement="top"
+              >
+                <IconButton size="small" sx={{ p: 0.5 }}>
+                  <Iconify
+                    icon="mdi:thumb-up"
+                    width={20}
+                    sx={{
+                      color: '#1340FF',
+                      filter: 'drop-shadow(0px 0px 0.2px #000000)',
+                    }}
+                  />
+                </IconButton>
+              </Tooltip>
             )}
             <Tooltip title={isResolved ? `Resolved at ${fDateTime(comment.resolvedAt)}` : 'Mark as Resolved'} arrow placement="top">
               <IconButton size="small" sx={{ p: 0.5 }} onClick={isPastVideo ? undefined : () => onToggleResolve?.(comment.id)}>
@@ -511,12 +535,14 @@ export default function AdminFeedbackPanel({
     socket.on('v4:comment:updated', handleCommentEvent);
     socket.on('v4:comment:reply:added', handleCommentEvent);
     socket.on('v4:comment:deleted', handleCommentEvent);
+    socket.on('v4:comment:agreed', handleCommentEvent);
 
     return () => {
       socket.off('v4:comment:added', handleCommentEvent);
       socket.off('v4:comment:updated', handleCommentEvent);
       socket.off('v4:comment:reply:added', handleCommentEvent);
       socket.off('v4:comment:deleted', handleCommentEvent);
+      socket.off('v4:comment:agreed', handleCommentEvent);
     };
   }, [socket, submission?.id, commentsMutate]);
 
