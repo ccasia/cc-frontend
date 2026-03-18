@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 
-import { Box, Avatar, Button, Tooltip, TextField, Typography, IconButton, CircularProgress } from '@mui/material';
+import { Box, Avatar, Button, TextField, Typography, IconButton, CircularProgress } from '@mui/material';
 import Iconify from 'src/components/iconify';
 import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -12,6 +12,7 @@ import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 import { fDateTime } from 'src/utils/format-time';
 
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -37,6 +38,56 @@ const formatDisplayTimestamp = (timeInSeconds) => {
   }
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
+
+const AnimatedDigit = ({ digit }) => (
+  <Box
+    component="span"
+    sx={{
+      display: 'inline-block',
+      position: 'relative',
+      width: '0.62em',
+      height: '1.2em',
+      overflow: 'hidden',
+      verticalAlign: 'top',
+    }}
+  >
+    <AnimatePresence mode="popLayout" initial={false}>
+      <m.span
+        key={digit}
+        initial={{ y: '100%', opacity: 0 }}
+        animate={{ y: '0%', opacity: 1 }}
+        exit={{ y: '-100%', opacity: 0 }}
+        transition={{ duration: 0.25, ease: 'easeInOut' }}
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          display: 'inline-block',
+          width: '100%',
+          textAlign: 'center',
+        }}
+      >
+        {digit}
+      </m.span>
+    </AnimatePresence>
+  </Box>
+);
+
+AnimatedDigit.propTypes = { digit: PropTypes.string.isRequired };
+
+const AnimatedTime = ({ time }) => (
+  <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+    {time.split('').map((char, i) =>
+      char === ':' ? (
+        <span key={`sep-${i}`}>:</span>
+      ) : (
+        <AnimatedDigit key={`pos-${i}`} digit={char} />
+      )
+    )}
+  </Box>
+);
+
+AnimatedTime.propTypes = { time: PropTypes.string.isRequired };
 
 const parseTimestamp = (timestampStr) => {
   if (!timestampStr) return 0;
@@ -256,7 +307,7 @@ const CommentCard = ({
                   >
                     Cancel
                   </Button>
-                  <Tooltip title="Update Feedback?" arrow>
+                  <DarkGlassTooltip title="Update Feedback?" placement="top">
                     <Button
                       size="small"
                       variant="contained"
@@ -282,7 +333,7 @@ const CommentCard = ({
                     >
                       <Iconify icon="ic:round-send" width={18} sx={{ color: 'white' }} />
                     </Button>
-                  </Tooltip>
+                  </DarkGlassTooltip>
                 </Box>
               </m.div>
             )}
@@ -325,12 +376,11 @@ const CommentCard = ({
           </Box>}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
             {hasAgreed && (
-              <Tooltip
+              <DarkGlassTooltip
                 title={(() => {
                   const names = comment.agreedBy?.map((a) => a.user?.name).filter(Boolean).join(', ');
                   return names ? `Agreed by ${names}` : 'Agreed';
                 })()}
-                arrow
                 placement="top"
               >
                 <IconButton size="small" sx={{ p: 0.5 }}>
@@ -343,9 +393,9 @@ const CommentCard = ({
                     }}
                   />
                 </IconButton>
-              </Tooltip>
+              </DarkGlassTooltip>
             )}
-            <Tooltip title={isResolved ? `Resolved at ${fDateTime(comment.resolvedAt)}` : 'Mark as Resolved'} arrow placement="top">
+            <DarkGlassTooltip title={isResolved ? `Resolved at ${fDateTime(comment.resolvedAt)}` : 'Mark as Resolved'} placement="top">
               <IconButton size="small" sx={{ p: 0.5 }} onClick={isPastVideo ? undefined : () => onToggleResolve?.(comment.id)}>
                 <Iconify
                   icon={isResolved ? 'mdi:check-circle' : 'mdi:check-circle-outline'}
@@ -353,7 +403,7 @@ const CommentCard = ({
                   sx={{ color: isResolved ? '#00A76F' : '#919191' }}
                 />
               </IconButton>
-            </Tooltip>
+            </DarkGlassTooltip>
           </Box>
         </Box>
       )}
@@ -495,6 +545,7 @@ CommentCard.propTypes = {
 
 export default function AdminFeedbackPanel({
   currentTime = 0,
+  duration = 0,
   onSeek,
   submission,
   videoId,
@@ -520,6 +571,40 @@ export default function AdminFeedbackPanel({
 
   const commentsEndRef = useRef(null);
   const initialLoadDone = useRef(false);
+
+  // Drag-to-seek on timer chip
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartTimeRef = useRef(0);
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
+
+  const handleTimerMouseDown = useCallback(
+    (e) => {
+      if (!duration) return;
+      e.preventDefault();
+      isDraggingRef.current = true;
+      dragStartXRef.current = e.clientX;
+      dragStartTimeRef.current = currentTimeRef.current;
+
+      const handleMouseMove = (moveEvent) => {
+        if (!isDraggingRef.current) return;
+        const deltaX = moveEvent.clientX - dragStartXRef.current;
+        const newTime = Math.max(0, Math.min(duration, dragStartTimeRef.current + deltaX * 0.15));
+        onSeek(newTime);
+      };
+
+      const handleMouseUp = () => {
+        isDraggingRef.current = false;
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    },
+    [duration, onSeek]
+  );
 
   // Socket listeners for real-time updates
   useEffect(() => {
@@ -842,6 +927,7 @@ export default function AdminFeedbackPanel({
           sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25, px: 2, pt: 1.5, pb: 0.75 }}
         >
           <Box
+            onMouseDown={handleTimerMouseDown}
             sx={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -853,15 +939,16 @@ export default function AdminFeedbackPanel({
               px: 1,
               py: 0.4,
               fontSize: 13,
-              fontWeight: 500,
+              fontWeight: 600,
               fontFamily: 'Inter, sans-serif',
               lineHeight: 1.4,
               userSelect: 'none',
               boxShadow: '0px 1px 0px 0px #E7E7E7',
               flexShrink: 0,
+              cursor: duration ? 'ew-resize' : 'default',
             }}
           >
-            {formatTime(currentTime)}
+            <AnimatedTime time={formatTime(currentTime)} />
           </Box>
           <TextField
             multiline
@@ -1101,6 +1188,7 @@ export default function AdminFeedbackPanel({
 
 AdminFeedbackPanel.propTypes = {
   currentTime: PropTypes.number,
+  duration: PropTypes.number,
   onSeek: PropTypes.func,
   submission: PropTypes.object,
   videoId: PropTypes.string,
