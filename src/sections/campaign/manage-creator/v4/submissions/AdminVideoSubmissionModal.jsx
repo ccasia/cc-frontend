@@ -12,12 +12,19 @@ const MAX_VIDEO_PAGES = 3;
 const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideContent }) => {
   const videoRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [videoPage, setVideoPage] = useState(0);
   const [freshSubmission, setFreshSubmission] = useState(null);
 
   const handleTimeUpdate = useCallback(() => {
     if (videoRef.current) {
       setCurrentTime(videoRef.current.currentTime);
+    }
+  }, []);
+
+  const handleLoadedMetadata = useCallback(() => {
+    if (videoRef.current && Number.isFinite(videoRef.current.duration)) {
+      setDuration(videoRef.current.duration);
     }
   }, []);
 
@@ -36,6 +43,7 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
   // Reset time when switching videos
   useEffect(() => {
     setCurrentTime(0);
+    setDuration(0);
   }, [videoPage]);
 
   // Fetch fresh submission data on open to get all video versions
@@ -295,6 +303,7 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
                   preload="metadata"
                   playsInline
                   onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -321,6 +330,7 @@ const VideoSubmissionModal = ({ open, onClose, submission, creator, rightSideCon
           {(typeof rightSideContent === 'function'
             ? rightSideContent({
                 currentTime,
+                duration,
                 onSeek: handleSeekToTime,
                 videoId: currentVideo?.id,
                 videoPage: effectiveVideoPage,

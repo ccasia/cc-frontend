@@ -425,9 +425,10 @@ export default function FeedbackActions({
           open={reviewModalOpen}
           onClose={() => setReviewModalOpen(false)}
           submission={submission}
-          rightSideContent={({ currentTime, onSeek, videoId, videoPage, setVideoPage, videoCount, isPastVideo }) => (
+          rightSideContent={({ currentTime, duration, onSeek, videoId, videoPage, setVideoPage, videoCount, isPastVideo }) => (
             <AdminFeedbackPanel
               currentTime={currentTime}
+              duration={duration}
               onSeek={onSeek}
               submission={submission}
               videoId={videoId || submission.video?.[0]?.id}

@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 
-import { Box, Avatar, Button, Tooltip, TextField, Typography, IconButton, CircularProgress } from '@mui/material';
+import { Box, Avatar, Button, TextField, Typography, IconButton, CircularProgress } from '@mui/material';
 import Iconify from 'src/components/iconify';
 import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -12,6 +12,7 @@ import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 import { fDateTime } from 'src/utils/format-time';
 
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -37,6 +38,56 @@ const formatDisplayTimestamp = (timeInSeconds) => {
   }
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
+
+const AnimatedDigit = ({ digit }) => (
+  <Box
+    component="span"
+    sx={{
+      display: 'inline-block',
+      position: 'relative',
+      width: '0.62em',
+      height: '1.2em',
+      overflow: 'hidden',
+      verticalAlign: 'top',
+    }}
+  >
+    <AnimatePresence mode="popLayout" initial={false}>
+      <m.span
+        key={digit}
+        initial={{ y: '100%', opacity: 0 }}
+        animate={{ y: '0%', opacity: 1 }}
+        exit={{ y: '-100%', opacity: 0 }}
+        transition={{ duration: 0.25, ease: 'easeInOut' }}
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          display: 'inline-block',
+          width: '100%',
+          textAlign: 'center',
+        }}
+      >
+        {digit}
+      </m.span>
+    </AnimatePresence>
+  </Box>
+);
+
+AnimatedDigit.propTypes = { digit: PropTypes.string.isRequired };
+
+const AnimatedTime = ({ time }) => (
+  <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+    {time.split('').map((char, i) =>
+      char === ':' ? (
+        <span key={`sep-${i}`}>:</span>
+      ) : (
+        <AnimatedDigit key={`pos-${i}`} digit={char} />
+      )
+    )}
+  </Box>
+);
+
+AnimatedTime.propTypes = { time: PropTypes.string.isRequired };
 
 const parseTimestamp = (timestampStr) => {
   if (!timestampStr) return 0;
@@ -150,15 +201,16 @@ const CommentCard = ({
 
       {/* Body */}
       <Box sx={{ pl: 0.5 }}>
-        {isEditing ? (
-          <Box
-            sx={{
-              border: '1px solid #E7E7E7',
-              borderRadius: '8px',
-              bgcolor: '#FFFFFF',
-              p: 1.5,
-            }}
-          >
+        <m.div
+          animate={{
+            border: isEditing ? '1px solid #E7E7E7' : '1px solid transparent',
+            backgroundColor: isEditing ? '#FFFFFF' : 'transparent',
+            padding: isEditing ? 12 : 0,
+            borderRadius: 8,
+          }}
+          transition={{ duration: 0.25, ease: 'easeInOut' }}
+        >
+          {isEditing ? (
             <TextField
               inputRef={(input) => {
                 if (input && !editFocusedRef.current) {
@@ -195,84 +247,98 @@ const CommentCard = ({
                 },
               }}
             />
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1 }}>
-              <Button
-                size="small"
-                onClick={onCancelEdit}
-                sx={{
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: '#1340FF',
-                  bgcolor: 'transparent',
-                  border: '1px solid #E7E7E7',
-                  borderBottom: '3px solid #E7E7E7',
-                  borderRadius: 1,
-                  px: 1.5,
-                  py: 0.5,
-                  '&:hover': {
-                    bgcolor: '#F9F9F9',
-                    border: '1px solid #E7E7E7',
-                    borderBottom: '3px solid #E7E7E7',
-                  },
-                }}
+          ) : (
+            <Typography
+              sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#1F2937', wordBreak: 'break-word' }}
+            >
+              {comment.timestamp && (
+                <Typography
+                  component="span"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onTimestampClick) {
+                      onTimestampClick(parseTimestamp(comment.timestamp));
+                    }
+                  }}
+                  sx={{
+                    color: '#1340FF',
+                    fontWeight: 700,
+                    fontSize: 'inherit',
+                    mr: 0.5,
+                    cursor: onTimestampClick ? 'pointer' : 'default',
+                    '&:hover': onTimestampClick ? { textDecoration: 'underline' } : {},
+                  }}
+                >
+                  {formatDisplayTimestamp(parseTimestamp(comment.timestamp))}
+                </Typography>
+              )}
+              {comment.text}
+            </Typography>
+          )}
+          <AnimatePresence>
+            {isEditing && (
+              <m.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                style={{ overflow: 'hidden' }}
               >
-                Cancel
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                disabled={!editText?.trim()}
-                onClick={() => onSaveEdit(comment.id)}
-                sx={{
-                  bgcolor: '#1340ff',
-                  borderBottom: '2px solid #0A238C',
-                  boxShadow: 'inset 0px -2px 0px 0px #0A238C',
-                  borderRadius: 1,
-                  minWidth: 'unset',
-                  minHeight: 28,
-                  px: 1.5,
-                  py: 0.5,
-                  '&:hover': { bgcolor: '#1a4dff' },
-                  '&.Mui-disabled': {
-                    bgcolor: 'action.disabledBackground',
-                    color: 'action.disabled',
-                    borderBottomColor: 'action.disabledBackground',
-                    boxShadow: 'none',
-                  },
-                }}
-              >
-                <Iconify icon="ic:round-send" width={18} sx={{ color: 'white' }} />
-              </Button>
-            </Box>
-          </Box>
-        ) : (
-          <Typography
-            sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#1F2937', wordBreak: 'break-word' }}
-          >
-            {comment.timestamp && (
-              <Typography
-                component="span"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onTimestampClick) {
-                    onTimestampClick(parseTimestamp(comment.timestamp));
-                  }
-                }}
-                sx={{
-                  color: '#1340FF',
-                  fontWeight: 700,
-                  fontSize: 'inherit',
-                  mr: 0.5,
-                  cursor: onTimestampClick ? 'pointer' : 'default',
-                  '&:hover': onTimestampClick ? { textDecoration: 'underline' } : {},
-                }}
-              >
-                {formatDisplayTimestamp(parseTimestamp(comment.timestamp))}
-              </Typography>
+                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1 }}>
+                  <Button
+                    size="small"
+                    onClick={onCancelEdit}
+                    sx={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: '#1340FF',
+                      bgcolor: 'transparent',
+                      border: '1px solid #E7E7E7',
+                      borderBottom: '3px solid #E7E7E7',
+                      borderRadius: 1,
+                      px: 1.5,
+                      py: 0.5,
+                      '&:hover': {
+                        bgcolor: '#F9F9F9',
+                        border: '1px solid #E7E7E7',
+                        borderBottom: '3px solid #E7E7E7',
+                      },
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <DarkGlassTooltip title="Update Feedback?" placement="top">
+                    <Button
+                      size="small"
+                      variant="contained"
+                      disabled={!editText?.trim()}
+                      onClick={() => onSaveEdit(comment.id)}
+                      sx={{
+                        bgcolor: '#1340ff',
+                        borderBottom: '2px solid #0A238C',
+                        boxShadow: 'inset 0px -2px 0px 0px #0A238C',
+                        borderRadius: 1,
+                        minWidth: 'unset',
+                        minHeight: 28,
+                        px: 1.5,
+                        py: 0.5,
+                        '&:hover': { bgcolor: '#1a4dff' },
+                        '&.Mui-disabled': {
+                          bgcolor: 'action.disabledBackground',
+                          color: 'action.disabled',
+                          borderBottomColor: 'action.disabledBackground',
+                          boxShadow: 'none',
+                        },
+                      }}
+                    >
+                      <Iconify icon="ic:round-send" width={18} sx={{ color: 'white' }} />
+                    </Button>
+                  </DarkGlassTooltip>
+                </Box>
+              </m.div>
             )}
-            {comment.text}
-          </Typography>
-        )}
+          </AnimatePresence>
+        </m.div>
       </Box>
 
       {/* Footer Actions */}
@@ -310,18 +376,26 @@ const CommentCard = ({
           </Box>}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
             {hasAgreed && (
-              <IconButton size="small" sx={{ p: 0.5 }}>
-                <Iconify
-                  icon="mdi:thumb-up"
-                  width={20}
-                  sx={{
-                    color: '#1340FF',
-                    filter: 'drop-shadow(0px 0px 0.2px #000000)',
-                  }}
-                />
-              </IconButton>
+              <DarkGlassTooltip
+                title={(() => {
+                  const names = comment.agreedBy?.map((a) => a.user?.name).filter(Boolean).join(', ');
+                  return names ? `Agreed by ${names}` : 'Agreed';
+                })()}
+                placement="top"
+              >
+                <IconButton size="small" sx={{ p: 0.5 }}>
+                  <Iconify
+                    icon="mdi:thumb-up"
+                    width={20}
+                    sx={{
+                      color: '#1340FF',
+                      filter: 'drop-shadow(0px 0px 0.2px #000000)',
+                    }}
+                  />
+                </IconButton>
+              </DarkGlassTooltip>
             )}
-            <Tooltip title={isResolved ? `Resolved at ${fDateTime(comment.resolvedAt)}` : 'Mark as Resolved'} arrow placement="top">
+            <DarkGlassTooltip title={isResolved ? `Resolved at ${fDateTime(comment.resolvedAt)}` : 'Mark as Resolved'} placement="top">
               <IconButton size="small" sx={{ p: 0.5 }} onClick={isPastVideo ? undefined : () => onToggleResolve?.(comment.id)}>
                 <Iconify
                   icon={isResolved ? 'mdi:check-circle' : 'mdi:check-circle-outline'}
@@ -329,7 +403,7 @@ const CommentCard = ({
                   sx={{ color: isResolved ? '#00A76F' : '#919191' }}
                 />
               </IconButton>
-            </Tooltip>
+            </DarkGlassTooltip>
           </Box>
         </Box>
       )}
@@ -471,6 +545,7 @@ CommentCard.propTypes = {
 
 export default function AdminFeedbackPanel({
   currentTime = 0,
+  duration = 0,
   onSeek,
   submission,
   videoId,
@@ -497,6 +572,40 @@ export default function AdminFeedbackPanel({
   const commentsEndRef = useRef(null);
   const initialLoadDone = useRef(false);
 
+  // Drag-to-seek on timer chip
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartTimeRef = useRef(0);
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
+
+  const handleTimerMouseDown = useCallback(
+    (e) => {
+      if (!duration) return;
+      e.preventDefault();
+      isDraggingRef.current = true;
+      dragStartXRef.current = e.clientX;
+      dragStartTimeRef.current = currentTimeRef.current;
+
+      const handleMouseMove = (moveEvent) => {
+        if (!isDraggingRef.current) return;
+        const deltaX = moveEvent.clientX - dragStartXRef.current;
+        const newTime = Math.max(0, Math.min(duration, dragStartTimeRef.current + deltaX * 0.15));
+        onSeek(newTime);
+      };
+
+      const handleMouseUp = () => {
+        isDraggingRef.current = false;
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    },
+    [duration, onSeek]
+  );
+
   // Socket listeners for real-time updates
   useEffect(() => {
     if (!socket || !submission?.id) return undefined;
@@ -511,12 +620,14 @@ export default function AdminFeedbackPanel({
     socket.on('v4:comment:updated', handleCommentEvent);
     socket.on('v4:comment:reply:added', handleCommentEvent);
     socket.on('v4:comment:deleted', handleCommentEvent);
+    socket.on('v4:comment:agreed', handleCommentEvent);
 
     return () => {
       socket.off('v4:comment:added', handleCommentEvent);
       socket.off('v4:comment:updated', handleCommentEvent);
       socket.off('v4:comment:reply:added', handleCommentEvent);
       socket.off('v4:comment:deleted', handleCommentEvent);
+      socket.off('v4:comment:agreed', handleCommentEvent);
     };
   }, [socket, submission?.id, commentsMutate]);
 
@@ -816,6 +927,7 @@ export default function AdminFeedbackPanel({
           sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25, px: 2, pt: 1.5, pb: 0.75 }}
         >
           <Box
+            onMouseDown={handleTimerMouseDown}
             sx={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -827,15 +939,16 @@ export default function AdminFeedbackPanel({
               px: 1,
               py: 0.4,
               fontSize: 13,
-              fontWeight: 500,
+              fontWeight: 600,
               fontFamily: 'Inter, sans-serif',
               lineHeight: 1.4,
               userSelect: 'none',
               boxShadow: '0px 1px 0px 0px #E7E7E7',
               flexShrink: 0,
+              cursor: duration ? 'ew-resize' : 'default',
             }}
           >
-            {formatTime(currentTime)}
+            <AnimatedTime time={formatTime(currentTime)} />
           </Box>
           <TextField
             multiline
@@ -1075,6 +1188,7 @@ export default function AdminFeedbackPanel({
 
 AdminFeedbackPanel.propTypes = {
   currentTime: PropTypes.number,
+  duration: PropTypes.number,
   onSeek: PropTypes.func,
   submission: PropTypes.object,
   videoId: PropTypes.string,

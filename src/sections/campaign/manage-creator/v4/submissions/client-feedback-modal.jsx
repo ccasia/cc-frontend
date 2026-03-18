@@ -535,10 +535,100 @@ const ClientFeedbackModal = forwardRef(
         setTimeout(() => scrollToElement(data.comment.id), 100);
       };
 
+      const handleCommentAdded = (data) => {
+        if (data.submissionId !== submissionId || data.videoId !== videoId) return;
+        if (data.comment?.userId === user.id) return;
+
+        setComments((prev) => {
+          if (prev.some((c) => c.id === data.comment.id)) return prev;
+          return [...prev, { ...data.comment, replies: [], agreedBy: [], isNew: true }];
+        });
+
+        setTimeout(() => scrollToElement(data.comment.id), 100);
+      };
+
+      const handleCommentUpdated = (data) => {
+        if (data.submissionId !== submissionId || data.videoId !== videoId) return;
+
+        setComments((prev) =>
+          prev.map((c) => {
+            if (c.id === data.comment.id) {
+              return {
+                ...c,
+                ...data.comment,
+                replies: c.replies,
+                agreedBy: c.agreedBy,
+                user: data.comment.user || c.user,
+                text: data.comment.text ?? c.text,
+              };
+            }
+            if (c.replies?.some((r) => r.id === data.comment.id)) {
+              return {
+                ...c,
+                replies: c.replies.map((r) =>
+                  r.id === data.comment.id
+                    ? {
+                        ...r,
+                        ...data.comment,
+                        agreedBy: r.agreedBy,
+                        user: data.comment.user || r.user,
+                        text: data.comment.text ?? r.text,
+                      }
+                    : r
+                ),
+              };
+            }
+            return c;
+          })
+        );
+      };
+
+      const handleCommentDeleted = (data) => {
+        if (data.submissionId !== submissionId || data.videoId !== videoId) return;
+
+        setComments((prev) => {
+          const filtered = prev.filter((c) => c.id !== data.commentId);
+          return filtered.map((c) => ({
+            ...c,
+            replies: c.replies?.filter((r) => r.id !== data.commentId) || [],
+          }));
+        });
+      };
+
+      const handleCommentAgreed = (data) => {
+        if (data.submissionId !== submissionId || data.videoId !== videoId) return;
+        if (data.userId === user.id) return; // client already saw their own like update instantly, no need to process the socket echo
+
+        setComments((prev) =>
+          prev.map((c) => {
+            if (c.id === data.commentId) {
+              return { ...c, agreedBy: data.agreedBy };
+            }
+            if (c.replies?.some((r) => r.id === data.commentId)) {
+              return {
+                ...c,
+                replies: c.replies.map((r) =>
+                  r.id === data.commentId ? { ...r, agreedBy: data.agreedBy } : r
+                ),
+              };
+            }
+            return c;
+          })
+        );
+      };
+
       socket.on('v4:comment:reply:added', handleReplyAdded);
+      socket.on('v4:comment:added', handleCommentAdded);
+      socket.on('v4:comment:updated', handleCommentUpdated);
+      socket.on('v4:comment:deleted', handleCommentDeleted);
+      socket.on('v4:comment:agreed', handleCommentAgreed);
 
       return () => {
         socket.off('v4:comment:reply:added', handleReplyAdded);
+        socket.off('v4:comment:added', handleCommentAdded);
+        socket.off('v4:comment:updated', handleCommentUpdated);
+        socket.off('v4:comment:deleted', handleCommentDeleted);
+        socket.off('v4:comment:agreed', handleCommentAgreed);
       };
     }, [socket, submissionId, videoId, user.id]);
 
@@ -569,7 +659,7 @@ const ClientFeedbackModal = forwardRef(
                 return {
                   ...comment,
                   agreedBy: data.agreed
-                    ? [...agreedBy, { userId: user.id }] // Add
+                    ? [...agreedBy, { userId: user.id, user: { id: user.id, name: user.name } }] // Add
                     : agreedBy.filter((agreement) => agreement.userId !== user.id), // Remove
                 };
               }
