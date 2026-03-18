@@ -416,12 +416,28 @@ const ClientFeedbackModal = forwardRef(
 
     const [timeLeft, setTimeLeft] = useState(0);
     const [isCountingDown, setIsCountingDown] = useState(false);
-    const STORAGE_KEY_END_TIME = `send_timer_end_${submissionId}`;
-    const COUNTDOWN_SECONDS = 24 * 60 * 60;
-    // const COUNTDOWN_SECONDS = 3000; //for testing
+    const [activeVideoId, setActiveVideoId] = useState(videoId);
+
+    const STORAGE_KEY_END_TIME = `send_timer_end_${submissionId}_${videoId}`;
+    // const COUNTDOWN_SECONDS = 24 * 60 * 60;
+    const COUNTDOWN_SECONDS = 3000; //for testing
 
     const commentRefs = useRef({});
     const effectiveIsLocked = (isLocked && !isCountingDown) || isPastVideo;
+
+    if (videoId !== activeVideoId) {
+      setActiveVideoId(videoId); // Sync the tracking ID
+
+      const savedEndTime = localStorage.getItem(STORAGE_KEY_END_TIME);
+      if (savedEndTime) {
+        const remaining = Math.max(0, Math.floor((parseInt(savedEndTime, 10) - Date.now()) / 1000));
+        setTimeLeft(remaining > 0 ? remaining : 0);
+        setIsCountingDown(remaining > 0);
+      } else {
+        setTimeLeft(0);
+        setIsCountingDown(false);
+      }
+    }
 
     useImperativeHandle(ref, () => ({
       getHasInteracted: () => hasInteracted,
@@ -477,30 +493,34 @@ const ClientFeedbackModal = forwardRef(
     }, [submissionId, videoId, user.id]);
 
     useEffect(() => {
-      const savedEndTime = localStorage.getItem(STORAGE_KEY_END_TIME);
-      if (savedEndTime) {
-        const remaining = Math.max(0, Math.floor((parseInt(savedEndTime, 10) - Date.now()) / 1000));
-        if (remaining > 0) {
-          setTimeLeft(remaining);
-          setIsCountingDown(true);
-        } else if (parseInt(savedEndTime, 10) > 0) {
-          onSendToAdmin(videoId);
-          localStorage.removeItem(STORAGE_KEY_END_TIME);
-        }
-      }
-    }, [submissionId, videoId, STORAGE_KEY_END_TIME, onSendToAdmin]);
-
-    useEffect(() => {
       let timer;
-      if (isCountingDown && timeLeft > 0) {
-        timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
-      } else if (isCountingDown && timeLeft === 0) {
-        setIsCountingDown(false);
-        localStorage.removeItem(STORAGE_KEY_END_TIME);
-        if (onSendToAdmin) onSendToAdmin(videoId, true);
-      }
+      const tick = () => {
+        const savedEndTime = localStorage.getItem(STORAGE_KEY_END_TIME);
+        if (savedEndTime) {
+          const remaining = Math.max(
+            0,
+            Math.floor((parseInt(savedEndTime, 10) - Date.now()) / 1000)
+          );
+          if (remaining > 0) {
+            setTimeLeft(remaining);
+            setIsCountingDown(true);
+          } else {
+            setTimeLeft(0);
+            setIsCountingDown(false);
+            localStorage.removeItem(STORAGE_KEY_END_TIME);
+            if (parseInt(savedEndTime, 10) > 0 && onSendToAdmin) onSendToAdmin(videoId, true);
+          }
+        } else {
+          setTimeLeft(0);
+          setIsCountingDown(false);
+        }
+      };
+
+      tick();
+      timer = setInterval(tick, 1000);
+
       return () => clearInterval(timer);
-    }, [isCountingDown, timeLeft, onSendToAdmin, videoId, STORAGE_KEY_END_TIME]);
+    }, [STORAGE_KEY_END_TIME, videoId, onSendToAdmin]);
 
     // Real-time: listen for admin replies to client parent comments
     useEffect(() => {
@@ -993,7 +1013,7 @@ const ClientFeedbackModal = forwardRef(
             <Box
               sx={{
                 display: 'flex',
-                justifyContent: isCountingDown ? 'space-between' : 'flex-end',
+                justifyContent: isCountingDown && videoPage === 0 ? 'space-between' : 'flex-end',
                 px: 1.5,
                 pb: 1.25,
               }}
@@ -1108,32 +1128,32 @@ const ClientFeedbackModal = forwardRef(
                 </IconButton>
               </Box>
             )}
-            {!isCountingDown && (
-              <Button
-                variant="contained"
-                disableElevation
-                disabled={effectiveIsLocked}
-                onClick={handleSendToAdmin}
-                sx={{
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  borderRadius: '8px',
-                  boxShadow: '0px -4px 0px 0px #00000073 inset',
-                  bgcolor: '#3A3A3C',
-                  '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: '0px -4px 0px 0px #000000 inset' },
-                  '&:active': {
-                    boxShadow: '0px 0px 0px 0px #000000 inset',
-                    transform: 'translateY(1px)',
-                  },
-                  '&.Mui-disabled': {
-                    bgcolor: '#E5E7EB',
-                    color: '#9CA3AF',
-                  },
-                }}
-              >
-                Send Feedback to Admin
-              </Button>
-            )}
+            {/* {!isCountingDown && ( */}
+            <Button
+              variant="contained"
+              disableElevation
+              disabled={effectiveIsLocked || isCountingDown}
+              onClick={handleSendToAdmin}
+              sx={{
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                borderRadius: '8px',
+                boxShadow: '0px -4px 0px 0px #00000073 inset',
+                bgcolor: '#3A3A3C',
+                '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: '0px -4px 0px 0px #000000 inset' },
+                '&:active': {
+                  boxShadow: '0px 0px 0px 0px #000000 inset',
+                  transform: 'translateY(1px)',
+                },
+                '&.Mui-disabled': {
+                  bgcolor: '#E5E7EB',
+                  color: '#9CA3AF',
+                },
+              }}
+            >
+              Send Feedback to Admin
+            </Button>
+            {/* )} */}
           </Box>
         </Box>
 
