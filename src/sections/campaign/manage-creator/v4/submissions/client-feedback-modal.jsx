@@ -421,7 +421,7 @@ const ClientFeedbackModal = forwardRef(
     // const COUNTDOWN_SECONDS = 3000; //for testing
 
     const commentRefs = useRef({});
-    const effectiveIsLocked = isLocked && !isCountingDown;
+    const effectiveIsLocked = (isLocked && !isCountingDown) || isPastVideo;
 
     useImperativeHandle(ref, () => ({
       getHasInteracted: () => hasInteracted,
@@ -811,7 +811,7 @@ const ClientFeedbackModal = forwardRef(
                 mb: -0.5, // Pulls it slightly closer to the box below
               }}
             >
-              {isPastVideo ? 'This `is` an older version' : 'Feedback has been sent'}
+              {isPastVideo ? 'This is an older version' : 'Feedback has been sent'}
             </Typography>
           )}
           <Box

@@ -528,12 +528,14 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                             isDisabled={isDisabled}
                           />
                         ) : (
-                          <FeedbackSection
-                            onViewLogs={() => setShowFeedbackLogs(true)}
-                            submission={submission}
-                            isVisible={submission.status !== 'PENDING_REVIEW'}
-                            isClient={isClient}
-                          />
+                          !isClient && (
+                            <FeedbackSection
+                              onViewLogs={() => setShowFeedbackLogs(true)}
+                              submission={submission}
+                              isVisible={submission.status !== 'PENDING_REVIEW'}
+                              isClient={isClient}
+                            />
+                          )
                         )}
                       </Box>
                       {isClient && (
