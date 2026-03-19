@@ -12,6 +12,8 @@ import {
   TextField,
   Typography,
   IconButton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 
 import axiosInstance from 'src/utils/axios';
@@ -133,7 +135,14 @@ const CommentCard = ({
         overflow: 'hidden',
       }}
     >
-      <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Box
+        sx={{
+          p: { xs: 1.25, md: 2 },
+          display: 'flex',
+          flexDirection: 'column',
+          gap: { xs: 0.75, md: 1.5 },
+        }}
+      >
         <Box
           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 0.5 }}
         >
@@ -147,7 +156,7 @@ const CommentCard = ({
                 bgcolor: '#E5E7EB',
                 color: '#6B7280',
                 border: '1px solid #EBEBEB',
-                fontSize: '0.875rem',
+                fontSize: { xs: '0.75rem', md: '0.875rem' },
                 fontWeight: 500,
               }}
             >
@@ -157,7 +166,7 @@ const CommentCard = ({
               <Typography
                 sx={{
                   fontWeight: 600,
-                  fontSize: '0.875rem',
+                  fontSize: { xs: '0.813rem', md: '0.875rem' },
                   color: '#111827',
                 }}
               >
@@ -165,7 +174,7 @@ const CommentCard = ({
               </Typography>
               <Typography
                 sx={{
-                  fontSize: '0.75rem',
+                  fontSize: { xs: '0.688rem', md: '0.75rem' },
                   fontWeight: 600,
                   color: '#9CA3AF',
                   textTransform: 'capitalize',
@@ -184,7 +193,7 @@ const CommentCard = ({
         <Box sx={{ pl: 0.5 }}>
           <Typography
             sx={{
-              fontSize: '0.875rem',
+              fontSize: { xs: '0.813rem', md: '0.875rem' },
               fontWeight: 500,
               color: '#1F2937',
               wordBreak: 'break-word',
@@ -222,10 +231,11 @@ const CommentCard = ({
             <Typography
               onClick={() => onReplyClick(comment.id)}
               sx={{
-                fontSize: { xs: '0.813rem', md: '0.875rem' },
+                fontSize: { xs: '0.75rem', md: '0.875rem' },
                 fontWeight: 600,
                 color: '#9CA3AF',
                 cursor: 'pointer',
+                padding: { xs: '2px 0', md: 0 },
                 '&:hover': { color: '#6B7280' },
               }}
             >
@@ -237,13 +247,13 @@ const CommentCard = ({
             <DarkGlassTooltip title="I agree with this comment" placement="top">
               <IconButton
                 size="small"
-                sx={{ p: 0.5 }}
+                sx={{ p: { xs: 0.25, md: 0.5 } }}
                 onClick={() => onAgree(comment.id)}
                 disabled={isDisabled}
               >
                 <Iconify
                   icon={hasAgreed ? 'mdi:thumb-up' : 'mdi-light:thumb-up'}
-                  width={20}
+                  width={{ xs: 16, md: 20 }}
                   sx={{
                     color: !isDisabled && hasAgreed ? '#1340FF' : '#9CA3AF',
                     filter: 'drop-shadow(0px 0px 0.2px #000000)',
@@ -270,15 +280,14 @@ const CommentCard = ({
               ref={replyBoxRef}
               sx={{
                 borderTop: '1px solid #E5E7EB',
-                p: 2,
+                p: { xs: 1.25, md: 2 },
                 bgcolor: '#FFFFFF',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 2,
+                gap: { xs: 1, md: 2 },
               }}
             >
               <TextField
-                // autoFocus
                 multiline
                 minRows={1}
                 maxRows={4}
@@ -311,10 +320,10 @@ const CommentCard = ({
                     borderRadius: 1.5,
                     textTransform: 'none',
                     fontWeight: 600,
-                    fontSize: '0.875rem',
+                    fontSize: { xs: '0.75rem', md: '0.875rem' },
                     py: 0.5,
                     px: 2,
-                    height: 32,
+                    height: { xs: 28, md: 32 },
                     '&:hover': { borderColor: '#D1D5DB', bgcolor: '#F9FAFB' },
                   }}
                 >
@@ -328,9 +337,9 @@ const CommentCard = ({
                   sx={{
                     bgcolor: '#1340FF',
                     borderRadius: 1.5,
-                    minWidth: 48,
+                    minWidth: { xs: 40, md: 48 }, 
                     px: 1,
-                    height: 32,
+                    height: { xs: 28, md: 32 }, 
                     boxShadow: 'none',
                     '&:hover': { bgcolor: '#0B2EB5', boxShadow: 'none' },
                     '&.Mui-disabled': { bgcolor: '#9CA3AF', color: 'white' },
@@ -407,6 +416,10 @@ const ClientFeedbackModal = forwardRef(
   ) => {
     const { user } = useAuthContext();
     const { socket } = useSocketContext();
+
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
     const [comments, setComments] = useState([]);
     const [feedbackText, setFeedbackText] = useState('');
     const [replyingToId, setReplyingToId] = useState(null);
@@ -416,12 +429,28 @@ const ClientFeedbackModal = forwardRef(
 
     const [timeLeft, setTimeLeft] = useState(0);
     const [isCountingDown, setIsCountingDown] = useState(false);
-    const STORAGE_KEY_END_TIME = `send_timer_end_${submissionId}`;
-    const COUNTDOWN_SECONDS = 24 * 60 * 60;
-    // const COUNTDOWN_SECONDS = 3000; //for testing
+    const [activeVideoId, setActiveVideoId] = useState(videoId);
+
+    const STORAGE_KEY_END_TIME = `send_timer_end_${submissionId}_${videoId}`;
+    // const COUNTDOWN_SECONDS = 24 * 60 * 60;
+    const COUNTDOWN_SECONDS = 3000; //for testing
 
     const commentRefs = useRef({});
     const effectiveIsLocked = (isLocked && !isCountingDown) || isPastVideo;
+
+    if (videoId !== activeVideoId) {
+      setActiveVideoId(videoId); // Sync the tracking ID
+
+      const savedEndTime = localStorage.getItem(STORAGE_KEY_END_TIME);
+      if (savedEndTime) {
+        const remaining = Math.max(0, Math.floor((parseInt(savedEndTime, 10) - Date.now()) / 1000));
+        setTimeLeft(remaining > 0 ? remaining : 0);
+        setIsCountingDown(remaining > 0);
+      } else {
+        setTimeLeft(0);
+        setIsCountingDown(false);
+      }
+    }
 
     useImperativeHandle(ref, () => ({
       getHasInteracted: () => hasInteracted,
@@ -477,30 +506,34 @@ const ClientFeedbackModal = forwardRef(
     }, [submissionId, videoId, user.id]);
 
     useEffect(() => {
-      const savedEndTime = localStorage.getItem(STORAGE_KEY_END_TIME);
-      if (savedEndTime) {
-        const remaining = Math.max(0, Math.floor((parseInt(savedEndTime, 10) - Date.now()) / 1000));
-        if (remaining > 0) {
-          setTimeLeft(remaining);
-          setIsCountingDown(true);
-        } else if (parseInt(savedEndTime, 10) > 0) {
-          onSendToAdmin(videoId);
-          localStorage.removeItem(STORAGE_KEY_END_TIME);
-        }
-      }
-    }, [submissionId, videoId, STORAGE_KEY_END_TIME, onSendToAdmin]);
-
-    useEffect(() => {
       let timer;
-      if (isCountingDown && timeLeft > 0) {
-        timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
-      } else if (isCountingDown && timeLeft === 0) {
-        setIsCountingDown(false);
-        localStorage.removeItem(STORAGE_KEY_END_TIME);
-        if (onSendToAdmin) onSendToAdmin(videoId, true);
-      }
+      const tick = () => {
+        const savedEndTime = localStorage.getItem(STORAGE_KEY_END_TIME);
+        if (savedEndTime) {
+          const remaining = Math.max(
+            0,
+            Math.floor((parseInt(savedEndTime, 10) - Date.now()) / 1000)
+          );
+          if (remaining > 0) {
+            setTimeLeft(remaining);
+            setIsCountingDown(true);
+          } else {
+            setTimeLeft(0);
+            setIsCountingDown(false);
+            localStorage.removeItem(STORAGE_KEY_END_TIME);
+            if (parseInt(savedEndTime, 10) > 0 && onSendToAdmin) onSendToAdmin(videoId, true);
+          }
+        } else {
+          setTimeLeft(0);
+          setIsCountingDown(false);
+        }
+      };
+
+      tick();
+      timer = setInterval(tick, 1000);
+
       return () => clearInterval(timer);
-    }, [isCountingDown, timeLeft, onSendToAdmin, videoId, STORAGE_KEY_END_TIME]);
+    }, [STORAGE_KEY_END_TIME, videoId, onSendToAdmin]);
 
     // Real-time: listen for admin replies to client parent comments
     useEffect(() => {
@@ -756,10 +789,11 @@ const ClientFeedbackModal = forwardRef(
     return (
       <Box
         sx={{
-          flex: { xs: '1 1 auto', md: '0 0 calc(40% - 20px)' },
+          flex: { xs: '1 1 80%', md: '0 0 calc(40% - 20px)' },
           display: 'flex',
           flexDirection: 'column',
-          height: '100%',
+          maxHeight: '100%',
+          minHeight: 0,
           overflow: 'hidden',
         }}
       >
@@ -837,13 +871,13 @@ const ClientFeedbackModal = forwardRef(
                         ref={(el) => {
                           if (el) commentRefs.current[reply.id] = el; // Corrected ref target
                         }}
-                        sx={{ position: 'relative', ml: 10 }}
+                        sx={{ position: 'relative', ml: { xs: 5, md: 10 } }}
                       >
                         {/* Vertical straight line (connects siblings) */}
                         <Box
                           sx={{
                             position: 'absolute',
-                            left: -50,
+                            left: { xs: -25, md: -50 },
                             top: index === 0 ? -4 : -16,
                             bottom: isLast ? 'calc(50% + 20px)' : -16,
                             borderLeft: '2px solid #8E8E93',
@@ -854,10 +888,10 @@ const ClientFeedbackModal = forwardRef(
                         <Box
                           sx={{
                             position: 'absolute',
-                            left: -50,
+                            left: { xs: -25, md: -50 },
                             top: index === 0 ? -4 : -16,
                             bottom: 'calc(50% - 1px)',
-                            width: 45,
+                            width: { xs: 20, md: 45 },
                             borderLeft: '2px solid #8E8E93',
                             borderBottom: '2px solid #8E8E93',
                             borderBottomLeftRadius: 16,
@@ -889,7 +923,15 @@ const ClientFeedbackModal = forwardRef(
         </Box>
 
         {/* Bottom Sticky Input Section */}
-        <Box sx={{ mt: 'auto', pt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box
+          sx={{
+            mt: 'auto',
+            pt: { xs: 1, md: 2 },
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.5,
+          }}
+        >
           {effectiveIsLocked && (
             <Typography
               sx={{
@@ -904,148 +946,179 @@ const ClientFeedbackModal = forwardRef(
               {isPastVideo ? 'This is an older version' : 'Feedback has been sent'}
             </Typography>
           )}
-          <Box
-            sx={{
-              flexShrink: 0,
-              border: '1px solid #E7E7E7',
-              borderBottom: '2px solid #E7E7E7',
-              borderRadius: '12px',
-              bgcolor: effectiveIsLocked ? '#F4F4F4' : '#FFFFFF',
-              boxShadow: effectiveIsLocked ? 'none' : '0px 1px 0px 0px #E7E7E7',
-              mb: 1,
-              transition: 'all 0.2s ease',
-              opacity: effectiveIsLocked ? 0.7 : 1,
-            }}
-          >
+          {!isPastVideo && !(isMobile && !!replyingToId) && (
             <Box
               sx={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 1.25,
-                px: 2,
-                pt: 1.5,
-                pb: 0.75,
+                flexShrink: 0,
+                border: '1px solid #E7E7E7',
+                borderBottom: '2px solid #E7E7E7',
+                borderRadius: '12px',
+                bgcolor: effectiveIsLocked ? '#F4F4F4' : '#FFFFFF',
+                boxShadow: effectiveIsLocked ? 'none' : '0px 1px 0px 0px #E7E7E7',
+                mb: 1,
+                transition: 'all 0.2s ease',
+                opacity: effectiveIsLocked ? 0.7 : 1,
               }}
             >
-              {/* Timestamp Badge */}
               <Box
                 sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  bgcolor: effectiveIsLocked ? '#E5E7EB' : 'background.paper',
-                  color: effectiveIsLocked ? '#9CA3AF' : '#1340ff',
-                  border: '1px solid',
-                  borderColor: effectiveIsLocked ? '#D1D5DB' : '#E7E7E7',
-                  borderBottom: '2px solid',
-                  borderBottomColor: effectiveIsLocked ? '#D1D5DB' : '#E7E7E7',
-                  borderRadius: 0.85,
-                  px: 1.5,
-                  py: 0.6,
-                  fontSize: 13,
-                  fontWeight: 500,
-                  fontFamily: 'Inter, sans-serif',
-                  lineHeight: 1.4,
-                  userSelect: 'none',
-                  boxShadow: effectiveIsLocked ? 'none' : '0px 1px 0px 0px #E7E7E7',
-                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: { xs: 1, md: 1.25 },
+                  px: { xs: 1.5, md: 2 },
+                  pt: { xs: 1, md: 1.5 },
+                  pb: 0.75,
                 }}
               >
-                {currentVideoTime}
-              </Box>
-
-              <TextField
-                multiline
-                disabled={effectiveIsLocked}
-                minRows={2}
-                maxRows={6}
-                placeholder={effectiveIsLocked ? 'Comments are disabled' : 'Leave feedback...'}
-                value={effectiveIsLocked ? 'Comments are disabled' : feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleTopLevelSubmit();
-                  }
-                }}
-                sx={{
-                  flex: 1,
-                  minWidth: 0,
-                  mt: '3px',
-                  '& .MuiOutlinedInput-root': {
-                    border: 'none',
-                    '& fieldset': { border: 'none' },
-                    p: 0,
-                  },
-                  '& .MuiInputBase-input': {
-                    fontSize: 15,
+                {/* Timestamp Badge */}
+                <Box
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    bgcolor: effectiveIsLocked ? '#E5E7EB' : 'background.paper',
+                    color: effectiveIsLocked ? '#9CA3AF' : '#1340ff',
+                    border: '1px solid',
+                    borderColor: effectiveIsLocked ? '#D1D5DB' : '#E7E7E7',
+                    borderBottom: '2px solid',
+                    borderBottomColor: effectiveIsLocked ? '#D1D5DB' : '#E7E7E7',
+                    borderRadius: 0.85,
+                    px: 1.5,
+                    py: 0.6,
+                    fontSize: 13,
+                    fontWeight: 500,
                     fontFamily: 'Inter, sans-serif',
-                    p: 0,
-                    lineHeight: 1.6,
-                    '&::placeholder': { color: '#B0B0B0', opacity: 1 },
-                  },
-                  '&.Mui-disabled': {
-                    WebkitTextFillColor: '#9CA3AF',
-                  },
-                }}
-                size="small"
-              />
-            </Box>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: isCountingDown ? 'space-between' : 'flex-end',
-                px: 1.5,
-                pb: 1.25,
-              }}
-            >
-              {isCountingDown && !effectiveIsLocked && (
-                <DarkGlassTooltip
-                  title="Time left to leave additional feedback for this round of submission"
-                  placement="top-start"
+                    lineHeight: 1.4,
+                    userSelect: 'none',
+                    boxShadow: effectiveIsLocked ? 'none' : '0px 1px 0px 0px #E7E7E7',
+                    flexShrink: 0,
+                  }}
                 >
-                  <Box
+                  {currentVideoTime}
+                </Box>
+
+                <TextField
+                  multiline
+                  disabled={effectiveIsLocked}
+                  minRows={isMobile ? 1 : 2}
+                  maxRows={isMobile ? 4 : 6}
+                  placeholder={effectiveIsLocked ? 'Comments are disabled' : 'Leave feedback...'}
+                  value={effectiveIsLocked ? 'Comments are disabled' : feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleTopLevelSubmit();
+                    }
+                  }}
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    mt: { xs: '1px', md: '3px' },
+                    '& .MuiOutlinedInput-root': {
+                      border: 'none',
+                      '& fieldset': { border: 'none' },
+                      p: 0,
+                    },
+                    '& .MuiInputBase-input': {
+                      fontSize: 15,
+                      fontFamily: 'Inter, sans-serif',
+                      p: 0,
+                      lineHeight: 1.6,
+                      '&::placeholder': { color: '#B0B0B0', opacity: 1 },
+                    },
+                    '&.Mui-disabled': {
+                      WebkitTextFillColor: '#9CA3AF',
+                    },
+                  }}
+                  size="small"
+                />
+                {isMobile && (
+                  <Button
+                    variant="contained"
+                    disabled={!feedbackText.trim() || effectiveIsLocked}
+                    onClick={handleTopLevelSubmit}
                     sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      cursor: 'default',
-                      gap: 0.5,
-                      color: '#D4321C',
+                      bgcolor: '#1340ff',
+                      borderBottom: '2px solid #0A238C',
+                      boxShadow: 'inset 0px -2px 0px 0px #0A238C',
+                      borderRadius: 1,
+                      minWidth: 52,
+                      minHeight: 32,
+                      height: 28,
+                      px: 2,
+                      py: 0.5,
+                      '&:hover': { bgcolor: '#1a4dff' },
+                      '&.Mui-disabled': {
+                        bgcolor: 'action.disabledBackground',
+                        color: 'action.disabled',
+                        borderBottomColor: '#E7E7E7',
+                        boxShadow: 'none',
+                      },
                     }}
                   >
-                    <Iconify icon="ic:sharp-timer" width={18} />
-                    <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                      {formatTimer(timeLeft)}
-                    </Typography>
-                  </Box>
-                </DarkGlassTooltip>
-              )}
-              <Button
-                variant="contained"
-                disabled={!feedbackText.trim() || effectiveIsLocked}
-                onClick={handleTopLevelSubmit}
+                    <Iconify icon="ic:round-send" width={20} sx={{ color: 'white' }} />
+                  </Button>
+                )}
+              </Box>
+              <Box
                 sx={{
-                  bgcolor: '#1340ff',
-                  borderBottom: '2px solid #0A238C',
-                  boxShadow: 'inset 0px -2px 0px 0px #0A238C',
-                  borderRadius: 1,
-                  minWidth: 52,
-                  minHeight: 32,
-                  height: 28,
-                  px: 2,
-                  py: 0.5,
-                  '&:hover': { bgcolor: '#1a4dff' },
-                  '&.Mui-disabled': {
-                    bgcolor: 'action.disabledBackground',
-                    color: 'action.disabled',
-                    borderBottomColor: '#E7E7E7',
-                    boxShadow: 'none',
-                  },
+                  display: 'flex',
+                  justifyContent: isCountingDown && videoPage === 0 ? 'space-between' : 'flex-end',
+                  px: 1.5,
+                  pb: 1.25,
                 }}
               >
-                <Iconify icon="ic:round-send" width={20} sx={{ color: 'white' }} />
-              </Button>
+                {isCountingDown && !effectiveIsLocked && (
+                  <DarkGlassTooltip
+                    title="Time left to leave additional feedback for this round of submission"
+                    placement="top-start"
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        cursor: 'default',
+                        gap: 0.5,
+                        color: '#D4321C',
+                      }}
+                    >
+                      <Iconify icon="ic:sharp-timer" width={18} />
+                      <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                        {formatTimer(timeLeft)}
+                      </Typography>
+                    </Box>
+                  </DarkGlassTooltip>
+                )}
+                {!isMobile && (
+                  <Button
+                    variant="contained"
+                    disabled={!feedbackText.trim() || effectiveIsLocked}
+                    onClick={handleTopLevelSubmit}
+                    sx={{
+                      bgcolor: '#1340ff',
+                      borderBottom: '2px solid #0A238C',
+                      boxShadow: 'inset 0px -2px 0px 0px #0A238C',
+                      borderRadius: 1,
+                      minWidth: 52,
+                      minHeight: 32,
+                      height: 28,
+                      px: 2,
+                      py: 0.5,
+                      '&:hover': { bgcolor: '#1a4dff' },
+                      '&.Mui-disabled': {
+                        bgcolor: 'action.disabledBackground',
+                        color: 'action.disabled',
+                        borderBottomColor: '#E7E7E7',
+                        boxShadow: 'none',
+                      },
+                    }}
+                  >
+                    <Iconify icon="ic:round-send" width={20} sx={{ color: 'white' }} />
+                  </Button>
+                )}
+              </Box>
             </Box>
-          </Box>
+          )}
 
           {/* Existing Send Feedback Button */}
           <Box
@@ -1053,7 +1126,7 @@ const ClientFeedbackModal = forwardRef(
               display: 'flex',
               justifyContent: videoCount > 1 ? 'space-between' : 'flex-end',
               alignItems: 'center',
-              mb: 1,
+              mb: { xs: 0, md: 1 },
             }}
           >
             {videoCount > 1 && (
@@ -1062,8 +1135,8 @@ const ClientFeedbackModal = forwardRef(
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'flex-start',
-                  gap: { xs: 0.25, md: 0.5 },
-                  pt: { xs: 1.5, md: 2 },
+                  gap: { xs: 1.75, md: 0.75 },
+                  pt: { xs: 0.5, md: 2 },
                   pb: { xs: 0.5, md: 1 },
                   px: { xs: 1, md: 0 },
                   flexShrink: 0,
@@ -1108,32 +1181,32 @@ const ClientFeedbackModal = forwardRef(
                 </IconButton>
               </Box>
             )}
-            {!isCountingDown && (
-              <Button
-                variant="contained"
-                disableElevation
-                disabled={effectiveIsLocked}
-                onClick={handleSendToAdmin}
-                sx={{
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  borderRadius: '8px',
-                  boxShadow: '0px -4px 0px 0px #00000073 inset',
-                  bgcolor: '#3A3A3C',
-                  '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: '0px -4px 0px 0px #000000 inset' },
-                  '&:active': {
-                    boxShadow: '0px 0px 0px 0px #000000 inset',
-                    transform: 'translateY(1px)',
-                  },
-                  '&.Mui-disabled': {
-                    bgcolor: '#E5E7EB',
-                    color: '#9CA3AF',
-                  },
-                }}
-              >
-                Send Feedback to Admin
-              </Button>
-            )}
+            {/* {!isCountingDown && ( */}
+            <Button
+              variant="contained"
+              disableElevation
+              disabled={effectiveIsLocked || isCountingDown}
+              onClick={handleSendToAdmin}
+              sx={{
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                borderRadius: '8px',
+                boxShadow: '0px -4px 0px 0px #00000073 inset',
+                bgcolor: '#3A3A3C',
+                '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: '0px -4px 0px 0px #000000 inset' },
+                '&:active': {
+                  boxShadow: '0px 0px 0px 0px #000000 inset',
+                  transform: 'translateY(1px)',
+                },
+                '&.Mui-disabled': {
+                  bgcolor: '#E5E7EB',
+                  color: '#9CA3AF',
+                },
+              }}
+            >
+              Send Feedback to Admin
+            </Button>
+            {/* )} */}
           </Box>
         </Box>
 
@@ -1144,7 +1217,7 @@ const ClientFeedbackModal = forwardRef(
           PaperProps={{
             sx: {
               borderRadius: '16px',
-              p: { xs: 3, md: 4 },
+              p: { xs: 2, md: 4 },
               maxWidth: 450,
               width: '100%',
               textAlign: 'center',

@@ -344,35 +344,35 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
       <Box>
         {(() => {
           // Not visible to client - show processing message
-          if (!clientVisible) {
-            return (
-              <Card sx={{ p: 3, bgcolor: 'background.neutral', textAlign: 'center' }}>
-                <Stack spacing={2} alignItems="center">
-                  <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Video content is being processed.
-                  </Typography>
-                  <Chip
-                    label="Processing"
-                    color="info"
-                    size="small"
-                  />
-                </Stack>
-              </Card>
-            );
-          }
+          // if (!clientVisible) {
+          //   return (
+          //     <Card sx={{ p: 3, bgcolor: 'background.neutral', textAlign: 'center' }}>
+          //       <Stack spacing={2} alignItems="center">
+          //         <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
+          //         <Typography variant="body2" color="text.secondary">
+          //           Video content is being processed.
+          //         </Typography>
+          //         <Chip
+          //           label="Processing"
+          //           color="info"
+          //           size="small"
+          //         />
+          //       </Stack>
+          //     </Card>
+          //   );
+          // }
 
           // Processing state — creator has uploaded, worker is compressing
-          if (submission.status === 'IN_PROGRESS') {
-            return (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, gap: 2 }}>
-                <CircularProgress size={40} thickness={5} sx={{ color: '#8A5AFE' }} />
-                <Typography variant="body2" color="text.secondary">
-                  Creator&apos;s new video is being processed
-                </Typography>
-              </Box>
-            );
-          }
+          // if (submission.status === 'IN_PROGRESS') {
+          //   return (
+          //     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, gap: 2 }}>
+          //       <CircularProgress size={40} thickness={5} sx={{ color: '#8A5AFE' }} />
+          //       <Typography variant="body2" color="text.secondary">
+          //         Creator&apos;s new video is being processed
+          //       </Typography>
+          //     </Box>
+          //   );
+          // }
 
           // No video - show empty state
           if (!video?.url) {
