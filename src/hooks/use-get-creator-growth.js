@@ -33,7 +33,7 @@ const useGetCreatorGrowth = ({ granularity, startDate, endDate, creditTiers = []
   return useMemo(
     () => ({
       creatorGrowth: data?.data?.creatorGrowth || [],
-      demographics: data?.data?.demographics || { gender: [], ageGroups: [] },
+      demographics: data?.data?.demographics || { gender: [], ageGroups: [], countries: [] },
       granularity: data?.data?.granularity || 'monthly',
       periodComparison: data?.data?.periodComparison || null,
       isLoading,
