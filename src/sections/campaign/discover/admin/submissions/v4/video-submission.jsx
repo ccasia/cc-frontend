@@ -48,6 +48,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
+    const clientAllowedStatuses = ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'APPROVED'];
+    const clientVideo = isClient
+      ? (submission.video || []).find((v) => clientAllowedStatuses.includes(v.status)) ?? null
+      : video;
     const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
     const hasPostingLink = Boolean(submission.content);
     const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
@@ -55,6 +59,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
     return {
       video,
+      clientVideo,
       pendingReview,
       hasPostingLink,
       isClientFeedback,
@@ -62,7 +67,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     };
   }, [submission.video, submission.status, submission.content, isClient]);
 
-  const { video, pendingReview, hasPostingLink, isClientFeedback, clientVisible } = submissionProps;
+  const { video, clientVideo, pendingReview, hasPostingLink, isClientFeedback, clientVisible } = submissionProps;
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
@@ -95,7 +100,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           submissionId: submission.id,
           action: 'approve',
           feedback: feedback.trim(),
-          reasons: reasons || []
+          reasons: reasons || [],
+          videoId: clientVideo?.id,
         });
 
         enqueueSnackbar('Video approved successfully', { variant: 'success' });
@@ -134,7 +140,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         setTimeout(() => setLocalActionInProgress(false), 300);
       }
     }
-  }, [feedback, reasons, caption, submission.id, video?.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
+  }, [feedback, reasons, caption, submission.id, video?.id, clientVideo?.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
 
   const handleRequestChanges = useCallback(async () => {
     const currentFeedback = feedback;
@@ -158,7 +164,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           submissionId: submission.id,
           action: 'request_changes',
           feedback: hasContent ? currentFeedback.trim() : '',
-          reasons: currentReasons || []
+          reasons: currentReasons || [],
+          videoId: clientVideo?.id,
         });
 
         enqueueSnackbar('Changes requested successfully', { variant: 'success' });
@@ -197,7 +204,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         setTimeout(() => setLocalActionInProgress(false), 300);
       }
     }
-  }, [feedback, reasons, caption, submission.id, video?.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
+  }, [feedback, reasons, caption, submission.id, video?.id, clientVideo?.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
 
   const handleSendComments = useCallback(
     async (videoIdToPublish, shouldRefresh = false) => {
@@ -308,14 +315,15 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   }), [isPlaying, duration, volume]);
 
   const handleVideoClick = useCallback(() => {
-    if (video?.url) {
+    const targetVideo = isClient ? clientVideo : video;
+    if (targetVideo?.url) {
       if (isClient) {
         setVideoSubmissionModalOpen(true);
       } else {
         setAdminReviewModalOpen(true);
       }
     }
-  }, [video?.url, isClient]);
+  }, [clientVideo, video, isClient]);
 
   const { togglePlay, handleTimeUpdate, handleLoadedMetadata, handleSeek, handleVolumeChange, toggleMute, formatTime } = videoControls;
 
@@ -329,12 +337,13 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   });
 
   const handleCloseModal = useCallback(() => {
-    if (submission?.id && video?.id && user?.id) {
-      const storageKey = `lastViewed_sub_${submission.id}_vid_${video?.id}_user${user?.id}`;
+    const targetVideo = isClient ? clientVideo : video;
+    if (submission?.id && targetVideo?.id && user?.id) {
+      const storageKey = `lastViewed_sub_${submission.id}_vid_${targetVideo?.id}_user${user?.id}`;
       localStorage.setItem(storageKey, new Date().toISOString());
     }
     setVideoSubmissionModalOpen(false);
-  }, [submission?.id, video?.id, user?.id]);
+  }, [submission?.id, clientVideo, video, isClient, user?.id]);
 
   return (
     <Box sx={{
@@ -343,9 +352,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     }}>
       <Box>
         {(() => {
-          // Client can only see video after admin sends it to them
-          const clientAllowedVideoStatuses = ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'APPROVED'];
-          if (isClient && (!video?.status || !clientAllowedVideoStatuses.includes(video.status))) {
+          // Client can only see videos that were sent to them by admin
+          if (isClient && !clientVideo) {
             return (
               <Card sx={{ p: 3, bgcolor: 'background.neutral', textAlign: 'center' }}>
                 <Stack spacing={2} alignItems="center">
@@ -363,8 +371,11 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
             );
           }
 
+          // Use client-visible video for clients, newest video for admin/creator
+          const displayVideo = isClient ? clientVideo : video;
+
           // No video - show empty state
-          if (!video?.url) {
+          if (!displayVideo?.url) {
             return (
               <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" sx={{p: 8, justifyContent: 'center' }}>
                 <Box component="img" src="/assets/icons/empty/ic_content.svg" alt="No content" sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }} />
@@ -527,7 +538,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           )
                         )}
                       </Box>
-                      {isClient && video?.status && ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'APPROVED'].includes(video.status) && (
+                      {isClient && clientVideo && (
                         <Box sx={{ mt: 2 }}>
                           <button
                             type="button"
@@ -620,7 +631,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           display: 'block',
                           pointerEvents: 'none'
                         }}
-                        src={video.url}
+                        src={displayVideo.url}
                         onTimeUpdate={handleTimeUpdate}
                         onLoadedMetadata={handleLoadedMetadata}
                         onPlay={() => setIsPlaying(true)}
@@ -889,7 +900,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         rightSideContent={
           <ClientFeedbackModal
             submissionId={submission.id}
-            videoId={video?.id}
+            videoId={clientVideo?.id || video?.id}
             onSendToAdmin={handleSendComments}
             isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
           />

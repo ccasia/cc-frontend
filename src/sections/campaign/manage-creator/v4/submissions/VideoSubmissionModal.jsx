@@ -96,11 +96,15 @@ const VideoSubmissionModal = ({
   const effectiveSubmission = freshSubmission || submission;
 
   const allVideos = effectiveSubmission.video || [];
+  const CLIENT_ALLOWED_STATUSES = ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'APPROVED'];
   const MAX_VIDEO_PAGES = 3;
   // Videos come from backend ordered by createdAt DESC (latest first)
-  // Take the first MAX_VIDEO_PAGES videos (which are already the latest)
+  // For clients: only show videos that were sent to them by admin
+  const visibleVideos = isClient
+    ? allVideos.filter((v) => CLIENT_ALLOWED_STATUSES.includes(v.status))
+    : allVideos;
   const latestVideos =
-    allVideos.length <= MAX_VIDEO_PAGES ? allVideos : allVideos.slice(0, MAX_VIDEO_PAGES);
+    visibleVideos.length <= MAX_VIDEO_PAGES ? visibleVideos : visibleVideos.slice(0, MAX_VIDEO_PAGES);
   const videos = latestVideos;
   const videoCount = videos.length;
   const currentVideo = videos[videoPage] || videos[0];
