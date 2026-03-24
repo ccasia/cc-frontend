@@ -13,6 +13,7 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+import Alert from '@mui/material/Alert';
 import { Tab, Tabs, Stack, Select, InputLabel, FormControl, InputAdornment } from '@mui/material';
 
 import useGetRoles from 'src/hooks/use-get-roles';
@@ -30,7 +31,7 @@ import { MODULE_ITEMS } from './view/user-list-view';
 
 const ADMIN_STATUS = [
   {
-    label: 'Banned',
+    label: 'Inactive',
     value: 'banned',
     color: 'error',
   },
@@ -95,7 +96,7 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      editAdmin({ ...data, userId: currentUser?.id });
+      await editAdmin({ ...data, userId: currentUser?.id });
       // await new Promise((resolve) => setTimeout(resolve, 500));
       // mutate(endpoints.users.admins);
       reset();
@@ -124,6 +125,7 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
   }, []);
 
   const countryValue = watch('country');
+  const statusValue = watch('status');
 
   return (
     <Dialog
@@ -181,6 +183,12 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
                   </MenuItem>
                 ))}
               </RHFSelect>
+
+              {statusValue === 'banned' && (
+                <Alert severity="warning" sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>
+                  Setting this user to Inactive will remove them from all campaigns.
+                </Alert>
+              )}
 
               <RHFTextField name="name" label="Full Name" />
               <RHFTextField name="email" label="Email Address" />

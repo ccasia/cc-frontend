@@ -18,6 +18,7 @@ import { AuthContext } from './auth-context';
 const initialState = {
   user: null,
   loading: true,
+  reauth_required: false,
 };
 
 const reducer = (state, action) => {
@@ -25,6 +26,7 @@ const reducer = (state, action) => {
     return {
       loading: false,
       user: action.payload.user,
+      reauth_required: action.payload.reauth_required,
     };
   }
   if (action.type === 'LOGIN') {
@@ -71,6 +73,7 @@ export function AuthProvider({ children }) {
         type: 'INITIAL',
         payload: {
           user: res.data.user,
+          reauth_required: res.data?.reauth_required,
         },
       });
     } catch (error) {
@@ -97,7 +100,6 @@ export function AuthProvider({ children }) {
 
     const { accessToken, user } = response.data;
 
-    // Clear the popup shown flag on login to ensure it shows again
     sessionStorage.removeItem('mediaKitPopupShown');
 
     dispatch({
@@ -178,7 +180,6 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
-  // LOGOUT
   const logout = useCallback(async () => {
     await axios.post(endpoints.auth.logout);
     setSession(null);
@@ -208,6 +209,7 @@ export function AuthProvider({ children }) {
   const memoizedValue = useMemo(
     () => ({
       user: state.user,
+      xero_reauth_required: state?.reauth_required,
       method: 'jwt',
       permission,
       role,
@@ -232,6 +234,7 @@ export function AuthProvider({ children }) {
       verify,
       verifyClient,
       state.user,
+      state?.reauth_required,
       status,
       permission,
       role,

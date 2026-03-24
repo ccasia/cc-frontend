@@ -321,33 +321,33 @@ const CampaignDetailView = ({ id }) => {
   }, []);
 
   const getAgreementsLabel = (submissions, agreements, pitches, shortlisted) => {
-    const pendingAgreementApproval =
-      submissions?.filter((a) => a?.status === 'PENDING_REVIEW').length || 0;
-
     // Get approved pitch user IDs
     const approvedPitchUserIds = new Set(
       (pitches || [])
-        .filter((pitch) => pitch?.status === 'APPROVED' && pitch?.userId)
+        .filter(
+          (pitch) =>
+            (pitch?.status === 'APPROVED' ||
+              pitch?.status === 'AGREEMENT_SUBMITTED' ||
+              pitch?.status === 'AGREEMENT_PENDING') &&
+            pitch?.userId
+        )
         .map((pitch) => pitch.userId)
     );
 
-    // Get shortlisted user IDs where agreement is not ready
-    const shortlistedPendingUserIds = new Set(
-      (shortlisted || [])
-        .filter((s) => s?.userId && s?.isAgreementReady === false)
-        .map((s) => s.userId)
+    // Get shortlisted user IDs (for backwards compatibility)
+    const shortlistedUserIds = new Set(
+      (shortlisted || []).filter((s) => s?.userId).map((s) => s.userId)
     );
 
-    // Combine both sets for users who need agreements sent
-    const usersNeedingAgreement = new Set([...approvedPitchUserIds, ...shortlistedPendingUserIds]);
+    // Combine both sets for total agreements
+    const totalAgreementsUserIds = new Set([...approvedPitchUserIds, ...shortlistedUserIds]);
 
-    // Count agreements not sent for users in the combined set (no duplicates)
-    const pendingSendAgreement = (agreements || []).filter(
-      (a) => a.isSent === false && usersNeedingAgreement.has(a.userId)
+    // Count total agreements for approved creators
+    const totalAgreements = (agreements || []).filter((a) =>
+      totalAgreementsUserIds.has(a.userId)
     ).length;
 
-    const totalPending = pendingAgreementApproval + pendingSendAgreement;
-    return totalPending > 0 ? `Agreements (${totalPending})` : 'Agreements';
+    return `Agreements (${totalAgreements})`;
   };
 
   const renderTabs = (
@@ -587,7 +587,13 @@ const CampaignDetailView = ({ id }) => {
     'creator-master-list': (
       <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
     ),
-    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
+    agreement: (
+      <CampaignAgreements
+        campaign={campaign}
+        campaignMutate={campaignMutate}
+        isDisabled={isDisabled}
+      />
+    ),
     // HIDE: logistics
     logistics: isClient ? (
       <CampaignLogisticsView
@@ -612,11 +618,23 @@ const CampaignDetailView = ({ id }) => {
     // ) : (
     //   <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
     // ),
-    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
+    invoices: (
+      <CampaignInvoicesList
+        campId={campaign?.id}
+        campaignMutate={campaignMutate}
+        isDisabled={isDisabled}
+      />
+    ),
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
-    pitch: <CampaignV3PitchesWrapper campaign={campaign} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
+    pitch: (
+      <CampaignV3PitchesWrapper
+        campaign={campaign}
+        campaignMutate={campaignMutate}
+        isDisabled={isDisabled}
+      />
+    ),
     submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
     deliverables: isClient ? (
       <CampaignCreatorDeliverablesClient campaign={campaign} campaignMutate={campaignMutate} />
@@ -624,7 +642,13 @@ const CampaignDetailView = ({ id }) => {
       <CampaignCreatorDeliverables campaign={campaign} isDisabled={isDisabled} />
     ),
     'submissions-v4': <CampaignCreatorSubmissionsV4 campaign={campaign} isDisabled={isDisabled} />,
-    analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
+    analytics: (
+      <CampaignAnalytics
+        campaign={campaign}
+        campaignMutate={campaignMutate}
+        isDisabled={isDisabled}
+      />
+    ),
     faq: <CampaignFAQ />,
   };
 
@@ -717,7 +741,6 @@ const CampaignDetailView = ({ id }) => {
 
   const isPendingCampaign = useMemo(
     () =>
-      campaign?.status === 'SCHEDULED' ||
       campaign?.status === 'PENDING_CSM_REVIEW' ||
       campaign?.status === 'PENDING_ADMIN_ACTIVATION',
     [campaign]
@@ -736,7 +759,7 @@ const CampaignDetailView = ({ id }) => {
               // For superadmin on pending campaigns: use initial activation (admin assignment only)
               if (
                 canInitialActivate &&
-                (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')
+                (campaign?.status === 'PENDING_CSM_REVIEW')
               ) {
                 console.log('Opening InitialActivateDialog (admin assignment only)');
                 setInitialActivateDialogOpen(true);
@@ -772,17 +795,47 @@ const CampaignDetailView = ({ id }) => {
         );
       }
 
+      // HIDE: logistics - button moved to logistics view
+      // if (currentTab === 'logistics') {
+      //   return (
+      //     <Button
+      //       variant="contained"
+      //       size="small"
+      //       startIcon={<Iconify icon="eva:edit-2-fill" width={20} />}
+      //       onClick={() => setOpenBulkAssign(true)}
+      //       disabled={isDisabled}
+      //       sx={{
+      //         height: 42,
+      //         borderRadius: 1,
+      //         color: 'white',
+      //         bgcolor: '#1340ff',
+      //         border: '1px solid #1340ff',
+      //         borderBottom: '4px solid #0e2fd6',
+      //         fontWeight: 600,
+      //         fontSize: '0.95rem',
+      //         px: 2,
+      //         whiteSpace: 'nowrap',
+      //         '&:hover': { bgcolor: '#0e2fd6' },
+      //       }}
+      //     >
+      //       Edit & Bulk Assign
+      //     </Button>
+      //   );
+      // }
+
       return (
         <Button
           variant="outlined"
           size="small"
           startIcon={
-            <Iconify
-              icon="lucide:edit"
-              width={15}
-              height={15}
-              color={isDisabled ? '#bdbdbd' : '#221f20'}
-              style={{ opacity: isDisabled ? 0.3 : 1 }}
+            <img
+              src="/assets/icons/overview/editButton.svg"
+              alt="edit"
+              style={{
+                width: 18,
+                height: 18,
+                opacity: isDisabled ? 0.3 : 1,
+              }}
             />
           }
           onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
@@ -920,9 +973,8 @@ const CampaignDetailView = ({ id }) => {
                 sx={{
                   color: '#221f20',
                   fontWeight: 500,
-                  fontSize: { xs: 12, sm: 15 },
-                  overflow: 'hidden',
-                  whiteSpace: 'none'
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {formatDate(campaign?.campaignBrief?.startDate)} -{' '}

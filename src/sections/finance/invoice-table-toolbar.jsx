@@ -1,143 +1,56 @@
 import PropTypes from 'prop-types';
-import { memo, useMemo, useCallback } from 'react';
+import { memo, useMemo, useState, useCallback } from 'react';
 
+import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import {
-  MenuItem,
-  TextField,
-  IconButton,
-  InputAdornment,
-} from '@mui/material';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import InputBase from '@mui/material/InputBase';
+import Typography from '@mui/material/Typography';
 
 import Iconify from 'src/components/iconify';
-import CustomPopover, { usePopover } from 'src/components/custom-popover';
+import usePopover from 'src/components/custom-popover/use-popover';
+import CustomPopover from 'src/components/custom-popover/custom-popover';
+import InlineDateRangePicker from 'src/components/custom-date-range-picker/inline-date-range-picker';
+import { CURRENCY_PREFIXES } from 'src/utils/currency';
 
 // ----------------------------------------------------------------------
 
-function InvoiceTableToolbar({ filters, onFilters, campaigns }) {
-  const popover = usePopover();
+const filterButtonSx = {
+  height: 44,
+  border: '1px solid',
+  borderBottom: '3.5px solid',
+  borderColor: 'divider',
+  borderRadius: 1.5,
+  bgcolor: 'background.paper',
+  color: 'text.secondary',
+  textTransform: 'none',
+  fontWeight: 600,
+  fontSize: '0.85rem',
+  px: 1.5,
+  whiteSpace: 'nowrap',
+  '&:hover': { bgcolor: 'action.hover' },
+};
 
-  // OPTIMIZED: Memoize currency options to prevent recreation on every render
-  const currencyOptions = useMemo(
-    () => [
-      { code: 'MYR', symbol: 'RM', label: 'MYR (RM)' },
-      { code: 'SGD', symbol: 'S$', label: 'SGD (S$)' },
-      { code: 'USD', symbol: '$', label: 'USD ($)' },
-      { code: 'AUD', symbol: 'A$', label: 'AUD (A$)' },
-      { code: 'JPY', symbol: '¥', label: 'JPY (¥)' },
-      { code: 'IDR', symbol: 'Rp', label: 'IDR (Rp)' },
-    ],
-    []
-  );
+function InvoiceTableToolbar({
+  filters,
+  onFilters,
+  campaignOptions = [],
+  selectedCampaigns = [],
+  onFilterCampaigns,
+  dateRange,
+  onDateApply,
+  onDateClear,
+  onExportCSV,
+}) {
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [campaignSearch, setCampaignSearch] = useState('');
+  const campaignPopover = usePopover();
+  const currencyPopover = usePopover();
 
-  // OPTIMIZED: Memoize campaigns list to prevent unnecessary re-renders
-  const campaignOptions = useMemo(
-    () => campaigns || [],
-    [campaigns]
-  );
-
-  // OPTIMIZED: Memoize sx objects to prevent recreation on every render
-  const stackSx = useMemo(
-    () => ({
-      p: 2.5,
-      pr: { xs: 2.5, md: 1 },
-    }),
-    []
-  );
-
-  const innerStackSx = useMemo(
-    () => ({
-      width: 1,
-    }),
-    []
-  );
-
-  // OPTIMIZED: Memoize FormControl sx styles
-  const campaignFormControlSx = useMemo(
-    () => ({
-      width: 180,
-      '& .MuiOutlinedInput-root': {
-        height: '38px',
-        border: '1px solid #e7e7e7',
-        borderBottom: '3px solid #e7e7e7',
-        borderRadius: 1,
-        fontSize: '0.85rem',
-        '& .MuiSelect-select': {
-          py: 0,
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-        },
-      },
-    }),
-    []
-  );
-
-  const currencyFormControlSx = useMemo(
-    () => ({
-      width: 140,
-      '& .MuiOutlinedInput-root': {
-        height: '38px',
-        border: '1px solid #e7e7e7',
-        borderBottom: '3px solid #e7e7e7',
-        borderRadius: 1,
-        fontSize: '0.85rem',
-        '& .MuiSelect-select': {
-          py: 0,
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-        },
-      },
-    }),
-    []
-  );
-
-  const textFieldSx = useMemo(
-    () => ({
-      '& .MuiOutlinedInput-root': {
-        height: '38px',
-        border: '1px solid #e7e7e7',
-        borderBottom: '3px solid #e7e7e7',
-        borderRadius: 1,
-      },
-    }),
-    []
-  );
-
-  const iconButtonSx = useMemo(
-    () => ({
-      width: 38,
-      height: 38,
-      border: '1px solid #e7e7e7',
-      borderBottom: '3px solid #e7e7e7',
-      borderRadius: 1,
-    }),
-    []
-  );
-
-  const menuItemSx = useMemo(() => ({ fontSize: '0.85rem' }), []);
-  const inputLabelSx = useMemo(() => ({ fontSize: '0.85rem' }), []);
-
-  // OPTIMIZED: Memoize InputProps to prevent recreation on every render
-  const textFieldInputProps = useMemo(
-    () => ({
-      startAdornment: (
-        <InputAdornment position="start">
-          <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
-        </InputAdornment>
-      ),
-      sx: {
-        height: '38px',
-        '& input': {
-          py: 0,
-          height: '100%',
-          fontSize: '0.85rem',
-        },
-      },
-    }),
-    []
-  );
+  // Date picker anchor
+  const [dateAnchorEl, setDateAnchorEl] = useState(null);
+  const datePickerOpen = Boolean(dateAnchorEl);
 
   const handleFilterName = useCallback(
     (event) => {
@@ -146,88 +59,312 @@ function InvoiceTableToolbar({ filters, onFilters, campaigns }) {
     [onFilters]
   );
 
-  const handleFilterCampaignName = useCallback(
-    (e) => {
-      onFilters('campaignName', e.target.value);
+  const handleToggleCampaign = useCallback(
+    (campaignName) => {
+      const newSelected = selectedCampaigns.includes(campaignName)
+        ? selectedCampaigns.filter((c) => c !== campaignName)
+        : [...selectedCampaigns, campaignName];
+      onFilterCampaigns(newSelected);
     },
-    [onFilters]
+    [selectedCampaigns, onFilterCampaigns]
   );
-  
-  const handleFilterCurrency = useCallback(
-    (e) => {
-      onFilters('currency', e.target.value);
-    },
-    [onFilters]
+
+  const handleClearCampaigns = useCallback(() => {
+    onFilterCampaigns([]);
+    setCampaignSearch('');
+  }, [onFilterCampaigns]);
+
+  const filteredCampaignOptions = useMemo(
+    () =>
+      campaignOptions.filter((name) =>
+        name.toLowerCase().includes(campaignSearch.toLowerCase())
+      ),
+    [campaignOptions, campaignSearch]
   );
+
+  // Determine date button label
+  const dateLabel = useMemo(() => {
+    if (!dateRange?.selected) return 'Due Date';
+    if (dateRange.presetLabel) return dateRange.presetLabel;
+    return dateRange.shortLabel;
+  }, [dateRange]);
 
   return (
-    <>
-      <Stack
-        spacing={2}
-        alignItems={{ xs: 'flex-end', md: 'center' }}
-        direction={{
-          xs: 'column',
-          md: 'row',
-        }}
-        sx={stackSx}
-      >
-        <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={innerStackSx}>
-          <TextField
-            fullWidth
+    <Stack
+      spacing={2}
+      alignItems={{ xs: 'flex-end', md: 'center' }}
+      direction={{
+        xs: 'column',
+        md: 'row',
+      }}
+      sx={{
+        px: 2.5,
+        py: 1.5,
+      }}
+    >
+      <Stack direction="row" alignItems="center" spacing={1} flexGrow={1} sx={{ width: 1 }}>
+        <Box
+          sx={{
+            flex: 1,
+            border: '1px solid',
+            borderBottom: '3.5px solid',
+            borderColor: isSearchFocused ? '#1340ff' : 'divider',
+            borderRadius: 1.5,
+            bgcolor: 'background.paper',
+            height: 44,
+            display: 'flex',
+            alignItems: 'center',
+            transition: 'border-color 0.2s ease',
+          }}
+        >
+          <InputBase
             value={filters.name}
             onChange={handleFilterName}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
             placeholder="Search by Creator Name, Campaign Name or Invoice ID"
-            InputProps={textFieldInputProps}
-            sx={textFieldSx}
+            startAdornment={
+              <Iconify
+                icon="eva:search-fill"
+                sx={{ width: 20, height: 20, mr: 1, ml: 1.5, color: 'text.disabled', flexShrink: 0 }}
+              />
+            }
+            sx={{
+              width: '100%',
+              height: '100%',
+              color: 'text.primary',
+              '& input': {
+                py: 0,
+                px: 0.5,
+              },
+            }}
           />
+        </Box>
 
-          <IconButton onClick={popover.onOpen} sx={iconButtonSx}>
-            <Iconify icon="eva:more-vertical-fill" />
-          </IconButton>
-        </Stack>
-      </Stack>
-
-      <CustomPopover
-        open={popover.open}
-        onClose={popover.onClose}
-        arrow="right-top"
-        sx={{ width: 140 }}
-      >
-        <MenuItem
-          onClick={() => {
-            popover.onClose();
+        {/* Currency Filter Button */}
+        <Button
+          onClick={currencyPopover.onOpen}
+          sx={{
+            ...filterButtonSx,
+            ...(filters.currency && {
+              borderColor: '#1340ff',
+              color: '#1340ff',
+            }),
           }}
+          startIcon={<Iconify icon="solar:dollar-minimalistic-bold" width={18} />}
         >
-          <Iconify icon="solar:printer-minimalistic-bold" />
-          Print
-        </MenuItem>
+          {filters.currency || 'Currency'}
+        </Button>
 
-        <MenuItem
-          onClick={() => {
-            popover.onClose();
-          }}
+        <CustomPopover
+          open={currencyPopover.open}
+          onClose={currencyPopover.onClose}
+          arrow="top-right"
+          sx={{ width: 200, p: 0 }}
         >
-          <Iconify icon="solar:import-bold" />
-          Import
-        </MenuItem>
+          <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
+            {Object.entries(CURRENCY_PREFIXES).map(([code, { prefix }]) => (
+              <Box
+                key={code}
+                onClick={() => {
+                  onFilters('currency', filters.currency === code ? '' : code);
+                  currencyPopover.onClose();
+                }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  px: 2,
+                  py: 1,
+                  cursor: 'pointer',
+                  bgcolor: filters.currency === code ? '#1340ff14' : 'transparent',
+                  '&:hover': { bgcolor: filters.currency === code ? '#1340ff22' : 'action.hover' },
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontSize: '0.85rem',
+                    fontWeight: filters.currency === code ? 700 : 400,
+                    color: filters.currency === code ? '#1340ff' : 'text.primary',
+                  }}
+                >
+                  {code} ({prefix})
+                </Typography>
+              </Box>
+            ))}
+          </Box>
 
-        <MenuItem
-          onClick={() => {
-            popover.onClose();
+          {!!filters.currency && (
+            <Box sx={{ p: 1, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                size="small"
+                color="error"
+                onClick={() => {
+                  onFilters('currency', '');
+                  currencyPopover.onClose();
+                }}
+              >
+                Clear
+              </Button>
+            </Box>
+          )}
+        </CustomPopover>
+
+        {/* Campaign Filter Button */}
+        <Button
+          onClick={campaignPopover.onOpen}
+          sx={{
+            ...filterButtonSx,
+            ...(selectedCampaigns.length > 0 && {
+              borderColor: '#1340ff',
+              color: '#1340ff',
+            }),
           }}
+          startIcon={<Iconify icon="solar:filter-bold" width={18} />}
         >
-          <Iconify icon="solar:export-bold" />
+          Campaign
+          {selectedCampaigns.length > 0 && (
+            <Box
+              component="span"
+              sx={{
+                ml: 0.75,
+                width: 20,
+                height: 20,
+                minWidth: 20,
+                borderRadius: '50%',
+                bgcolor: '#1340ff',
+                color: '#fff',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1,
+              }}
+            >
+              {selectedCampaigns.length}
+            </Box>
+          )}
+        </Button>
+
+        <CustomPopover
+          open={campaignPopover.open}
+          onClose={campaignPopover.onClose}
+          arrow="top-right"
+          sx={{ width: 280, p: 0 }}
+        >
+          <Box sx={{ p: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <InputBase
+              value={campaignSearch}
+              onChange={(e) => setCampaignSearch(e.target.value)}
+              placeholder="Search campaigns..."
+              fullWidth
+              startAdornment={
+                <Iconify
+                  icon="eva:search-fill"
+                  sx={{ width: 18, height: 18, mr: 1, color: 'text.disabled', flexShrink: 0 }}
+                />
+              }
+              sx={{
+                height: 36,
+                fontSize: '0.85rem',
+                '& input': { py: 0 },
+              }}
+            />
+          </Box>
+
+          <Box sx={{ maxHeight: 240, overflowY: 'auto' }}>
+            {filteredCampaignOptions.length === 0 ? (
+              <Typography sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontSize: '0.85rem' }}>
+                No campaigns found
+              </Typography>
+            ) : (
+              filteredCampaignOptions.map((name) => (
+                <Box
+                  key={name}
+                  onClick={() => handleToggleCampaign(name)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    px: 1,
+                    py: 0.25,
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'action.hover' },
+                  }}
+                >
+                  <Checkbox
+                    size="small"
+                    checked={selectedCampaigns.includes(name)}
+                    sx={{ p: 0.5 }}
+                  />
+                  <Typography
+                    variant="body2"
+                    noWrap
+                    sx={{ ml: 0.5, flex: 1, fontSize: '0.85rem' }}
+                  >
+                    {name}
+                  </Typography>
+                </Box>
+              ))
+            )}
+          </Box>
+
+          {selectedCampaigns.length > 0 && (
+            <Box sx={{ p: 1, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end' }}>
+              <Button size="small" color="error" onClick={handleClearCampaigns}>
+                Clear ({selectedCampaigns.length})
+              </Button>
+            </Box>
+          )}
+        </CustomPopover>
+
+        {/* Date Range Filter Button */}
+        <Button
+          onClick={(e) => setDateAnchorEl(e.currentTarget)}
+          sx={{
+            ...filterButtonSx,
+            ...(dateRange?.selected && {
+              borderColor: '#1340ff',
+              color: '#1340ff',
+            }),
+          }}
+          startIcon={<Iconify icon="solar:calendar-bold" width={18} />}
+        >
+          {dateLabel}
+        </Button>
+
+        <InlineDateRangePicker
+          anchorEl={dateAnchorEl}
+          open={datePickerOpen}
+          onClose={() => setDateAnchorEl(null)}
+          startDate={dateRange?.startDate}
+          endDate={dateRange?.endDate}
+          onApply={onDateApply}
+          onClear={onDateClear}
+        />
+
+        <Button
+          onClick={onExportCSV}
+          sx={filterButtonSx}
+          startIcon={<Iconify icon="solar:export-bold" width={18} />}
+        >
           Export
-        </MenuItem>
-      </CustomPopover>
-    </>
+        </Button>
+      </Stack>
+    </Stack>
   );
 }
 
 InvoiceTableToolbar.propTypes = {
   filters: PropTypes.object,
   onFilters: PropTypes.func,
-  campaigns: PropTypes.array,
+  campaignOptions: PropTypes.array,
+  selectedCampaigns: PropTypes.array,
+  onFilterCampaigns: PropTypes.func,
+  dateRange: PropTypes.object,
+  onDateApply: PropTypes.func,
+  onDateClear: PropTypes.func,
+  onExportCSV: PropTypes.func,
 };
 
 // OPTIMIZED: Memoize component to prevent unnecessary re-renders when props haven't changed

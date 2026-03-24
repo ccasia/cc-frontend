@@ -105,7 +105,7 @@ const usePendingPitches = () =>
 // OPTIMIZATION 3: Fetch only aggregated stats (if backend endpoint exists)
 const useDashboardStats = () => {
   // TODO: Replace with actual backend endpoint that returns:
-  // { totalCreators, totalClients, totalPitches, approvedPitches, rejectedPitches, etc }
+  // { totalCreators, totalClients, totalPitches, approvedPitches, totalCreatorsIncludingAll, etc }
   const { data, isLoading } = useSWR(
     endpoints.dashboard?.stats || null,
     fetcher,
@@ -254,7 +254,7 @@ const DashboardSuperadmin = () => {
         totalClients: dashboardStats.totalClients || clientData || 0,
         totalPitches: dashboardStats.totalPitches || 0,
         approvedPitches: dashboardStats.approvedPitches || 0,
-        rejectedPitches: dashboardStats.rejectedPitches || 0,
+        totalCreatorsIncludingAll: dashboardStats.totalCreatorsIncludingAll || 0,
         creatorsWithMediaKit: dashboardStats.creatorsWithMediaKit || 0,
         creatorsInCampaigns: dashboardStats.creatorsInCampaigns || 0,
       };
@@ -269,17 +269,13 @@ const DashboardSuperadmin = () => {
       (acc, c) => acc + (c?.pitch?.filter((p) => p.status === 'approved')?.length || 0),
       0
     );
-    const rejectedPitches = activeCampaigns.reduce(
-      (acc, c) => acc + (c?.pitch?.filter((p) => p.status === 'rejected')?.length || 0),
-      0
-    );
 
     return {
       totalCreators: creatorCount || 0,
       totalClients: clientData || 0,
       totalPitches,
       approvedPitches,
-      rejectedPitches,
+      totalCreatorsIncludingAll: creatorCount || 0,
       creatorsWithMediaKit: 0, // Requires backend aggregation
       creatorsInCampaigns: 0, // Requires backend aggregation
     };
@@ -301,9 +297,9 @@ const DashboardSuperadmin = () => {
       },
       {
         title: 'Total Creators',
-        value: metrics.totalCreators,
-        color: colors.primary,
-        icon: createIcon('ic_creators'),
+        value: metrics.totalCreatorsIncludingAll,
+        color: '#8b5cf6',
+        icon: <Iconify icon="mdi:account-group-outline" width={20} />,
       },
       {
         title: 'Total Pitches',
@@ -324,10 +320,10 @@ const DashboardSuperadmin = () => {
         icon: <Iconify icon="mdi:check-decagram-outline" width={20} />,
       },
       {
-        title: 'Rejected Pitches',
-        value: metrics.rejectedPitches,
-        color: '#ef4444',
-        icon: <Iconify icon="mdi:close-octagon-outline" width={20} />,
+        title: 'Active Creators',
+        value: metrics.totalCreators,
+        color: colors.primary,
+        icon: createIcon('ic_creators'),
       },
       {
         title: 'Media Kits Connected',

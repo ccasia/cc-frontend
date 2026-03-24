@@ -34,6 +34,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
+import MediaKitPopup from './media-kit-popup';
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
 const ChipStyle = {
@@ -112,6 +113,7 @@ const CampaignModal = ({
   const [fullImageOpen, setFullImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
 
   const dialogContentRef = useRef(null);
   const images = campaign?.campaignBrief?.images || [];
@@ -182,33 +184,8 @@ const CampaignModal = ({
   }, [imageLoaded]);
 
   const handlePitch = () => {
-    // Check if user is in the target list for media kit requirement
-    const targetUserIds = [
-      'cm8gvqtcv01hwph01uof2u9xu',
-      'cm4132k9p00wb54qgcrs71v0t',
-      'cmauqo8oy03ioky0157sbr2jg',
-      'cm8jxuuvy0272ph01nr0h7din',
-      'cm5b5p0zu00r2ylfpo241kqki',
-      'cmewrex4p054ipx01u5xqkqhj',
-      'cm7oe0q15005bms010ujmjb3r',
-      'cm44lei3t00si132zq87a5lan',
-      'cm9kzqz1u00ziqe01q2tsdptg',
-      'cmj9pz1n40a3hs40154b31l90',
-      'cm8mh5ic5032sph011r87rw4e',
-      'cm40womsf001k54qg4epuacmu',
-      'cm4utxiyv02mu9wevfkpyt8qj',
-      'cmj7kdxxi05sqs401pro45vik',
-      'cmj21yl0102ghpc01xmy9zkwa',
-      'cm3pyp3vm006qm9m8qm1ep02d',
-      'cm4ey6g9401w4trd2ip0zf1et',
-      'cmh0bsyrv0bftp301prsp7y2k',
-      'cm857tk4w03rhmr01r0pjlxkq',
-      'cmang4buw01afn7010m7uzuni',
-      'cmbvekkhd00sxqh01ittftmd4',
-      'cmdgbxxdx01l7mc01xz9bx3v8',
-      'cm5q6r86y007p11jxkphbe7ht',
-    ];
-    const isTargetUser = targetUserIds.includes(user?.id);
+    // Check if user is marked as Media Kit Mandatory
+    const isMKM = user?.mediaKitMandatory === true;
 
     // Check if media kit is connected
     const hasMediaKit =
@@ -216,11 +193,14 @@ const CampaignModal = ({
 
     const hasPaymentDetails = isFormCompleted && user?.paymentForm?.bankAccountName;
 
-    if (isTargetUser && (!hasMediaKit || !hasPaymentDetails)) {
+    // For MKM users, enforce media kit connection
+    if (isMKM && !hasMediaKit) {
+      setShowMediaKitPopup(true);
       return;
     }
 
-    if (!isTargetUser && (!isFormCompleted || !user?.paymentForm?.bankAccountName)) {
+    // Check payment details for all users
+    if (!isFormCompleted || !user?.paymentForm?.bankAccountName) {
       return;
     }
 
@@ -634,28 +614,40 @@ const CampaignModal = ({
                   </Stack>
                 ) : hasPitched ? (
                   existingPitch.status === 'APPROVED' ? (
-                    <Button
-                      variant="contained"
-                      onClick={() => handleManageClick(campaign.id)}
-                      sx={{
-                        backgroundColor: '#203ff5',
-                        color: 'white',
-                        borderBottom: '4px solid #102387 !important',
-                        border: 'none',
-                        '&:hover': {
-                          backgroundColor: '#1935dd',
-                          borderBottom: '4px solid #102387 !important',
-                        },
-                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                        padding: { xs: '4px 12px', sm: '6px 18px' },
-                        minWidth: '100px',
-                        height: '42px',
-                        boxShadow: 'none',
-                        textTransform: 'none',
-                      }}
-                    >
-                      Manage
-                    </Button>
+                    (() => {
+                      // Check if user is marked as Media Kit Mandatory
+                      const isMKM = user?.mediaKitMandatory === true;
+                      const hasMediaKit = user?.creator && 
+                        (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+                      const isDisabled = isMKM && !hasMediaKit;
+
+                      return (
+                        <Button
+                          variant="contained"
+                          onClick={() => !isDisabled && handleManageClick(campaign.id)}
+                          disabled={isDisabled}
+                          sx={{
+                            backgroundColor: isDisabled ? '#f5f5f5' : '#203ff5',
+                            color: isDisabled ? '#a1a1a1' : 'white',
+                            borderBottom: isDisabled ? '4px solid #d1d1d1 !important' : '4px solid #102387 !important',
+                            border: 'none',
+                            '&:hover': {
+                              backgroundColor: isDisabled ? '#f5f5f5' : '#1935dd',
+                              borderBottom: isDisabled ? '4px solid #d1d1d1 !important' : '4px solid #102387 !important',
+                            },
+                            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                            padding: { xs: '4px 12px', sm: '6px 18px' },
+                            minWidth: '100px',
+                            height: '42px',
+                            boxShadow: 'none',
+                            textTransform: 'none',
+                            opacity: isDisabled ? 0.7 : 1,
+                          }}
+                        >
+                          Manage
+                        </Button>
+                      );
+                    })()
                   ) : existingPitch.status === 'REJECTED' ? (
                     <Chip
                       icon={<Iconify icon="mdi:close-circle" />}
@@ -726,33 +718,8 @@ const CampaignModal = ({
                       // Check if campaign credits are finished
                       if (isCreditsFinished) return true;
 
-                      // Check if user is in the target list for media kit requirement
-                      const targetUserIds = [
-                        'cm8gvqtcv01hwph01uof2u9xu',
-                        'cm4132k9p00wb54qgcrs71v0t',
-                        'cmauqo8oy03ioky0157sbr2jg',
-                        'cm8jxuuvy0272ph01nr0h7din',
-                        'cm5b5p0zu00r2ylfpo241kqki',
-                        'cmewrex4p054ipx01u5xqkqhj',
-                        'cm7oe0q15005bms010ujmjb3r',
-                        'cm44lei3t00si132zq87a5lan',
-                        'cm9kzqz1u00ziqe01q2tsdptg',
-                        'cmj9pz1n40a3hs40154b31l90',
-                        'cm8mh5ic5032sph011r87rw4e',
-                        'cm40womsf001k54qg4epuacmu',
-                        'cm4utxiyv02mu9wevfkpyt8qj',
-                        'cmj7kdxxi05sqs401pro45vik',
-                        'cmj21yl0102ghpc01xmy9zkwa',
-                        'cm3pyp3vm006qm9m8qm1ep02d',
-                        'cm4ey6g9401w4trd2ip0zf1et',
-                        'cmh0bsyrv0bftp301prsp7y2k',
-                        'cm857tk4w03rhmr01r0pjlxkq',
-                        'cmang4buw01afn7010m7uzuni',
-                        'cmbvekkhd00sxqh01ittftmd4',
-                        'cmdgbxxdx01l7mc01xz9bx3v8',
-                        'cm5q6r86y007p11jxkphbe7ht',
-                      ];
-                      const isTargetUser = targetUserIds.includes(user?.id);
+                      // Check if user is marked as Media Kit Mandatory
+                      const isMKM = user?.mediaKitMandatory === true;
 
                       // Check if media kit is connected
                       const hasMediaKit =
@@ -763,12 +730,12 @@ const CampaignModal = ({
                       const hasPaymentDetails =
                         isFormCompleted && user?.paymentForm?.bankAccountName;
 
-                      // For target users, check both media kit and payment details
-                      if (isTargetUser) {
-                        return !hasMediaKit || !hasPaymentDetails;
+                      // For MKM users, require media kit connection
+                      if (isMKM && !hasMediaKit) {
+                        return true;
                       }
 
-                      // For non-target users, only check payment details
+                      // All users need payment details
                       return !hasPaymentDetails;
                     })()}
                     sx={{
@@ -824,33 +791,8 @@ const CampaignModal = ({
 
             {/* Warning message for incomplete profile */}
             {(() => {
-              // Check if user is in the target list for media kit requirement
-              const targetUserIds = [
-                'cm8gvqtcv01hwph01uof2u9xu',
-                'cm4132k9p00wb54qgcrs71v0t',
-                'cmauqo8oy03ioky0157sbr2jg',
-                'cm8jxuuvy0272ph01nr0h7din',
-                'cm5b5p0zu00r2ylfpo241kqki',
-                'cmewrex4p054ipx01u5xqkqhj',
-                'cm7oe0q15005bms010ujmjb3r',
-                'cm44lei3t00si132zq87a5lan',
-                'cm9kzqz1u00ziqe01q2tsdptg',
-                'cmj9pz1n40a3hs40154b31l90',
-                'cm8mh5ic5032sph011r87rw4e',
-                'cm40womsf001k54qg4epuacmu',
-                'cm4utxiyv02mu9wevfkpyt8qj',
-                'cmj7kdxxi05sqs401pro45vik',
-                'cmj21yl0102ghpc01xmy9zkwa',
-                'cm3pyp3vm006qm9m8qm1ep02d',
-                'cm4ey6g9401w4trd2ip0zf1et',
-                'cmh0bsyrv0bftp301prsp7y2k',
-                'cm857tk4w03rhmr01r0pjlxkq',
-                'cmang4buw01afn7010m7uzuni',
-                'cmbvekkhd00sxqh01ittftmd4',
-                'cmdgbxxdx01l7mc01xz9bx3v8',
-                'cm5q6r86y007p11jxkphbe7ht',
-              ];
-              const isTargetUser = targetUserIds.includes(user?.id);
+              // Check if user is marked as Media Kit Mandatory
+              const isMKM = user?.mediaKitMandatory === true;
 
               // Check if media kit is connected
               const hasMediaKit =
@@ -860,7 +802,7 @@ const CampaignModal = ({
               // Check if payment details are completed
               const hasPaymentDetails = isFormCompleted && user?.paymentForm?.bankAccountName;
 
-              if (isTargetUser) {
+              if (isMKM) {
                 // For target users, check both media kit and payment details
                 if (!hasMediaKit && !hasPaymentDetails) {
                   return (
@@ -1578,6 +1520,13 @@ const CampaignModal = ({
           )}
         </DialogContent>
       </Dialog>
+
+      <MediaKitPopup
+        open={showMediaKitPopup}
+        onClose={() => setShowMediaKitPopup(false)}
+        userId={user?.id || ''}
+        showPitchError
+      />
     </Dialog>
   );
 };

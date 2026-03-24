@@ -165,6 +165,12 @@ export function useNavData() {
             path: paths.dashboard.company.discover,
             icon: ICONS.clients,
           },
+          {
+            roles: ['superadmin', 'god'],
+            title: 'Creator Discovery Tool',
+            path: paths.dashboard.discoveryTool,
+            icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
+          },
           // {
           //   title: 'My Tasks',
           //   path: paths.dashboard.kanban,
@@ -194,6 +200,12 @@ export function useNavData() {
             title: 'Credit Tier',
             path: paths.dashboard.creditTier.root,
             icon: <Iconify icon="mdi:account-star-outline" width={25} />,
+          },
+          {
+            roles: ['superadmin', 'god'],
+            title: 'Feedback',
+            path: paths.dashboard.feedback.root,
+            icon: <Iconify icon="material-symbols:rate-review-outline" width={25} />,
           },
           {
             roles: ['superadmin', 'god'],

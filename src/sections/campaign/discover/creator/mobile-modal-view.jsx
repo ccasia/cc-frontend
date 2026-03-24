@@ -325,25 +325,33 @@ const MobileModalView = () => {
 
     if (hasPitched) {
       if (existingPitch.status === 'approved') {
+        // Check if user is marked as Media Kit Mandatory
+        const isMKM = user?.mediaKitMandatory === true;
+        const hasMediaKit = user?.creator && 
+          (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+        const isDisabled = isMKM && !hasMediaKit;
+
         return (
           <Button
             fullWidth
             variant="contained"
-            onClick={() => router.push(paths.dashboard.campaign.creator.detail(campaignData.id))}
+            onClick={() => !isDisabled && router.push(paths.dashboard.campaign.creator.detail(campaignData.id))}
+            disabled={isDisabled}
             sx={{
-              backgroundColor: '#203ff5',
-              color: 'white',
-              borderBottom: '4px solid #102387 !important',
+              backgroundColor: isDisabled ? '#f5f5f5' : '#203ff5',
+              color: isDisabled ? '#a1a1a1' : 'white',
+              borderBottom: isDisabled ? '4px solid #d1d1d1 !important' : '4px solid #102387 !important',
               border: 'none',
               '&:hover': {
-                backgroundColor: '#1935dd',
-                borderBottom: '4px solid #102387 !important',
+                backgroundColor: isDisabled ? '#f5f5f5' : '#1935dd',
+                borderBottom: isDisabled ? '4px solid #d1d1d1 !important' : '4px solid #102387 !important',
               },
               fontSize: '0.875rem',
               padding: '6px 18px',
               height: '42px',
               boxShadow: 'none',
               textTransform: 'none',
+              opacity: isDisabled ? 0.7 : 1,
             }}
           >
             Manage
@@ -422,25 +430,33 @@ const MobileModalView = () => {
     }
 
     if (isShortlisted) {
+      // Check if user is marked as Media Kit Mandatory
+      const isMKM = user?.mediaKitMandatory === true;
+      const hasMediaKit = user?.creator && 
+        (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+      const isDisabled = isMKM && !hasMediaKit;
+
       return (
         <Button
           fullWidth
           variant="contained"
-          onClick={() => router.push(paths.dashboard.campaign.creator.detail(campaignData.id))}
+          onClick={() => !isDisabled && router.push(paths.dashboard.campaign.creator.detail(campaignData.id))}
+          disabled={isDisabled}
           sx={{
-            backgroundColor: '#203ff5',
-            color: 'white',
-            borderBottom: '4px solid #102387 !important',
+            backgroundColor: isDisabled ? '#f5f5f5' : '#203ff5',
+            color: isDisabled ? '#a1a1a1' : 'white',
+            borderBottom: isDisabled ? '4px solid #d1d1d1 !important' : '4px solid #102387 !important',
             border: 'none',
             '&:hover': {
-              backgroundColor: '#1935dd',
-              borderBottom: '4px solid #102387 !important',
+              backgroundColor: isDisabled ? '#f5f5f5' : '#1935dd',
+              borderBottom: isDisabled ? '4px solid #d1d1d1 !important' : '4px solid #102387 !important',
             },
             fontSize: '0.875rem',
             padding: '6px 18px',
             height: '42px',
             boxShadow: 'none',
             textTransform: 'none',
+            opacity: isDisabled ? 0.7 : 1,
           }}
         >
           Manage

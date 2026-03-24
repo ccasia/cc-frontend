@@ -10,7 +10,7 @@ import {
   TextField,
   Typography,
   IconButton,
-  CircularProgress
+  CircularProgress,
 } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
@@ -30,7 +30,12 @@ import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
 import { VideoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
 
-export default function V4RawFootageSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
+export default function V4RawFootageSubmission({
+  submission,
+  campaign,
+  onUpdate,
+  isDisabled = false,
+}) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
@@ -40,9 +45,11 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
     const rawFootages = submission.rawFootages || [];
     const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
     const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
-    const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
+    const clientVisible =
+      !isClient ||
+      ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
 
-    return {      
+    return {
       rawFootages,
       pendingReview,
       isClientFeedback,
@@ -56,7 +63,9 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
   const [action, setAction] = useState('approve');
   const [localActionInProgress, setLocalActionInProgress] = useState(false);
   const [reasons, setReasons] = useState(() => getInitialReasons(isClientFeedback, submission));
-  const [feedback, setFeedback] = useState(() => getDefaultFeedback(isClientFeedback, submission, 'rawFootages'));
+  const [feedback, setFeedback] = useState(() =>
+    getDefaultFeedback(isClientFeedback, submission, 'rawFootages')
+  );
   const [caption, setCaption] = useState(submission.caption || '');
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -74,51 +83,57 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }, []);
 
-  const togglePlay = useCallback((footageId) => {
-    const videoRef = videoRefs.current[footageId];
-    if (videoRef) {
-      const currentState = videoStates[footageId];
-      if (currentState?.isPlaying) {
-        videoRef.pause();
-      } else {
-        videoRef.play();
+  const togglePlay = useCallback(
+    (footageId) => {
+      const videoRef = videoRefs.current[footageId];
+      if (videoRef) {
+        const currentState = videoStates[footageId];
+        if (currentState?.isPlaying) {
+          videoRef.pause();
+        } else {
+          videoRef.play();
+        }
+        setVideoStates((prev) => ({
+          ...prev,
+          [footageId]: {
+            ...prev[footageId],
+            isPlaying: !currentState?.isPlaying,
+          },
+        }));
       }
-      setVideoStates(prev => ({
-        ...prev,
-        [footageId]: {
-          ...prev[footageId],
-          isPlaying: !currentState?.isPlaying
-        }
-      }));
-    }
-  }, [videoStates]);
+    },
+    [videoStates]
+  );
 
-  const handleSeek = useCallback((event, footageId) => {
-    const videoRef = videoRefs.current[footageId];
-    if (videoRef) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      const pos = (event.clientX - rect.left) / rect.width;
-      const newTime = pos * (videoStates[footageId]?.duration || 0);
-      videoRef.currentTime = newTime;
-      setVideoStates(prev => ({
-        ...prev,
-        [footageId]: {
-          ...prev[footageId],
-          currentTime: newTime
-        }
-      }));
-    }
-  }, [videoStates]);
+  const handleSeek = useCallback(
+    (event, footageId) => {
+      const videoRef = videoRefs.current[footageId];
+      if (videoRef) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const pos = (event.clientX - rect.left) / rect.width;
+        const newTime = pos * (videoStates[footageId]?.duration || 0);
+        videoRef.currentTime = newTime;
+        setVideoStates((prev) => ({
+          ...prev,
+          [footageId]: {
+            ...prev[footageId],
+            currentTime: newTime,
+          },
+        }));
+      }
+    },
+    [videoStates]
+  );
 
   const handleTimeUpdate = useCallback((footageId) => {
     const videoRef = videoRefs.current[footageId];
     if (videoRef) {
-      setVideoStates(prev => ({
+      setVideoStates((prev) => ({
         ...prev,
         [footageId]: {
           ...prev[footageId],
-          currentTime: videoRef.currentTime
-        }
+          currentTime: videoRef.currentTime,
+        },
       }));
     }
   }, []);
@@ -128,19 +143,19 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
       const { videoWidth, videoHeight, duration } = videoElement;
       const aspectRatio = videoWidth / videoHeight;
 
-      setVideoDimensions(prev => ({
+      setVideoDimensions((prev) => ({
         ...prev,
-        [footageId]: { width: videoWidth, height: videoHeight, aspectRatio }
+        [footageId]: { width: videoWidth, height: videoHeight, aspectRatio },
       }));
 
-      setVideoStates(prev => ({
+      setVideoStates((prev) => ({
         ...prev,
         [footageId]: {
           ...prev[footageId],
           duration,
           currentTime: 0,
-          isPlaying: false
-        }
+          isPlaying: false,
+        },
       }));
     }
   }, []);
@@ -155,7 +170,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
           submissionId: submission.id,
           action: 'approve',
           feedback: feedback.trim(),
-          reasons: reasons || []
+          reasons: reasons || [],
         });
 
         enqueueSnackbar('Raw footage approved successfully', { variant: 'success' });
@@ -203,7 +218,9 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
       const hasReasons = currentReasons && currentReasons.length > 0;
 
       if (!hasContent && !hasReasons) {
-        enqueueSnackbar('Please provide feedback or select reasons for changes', { variant: 'warning' });
+        enqueueSnackbar('Please provide feedback or select reasons for changes', {
+          variant: 'warning',
+        });
         setLoading(false);
         return;
       }
@@ -213,7 +230,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
           submissionId: submission.id,
           action: 'request_changes',
           feedback: hasContent ? currentFeedback.trim() : '',
-          reasons: currentReasons || []
+          reasons: currentReasons || [],
         });
 
         enqueueSnackbar('Changes requested successfully', { variant: 'success' });
@@ -261,14 +278,16 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
     onUpdate,
     localActionInProgress,
     userId: user?.id,
-    hasRawFootage: true
+    hasRawFootage: true,
   });
 
   return (
-    <Box sx={{
-      overflow: 'hidden',
-      bgcolor: 'background.neutral'
-    }}>
+    <Box
+      sx={{
+        overflow: 'hidden',
+        bgcolor: 'background.neutral',
+      }}
+    >
       <Box>
         {(() => {
           // Not visible to client - show processing message
@@ -280,11 +299,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                   <Typography variant="body2" color="text.secondary">
                     Raw footage content is being processed.
                   </Typography>
-                  <Chip
-                    label="Processing"
-                    color="info"
-                    size="small"
-                  />
+                  <Chip label="Processing" color="info" size="small" />
                 </Stack>
               </Card>
             );
@@ -293,7 +308,16 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
           // Processing state — creator has uploaded, worker is processing
           if (submission.status === 'IN_PROGRESS') {
             return (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, gap: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  py: 8,
+                  gap: 2,
+                }}
+              >
                 <CircularProgress size={40} thickness={5} sx={{ color: '#8A5AFE' }} />
                 <Typography variant="body2" color="text.secondary">
                   Creator&apos;s new raw footage is being processed
@@ -305,8 +329,19 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
           // No raw footages - show empty state
           if (rawFootages.length === 0) {
             return (
-              <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" sx={{p: 8, justifyContent: 'center' }}>
-                <Box component="img" src="/assets/icons/empty/ic_content.svg" alt="No content" sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }} />
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                textAlign="center"
+                sx={{ p: 8, justifyContent: 'center' }}
+              >
+                <Box
+                  component="img"
+                  src="/assets/icons/empty/ic_content.svg"
+                  alt="No content"
+                  sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }}
+                />
                 <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                   No deliverables found
                 </Typography>
@@ -320,26 +355,30 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
           // Has raw footages - show content
           return (
             <Box sx={{ p: 2, bgcolor: 'background.neutral' }}>
-              <Box sx={{
-                display: 'flex',
-                gap: { xs: 1, sm: 1.5, md: 2 },
-                justifyContent: 'space-between',
-                alignItems: 'stretch',
-                minHeight: { xs: 600, sm: 550, md: 500 },
-                flexDirection: { xs: 'column', lg: 'row' }
-              }}>
-                {/* Caption & Feedback - Left side */}
-                <Box sx={{
-                  flex: 1,
+              <Box
+                sx={{
                   display: 'flex',
-                  flexDirection: 'column',
+                  gap: { xs: 1, sm: 1.5, md: 2 },
                   justifyContent: 'space-between',
-                  maxWidth: { xs: '100%', md: 420, lg: 500 },
-                  minWidth: { xs: '100%', lg: 350 },
-                  height: { xs: 'auto', lg: 500 },
-                  minHeight: { xs: 300, lg: 500 },
-                  overflow: 'hidden'
-                }}>
+                  alignItems: 'stretch',
+                  minHeight: { xs: 600, sm: 550, md: 500 },
+                  flexDirection: { xs: 'column', lg: 'row' },
+                }}
+              >
+                {/* Caption & Feedback - Left side */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    maxWidth: { xs: '100%', md: 420, lg: 500 },
+                    minWidth: { xs: '100%', lg: 350 },
+                    height: { xs: 'auto', lg: 500 },
+                    minHeight: { xs: 300, lg: 500 },
+                    overflow: 'hidden',
+                  }}
+                >
                   {showFeedbackLogs ? (
                     <FeedbackLogs
                       submission={submission}
@@ -348,7 +387,9 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                   ) : (
                     <>
                       <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
-                        <Typography variant='caption' fontWeight="bold" color="#636366" mb={0.5}>Caption</Typography>
+                        <Typography variant="caption" fontWeight="bold" color="#636366" mb={0.5}>
+                          Caption
+                        </Typography>
                         {(() => {
                           if (pendingReview) {
                             return (
@@ -380,41 +421,54 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                                     position: 'absolute',
                                     width: '100%',
                                     maxWidth: 400,
-                                    pointerEvents: 'none'
+                                    pointerEvents: 'none',
                                   }}
                                 >
-                                  <Typography fontSize={14} sx={{
-                                    wordWrap: 'break-word',
-                                    overflowWrap: 'break-word',
-                                    lineHeight: 1.5
-                                  }}>
+                                  <Typography
+                                    fontSize={14}
+                                    sx={{
+                                      wordWrap: 'break-word',
+                                      overflowWrap: 'break-word',
+                                      lineHeight: 1.5,
+                                    }}
+                                  >
                                     {submission.caption}
                                   </Typography>
                                 </Box>
 
                                 {captionOverflows ? (
-                                  <Box sx={{
-                                    maxHeight: { xs: 80, sm: 100, md: 120 },
-                                    overflow: 'auto',
-                                    border: '1px solid #E7E7E7',
-                                    borderRadius: 0.5,
-                                    p: 1,
-                                    bgcolor: 'background.paper',
-                                  }}>
-                                    <Typography fontSize={14} color="#636366" sx={{
-                                      wordWrap: 'break-word',
-                                      overflowWrap: 'break-word',
-                                      lineHeight: 1.5
-                                    }}>
+                                  <Box
+                                    sx={{
+                                      maxHeight: { xs: 80, sm: 100, md: 120 },
+                                      overflow: 'auto',
+                                      border: '1px solid #E7E7E7',
+                                      borderRadius: 0.5,
+                                      p: 1,
+                                      bgcolor: 'background.paper',
+                                    }}
+                                  >
+                                    <Typography
+                                      fontSize={14}
+                                      color="#636366"
+                                      sx={{
+                                        wordWrap: 'break-word',
+                                        overflowWrap: 'break-word',
+                                        lineHeight: 1.5,
+                                      }}
+                                    >
                                       {submission.caption}
                                     </Typography>
                                   </Box>
                                 ) : (
-                                  <Typography fontSize={14} color="#636366" sx={{
-                                    wordWrap: 'break-word',
-                                    overflowWrap: 'break-word',
-                                    lineHeight: 1.5
-                                  }}>
+                                  <Typography
+                                    fontSize={14}
+                                    color="#636366"
+                                    sx={{
+                                      wordWrap: 'break-word',
+                                      overflowWrap: 'break-word',
+                                      lineHeight: 1.5,
+                                    }}
+                                  >
                                     {submission.caption}
                                   </Typography>
                                 )}
@@ -425,7 +479,14 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                         })()}
                       </Box>
 
-                      <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                      <Box
+                        sx={{
+                          flex: 'auto 0 1',
+                          minHeight: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                      >
                         <FeedbackSection
                           onViewLogs={() => setShowFeedbackLogs(true)}
                           submission={submission}
@@ -455,7 +516,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                     </>
                   )}
                 </Box>
-                
+
                 {/* Content - Right side */}
                 <Box
                   sx={{
@@ -501,7 +562,11 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                     {rawFootages.map((rawFootage, footageIndex) => {
                       const getFootageWidth = () => ({ xs: 140, sm: 160, md: 200, lg: 240 });
 
-                      const getFootageHeight = () => ({ xs: 'calc(100% - 4px)', sm: 'calc(100% - 6px)', md: 'calc(100% - 8px)' });
+                      const getFootageHeight = () => ({
+                        xs: 'calc(100% - 4px)',
+                        sm: 'calc(100% - 6px)',
+                        md: 'calc(100% - 8px)',
+                      });
 
                       return (
                         <Box
@@ -532,7 +597,15 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                               }}
                               onClick={() => handleVideoClick(footageIndex)}
                             >
-                              <Box sx={{ position: 'relative', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                              <Box
+                                sx={{
+                                  position: 'relative',
+                                  width: '100%',
+                                  height: '100%',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                }}
+                              >
                                 <Box sx={{ flex: 1, position: 'relative' }}>
                                   <video
                                     ref={(el) => {
@@ -542,19 +615,31 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                                       width: '100%',
                                       height: '100%',
                                       objectFit: 'cover',
-                                      display: 'block'
+                                      display: 'block',
                                     }}
                                     src={rawFootage.url}
-                                    onLoadedMetadata={(e) => handleVideoMetadataLoaded(rawFootage.id, e.target)}
+                                    onLoadedMetadata={(e) =>
+                                      handleVideoMetadataLoaded(rawFootage.id, e.target)
+                                    }
                                     onTimeUpdate={() => handleTimeUpdate(rawFootage.id)}
-                                    onPlay={() => setVideoStates(prev => ({
-                                      ...prev,
-                                      [rawFootage.id]: { ...prev[rawFootage.id], isPlaying: true }
-                                    }))}
-                                    onPause={() => setVideoStates(prev => ({
-                                      ...prev,
-                                      [rawFootage.id]: { ...prev[rawFootage.id], isPlaying: false }
-                                    }))}
+                                    onPlay={() =>
+                                      setVideoStates((prev) => ({
+                                        ...prev,
+                                        [rawFootage.id]: {
+                                          ...prev[rawFootage.id],
+                                          isPlaying: true,
+                                        },
+                                      }))
+                                    }
+                                    onPause={() =>
+                                      setVideoStates((prev) => ({
+                                        ...prev,
+                                        [rawFootage.id]: {
+                                          ...prev[rawFootage.id],
+                                          isPlaying: false,
+                                        },
+                                      }))
+                                    }
                                   >
                                     <track kind="captions" srcLang="en" label="English" />
                                   </video>
@@ -587,49 +672,69 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                                       p: { xs: 0.4, sm: 0.35, md: 0.3 },
                                       mr: { xs: 0.3, sm: 0.4, md: 0.5 },
                                       '&:hover': {
-                                        bgcolor: 'rgba(255,255,255,0.2)'
+                                        bgcolor: 'rgba(255,255,255,0.2)',
                                       },
                                       '&:active': {
-                                        bgcolor: 'rgba(255,255,255,0.3)'
-                                      }
+                                        bgcolor: 'rgba(255,255,255,0.3)',
+                                      },
                                     }}
                                   >
                                     {videoStates[rawFootage.id]?.isPlaying ? (
-                                      <Box sx={{
-                                        width: { xs: 7, sm: 6.5, md: 6 },
-                                        height: { xs: 8, sm: 7.5, md: 7 },
-                                        display: 'flex',
-                                        gap: { xs: 0.4, sm: 0.35, md: 0.3 }
-                                      }}>
-                                        <Box sx={{
-                                          width: { xs: 3, sm: 2.7, md: 2.5 },
-                                          height: '100%',
-                                          bgcolor: 'white'
-                                        }} />
-                                        <Box sx={{
-                                          width: { xs: 3, sm: 2.7, md: 2.5 },
-                                          height: '100%',
-                                          bgcolor: 'white'
-                                        }} />
+                                      <Box
+                                        sx={{
+                                          width: { xs: 7, sm: 6.5, md: 6 },
+                                          height: { xs: 8, sm: 7.5, md: 7 },
+                                          display: 'flex',
+                                          gap: { xs: 0.4, sm: 0.35, md: 0.3 },
+                                        }}
+                                      >
+                                        <Box
+                                          sx={{
+                                            width: { xs: 3, sm: 2.7, md: 2.5 },
+                                            height: '100%',
+                                            bgcolor: 'white',
+                                          }}
+                                        />
+                                        <Box
+                                          sx={{
+                                            width: { xs: 3, sm: 2.7, md: 2.5 },
+                                            height: '100%',
+                                            bgcolor: 'white',
+                                          }}
+                                        />
                                       </Box>
                                     ) : (
-                                      <Box sx={{
-                                        width: 0,
-                                        height: 0,
-                                        borderLeft: { xs: '7px solid white', sm: '6.5px solid white', md: '6px solid white' },
-                                        borderTop: { xs: '4.5px solid transparent', sm: '4.2px solid transparent', md: '4px solid transparent' },
-                                        borderBottom: { xs: '4.5px solid transparent', sm: '4.2px solid transparent', md: '4px solid transparent' },
-                                        ml: { xs: 0.3, sm: 0.25, md: 0.2 }
-                                      }} />
+                                      <Box
+                                        sx={{
+                                          width: 0,
+                                          height: 0,
+                                          borderLeft: {
+                                            xs: '7px solid white',
+                                            sm: '6.5px solid white',
+                                            md: '6px solid white',
+                                          },
+                                          borderTop: {
+                                            xs: '4.5px solid transparent',
+                                            sm: '4.2px solid transparent',
+                                            md: '4px solid transparent',
+                                          },
+                                          borderBottom: {
+                                            xs: '4.5px solid transparent',
+                                            sm: '4.2px solid transparent',
+                                            md: '4px solid transparent',
+                                          },
+                                          ml: { xs: 0.3, sm: 0.25, md: 0.2 },
+                                        }}
+                                      />
                                     )}
                                   </IconButton>
 
-                                  <Typography 
-                                    variant="caption" 
-                                    sx={{ 
-                                      color: 'white', 
-                                      minWidth: { xs: '25px', sm: '28px', md: '30px' }, 
-                                      fontSize: { xs: 9, sm: 9.5, md: 10 }
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      color: 'white',
+                                      minWidth: { xs: '25px', sm: '28px', md: '30px' },
+                                      fontSize: { xs: 9, sm: 9.5, md: 10 },
                                     }}
                                   >
                                     {formatTime(videoStates[rawFootage.id]?.currentTime || 0)}
@@ -644,10 +749,10 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                                       cursor: 'pointer',
                                       mx: { xs: 0.3, sm: 0.4, md: 0.5 },
                                       '&:hover': {
-                                        height: { xs: 7, sm: 6, md: 5 }
+                                        height: { xs: 7, sm: 6, md: 5 },
                                       },
                                       '&:active': {
-                                        height: { xs: 7, sm: 6, md: 5 }
+                                        height: { xs: 7, sm: 6, md: 5 },
                                       },
                                       // Increase touch target for mobile
                                       position: 'relative',
@@ -658,8 +763,8 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                                         bottom: { xs: -6, sm: -4, md: -2 },
                                         left: 0,
                                         right: 0,
-                                        display: { xs: 'block', md: 'none' }
-                                      }
+                                        display: { xs: 'block', md: 'none' },
+                                      },
                                     }}
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -677,17 +782,17 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                                         height: '100%',
                                         bgcolor: 'primary.main',
                                         borderRadius: 2,
-                                        transition: 'width 0.1s ease'
+                                        transition: 'width 0.1s ease',
                                       }}
                                     />
                                   </Box>
 
-                                  <Typography 
-                                    variant="caption" 
-                                    sx={{ 
-                                      color: 'white', 
-                                      minWidth: { xs: '25px', sm: '28px', md: '30px' }, 
-                                      fontSize: { xs: 9, sm: 9.5, md: 10 }
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      color: 'white',
+                                      minWidth: { xs: '25px', sm: '28px', md: '30px' },
+                                      fontSize: { xs: 9, sm: 9.5, md: 10 },
                                     }}
                                   >
                                     {formatTime(videoStates[rawFootage.id]?.duration || 0)}
@@ -706,17 +811,17 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                                       minWidth: { xs: 28, sm: 26, md: 24 },
                                       minHeight: { xs: 28, sm: 26, md: 24 },
                                       '&:hover': {
-                                        bgcolor: 'rgba(255,255,255,0.1)'
+                                        bgcolor: 'rgba(255,255,255,0.1)',
                                       },
                                       '&:active': {
-                                        bgcolor: 'rgba(255,255,255,0.2)'
+                                        bgcolor: 'rgba(255,255,255,0.2)',
                                       },
                                     }}
                                   >
                                     <Iconify
                                       icon="eva:expand-fill"
                                       sx={{
-                                        fontSize: { xs: 16, sm: 15, md: 14 }
+                                        fontSize: { xs: 16, sm: 15, md: 14 },
                                       }}
                                     />
                                   </IconButton>
@@ -740,7 +845,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                                   zIndex: 10,
                                   border: '1px solid #EBEBEB',
                                   boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                                  p: { xs: 0.3, sm: 0.5, md: 0.75, lg: 1 }
+                                  p: { xs: 0.3, sm: 0.5, md: 0.75, lg: 1 },
                                 }}
                               >
                                 {footageIndex + 1}
@@ -760,8 +865,13 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate,
                               }}
                             >
                               <Stack spacing={2} alignItems="center">
-                                <Iconify icon="eva:film-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
-                                <Typography color="text.secondary">No raw footage uploaded yet</Typography>
+                                <Iconify
+                                  icon="eva:film-fill"
+                                  sx={{ color: 'text.disabled', fontSize: 48 }}
+                                />
+                                <Typography color="text.secondary">
+                                  No raw footage uploaded yet
+                                </Typography>
                               </Stack>
                             </Box>
                           )}

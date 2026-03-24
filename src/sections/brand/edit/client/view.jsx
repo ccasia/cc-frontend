@@ -94,12 +94,6 @@ const CompanyEditView = ({ id }) => {
   const [loading, setLoading] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
-  const [picDialogOpen, setPicDialogOpen] = useState(false);
-  const [picFormData, setPicFormData] = useState({
-    name: '',
-    email: '',
-    designation: '',
-  });
   const router = useRouter();
   const dialog = useBoolean();
   const packageDialog = useBoolean();
@@ -107,6 +101,8 @@ const CompanyEditView = ({ id }) => {
   const [campaignSearch, setCampaignSearch] = useState('');
   const [inviteChildDialog, setInviteChildDialog] = useState(false);
   const [mainPicStatus, setMainPicStatus] = useState(null);
+  const [picDialogOpen, setPicDialogOpen] = useState(false);
+  const [picFormData, setPicFormData] = useState({ name: '', email: '', designation: '' });
 
   // Fetch main PIC user status
   useEffect(() => {
@@ -237,10 +233,11 @@ const CompanyEditView = ({ id }) => {
   });
 
   const handleActivateButtonClick = () => {
-    // Check if PIC exists, if not show PIC creation modal
     if (!hasValidPIC) {
+      // Open PIC dialog if no PIC exists
       setPicDialogOpen(true);
     } else {
+      // Open activation dialog if PIC exists
       setActivateDialogOpen(true);
     }
   };
@@ -248,23 +245,15 @@ const CompanyEditView = ({ id }) => {
   const handleCreatePIC = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.post('/api/pic', {
-        ...picFormData,
-        companyId: company?.id,
-      });
-
-      enqueueSnackbar(response.data.message || 'PIC created successfully', { variant: 'success' });
+      await axiosInstance.post(`/api/pic/company/${id}`, picFormData);
+      enqueueSnackbar('Person In Charge added successfully!', { variant: 'success' });
       setPicDialogOpen(false);
       setPicFormData({ name: '', email: '', designation: '' });
       mutate(); // Refresh company data
-      
-      // After creating PIC, show activation dialog
-      setTimeout(() => {
-        setActivateDialogOpen(true);
-      }, 300);
+      // After creating PIC, open activation dialog
+      setActivateDialogOpen(true);
     } catch (error) {
-      console.error('Error creating PIC:', error);
-      const errorMessage = error.response?.data?.message || 'Error creating PIC';
+      const errorMessage = error.response?.data?.message || 'Error adding Person In Charge';
       enqueueSnackbar(errorMessage, { variant: 'error' });
     } finally {
       setLoading(false);

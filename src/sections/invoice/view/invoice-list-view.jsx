@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
+import { useTheme } from '@mui/material';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
@@ -40,6 +41,7 @@ import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import { useSnackbar } from 'src/components/snackbar';
 import { ConfirmDialog } from 'src/components/custom-dialog';
+import { useSettingsContext } from 'src/components/settings';
 import {
   useTable,
   emptyRows,
@@ -78,12 +80,14 @@ const defaultFilters = {
 
 export default function InvoiceListView({ campId, invoices, isDisabled: propIsDisabled = false }) {
   const { enqueueSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const settings = useSettingsContext();
 
   const { user } = useAuthContext();
 
   const [openNewInvoiceModal, setOpenNewInvoiceModal] = useState(false);
 
-  const { data } = useGetAgreements(campId);
+  const { data, isLoading, error } = useGetAgreements(campId);
 
   const router = useRouter();
 
@@ -150,8 +154,8 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
   const dataFiltered = useMemo(() => {
     if (alphabetical) {
       return [...filteredData].sort((a, b) => {
-        const nameA = ((a.creator.user.name ?? a.invoiceFrom?.name) || '').toLowerCase();
-        const nameB = ((b.creator.user.name ?? b.invoiceFrom?.name) || '').toLowerCase();
+        const nameA = (a.invoiceFrom?.name || '').toLowerCase();
+        const nameB = (b.invoiceFrom?.name || '').toLowerCase();
         return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
       });
     }
@@ -368,7 +372,7 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
       );
 
       // Get the creator details from the data passed from the modal
-      const {creatorDetails} = formData;
+      const { creatorDetails } = formData;
       console.log('Creator Details:', creatorDetails);
 
       // Get the payment form from the creator details or other locations
@@ -450,7 +454,7 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
           // Use the payment form we found
           bankName: paymentForm.bankName || '',
           accountName: paymentForm.bankAccountName || formData.creator,
-          payTo: formData.creator,
+          payTo: paymentForm.bankAccountName || formData.creator,
           accountNumber: paymentForm.bankAccountNumber || '',
 
           // Email from the creator data
@@ -705,6 +709,7 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                   cursor: 'not-allowed',
                   pointerEvents: 'auto',
                 },
+
                 textTransform: 'none',
                 fontWeight: 600,
                 whiteSpace: 'nowrap',
@@ -809,7 +814,9 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                           color="primary"
                           onClick={confirm.onTrue}
                           disabled={isDisabled}
-                          sx={{ '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' } }}
+                          sx={{
+                            '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' },
+                          }}
                         >
                           <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
@@ -939,15 +946,14 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                         >
                           <TableCell sx={{ width: 300, display: 'flex', alignItems: 'center' }}>
                             <Avatar alt={row.invoiceFrom?.name} sx={{ mr: 2 }}>
-                              {row.creator?.user?.name?.charAt(0).toUpperCase() ??
-                                row.invoiceFrom?.name?.charAt(0).toUpperCase()}
+                              {row.invoiceFrom?.name?.charAt(0).toUpperCase()}
                             </Avatar>
 
                             <ListItemText
                               disableTypography
                               primary={
                                 <Typography variant="body2" noWrap sx={{ mt: 1 }}>
-                                  {row.creator?.user?.name ?? row.invoiceFrom?.name}
+                                  {row.invoiceFrom?.name}
                                 </Typography>
                               }
                               secondary={
@@ -1012,8 +1018,8 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                                 borderRadius: 0.8,
                                 bgcolor: 'white',
                                 ...(row.status === 'paid' && {
-                                  color: '#2e6b55',
-                                  borderColor: '#2e6b55',
+                                  color: '#1340FF',
+                                  borderColor: '#1340FF',
                                 }),
                                 ...(row.status === 'approved' && {
                                   color: '#1ABF66',
@@ -1159,8 +1165,8 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
           onPageChange={table.onChangePage}
           onRowsPerPageChange={table.onChangeRowsPerPage}
           dense={table.dense}
-          onChangeDense={table.onChangeDense}
-          sx={{ py: 2, ml: { xs: 0, md: -4 } }}
+          // onChangeDense={table.onChangeDense}
+          // sx={{ py: 2 }}
         />
       </Container>
 
