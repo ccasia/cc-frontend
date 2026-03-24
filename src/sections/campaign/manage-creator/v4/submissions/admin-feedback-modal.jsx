@@ -562,7 +562,6 @@ export default function AdminFeedbackPanel({
   const [editText, setEditText] = useState('');
   const [sending, setSending] = useState(false);
   const [confirmSendToClientOpen, setConfirmSendToClientOpen] = useState(false);
-  const [confirmSendToCreatorOpen, setConfirmSendToCreatorOpen] = useState(false);
 
   const { socket } = useSocketContext();
   const { comments, commentsLoading, commentsMutate } = useSubmissionComments(
@@ -1090,7 +1089,7 @@ export default function AdminFeedbackPanel({
                 variant="contained"
                 disableElevation
                 disabled={!hasComments || sending}
-                onClick={() => setConfirmSendToCreatorOpen(true)}
+                onClick={handleSendToCreator}
                 sx={{
                   fontWeight: 700,
                   fontSize: { xs: '0.8rem', md: '0.85rem', lg: '0.95rem' },
@@ -1156,33 +1155,6 @@ export default function AdminFeedbackPanel({
           </Box>
         )}
       </Box>
-
-      <ConfirmDialogV2
-        open={confirmSendToCreatorOpen}
-        onClose={() => setConfirmSendToCreatorOpen(false)}
-        title="Send this Feedback to the Creator?"
-        emoji={
-          <Avatar
-            src="/assets/images/modals/sent_to_creator.png"
-            alt="sent_to_creator"
-            sx={{ width: 80, height: 80 }}
-          />
-        }
-        content=""
-        action={
-          <Button
-            variant="contained"
-            color="success"
-            onClick={() => {
-              setConfirmSendToCreatorOpen(false);
-              handleSendToCreator();
-            }}
-            disabled={sending}
-          >
-            Send this Feedback to the Creator?
-          </Button>
-        }
-      />
 
       <ConfirmDialogV2
         open={confirmSendToClientOpen}
