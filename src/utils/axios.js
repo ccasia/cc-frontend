@@ -40,6 +40,7 @@ export const endpoints = {
   analytics: {
     creatorGrowth: '/api/analytics/v2/creator-growth',
     creatorGrowthCreators: '/api/analytics/v2/creator-growth/creators',
+    creatorsByCountry: '/api/analytics/v2/creator-growth/creators-by-country',
     activationRate: '/api/analytics/v2/activation-rate',
     timeToActivation: '/api/analytics/v2/time-to-activation',
     timeToActivationCreators: '/api/analytics/v2/time-to-activation/creators',
