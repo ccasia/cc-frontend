@@ -169,7 +169,7 @@ const CampaignFirstDraft = ({
   );
 
   const totalUGCVideos = useMemo(
-    () => campaign.shortlisted?.find((x) => x.userId === submission.userId)?.ugcVideos || null,
+    () => campaign.shortlisted?.find((x) => x?.userId === submission?.userId)?.ugcVideos || null,
     [campaign, submission]
   );
 
@@ -180,25 +180,28 @@ const CampaignFirstDraft = ({
     // Sort by date and remove duplicates
     const uniqueFeedbacks = allFeedbacks
       .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))
-      .filter((feedback, index, self) => 
-        index === self.findIndex((f) => f.id === feedback.id)
-      );
+      .filter((feedback, index, self) => index === self.findIndex((f) => f.id === feedback.id));
 
     // Keep both client feedback and admin feedback for change requests (creators need to see admin feedback when changes are requested)
-    const relevantFeedbacks = uniqueFeedbacks.filter(f => {
-      const isClient = (f?.admin?.role === 'client') || (f?.role === 'client');
-      const isAdmin = (f?.admin?.role === 'admin') || (f?.role === 'admin');
-      const isChangeRequest = f?.type === 'REQUEST' || f?.videosToUpdate?.length > 0 || f?.photosToUpdate?.length > 0 || f?.rawFootageToUpdate?.length > 0;
-      
+    const relevantFeedbacks = uniqueFeedbacks.filter((f) => {
+      const isClient = f?.admin?.role === 'client' || f?.role === 'client';
+      const isAdmin = f?.admin?.role === 'admin' || f?.role === 'admin';
+      const isChangeRequest =
+        f?.type === 'REQUEST' ||
+        f?.videosToUpdate?.length > 0 ||
+        f?.photosToUpdate?.length > 0 ||
+        f?.rawFootageToUpdate?.length > 0;
+
       // Show client feedback always, and admin feedback when it's a change request
       return isClient || (isAdmin && isChangeRequest);
     });
 
     // Show feedback that has content or media updates (less restrictive filtering)
     const result = relevantFeedbacks
-      .filter(item => {
-        const hasMediaUpdates = item?.photosToUpdate?.length > 0 || 
-          item?.videosToUpdate?.length > 0 || 
+      .filter((item) => {
+        const hasMediaUpdates =
+          item?.photosToUpdate?.length > 0 ||
+          item?.videosToUpdate?.length > 0 ||
           item?.rawFootageToUpdate?.length > 0;
         const hasContent = item?.content && item.content.trim() !== '';
         const hasReasons = item?.reasons && item.reasons.length > 0;
@@ -267,7 +270,7 @@ const CampaignFirstDraft = ({
       uniqueFeedbacksCount: uniqueFeedbacks.length,
       relevantFeedbacksCount: relevantFeedbacks.length,
       finalResultCount: result.length,
-      allFeedbacks: allFeedbacks.map(f => ({
+      allFeedbacks: allFeedbacks.map((f) => ({
         id: f.id,
         type: f.type,
         adminRole: f.admin?.role,
@@ -276,9 +279,9 @@ const CampaignFirstDraft = ({
         videosToUpdate: f.videosToUpdate?.length || 0,
         photosToUpdate: f.photosToUpdate?.length || 0,
         rawFootageToUpdate: f.rawFootageToUpdate?.length || 0,
-        createdAt: f.createdAt
+        createdAt: f.createdAt,
       })),
-      result
+      result,
     });
 
     return result;
@@ -291,7 +294,7 @@ const CampaignFirstDraft = ({
         submissionId: submission?.id,
         submissionStatus: submission?.status,
         feedbacksTestingCount: feedbacksTesting.length,
-        feedbacksTesting: feedbacksTesting.map(f => ({
+        feedbacksTesting: feedbacksTesting.map((f) => ({
           id: f.id,
           adminName: f.adminName,
           role: f.role,
@@ -299,7 +302,7 @@ const CampaignFirstDraft = ({
           changes: f.changes,
           reasons: f.reasons,
           createdAt: f.createdAt,
-        }))
+        })),
       });
     }
   }, [feedbacksTesting, submission]);
@@ -326,7 +329,12 @@ const CampaignFirstDraft = ({
             if (serverP >= 100) {
               return { ...item, ...data, serverProgress: 100, progressShown: 100 };
             }
-            return { ...item, ...data, serverProgress: serverP, progressShown: Math.max(1, item.progressShown || 1) };
+            return {
+              ...item,
+              ...data,
+              serverProgress: serverP,
+              progressShown: Math.max(1, item.progressShown || 1),
+            };
           });
         }
 
@@ -354,7 +362,10 @@ const CampaignFirstDraft = ({
   }, [submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
   const checkProgress = useCallback(() => {
-    if (uploadProgress?.length && uploadProgress?.every((x) => Number(x?.serverProgress || 0) >= 100)) {
+    if (
+      uploadProgress?.length &&
+      uploadProgress?.every((x) => Number(x?.serverProgress || 0) >= 100)
+    ) {
       // Immediately refresh submissions to reflect new status
       if (socket) {
         mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
@@ -366,7 +377,9 @@ const CampaignFirstDraft = ({
         let attempts = 0;
         const poll = async () => {
           attempts += 1;
-          await mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+          await mutate(
+            `${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`
+          );
           const currentStatus = latestSubmissionRef.current?.status;
           if (
             currentStatus === 'PENDING_REVIEW' ||
@@ -483,7 +496,9 @@ const CampaignFirstDraft = ({
 
   // Check if creator has uploaded all required deliverables
   const areDeliverablesComplete = useMemo(() => {
-    const hasVideo = Array.isArray(submission?.video) ? submission.video.length > 0 : !!submission?.content;
+    const hasVideo = Array.isArray(submission?.video)
+      ? submission.video.length > 0
+      : !!submission?.content;
     const needsRaw = !!campaign?.rawFootage;
     const needsPhotos = !!campaign?.photos;
     const hasRaw = Array.isArray(submission?.rawFootages) && submission.rawFootages.length > 0;
@@ -598,8 +613,7 @@ const CampaignFirstDraft = ({
         />
 
         <Box>
-          {(submission?.status === 'PENDING_REVIEW' ||
-            submission?.status === 'SENT_TO_CLIENT') && (
+          {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && (
             <Stack justifyContent="center" alignItems="center" spacing={2}>
               <Box
                 sx={{
@@ -716,10 +730,7 @@ const CampaignFirstDraft = ({
                         zIndex: 1,
                       }}
                     >
-                      <Iconify
-                        icon="eva:checkmark-fill"
-                        sx={{ color: 'white', width: 20 }}
-                      />
+                      <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
                     </Box>
                   )}
 
@@ -801,10 +812,7 @@ const CampaignFirstDraft = ({
                           zIndex: 1,
                         }}
                       >
-                        <Iconify
-                          icon="eva:checkmark-fill"
-                          sx={{ color: 'white', width: 20 }}
-                        />
+                        <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
                       </Box>
                     )}
 
@@ -887,10 +895,7 @@ const CampaignFirstDraft = ({
                           zIndex: 1,
                         }}
                       >
-                        <Iconify
-                          icon="eva:checkmark-fill"
-                          sx={{ color: 'white', width: 20 }}
-                        />
+                        <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
                       </Box>
                     )}
 
@@ -1002,7 +1007,7 @@ const CampaignFirstDraft = ({
                             )}
 
                             <Stack spacing={1} flexGrow={1}>
-                              <Typography fontSize={{ xs: 12, md: 14}} noWrap>
+                              <Typography fontSize={{ xs: 12, md: 14 }} noWrap>
                                 {truncateText(currentFile?.fileName, 25) || 'Uploading file...'}
                               </Typography>
                               <Stack direction="row" spacing={2} alignItems="center">
@@ -1022,7 +1027,8 @@ const CampaignFirstDraft = ({
                                       currentFile.progressShown = next;
                                       progressValue = next;
                                     }
-                                    const isComplete = Number(currentFile?.serverProgress || 0) >= 100;
+                                    const isComplete =
+                                      Number(currentFile?.serverProgress || 0) >= 100;
                                     return (
                                       <>
                                         <CircularProgress
@@ -1080,7 +1086,10 @@ const CampaignFirstDraft = ({
                                     justifyContent="space-between"
                                     alignItems="center"
                                   >
-                                    <Typography fontSize={{ xs: 11, md: 12 }} sx={{ color: 'text.secondary' }}>
+                                    <Typography
+                                      fontSize={{ xs: 11, md: 12 }}
+                                      sx={{ color: 'text.secondary' }}
+                                    >
                                       {Number(currentFile?.serverProgress || 0) >= 100 ? (
                                         <Box
                                           component="span"
@@ -1092,7 +1101,10 @@ const CampaignFirstDraft = ({
                                         `${currentFile?.name || 'Uploading'}...`
                                       )}
                                     </Typography>
-                                    <Typography fontSize={{ xs: 11, md: 12 }} sx={{ color: 'text.secondary' }}>
+                                    <Typography
+                                      fontSize={{ xs: 11, md: 12 }}
+                                      sx={{ color: 'text.secondary' }}
+                                    >
                                       {formatFileSize(currentFile?.fileSize || 0)}
                                     </Typography>
                                   </Stack>
@@ -1112,7 +1124,11 @@ const CampaignFirstDraft = ({
                         if (submission?.status === 'CHANGES_REQUIRED') {
                           return 'Please review the feedback below and resubmit your first draft with the requested changes.';
                         }
-                        if (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0) {
+                        if (
+                          submission?.status === 'NOT_STARTED' &&
+                          feedbacksTesting &&
+                          feedbacksTesting.length > 0
+                        ) {
                           return 'Please review the feedback below and submit your first draft with the requested changes.';
                         }
                         return "It's time to submit your first draft for this campaign!";
@@ -1123,7 +1139,11 @@ const CampaignFirstDraft = ({
                         if (submission?.status === 'CHANGES_REQUIRED') {
                           return 'Make sure to address all the feedback points mentioned in the review.';
                         }
-                        if (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0) {
+                        if (
+                          submission?.status === 'NOT_STARTED' &&
+                          feedbacksTesting &&
+                          feedbacksTesting.length > 0
+                        ) {
                           return 'Make sure to address all the feedback points mentioned in the review.';
                         }
                         return "Do ensure to read through the brief, and the do's and dont's for the creatives over at the";
@@ -1270,10 +1290,7 @@ const CampaignFirstDraft = ({
                               zIndex: 1,
                             }}
                           >
-                            <Iconify
-                              icon="eva:checkmark-fill"
-                              sx={{ color: 'white', width: 20 }}
-                            />
+                            <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
                           </Box>
                         )}
 
@@ -1643,27 +1660,29 @@ const CampaignFirstDraft = ({
                 </Stack>
               )}
 
-              {submission?.status === 'IN_PROGRESS' && areDeliverablesComplete && !uploadProgress.length && (
-                <Stack alignItems="center" sx={{ mt: 2 }}>
-                  <Button
-                    variant="contained"
-                    onClick={handleForceSubmitForReview}
-                    startIcon={<Iconify icon="solar:upload-square-bold" width={22} />}
-                    sx={{
-                      bgcolor: '#203ff5',
-                      color: 'white',
-                      borderBottom: 3.5,
-                      borderBottomColor: '#112286',
-                      borderRadius: 1.5,
-                      px: 2.5,
-                      py: 1,
-                      '&:hover': { bgcolor: '#203ff5', opacity: 0.9 },
-                    }}
-                  >
-                    Submit for Review
-                  </Button>
-                </Stack>
-              )}
+              {submission?.status === 'IN_PROGRESS' &&
+                areDeliverablesComplete &&
+                !uploadProgress.length && (
+                  <Stack alignItems="center" sx={{ mt: 2 }}>
+                    <Button
+                      variant="contained"
+                      onClick={handleForceSubmitForReview}
+                      startIcon={<Iconify icon="solar:upload-square-bold" width={22} />}
+                      sx={{
+                        bgcolor: '#203ff5',
+                        color: 'white',
+                        borderBottom: 3.5,
+                        borderBottomColor: '#112286',
+                        borderRadius: 1.5,
+                        px: 2.5,
+                        py: 1,
+                        '&:hover': { bgcolor: '#203ff5', opacity: 0.9 },
+                      }}
+                    >
+                      Submit for Review
+                    </Button>
+                  </Stack>
+                )}
             </>
           )}
 
@@ -1731,22 +1750,31 @@ const CampaignFirstDraft = ({
               </Stack>
 
               {/* Detailed Feedback Display - Disabled: feedback is shown in 2nd Draft tab instead */}
-              {false && ((submission?.feedback && submission.feedback.length > 0) ||
-                (submission?.status === 'NOT_STARTED' &&
-                  feedbacksTesting &&
-                  feedbacksTesting.length > 0)) && (
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                    Content Requiring Changes
-                  </Typography>
+              {false &&
+                ((submission?.feedback && submission.feedback.length > 0) ||
+                  (submission?.status === 'NOT_STARTED' &&
+                    feedbacksTesting &&
+                    feedbacksTesting.length > 0)) && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                      Content Requiring Changes
+                    </Typography>
 
-                  {(
-                    (submission?.status === 'NOT_STARTED' && feedbacksTesting?.length > 0 ? feedbacksTesting : (submission.feedback || []))
+                    {(submission?.status === 'NOT_STARTED' && feedbacksTesting?.length > 0
+                      ? feedbacksTesting
+                      : submission.feedback || []
+                    )
                       .filter((feedback) => {
-                        const isClient = (feedback.admin?.role === 'client') || (feedback.role === 'client');
-                        const isAdmin = (feedback.admin?.role === 'admin') || (feedback.role === 'admin');
-                        const isChangeRequest = feedback.type === 'REQUEST' || feedback.videosToUpdate?.length > 0 || feedback.photosToUpdate?.length > 0 || feedback.rawFootageToUpdate?.length > 0;
-                        
+                        const isClient =
+                          feedback.admin?.role === 'client' || feedback.role === 'client';
+                        const isAdmin =
+                          feedback.admin?.role === 'admin' || feedback.role === 'admin';
+                        const isChangeRequest =
+                          feedback.type === 'REQUEST' ||
+                          feedback.videosToUpdate?.length > 0 ||
+                          feedback.photosToUpdate?.length > 0 ||
+                          feedback.rawFootageToUpdate?.length > 0;
+
                         // Show client feedback always, and admin feedback when it's a change request
                         return isClient || (isAdmin && isChangeRequest);
                       })
@@ -1763,7 +1791,7 @@ const CampaignFirstDraft = ({
                         return isValidType && (hasMediaUpdates || hasContent);
                       })
                       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                  ).map((feedback, feedbackIndex) => (
+                      .map((feedback, feedbackIndex) => (
                         <Box
                           key={feedback.id || feedbackIndex}
                           mb={2}
@@ -1787,13 +1815,11 @@ const CampaignFirstDraft = ({
                               <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
                                 Feedback:
                               </Typography>
-                              {feedback.content
-                                .split('\n')
-                                .map((line, i) => (
-                                  <Typography key={i} variant="body2" sx={{ mb: 0.5 }}>
-                                    {line}
-                                  </Typography>
-                                ))}
+                              {feedback.content.split('\n').map((line, i) => (
+                                <Typography key={i} variant="body2" sx={{ mb: 0.5 }}>
+                                  {line}
+                                </Typography>
+                              ))}
                             </Box>
                           )}
 
@@ -1846,12 +1872,10 @@ const CampaignFirstDraft = ({
                           )}
                         </Box>
                       ))}
-                </Box>
-              )}
+                  </Box>
+                )}
             </Box>
           )}
-
-  
 
           {(submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED') && (
             <Stack justifyContent="center" alignItems="center" spacing={2}>
@@ -1879,9 +1903,7 @@ const CampaignFirstDraft = ({
                     fontWeight: 550,
                   }}
                 >
-                  {submission?.status === 'CLIENT_APPROVED'
-                    ? 'Submission Approved!'
-                    : 'Approved!'}
+                  {submission?.status === 'CLIENT_APPROVED' ? 'Submission Approved!' : 'Approved!'}
                 </Typography>
                 <Typography
                   variant="body1"
@@ -2201,8 +2223,7 @@ const CampaignFirstDraft = ({
                         iconPosition="start"
                         sx={{
                           opacity: 1,
-                          color:
-                            tabIndex === getTabIndex('caption') ? '#1340FF' : 'text.secondary',
+                          color: tabIndex === getTabIndex('caption') ? '#1340FF' : 'text.secondary',
                           '&.Mui-selected': { color: '#1340FF' },
                         }}
                       />
