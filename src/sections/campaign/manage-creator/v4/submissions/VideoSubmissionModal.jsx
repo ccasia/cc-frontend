@@ -479,7 +479,8 @@ const VideoSubmissionModal = ({
                   submissionId: effectiveSubmission.id,
                   videoId: currentVideo?.id,
                   isLocked:
-                    !['SENT_TO_CLIENT'].includes(effectiveSubmission.status) || videoPage !== 0,
+                    !['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(effectiveSubmission.status) ||
+                    videoPage !== 0,
                   isPastVideo: videoPage !== 0,
                   currentVideoTime: formatTime(modalCurrentTime),
                   onSeekTo: handleModalSeek,

@@ -265,7 +265,7 @@ export default function MobileVideoSubmission({
       return (
         <Box
           sx={{
-            maxHeight: 120,
+            maxHeight: 180,
             overflow: 'auto',
           }}
         >
@@ -290,19 +290,6 @@ export default function MobileVideoSubmission({
       </Typography>
     );
   };
-
-  // if (!clientVisible) {
-  //   return (
-  //     <Box sx={{ p: 3, textAlign: 'center' }}>
-  //       <Stack spacing={2} alignItems="center">
-  //         <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
-  //         <Typography variant="body2" color="text.secondary">
-  //           Video content is being processed.
-  //         </Typography>
-  //       </Stack>
-  //     </Box>
-  //   );
-  // }
 
   if (!video?.url) {
     return (
@@ -408,13 +395,12 @@ export default function MobileVideoSubmission({
               <button
                 type="button"
                 style={{
-                  padding: '12px 24px',
                   background: 'none',
                   color: '#1340FF',
                   border: 'none',
                   borderRadius: '8px',
                   fontWeight: 600,
-                  fontSize: '1rem',
+                  fontSize: '0.875rem',
                   cursor: 'pointer',
                 }}
                 onClick={() => setVideoSubmissionModalOpen(true)}

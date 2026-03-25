@@ -436,7 +436,7 @@ const ClientFeedbackModal = forwardRef(
     const COUNTDOWN_SECONDS = 3000; //for testing
 
     const commentRefs = useRef({});
-    const effectiveIsLocked = (isLocked && !isCountingDown) || isPastVideo;
+    const effectiveIsLocked = isLocked || !isCountingDown || isPastVideo;
 
     if (videoId !== activeVideoId) {
       setActiveVideoId(videoId); // Sync the tracking ID
@@ -946,7 +946,7 @@ const ClientFeedbackModal = forwardRef(
               {isPastVideo ? 'This is an older version' : 'Feedback has been sent'}
             </Typography>
           )}
-          {!isPastVideo && !(isMobile && !!replyingToId) && (
+          {!effectiveIsLocked && !(isMobile && !!replyingToId) && (
             <Box
               sx={{
                 flexShrink: 0,
@@ -1181,7 +1181,6 @@ const ClientFeedbackModal = forwardRef(
                 </IconButton>
               </Box>
             )}
-            {/* {!isCountingDown && ( */}
             <Button
               variant="contained"
               disableElevation
@@ -1206,7 +1205,6 @@ const ClientFeedbackModal = forwardRef(
             >
               Send Feedback to Admin
             </Button>
-            {/* )} */}
           </Box>
         </Box>
 
