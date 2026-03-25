@@ -5,6 +5,7 @@ import Grid from '@mui/material/Grid';
 import { varFade, varContainer } from 'src/components/animate/variants';
 
 import CreatorGrowthChart from './creators/creator-growth-chart';
+import CreatorCountryMapChart from './creators/creator-country-map-chart';
 import ActivationRateChart from './creators/activation-rate-chart';
 import TimeToActivationChart from './creators/time-to-activation-chart';
 import MediaKitActivationChart from './creators/media-kit-activation-chart';
@@ -29,6 +30,9 @@ export default function CreatorsTabContent() {
     >
       <Grid item xs={12} component={m.div} variants={itemVariants}>
         <CreatorGrowthChart />
+      </Grid>
+      <Grid item xs={12} component={m.div} variants={itemVariants}>
+        <CreatorCountryMapChart />
       </Grid>
       <Grid item xs={12} md={6} component={m.div} variants={itemVariants}>
         <ActivationRateChart />

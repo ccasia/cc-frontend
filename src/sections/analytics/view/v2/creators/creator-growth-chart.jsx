@@ -10,22 +10,16 @@ import ShowChartIcon from '@mui/icons-material/ShowChart';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import { useAxisTooltip } from '@mui/x-charts/ChartsTooltip';
-import { useDrawingArea, useXScale, useYScale } from '@mui/x-charts/hooks';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import PublicOutlinedIcon from '@mui/icons-material/PublicOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { Box, Card, Chip, Stack, Paper, Divider, Tooltip, Typography, useTheme, useMediaQuery } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
-import { countries as countryList } from 'src/assets/data/countries';
 import useChartZoom from 'src/hooks/use-chart-zoom';
 import useGetCreatorGrowth from 'src/hooks/use-get-creator-growth';
 import useGetCreatorGrowthCreators from 'src/hooks/use-get-creator-growth-creators';
-import useGetCreatorsByCountry from 'src/hooks/use-get-creators-by-country';
 
 import ChartItemTooltip from '../components/chart-item-tooltip';
-import ChartAxisTooltip from '../components/chart-axis-tooltip';
 import ZoomableChart from '../components/zoomable-chart';
 import CreatorDrilldownDrawer from './creator-drilldown-drawer';
 import { useDateFilter, useFilteredData, useFilterLabel, useIsDaily } from '../date-filter-context';
@@ -34,58 +28,6 @@ import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, TICK_LA
 const GrowthDataContext = createContext([]);
 
 const GENDER_COLORS = { male: '#1340FF', female: '#E45DBF', nonBinary: '#919EAB' };
-
-// Country name → ISO code lookup for flag icons
-const countryCodeMap = new Map(countryList.filter((c) => c.code).map((c) => [c.label.toLowerCase(), c.code.toLowerCase()]));
-const getCountryCode = (name) => countryCodeMap.get(name.toLowerCase()) || '';
-
-const FLAG_SIZE = 18;
-
-function FlagBarOverlay({ data }) {
-  const { top } = useDrawingArea();
-  const xScale = useXScale();
-  const yScale = useYScale();
-
-  if (!xScale?.bandwidth || !yScale) return null;
-
-  const bandwidth = xScale.bandwidth();
-
-  return (
-    <g>
-      {data.map((d) => {
-        const x = xScale(d.label);
-        if (x == null) return null;
-        const cx = x + bandwidth / 2;
-        const code = getCountryCode(d.label);
-        if (!code) return null;
-
-        const barTopY = yScale(d.value) ?? top;
-        const flagY = barTopY - FLAG_SIZE - 4;
-
-        return (
-          <foreignObject
-            key={d.label}
-            x={cx - FLAG_SIZE / 2}
-            y={Math.max(flagY, 0)}
-            width={FLAG_SIZE}
-            height={FLAG_SIZE}
-            style={{ overflow: 'visible' }}
-          >
-            <Iconify
-              icon={`circle-flags:${code}`}
-              width={FLAG_SIZE}
-              sx={{ display: 'block', mx: 'auto' }}
-            />
-          </foreignObject>
-        );
-      })}
-    </g>
-  );
-}
-
-FlagBarOverlay.propTypes = {
-  data: PropTypes.array.isRequired,
-};
 
 function GrowthHeroStats({ genderBreakdown, count }) {
   const total = count || 0;
@@ -146,35 +88,6 @@ const GROWTH_DRAWER_CONFIG = {
   emptySubtitle: 'No creators registered in this period',
 };
 
-const COUNTRY_DRAWER_CONFIG = {
-  useCreatorsHook: useGetCreatorsByCountry,
-  variant: 'simple',
-  subtitle: (
-    <>
-      Creators registered from this <Typography component="span" sx={{ fontWeight: 700, color: '#637381', fontSize: 'inherit' }}>country</Typography>
-    </>
-  ),
-  renderHeroStats: (hookData) => (
-    <GrowthHeroStats genderBreakdown={hookData.genderBreakdown} count={hookData.count} />
-  ),
-  emptyTitle: 'No creators found',
-  emptySubtitle: 'No creators registered from this country',
-  deriveHookOptions: (selectedPoint, _points, _data, _isDaily, creditTiers) => {
-    const opts = { country: selectedPoint };
-    if (creditTiers.length > 0) opts.creditTiers = creditTiers;
-    return { hookOptions: opts, displayTitle: selectedPoint };
-  },
-  renderTitle: (title) => {
-    const code = getCountryCode(title);
-    return (
-      <Stack direction="row" alignItems="center" spacing={1}>
-        {code && <Iconify icon={`circle-flags:${code}`} width={24} />}
-        <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{title}</Typography>
-      </Stack>
-    );
-  },
-};
-
 function GrowthTooltip() {
   const tooltipData = useAxisTooltip();
   const growthData = useContext(GrowthDataContext);
@@ -218,15 +131,14 @@ function GrowthTooltip() {
 }
 
 // Demographics panel — gender donut + age group bars
-function DemographicsPanel({ chipLabel, total, growthRate, trend, TrendIcon, isNeutral, demographics, onCountryClick }) {
+function DemographicsPanel({ chipLabel, total, growthRate, trend, TrendIcon, isNeutral, demographics }) {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
   const donutSize = isSmall ? 160 : 180;
 
-  const { gender, ageGroups, countries = [] } = demographics;
+  const { gender, ageGroups } = demographics;
   const genderSum = gender.reduce((sum, d) => sum + d.value, 0);
   const genderTotal = genderSum || 1; // avoid division by zero for percentages
-  const countryTotal = countries.reduce((sum, d) => sum + d.value, 0) || 1;
 
   const pieData = gender.map((d, i) => ({
     id: i,
@@ -355,74 +267,6 @@ function DemographicsPanel({ chipLabel, total, growthRate, trend, TrendIcon, isN
           />
         </Box>
       </Box>
-
-      {countries.length > 0 && (
-        <>
-          <Divider sx={{ borderColor: '#E8ECEE', my: 1.5 }} />
-
-          {/* Countries Section */}
-          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 0.5 }}>
-              <PublicOutlinedIcon sx={{ fontSize: 18, color: '#919EAB' }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
-                Countries
-              </Typography>
-            </Stack>
-            <Box
-              sx={{
-                width: '100%',
-                overflowX: 'auto',
-                '&::-webkit-scrollbar': { height: '3px' },
-                '&::-webkit-scrollbar-track': { background: 'transparent' },
-                '&::-webkit-scrollbar-thumb': { background: 'transparent', borderRadius: '1.5px' },
-                '&:hover::-webkit-scrollbar-thumb': { background: '#D0D5DA' },
-                scrollbarWidth: 'thin',
-              }}
-            >
-              <BarChart
-                series={[{
-                  data: countries.map((d) => d.value),
-                  valueFormatter: (val) => {
-                    const pct = ((val / countryTotal) * 100).toFixed(1);
-                    return `${val.toLocaleString()} (${pct}%)`;
-                  },
-                }]}
-                xAxis={[{
-                  scaleType: 'band',
-                  data: countries.map((d) => d.label),
-                  tickLabelStyle: { fill: '#333', fontSize: 10, fontWeight: 500 },
-                  colorMap: {
-                    type: 'ordinal',
-                    values: countries.map((d) => d.label),
-                    colors: countries.map((d) => d.color),
-                  },
-                }]}
-                yAxis={[{
-                  tickLabelStyle: { fill: '#666', fontSize: 11, fontWeight: 500 },
-                }]}
-                height={360}
-                width={Math.max(countries.length * 80 + 52, 300)}
-                margin={{ top: FLAG_SIZE + 8, bottom: 40, left: 36, right: 16 }}
-                grid={{ horizontal: true, vertical: false }}
-                hideLegend
-                tooltip={{ trigger: 'axis' }}
-                slots={{ axisContent: ChartAxisTooltip }}
-                onAxisClick={onCountryClick}
-                sx={{
-                  overflow: 'visible',
-                  '& .MuiChartsAxis-tick': { display: 'none' },
-                  '& .MuiChartsAxis-left .MuiChartsAxis-line': { stroke: '#E0E3E7', strokeWidth: 1 },
-                  '& .MuiChartsAxis-bottom .MuiChartsAxis-line': { stroke: '#E0E3E7', strokeWidth: 1 },
-                  '& .MuiChartsGrid-line': { stroke: '#F0F2F4', strokeDasharray: '4 4' },
-                  '& .MuiBarElement-root': { rx: 3, cursor: 'pointer' },
-                }}
-              >
-                <FlagBarOverlay data={countries} />
-              </BarChart>
-            </Box>
-          </Box>
-        </>
-      )}
     </Stack>
   );
 }
@@ -445,13 +289,7 @@ DemographicsPanel.propTypes = {
       value: PropTypes.number,
       color: PropTypes.string,
     })),
-    countries: PropTypes.arrayOf(PropTypes.shape({
-      label: PropTypes.string,
-      value: PropTypes.number,
-      color: PropTypes.string,
-    })),
   }),
-  onCountryClick: PropTypes.func,
 };
 
 function CreatorGrowthChart() {
@@ -481,7 +319,6 @@ function CreatorGrowthChart() {
   const indices = useMemo(() => labels.map((_, i) => i), [labels]);
 
   const [selectedPoint, setSelectedPoint] = useState(null);
-  const [selectedCountry, setSelectedCountry] = useState(null);
   const clickStartRef = useRef(null);
   const chartContainerRef = useRef(null);
   const [chartHeight, setChartHeight] = useState(560);
@@ -507,12 +344,6 @@ function CreatorGrowthChart() {
     const label = labels[d.dataIndex];
     if (label) setSelectedPoint(label);
   }, [labels]);
-
-  const handleCountryClick = useCallback((_event, d) => {
-    if (!d || d.dataIndex == null) return;
-    const country = demographics.countries?.[d.dataIndex];
-    if (country) setSelectedCountry(country.label);
-  }, [demographics.countries]);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -663,7 +494,7 @@ function CreatorGrowthChart() {
         {/* Right: Demographics panel - fixed width */}
         <Stack
           sx={{
-            width: { md: 500 },
+            width: { md: 560 },
             flexShrink: 0,
             borderLeft: { md: '1px solid #E8ECEE' },
             borderTop: { xs: '1px solid #E8ECEE', md: 'none' },
@@ -678,7 +509,6 @@ function CreatorGrowthChart() {
             TrendIcon={TrendIcon}
             isNeutral={isNeutral}
             demographics={demographics}
-            onCountryClick={handleCountryClick}
           />
         </Stack>
       </Stack>
@@ -691,15 +521,6 @@ function CreatorGrowthChart() {
       onClose={() => setSelectedPoint(null)}
       onNavigate={setSelectedPoint}
       config={GROWTH_DRAWER_CONFIG}
-    />
-    <CreatorDrilldownDrawer
-      selectedPoint={selectedCountry}
-      points={demographics.countries.map((c) => c.label)}
-      data={demographics.countries}
-      isDaily={false}
-      onClose={() => setSelectedCountry(null)}
-      onNavigate={setSelectedCountry}
-      config={COUNTRY_DRAWER_CONFIG}
     />
     </GrowthDataContext.Provider>
   );
