@@ -122,6 +122,7 @@ export default function DashboardLayout({ children }) {
     attachments: yup
       .array()
       .of(yup.mixed())
+      .required('Please provide at least one attachment')
       .min(1, 'Please provide at least one attachment')
       .max(5, 'Maximum 5 attachments allowed'),
     campaignName: yup.string().required('Campaign name is required'),
@@ -237,7 +238,7 @@ export default function DashboardLayout({ children }) {
 
     if (attachments?.length) {
       attachments.forEach((file) => {
-        formData.append('attachments', file);
+        formData.append('attachment', file);
       });
     }
 
