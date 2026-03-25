@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
@@ -12,7 +12,7 @@ import {
   Stack,
   Button,
   Dialog,
-  FormLabel,
+  Divider,
   IconButton,
   Typography,
   DialogTitle,
@@ -68,14 +68,43 @@ const EXCLUDED_USER_IDS = [
 // ----------------------------------------------------------------------
 
 // eslint-disable-next-line react/prop-types
-const FormField = ({ label, children, ...others }) => (
+const FormField = ({ label, children, required: isRequired = false, ...others }) => (
   <Stack spacing={0.5} alignItems="start" width={1}>
-    <FormLabel required sx={{ fontWeight: 500, color: '#636366', fontSize: '12px' }} {...others}>
+    <Typography
+      component="label"
+      sx={{
+        fontFamily: 'Inter Display, sans-serif',
+        fontWeight: 500,
+        fontSize: '12px',
+        lineHeight: '16px',
+        color: '#636366',
+      }}
+      {...others}
+    >
       {label}
-    </FormLabel>
+      {isRequired && <span style={{ color: '#FF5630', marginLeft: 2 }}>*</span>}
+    </Typography>
     {children}
   </Stack>
 );
+
+const inputSx = {
+  '& .MuiInputBase-root': {
+    borderRadius: '8px',
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #E5E5EA',
+    '&:hover': { backgroundColor: '#FFFFFF', borderColor: '#E5E5EA' },
+    '&.Mui-focused': { backgroundColor: '#FFFFFF', borderColor: '#1340FF' },
+  },
+  '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+  '& .MuiInputBase-input': {
+    padding: '12px 14px',
+    fontFamily: 'Inter Display, sans-serif',
+    fontSize: '14px',
+    color: '#231F20',
+    '&::placeholder': { color: '#C7C7CC', opacity: 1 },
+  },
+};
 
 export default function DashboardLayout({ children }) {
   const { user } = useAuthContext();
@@ -86,17 +115,24 @@ export default function DashboardLayout({ children }) {
   const bugFormDialog = useBoolean();
   const kwspFormDialog = useBoolean();
 
+  const [submitCount, setSubmitCount] = useState(0);
+
   const schema = yup.object().shape({
     stepsToReproduce: yup.string().required('Steps to reproduce is required'),
-    attachment: yup.mixed().required('Please provide attachment of the bugs'),
-    campaignName: yup.string(),
+    attachments: yup
+      .array()
+      .of(yup.mixed())
+      .required('Please provide at least one attachment')
+      .min(1, 'Please provide at least one attachment')
+      .max(5, 'Maximum 5 attachments allowed'),
+    campaignName: yup.string().required('Campaign name is required'),
   });
 
   const methods = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       stepsToReproduce: '',
-      attachment: null,
+      attachments: [],
       campaignName: '',
     },
   });
@@ -104,9 +140,13 @@ export default function DashboardLayout({ children }) {
   const {
     handleSubmit,
     reset,
-    setValue,
-    formState: { isDirty, isSubmitting },
+    watch,
+    formState: { isSubmitting },
   } = methods;
+
+  const watchedFields = watch(['stepsToReproduce', 'campaignName', 'attachments']);
+  const isFormFilled =
+    !!watchedFields[0]?.trim() && !!watchedFields[1]?.trim() && !!watchedFields[2]?.length;
 
   const kwspSchema = yup.object().shape({
     fullName: yup.string().required('Full name is required'),
@@ -192,25 +232,17 @@ export default function DashboardLayout({ children }) {
     />
   );
 
-  const onDrop = useCallback(
-    (e) => {
-      const preview = URL.createObjectURL(e[0]);
-      setValue('attachment', { file: e[0], preview });
-    },
-    [setValue]
-  );
-
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
+    const { attachments, ...rest } = data;
 
-    if (data.attachment) {
-      formData.append('attachment', data.attachment.file);
-
-      // remove attachment
-      delete data.attachment;
+    if (attachments?.length) {
+      attachments.forEach((file) => {
+        formData.append('attachment', file);
+      });
     }
 
-    formData.append('data', JSON.stringify(data));
+    formData.append('data', JSON.stringify(rest));
 
     try {
       const res = await axiosInstance.post(endpoints.bug.create, formData, {
@@ -220,6 +252,7 @@ export default function DashboardLayout({ children }) {
       });
 
       reset();
+      setSubmitCount((c) => c + 1);
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar(error?.message, {
@@ -320,74 +353,136 @@ export default function DashboardLayout({ children }) {
   const feedbackForm = (
     <Dialog
       open={bugFormDialog.value}
-      maxWidth="md"
-      fullWidth
-      sx={{
-        '& .MuiDialog-paper': {
-          scrollbarWidth: 'none',
+      maxWidth={false}
+      PaperProps={{
+        sx: {
+          width: '860px',
+          maxWidth: '95vw',
+          maxHeight: '90vh',
+          borderRadius: '16px',
+          padding: '24px',
+          gap: '24px',
+          backgroundColor: '#F4F4F4',
+          boxShadow: '0px 1px 2px 0px rgba(0, 0, 0, 0.15)',
         },
       }}
     >
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" px={1}>
-          <DialogTitle>
-            <Typography
+        <Stack sx={{ height: '100%', maxHeight: 'calc(90vh - 48px)' }}>
+          {/* Header — fixed top */}
+          <Stack spacing={1} sx={{ pb: 2 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+              <Stack spacing={1}>
+                <Typography
+                  sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                    fontSize: '36px',
+                    lineHeight: '40px',
+                    color: '#231F20',
+                  }}
+                >
+                  🐞 Report a Bug
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: 'Inter Display, sans-serif',
+                    fontWeight: 400,
+                    fontSize: '14px',
+                    lineHeight: '20px',
+                    color: '#8E8E93',
+                  }}
+                >
+                  Help us improve by describing what went wrong.
+                </Typography>
+              </Stack>
+              <IconButton
+                onClick={bugFormDialog.onFalse}
+                sx={{ mt: -0.5, mr: -1, color: '#8E8E93', '&:hover': { color: '#231F20' } }}
+              >
+                <Iconify icon="charm:cross" width={18} />
+              </IconButton>
+            </Stack>
+            <Divider sx={{ borderColor: '#E5E5EA' }} />
+          </Stack>
+
+          {/* Form Fields */}
+          <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
+            <Stack spacing={2.5}>
+              <FormField label="Describe the issue" required>
+                <RHFTextField
+                  name="stepsToReproduce"
+                  placeholder="What happened? Please describe the issue in detail."
+                  multiline
+                  rows={6}
+                  sx={{
+                    ...inputSx,
+                    '& .MuiInputBase-root': {
+                      ...inputSx['& .MuiInputBase-root'],
+                      height: 'auto',
+                      alignItems: 'flex-start',
+                    },
+                    '& .MuiInputBase-inputMultiline': {
+                      padding: '0px',
+                    },
+                  }}
+                />
+              </FormField>
+
+              <FormField label="Campaign Name" required>
+                <RHFTextField
+                  name="campaignName"
+                  placeholder="Which campaign is this related to?"
+                  sx={inputSx}
+                />
+              </FormField>
+
+              <FormField label="Attachments (upload up to 5 screenshots or images)" required>
+                <RHFUpload
+                  key={submitCount}
+                  name="attachments"
+                  type="file"
+                  multiple
+                />
+              </FormField>
+            </Stack>
+          </Box>
+
+          {/* Submit — fixed bottom */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2, mt: 2 }}>
+            <LoadingButton
+              variant="contained"
+              type="submit"
+              loading={isSubmitting}
               sx={{
-                fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                fontSize: 30,
-                fontWeight: 300,
+                backgroundColor: '#1340FF',
+                color: '#FFFFFF',
+                fontFamily: 'Inter Display, sans-serif',
+                fontWeight: 550,
+                fontSize: '14px',
+                lineHeight: '20px',
+                textTransform: 'none',
+                borderRadius: '8px',
+                px: 3,
+                pt: 1.25,
+                pb: 1.6,
+                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                '&:hover': {
+                  backgroundColor: '#0F35CC',
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                },
+                ...(!isFormFilled && {
+                  background:
+                    'linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), #3A3A3C',
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
+                  pointerEvents: 'none',
+                }),
               }}
             >
-              🐞 Bug Report Form
-            </Typography>
-          </DialogTitle>
-          <IconButton onClick={bugFormDialog.onFalse}>
-            <Iconify icon="charm:cross" width={20} />
-          </IconButton>
+              Submit Report
+            </LoadingButton>
+          </Box>
         </Stack>
-        <DialogContent>
-          <Stack spacing={2}>
-            <FormField label="Please describe the issue you are facing in detail.">
-              <RHFTextField
-                name="stepsToReproduce"
-                placeholder="Describe the issue."
-                multiline
-                rows={4}
-              />
-            </FormField>
-
-            <FormField label="Campaign name">
-              <RHFTextField name="campaignName" placeholder="Campaign name" />
-            </FormField>
-
-            <FormField label="Attachment" required={false}>
-              <RHFUpload
-                name="attachment"
-                type="file"
-                onDrop={onDrop}
-                onDelete={() => setValue('attachment', null, { shouldValidate: true })}
-              />
-            </FormField>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <LoadingButton
-            variant="contained"
-            type="submit"
-            loading={isSubmitting}
-            sx={{
-              background: '#1340FF',
-              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-              ...(!isDirty && {
-                background:
-                  'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
-                pointerEvents: 'none',
-              }),
-            }}
-          >
-            Submit
-          </LoadingButton>
-        </DialogActions>
       </FormProvider>
     </Dialog>
   );
