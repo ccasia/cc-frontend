@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import toast from 'react-hot-toast';
 import { enqueueSnackbar } from 'notistack';
 import React, { useState, useEffect, useCallback } from 'react';
 
@@ -24,12 +25,19 @@ import {
   DialogActions,
 } from '@mui/material';
 
+import { useRouter } from 'src/routes/hooks';
+
 import axiosInstance from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 
 const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPicActivated }) => {
+  const router = useRouter();
+  const { initialize } = useAuthContext();
+
   const [childAccounts, setChildAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -42,6 +50,7 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
     firstName: '',
     lastName: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   // Get client ID from company - use the first active client
   // Note: company.clientId is just a reference (like A01), we need the actual client.id
@@ -114,7 +123,7 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
       enqueueSnackbar('No account selected', { variant: 'error' });
       return;
     }
-    
+
     try {
       console.log('Resending invitation for account:', selectedAccount);
       const response = await axiosInstance.post(`/api/child-account/${selectedAccount.id}/resend`);
@@ -137,7 +146,7 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
       enqueueSnackbar('No account selected', { variant: 'error' });
       return;
     }
-    
+
     try {
       console.log('Deleting account:', selectedAccount);
       const response = await axiosInstance.delete(`/api/child-account/${selectedAccount.id}`);
@@ -227,13 +236,18 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
                   justifyContent: 'center',
                 }}
               >
-                <Iconify icon="solar:link-broken-bold-duotone" width={32} sx={{ color: '#F04438' }} />
+                <Iconify
+                  icon="solar:link-broken-bold-duotone"
+                  width={32}
+                  sx={{ color: '#F04438' }}
+                />
               </Box>
               <Typography variant="subtitle1" color="text.primary" fontWeight={600}>
                 No Client Associated
               </Typography>
               <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={360}>
-                This company doesn&apos;t have an active client account yet. Activate the account first to manage child accounts.
+                This company doesn&apos;t have an active client account yet. Activate the account
+                first to manage child accounts.
               </Typography>
             </Stack>
           </TableCell>
@@ -264,7 +278,8 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
                 Pending Activation
               </Typography>
               <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={360}>
-                The primary account holder must activate their account before child accounts can be invited. Check the Person In Charge tab for status.
+                The primary account holder must activate their account before child accounts can be
+                invited. Check the Person In Charge tab for status.
               </Typography>
             </Stack>
           </TableCell>
@@ -289,13 +304,18 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
                   justifyContent: 'center',
                 }}
               >
-                <Iconify icon="solar:users-group-rounded-bold-duotone" width={32} sx={{ color: '#C4CDD5' }} />
+                <Iconify
+                  icon="solar:users-group-rounded-bold-duotone"
+                  width={32}
+                  sx={{ color: '#C4CDD5' }}
+                />
               </Box>
               <Typography variant="subtitle1" color="text.primary" fontWeight={600}>
                 No Child Accounts
               </Typography>
               <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={320}>
-                Invite team members to give them access to this client account. They&apos;ll receive an email to set up their login.
+                Invite team members to give them access to this client account. They&apos;ll receive
+                an email to set up their login.
               </Typography>
             </Stack>
           </TableCell>
@@ -347,6 +367,22 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
         </TableCell>
       </TableRow>
     ));
+  };
+
+  const impersonateClient = async (email) => {
+    try {
+      setIsLoading(true);
+      await axiosInstance.post('/api/admin/impersonate-client', { email });
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      handleMenuClose();
+      initialize();
+      router.replace('/dashboard');
+    } catch (error) {
+      console.log(error);
+      toast.error('Failed to impersonate');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -603,8 +639,35 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
             '&:hover': { bgcolor: '#F5F5F5' },
           }}
         >
-          <Iconify icon="eva:refresh-fill" sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }} />
+          <Iconify
+            icon="eva:refresh-fill"
+            sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
+          />
           Resend Invitation
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            impersonateClient(selectedAccount.email);
+          }}
+          sx={{
+            py: 1.25,
+            px: 2,
+            fontSize: 14,
+            '&:hover': { bgcolor: '#F5F5F5' },
+          }}
+        >
+          {isLoading ? (
+            <Iconify
+              icon="line-md:loading-loop"
+              sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
+            />
+          ) : (
+            <Iconify
+              icon="boxicons:user-filled"
+              sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
+            />
+          )}
+          Impersonate
         </MenuItem>
         <Divider sx={{ my: 0.5 }} />
         <MenuItem
