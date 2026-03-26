@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { m, AnimatePresence } from 'framer-motion';
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 
-import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 import {
   Box,
   Grid,
@@ -1926,7 +1925,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
   const campaignId = campaign?.id;
   const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
   const [selectedPlatform, setSelectedPlatform] = useState('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
   const [reportState, setReportState] = useState('generate'); // 'generate', 'loading', 'view'
   const [showReportPage, setShowReportPage] = useState(false);
   const [showAddCreatorForm, setShowAddCreatorForm] = useState(false);
@@ -1938,7 +1936,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
   const formRef = useRef(null);
-  const itemsPerPage = 5;
 
   const lgUp = useResponsive('up', 'lg');
   const { socket } = useSocketContext();
@@ -1988,22 +1985,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     }
     return postingSubmissions.filter((sub) => sub && sub.platform === selectedPlatform);
   }, [postingSubmissions, selectedPlatform]);
-
-  const paginationData = useMemo(() => {
-    const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const displayedSubmissions = filteredSubmissions.slice(startIndex, endIndex);
-
-    return {
-      totalPages,
-      startIndex,
-      endIndex,
-      displayedSubmissions,
-      hasNextPage: currentPage < totalPages,
-      hasPrevPage: currentPage > 1,
-    };
-  }, [filteredSubmissions, currentPage, itemsPerPage]);
 
   // Get platform counts for beam display (includes both API submissions and manual entries)
   const platformCounts = useMemo(() => {
@@ -2119,10 +2100,8 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     };
   }, [socket, campaignId, postingSubmissions, clearCache, refreshInsights, enqueueSnackbar]);
 
-  // Reset to page 1 when platform changes
   const handlePlatformChange = (platform) => {
     setSelectedPlatform(platform);
-    setCurrentPage(1);
   };
 
   // Handle opening delete modal
