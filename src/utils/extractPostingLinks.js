@@ -90,6 +90,14 @@ export const extractPostingSubmissions = (submissions) => {
     });
   });
   
-  console.log('Extracted submissions with URLs:', extractedSubmissions.length);
-  return extractedSubmissions;
+  // Deduplicate by (user, postUrl) — multiple submissions (VIDEO + PHOTO) can share the same posting URL
+  const seen = new Set();
+  const uniqueSubmissions = extractedSubmissions.filter((sub) => {
+    const key = `${sub.user}_${sub.postUrl}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return uniqueSubmissions;
 };
