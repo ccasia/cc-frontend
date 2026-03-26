@@ -273,7 +273,7 @@ export default function DashboardLayout({ children }) {
 
     if (attachments?.length) {
       attachments.forEach((file) => {
-        formData.append('attachment', file);
+        formData.append('attachments', file);
       });
     }
 
