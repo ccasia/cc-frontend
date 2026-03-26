@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { m, AnimatePresence } from 'framer-motion';
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 
-import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 import {
   Box,
   Grid,
@@ -1716,7 +1715,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
   const campaignId = campaign?.id;
   const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
   const [selectedPlatform, setSelectedPlatform] = useState('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
   const [reportState, setReportState] = useState('generate'); // 'generate', 'loading', 'view'
   const [showReportPage, setShowReportPage] = useState(false);
   const [showAddCreatorForm, setShowAddCreatorForm] = useState(false);
@@ -1724,7 +1722,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
   const formRef = useRef(null);
-  const itemsPerPage = 5;
 
   const lgUp = useResponsive('up', 'lg');
   const { socket } = useSocketContext();
@@ -1773,22 +1770,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     }
     return postingSubmissions.filter((sub) => sub && sub.platform === selectedPlatform);
   }, [postingSubmissions, selectedPlatform]);
-
-  const paginationData = useMemo(() => {
-    const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const displayedSubmissions = filteredSubmissions.slice(startIndex, endIndex);
-
-    return {
-      totalPages,
-      startIndex,
-      endIndex,
-      displayedSubmissions,
-      hasNextPage: currentPage < totalPages,
-      hasPrevPage: currentPage > 1,
-    };
-  }, [filteredSubmissions, currentPage, itemsPerPage]);
 
   // Get platform counts for beam display (includes both API submissions and manual entries)
   const platformCounts = useMemo(() => {
@@ -1862,15 +1843,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     return calculateSummaryStats(filteredInsightsData, filteredManualEntries);
   }, [filteredInsightsData, filteredManualEntries]);
 
-  const handleNextPage = () => {
-    setCurrentPage((prev) => prev + 1);
-  };
-
-  const handlePrevPage = () => {
-    setCurrentPage((prev) => prev - 1);
-  };
-
-
   // Socket event listener for media kit connections
   useEffect(() => {
     if (!socket || !campaignId) return undefined;
@@ -1907,10 +1879,8 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     };
   }, [socket, campaignId, postingSubmissions, clearCache, refreshInsights, enqueueSnackbar]);
 
-  // Reset to page 1 when platform changes
   const handlePlatformChange = (platform) => {
     setSelectedPlatform(platform);
-    setCurrentPage(1);
   };
 
   // Handle opening delete modal
@@ -2430,7 +2400,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                   ))}
 
                 {/* eslint-disable react/prop-types */}
-                {paginationData.displayedSubmissions.map((submission) => {
+                {filteredSubmissions.map((submission) => {
                   const insightData = insightsData.find((data) => data.submissionId === submission.id);
                   const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
 
@@ -2496,195 +2466,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
               </Grid>
           </Box>
         </>
-      )}
-
-      {/* Pagination Controls */}
-      {paginationData.totalPages > 1 && (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            mt: 3,
-            pb: 2,
-            gap: 0.3,
-          }}
-        >
-          {/* Previous Button */}
-          <Button
-            onClick={handlePrevPage}
-            disabled={!paginationData.hasPrevPage}
-            sx={{
-              minWidth: 'auto',
-              p: 0,
-              backgroundColor: 'transparent',
-              color: paginationData.hasPrevPage ? '#000000' : '#8E8E93',
-              border: 'none',
-              fontSize: 20,
-              fontWeight: 400,
-              '&:hover': {
-                backgroundColor: 'transparent',
-              },
-              '&:disabled': {
-                backgroundColor: 'transparent',
-                color: '#8E8E93',
-              },
-            }}
-          >
-            <ChevronLeftRounded size={16} />
-          </Button>
-
-          {/* Page Numbers */}
-          {(() => {
-            const pageButtons = [];
-            const showEllipsis = paginationData.totalPages > 3;
-
-            if (!showEllipsis) {
-              // Show all pages if 3 or fewer
-              for (let i = 1; i <= paginationData.totalPages; i += 1) {
-                pageButtons.push(
-                  <Button
-                    key={i}
-                    onClick={() => setCurrentPage(i)}
-                    sx={{
-                      minWidth: 'auto',
-                      p: 0,
-                      mx: 1,
-                      backgroundColor: 'transparent',
-                      color: currentPage === i ? '#000000' : '#8E8E93',
-                      border: 'none',
-                      fontSize: 16,
-                      fontWeight: 400,
-                      '&:hover': {
-                        backgroundColor: 'transparent',
-                      },
-                    }}
-                  >
-                    {i}
-                  </Button>
-                );
-              }
-            } else {
-              // Show 1, current-1, current, current+1, ..., last
-              pageButtons.push(
-                <Button
-                  key={1}
-                  onClick={() => setCurrentPage(1)}
-                  sx={{
-                    minWidth: 'auto',
-                    p: 0,
-                    mx: 1,
-                    backgroundColor: 'transparent',
-                    color: currentPage === 1 ? '#000000' : '#8E8E93',
-                    border: 'none',
-                    fontSize: 16,
-                    fontWeight: 400,
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                    },
-                  }}
-                >
-                  1
-                </Button>
-              );
-
-              if (currentPage > 3) {
-                pageButtons.push(
-                  <Typography key="ellipsis1" sx={{ mx: 1, color: '#8E8E93', fontSize: 16 }}>
-                    ...
-                  </Typography>
-                );
-              }
-
-              // Show current page and adjacent pages
-              for (
-                let i = Math.max(2, currentPage - 1);
-                i <= Math.min(paginationData.totalPages - 1, currentPage + 1);
-                i += 1
-              ) {
-                pageButtons.push(
-                  <Button
-                    key={i}
-                    onClick={() => setCurrentPage(i)}
-                    sx={{
-                      minWidth: 'auto',
-                      p: 0,
-                      mx: 1,
-                      backgroundColor: 'transparent',
-                      color: currentPage === i ? '#000000' : '#8E8E93',
-                      border: 'none',
-                      fontSize: 16,
-                      fontWeight: 400,
-                      '&:hover': {
-                        backgroundColor: 'transparent',
-                      },
-                    }}
-                  >
-                    {i}
-                  </Button>
-                );
-              }
-
-              if (currentPage < paginationData.totalPages - 2) {
-                pageButtons.push(
-                  <Typography key="ellipsis2" sx={{ mx: 1, color: '#8E8E93', fontSize: 16 }}>
-                    ...
-                  </Typography>
-                );
-              }
-
-              if (paginationData.totalPages > 1) {
-                pageButtons.push(
-                  <Button
-                    key={paginationData.totalPages}
-                    onClick={() => setCurrentPage(paginationData.totalPages)}
-                    sx={{
-                      minWidth: 'auto',
-                      p: 0,
-                      mx: 1,
-                      backgroundColor: 'transparent',
-                      color: currentPage === paginationData.totalPages ? '#000000' : '#8E8E93',
-                      border: 'none',
-                      fontSize: 16,
-                      fontWeight: 400,
-                      '&:hover': {
-                        backgroundColor: 'transparent',
-                      },
-                    }}
-                  >
-                    {paginationData.totalPages}
-                  </Button>
-                );
-              }
-            }
-
-            return pageButtons;
-          })()}
-
-          {/* Next Button */}
-          <Button
-            onClick={handleNextPage}
-            disabled={!paginationData.hasNextPage}
-            sx={{
-              minWidth: 'auto',
-              p: 0,
-              backgroundColor: 'transparent',
-              color: paginationData.hasNextPage ? '#000000' : '#8E8E93',
-              border: 'none',
-              fontSize: 16,
-              fontWeight: 400,
-              '&:hover': {
-                backgroundColor: 'transparent',
-              },
-              '&:disabled': {
-                backgroundColor: 'transparent',
-                color: '#8E8E93',
-              },
-            }}
-          >
-            <ChevronRightRounded size={16} />
-          </Button>
-        </Box>
       )}
         </>
       )}
