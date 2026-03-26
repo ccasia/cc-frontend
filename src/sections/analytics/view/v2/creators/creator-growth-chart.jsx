@@ -148,7 +148,7 @@ function DemographicsPanel({ chipLabel, total, growthRate, trend, TrendIcon, isN
   }));
 
   return (
-    <Stack sx={{ px: 3, pb: 2, width: '100%', height: '100%', justifyContent: 'space-between' }}>
+    <Stack sx={{ px: 3, pb: 2, width: '100%', height: '100%', overflowY: 'auto' }}>
       {/* Gender Section */}
       <Box>
         <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1.5 }}>
@@ -216,7 +216,7 @@ function DemographicsPanel({ chipLabel, total, growthRate, trend, TrendIcon, isN
       <Divider sx={{ borderColor: '#E8ECEE', my: 1.5 }} />
 
       {/* Age Groups Section */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <Stack direction="row" alignItems="center" spacing={0.75}>
           <CalendarMonthOutlinedIcon sx={{ fontSize: 18, color: '#919EAB' }} />
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
@@ -320,6 +320,19 @@ function CreatorGrowthChart() {
 
   const [selectedPoint, setSelectedPoint] = useState(null);
   const clickStartRef = useRef(null);
+  const chartContainerRef = useRef(null);
+  const [chartHeight, setChartHeight] = useState(560);
+
+  useEffect(() => {
+    const el = chartContainerRef.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(([entry]) => {
+      const h = Math.floor(entry.contentRect.height);
+      if (h > 0) setChartHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const handleAxisClick = useCallback((event, d) => {
     if (!d || d.dataIndex == null) return;
@@ -380,7 +393,7 @@ function CreatorGrowthChart() {
         sx={{ height: '100%', flex: 1 }}
       >
         {/* Left: Chart section with its own header */}
-        <Box sx={{ flex: { md: 3 }, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           {/* Chart header */}
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, pt: 3, pb: 1 }}>
             <Stack direction="row" alignItems="center" spacing={0.75}>
@@ -439,7 +452,7 @@ function CreatorGrowthChart() {
             </Stack>
           </Stack>
           {/* Chart content */}
-          <Box sx={{ px: 1, pb: 1, flex: 1 }}>
+          <Box ref={chartContainerRef} sx={{ px: 1, pb: 1, flex: 1 }}>
             <ZoomableChart
               containerProps={{
                 ...containerProps,
@@ -461,7 +474,7 @@ function CreatorGrowthChart() {
                 }]}
                 xAxis={xAxisConfig}
                 yAxis={[{ ...yDomain, tickLabelStyle: TICK_LABEL_STYLE }]}
-                height={560}
+                height={chartHeight}
                 margin={CHART_MARGIN}
                 grid={CHART_GRID}
                 tooltip={{ trigger: 'axis' }}
@@ -478,10 +491,11 @@ function CreatorGrowthChart() {
           </Box>
         </Box>
 
-        {/* Right: Demographics panel - starts from top of card */}
+        {/* Right: Demographics panel - fixed width */}
         <Stack
           sx={{
-            flex: { md: 2 },
+            width: { md: 560 },
+            flexShrink: 0,
             borderLeft: { md: '1px solid #E8ECEE' },
             borderTop: { xs: '1px solid #E8ECEE', md: 'none' },
             pt: { md: 3 },
