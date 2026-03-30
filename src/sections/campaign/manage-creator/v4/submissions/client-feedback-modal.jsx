@@ -46,13 +46,12 @@ const formatDisplayTime = (timeStr) => {
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
-    // Drop the hour if it's 0 (e.g., 00:00:15 becomes 0:15)
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
 
   if (parts.length === 2) {
     const [minutes, seconds] = parts;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
 
   return timeStr;

@@ -19,12 +19,13 @@ const CustomV4Upload = ({
   submissionId,
   submittedVideo,
   accept = 'video/*',
-  maxSize = 500 * 1024 * 1024, // 500MB default
+  maxSize = 500 * 1024 * 1024, 
   fileTypes = 'MP4, MOV, JPEG, PNG',
-  height = 160, // Compressed height
-  uploading = false, // NEW: Track if upload is in progress
-  hasSubmitted = false, // NEW: Track if content has been submitted
-  onVideoClick, // NEW: Handler for video click
+  height = 160, 
+  uploading = false,
+  hasSubmitted = false, 
+  onVideoClick, 
+  multiple = false, 
 }) => {
   const handleDrop = (e) => {
     e.preventDefault();
@@ -44,7 +45,18 @@ const CustomV4Upload = ({
   const validateAndAddFiles = (newFiles) => {
     const validFiles = [];
     
-    newFiles.forEach(file => {
+    // If multiple is false and we already have a file, show error
+    if (!multiple && files.length > 0) {
+      enqueueSnackbar('Only one file can be uploaded. Please remove the existing file first.', { variant: 'warning' });
+      return;
+    }
+    
+    // If multiple is false, only take the first file
+    const filesToValidate = !multiple ? [newFiles[0]] : newFiles;
+    
+    filesToValidate.forEach(file => {
+      if (!file) return;
+      
       // Check file type based on accept prop
       const acceptsVideo = accept.includes('video');
       const acceptsImage = accept.includes('image');
@@ -70,7 +82,8 @@ const CustomV4Upload = ({
     });
     
     if (validFiles.length > 0) {
-      onFilesChange([...files, ...validFiles]);
+      // If multiple is false, replace existing files; otherwise append
+      onFilesChange(multiple ? [...files, ...validFiles] : validFiles);
     }
   };
 
@@ -309,7 +322,7 @@ const CustomV4Upload = ({
         id={`file-input-${submissionId}`}
         type="file"
         accept={accept}
-        multiple
+        multiple={multiple}
         onChange={handleFileSelect}
         style={{ display: 'none' }}
         disabled={disabled}
@@ -331,6 +344,7 @@ CustomV4Upload.propTypes = {
   uploading: PropTypes.bool,
   hasSubmitted: PropTypes.bool,
   onVideoClick: PropTypes.func,
+  multiple: PropTypes.bool,
 };
 
 export default React.memo(CustomV4Upload);

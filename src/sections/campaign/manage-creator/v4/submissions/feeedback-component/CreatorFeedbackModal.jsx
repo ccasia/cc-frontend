@@ -1,9 +1,11 @@
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { Box, Avatar, TextField, Typography, IconButton } from '@mui/material';
 
-import axiosInstance from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
+import { useSubmissionComments } from 'src/hooks/use-submission-comments';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 
@@ -35,6 +37,27 @@ const formatDate = (dateString) => {
   });
 };
 
+/** Normalize stored timestamps (e.g. 00:00:02) to mm:ss for display when under 1h */
+const parseSecondsFromTimestamp = (timeStr) => {
+  if (!timeStr) return 0;
+  const parts = timeStr.split(':').map(Number);
+  if (parts.some(Number.isNaN)) return 0;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return 0;
+};
+
+const formatTimestampForDisplay = (timeStr) => {
+  const total = parseSecondsFromTimestamp(timeStr);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+
 const getPhotoFromObject = (obj) => {
   if (!obj) return null;
   return (
@@ -52,6 +75,14 @@ const getPhotoFromObject = (obj) => {
 };
 
 const getAdminInfo = (feedbackItem, submission) => {
+  if (feedbackItem.forwardedBy) {
+    return {
+      name: feedbackItem.forwardedBy.name || 'Admin',
+      role: feedbackItem.forwardedBy.role || 'Admin',
+      photo: feedbackItem.forwardedBy.photoURL || null,
+    };
+  }
+  
   const feedbackAdmin = feedbackItem.admin || submission.admin || {};
   const adminPhoto =
     feedbackItem.adminPhotoURL ||
@@ -158,7 +189,7 @@ ActionButton.propTypes = {
   icon: PropTypes.string,
 };
 
-const ReplyBox = ({ value, onChange, onCancel, onSend }) => (
+const ReplyBox = ({ value, onChange, onCancel, onSend, currentTime, showTimestamp }) => (
   <Box
     sx={{
       width: '100%',
@@ -172,6 +203,31 @@ const ReplyBox = ({ value, onChange, onCancel, onSend }) => (
       gap: { xs: 1, md: 1.5 },
     }}
   >
+    {showTimestamp && currentTime !== undefined && (
+      <Box
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          bgcolor: 'background.paper',
+          color: COLORS.primary,
+          border: `1px solid ${COLORS.borderLight}`,
+          borderBottom: `2px solid ${COLORS.borderLight}`,
+          borderRadius: 0.85,
+          px: 1,
+          py: 0.4,
+          fontSize: 13,
+          fontWeight: 600,
+          fontFamily: FONT_FAMILY,
+          lineHeight: 1.4,
+          userSelect: 'none',
+          boxShadow: `0px 1px 0px 0px ${COLORS.borderLight}`,
+          flexShrink: 0,
+          alignSelf: 'flex-start',
+        }}
+      >
+        {formatTimestampForDisplay(currentTime)}
+      </Box>
+    )}
     <TextField
       multiline
       minRows={2}
@@ -204,6 +260,8 @@ ReplyBox.propTypes = {
   onChange: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
   onSend: PropTypes.func.isRequired,
+  currentTime: PropTypes.string,
+  showTimestamp: PropTypes.bool,
 };
 
 const ConnectorLine = ({ isVertical, isSingleReply }) => {
@@ -251,46 +309,59 @@ ConnectorLine.propTypes = {
   isSingleReply: PropTypes.bool,
 };
 
-const ReplyItem = ({ reply, isParentResolved }) => (
-  <Box
-    sx={{
-      bgcolor: isParentResolved ? COLORS.resolvedBg : COLORS.bgPrimary,
-      border: `1px solid ${COLORS.border}`,
-      borderRadius: '16px',
-      p: { xs: '12px 16px', md: '16px 24px' },
-      ml: { xs: 3, md: 4 },
-    }}
-  >
-    <UserInfo
-      name={reply.user?.name || reply.creatorName || 'Creator'}
-      roleLabel={reply.user?.role || 'Creator'}
-      photo={reply.user?.photoURL || reply.creatorPhoto}
-      date={formatDate(reply.createdAt)}
-    />
-    <Typography
-      variant="body2"
+const ReplyItem = ({ reply, isParentResolved }) => {
+  // If reply was forwarded by admin (client reply), show admin as the author
+  const displayUser = reply.forwardedBy || reply.user;
+  const displayName = displayUser?.name || reply.creatorName || 'User';
+  const displayRole = displayUser?.role || 'Creator';
+  const displayPhoto = displayUser?.photoURL || reply.creatorPhoto;
+
+  return (
+    <Box
       sx={{
-        fontFamily: FONT_FAMILY,
-        fontSize: { xs: '0.813rem', md: '0.875rem' },
-        color: COLORS.textPrimary,
-        lineHeight: 1.5,
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
-        mt: { xs: 0.75, md: 1 },
+        bgcolor: isParentResolved ? COLORS.resolvedBg : COLORS.bgPrimary,
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: '16px',
+        p: { xs: '12px 16px', md: '16px 24px' },
+        ml: { xs: 3, md: 4 },
       }}
     >
-      {reply.content}
-    </Typography>
-  </Box>
-);
+      <UserInfo
+        name={displayName}
+        roleLabel={displayRole}
+        photo={displayPhoto}
+        date={formatDate(reply.createdAt)}
+      />
+      <Typography
+        variant="body2"
+        sx={{
+          fontFamily: FONT_FAMILY,
+          fontSize: { xs: '0.813rem', md: '0.875rem' },
+          color: COLORS.textPrimary,
+          lineHeight: 1.5,
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          mt: { xs: 0.75, md: 1 },
+        }}
+      >
+        {reply.content}
+      </Typography>
+    </Box>
+  );
+};
 
 ReplyItem.propTypes = {
   reply: PropTypes.shape({
     content: PropTypes.string.isRequired,
     createdAt: PropTypes.string.isRequired,
-    creatorName: PropTypes.string.isRequired,
+    creatorName: PropTypes.string,
     creatorPhoto: PropTypes.string,
     user: PropTypes.shape({
+      name: PropTypes.string,
+      role: PropTypes.string,
+      photoURL: PropTypes.string,
+    }),
+    forwardedBy: PropTypes.shape({
       name: PropTypes.string,
       role: PropTypes.string,
       photoURL: PropTypes.string,
@@ -338,6 +409,9 @@ const FeedbackCard = ({
   replies,
   isResolved,
   isNewAndUnopened,
+  onSeekTo,
+  currentTime,
+  useCommentSystem,
 }) => {
   const adminInfo = getAdminInfo(feedbackItem, submission);
   const replyCount = replies?.length ?? 0;
@@ -367,15 +441,36 @@ const FeedbackCard = ({
         <Box sx={{ display: 'flex', gap: { xs: 0.75, md: 1 } }}>
           <Typography
             variant="body2"
+            component={onSeekTo && feedbackItem.timestamp ? 'button' : 'span'}
+            type={onSeekTo && feedbackItem.timestamp ? 'button' : undefined}
+            onClick={
+              onSeekTo && feedbackItem.timestamp
+                ? () => onSeekTo(feedbackItem.timestamp)
+                : undefined
+            }
             sx={{
               fontFamily: FONT_FAMILY,
               fontSize: { xs: '0.813rem', md: '0.875rem' },
               color: COLORS.primary,
               fontWeight: 600,
               flexShrink: 0,
+              ...(onSeekTo && feedbackItem.timestamp
+                ? {
+                    cursor: 'pointer',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    textAlign: 'left',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                      textUnderlineOffset: 2,
+                      opacity: 0.9,
+                    },
+                  }
+                : {}),
             }}
           >
-            {feedbackItem.timestamp || '0:00'}
+            {feedbackItem.timestamp ? formatTimestampForDisplay(feedbackItem.timestamp) : '00:00'}
           </Typography>
           <Typography
             variant="body2"
@@ -443,6 +538,8 @@ const FeedbackCard = ({
           onChange={onReplyTextChange}
           onCancel={onCancelReply}
           onSend={onSendReply}
+          currentTime={currentTime}
+          showTimestamp={useCommentSystem}
         />
       )}
 
@@ -468,6 +565,9 @@ FeedbackCard.propTypes = {
   replies: PropTypes.array,
   isResolved: PropTypes.bool,
   isNewAndUnopened: PropTypes.bool,
+  onSeekTo: PropTypes.func,
+  currentTime: PropTypes.string,
+  useCommentSystem: PropTypes.bool,
 };
 
 // Main Component
@@ -478,18 +578,77 @@ const CreatorFeedbackModal = ({
   videoCount = 1,
   currentVideo = null,
   showNewCommentBorders = false,
+  onSeekTo,
+  currentTime = 0,
 }) => {
-  const allFeedback = submission?.feedback || [];
   const currentVideoId = currentVideo?.id;
+  const { socket } = useSocketContext();
+  
+  // Use submissionComment system when available (admin feedback)
+  const { comments, commentsLoading, commentsMutate } = useSubmissionComments(
+    submission?.id,
+    currentVideoId
+  );
+  
+  // Legacy feedback system (fallback)
+  const allFeedback = submission?.feedback || [];
   const feedbackToShow = currentVideoId
     ? allFeedback.filter((f) => !f.videoId || f.videoId === currentVideoId)
     : allFeedback;
+  
+  // Determine which system to use: if we have comments from submissionComment, use that
+  const useCommentSystem = comments && comments.length > 0;
+  const displayItems = useCommentSystem ? comments : feedbackToShow;
+  
   const [replyStates, setReplyStates] = useState({});
   const [viewRepliesOpen, setViewRepliesOpen] = useState({});
   const [replyTexts, setReplyTexts] = useState({});
   const [replies, setReplies] = useState({});
+  const commentsEndRef = useRef(null);
+  const initialLoadDone = useRef(false);
 
-  const hasResolvedComments = feedbackToShow.some((item) => item.resolved === true);
+  const hasResolvedComments = useCommentSystem 
+    ? comments.some((c) => c.resolvedByUserId)
+    : feedbackToShow.some((item) => item.resolved === true);
+
+  // Socket listeners for real-time updates (comment system)
+  useEffect(() => {
+    if (!socket || !submission?.id || !useCommentSystem) return undefined;
+
+    const handleCommentEvent = (data) => {
+      if (data.submissionId === submission.id) {
+        commentsMutate();
+      }
+    };
+
+    socket.on('v4:comment:added', handleCommentEvent);
+    socket.on('v4:comment:updated', handleCommentEvent);
+    socket.on('v4:comment:reply:added', handleCommentEvent);
+    socket.on('v4:comment:deleted', handleCommentEvent);
+
+    return () => {
+      socket.off('v4:comment:added', handleCommentEvent);
+      socket.off('v4:comment:updated', handleCommentEvent);
+      socket.off('v4:comment:reply:added', handleCommentEvent);
+      socket.off('v4:comment:deleted', handleCommentEvent);
+    };
+  }, [socket, submission?.id, commentsMutate, useCommentSystem]);
+
+  // Reset scroll state on mount
+  useEffect(() => {
+    initialLoadDone.current = false;
+  }, []);
+
+  // Scroll to bottom on initial load (instant) and when new items added (smooth)
+  useEffect(() => {
+    if (!commentsEndRef.current || !displayItems?.length) return;
+    if (!initialLoadDone.current) {
+      commentsEndRef.current.scrollIntoView({ behavior: 'instant' });
+      initialLoadDone.current = true;
+      return;
+    }
+    commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, [displayItems?.length]);
 
   const toggleReply = (index) => {
     setReplyStates((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -512,47 +671,70 @@ const CreatorFeedbackModal = ({
     const replyText = replyTexts[index];
     if (!replyText?.trim()) return;
 
-    const feedbackId = feedbackToShow[index]?.id;
-    if (!feedbackId) return;
-
-    // Optimistic UI
-    const optimisticReply = {
-      id: `optimistic-${Date.now()}`,
-      content: replyText,
-      createdAt: new Date().toISOString(),
-      user: {
-        name: submission.user?.name || submission.creator?.name || 'Creator',
-        role: 'Creator',
-        photoURL: getPhotoFromObject(submission.user) || getPhotoFromObject(submission.creator),
-      },
-    };
-
-    setReplies((prev) => ({
-      ...prev,
-      [index]: [...(prev[index] || []), optimisticReply],
-    }));
+    const item = displayItems[index];
+    if (!item?.id) return;
 
     handleCancelReply(index);
 
     try {
-      const res = await axiosInstance.post(`/api/creator/submissions/v4/feedback/${feedbackId}/replies`, {
-        content: replyText,
-      });
+      if (useCommentSystem) {
+        // Use submissionComment system with timestamp support
+        const formatTimeForBackend = (seconds) => {
+          const t = Math.floor(Math.max(0, Number(seconds) || 0));
+          const h = Math.floor(t / 3600);
+          const m = Math.floor((t % 3600) / 60);
+          const s = t % 60;
+          if (h > 0) {
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+          }
+          return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        };
 
-      const saved = res?.data?.reply;
-      if (saved) {
+        await axiosInstance.post(endpoints.submission.v4.comments(submission.id), {
+          text: replyText,
+          parentId: item.id,
+          videoId: currentVideoId,
+          timestamp: formatTimeForBackend(currentTime),
+        });
+        // Real-time update via socket
+      } else {
+        // Legacy feedback reply system
+        const optimisticReply = {
+          id: `optimistic-${Date.now()}`,
+          content: replyText,
+          createdAt: new Date().toISOString(),
+          user: {
+            name: submission.user?.name || submission.creator?.name || 'Creator',
+            role: 'Creator',
+            photoURL: getPhotoFromObject(submission.user) || getPhotoFromObject(submission.creator),
+          },
+        };
+
         setReplies((prev) => ({
           ...prev,
-          [index]: (prev[index] || []).map((r) => (r.id === optimisticReply.id ? saved : r)),
+          [index]: [...(prev[index] || []), optimisticReply],
         }));
+
+        const res = await axiosInstance.post(`/api/creator/submissions/v4/feedback/${item.id}/replies`, {
+          content: replyText,
+        });
+
+        const saved = res?.data?.reply;
+        if (saved) {
+          setReplies((prev) => ({
+            ...prev,
+            [index]: (prev[index] || []).map((r) => (r.id === optimisticReply.id ? saved : r)),
+          }));
+        }
       }
     } catch (err) {
-      // Rollback optimistic reply on failure
-      setReplies((prev) => ({
-        ...prev,
-        [index]: (prev[index] || []).filter((r) => r.id !== optimisticReply.id),
-      }));
-      // Keep silent here; caller UI doesn't have snackbar in this file
+      // Rollback optimistic reply on failure (legacy system only)
+      if (!useCommentSystem) {
+        setReplies((prev) => ({
+          ...prev,
+          [index]: (prev[index] || []).filter((r) => r.id?.startsWith('optimistic-')),
+        }));
+      }
       // eslint-disable-next-line no-console
       console.error('Failed to send reply', err);
     }
@@ -589,7 +771,7 @@ const CreatorFeedbackModal = ({
           },
         }}
       >
-        {feedbackToShow.length > 0 ? (
+        {displayItems.length > 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 2.5 } }}>
             {hasResolvedComments && (
               <Box
@@ -629,25 +811,67 @@ const CreatorFeedbackModal = ({
                 />
               </Box>
             )}
-            {feedbackToShow.map((feedbackItem, index) => (
-              <FeedbackCard
-                key={feedbackItem.id ?? index}
-                feedbackItem={feedbackItem}
-                submission={submission}
-                index={index}
-                isReplyOpen={replyStates[index] || false}
-                onToggleReply={() => toggleReply(index)}
-                isRepliesListOpen={viewRepliesOpen[index] || false}
-                onToggleViewReplies={() => toggleViewReplies(index)}
-                replyText={replyTexts[index] || ''}
-                onReplyTextChange={(value) => handleReplyTextChange(index, value)}
-                onCancelReply={() => handleCancelReply(index)}
-                onSendReply={() => handleSendReply(index)}
-                replies={[...(feedbackItem.replies || []), ...(replies[index] || [])]}
-                isResolved={feedbackItem.resolved === true}
-                isNewAndUnopened={showNewCommentBorders}
-              />
-            ))}
+            {displayItems.map((item, index) => {
+              // Map comment system data to feedback card format
+              const feedbackItem = useCommentSystem ? {
+                id: item.id,
+                content: item.text,
+                timestamp: item.timestamp,
+                createdAt: item.createdAt,
+                resolved: !!item.resolvedByUserId,
+                resolvedAt: item.resolvedAt,
+                resolvedBy: item.resolvedBy,
+                replies: item.replies || [],
+                // If forwarded by admin, use forwardedBy as the display user
+                forwardedBy: item.forwardedBy,
+                admin: item.forwardedBy || item.user,
+                adminName: item.forwardedBy?.name || item.user?.name,
+                adminRole: item.forwardedBy?.role || item.user?.role,
+                adminPhotoURL: item.forwardedBy?.photoURL || item.user?.photoURL,
+                user: item.user,
+              } : item;
+
+              const formatTimeForBackend = (seconds) => {
+                const t = Math.floor(Math.max(0, Number(seconds) || 0));
+                const h = Math.floor(t / 3600);
+                const m = Math.floor((t % 3600) / 60);
+                const s = t % 60;
+                if (h > 0) {
+                  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                }
+                return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+              };
+
+              return (
+                <FeedbackCard
+                  key={item.id ?? index}
+                  feedbackItem={feedbackItem}
+                  submission={submission}
+                  index={index}
+                  isReplyOpen={replyStates[index] || false}
+                  onToggleReply={() => toggleReply(index)}
+                  isRepliesListOpen={viewRepliesOpen[index] || false}
+                  onToggleViewReplies={() => toggleViewReplies(index)}
+                  replyText={replyTexts[index] || ''}
+                  onReplyTextChange={(value) => handleReplyTextChange(index, value)}
+                  onCancelReply={() => handleCancelReply(index)}
+                  onSendReply={() => handleSendReply(index)}
+                  replies={useCommentSystem ? (item.replies || []).map(r => ({
+                    id: r.id,
+                    content: r.text,
+                    createdAt: r.createdAt,
+                    user: r.user,
+                    forwardedBy: r.forwardedBy,
+                  })) : [...(item.replies || []), ...(replies[index] || [])]}
+                  isResolved={useCommentSystem ? !!item.resolvedByUserId : item.resolved === true}
+                  isNewAndUnopened={showNewCommentBorders}
+                  onSeekTo={onSeekTo}
+                  currentTime={formatTimeForBackend(currentTime)}
+                  useCommentSystem={useCommentSystem}
+                />
+              );
+            })}
+            <div ref={commentsEndRef} />
           </Box>
         ) : (
           <Box
@@ -757,6 +981,8 @@ CreatorFeedbackModal.propTypes = {
     url: PropTypes.string,
   }),
   showNewCommentBorders: PropTypes.bool,
+  onSeekTo: PropTypes.func,
+  currentTime: PropTypes.number,
 };
 
 export default CreatorFeedbackModal;
