@@ -271,12 +271,24 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
 
         // Check user role to call the correct endpoint
         if (user?.role === 'client') {
+          let requestBody = {};
+
+          if (maybeReason === 'others') {
+            requestBody = {
+              rejectionReason: 'Other',
+              customRejectionText: maybeNote.trim(),
+            };
+          } else if (maybeReason) {
+            const reasonLabel = MAYBE_REASONS.find((reason) => reason.value === maybeReason)?.label;
+            requestBody = { rejectionReason: reasonLabel };
+          } else {
+            requestBody = { rejectionReason: 'Rejected by client' };
+          }
+
           // Client rejects pitch
           response = await axiosInstance.patch(
             endpoints.campaign.pitch.v3.rejectClient(v3PitchId),
-            {
-              rejectionReason: 'Rejected by client',
-            }
+            requestBody
           );
         } else {
           // Admin rejects pitch
