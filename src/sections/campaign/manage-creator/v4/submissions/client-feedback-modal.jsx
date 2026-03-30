@@ -337,9 +337,9 @@ const CommentCard = ({
                   sx={{
                     bgcolor: '#1340FF',
                     borderRadius: 1.5,
-                    minWidth: { xs: 40, md: 48 }, 
+                    minWidth: { xs: 40, md: 48 },
                     px: 1,
-                    height: { xs: 28, md: 32 }, 
+                    height: { xs: 28, md: 32 },
                     boxShadow: 'none',
                     '&:hover': { bgcolor: '#0B2EB5', boxShadow: 'none' },
                     '&.Mui-disabled': { bgcolor: '#9CA3AF', color: 'white' },
@@ -436,10 +436,10 @@ const ClientFeedbackModal = forwardRef(
     const COUNTDOWN_SECONDS = 3000; //for testing
 
     const commentRefs = useRef({});
-    const effectiveIsLocked = isLocked || !isCountingDown || isPastVideo;
+    const effectiveIsLocked = isLocked || isPastVideo;
 
     if (videoId !== activeVideoId) {
-      setActiveVideoId(videoId); // Sync the tracking ID
+      setActiveVideoId(videoId);
 
       const savedEndTime = localStorage.getItem(STORAGE_KEY_END_TIME);
       if (savedEndTime) {

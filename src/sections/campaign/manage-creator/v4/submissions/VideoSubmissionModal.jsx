@@ -104,7 +104,9 @@ const VideoSubmissionModal = ({
     ? allVideos.filter((v) => CLIENT_ALLOWED_STATUSES.includes(v.status))
     : allVideos;
   const latestVideos =
-    visibleVideos.length <= MAX_VIDEO_PAGES ? visibleVideos : visibleVideos.slice(0, MAX_VIDEO_PAGES);
+    visibleVideos.length <= MAX_VIDEO_PAGES
+      ? visibleVideos
+      : visibleVideos.slice(0, MAX_VIDEO_PAGES);
   const videos = latestVideos;
   const videoCount = videos.length;
   const currentVideo = videos[videoPage] || videos[0];
@@ -164,34 +166,17 @@ const VideoSubmissionModal = ({
       >
         <Box
           sx={{
-            // position: 'absolute',
+            position: 'absolute',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: { xs: '95vw', sm: '95vw', md: '90vw', lg: 1397 },
-            // maxWidth: { xs: '92vw', sm: '95vw', md: 1397 },
-            // height: { xs: '90vh', sm: '92vh', md: '90vh', lg: 855 },
-            maxHeight: { xs: '95vh', sm: '92vh', md: 855 },
-            // bgcolor: '#F4F4F4',
-            borderRadius: '16px',
-            // p: { xs: 2, sm: 2.5, md: 3 },
-            // boxShadow: '0px 24px 48px rgba(0, 0, 0, 0.2)',
-            // outline: 'none',
-            // display: 'flex',
-            // flexDirection: 'column',
-            // overflow: 'hidden',
-            position: 'absolute',
-            // --- NEW RESPONSIVE POSITIONING ---
-            // top: { xs: 0, md: '50%' },
-            // left: { xs: 0, md: '50%' },
-            // transform: { xs: 'none', md: 'translate(-50%, -50%)' },
-            // width: { xs: '90%', md: '90vw', lg: 1397 },
-            height: { xs: '100dvh', md: '90vh', lg: 855 }, // <--- 100dvh handles keyboards perfectly!
-            // maxHeight: { xs: '100dvh', md: 855 },
-            // borderRadius: { xs: 0, md: '16px' }, // Removes rounded corners on mobile for a native app feel
-            p: { xs: 1.5, sm: 2.5, md: 3 },
-            // ----------------------------------
+            width: { xs: '95vw', sm: '92vw', md: '88vw', lg: '95vw' },
+            maxWidth: '95vw',
+            height: { xs: '95vh', sm: '92vh', md: '90vh', lg: 950 },
+            maxHeight: '90vh',
             bgcolor: '#F4F4F4',
+            borderRadius: '20px',
+            p: { xs: 2, sm: 2.5, md: 3 },
             boxShadow: '0px 24px 48px rgba(0, 0, 0, 0.2)',
             outline: 'none',
             display: 'flex',
