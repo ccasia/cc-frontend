@@ -10,10 +10,10 @@ import {
   Avatar,
   Tooltip,
   MenuItem,
-  Typography,
   FormControl,
 } from '@mui/material';
 
+import TypographyMotion from 'src/components/animate/motion-typography';
 import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 
 import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissions/admin-feedback-modal';
@@ -45,7 +45,10 @@ export default function FeedbackActions({
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   if (
-    (submission.status === 'APPROVED' || submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || hasPostingLink) &&
+    (submission.status === 'APPROVED' ||
+      submission.status === 'CLIENT_APPROVED' ||
+      submission.status === 'POSTED' ||
+      hasPostingLink) &&
     campaign?.campaignType === 'normal'
   ) {
     return null;
@@ -70,7 +73,9 @@ export default function FeedbackActions({
   const showApproveAction = isClient || isVideoSubmission;
 
   const actionText = showApproveAction ? 'Approve Submission?' : 'Send this Submission to Client?';
-  const modalIconSrc = showApproveAction ? '/assets/images/modals/approve.png' : '/assets/images/modals/send_to_client.png';
+  const modalIconSrc = showApproveAction
+    ? '/assets/images/modals/approve.png'
+    : '/assets/images/modals/send_to_client.png';
   const modalIconAlt = showApproveAction ? 'approve' : 'send_to_client';
 
   return (
@@ -83,10 +88,20 @@ export default function FeedbackActions({
           justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
           alignItems="center"
         >
-          {(visibility.showRequestChangeButton || submission.status === 'CHANGES_REQUIRED' || submission.status === 'SENT_TO_CLIENT' || submission.status === 'CLIENT_FEEDBACK' || submission.status === 'APPROVED') && (
-            <Typography
+          {(visibility.showRequestChangeButton ||
+            submission.status === 'CHANGES_REQUIRED' ||
+            submission.status === 'SENT_TO_CLIENT' ||
+            submission.status === 'CLIENT_FEEDBACK' ||
+            submission.status === 'APPROVED') && (
+            <TypographyMotion
               component="button"
               onClick={() => setReviewModalOpen(true)}
+              initial={{ scale: 1 }}
+              whileHover={{
+                scale: 1.1,
+                transition: { duration: 0.1 },
+              }}
+              transition={{ duration: 0.1 }}
               sx={{
                 px: 2,
                 py: 1,
@@ -97,15 +112,13 @@ export default function FeedbackActions({
                 border: 'none',
                 cursor: 'pointer',
                 outline: 'none',
-                transition: 'all 0.2s ease',
                 mr: 'auto',
-                '&:hover': {
-                  opacity: 0.8,
-                },
+                textDecoration: 'underline',
+                textUnderlineOffset: 4,
               }}
             >
               Review Submission
-            </Typography>
+            </TypographyMotion>
           )}
 
           {visibility.showChangeRequestForm && (
@@ -115,7 +128,7 @@ export default function FeedbackActions({
               width="100%"
               gap={{ xs: 0.8, sm: 1 }}
               mb={isClient ? 1 : 0}
-              justifyContent={{ xs: "space-between", sm: "flex-end" }}
+              justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
             >
               <Button
                 variant="contained"
@@ -151,7 +164,11 @@ export default function FeedbackActions({
           )}
 
           {visibility.showApproveButton && (
-            <Tooltip title={!isClient && !isVideoSubmission ? 'Send to Client' : ''} arrow placement="top">
+            <Tooltip
+              title={!isClient && !isVideoSubmission ? 'Send to Client' : ''}
+              arrow
+              placement="top"
+            >
               <Button
                 variant="contained"
                 color="success"
@@ -426,7 +443,16 @@ export default function FeedbackActions({
           onClose={() => setReviewModalOpen(false)}
           submission={submission}
           videoOrder="asc"
-          rightSideContent={({ currentTime, duration, onSeek, videoId, videoPage, setVideoPage, videoCount, isPastVideo }) => (
+          rightSideContent={({
+            currentTime,
+            duration,
+            onSeek,
+            videoId,
+            videoPage,
+            setVideoPage,
+            videoCount,
+            isPastVideo,
+          }) => (
             <AdminFeedbackPanel
               currentTime={currentTime}
               duration={duration}

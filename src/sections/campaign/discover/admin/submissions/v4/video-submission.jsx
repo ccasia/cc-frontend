@@ -11,7 +11,7 @@ import {
   Slider,
   TextField,
   Typography,
-  IconButton
+  IconButton,
 } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
@@ -35,6 +35,7 @@ import PostingLinkSection from './shared/posting-link-section';
 import useCaptionOverflow from './shared/use-caption-overflow';
 import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
+import TypographyMotion from 'src/components/animate/motion-typography';
 
 export default function V4VideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
@@ -48,12 +49,16 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     const video = submission.video?.[0];
     const clientAllowedStatuses = ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'APPROVED'];
     const clientVideo = isClient
-      ? (submission.video || []).find((v) => clientAllowedStatuses.includes(v.status)) ?? null
+      ? ((submission.video || []).find((v) => clientAllowedStatuses.includes(v.status)) ?? null)
       : video;
     const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
     const hasPostingLink = Boolean(submission.content);
     const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
-    const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
+    const clientVisible =
+      !isClient ||
+      ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(
+        submission.status
+      );
 
     return {
       video,
@@ -61,17 +66,20 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
       pendingReview,
       hasPostingLink,
       isClientFeedback,
-      clientVisible
+      clientVisible,
     };
   }, [submission.video, submission.status, submission.content, isClient]);
 
-  const { video, clientVideo, pendingReview, hasPostingLink, isClientFeedback, clientVisible } = submissionProps;
+  const { video, clientVideo, pendingReview, hasPostingLink, isClientFeedback, clientVisible } =
+    submissionProps;
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
   const [localActionInProgress, setLocalActionInProgress] = useState(false);
   const [reasons, setReasons] = useState(() => getInitialReasons(isClientFeedback, submission));
-  const [feedback, setFeedback] = useState(() => getDefaultFeedback(isClientFeedback, submission, 'video'));
+  const [feedback, setFeedback] = useState(() =>
+    getDefaultFeedback(isClientFeedback, submission, 'video')
+  );
   const [caption, setCaption] = useState(submission.caption || '');
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -138,7 +146,18 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         setTimeout(() => setLocalActionInProgress(false), 300);
       }
     }
-  }, [feedback, reasons, caption, submission.id, video?.id, clientVideo?.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
+  }, [
+    feedback,
+    reasons,
+    caption,
+    submission.id,
+    video?.id,
+    clientVideo?.id,
+    onUpdate,
+    isClient,
+    localActionInProgress,
+    showNpsModal,
+  ]);
 
   const handleRequestChanges = useCallback(async () => {
     const currentFeedback = feedback;
@@ -152,7 +171,9 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
       const hasReasons = currentReasons && currentReasons.length > 0;
 
       if (!hasContent && !hasReasons) {
-        enqueueSnackbar('Please provide feedback or select reasons for changes', { variant: 'warning' });
+        enqueueSnackbar('Please provide feedback or select reasons for changes', {
+          variant: 'warning',
+        });
         setLoading(false);
         return;
       }
@@ -202,7 +223,18 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         setTimeout(() => setLocalActionInProgress(false), 300);
       }
     }
-  }, [feedback, reasons, caption, submission.id, video?.id, clientVideo?.id, onUpdate, isClient, localActionInProgress, showNpsModal]);
+  }, [
+    feedback,
+    reasons,
+    caption,
+    submission.id,
+    video?.id,
+    clientVideo?.id,
+    onUpdate,
+    isClient,
+    localActionInProgress,
+    showNpsModal,
+  ]);
 
   const handleSendComments = useCallback(
     async (videoIdToPublish, shouldRefresh = false) => {
@@ -260,57 +292,59 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         }
       },
 
-    handleTimeUpdate: () => {
-      if (videoRef.current) {
-        setCurrentTime(videoRef.current.currentTime);
-      }
-    },
-
-    handleLoadedMetadata: () => {
-      if (videoRef.current) {
-        setDuration(videoRef.current.duration);
-        const { videoWidth, videoHeight } = videoRef.current;
-        const aspectRatio = videoWidth / videoHeight;
-        setVideoDimensions({ width: videoWidth, height: videoHeight, aspectRatio });
-      }
-    },
-
-    handleSeek: (event) => {
-      const rect = event.currentTarget.getBoundingClientRect();
-      const pos = (event.clientX - rect.left) / rect.width;
-      const newTime = pos * duration;
-      if (videoRef.current) {
-        videoRef.current.currentTime = newTime;
-        setCurrentTime(newTime);
-      }
-    },
-
-    handleVolumeChange: (_, newValue) => {
-      const newVolume = newValue / 100;
-      setVolume(newVolume);
-      if (videoRef.current) {
-        videoRef.current.volume = newVolume;
-      }
-    },
-
-    toggleMute: () => {
-      if (videoRef.current) {
-        if (volume === 0) {
-          setVolume(0.5);
-          videoRef.current.volume = 0.5;
-        } else {
-          setVolume(0);
-          videoRef.current.volume = 0;
+      handleTimeUpdate: () => {
+        if (videoRef.current) {
+          setCurrentTime(videoRef.current.currentTime);
         }
-      }
-    },
+      },
 
-    formatTime: (time) => {
-      const minutes = Math.floor(time / 60);
-      const seconds = Math.floor(time % 60);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    }
-  }), [isPlaying, duration, volume]);
+      handleLoadedMetadata: () => {
+        if (videoRef.current) {
+          setDuration(videoRef.current.duration);
+          const { videoWidth, videoHeight } = videoRef.current;
+          const aspectRatio = videoWidth / videoHeight;
+          setVideoDimensions({ width: videoWidth, height: videoHeight, aspectRatio });
+        }
+      },
+
+      handleSeek: (event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const pos = (event.clientX - rect.left) / rect.width;
+        const newTime = pos * duration;
+        if (videoRef.current) {
+          videoRef.current.currentTime = newTime;
+          setCurrentTime(newTime);
+        }
+      },
+
+      handleVolumeChange: (_, newValue) => {
+        const newVolume = newValue / 100;
+        setVolume(newVolume);
+        if (videoRef.current) {
+          videoRef.current.volume = newVolume;
+        }
+      },
+
+      toggleMute: () => {
+        if (videoRef.current) {
+          if (volume === 0) {
+            setVolume(0.5);
+            videoRef.current.volume = 0.5;
+          } else {
+            setVolume(0);
+            videoRef.current.volume = 0;
+          }
+        }
+      },
+
+      formatTime: (time) => {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      },
+    }),
+    [isPlaying, duration, volume]
+  );
 
   const handleVideoClick = useCallback(() => {
     const targetVideo = isClient ? clientVideo : video;
@@ -323,7 +357,15 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     }
   }, [clientVideo, video, isClient]);
 
-  const { togglePlay, handleTimeUpdate, handleLoadedMetadata, handleSeek, handleVolumeChange, toggleMute, formatTime } = videoControls;
+  const {
+    togglePlay,
+    handleTimeUpdate,
+    handleLoadedMetadata,
+    handleSeek,
+    handleVolumeChange,
+    toggleMute,
+    formatTime,
+  } = videoControls;
 
   useSubmissionSocket({
     socket,
@@ -331,7 +373,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     campaign,
     onUpdate,
     localActionInProgress,
-    userId: user?.id
+    userId: user?.id,
   });
 
   const handleCloseModal = useCallback(() => {
@@ -344,10 +386,12 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   }, [submission?.id, clientVideo, video, isClient, user?.id]);
 
   return (
-    <Box sx={{
-      overflow: 'hidden',
-      bgcolor: 'background.neutral',
-    }}>
+    <Box
+      sx={{
+        overflow: 'hidden',
+        bgcolor: 'background.neutral',
+      }}
+    >
       <Box>
         {(() => {
           // Client can only see videos that were sent to them by admin
@@ -359,11 +403,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                   <Typography variant="body2" color="text.secondary">
                     Video content is being processed.
                   </Typography>
-                  <Chip
-                    label="Processing"
-                    color="info"
-                    size="small"
-                  />
+                  <Chip label="Processing" color="info" size="small" />
                 </Stack>
               </Card>
             );
@@ -375,8 +415,19 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           // No video - show empty state
           if (!displayVideo?.url) {
             return (
-              <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" sx={{p: 8, justifyContent: 'center' }}>
-                <Box component="img" src="/assets/icons/empty/ic_content.svg" alt="No content" sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }} />
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                textAlign="center"
+                sx={{ p: 8, justifyContent: 'center' }}
+              >
+                <Box
+                  component="img"
+                  src="/assets/icons/empty/ic_content.svg"
+                  alt="No content"
+                  sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }}
+                />
                 <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                   No deliverables found
                 </Typography>
@@ -390,26 +441,30 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           // Has video - show content
           return (
             <Box sx={{ p: 2, bgcolor: 'background.neutral' }}>
-              <Box sx={{
-                display: 'flex',
-                gap: { xs: 1, sm: 1.5, md: 2 },
-                justifyContent: 'space-between',
-                alignItems: 'stretch',
-                minHeight: { xs: 600, sm: 550, md: 500 },
-                flexDirection: { xs: 'column', lg: 'row' }
-              }}>
-                {/* Caption & Feedback - Left side */}
-                <Box sx={{
-                  flex: 1,
+              <Box
+                sx={{
                   display: 'flex',
-                  flexDirection: 'column',
+                  gap: { xs: 1, sm: 1.5, md: 2 },
                   justifyContent: 'space-between',
-                  maxWidth: { xs: '100%', lg: 450, xl: 600 },
-                  minWidth: { xs: '100%', lg: 350 },
-                  height: { xs: 'auto', lg: 500 },
-                  minHeight: { xs: 300, lg: 500 },
-                  overflow: 'hidden'
-                }}>
+                  alignItems: 'stretch',
+                  minHeight: { xs: 600, sm: 550, md: 500 },
+                  flexDirection: { xs: 'column', lg: 'row' },
+                }}
+              >
+                {/* Caption & Feedback - Left side */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    maxWidth: { xs: '100%', lg: 450, xl: 600 },
+                    minWidth: { xs: '100%', lg: 350 },
+                    height: { xs: 'auto', lg: 500 },
+                    minHeight: { xs: 300, lg: 500 },
+                    overflow: 'hidden',
+                  }}
+                >
                   {showFeedbackLogs ? (
                     <FeedbackLogs
                       submission={submission}
@@ -418,7 +473,9 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                   ) : (
                     <>
                       <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
-                        <Typography variant='caption' fontWeight="bold" color="#636366" mb={0.5}>Caption</Typography>
+                        <Typography variant="caption" fontWeight="bold" color="#636366" mb={0.5}>
+                          Caption
+                        </Typography>
                         {(() => {
                           if (pendingReview) {
                             return (
@@ -450,41 +507,54 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                                     position: 'absolute',
                                     width: '100%',
                                     maxWidth: 400,
-                                    pointerEvents: 'none'
+                                    pointerEvents: 'none',
                                   }}
                                 >
-                                  <Typography fontSize={14} sx={{
-                                    wordWrap: 'break-word',
-                                    overflowWrap: 'break-word',
-                                    lineHeight: 1.5
-                                  }}>
+                                  <Typography
+                                    fontSize={14}
+                                    sx={{
+                                      wordWrap: 'break-word',
+                                      overflowWrap: 'break-word',
+                                      lineHeight: 1.5,
+                                    }}
+                                  >
                                     {submission.caption}
                                   </Typography>
                                 </Box>
 
                                 {captionOverflows ? (
-                                  <Box sx={{
-                                    maxHeight: { xs: 80, sm: 200, md: 420 },
-                                    overflow: 'auto',
-                                    border: '1px solid #E7E7E7',
-                                    borderRadius: 0.5,
-                                    p: 1,
-                                    bgcolor: 'background.paper',
-                                  }}>
-                                    <Typography fontSize={14} color="#636366" sx={{
-                                      wordWrap: 'break-word',
-                                      overflowWrap: 'break-word',
-                                      lineHeight: 1.5
-                                    }}>
+                                  <Box
+                                    sx={{
+                                      maxHeight: { xs: 80, sm: 200, md: 420 },
+                                      overflow: 'auto',
+                                      border: '1px solid #E7E7E7',
+                                      borderRadius: 0.5,
+                                      p: 1,
+                                      bgcolor: 'background.paper',
+                                    }}
+                                  >
+                                    <Typography
+                                      fontSize={14}
+                                      color="#636366"
+                                      sx={{
+                                        wordWrap: 'break-word',
+                                        overflowWrap: 'break-word',
+                                        lineHeight: 1.5,
+                                      }}
+                                    >
                                       {submission.caption}
                                     </Typography>
                                   </Box>
                                 ) : (
-                                  <Typography fontSize={14} color="#636366" sx={{
-                                    wordWrap: 'break-word',
-                                    overflowWrap: 'break-word',
-                                    lineHeight: 1.5
-                                  }}>
+                                  <Typography
+                                    fontSize={14}
+                                    color="#636366"
+                                    sx={{
+                                      wordWrap: 'break-word',
+                                      overflowWrap: 'break-word',
+                                      lineHeight: 1.5,
+                                    }}
+                                  >
                                     {submission.caption}
                                   </Typography>
                                 )}
@@ -494,30 +564,48 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           return null;
                         })()}
                         {!isClient &&
-                          ['PENDING_REVIEW', 'CLIENT_FEEDBACK', 'CHANGES_REQUIRED', 'SENT_TO_CLIENT', 'APPROVED'].includes(submission.status) &&
+                          [
+                            'PENDING_REVIEW',
+                            'CLIENT_FEEDBACK',
+                            'CHANGES_REQUIRED',
+                            'SENT_TO_CLIENT',
+                            'APPROVED',
+                          ].includes(submission.status) &&
                           !(hasPostingLink && campaign?.campaignType === 'normal') && (
-                          <Button
-                            size="small"
-                            variant="text"
-                            onClick={() => setShowFeedbackLogs(true)}
-                            sx={{
-                              fontSize: { xs: 11, sm: 12 },
-                              color: '#919191',
-                              p: 0,
-                              minWidth: 'auto',
-                              textTransform: 'none',
-                              alignSelf: 'flex-start',
-                              mt: 0.5,
-                              '&:hover': { backgroundColor: 'transparent' },
-                            }}
-                          >
-                            view logs
-                          </Button>
-                        )}
+                            <Button
+                              size="small"
+                              variant="text"
+                              onClick={() => setShowFeedbackLogs(true)}
+                              sx={{
+                                fontSize: { xs: 11, sm: 12 },
+                                color: '#919191',
+                                p: 0,
+                                minWidth: 'auto',
+                                textTransform: 'none',
+                                alignSelf: 'flex-start',
+                                mt: 0.5,
+                                '&:hover': { backgroundColor: 'transparent' },
+                              }}
+                            >
+                              view logs
+                            </Button>
+                          )}
                       </Box>
 
-                      <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        {!isClient && (submission.status === 'APPROVED' || submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || submission.status === 'REJECTED') && campaign?.campaignType === 'normal' ? (
+                      <Box
+                        sx={{
+                          flex: 'auto 0 1',
+                          minHeight: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                      >
+                        {!isClient &&
+                        (submission.status === 'APPROVED' ||
+                          submission.status === 'CLIENT_APPROVED' ||
+                          submission.status === 'POSTED' ||
+                          submission.status === 'REJECTED') &&
+                        campaign?.campaignType === 'normal' ? (
                           <PostingLinkSection
                             submission={submission}
                             onUpdate={onUpdate}
@@ -538,7 +626,34 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                       </Box>
                       {isClient && clientVideo && (
                         <Box sx={{ mt: 2 }}>
-                          <button
+                          <TypographyMotion
+                            component="button"
+                            onClick={() => setVideoSubmissionModalOpen(true)}
+                            initial={{ scale: 1 }}
+                            whileHover={{
+                              scale: 1.1,
+                              transition: { duration: 0.1 },
+                            }}
+                            transition={{ duration: 0.1 }}
+                            sx={{
+                              px: 2,
+                              py: 1,
+                              bgcolor: 'transparent',
+                              fontWeight: 800,
+                              fontSize: 14,
+                              color:
+                                submission.status === 'CLIENT_FEEDBACK' ? '#1340FF' : '#919191',
+                              border: 'none',
+                              cursor: 'pointer',
+                              outline: 'none',
+                              mr: 'auto',
+                              textDecoration: 'underline',
+                              textUnderlineOffset: 4,
+                            }}
+                          >
+                            Review Submission
+                          </TypographyMotion>
+                          {/* <button
                             type="button"
                             style={{
                               padding: '12px 24px',
@@ -553,8 +668,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                             onClick={() => setVideoSubmissionModalOpen(true)}
                             disabled={isDisabled}
                           >
-                            Review Submission
-                          </button>
+                            Review Submissionnnn
+                          </button> */}
                         </Box>
                       )}
                       {!isClient && (
@@ -581,7 +696,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                     </>
                   )}
                 </Box>
-                
+
                 {/* Content - Right side */}
                 {clientVisible ? (
                   <Box
@@ -998,7 +1113,17 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         onClose={() => setAdminReviewModalOpen(false)}
         submission={submission}
         videoOrder="asc"
-        rightSideContent={({ currentTime: modalCurrentTime, duration: modalDuration, onSeek, videoId: modalVideoId, videoPage, setVideoPage, videoCount, isPastVideo, submission: modalSubmission }) => (
+        rightSideContent={({
+          currentTime: modalCurrentTime,
+          duration: modalDuration,
+          onSeek,
+          videoId: modalVideoId,
+          videoPage,
+          setVideoPage,
+          videoCount,
+          isPastVideo,
+          submission: modalSubmission,
+        }) => (
           <AdminFeedbackPanel
             currentTime={modalCurrentTime}
             duration={modalDuration}
@@ -1029,7 +1154,6 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         />
       )}
       */}
-
     </Box>
   );
 }
