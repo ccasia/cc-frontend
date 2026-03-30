@@ -20,18 +20,9 @@ import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 // Utilities
 // ---------------------------------------------------------------------------
 
-// Always hh:mm:ss — used for the input chip
+// mm:ss under 1h; hh:mm:ss when hours > 0 — chip, saved comment timestamps, display
 const formatTime = (timeInSeconds) => {
-  const totalSeconds = Math.floor(timeInSeconds);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-};
-
-// Dynamic mm:ss or hh:mm:ss — used for displayed comment timestamps
-const formatDisplayTimestamp = (timeInSeconds) => {
-  const totalSeconds = Math.floor(timeInSeconds);
+  const totalSeconds = Math.floor(Math.max(0, timeInSeconds));
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
@@ -40,6 +31,8 @@ const formatDisplayTimestamp = (timeInSeconds) => {
   }
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
+
+const formatDisplayTimestamp = formatTime;
 
 const AnimatedDigit = ({ digit }) => (
   <Box

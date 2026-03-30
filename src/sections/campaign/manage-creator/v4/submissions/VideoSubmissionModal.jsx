@@ -22,10 +22,14 @@ import Iconify from 'src/components/iconify';
 import { GlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
 const formatTime = (timeInSeconds) => {
-  if (!timeInSeconds) return '0:00';
-  const m = Math.floor(timeInSeconds / 60);
-  const s = Math.floor(timeInSeconds % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  const t = Math.floor(Math.max(0, Number(timeInSeconds) || 0));
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = t % 60;
+  if (h > 0) {
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
 const parseTimeToSeconds = (timeStr) => {
@@ -59,10 +63,13 @@ const VideoSubmissionModal = ({
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
 
   const handleModalSeek = (timeStr) => {
-    if (modalVideoRef.current) {
-      const seconds = parseTimeToSeconds(timeStr);
-      modalVideoRef.current.currentTime = seconds;
-      modalVideoRef.current.play();
+    const el = modalVideoRef.current;
+    if (!el) return;
+    const wasPaused = el.paused;
+    const seconds = parseTimeToSeconds(timeStr);
+    el.currentTime = seconds;
+    if (!wasPaused) {
+      el.play();
     }
   };
 

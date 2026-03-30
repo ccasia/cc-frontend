@@ -19,6 +19,16 @@ import {
   getSubmissionStatusFlags,
 } from './shared';
 
+// Helper to parse timestamp string to seconds
+const parseSecondsFromTimestamp = (timeStr) => {
+  if (!timeStr) return 0;
+  const parts = String(timeStr).split(':').map(Number);
+  if (parts.some(Number.isNaN)) return 0;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return 0;
+};
+
 const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange, creator }) => {
   // State for modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -214,6 +224,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
             uploading={uploading}
             hasSubmitted={hasSubmitted}
             onVideoClick={handleVideoClick}
+            multiple={false}
           />
         </Box>
 
@@ -273,7 +284,16 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
         submission={submission}
         creator={creator}
         showNewCommentBorders={showNewCommentBorders}
-        rightSideContent={({ videoPage, setVideoPage, videoCount, currentVideo, showNewCommentBorders: showBorders, submission: freshSubmission }) => (
+        rightSideContent={({
+          videoPage,
+          setVideoPage,
+          videoCount,
+          currentVideo,
+          showNewCommentBorders: showBorders,
+          submission: freshSubmission,
+          onSeekTo,
+          currentVideoTime,
+        }) => (
           <CreatorFeedbackModal
             submission={freshSubmission || submission}
             videoPage={videoPage}
@@ -281,6 +301,8 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
             videoCount={videoCount}
             currentVideo={currentVideo}
             showNewCommentBorders={showBorders}
+            onSeekTo={onSeekTo}
+            currentTime={parseSecondsFromTimestamp(currentVideoTime)}
           />
         )}
       />
