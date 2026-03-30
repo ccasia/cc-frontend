@@ -68,6 +68,7 @@ export default function Main({ children, sx, ...other }) {
           flexGrow: 1,
           height: 1,
           overflow: 'auto',
+          overscrollBehavior: 'contain',
           flexDirection: 'column',
           py: `${HEADER.H_MOBILE + SPACING}px`,
           ...(lgUp && {

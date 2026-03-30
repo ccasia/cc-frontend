@@ -150,6 +150,9 @@ export const paths = {
     reportAi: {
       root: `${ROOTS.DASHBOARD}/report-ai`,
     },
+    whatsapp: {
+      root: `${ROOTS.DASHBOARD}/whatsapp`,
+    },
   },
   public: {
     creator: {

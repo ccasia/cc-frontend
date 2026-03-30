@@ -213,6 +213,12 @@ export function useNavData() {
             path: paths.dashboard.reportAi.root,
             icon: <Iconify icon="mingcute:ai-line" width={25} />,
           },
+          {
+            roles: ['superadmin', 'god'],
+            title: 'Whatsapp Business Account',
+            path: paths.dashboard.whatsapp.root,
+            icon: <Iconify icon="ic:baseline-whatsapp" width={25} />,
+          },
         ],
       },
 
