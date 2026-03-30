@@ -26,6 +26,11 @@ const SubmissionActionButton = ({
   // Conditional logic
   isPostingLinkEditable = false,
   
+  // View Feedback Button (NEW)
+  showViewFeedbackButton = false,
+  onViewFeedback,
+  hasNewFeedback = false,
+  
   // Button text overrides
   reuploadText = 'Reupload Draft',
   submitText = 'Submit',
@@ -68,6 +73,7 @@ const SubmissionActionButton = ({
         mt: { xs: 2 },
         position: 'relative',
         zIndex: 10,
+        gap: 2,
       }}
     >
       {/* Upload Progress */}
@@ -80,6 +86,31 @@ const SubmissionActionButton = ({
           </Stack>
           <LinearProgress variant="determinate" value={uploadProgress} />
         </Box>
+      )}
+      
+      {/* View Feedback Button */}
+      {showViewFeedbackButton && onViewFeedback && (
+        <Typography
+          component="button"
+          onClick={onViewFeedback}
+          sx={{
+            px: 2,
+            py: 1,
+            bgcolor: 'transparent',
+            fontWeight: 800,
+            fontSize: 14,
+            color: hasNewFeedback ? '#1340FF' : '#919191',
+            border: 'none',
+            cursor: 'pointer',
+            outline: 'none',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              opacity: 0.8,
+            },
+          }}
+        >
+          {hasNewFeedback ? 'View New Feedback' : 'View Feedback'}
+        </Typography>
       )}
       
       {/* Action Button */}
@@ -130,6 +161,11 @@ SubmissionActionButton.propTypes = {
   
   // Conditional logic
   isPostingLinkEditable: PropTypes.bool,
+  
+  // View Feedback Button (NEW)
+  showViewFeedbackButton: PropTypes.bool,
+  onViewFeedback: PropTypes.func,
+  hasNewFeedback: PropTypes.bool,
   
   // Button text overrides
   reuploadText: PropTypes.string,

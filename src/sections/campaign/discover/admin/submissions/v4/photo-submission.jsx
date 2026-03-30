@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useRef, useMemo, useState, useCallback } from 'react';
 
-import { Box, Card, Chip, Stack, TextField, Typography, CircularProgress } from '@mui/material';
+import { Box, Card, Chip, Stack, Button, TextField, Typography, CircularProgress } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
 
@@ -367,6 +367,27 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate, isDi
                           }
                           return null;
                         })()}
+                        {!isClient &&
+                          ['PENDING_REVIEW', 'CLIENT_FEEDBACK', 'CHANGES_REQUIRED', 'SENT_TO_CLIENT', 'APPROVED'].includes(submission.status) &&
+                          !(hasPostingLink && campaign?.campaignType === 'normal') && (
+                          <Button
+                            size="small"
+                            variant="text"
+                            onClick={() => setShowFeedbackLogs(true)}
+                            sx={{
+                              fontSize: { xs: 11, sm: 12 },
+                              color: '#919191',
+                              p: 0,
+                              minWidth: 'auto',
+                              textTransform: 'none',
+                              alignSelf: 'flex-start',
+                              mt: 0.5,
+                              '&:hover': { backgroundColor: 'transparent' },
+                            }}
+                          >
+                            view logs
+                          </Button>
+                        )}
                       </Box>
 
                       <Box
@@ -378,7 +399,8 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate, isDi
                         }}
                       >
                         {!isClient &&
-                        (submission.status === 'CLIENT_APPROVED' ||
+                        (submission.status === 'APPROVED' ||
+                          submission.status === 'CLIENT_APPROVED' ||
                           submission.status === 'POSTED' ||
                           submission.status === 'REJECTED') &&
                         campaign?.campaignType === 'normal' ? (

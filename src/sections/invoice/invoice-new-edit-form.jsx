@@ -48,8 +48,8 @@ import { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-fo
 
 import InvoicePDF from './invoice-pdf';
 import InvoiceNewEditAddress from './invoice-new-edit-address';
-import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
 import InvoiceNewEditDetails from './invoice-new-edit-details';
+import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
 
 // ----------------------------------------------------------------------
 

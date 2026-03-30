@@ -1,7 +1,6 @@
-import { lazy, Suspense, useState, useMemo, useCallback, useRef, useEffect } from 'react';
-
 import { Helmet } from 'react-helmet-async';
 import { m, AnimatePresence } from 'framer-motion';
+import { lazy, useRef, useMemo, Suspense, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
@@ -9,33 +8,34 @@ import {
   Stack,
   Rating,
   Button,
+  Popover,
   Skeleton,
   Container,
-  Popover,
   Typography,
 } from '@mui/material';
+
+import useGetPitchRate from 'src/hooks/use-get-pitch-rate';
+import useGetCreatorGrowth from 'src/hooks/use-get-creator-growth';
+import useGetActivationRate from 'src/hooks/use-get-activation-rate';
+import useGetCreatorSatisfaction from 'src/hooks/use-get-creator-satisfaction';
 
 import Iconify from 'src/components/iconify';
 import { varFade, varContainer } from 'src/components/animate/variants';
 
 import DateFilterSelect from 'src/sections/feedback/components/date-filter-select';
-import useGetCreatorGrowth from 'src/hooks/use-get-creator-growth';
-import useGetActivationRate from 'src/hooks/use-get-activation-rate';
-import useGetCreatorSatisfaction from 'src/hooks/use-get-creator-satisfaction';
-import useGetPitchRate from 'src/hooks/use-get-pitch-rate';
 
-import CreditTierFilterSelect from './v2/components/credit-tier-filter-select';
 import KpiCard from './v2/components/kpi-card';
 import { CHART_COLORS } from './v2/chart-config';
-import {
-  DateFilterProvider,
-  useDateFilter,
-  useFilteredData,
-  useIsDaily,
-  useTrendLabel,
-} from './v2/date-filter-context';
 import PackageFilterSelect from './v2/components/package-filter';
 import ClientsTabContent from './components/clients/client-analytics';
+import CreditTierFilterSelect from './v2/components/credit-tier-filter-select';
+import {
+  useIsDaily,
+  useDateFilter,
+  useTrendLabel,
+  useFilteredData,
+  DateFilterProvider,
+} from './v2/date-filter-context';
 
 const CreatorsTabContent = lazy(() => import('./v2/creators-tab-content'));
 const AdminsTabContent = lazy(() => import('./v2/admins-tab-content'));

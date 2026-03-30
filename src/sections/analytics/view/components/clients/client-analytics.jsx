@@ -1,24 +1,26 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types'; // 1. Import PropTypes
+import PropTypes from 'prop-types';
+import React, { useState } from 'react'; // 1. Import PropTypes
 
-import { Grid, Typography, Stack, Rating } from '@mui/material';
 import useSWR from 'swr';
-import { fetcher, endpoints } from 'src/utils/axios';
-import { useDateFilter, useTrendLabel } from '../../v2/date-filter-context';
 
+import { Grid, Stack, Rating, Typography } from '@mui/material';
+
+import { fetcher, endpoints } from 'src/utils/axios';
+
+import InactiveBrandsDrawer from './client-inactive-company-drawer';
+import { useDateFilter, useTrendLabel } from '../../v2/date-filter-context';
 // Import all your meticulously crafted widgets
 import {
   TopKPICard,
-  TimeSpentChart,
-  SkippedFieldsChart,
   DropOffChart,
   RenewalChart,
-  ReviewEfficiencyScatter,
-  TurnaroundChart,
+  TimeSpentChart,
   RejectionDonut,
+  TurnaroundChart,
   SimpleMetricCard,
+  SkippedFieldsChart,
+  ReviewEfficiencyScatter,
 } from './client-widgets';
-import InactiveBrandsDrawer from './client-inactive-company-drawer';
 
 export default function ClientsTabContent({ packageTypes }) {
   const { startDate, endDate } = useDateFilter();

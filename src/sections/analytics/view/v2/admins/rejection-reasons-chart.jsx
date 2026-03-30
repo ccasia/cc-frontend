@@ -1,8 +1,8 @@
 import { memo } from 'react';
 
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import { Box, Stack, Skeleton, Typography, LinearProgress, useTheme, useMediaQuery } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import { Box, Stack, Skeleton, useTheme, Typography, useMediaQuery, LinearProgress } from '@mui/material';
 
 import useGetRejectionReasons from 'src/hooks/use-get-rejection-reasons';
 

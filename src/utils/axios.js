@@ -335,6 +335,12 @@ export const endpoints = {
       approve: '/api/submissions/v4/approve',
       postingLink: '/api/submissions/v4/posting-link',
       approvePostingLink: '/api/submissions/v4/posting-link/approve',
+      comments: (submissionId) => `/api/submissions/v4/submission/${submissionId}/comments`,
+      updateComment: (commentId) => `/api/submissions/v4/comments/${commentId}`,
+      deleteComment: (commentId) => `/api/submissions/v4/comments/${commentId}`,
+      sendToCreator: (submissionId) => `/api/submissions/v4/submission/${submissionId}/send-to-creator`,
+      sendToClient: (submissionId) => `/api/submissions/v4/submission/${submissionId}/send-to-client`,
+      resolveComment: (commentId) => `/api/submissions/v4/comments/${commentId}/resolve`,
     },
     creator: {
       agreement: '/api/submission/submitAgreement',

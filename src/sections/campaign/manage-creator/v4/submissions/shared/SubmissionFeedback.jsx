@@ -80,7 +80,7 @@ const SubmissionFeedback = ({ feedback, hasChangesRequired }) => {
               </Box>
             )}
 
-            {/* CS Feedback Content */}
+            {/* CS Feedback Content - commented out
             <Box>
               <Typography
                 variant="body2"
@@ -111,6 +111,7 @@ const SubmissionFeedback = ({ feedback, hasChangesRequired }) => {
                 {feedbackItem.content || 'No specific feedback provided.'}
               </Typography>
             </Box>
+            */}
           </Stack>
         ))}
       </Stack>

@@ -1,20 +1,20 @@
 import { useMemo, useEffect } from 'react';
 
 import { LineChart } from '@mui/x-charts/LineChart';
+import RemoveIcon from '@mui/icons-material/Remove';
 import { Chip, Stack, Typography } from '@mui/material';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
-import RemoveIcon from '@mui/icons-material/Remove';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 import useChartZoom from 'src/hooks/use-chart-zoom';
 
 import { MOCK_RETENTION } from '../mock-data';
-import { useFilteredData, useFilterLabel } from '../date-filter-context';
 import ChartCard from '../components/chart-card';
 import ZoomableChart from '../components/zoomable-chart';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
-import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, TICK_LABEL_STYLE, getTrendProps } from '../chart-config';
+import { useFilterLabel, useFilteredData } from '../date-filter-context';
+import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, getTrendProps, TICK_LABEL_STYLE } from '../chart-config';
 
 export default function CreatorRetentionChart() {
   const filtered = useFilteredData(MOCK_RETENTION);

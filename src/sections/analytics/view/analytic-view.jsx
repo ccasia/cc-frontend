@@ -13,13 +13,13 @@ import CreatorSendPosting from './components/creators/posting';
 import TotalCreators from './components/creators/totalcreators';
 import CreatorSendAgreement from './components/creators/agreements';
 import PostingAnalytics from './components/admins/PostingAnalytics';
+import ClientAnalytics from './components/clients/client-analytics';
 import LanguageAnalytics from './components/creators/language-analytics';
 import ApproveDraftsAnalytics from './components/admins/DraftsAnalytics';
 import ShortlistedCreators from './components/creators/shortlisted-creators';
 import CampaignParticipation from './components/creators/campaign-participants';
 import SendAgreementsAnalytics from './components/admins/SendAgreementsAnalytics';
 import ApproveAgreementsAnalytics from './components/admins/ApproveAgreementsAnalytics';
-import ClientAnalytics from './components/clients/client-analytics';
 
 export default function AnalyticsView() {
   const [activeTab, setActiveTab] = useState(0);
@@ -77,41 +77,51 @@ export default function AnalyticsView() {
         <Box sx={{ mt: 3 }}>
           {activeTab === 0 && (
             <>
-              {creatorsLoading || usersLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <>
-                  <Grid container spacing={3}>
-                    {/* Total Creators Analytics */}
-                    <Grid item xs={12} md={6}>
-                      <TotalCreators creators={creatorsData} />
-                    </Grid>
+             {creatorsLoading || usersLoading ? (
+               <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+                 <CircularProgress />
+               </Box>
+             ) : (
+               <>
+                 <Grid container spacing={3}>
+                   {/* Total Creators Analytics - Left Column */}
+                   <Grid item xs={12} md={6}>
+                     <TotalCreators creators={creatorsData} />
+                   </Grid>
 
-                    {/* Shortlisted Creators */}
-                    <Grid item xs={12} md={6}>
-                      <ShortlistedCreators creators={creatorsData} />
-                    </Grid>
+                   {/* Right Column - Shortlisted Creators and Language Analytics stacked */}
+                   <Grid item xs={12} md={6}>
+                     <Grid container spacing={3}>
+                       {/* Shortlisted Creators */}
+                       <Grid item xs={12}>
+                         <ShortlistedCreators creators={creatorsData} />
+                       </Grid>
 
-                    {/* Total Pitches */}
-                    <Grid item xs={12} md={6}>
-                      <TotalPitches users={usersData} />
-                    </Grid>
+                       {/* Language Analytics - Below Shortlisted Creators */}
+                       <Grid item xs={12}>
+                         <LanguageAnalytics creators={creatorsData} />
+                       </Grid>
+                     </Grid>
+                   </Grid>
 
-                    {/* Campaign Participation */}
-                    <Grid item xs={12} md={6} mb={2}>
-                      <CampaignParticipation creators={creatorsData} />
-                    </Grid>
-                  </Grid>
+                   {/* Total Pitches */}
+                   <Grid item xs={12} md={6}>
+                     <TotalPitches users={usersData} />
+                   </Grid>
 
-                  <CreatorSendAgreement />
+                   {/* Campaign Participation */}
+                   <Grid item xs={12} md={6} mb={2}>
+                     <CampaignParticipation creators={creatorsData} />
+                   </Grid>
+                 </Grid>
 
-                  <CreatorSendDrafts />
+                 <CreatorSendAgreement/>
 
-                  <CreatorSendPosting />
-                </>
-              )}
+                 <CreatorSendDrafts/>
+
+                 <CreatorSendPosting/>
+               </>
+             )}
             </>
           )}
 
@@ -126,9 +136,7 @@ export default function AnalyticsView() {
           )}
 
           {activeTab === 2 && (
-            <>
-              <ClientAnalytics />
-            </>
+            <ClientAnalytics />
           )}
         </Box>
       </Container>

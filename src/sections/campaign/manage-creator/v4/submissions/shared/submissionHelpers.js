@@ -93,7 +93,7 @@ export const getButtonStates = ({
     postingLoading ||
     status === 'PENDING_REVIEW' ||
     status === 'POSTED' ||
-    status === 'APPROVED' || // Added - prevent submission when already approved
+    (status === 'APPROVED' && !isPostingLinkEditable) || // prevent submission when approved, but allow posting link
     (status !== 'CHANGES_REQUIRED' &&
       status !== 'NOT_STARTED' &&
       status !== 'CLIENT_APPROVED' &&

@@ -1,11 +1,12 @@
 import { memo, useMemo } from 'react';
 
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
-import { Avatar, Box, Skeleton, Stack, Typography } from '@mui/material';
+import { Box, Stack, Avatar, Skeleton, Typography } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import useGetTopShortlistedCreators from 'src/hooks/use-get-top-shortlisted-creators';
-import { useRouter } from 'src/routes/hooks';
-import { paths } from 'src/routes/paths';
 
 import ChartCard from '../components/chart-card';
 import { useDateFilter } from '../date-filter-context';

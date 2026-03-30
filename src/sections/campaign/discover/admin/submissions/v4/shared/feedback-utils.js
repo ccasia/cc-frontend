@@ -16,16 +16,18 @@ export function getFeedbackActionsVisibility({
   action
 }) {
   const showFeedbackActions =
-    (!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) ||
+    (!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK' || submission.status === 'CHANGES_REQUIRED' || submission.status === 'SENT_TO_CLIENT' || submission.status === 'APPROVED')) ||
     (isClient && submission.status === 'SENT_TO_CLIENT');
 
-  const showRequestChangeButton = clientVisible && !isClientFeedback && action !== 'request_revision';
+  const isReadOnlyStatus = submission.status === 'CHANGES_REQUIRED' || submission.status === 'SENT_TO_CLIENT' || submission.status === 'APPROVED';
+
+  const showRequestChangeButton = clientVisible && !isClientFeedback && action !== 'request_revision' && !isReadOnlyStatus;
 
   const showChangeRequestForm = action === 'request_revision' && clientVisible;
 
-  const showApproveButton = !isClientFeedback && action !== 'request_revision';
+  const showApproveButton = action !== 'request_revision' && !isReadOnlyStatus;
 
-  const showAdminClientFeedbackActions = !isClient && isClientFeedback && action !== 'request_revision';
+  const showAdminClientFeedbackActions = false;
 
   const showReasonsDropdown = action === 'request_revision' || action === 'request_changes';
 

@@ -1,11 +1,10 @@
 import { memo } from 'react';
-
 import PropTypes from 'prop-types';
 
-import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Box, Card, Stack, Typography } from '@mui/material';
+import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import { SparkLineChart } from '@mui/x-charts/SparkLineChart';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 import { AnalyticsTooltip } from 'src/sections/analytics/view/components/creators/analytics-tooltips';
 
