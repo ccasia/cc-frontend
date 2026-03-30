@@ -11,8 +11,7 @@ import {
   Slider,
   TextField,
   Typography,
-  IconButton,
-  CircularProgress
+  IconButton
 } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
@@ -28,7 +27,6 @@ import { useNps } from 'src/components/nps-feedback/nps-provider';
 import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissions/admin-feedback-modal';
 import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
 import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
-import AdminVideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/AdminVideoSubmissionModal';
 
 import FeedbackLogs from './shared/feedback-logs';
 import FeedbackSection from './shared/feedback-section';
@@ -995,10 +993,11 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         }
       />
 
-      <AdminVideoSubmissionModal
+      <VideoSubmissionModal
         open={adminReviewModalOpen}
         onClose={() => setAdminReviewModalOpen(false)}
         submission={submission}
+        videoOrder="asc"
         rightSideContent={({ currentTime: modalCurrentTime, duration: modalDuration, onSeek, videoId: modalVideoId, videoPage, setVideoPage, videoCount, isPastVideo, submission: modalSubmission }) => (
           <AdminFeedbackPanel
             currentTime={modalCurrentTime}

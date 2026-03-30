@@ -9,9 +9,9 @@ import {
   Dialog,
   Button,
   Backdrop,
+  Collapse,
   Typography,
   IconButton,
-  Collapse,
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -43,6 +43,7 @@ const VideoSubmissionModal = ({
   creator,
   rightSideContent,
   showNewCommentBorders = false,
+  videoOrder = 'desc',
 }) => {
   const { user } = useAuthContext();
   const isClient = user?.role === 'client';
@@ -53,6 +54,7 @@ const VideoSubmissionModal = ({
   const modalVideoRef = useRef(null);
   const feedbackPanelRef = useRef(null);
   const [modalCurrentTime, setModalCurrentTime] = useState(0);
+  const [modalDuration, setModalDuration] = useState(0);
 
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
 
@@ -65,11 +67,12 @@ const VideoSubmissionModal = ({
   };
 
   useEffect(() => {
-    if (open) setVideoPage(0);
-  }, [open, submission?.id]);
+    if (open) setVideoPage(videoOrder === 'asc' ? -1 : 0);
+  }, [open, submission?.id, videoOrder]);
 
   useEffect(() => {
     setModalCurrentTime(0);
+    setModalDuration(0);
   }, [videoPage]);
 
   useEffect(() => {
@@ -89,7 +92,7 @@ const VideoSubmissionModal = ({
     return () => {
       isMounted = false;
     };
-  }, [open, submission]);
+  }, [open, submission?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open || !submission) return null;
 
@@ -98,19 +101,38 @@ const VideoSubmissionModal = ({
   const allVideos = effectiveSubmission.video || [];
   const CLIENT_ALLOWED_STATUSES = ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'APPROVED'];
   const MAX_VIDEO_PAGES = 3;
+
   // Videos come from backend ordered by createdAt DESC (latest first)
-  // For clients: only show videos that were sent to them by admin
-  const visibleVideos = isClient
-    ? allVideos.filter((v) => CLIENT_ALLOWED_STATUSES.includes(v.status))
-    : allVideos;
-  const latestVideos =
-    visibleVideos.length <= MAX_VIDEO_PAGES
-      ? visibleVideos
-      : visibleVideos.slice(0, MAX_VIDEO_PAGES);
-  const videos = latestVideos;
+  let videos;
+  if (videoOrder === 'asc') {
+    // Admin path: reverse DESC-ASC (oldest first), take up to MAX_VIDEO_PAGES
+    const clipped =
+      allVideos.length <= MAX_VIDEO_PAGES
+        ? [...allVideos].reverse()
+        : allVideos.slice(0, MAX_VIDEO_PAGES).reverse();
+    videos = clipped;
+  } else {
+    // Client/Creator path: keep DESC, filter for clients
+    const visibleVideos = isClient
+      ? allVideos.filter((v) => CLIENT_ALLOWED_STATUSES.includes(v.status))
+      : allVideos;
+    videos =
+      visibleVideos.length <= MAX_VIDEO_PAGES
+        ? visibleVideos
+        : visibleVideos.slice(0, MAX_VIDEO_PAGES);
+  }
+
   const videoCount = videos.length;
-  const currentVideo = videos[videoPage] || videos[0];
+  // ASC: default to last index (newest); DESC: default to 0 (newest)
+  let effectiveVideoPage = videoPage;
+  if (videoOrder === 'asc') {
+    effectiveVideoPage =
+      videoPage >= 0 && videoPage < videoCount ? videoPage : videoCount - 1;
+  }
+  const currentVideo = videos[effectiveVideoPage] || videos[0] || null;
   const videoUrl = currentVideo?.url || null;
+  const isPastVideo =
+    videoOrder === 'asc' ? effectiveVideoPage !== videoCount - 1 : effectiveVideoPage !== 0;
 
   const captionText = effectiveSubmission.caption || '';
   const campaignName = submission.campaign?.name || 'Campaign';
@@ -415,7 +437,10 @@ const VideoSubmissionModal = ({
                       controlsList="nodownload"
                       preload="metadata"
                       playsInline
-                      onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)} // <--- YOUR TIME TRACKER ATTACHED
+                      onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)}
+                      onLoadedMetadata={(e) => {
+                        if (Number.isFinite(e.target.duration)) setModalDuration(e.target.duration);
+                      }}
                       style={{
                         width: '100%',
                         height: '100%',
@@ -443,7 +468,7 @@ const VideoSubmissionModal = ({
             {(() => {
               if (typeof rightSideContent === 'function') {
                 return rightSideContent({
-                  videoPage,
+                  videoPage: effectiveVideoPage,
                   setVideoPage,
                   videoCount,
                   currentVideo,
@@ -452,10 +477,19 @@ const VideoSubmissionModal = ({
                   submission: effectiveSubmission,
                   submissionId: effectiveSubmission.id,
                   videoId: currentVideo?.id,
-                  isPastVideo: videoPage !== 0,
+                  isPastVideo,
                   currentVideoTime: formatTime(modalCurrentTime),
                   onSeekTo: handleModalSeek,
                   ref: feedbackPanelRef,
+                  // Admin-facing fields (raw seconds)
+                  currentTime: modalCurrentTime,
+                  duration: modalDuration,
+                  onSeek: (seconds) => {
+                    if (modalVideoRef.current) {
+                      modalVideoRef.current.currentTime = seconds;
+                      setModalCurrentTime(seconds);
+                    }
+                  },
                 });
               }
               if (React.isValidElement(rightSideContent)) {
@@ -465,11 +499,11 @@ const VideoSubmissionModal = ({
                   videoId: currentVideo?.id,
                   isLocked:
                     !['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(effectiveSubmission.status) ||
-                    videoPage !== 0,
-                  isPastVideo: videoPage !== 0,
+                    isPastVideo,
+                  isPastVideo,
                   currentVideoTime: formatTime(modalCurrentTime),
                   onSeekTo: handleModalSeek,
-                  videoPage,
+                  videoPage: effectiveVideoPage,
                   setVideoPage,
                   videoCount,
                 });
@@ -636,6 +670,7 @@ VideoSubmissionModal.propTypes = {
   }),
   rightSideContent: PropTypes.oneOfType([PropTypes.node, PropTypes.func]),
   showNewCommentBorders: PropTypes.bool,
+  videoOrder: PropTypes.oneOf(['asc', 'desc']),
 };
 
 export default VideoSubmissionModal;
