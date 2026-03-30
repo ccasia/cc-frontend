@@ -17,7 +17,7 @@ import {
 import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 
 import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissions/admin-feedback-modal';
-import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/AdminVideoSubmissionModal';
+import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
 
 import { options_changes } from '../constants';
 import { getFeedbackActionsVisibility } from './feedback-utils';
@@ -425,6 +425,7 @@ export default function FeedbackActions({
           open={reviewModalOpen}
           onClose={() => setReviewModalOpen(false)}
           submission={submission}
+          videoOrder="asc"
           rightSideContent={({ currentTime, duration, onSeek, videoId, videoPage, setVideoPage, videoCount, isPastVideo }) => (
             <AdminFeedbackPanel
               currentTime={currentTime}

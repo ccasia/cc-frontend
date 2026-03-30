@@ -9,10 +9,10 @@ import {
   Button,
   Dialog,
   Divider,
+  useTheme,
   TextField,
   Typography,
   IconButton,
-  useTheme,
   useMediaQuery,
 } from '@mui/material';
 
@@ -433,7 +433,7 @@ const ClientFeedbackModal = forwardRef(
 
     const STORAGE_KEY_END_TIME = `send_timer_end_${submissionId}_${videoId}`;
     // const COUNTDOWN_SECONDS = 24 * 60 * 60;
-    const COUNTDOWN_SECONDS = 3000; //for testing
+    const COUNTDOWN_SECONDS = 3000; // for testing
 
     const commentRefs = useRef({});
     const effectiveIsLocked = isLocked || isPastVideo;
