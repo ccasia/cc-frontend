@@ -1,9 +1,10 @@
-import { memo, useRef, useMemo, useState, useCallback } from 'react';
+import { memo, useRef, useMemo, useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import { PieChart } from '@mui/x-charts/PieChart';
 import PublicOutlinedIcon from '@mui/icons-material/PublicOutlined';
 import { Box, Stack, Paper, MenuItem, TextField, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { m, AnimatePresence } from 'framer-motion';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 
@@ -98,6 +99,10 @@ function getMapColor(value, maxVal) {
 // Pie chart constants
 
 const PIE_SIZE = 200;
+
+const COUNTRY_LIST_SCROLL_EPS = 4;
+// Height of top/bottom gradient hint on the country list
+const COUNTRY_LIST_EDGE_FADE_PX = 26;
 
 // Drawer config
 
@@ -194,6 +199,42 @@ function CreatorCountryMapChart() {
   const [highlightedItem, setHighlightedItem] = useState(null);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const mouseRef = useRef({ x: 0, y: 0 });
+  const countryListScrollRef = useRef(null);
+  const [countryListEdgeFade, setCountryListEdgeFade] = useState({ top: false, bottom: false });
+
+  const updateCountryListEdgeFade = useCallback(() => {
+    const el = countryListScrollRef.current;
+    if (!el) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    const eps = COUNTRY_LIST_SCROLL_EPS;
+    const bottom = scrollTop + clientHeight < scrollHeight - eps;
+    const top = scrollTop > eps;
+    setCountryListEdgeFade((prev) => {
+      if (prev.top === top && prev.bottom === bottom) return prev;
+      return { top, bottom };
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    updateCountryListEdgeFade();
+  }, [filteredCountries, updateCountryListEdgeFade]);
+
+  useEffect(() => {
+    const el = countryListScrollRef.current;
+    const onResize = () => updateCountryListEdgeFade();
+    window.addEventListener('resize', onResize);
+
+    let ro;
+    if (el && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(onResize);
+      ro.observe(el);
+    }
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (ro) ro.disconnect();
+    };
+  }, [updateCountryListEdgeFade]);
 
   const handleHighlightChange = useCallback((highlighted) => {
     if (!highlighted || highlighted.dataIndex == null) {
@@ -263,62 +304,85 @@ function CreatorCountryMapChart() {
           </TextField>
         }
       >
-        <Stack direction={{ xs: 'column', md: 'row' }} sx={{ flex: 1 }}>
-          {/* Left: World map (80%) */}
-          <Box sx={{ flex: 8, position: 'relative', px: 2, pb: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-            <AnimatePresence mode="wait">
-            <m.div
-              key={region.label}
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.97 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-            >
-            <ComposableMap
-              projection="geoMercator"
-              projectionConfig={{ scale: region.scale, center: region.center }}
-              width={800}
-              height={400}
-              style={{ width: '100%', height: 'auto' }}
-            >
-              <Geographies geography={GEO_URL}>
-                {({ geographies }) =>
-                  geographies.map((geo) => {
-                    const d = numericLookup[geo.id];
-                    return (
-                      <Geography
-                        key={geo.rsmKey}
-                        geography={geo}
-                        fill={d ? getMapColor(d.value, maxVal) : '#F4F6F8'}
-                        stroke="#D6D6DA"
-                        strokeWidth={0.4}
-                        onClick={() => handleMapClick(geo)}
-                        onMouseMove={(evt) => {
-                          const code = getCountryCode(d?.label || geo.properties.name);
-                          const pct = d ? ((d.value / filteredTotal) * 100).toFixed(1) : null;
-                          setTooltip({
-                            x: evt.clientX,
-                            y: evt.clientY,
-                            name: d?.label || geo.properties.name,
-                            code,
-                            value: d?.value || 0,
-                            pct,
-                          });
-                        }}
-                        onMouseLeave={() => setTooltip(null)}
-                        style={{
-                          default: { outline: 'none' },
-                          hover: { fill: d ? '#FFAB00' : '#E8ECEE', outline: 'none', cursor: d ? 'pointer' : 'default' },
-                          pressed: { outline: 'none' },
-                        }}
-                      />
-                    );
-                  })
-                }
-              </Geographies>
-            </ComposableMap>
-            </m.div>
-            </AnimatePresence>
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          sx={{
+            flex: { xs: '0 0 auto', md: 1 },
+            minHeight: 0,
+            width: '100%',
+            height: { md: '100%' },
+            alignItems: 'stretch',
+          }}
+        >
+          {/* Left: World Map */}
+          <Box
+            sx={{
+              flex: { xs: '0 0 auto', md: '8 1 0%' },
+              position: 'relative',
+              px: 2,
+              pb: 1,
+              minWidth: 0,
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              height: { xs: 'auto', md: '100%' },
+            }}
+          >
+            <Box sx={{ flexShrink: 0, width: '100%' }}>
+              <AnimatePresence mode="wait">
+                <m.div
+                  key={region.label}
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                >
+                  <ComposableMap
+                    projection="geoMercator"
+                    projectionConfig={{ scale: region.scale, center: region.center }}
+                    width={800}
+                    height={400}
+                    style={{ width: '100%', height: 'auto' }}
+                  >
+                    <Geographies geography={GEO_URL}>
+                      {({ geographies }) =>
+                        geographies.map((geo) => {
+                          const d = numericLookup[geo.id];
+                          return (
+                            <Geography
+                              key={geo.rsmKey}
+                              geography={geo}
+                              fill={d ? getMapColor(d.value, maxVal) : '#F4F6F8'}
+                              stroke="#D6D6DA"
+                              strokeWidth={0.4}
+                              onClick={() => handleMapClick(geo)}
+                              onMouseMove={(evt) => {
+                                const code = getCountryCode(d?.label || geo.properties.name);
+                                const pct = d ? ((d.value / filteredTotal) * 100).toFixed(1) : null;
+                                setTooltip({
+                                  x: evt.clientX,
+                                  y: evt.clientY,
+                                  name: d?.label || geo.properties.name,
+                                  code,
+                                  value: d?.value || 0,
+                                  pct,
+                                });
+                              }}
+                              onMouseLeave={() => setTooltip(null)}
+                              style={{
+                                default: { outline: 'none' },
+                                hover: { fill: d ? '#FFAB00' : '#E8ECEE', outline: 'none', cursor: d ? 'pointer' : 'default' },
+                                pressed: { outline: 'none' },
+                              }}
+                            />
+                          );
+                        })
+                      }
+                    </Geographies>
+                  </ComposableMap>
+                </m.div>
+              </AnimatePresence>
+            </Box>
 
             {/* Tooltip */}
             {tooltip && (
@@ -357,7 +421,17 @@ function CreatorCountryMapChart() {
             )}
 
             {/* Legend */}
-            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ justifyContent: 'center', mt: 'auto', pt: 1 }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={0.5}
+              sx={{
+                justifyContent: 'center',
+                flexShrink: 0,
+                mt: { xs: 1.5, md: 'auto' },
+                pt: { md: 1 },
+              }}
+            >
               <Typography sx={{ fontSize: '0.625rem', color: '#919EAB' }}>Low</Typography>
               {MAP_COLORS.map((color) => (
                 <Box key={color} sx={{ width: 28, height: 10, bgcolor: color, borderRadius: 0.5 }} />
@@ -369,8 +443,11 @@ function CreatorCountryMapChart() {
           {/* Right: Pie chart + legend (20%) */}
           <Stack
             sx={{
-              flex: 2,
-              flexShrink: 0,
+              flex: { xs: '0 0 auto', md: '2 1 0%' },
+              minWidth: 0,
+              minHeight: 0,
+              width: { xs: '100%', md: 'auto' },
+              height: { xs: 'auto', md: '100%' },
               borderLeft: { md: '1px solid #E8ECEE' },
               borderTop: { xs: '1px solid #E8ECEE', md: 'none' },
               py: 2,
@@ -459,58 +536,98 @@ function CreatorCountryMapChart() {
                 </Stack>
               </Paper>
             )}
-            <Box
-              sx={{
-                width: '100%',
-                flex: 1,
-                overflowY: 'auto',
-                mt: 1.5,
-                '&::-webkit-scrollbar': { width: '3px' },
-                '&::-webkit-scrollbar-track': { background: 'transparent' },
-                '&::-webkit-scrollbar-thumb': { background: 'transparent', borderRadius: '1.5px' },
-                '&:hover::-webkit-scrollbar-thumb': { background: '#D0D5DA' },
-                scrollbarWidth: 'thin',
-              }}
-            >
-              <Stack spacing={0.75}>
-                {filteredCountries.map((d, i) => {
-                  const code = getCountryCode(d.label);
-                  const pct = ((d.value / filteredTotal) * 100).toFixed(1);
-                  const isHighlighted = highlightedItem?.dataIndex === i;
-                  return (
-                    <Stack
-                      key={d.label}
-                      direction="row"
-                      alignItems="center"
-                      spacing={0.75}
-                      onMouseEnter={() => setHighlightedItem({ seriesId: 'country-pie', dataIndex: i })}
-                      onMouseLeave={() => setHighlightedItem(null)}
-                      onClick={() => setSelectedCountry(d.label)}
-                      sx={{
-                        cursor: 'pointer',
-                        borderRadius: 0.75,
-                        px: 0.5,
-                        mx: -0.5,
-                        transition: 'background-color 0.15s',
-                        bgcolor: isHighlighted ? '#F4F6F8' : 'transparent',
-                        '&:hover': { bgcolor: '#F4F6F8' },
-                      }}
-                    >
-                      {code ? (
-                        <Iconify icon={`circle-flags:${code}`} width={16} sx={{ flexShrink: 0 }} />
-                      ) : (
-                        <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: d.color, flexShrink: 0 }} />
-                      )}
-                      <Typography sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#333', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-                        {d.label}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.8125rem', fontWeight: 500, color: '#637381', flexShrink: 0 }}>
-                        {d.value} creators ({pct}%)
-                      </Typography>
-                    </Stack>
-                  );
-                })}
-              </Stack>
+            <Box sx={{ position: 'relative', width: '100%', mt: 1.5 }}>
+              <Box
+                ref={countryListScrollRef}
+                onScroll={updateCountryListEdgeFade}
+                sx={{
+                  width: '100%',
+                  maxHeight: { xs: 'min(240px, 42vh)', md: 'min(360px, 50vh)' },
+                  minHeight: 0,
+                  overflowY: 'auto',
+                  scrollbarGutter: 'stable',
+                  pr: 1,
+                  boxSizing: 'border-box',
+                  '&::-webkit-scrollbar': { width: 6 },
+                  '&::-webkit-scrollbar-track': { background: 'transparent' },
+                  '&::-webkit-scrollbar-thumb': { background: 'rgba(145, 158, 171, 0.35)', borderRadius: 3 },
+                  '&:hover::-webkit-scrollbar-thumb': { background: 'rgba(145, 158, 171, 0.55)' },
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: `${alpha('#919EAB', 0.45)} transparent`,
+                }}
+              >
+                <Stack spacing={0.75}>
+                  {filteredCountries.map((d, i) => {
+                    const code = getCountryCode(d.label);
+                    const pct = ((d.value / filteredTotal) * 100).toFixed(1);
+                    const isHighlighted = highlightedItem?.dataIndex === i;
+                    return (
+                      <Stack
+                        key={d.label}
+                        direction="row"
+                        alignItems="center"
+                        spacing={0.75}
+                        onMouseEnter={() => setHighlightedItem({ seriesId: 'country-pie', dataIndex: i })}
+                        onMouseLeave={() => setHighlightedItem(null)}
+                        onClick={() => setSelectedCountry(d.label)}
+                        sx={{
+                          cursor: 'pointer',
+                          borderRadius: 0.75,
+                          px: 0.5,
+                          mx: -0.5,
+                          transition: 'background-color 0.15s',
+                          bgcolor: isHighlighted ? '#F4F6F8' : 'transparent',
+                          '&:hover': { bgcolor: '#F4F6F8' },
+                        }}
+                      >
+                        {code ? (
+                          <Iconify icon={`circle-flags:${code}`} width={16} sx={{ flexShrink: 0 }} />
+                        ) : (
+                          <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: d.color, flexShrink: 0 }} />
+                        )}
+                        <Typography sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#333', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                          {d.label}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.8125rem', fontWeight: 500, color: '#637381', flexShrink: 0 }}>
+                          {d.value} creators ({pct}%)
+                        </Typography>
+                      </Stack>
+                    );
+                  })}
+                </Stack>
+              </Box>
+              <Box
+                aria-hidden
+                sx={{
+                  pointerEvents: 'none',
+                  position: 'absolute',
+                  left: 0,
+                  right: '6px',
+                  top: 0,
+                  height: COUNTRY_LIST_EDGE_FADE_PX,
+                  zIndex: 1,
+                  opacity: countryListEdgeFade.top ? 1 : 0,
+                  transition: 'opacity 0.2s ease',
+                  background: (theme) =>
+                    `linear-gradient(to bottom, ${theme.palette.background.paper}, ${alpha(theme.palette.background.paper, 0)})`,
+                }}
+              />
+              <Box
+                aria-hidden
+                sx={{
+                  pointerEvents: 'none',
+                  position: 'absolute',
+                  left: 0,
+                  right: '6px',
+                  bottom: 0,
+                  height: COUNTRY_LIST_EDGE_FADE_PX,
+                  zIndex: 1,
+                  opacity: countryListEdgeFade.bottom ? 1 : 0,
+                  transition: 'opacity 0.2s ease',
+                  background: (theme) =>
+                    `linear-gradient(to bottom, ${alpha(theme.palette.background.paper, 0)}, ${theme.palette.background.paper})`,
+                }}
+              />
             </Box>
           </Stack>
         </Stack>
