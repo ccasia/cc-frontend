@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { Box, Chip, Stack, Avatar, Checkbox, Typography } from '@mui/material';
@@ -190,6 +190,11 @@ VideoThumbnail.propTypes = {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const CreatorCard = ({ creator, selected, onSelect }) => {
+  const bioRef = useRef(null);
+
+  const [isBioExpanded, setIsBioExpanded] = useState(false);
+  const [hasBioOverflow, setHasBioOverflow] = useState(false);
+
   const platformData = resolvePlatformData(creator);
   const { platform } = platformData;
   const handle = getPlatformHandle(creator, platform);
@@ -212,11 +217,36 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
 
   const topVideos = (platformData.topVideos || []).slice(0, 3);
 
+  useEffect(() => {
+    const checkOverflow = () => {
+      const el = bioRef.current;
+      if (!el) return;
+
+      const computed = window.getComputedStyle(el);
+      const lineHeight = Number.parseFloat(computed.lineHeight) || 0;
+      const collapsedHeight = lineHeight > 0 ? lineHeight * 4 : 0;
+      const isOverflowing = collapsedHeight > 0 ? el.scrollHeight > collapsedHeight + 1 : false;
+      setHasBioOverflow(isOverflowing);
+    };
+
+    const frame = requestAnimationFrame(checkOverflow);
+    window.addEventListener('resize', checkOverflow);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', checkOverflow);
+    };
+  }, [bio, isBioExpanded]);
+
+  useEffect(() => {
+    setIsBioExpanded(false);
+  }, [creator.rowId, creator.userId]);
+
   return (
     <Box
       sx={{
         position: 'relative',
-        overflow: 'hidden',
+        overflow: isBioExpanded ? 'visible' : 'hidden',
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
@@ -362,6 +392,8 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
+          maxHeight: isBioExpanded ? 'none' : 190,
+          overflow: isBioExpanded ? 'visible' : 'hidden'
         }}
       >
         {/* Stats row */}
@@ -375,14 +407,42 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
 
         {/* Bio / About */}
         <Typography
+          ref={bioRef}
           sx={{
             fontSize: 13,
             color: 'text.primary',
-            lineHeight: 1.6,
+            lineHeight: 1.5,
+            overflow: isBioExpanded ? 'visible' : 'hidden',
+            textOverflow: isBioExpanded ? 'clip' : 'ellipsis',
+            display: isBioExpanded ? 'block' : '-webkit-box',
+            WebkitBoxOrient: isBioExpanded ? 'initial' : 'vertical',
+            WebkitLineClamp: isBioExpanded ? 'initial' : 4,
           }}
         >
           {bio || 'No bio available.'}
         </Typography>
+
+        {hasBioOverflow && (
+          <Typography
+            component="button"
+            type="button"
+            onClick={() => setIsBioExpanded((prev) => !prev)}
+            sx={{
+              mt: 0.75,
+              p: 0,
+              border: 0,
+              bgcolor: 'transparent',
+              color: '#1340FF',
+              fontSize: 11,
+              fontWeight: 600,
+              lineHeight: 1,
+              alignSelf: 'flex-start',
+              cursor: 'pointer',
+            }}
+          >
+            {isBioExpanded ? 'Read less' : 'Read more'}
+          </Typography>
+        )}
       </Box>
 
       {/* ─── Right: Top Videos ────────────────────────────────────────────────── */}

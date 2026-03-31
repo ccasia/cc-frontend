@@ -168,8 +168,18 @@ export function useNavData() {
           {
             roles: ['superadmin', 'god'],
             title: 'Creator Discovery Tool',
-            path: paths.dashboard.discoveryTool,
+            path: paths.dashboard.discoveryTool.root,
             icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
+            children: [
+              {
+                title: 'Platform Creators',
+                path: paths.dashboard.discoveryTool.root,
+              },
+              {
+                title: 'Non-Platform Creators',
+                path: paths.dashboard.discoveryTool.npc
+              }
+            ]
           },
           // {
           //   title: 'My Tasks',

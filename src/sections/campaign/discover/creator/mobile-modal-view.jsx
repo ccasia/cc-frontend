@@ -10,9 +10,13 @@ import {
   Stack,
   Button,
   Avatar,
+  Dialog,
   Divider,
   Container,
   Typography,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
   CircularProgress,
 } from '@mui/material';
 
@@ -21,7 +25,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import { fetcher, endpoints } from 'src/utils/axios';
+import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -136,6 +140,11 @@ const MobileModalView = () => {
     [campaignData, user]
   );
 
+  const invitedCreator = useMemo(
+    () => campaignData?.pitch?.find((item) => item.userId === user?.id && item.isInvited === true),
+    [campaignData, user]
+  );
+
   const draftPitch = useMemo(
     () => campaignData?.pitch?.find((item) => item.userId === user?.id && item.status === 'draft'),
     [campaignData, user]
@@ -164,6 +173,8 @@ const MobileModalView = () => {
   const [pitchOptionsOpen, setPitchOptionsOpen] = useState(false);
   const [textPitchOpen, setTextPitchOpen] = useState(false);
   const [videoPitchOpen, setVideoPitchOpen] = useState(false);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
 
   const handlePitch = () => {
     setPitchOptionsOpen(true);
@@ -189,6 +200,29 @@ const MobileModalView = () => {
 
   const handleCloseVideoPitch = () => {
     setVideoPitchOpen(false);
+  };
+
+  const handleJoinNowClick = () => {
+    setJoinDialogOpen(true);
+  };
+
+  const handleJoinConfirm = async () => {
+    if (!invitedCreator?.id) return;
+    try {
+      setIsJoining(true);
+      await axiosInstance.patch(endpoints.campaign.pitch.v3.acceptInvite(invitedCreator.id));
+      if (mutate) mutate();
+      setJoinDialogOpen(false);
+      router.push(paths.dashboard.campaign.creator.detail(campaignData.id));
+    } catch (error) {
+      console.error('Error joining campaign:', error);
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleJoinDialogClose = () => {
+    setJoinDialogOpen(false);
   };
 
   const handleDraftClick = () => {
@@ -324,12 +358,42 @@ const MobileModalView = () => {
     }
 
     if (hasPitched) {
-      if (existingPitch.status === 'approved') {
+      if (existingPitch.status === 'approved' || existingPitch.status === 'APPROVED') {
         // Check if user is marked as Media Kit Mandatory
         const isMKM = user?.mediaKitMandatory === true;
         const hasMediaKit = user?.creator && 
           (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
         const isDisabled = isMKM && !hasMediaKit;
+
+        // If creator was invited, show "Join Now" instead of "Manage"
+        if (invitedCreator) {
+          return (
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={handleJoinNowClick}
+              disabled={isDisabled}
+              sx={{
+                backgroundColor: isDisabled ? '#f5f5f5' : '#203ff5',
+                color: isDisabled ? '#a1a1a1' : 'white',
+                borderBottom: isDisabled ? '4px solid #d1d1d1 !important' : '4px solid #102387 !important',
+                border: 'none',
+                '&:hover': {
+                  backgroundColor: isDisabled ? '#f5f5f5' : '#1935dd',
+                  borderBottom: isDisabled ? '4px solid #d1d1d1 !important' : '4px solid #102387 !important',
+                },
+                fontSize: '0.875rem',
+                padding: '6px 18px',
+                height: '42px',
+                boxShadow: 'none',
+                textTransform: 'none',
+                opacity: isDisabled ? 0.7 : 1,
+              }}
+            >
+              Join Now
+            </Button>
+          );
+        }
 
         return (
           <Button
@@ -359,7 +423,7 @@ const MobileModalView = () => {
         );
       }
 
-      if (existingPitch.status === 'rejected') {
+      if (existingPitch.status === 'rejected' || existingPitch.status === 'REJECTED') {
         return (
           <Chip
             icon={<Iconify icon="mdi:close-circle" />}
@@ -663,6 +727,69 @@ const MobileModalView = () => {
         }}
         mutate={mutate}
       />
+
+      {/* Join Campaign Confirmation Dialog */}
+      <Dialog
+        open={joinDialogOpen}
+        onClose={() => setJoinDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            p: 1,
+          },
+        }}
+      >
+        <DialogTitle sx={{ textAlign: 'center', fontWeight: 600, fontSize: '1.25rem' }}>
+          Join Campaign
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ textAlign: 'center', color: '#636366' }}>
+            You have been invited to join <strong>{campaignData?.name}</strong>. Would you like to
+            accept and join this campaign?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 2, gap: 1.5 }}>
+          <Button
+            variant="outlined"
+            onClick={handleJoinDialogClose}
+            sx={{
+              borderColor: '#e7e7e7',
+              color: '#636366',
+              borderBottom: '3px solid #e7e7e7',
+              textTransform: 'none',
+              fontWeight: 600,
+              minWidth: '120px',
+              '&:hover': {
+                borderColor: '#d1d1d1',
+                backgroundColor: '#f5f5f5',
+              },
+            }}
+          >
+            No Thanks
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleJoinConfirm}
+            disabled={isJoining}
+            sx={{
+              backgroundColor: '#203ff5',
+              color: 'white',
+              borderBottom: '4px solid #102387 !important',
+              border: 'none',
+              textTransform: 'none',
+              fontWeight: 600,
+              minWidth: '120px',
+              '&:hover': {
+                backgroundColor: '#1935dd',
+              },
+            }}
+          >
+            {isJoining ? 'Joining...' : 'Join Campaign'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

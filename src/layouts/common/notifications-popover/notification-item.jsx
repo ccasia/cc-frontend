@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
@@ -15,19 +16,48 @@ import { fToNow } from 'src/utils/format-time';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Iconify from 'src/components/iconify';
+import CampaignInvitationModal from '../campaign-invitation';
 
 // ----------------------------------------------------------------------
 
 export default function NotificationItem({ notification, markAsRead }) {
   const { user } = useAuthContext();
   const router = useRouter();
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+
+  const isCreatorInviteNotification =
+    user?.role?.includes('creator') &&
+    notification?.notification?.entity === 'Pitch' &&
+    notification?.notification?.title === 'Campaign Invitation' &&
+    Boolean(notification?.notification?.campaignId);
+
+  const campaignNameFromMessage = notification?.notification?.message?.match(/"([^"]+)"/)?.[1];
+  const campaignName = notification?.notification?.campaign?.name || campaignNameFromMessage;
+
+  const handleGoToInvitedCampaign = () => {
+    const campaignId = notification?.notification?.campaignId;
+    setInviteDialogOpen(false);
+
+    if (!campaignId) return;
+
+    const targetLink = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage?tab=pending&campaignId=${campaignId}`;
+    router.push('/dashboard/temp');
+    setTimeout(() => router.push(targetLink), 0);
+  };
 
   const handleViewClick = () => {
     const { entity, campaignId, threadId, creatorId, invoiceId } = notification.notification ?? {};
 
     let link = '';
     let tabToSet = null;
+
+    if (isCreatorInviteNotification) {
+      if (notification.read === false) {
+        markAsRead(notification.id);
+      }
+      setInviteDialogOpen(true);
+      return;
+    }
 
     // the cases are entity
     switch (entity) {
@@ -163,20 +193,6 @@ export default function NotificationItem({ notification, markAsRead }) {
     <Badge badgeContent={1} color="error" variant="dot" sx={{ marginRight: '1px' }} />
   );
 
-  const renderReadStatus = notification.read && (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Typography variant="body2" color="textSecondary">
-        Read
-      </Typography>
-      <Iconify
-        icon="mdi:tick-all"
-        width="24"
-        height="24"
-        style={{ color: 'black', marginRight: '4px' }}
-      />
-    </Box>
-  );
-
   const renderOther = (
     <Stack
       direction="row"
@@ -242,6 +258,13 @@ export default function NotificationItem({ notification, markAsRead }) {
         </Box>
       </ListItemButton>
       <Divider sx={{ marginLeft: '16px', marginRight: '16px' }} />
+
+      <CampaignInvitationModal
+        open={inviteDialogOpen}
+        onClose={() => setInviteDialogOpen(false)}
+        onGoToCampaign={handleGoToInvitedCampaign}
+        campaignName={campaignName}
+      />
     </>
   );
 }
