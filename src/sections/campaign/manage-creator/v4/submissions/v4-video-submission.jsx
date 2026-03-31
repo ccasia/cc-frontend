@@ -5,6 +5,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { Box } from '@mui/material';
 
 import CustomV4Upload from 'src/components/upload/custom-v4-upload';
+import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 
 import VideoSubmissionModal from './VideoSubmissionModal';
 import { CreatorFeedbackModal } from './feeedback-component';
@@ -29,11 +30,67 @@ const parseSecondsFromTimestamp = (timeStr) => {
   return 0;
 };
 
+const readFeedbackViewedCutoffMs = (submissionId) => {
+  try {
+    const raw = localStorage.getItem(`feedback_viewed_${submissionId}`);
+    if (raw == null || raw === '') return null;
+    const n = parseInt(raw, 10);
+    return Number.isNaN(n) ? null : n;
+  } catch {
+    return null;
+  }
+};
+
 const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange, creator }) => {
   // State for modal
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [feedbackViewed, setFeedbackViewed] = useState(false);
   const [showNewCommentBorders, setShowNewCommentBorders] = useState(false);
+  /** Snapshot of last "viewed" time (ms) before opening modal; null = never viewed */
+  const [commentHighlightCutoffMs, setCommentHighlightCutoffMs] = useState(null);
+
+  const submittedVideo = useMemo(() => {
+    const hasSubmittedVideos = submission.video && submission.video.length > 0;
+    return hasSubmittedVideos ? submission.video[0] : null;
+  }, [submission.video]);
+
+  const { comments } = useSubmissionComments(submission?.id, submittedVideo?.id);
+
+  const hasNewFeedback = useMemo(() => {
+    try {
+      const storageKey = `feedback_viewed_${submission.id}`;
+      const lastViewedTimestamp = localStorage.getItem(storageKey);
+      
+      const allFeedback = submission?.feedback || [];
+      const legacyFeedbackTime = allFeedback.length > 0
+        ? Math.max(...allFeedback.map(f => new Date(f.createdAt || 0).getTime()))
+        : 0;
+
+      const allComments = comments || [];
+      const commentTimes = allComments.flatMap(comment => {
+        const times = [new Date(comment.createdAt || 0).getTime()];
+        if (comment.replies && comment.replies.length > 0) {
+          times.push(...comment.replies.map(r => new Date(r.createdAt || 0).getTime()));
+        }
+        return times;
+      });
+      const latestCommentTime = commentTimes.length > 0 ? Math.max(...commentTimes) : 0;
+
+      const latestFeedbackTime = Math.max(legacyFeedbackTime, latestCommentTime);
+      
+      if (!lastViewedTimestamp && latestFeedbackTime > 0) {
+        return true;
+      }
+      
+      if (lastViewedTimestamp && latestFeedbackTime > parseInt(lastViewedTimestamp, 10)) {
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error checking new feedback:', error);
+      return false;
+    }
+  }, [submission.id, submission?.feedback, comments]);
 
   // Use shared hook with video-specific configuration
   const {
@@ -79,12 +136,6 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
     isPostingLinkEditable,
     isPostingLinkRejected,
   } = statusFlags;
-
-  // Get submitted video
-  const submittedVideo = useMemo(() => {
-    const hasSubmittedVideos = submission.video && submission.video.length > 0;
-    return hasSubmittedVideos ? submission.video[0] : null;
-  }, [submission.video]);
 
   // Determine video to show (null if in reupload mode)
   const videoToShow = useMemo(
@@ -159,22 +210,32 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
     [handleSubmit]
   );
 
+  const markFeedbackAsViewed = useCallback(() => {
+    try {
+      const storageKey = `feedback_viewed_${submission.id}`;
+      const currentTimestamp = Date.now();
+      localStorage.setItem(storageKey, currentTimestamp.toString());
+    } catch (error) {
+      console.error('Error marking feedback as viewed:', error);
+    }
+  }, [submission.id]);
+
   // Handle video click to open modal
   const handleVideoClick = useCallback(() => {
     // Only open modal if there's a submitted video (not in reupload mode or selecting new files)
     if (submittedVideo && !isReuploadMode && selectedFiles.length === 0) {
-      setShowNewCommentBorders(!feedbackViewed);
+      setCommentHighlightCutoffMs(hasNewFeedback ? readFeedbackViewedCutoffMs(submission.id) : null);
+      setShowNewCommentBorders(hasNewFeedback);
       setIsModalOpen(true);
-      setFeedbackViewed(true);
     }
-  }, [submittedVideo, isReuploadMode, selectedFiles.length, feedbackViewed]);
+  }, [submittedVideo, isReuploadMode, selectedFiles.length, hasNewFeedback, submission.id]);
 
   // Handle view feedback button click
   const handleViewFeedback = useCallback(() => {
-    setShowNewCommentBorders(!feedbackViewed);
+    setCommentHighlightCutoffMs(hasNewFeedback ? readFeedbackViewedCutoffMs(submission.id) : null);
+    setShowNewCommentBorders(hasNewFeedback);
     setIsModalOpen(true);
-    setFeedbackViewed(true);
-  }, [feedbackViewed]);
+  }, [hasNewFeedback, submission.id]);
 
   // Determine if "View Feedback" button should show
   // Show when there's feedback and a video - including after reupload (so user can view feedback & previous drafts)
@@ -271,7 +332,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
         uploadingText="Uploading videos..."
         showViewFeedbackButton={showViewFeedbackButton}
         onViewFeedback={handleViewFeedback}
-        hasNewFeedback={!feedbackViewed}
+        hasNewFeedback={hasNewFeedback}
       />
 
       {/* VIDEO SUBMISSION MODAL */}
@@ -280,19 +341,24 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
         onClose={() => {
           setIsModalOpen(false);
           setShowNewCommentBorders(false);
+          setCommentHighlightCutoffMs(null);
+          markFeedbackAsViewed();
         }}
         submission={submission}
         creator={creator}
         showNewCommentBorders={showNewCommentBorders}
+        commentHighlightCutoffMs={commentHighlightCutoffMs}
         rightSideContent={({
           videoPage,
           setVideoPage,
           videoCount,
           currentVideo,
           showNewCommentBorders: showBorders,
+          commentHighlightCutoffMs: highlightCutoff,
           submission: freshSubmission,
           onSeekTo,
           currentVideoTime,
+          isPastVideo,
         }) => (
           <CreatorFeedbackModal
             submission={freshSubmission || submission}
@@ -301,6 +367,8 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
             videoCount={videoCount}
             currentVideo={currentVideo}
             showNewCommentBorders={showBorders}
+            commentHighlightCutoffMs={highlightCutoff}
+            isPastVideo={isPastVideo}
             onSeekTo={onSeekTo}
             currentTime={parseSecondsFromTimestamp(currentVideoTime)}
           />

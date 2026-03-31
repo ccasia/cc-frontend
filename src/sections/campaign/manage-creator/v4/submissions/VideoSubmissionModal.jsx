@@ -47,6 +47,7 @@ const VideoSubmissionModal = ({
   creator,
   rightSideContent,
   showNewCommentBorders = false,
+  commentHighlightCutoffMs = null,
   videoOrder = 'desc',
 }) => {
   const { user } = useAuthContext();
@@ -481,6 +482,7 @@ const VideoSubmissionModal = ({
                   currentVideo,
                   videos,
                   showNewCommentBorders,
+                  commentHighlightCutoffMs,
                   submission: effectiveSubmission,
                   submissionId: effectiveSubmission.id,
                   videoId: currentVideo?.id,
@@ -677,6 +679,7 @@ VideoSubmissionModal.propTypes = {
   }),
   rightSideContent: PropTypes.oneOfType([PropTypes.node, PropTypes.func]),
   showNewCommentBorders: PropTypes.bool,
+  commentHighlightCutoffMs: PropTypes.number,
   videoOrder: PropTypes.oneOf(['asc', 'desc']),
 };
 
