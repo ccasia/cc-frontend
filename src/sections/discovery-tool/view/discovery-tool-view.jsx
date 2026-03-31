@@ -34,24 +34,6 @@ const DiscoveryToolView = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortByFollowers, setSortByFollowers] = useState(false);
 
-  // All filters are now server-side — pass them all to the SWR hook
-  const { creators, pagination, availableLocations, isLoading, isError } = useGetDiscoveryCreators({
-    platform: filters.platform,
-    gender: filters.gender || undefined,
-    ageRange: filters.ageRange || undefined,
-    country: filters.country || undefined,
-    city: filters.city || undefined,
-    creditTier: filters.creditTier || undefined,
-    languages: filters.languages?.length ? filters.languages : undefined,
-    interests: filters.interests?.length ? filters.interests : undefined,
-    keyword: filters.debouncedKeyword || undefined,
-    hashtag: filters.debouncedHashtag || undefined,
-    sortBy: sortByFollowers ? 'followers' : 'name',
-    sortDirection: sortByFollowers ? 'desc' : 'asc',
-    page: currentPage,
-    limit: 20,
-  });
-
   // Check if any filter is active (non-default)
   const hasActiveFilters = useMemo(
     () =>
@@ -67,6 +49,32 @@ const DiscoveryToolView = () => {
       filters.interests.length > 0,
     [filters]
   );
+
+  // While users are editing filters, run lightweight queries only.
+  // Full hydration happens after they click Show Results.
+  const shouldHydrateMissing = useMemo(
+    () => isInitialMount.current || !hasActiveFilters || showResults,
+    [hasActiveFilters, showResults]
+  );
+
+  // All filters are now server-side — pass them all to the SWR hook
+  const { creators, pagination, availableLocations, isLoading, isError } = useGetDiscoveryCreators({
+    platform: filters.platform,
+    gender: filters.gender || undefined,
+    ageRange: filters.ageRange || undefined,
+    country: filters.country || undefined,
+    city: filters.city || undefined,
+    creditTier: filters.creditTier || undefined,
+    languages: filters.languages?.length ? filters.languages : undefined,
+    interests: filters.interests?.length ? filters.interests : undefined,
+    keyword: filters.debouncedKeyword || undefined,
+    hashtag: filters.debouncedHashtag || undefined,
+    sortBy: sortByFollowers ? 'followers' : 'name',
+    sortDirection: sortByFollowers ? 'desc' : 'asc',
+    hydrateMissing: shouldHydrateMissing,
+    page: currentPage,
+    limit: 20,
+  });
 
   // Show results if explicitly applied OR no filters are active (default view)
   const shouldShowResults = showResults || !hasActiveFilters;
