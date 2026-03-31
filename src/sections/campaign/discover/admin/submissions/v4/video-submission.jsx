@@ -615,7 +615,6 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                               cursor: 'pointer',
                               outline: 'none',
                               mr: 'auto',
-                              textDecoration: 'underline',
                               textUnderlineOffset: 4,
                             }}
                           >

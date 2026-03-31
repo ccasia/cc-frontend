@@ -113,8 +113,6 @@ export default function FeedbackActions({
                 cursor: 'pointer',
                 outline: 'none',
                 mr: 'auto',
-                textDecoration: 'underline',
-                textUnderlineOffset: 4,
               }}
             >
               Review Submission
