@@ -37,6 +37,65 @@ const formatFollowers = (value) => {
   return String(count);
 };
 
+const getCreatorProfileMeta = (profileLink) => {
+  if (!profileLink || typeof profileLink !== 'string') return null;
+
+  const trimmedLink = profileLink.trim();
+  if (!trimmedLink) return null;
+
+  const parseableLink = /^https?:\/\//i.test(trimmedLink)
+    ? trimmedLink
+    : `https://${trimmedLink}`;
+
+  try {
+    const parsedUrl = new URL(parseableLink);
+    const hostname = parsedUrl.hostname.toLowerCase();
+    const normalizedHostname = hostname.replace(/^www\./i, '');
+    const pathSegments = parsedUrl.pathname.split('/').filter(Boolean);
+
+    if (normalizedHostname.includes('tiktok.com')) {
+      const tikTokHandle = pathSegments.find((segment) => segment.startsWith('@'));
+      if (tikTokHandle) {
+        const display = `www.tiktok.com/${tikTokHandle}`;
+        return { href: `https://${display}`, display };
+      }
+    }
+
+    if (normalizedHostname.includes('instagram.com')) {
+      const firstSegment = pathSegments[0];
+      const reservedSegments = new Set([
+        'p',
+        'reel',
+        'reels',
+        'tv',
+        'stories',
+        'explore',
+        'accounts',
+        'about',
+        'developer',
+      ]);
+
+      if (firstSegment && !reservedSegments.has(firstSegment.toLowerCase())) {
+        const display = `www.instagram.com/${firstSegment}`;
+        return { href: `https://${display}`, display };
+      }
+    }
+
+    const cleanedPath = parsedUrl.pathname.replace(/\/+$/, '');
+    const cleanedDomain = parsedUrl.hostname;
+    const display = `${cleanedDomain}${cleanedPath}`;
+    return { href: parsedUrl.href, display };
+  } catch (_error) {
+    const display = trimmedLink.replace(/^https?:\/\//i, '').split(/[?#]/)[0].replace(/\/+$/, '');
+    if (!display) return null;
+
+    return {
+      href: /^https?:\/\//i.test(trimmedLink) ? trimmedLink : `https://${display}`,
+      display,
+    };
+  }
+};
+
 const EmptyProfileSvgIcon = ({ size = '100%' }) => (
   <Box
     component="svg"
@@ -494,10 +553,12 @@ const DiscoveryToolNpcView = () => {
                   <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{creator.name}</Typography>
                   {/* Refactored to avoid nested ternary */}
                   {(() => {
-                    if (creator.profileLink) {
+                    const profileMeta = getCreatorProfileMeta(creator.profileLink);
+
+                    if (profileMeta) {
                       return (
                         <Link
-                          href={creator.profileLink}
+                          href={profileMeta.href}
                           target="_blank"
                           rel="noopener noreferrer"
                           underline="hover"
@@ -514,7 +575,7 @@ const DiscoveryToolNpcView = () => {
                             mb: 1,
                           }}
                         >
-                          {creator.profileLink.replace(/^https?:\/\//, '')}
+                          {profileMeta.display}
                         </Link>
                       );
                     }
