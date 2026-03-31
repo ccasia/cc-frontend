@@ -19,7 +19,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import { GlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
 const formatTime = (timeInSeconds) => {
   const t = Math.floor(Math.max(0, Number(timeInSeconds) || 0));
@@ -356,7 +355,7 @@ const VideoSubmissionModal = ({
                 <Collapse in={isCaptionOpen} sx={{ display: { xs: 'block', md: 'none' } }}>
                   <Box
                     sx={{
-                      maxHeight: 300, // <--- Lowered from 120 to 100 for better mobile balance
+                      maxHeight: 300,
                       overflowY: 'auto',
                       mt: 1,
                       pr: 1, // Prevents text from touching scrollbar
@@ -383,59 +382,54 @@ const VideoSubmissionModal = ({
                   </Box>
                 </Collapse>
 
-                {/* Desktop: Always visible scrollable area wrapped in Tooltip */}
-                <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                  <GlassTooltip
-                    title={captionText || 'No caption provided'}
-                    placement="bottom-start"
+                {/* Desktop: Always visible scrollable area */}
+                <Box
+                  sx={{
+                    display: { xs: 'none', md: 'block' },
+                    maxHeight: 150,
+                    overflowY: 'auto',
+                    '&::-webkit-scrollbar': { width: '4px' },
+                    '&::-webkit-scrollbar-thumb': {
+                      background: 'rgba(0,0,0,0.2)',
+                      borderRadius: '4px',
+                    },
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontFamily: 'Inter Display, Inter, sans-serif',
+                      fontSize: '0.875rem',
+                      color: '#1F2937',
+                      lineHeight: 1.6,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}
                   >
-                    <Box
-                      sx={{
-                        maxHeight: 150,
-                        overflowY: 'auto',
-                        '&::-webkit-scrollbar': { width: '4px' },
-                        '&::-webkit-scrollbar-thumb': {
-                          background: 'rgba(0,0,0,0.2)',
-                          borderRadius: '4px',
-                        },
-                      }}
-                    >
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontFamily: 'Inter Display, Inter, sans-serif',
-                          fontSize: '0.875rem',
-                          color: '#1F2937',
-                          lineHeight: 1.6,
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        {captionText || 'No caption provided'}
-                      </Typography>
-                    </Box>
-                  </GlassTooltip>
+                    {captionText || 'No caption provided'}
+                  </Typography>
                 </Box>
               </Box>
 
               {/* Video Player */}
-              {!isCaptionOpen && (
-                <Box
-                  sx={{
-                    flex: 1,
-                    bgcolor: '#000',
-                    borderRadius: { xs: '8px', md: '12px' },
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: { xs: 0, sm: 280, md: 450 },
-                    maxHeight: { xs: '33vh', sm: '42vh', md: 'none' },
-                    // maxHeight: { xs: '55vh', sm: '60vh', md: 'none' },
-                    position: 'relative',
-                  }}
-                >
+              <Box
+                sx={{
+                  flex: 1,
+                  bgcolor: '#000',
+                  borderRadius: { xs: '8px', md: '12px' },
+                  overflow: 'hidden',
+                  display: {
+                    xs: isCaptionOpen ? 'none' : 'flex',
+                    md: 'flex',
+                  },
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: { xs: 0, sm: 200, md: 300 },
+                  maxHeight: { xs: '33vh', sm: '42vh', md: 'none' },
+                  position: 'relative',
+                }}
+              >
                   {videoUrl ? (
                     <video
                       key={currentVideo?.id}
@@ -469,7 +463,6 @@ const VideoSubmissionModal = ({
                     </Typography>
                   )}
                 </Box>
-              )}
             </Box>
 
             {/* Right Side - Flexible Content (Client/Creator/Admin specific) */}

@@ -472,7 +472,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                     />
                   ) : (
                     <>
-                      <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
+                      <Box sx={{ flex: '0 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                         <Typography variant="caption" fontWeight="bold" color="#636366" mb={0.5}>
                           Caption
                         </Typography>
@@ -483,7 +483,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                                 <TextField
                                   fullWidth
                                   multiline
-                                  rows={3}
+                                  minRows={3}
+                                  maxRows={12}
                                   placeholder="Enter caption here..."
                                   value={caption}
                                   onChange={(e) => setCaption(e.target.value)}
@@ -499,66 +500,34 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           }
                           if (submission.caption) {
                             return (
-                              <>
-                                <Box
-                                  ref={captionMeasureRef}
+                              <Box
+                                sx={{
+                                  maxHeight: submission.status === 'POSTED'
+                                    ? { xs: 150, sm: 250, md: 350 }
+                                    : { xs: 80, sm: 150, md: 260 },
+                                  overflowY: 'auto',
+                                  bgcolor: 'background.paper',
+                                  borderRadius: 0.5,
+                                  p: 1,
+                                  '&::-webkit-scrollbar': { width: '4px' },
+                                  '&::-webkit-scrollbar-thumb': {
+                                    background: 'rgba(0,0,0,0.15)',
+                                    borderRadius: '4px',
+                                  },
+                                }}
+                              >
+                                <Typography
+                                  fontSize={14}
+                                  color="#636366"
                                   sx={{
-                                    visibility: 'hidden',
-                                    position: 'absolute',
-                                    width: '100%',
-                                    maxWidth: 400,
-                                    pointerEvents: 'none',
+                                    wordWrap: 'break-word',
+                                    overflowWrap: 'break-word',
+                                    lineHeight: 1.5,
                                   }}
                                 >
-                                  <Typography
-                                    fontSize={14}
-                                    sx={{
-                                      wordWrap: 'break-word',
-                                      overflowWrap: 'break-word',
-                                      lineHeight: 1.5,
-                                    }}
-                                  >
-                                    {submission.caption}
-                                  </Typography>
-                                </Box>
-
-                                {captionOverflows ? (
-                                  <Box
-                                    sx={{
-                                      maxHeight: { xs: 80, sm: 200, md: 420 },
-                                      overflow: 'auto',
-                                      border: '1px solid #E7E7E7',
-                                      borderRadius: 0.5,
-                                      p: 1,
-                                      bgcolor: 'background.paper',
-                                    }}
-                                  >
-                                    <Typography
-                                      fontSize={14}
-                                      color="#636366"
-                                      sx={{
-                                        wordWrap: 'break-word',
-                                        overflowWrap: 'break-word',
-                                        lineHeight: 1.5,
-                                      }}
-                                    >
-                                      {submission.caption}
-                                    </Typography>
-                                  </Box>
-                                ) : (
-                                  <Typography
-                                    fontSize={14}
-                                    color="#636366"
-                                    sx={{
-                                      wordWrap: 'break-word',
-                                      overflowWrap: 'break-word',
-                                      lineHeight: 1.5,
-                                    }}
-                                  >
-                                    {submission.caption}
-                                  </Typography>
-                                )}
-                              </>
+                                  {submission.caption}
+                                </Typography>
+                              </Box>
                             );
                           }
                           return null;
@@ -594,8 +563,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
                       <Box
                         sx={{
-                          flex: 'auto 0 1',
-                          minHeight: 0,
+                          flex: '0 0 auto',
                           display: 'flex',
                           flexDirection: 'column',
                         }}

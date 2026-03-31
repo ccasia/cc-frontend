@@ -756,7 +756,7 @@ export default function AdminFeedbackPanel({
   };
 
   // ---- Button visibility ----
-  const isReadOnly = isPastVideo || submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'SENT_TO_CLIENT' || submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED';
+  const isReadOnly = isPastVideo || submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'SENT_TO_CLIENT' || submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED' || submission?.status === 'POSTED';
 
   const showSendToClient =
     submission?.status === 'PENDING_REVIEW' && submission?.campaign?.origin !== 'ADMIN';
@@ -774,7 +774,7 @@ export default function AdminFeedbackPanel({
         flex: { xs: '1 1 auto', md: '0 0 calc(40% - 20px)' },
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
+        minHeight: 0,
         overflow: 'hidden',
       }}
     >
@@ -782,6 +782,7 @@ export default function AdminFeedbackPanel({
       <Box
         sx={{
           flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
           pr: 1,
           pb: 2,
@@ -1020,18 +1021,18 @@ export default function AdminFeedbackPanel({
         </Box>
       </Box>}
 
-      {/* Pagination + Action Buttons — container always rendered with fixed height to prevent jumping */}
+      {/* Pagination + Action Buttons */}
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 1.5,
-          minHeight: 48,
+          ...(!isReadOnly && { minHeight: 48 }),
           flexShrink: 0,
           flexWrap: 'wrap',
-          pt: 1,
-          pb: 0.5,
+          pt: isReadOnly ? 0.5 : 1,
+          pb: isReadOnly ? 0 : 0.5,
         }}
       >
         {/* Pagination - left side (always occupies space) */}
