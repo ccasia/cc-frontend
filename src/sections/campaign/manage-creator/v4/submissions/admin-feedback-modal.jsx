@@ -607,7 +607,7 @@ export default function AdminFeedbackPanel({
     if (!socket || !submission?.id) return undefined;
 
     const handleCommentEvent = (data) => {
-      if (data.submissionId === submission.id) {
+      if (data.submissionId === submission.id && !data.comment?.isClientDraft) {
         commentsMutate();
       }
     };

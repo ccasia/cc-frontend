@@ -666,7 +666,7 @@ const CreatorFeedbackModal = ({
     if (!socket || !submission?.id || !useCommentSystem) return undefined;
 
     const handleCommentEvent = (data) => {
-      if (data.submissionId === submission.id) {
+      if (data.submissionId === submission.id && !data.comment?.isClientDraft) {
         commentsMutate();
       }
     };
