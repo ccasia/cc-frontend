@@ -74,10 +74,7 @@ const CommentCard = ({
   const isUser = currentUser?.id === comment?.user?.id;
   const hasAgreed = comment.agreedBy?.some((agreement) => agreement.userId === currentUser?.id);
   const displayName = comment.forwardedBy?.name || comment.user?.name || 'Unknown';
-  const displayPhoto =
-    comment.user?.photoURL ||
-    comment?.user?.client?.company?.logo ||
-    null;
+  const displayPhoto = comment.user?.photoURL || comment?.user?.client?.company?.logo || null;
 
   const isDisabled = isLocked || isPastVideo;
 
@@ -1118,7 +1115,7 @@ const ClientFeedbackModal = forwardRef(
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'flex-start',
-                  gap: { xs: 1.75, md: 0.75 },
+                  gap: { xs: 1.75, md: 0.5 },
                   pt: { xs: 0.5, md: 2 },
                   pb: { xs: 0.5, md: 1 },
                   px: { xs: 1, md: 0 },
@@ -1151,7 +1148,7 @@ const ClientFeedbackModal = forwardRef(
                       userSelect: 'none',
                     }}
                   >
-                    {idx + 1}
+                    {idx === 0 ? 'Latest' : idx + 1}
                   </Typography>
                 ))}
                 <IconButton
@@ -1240,8 +1237,8 @@ const ClientFeedbackModal = forwardRef(
             variant="body2"
             sx={{ color: '#636366', fontWeight: 400, fontSize: '16px', mb: 3, lineHeight: 1.2 }}
           >
-            After sending, you&apos;ll have 24 hours to add additional feedback before the current
-            submission round ends
+            After sending, your organisation will have 24 hours to add additional feedback before
+            the current submission round ends
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             <LoadingButton
