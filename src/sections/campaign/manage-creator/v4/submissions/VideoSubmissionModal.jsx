@@ -12,11 +12,13 @@ import {
   Collapse,
   Typography,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { getStatusColor } from 'src/contants/statusColors';
 
 import Iconify from 'src/components/iconify';
 
@@ -51,6 +53,7 @@ const VideoSubmissionModal = ({
 }) => {
   const { user } = useAuthContext();
   const isClient = user?.role === 'client';
+  const isCreator = user?.role === 'creator';
   const [videoPage, setVideoPage] = useState(0);
   const [isCaptionOpen, setIsCaptionOpen] = useState(false);
   const [freshSubmission, setFreshSubmission] = useState(submission);
@@ -177,6 +180,106 @@ const VideoSubmissionModal = ({
     onClose();
   };
 
+  // Role-based status chip helpers
+  const campaignType = effectiveSubmission.campaign?.campaignType;
+  const submissionStatus = effectiveSubmission.status;
+
+  const getModalStatusColor = (status) => {
+    if (isCreator) {
+      const creatorColorMap = {
+        NOT_STARTED: '#8E8E93',
+        IN_PROGRESS: '#8B5CF6',
+        PENDING_REVIEW: '#8B5CF6',
+        SENT_TO_CLIENT: '#8B5CF6',
+        CLIENT_FEEDBACK: '#8B5CF6',
+        CHANGES_REQUIRED: '#FF4842',
+        REJECTED: '#FF4842',
+        APPROVED: '#00AB55',
+        CLIENT_APPROVED: '#00AB55',
+        POSTED: '#1ABF66',
+      };
+      return creatorColorMap[status] || '#8E8E93';
+    }
+
+    if (isClient) {
+      switch (status) {
+        case 'SENT_TO_CLIENT':
+          return getStatusColor('PENDING_REVIEW');
+        case 'PENDING_REVIEW':
+        case 'CHANGES_REQUIRED':
+        case 'CLIENT_FEEDBACK':
+        case 'REJECTED':
+          return getStatusColor('IN_PROGRESS');
+        default:
+          return getStatusColor(status);
+      }
+    }
+
+    // Admin
+    if ((status === 'APPROVED' || status === 'CLIENT_APPROVED') && campaignType === 'normal') {
+      return getStatusColor('PENDING_REVIEW');
+    }
+    return getStatusColor(status);
+  };
+
+  const getModalStatusLabel = (status) => {
+    if (isCreator) {
+      switch (status) {
+        case 'IN_PROGRESS':
+        case 'PENDING_REVIEW':
+        case 'SENT_TO_CLIENT':
+        case 'CLIENT_FEEDBACK':
+          return 'IN REVIEW';
+        case 'CHANGES_REQUIRED':
+        case 'REJECTED':
+          return 'CHANGES REQUIRED';
+        case 'APPROVED':
+        case 'CLIENT_APPROVED':
+          return 'APPROVED';
+        case 'POSTED':
+          return 'POSTED';
+        case 'NOT_STARTED':
+          return 'NOT STARTED';
+        default:
+          return status?.replace(/_/g, ' ') || 'Unknown';
+      }
+    }
+
+    if (isClient) {
+      switch (status) {
+        case 'NOT_STARTED':
+          return 'NOT STARTED';
+        case 'IN_PROGRESS':
+          return 'IN PROGRESS';
+        case 'PENDING_REVIEW':
+          return 'IN PROGRESS';
+        case 'SENT_TO_CLIENT':
+          return 'PENDING REVIEW';
+        case 'CLIENT_APPROVED':
+        case 'APPROVED':
+          return 'APPROVED';
+        case 'POSTED':
+          return 'POSTED';
+        case 'CLIENT_FEEDBACK':
+        case 'CHANGES_REQUIRED':
+        case 'REJECTED':
+          return 'IN PROGRESS';
+        default:
+          return status?.replace(/_/g, ' ') || 'Unknown';
+      }
+    }
+
+    // Admin
+    if (status === 'IN_PROGRESS') return 'PROCESSING';
+    if (campaignType === 'normal' && (status === 'APPROVED' || status === 'CLIENT_APPROVED')) {
+      return 'PENDING LINK';
+    }
+    return status?.replace(/_/g, ' ') || 'Unknown';
+  };
+
+  const statusColor = getModalStatusColor(submissionStatus);
+  const statusLabel = getModalStatusLabel(submissionStatus);
+
   return (
     <>
       <Modal
@@ -271,6 +374,41 @@ const VideoSubmissionModal = ({
                     : ''}
                 </Typography>
               </Box>
+              {/* Status Chip */}
+              {submissionStatus && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.8,
+                    ml: 1.5,
+                    px: 1.3,
+                    py: 0.6,
+                    border: '1px solid',
+                    borderColor: statusColor,
+                    borderRadius: 0.8,
+                    boxShadow: `0px -2px 0px 0px ${statusColor} inset`,
+                    bgcolor: '#fff',
+                    color: statusColor,
+                  }}
+                >
+                  {submissionStatus === 'IN_PROGRESS' && (
+                    <CircularProgress
+                      size={12}
+                      thickness={5}
+                      sx={{ color: statusColor, display: 'flex' }}
+                    />
+                  )}
+                  <Typography
+                    fontWeight="SemiBold"
+                    fontSize={12}
+                    color={statusColor}
+                    noWrap
+                  >
+                    {statusLabel}
+                  </Typography>
+                </Box>
+              )}
             </Box>
 
             {/* Close Button */}
