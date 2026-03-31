@@ -22,6 +22,18 @@ export const formatNumber = (num) => {
   return num.toString();
 };
 
+const getContentPreviewUrl = (content) => {
+  if (!content) return '';
+
+  if (content?.cached_thumbnail_url) return content.cached_thumbnail_url;
+
+  if (content?.media_type === 'VIDEO') {
+    return content?.thumbnail_url || content?.media_url || '';
+  }
+
+  return content?.media_url || content?.thumbnail_url || '';
+};
+
 // const typeAnimation = keyframes`
 //   from { width: 0; }
 //   to { width: 100%; }
@@ -98,7 +110,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                   width: '100%',
                   transition: 'all .3s ease',
                   objectFit: 'cover',
-                  background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.media_type === 'VIDEO' ? content?.thumbnail_url : content?.media_url}) center/cover no-repeat`,
+                  background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${getContentPreviewUrl(content)}) center/cover no-repeat`,
                 }}
               />
               <Box
@@ -144,7 +156,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                 lineHeight: 1.5,
               }}
             >
-              {`${content.caption.slice(0, 100)}...`}
+              {`${content?.caption?.slice(0, 100) || ''}...`}
             </Typography>
           </Box>
         ))}
@@ -220,7 +232,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                 height: 1,
                 transition: 'all .2s linear',
                 objectFit: 'cover',
-                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.media_type === 'VIDEO' ? content?.thumbnail_url : content?.media_url}) lightgray 50% / cover no-repeat`,
+                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${getContentPreviewUrl(content)}) lightgray 50% / cover no-repeat`,
               }}
             />
 
