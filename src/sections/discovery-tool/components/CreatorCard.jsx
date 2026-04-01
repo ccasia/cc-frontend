@@ -83,7 +83,9 @@ const VideoThumbnail = ({ video, platform, tiktokHandle }) => {
   const [hasImageError, setHasImageError] = useState(false);
 
   const thumbnailUrl =
-    platform === 'instagram' ? video.thumbnail_url || video.media_url : video.cover_image_url;
+    platform === 'instagram'
+      ? video.cached_thumbnail_url || video.thumbnail_url || video.media_url
+      : video.cover_image_url;
 
   const likes = platform === 'instagram' ? video.like_count : video.like_count;
   const comments = platform === 'instagram' ? video.comments_count : video.comment_count;
@@ -215,7 +217,13 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
   const avgSaves = platformData.averageSaves || 0;
   const avgShares = platformData.averageShares || 0;
 
-  const topVideos = (platformData.topVideos || []).slice(0, 3);
+  const topVideos = [...(platformData.topVideos || [])]
+    .sort((a, b) => {
+      const aLikes = Number(a?.like_count || 0);
+      const bLikes = Number(b?.like_count || 0);
+      return bLikes - aLikes;
+    })
+    .slice(0, 3);
 
   useEffect(() => {
     const checkOverflow = () => {

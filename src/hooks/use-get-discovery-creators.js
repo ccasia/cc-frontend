@@ -21,13 +21,14 @@ import { fetcher, endpoints } from 'src/utils/axios';
 const useGetDiscoveryCreators = (filters = {}) => {
   const page = filters.page || 1;
   const limit = filters.limit || 20;
+  const hydrateMissing = filters.hydrateMissing !== false;
 
   const url = useMemo(() => {
     const params = new URLSearchParams();
     params.set('platform', filters.platform || 'all');
     params.set('page', String(page));
     params.set('limit', String(limit));
-    params.set('hydrateMissing', 'true');
+    params.set('hydrateMissing', hydrateMissing ? 'true' : 'false');
     params.set('sortBy', filters.sortBy || 'name');
     params.set('sortDirection', filters.sortDirection || 'asc');
 
@@ -42,7 +43,7 @@ const useGetDiscoveryCreators = (filters = {}) => {
     if (filters.interests?.length) params.set('interests', JSON.stringify(filters.interests));
 
     return `${endpoints.discovery.creators}?${params.toString()}`;
-  }, [filters, page, limit]);
+  }, [filters, page, limit, hydrateMissing]);
 
   const { data, isLoading, mutate, error } = useSWR(url, fetcher, {
     revalidateOnFocus: false,
