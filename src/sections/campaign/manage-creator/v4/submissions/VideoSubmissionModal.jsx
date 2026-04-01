@@ -363,8 +363,8 @@ const VideoSubmissionModal = ({
                     display: { xs: 'none', sm: 'block' },
                   }}
                 >
-                  {submission.createdAt
-                    ? new Date(submission.createdAt).toLocaleDateString('en-US', {
+                  {(currentVideo?.createdAt || submission.createdAt)
+                    ? new Date(currentVideo?.createdAt || submission.createdAt).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',

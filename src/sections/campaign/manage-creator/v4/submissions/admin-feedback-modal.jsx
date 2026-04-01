@@ -718,21 +718,24 @@ export default function AdminFeedbackPanel({
     };
   }, [socket, submission?.id, commentsMutate]);
 
-  // Reset scroll state on mount (each modal open)
+  // Reset scroll state on mount and when switching video pages
   useEffect(() => {
     initialLoadDone.current = false;
-  }, []);
+  }, [videoId]);
 
-  // Scroll to bottom on initial load (instant) and when new comments are added (smooth)
+  // Scroll to bottom on initial load / page switch (instant) and when new comments are added (smooth)
   useEffect(() => {
     if (!commentsEndRef.current || !comments?.length || commentsLoading) return;
     if (!initialLoadDone.current) {
-      commentsEndRef.current.scrollIntoView({ behavior: 'instant' });
+      // Use requestAnimationFrame to ensure replies/nested content have rendered
+      requestAnimationFrame(() => {
+        commentsEndRef.current?.scrollIntoView({ behavior: 'instant' });
+      });
       initialLoadDone.current = true;
       return;
     }
     commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
-  }, [comments?.length, commentsLoading]);
+  }, [comments?.length, commentsLoading, videoId]);
 
   // ---- Handlers ----
 
@@ -1133,7 +1136,7 @@ export default function AdminFeedbackPanel({
                 onClick={() => setVideoPage(videoPage + 1)}
                 sx={{ p: 0.25, color: '#231F20', '&.Mui-disabled': { color: '#D1D1D6' } }}
               >
-                <Iconify icon="eva:chevron-left-fill" width={20} />
+                <Iconify icon="eva:chevron-left-fill" width={24} />
               </IconButton>
               {Array.from({ length: videoCount }, (_, i) => {
                 const pageIndex = videoCount - 1 - i;
@@ -1142,7 +1145,7 @@ export default function AdminFeedbackPanel({
                     key={pageIndex}
                     onClick={() => setVideoPage(pageIndex)}
                     sx={{
-                      fontSize: '0.875rem',
+                      fontSize: '1rem',
                       fontWeight: 700,
                       color: videoPage === pageIndex ? '#231F20' : '#8E8E93',
                       cursor: 'pointer',
@@ -1160,7 +1163,7 @@ export default function AdminFeedbackPanel({
                 onClick={() => setVideoPage(videoPage - 1)}
                 sx={{ p: 0.25, color: '#231F20', '&.Mui-disabled': { color: '#D1D1D6' } }}
               >
-                <Iconify icon="eva:chevron-right-fill" width={20} />
+                <Iconify icon="eva:chevron-right-fill" width={24} />
               </IconButton>
             </>
           )}
