@@ -314,8 +314,9 @@ const CommentCard = ({
                               }
                             }}
                             sx={{
+                              fontSize: { xs: '0.813rem', md: '0.875rem' },
                               color: '#1340FF',
-                              fontWeight: 700,
+                              fontWeight: 500,
                               fontSize: 'inherit',
                               mr: 0.5,
                               cursor: onTimestampClick ? 'pointer' : 'default',
