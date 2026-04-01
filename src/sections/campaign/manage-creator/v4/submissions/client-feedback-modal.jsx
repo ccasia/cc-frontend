@@ -286,6 +286,7 @@ const CommentCard = ({
               }}
             >
               <TextField
+                inputRef={inputRef}
                 multiline
                 minRows={1}
                 maxRows={4}
