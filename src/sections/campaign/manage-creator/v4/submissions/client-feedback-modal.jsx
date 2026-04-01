@@ -75,7 +75,6 @@ const CommentCard = ({
   const hasAgreed = comment.agreedBy?.some((agreement) => agreement.userId === currentUser?.id);
   const displayName = comment.forwardedBy?.name || comment.user?.name || 'Unknown';
   const displayPhoto =
-    comment.forwardedBy?.photoURL ||
     comment.user?.photoURL ||
     comment?.user?.client?.company?.logo ||
     null;
@@ -287,6 +286,7 @@ const CommentCard = ({
               }}
             >
               <TextField
+                inputRef={inputRef}
                 multiline
                 minRows={1}
                 maxRows={4}

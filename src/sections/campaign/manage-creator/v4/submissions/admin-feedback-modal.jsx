@@ -125,15 +125,25 @@ const CommentCard = ({
   onSendInlineReply,
   onCancelInlineReply,
 }) => {
-  const isClientComment = comment.user?.role === 'client' && !comment.forwardedBy;
+  const isClientComment = comment.user?.role === 'client';
+  const isEditedClientComment = isClientComment && !!comment.forwardedBy;
   const hasAgreed = comment.agreedBy?.length > 0;
   const isResolved = !!comment.resolvedByUserId || isPastVideo;
 
-  // Display forwardedBy name if set, otherwise user name
-  const displayName = comment.forwardedBy?.name || comment.user?.name || 'Unknown';
-  const displayPhoto = comment.forwardedBy?.photoURL || comment.user?.photoURL || comment?.user?.client?.company?.logo || null;
+  const [showOriginal, setShowOriginal] = useState(false);
+
+  // Toggle identity along with text: edited view shows admin, original view shows client
+  const showingOriginal = showOriginal && isEditedClientComment;
+  const displayName = showingOriginal
+    ? (comment.user?.name || 'Unknown')
+    : (comment.forwardedBy?.name || comment.user?.name || 'Unknown');
+  const displayPhoto = showingOriginal
+    ? (comment.user?.photoURL || comment?.user?.client?.company?.logo || null)
+    : (comment.forwardedBy?.photoURL || comment.user?.photoURL || comment?.user?.client?.company?.logo || null);
   const role = comment.user?.role;
-  const displayRole = comment.forwardedBy ? 'Admin' : (role && role.charAt(0).toUpperCase() + role.slice(1)) || '';
+  const capitalizedRole = (role && role.charAt(0).toUpperCase() + role.slice(1)) || '';
+  const forwardedRole = comment.forwardedBy ? 'Admin' : capitalizedRole;
+  const displayRole = showingOriginal ? capitalizedRole : forwardedRole;
 
   const isEditing = editTarget?.commentId === comment.id;
   const editFocusedRef = useRef(false);
@@ -145,7 +155,7 @@ const CommentCard = ({
   }
   prevEditingRef.current = isEditing;
 
-  const hasLeftActions = !isPastVideo && ((!isReply && isClientComment) || (isClientComment && !comment.forwardedBy && !!onEdit));
+  const hasLeftActions = !isPastVideo && ((!isReply && isClientComment && !isEditedClientComment) || (isClientComment && !isEditedClientComment && !!onEdit));
 
   return (
     <Box
@@ -153,7 +163,7 @@ const CommentCard = ({
         bgcolor: 'white',
         p: hasLeftActions ? 2 : 1.5,
         borderRadius: 2,
-        border: isClientComment && !comment.forwardedBy ? '1px solid #2563EB' : '1px solid #EBEBEB',
+        border: isClientComment && !isEditedClientComment ? '1px solid #2563EB' : '1px solid #EBEBEB',
         boxShadow: 'none',
         display: 'flex',
         flexDirection: 'column',
@@ -164,31 +174,40 @@ const CommentCard = ({
     >
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 0.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Avatar
-            src={displayPhoto}
-            alt={displayName}
-            sx={{
-              width: 36,
-              height: 36,
-              bgcolor: '#E5E7EB',
-              color: '#6B7280',
-              border: '1px solid #EBEBEB',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-            }}
+        <AnimatePresence mode="wait">
+          <m.div
+            key={showingOriginal ? 'original' : 'edited'}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8 }}
           >
-            {!displayPhoto && displayName.charAt(0)}
-          </Avatar>
-          <Box>
-            <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#111827' }}>
-              {displayName}
-            </Typography>
-            <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#9CA3AF' }}>
-              {displayRole}
-            </Typography>
-          </Box>
-        </Box>
+            <Avatar
+              src={displayPhoto}
+              alt={displayName}
+              sx={{
+                width: 36,
+                height: 36,
+                bgcolor: '#E5E7EB',
+                color: '#6B7280',
+                border: '1px solid #EBEBEB',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+              }}
+            >
+              {!displayPhoto && displayName.charAt(0)}
+            </Avatar>
+            <Box>
+              <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#111827' }}>
+                {displayName}
+              </Typography>
+              <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#9CA3AF' }}>
+                {displayRole}
+              </Typography>
+            </Box>
+          </m.div>
+        </AnimatePresence>
         <Typography sx={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
           {fDateTime(comment.createdAt)}
         </Typography>
@@ -206,69 +225,113 @@ const CommentCard = ({
           transition={{ duration: 0.25, ease: 'easeInOut' }}
         >
           {isEditing ? (
-            <TextField
-              inputRef={(input) => {
-                if (input && !editFocusedRef.current) {
-                  editFocusedRef.current = true;
-                  input.focus();
-                  const { length } = input.value;
-                  input.setSelectionRange(length, length);
-                }
-              }}
-              multiline
-              minRows={1}
-              maxRows={6}
-              value={editText}
-              onChange={(e) => onEditTextChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  onSaveEdit(comment.id);
-                }
-              }}
-              size="small"
-              fullWidth
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  border: 'none',
-                  '& fieldset': { border: 'none' },
-                  p: 0,
-                },
-                '& .MuiInputBase-input': {
-                  fontSize: '0.875rem',
-                  fontFamily: 'Inter, sans-serif',
-                  p: 0,
-                  lineHeight: 1.4,
-                },
-              }}
-            />
-          ) : (
-            <Typography
-              sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#1F2937', wordBreak: 'break-word' }}
-            >
-              {comment.timestamp && (
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+              {editTarget?.timestamp && (
                 <Typography
                   component="span"
                   onClick={(e) => {
                     e.stopPropagation();
                     if (onTimestampClick) {
-                      onTimestampClick(parseTimestamp(comment.timestamp));
+                      onTimestampClick(parseTimestamp(editTarget.timestamp));
                     }
                   }}
                   sx={{
                     color: '#1340FF',
                     fontWeight: 700,
-                    fontSize: 'inherit',
-                    mr: 0.5,
+                    fontSize: '0.875rem',
+                    lineHeight: 1.4,
                     cursor: onTimestampClick ? 'pointer' : 'default',
                     '&:hover': onTimestampClick ? { textDecoration: 'underline' } : {},
+                    whiteSpace: 'nowrap',
+                    mt: '1px',
                   }}
                 >
-                  {formatDisplayTimestamp(parseTimestamp(comment.timestamp))}
+                  {formatDisplayTimestamp(parseTimestamp(editTarget.timestamp))}
                 </Typography>
               )}
-              {comment.text}
-            </Typography>
+              <TextField
+                inputRef={(input) => {
+                  if (input && !editFocusedRef.current) {
+                    editFocusedRef.current = true;
+                    input.focus();
+                    const { length } = input.value;
+                    input.setSelectionRange(length, length);
+                  }
+                }}
+                multiline
+                minRows={1}
+                maxRows={6}
+                value={editText}
+                onChange={(e) => onEditTextChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    onSaveEdit(comment.id);
+                  }
+                }}
+                size="small"
+                fullWidth
+                sx={{
+                  flex: 1,
+                  '& .MuiOutlinedInput-root': {
+                    border: 'none',
+                    '& fieldset': { border: 'none' },
+                    p: 0,
+                  },
+                  '& .MuiInputBase-input': {
+                    fontSize: '0.875rem',
+                    fontFamily: 'Inter, sans-serif',
+                    p: 0,
+                    lineHeight: 1.4,
+                  },
+                }}
+              />
+            </Box>
+          ) : (
+            <AnimatePresence mode="wait">
+              <m.div
+                key={showingOriginal ? 'original-body' : 'edited-body'}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
+              >
+                <Typography
+                  sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#1F2937', wordBreak: 'break-word' }}
+                >
+                  {(() => {
+                    const displayTimestamp = showingOriginal && comment.originalTimestamp ? comment.originalTimestamp : comment.timestamp;
+                    const displayText = showingOriginal && comment.originalText ? comment.originalText : comment.text;
+                    return (
+                      <>
+                        {displayTimestamp && (
+                          <Typography
+                            component="span"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onTimestampClick) {
+                                onTimestampClick(parseTimestamp(displayTimestamp));
+                              }
+                            }}
+                            sx={{
+                              color: '#1340FF',
+                              fontWeight: 700,
+                              fontSize: 'inherit',
+                              mr: 0.5,
+                              cursor: onTimestampClick ? 'pointer' : 'default',
+                              '&:hover': onTimestampClick ? { textDecoration: 'underline' } : {},
+                            }}
+                          >
+                            {formatDisplayTimestamp(parseTimestamp(displayTimestamp))}
+                          </Typography>
+                        )}
+                        {displayText}
+                      </>
+                    );
+                  })()}
+                </Typography>
+              </m.div>
+            </AnimatePresence>
           )}
           <AnimatePresence>
             {isEditing && (
@@ -340,7 +403,7 @@ const CommentCard = ({
       {!isEditing && (
         <Box sx={{ pl: 0.5, display: 'flex', alignItems: 'center', justifyContent: hasLeftActions ? 'space-between' : 'flex-end' }}>
           {hasLeftActions && <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            {!isReply && isClientComment && (
+            {!isReply && isClientComment && !isEditedClientComment && (
               <Typography
                 onClick={() => onReply?.(comment)}
                 sx={{
@@ -354,7 +417,7 @@ const CommentCard = ({
                 Reply
               </Typography>
             )}
-            {isClientComment && !comment.forwardedBy && onEdit && (
+            {isClientComment && !isEditedClientComment && onEdit && (
               <Typography
                 onClick={() => onEdit(comment)}
                 sx={{
@@ -370,6 +433,34 @@ const CommentCard = ({
             )}
           </Box>}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+            {isEditedClientComment && (
+              <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
+                {!showOriginal && (
+                  <Typography
+                    sx={{
+                      fontSize: '0.75rem',
+                      fontStyle: 'italic',
+                      color: '#9CA3AF',
+                    }}
+                  >
+                    Edited,
+                  </Typography>
+                )}
+                <Typography
+                  onClick={() => setShowOriginal((prev) => !prev)}
+                  sx={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: '#9CA3AF',
+                    cursor: 'pointer',
+                    ml: showOriginal ? 0 : 0.5,
+                    '&:hover': { color: '#6B7280' },
+                  }}
+                >
+                  {showOriginal ? 'Back to edited' : 'see original'}
+                </Typography>
+              </Box>
+            )}
             {hasAgreed && (
               <DarkGlassTooltip
                 title={(() => {
@@ -607,7 +698,7 @@ export default function AdminFeedbackPanel({
     if (!socket || !submission?.id) return undefined;
 
     const handleCommentEvent = (data) => {
-      if (data.submissionId === submission.id) {
+      if (data.submissionId === submission.id && !data.comment?.isClientDraft) {
         commentsMutate();
       }
     };
@@ -627,21 +718,24 @@ export default function AdminFeedbackPanel({
     };
   }, [socket, submission?.id, commentsMutate]);
 
-  // Reset scroll state on mount (each modal open)
+  // Reset scroll state on mount and when switching video pages
   useEffect(() => {
     initialLoadDone.current = false;
-  }, []);
+  }, [videoId]);
 
-  // Scroll to bottom on initial load (instant) and when new comments are added (smooth)
+  // Scroll to bottom on initial load / page switch (instant) and when new comments are added (smooth)
   useEffect(() => {
     if (!commentsEndRef.current || !comments?.length || commentsLoading) return;
     if (!initialLoadDone.current) {
-      commentsEndRef.current.scrollIntoView({ behavior: 'instant' });
+      // Use requestAnimationFrame to ensure replies/nested content have rendered
+      requestAnimationFrame(() => {
+        commentsEndRef.current?.scrollIntoView({ behavior: 'instant' });
+      });
       initialLoadDone.current = true;
       return;
     }
     commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
-  }, [comments?.length, commentsLoading]);
+  }, [comments?.length, commentsLoading, videoId]);
 
   // ---- Handlers ----
 
@@ -693,19 +787,16 @@ export default function AdminFeedbackPanel({
   };
 
   const handleEdit = (comment) => {
-    setEditTarget({ commentId: comment.id, originalText: comment.text });
-    const ts = comment.timestamp ? formatDisplayTimestamp(parseTimestamp(comment.timestamp)) : '';
-    setEditText(ts ? `${ts} ${comment.text}` : comment.text);
+    setEditTarget({ commentId: comment.id, originalText: comment.text, timestamp: comment.timestamp });
+    setEditText(comment.text);
     setInlineReplyTarget(null);
   };
 
   const handleSaveEdit = async (commentId) => {
-    const raw = editText.trim();
-    if (!raw) return;
-
-    const { timestamp, text } = extractTimestamp(raw);
-
+    const text = editText.trim();
     if (!text) return;
+
+    const timestamp = editTarget?.timestamp || null;
 
     try {
       await axiosInstance.patch(endpoints.submission.v4.updateComment(commentId), { text, timestamp });
@@ -756,7 +847,7 @@ export default function AdminFeedbackPanel({
   };
 
   // ---- Button visibility ----
-  const isReadOnly = isPastVideo || submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'SENT_TO_CLIENT' || submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED';
+  const isReadOnly = isPastVideo || submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'SENT_TO_CLIENT' || submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED' || submission?.status === 'POSTED';
 
   const showSendToClient =
     submission?.status === 'PENDING_REVIEW' && submission?.campaign?.origin !== 'ADMIN';
@@ -774,7 +865,7 @@ export default function AdminFeedbackPanel({
         flex: { xs: '1 1 auto', md: '0 0 calc(40% - 20px)' },
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
+        minHeight: 0,
         overflow: 'hidden',
       }}
     >
@@ -782,6 +873,7 @@ export default function AdminFeedbackPanel({
       <Box
         sx={{
           flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
           pr: 1,
           pb: 2,
@@ -1020,18 +1112,18 @@ export default function AdminFeedbackPanel({
         </Box>
       </Box>}
 
-      {/* Pagination + Action Buttons — container always rendered with fixed height to prevent jumping */}
+      {/* Pagination + Action Buttons */}
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 1.5,
-          minHeight: 48,
+          ...(!isReadOnly && { minHeight: 48 }),
           flexShrink: 0,
           flexWrap: 'wrap',
-          pt: 1,
-          pb: 0.5,
+          pt: isReadOnly ? 0.5 : 1,
+          pb: isReadOnly ? 0 : 0.5,
         }}
       >
         {/* Pagination - left side (always occupies space) */}
@@ -1044,7 +1136,7 @@ export default function AdminFeedbackPanel({
                 onClick={() => setVideoPage(videoPage + 1)}
                 sx={{ p: 0.25, color: '#231F20', '&.Mui-disabled': { color: '#D1D1D6' } }}
               >
-                <Iconify icon="eva:chevron-left-fill" width={20} />
+                <Iconify icon="eva:chevron-left-fill" width={24} />
               </IconButton>
               {Array.from({ length: videoCount }, (_, i) => {
                 const pageIndex = videoCount - 1 - i;
@@ -1053,7 +1145,7 @@ export default function AdminFeedbackPanel({
                     key={pageIndex}
                     onClick={() => setVideoPage(pageIndex)}
                     sx={{
-                      fontSize: '0.875rem',
+                      fontSize: '1rem',
                       fontWeight: 700,
                       color: videoPage === pageIndex ? '#231F20' : '#8E8E93',
                       cursor: 'pointer',
@@ -1061,7 +1153,7 @@ export default function AdminFeedbackPanel({
                       userSelect: 'none',
                     }}
                   >
-                    {i + 1}
+                    {i === 0 ? 'Latest' : i + 1}
                   </Typography>
                 );
               })}
@@ -1071,7 +1163,7 @@ export default function AdminFeedbackPanel({
                 onClick={() => setVideoPage(videoPage - 1)}
                 sx={{ p: 0.25, color: '#231F20', '&.Mui-disabled': { color: '#D1D1D6' } }}
               >
-                <Iconify icon="eva:chevron-right-fill" width={20} />
+                <Iconify icon="eva:chevron-right-fill" width={24} />
               </IconButton>
             </>
           )}

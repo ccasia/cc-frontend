@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 
 import { Box, Avatar, TextField, Typography, IconButton } from '@mui/material';
 
@@ -56,6 +56,14 @@ const formatTimestampForDisplay = (timeStr) => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+
+const shouldHighlightAsNew = (createdAt, sessionActive, cutoffMs) => {
+  if (!sessionActive) return false;
+  const t = new Date(createdAt || 0).getTime();
+  if (Number.isNaN(t)) return false;
+  if (cutoffMs == null) return true;
+  return t > cutoffMs;
 };
 
 const getPhotoFromObject = (obj) => {
@@ -121,7 +129,7 @@ UserAvatar.propTypes = {
   responsive: PropTypes.bool,
 };
 
-const UserInfo = ({ name, roleLabel, photo, date }) => (
+const UserInfo = ({ name, roleLabel, photo, date, sequenceLabel }) => (
   <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: { xs: 0.5, md: 0 } }}>
     <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.5 } }}>
       <UserAvatar src={photo} name={name} responsive />
@@ -135,9 +143,25 @@ const UserInfo = ({ name, roleLabel, photo, date }) => (
       </Box>
     </Box>
     {date && (
-      <Typography variant="caption" sx={{ fontFamily: FONT_FAMILY, fontSize: { xs: '0.688rem', md: '0.75rem' }, color: COLORS.textSecondary }}>
-        {date}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+        {sequenceLabel && (
+          <Typography
+            variant="caption"
+            sx={{
+              fontFamily: FONT_FAMILY,
+              fontSize: { xs: '0.688rem', md: '0.75rem' },
+              color: COLORS.textSecondary,
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {sequenceLabel}
+          </Typography>
+        )}
+        <Typography variant="caption" sx={{ fontFamily: FONT_FAMILY, fontSize: { xs: '0.688rem', md: '0.75rem' }, color: COLORS.textSecondary, whiteSpace: 'nowrap' }}>
+          {date}
+        </Typography>
+      </Box>
     )}
   </Box>
 );
@@ -147,6 +171,7 @@ UserInfo.propTypes = {
   roleLabel: PropTypes.string.isRequired,
   photo: PropTypes.string,
   date: PropTypes.string,
+  sequenceLabel: PropTypes.string,
 };
 
 const ActionButton = ({ onClick, children, variant = 'primary', icon }) => {
@@ -309,7 +334,15 @@ ConnectorLine.propTypes = {
   isSingleReply: PropTypes.bool,
 };
 
-const ReplyItem = ({ reply, isParentResolved }) => {
+const ReplyItem = ({ reply, isParentResolved, showNewHighlight, highlightCutoffMs }) => {
+  const [highlightDismissed, setHighlightDismissed] = useState(false);
+  const dismissHighlight = useCallback(() => setHighlightDismissed(true), []);
+  const isNew = useMemo(
+    () => shouldHighlightAsNew(reply.createdAt, showNewHighlight, highlightCutoffMs),
+    [reply.createdAt, showNewHighlight, highlightCutoffMs]
+  );
+  const showBlueBorder = isNew && !highlightDismissed;
+
   // If reply was forwarded by admin (client reply), show admin as the author
   const displayUser = reply.forwardedBy || reply.user;
   const displayName = displayUser?.name || reply.creatorName || 'User';
@@ -318,9 +351,10 @@ const ReplyItem = ({ reply, isParentResolved }) => {
 
   return (
     <Box
+      onMouseEnter={dismissHighlight}
       sx={{
         bgcolor: isParentResolved ? COLORS.resolvedBg : COLORS.bgPrimary,
-        border: `1px solid ${COLORS.border}`,
+        border: `1px solid ${showBlueBorder ? COLORS.primary : COLORS.border}`,
         borderRadius: '16px',
         p: { xs: '12px 16px', md: '16px 24px' },
         ml: { xs: 3, md: 4 },
@@ -368,9 +402,11 @@ ReplyItem.propTypes = {
     }),
   }).isRequired,
   isParentResolved: PropTypes.bool,
+  showNewHighlight: PropTypes.bool,
+  highlightCutoffMs: PropTypes.number,
 };
 
-const RepliesList = ({ replies, isParentResolved }) => (
+const RepliesList = ({ replies, isParentResolved, showNewHighlight, highlightCutoffMs }) => (
   <Box sx={{ mt: { xs: 1.5, md: 2 }, position: 'relative' }}>
     <ConnectorLine isVertical isSingleReply={replies.length === 1} />
     {replies.map((reply, replyIndex) => (
@@ -383,7 +419,12 @@ const RepliesList = ({ replies, isParentResolved }) => (
         }}
       >
         <ConnectorLine />
-        <ReplyItem reply={reply} isParentResolved={isParentResolved} />
+        <ReplyItem
+          reply={reply}
+          isParentResolved={isParentResolved}
+          showNewHighlight={showNewHighlight}
+          highlightCutoffMs={highlightCutoffMs}
+        />
       </Box>
     ))}
   </Box>
@@ -392,12 +433,15 @@ const RepliesList = ({ replies, isParentResolved }) => (
 RepliesList.propTypes = {
   replies: PropTypes.arrayOf(PropTypes.object).isRequired,
   isParentResolved: PropTypes.bool,
+  showNewHighlight: PropTypes.bool,
+  highlightCutoffMs: PropTypes.number,
 };
 
 const FeedbackCard = ({
   feedbackItem,
   submission,
   index,
+  sequenceNumber,
   isReplyOpen,
   onToggleReply,
   isRepliesListOpen,
@@ -412,18 +456,35 @@ const FeedbackCard = ({
   onSeekTo,
   currentTime,
   useCommentSystem,
+  commentHighlightCutoffMs,
+  isPastVideo = false,
 }) => {
+  const [highlightDismissed, setHighlightDismissed] = useState(false);
+  const dismissHighlight = useCallback(() => setHighlightDismissed(true), []);
+
   const adminInfo = getAdminInfo(feedbackItem, submission);
   const replyCount = replies?.length ?? 0;
   const showRepliesList = isResolved ? isRepliesListOpen && replyCount > 0 : replyCount > 0;
 
+  const qualifiesForHighlight = useMemo(
+    () => shouldHighlightAsNew(feedbackItem.createdAt, isNewAndUnopened, commentHighlightCutoffMs),
+    [feedbackItem.createdAt, isNewAndUnopened, commentHighlightCutoffMs]
+  );
+  const showBlueBorder = qualifiesForHighlight && !highlightDismissed;
+  const sequenceLabel = useMemo(() => {
+    const n = Number(sequenceNumber);
+    if (!n || Number.isNaN(n) || n <= 0) return null;
+    return `#${n}`;
+  }, [sequenceNumber]);
+
   return (
     <Box>
       <Box
+        onMouseEnter={dismissHighlight}
         sx={{
           width: '100%',
           bgcolor: isResolved ? COLORS.resolvedBg : COLORS.bgPrimary,
-          border: `1px solid ${isNewAndUnopened ? COLORS.primary : COLORS.border}`,
+          border: `1px solid ${showBlueBorder ? COLORS.primary : COLORS.border}`,
           borderRadius: isReplyOpen || (isResolved && isRepliesListOpen) ? '16px 16px 0 0' : '16px',
           p: { xs: '12px 16px', md: '16px 24px' },
           display: 'flex',
@@ -436,6 +497,7 @@ const FeedbackCard = ({
           roleLabel={adminInfo.role}
           photo={adminInfo.photo}
           date={formatDate(feedbackItem.createdAt)}
+          sequenceLabel={sequenceLabel}
         />
 
         <Box sx={{ display: 'flex', gap: { xs: 0.75, md: 1 } }}>
@@ -526,7 +588,7 @@ const FeedbackCard = ({
                 '&:hover': { opacity: 0.9 },
               }}
             >
-              {isRepliesListOpen ? 'Hide' : 'View'} {replyCount} Reply{replyCount !== 1 ? 'ies' : ''}
+              {isRepliesListOpen ? 'Hide' : 'View'} {replyCount} {replyCount !== 1 ? 'Replies' : 'Reply'}
             </Typography>
           )}
         </Box>
@@ -544,7 +606,12 @@ const FeedbackCard = ({
       )}
 
       {showRepliesList && replies && replies.length > 0 && (
-        <RepliesList replies={replies} isParentResolved={isResolved} />
+        <RepliesList
+          replies={replies}
+          isParentResolved={isResolved}
+          showNewHighlight={isNewAndUnopened}
+          highlightCutoffMs={commentHighlightCutoffMs}
+        />
       )}
     </Box>
   );
@@ -554,6 +621,7 @@ FeedbackCard.propTypes = {
   feedbackItem: PropTypes.object.isRequired,
   submission: PropTypes.object.isRequired,
   index: PropTypes.number.isRequired,
+  sequenceNumber: PropTypes.number,
   isReplyOpen: PropTypes.bool.isRequired,
   onToggleReply: PropTypes.func.isRequired,
   isRepliesListOpen: PropTypes.bool.isRequired,
@@ -568,6 +636,8 @@ FeedbackCard.propTypes = {
   onSeekTo: PropTypes.func,
   currentTime: PropTypes.string,
   useCommentSystem: PropTypes.bool,
+  commentHighlightCutoffMs: PropTypes.number,
+  isPastVideo: PropTypes.bool,
 };
 
 // Main Component
@@ -578,6 +648,8 @@ const CreatorFeedbackModal = ({
   videoCount = 1,
   currentVideo = null,
   showNewCommentBorders = false,
+  commentHighlightCutoffMs = null,
+  isPastVideo = false,
   onSeekTo,
   currentTime = 0,
 }) => {
@@ -599,6 +671,23 @@ const CreatorFeedbackModal = ({
   // Determine which system to use: if we have comments from submissionComment, use that
   const useCommentSystem = comments && comments.length > 0;
   const displayItems = useCommentSystem ? comments : feedbackToShow;
+
+  // Sequence numbering for TOP-LEVEL comments only (replies excluded):
+  // oldest createdAt => #1 ... newest createdAt => #N
+  const topLevelSequenceByKey = useMemo(() => {
+    const items = displayItems || [];
+    const normalized = items.map((item, idx) => {
+      const key = item?.id ?? `idx-${idx}`;
+      const t = new Date(item?.createdAt || 0).getTime();
+      return { key, idx, t: Number.isNaN(t) ? 0 : t };
+    });
+    normalized.sort((a, b) => (a.t - b.t) || (a.idx - b.idx));
+    const map = new Map();
+    normalized.forEach((n, i) => {
+      map.set(n.key, i + 1);
+    });
+    return map;
+  }, [displayItems]);
   
   const [replyStates, setReplyStates] = useState({});
   const [viewRepliesOpen, setViewRepliesOpen] = useState({});
@@ -608,15 +697,18 @@ const CreatorFeedbackModal = ({
   const initialLoadDone = useRef(false);
 
   const hasResolvedComments = useCommentSystem 
-    ? comments.some((c) => c.resolvedByUserId)
-    : feedbackToShow.some((item) => item.resolved === true);
+    ? comments.some((c) => c.resolvedByUserId) && comments.some((c) => !c.resolvedByUserId)
+    : feedbackToShow.some((item) => item.resolved === true) && feedbackToShow.some((item) => !item.resolved);
+
+  const showResolvedCommentsDivider =
+    displayItems.length > 0 && (isPastVideo || hasResolvedComments);
 
   // Socket listeners for real-time updates (comment system)
   useEffect(() => {
     if (!socket || !submission?.id || !useCommentSystem) return undefined;
 
     const handleCommentEvent = (data) => {
-      if (data.submissionId === submission.id) {
+      if (data.submissionId === submission.id && !data.comment?.isClientDraft) {
         commentsMutate();
       }
     };
@@ -638,6 +730,28 @@ const CreatorFeedbackModal = ({
   useEffect(() => {
     initialLoadDone.current = false;
   }, []);
+
+  // Past-video pages: expand reply threads by default (archive / resolved design)
+  useEffect(() => {
+    if (!isPastVideo) return;
+    const items = useCommentSystem
+      ? comments || []
+      : currentVideoId
+        ? allFeedback.filter((f) => !f.videoId || f.videoId === currentVideoId)
+        : allFeedback;
+    if (!items.length) return;
+    setViewRepliesOpen((prev) => {
+      const next = { ...prev };
+      items.forEach((item, index) => {
+        const repliesLen = (item.replies || []).length;
+        const baseResolved = useCommentSystem ? !!item.resolvedByUserId : item.resolved === true;
+        if (repliesLen > 0 && (baseResolved || isPastVideo)) {
+          next[index] = true;
+        }
+      });
+      return next;
+    });
+  }, [isPastVideo, currentVideoId, useCommentSystem, comments, allFeedback]);
 
   // Scroll to bottom on initial load (instant) and when new items added (smooth)
   useEffect(() => {
@@ -773,7 +887,7 @@ const CreatorFeedbackModal = ({
       >
         {displayItems.length > 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 2.5 } }}>
-            {hasResolvedComments && (
+            {showResolvedCommentsDivider && (
               <Box
                 sx={{
                   display: 'flex',
@@ -842,12 +956,16 @@ const CreatorFeedbackModal = ({
                 return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
               };
 
+              const baseResolved = useCommentSystem ? !!item.resolvedByUserId : item.resolved === true;
+              const effectiveResolved = baseResolved || isPastVideo;
+
               return (
                 <FeedbackCard
                   key={item.id ?? index}
                   feedbackItem={feedbackItem}
                   submission={submission}
                   index={index}
+                  sequenceNumber={topLevelSequenceByKey.get(item?.id ?? `idx-${index}`)}
                   isReplyOpen={replyStates[index] || false}
                   onToggleReply={() => toggleReply(index)}
                   isRepliesListOpen={viewRepliesOpen[index] || false}
@@ -863,11 +981,13 @@ const CreatorFeedbackModal = ({
                     user: r.user,
                     forwardedBy: r.forwardedBy,
                   })) : [...(item.replies || []), ...(replies[index] || [])]}
-                  isResolved={useCommentSystem ? !!item.resolvedByUserId : item.resolved === true}
-                  isNewAndUnopened={showNewCommentBorders}
+                  isResolved={effectiveResolved}
+                  isNewAndUnopened={showNewCommentBorders && !isPastVideo}
                   onSeekTo={onSeekTo}
                   currentTime={formatTimeForBackend(currentTime)}
                   useCommentSystem={useCommentSystem}
+                  commentHighlightCutoffMs={commentHighlightCutoffMs}
+                  isPastVideo={isPastVideo}
                 />
               );
             })}
@@ -932,7 +1052,7 @@ const CreatorFeedbackModal = ({
                   p: { xs: 0.25, md: 0.5 },
                 }}
               >
-                {i + 1}
+                {i === 0 ? 'Latest' : i + 1}
               </Typography>
             ))}
           </Box>
@@ -981,6 +1101,8 @@ CreatorFeedbackModal.propTypes = {
     url: PropTypes.string,
   }),
   showNewCommentBorders: PropTypes.bool,
+  commentHighlightCutoffMs: PropTypes.number,
+  isPastVideo: PropTypes.bool,
   onSeekTo: PropTypes.func,
   currentTime: PropTypes.number,
 };

@@ -26,7 +26,8 @@ const SubmissionCaptionField = ({
         <TextField
           fullWidth
           multiline
-          rows={3}
+          minRows={3}
+          maxRows={12}
           value={caption}
           onChange={onCaptionChange}
           placeholder="Type your caption here..."
