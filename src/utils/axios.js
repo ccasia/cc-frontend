@@ -340,6 +340,7 @@ export const endpoints = {
       sendToCreator: (submissionId) => `/api/submissions/v4/submission/${submissionId}/send-to-creator`,
       sendToClient: (submissionId) => `/api/submissions/v4/submission/${submissionId}/send-to-client`,
       resolveComment: (commentId) => `/api/submissions/v4/comments/${commentId}/resolve`,
+      toggleCommentVisibility: (commentId) => `/api/submissions/v4/comments/${commentId}/visibility`,
     },
     creator: {
       agreement: '/api/submission/submitAgreement',
