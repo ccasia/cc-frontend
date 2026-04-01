@@ -659,6 +659,21 @@ export default function AdminFeedbackPanel({
   const commentsEndRef = useRef(null);
   const initialLoadDone = useRef(false);
 
+  // Track page-slide direction: 1 = slide from right, -1 = slide from left
+  const prevVideoPageRef = useRef(videoPage);
+  const slideDirection = useRef(0);
+  if (videoPage !== prevVideoPageRef.current) {
+    // videoPage decreasing = navigating to older page = new content from right
+    slideDirection.current = videoPage < prevVideoPageRef.current ? 1 : -1;
+    prevVideoPageRef.current = videoPage;
+  }
+
+  const pageSlideVariants = {
+    enter: (dir) => (dir !== 0 ? { x: `${dir * 40}%`, opacity: 0 } : { opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir) => ({ x: `${dir * -40}%`, opacity: 0 }),
+  };
+
   // Drag-to-seek on timer chip
   const isDraggingRef = useRef(false);
   const dragStartXRef = useRef(0);
@@ -875,6 +890,7 @@ export default function AdminFeedbackPanel({
           flex: 1,
           minHeight: 0,
           overflowY: 'auto',
+          overflowX: 'hidden',
           pr: 1,
           pb: 2,
           display: 'flex',
@@ -891,30 +907,34 @@ export default function AdminFeedbackPanel({
           </Box>
         )}
 
-        {!commentsLoading && comments.length === 0 && (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flex: 1,
-            }}
-          >
-            <Typography sx={{ color: '#636366', fontSize: '1rem', fontWeight: 500 }}>
-              No Comments Currently
-            </Typography>
-          </Box>
-        )}
-
-        <AnimatePresence initial={false} key={videoId}>
-        {comments.map((comment) => (
-          <m.div
-            key={comment.id}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-          >
+        {!commentsLoading && (
+          <AnimatePresence initial={false} mode="wait" custom={slideDirection.current}>
+            <m.div
+              key={videoId}
+              custom={slideDirection.current}
+              variants={pageSlideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+            >
+              {comments.length === 0 ? (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: 1,
+                  }}
+                >
+                  <Typography sx={{ color: '#636366', fontSize: '1rem', fontWeight: 500 }}>
+                    No Comments Currently
+                  </Typography>
+                </Box>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id}>
             {/* Parent Comment */}
             <CommentCard
               comment={comment}
@@ -995,9 +1015,12 @@ export default function AdminFeedbackPanel({
                 })}
               </Box>
             )}
-          </m.div>
-        ))}
-        </AnimatePresence>
+          </div>
+                ))
+              )}
+            </m.div>
+          </AnimatePresence>
+        )}
         <div ref={commentsEndRef} />
       </Box>
 
@@ -1143,11 +1166,13 @@ export default function AdminFeedbackPanel({
                 return (
                   <Typography
                     key={pageIndex}
+                    component={m.span}
+                    animate={{ color: videoPage === pageIndex ? '#231F20' : '#8E8E93' }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
                     onClick={() => setVideoPage(pageIndex)}
                     sx={{
                       fontSize: '1rem',
                       fontWeight: 700,
-                      color: videoPage === pageIndex ? '#231F20' : '#8E8E93',
                       cursor: 'pointer',
                       px: 0.5,
                       userSelect: 'none',

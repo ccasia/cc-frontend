@@ -21,6 +21,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import { getStatusColor } from 'src/contants/statusColors';
 
 import Iconify from 'src/components/iconify';
+import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
 const formatTime = (timeInSeconds) => {
   const t = Math.floor(Math.max(0, Number(timeInSeconds) || 0));
@@ -39,6 +40,13 @@ const parseTimeToSeconds = (timeStr) => {
   if (parts.length === 2) return parts[0] * 60 + parts[1];
   if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
   return 0;
+};
+
+const formatTimer = (totalSeconds) => {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds / 60) % 60);
+  const seconds = totalSeconds % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
 const VideoSubmissionModal = ({
@@ -64,6 +72,7 @@ const VideoSubmissionModal = ({
   const [modalDuration, setModalDuration] = useState(0);
 
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
+  const [feedbackTimeLeft, setFeedbackTimeLeft] = useState(0);
 
   const handleModalSeek = (timeStr) => {
     const el = modalVideoRef.current;
@@ -104,6 +113,48 @@ const VideoSubmissionModal = ({
     };
   }, [open, submission?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Countdown timer for feedbackDeadline (display-only, no auto-submit)
+  useEffect(() => {
+    const sub = freshSubmission || submission;
+    const allVids = sub?.video || [];
+    if (!allVids.length) {
+      setFeedbackTimeLeft(0);
+      return undefined;
+    }
+
+    // Derive current video to match render logic (only for admins)
+    const MAX = 3;
+    let vids;
+    if (videoOrder === 'asc') {
+      const clipped =
+        allVids.length <= MAX ? [...allVids].reverse() : allVids.slice(0, MAX).reverse();
+      vids = clipped;
+    } else {
+      vids = allVids.length <= MAX ? allVids : allVids.slice(0, MAX);
+    }
+
+    let page = videoPage;
+    if (videoOrder === 'asc') {
+      page = videoPage >= 0 && videoPage < vids.length ? videoPage : vids.length - 1;
+    }
+    const vid = vids[page] || vids[0] || null;
+    const deadline = vid?.feedbackDeadline;
+
+    if (!deadline) {
+      setFeedbackTimeLeft(0);
+      return undefined;
+    }
+
+    const endMs = new Date(deadline).getTime();
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((endMs - Date.now()) / 1000));
+      setFeedbackTimeLeft(remaining);
+    };
+    tick();
+    const timerId = setInterval(tick, 1000);
+    return () => clearInterval(timerId);
+  }, [freshSubmission, submission, videoPage, videoOrder]);
+
   if (!open || !submission) return null;
 
   const effectiveSubmission = freshSubmission || submission;
@@ -136,8 +187,7 @@ const VideoSubmissionModal = ({
   // ASC: default to last index (newest); DESC: default to 0 (newest)
   let effectiveVideoPage = videoPage;
   if (videoOrder === 'asc') {
-    effectiveVideoPage =
-      videoPage >= 0 && videoPage < videoCount ? videoPage : videoCount - 1;
+    effectiveVideoPage = videoPage >= 0 && videoPage < videoCount ? videoPage : videoCount - 1;
   }
   const currentVideo = videos[effectiveVideoPage] || videos[0] || null;
   const videoUrl = currentVideo?.url || null;
@@ -408,6 +458,28 @@ const VideoSubmissionModal = ({
                     {statusLabel}
                   </Typography>
                 </Box>
+              )}
+              {/* Feedback Deadline Timer */}
+              {feedbackTimeLeft > 0 && !isClient && !isCreator && (
+                <DarkGlassTooltip
+                  title="Client timer to provide additional feedback for current round of submission."
+                  placement="top-start"
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      cursor: 'default',
+                      gap: 0.5,
+                      color: '#1340ff',
+                    }}
+                  >
+                    <Iconify icon="ic:sharp-timer" width={18} />
+                    <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                      {formatTimer(feedbackTimeLeft)}
+                    </Typography>
+                  </Box>
+                </DarkGlassTooltip>
               )}
             </Box>
 
@@ -718,13 +790,14 @@ const VideoSubmissionModal = ({
             whiteSpace: 'nowrap',
           }}
         >
-          All set with your Feedback?
+          All set with the Feedback?
         </Typography>
         <Typography
           variant="body2"
           sx={{ color: '#636366', fontWeight: 400, fontSize: '16px', mb: 3 }}
         >
-          Your submission for <strong>{campaignName}</strong> has feedback to review
+          If yes, your organisation will have 24 hours to add additional feedback before the current
+          submission round ends
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <LoadingButton
@@ -745,7 +818,7 @@ const VideoSubmissionModal = ({
               },
             }}
           >
-            Yes, I&apos;m done with my feedback
+            Yes, the feedback is ready
           </LoadingButton>
           <Button
             fullWidth
@@ -769,7 +842,7 @@ const VideoSubmissionModal = ({
               },
             }}
           >
-            No, I need more time
+            No, we need more time
           </Button>
         </Box>
       </Dialog>

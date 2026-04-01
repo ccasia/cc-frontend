@@ -93,6 +93,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
   const [videoSubmissionModalOpen, setVideoSubmissionModalOpen] = useState(false);
   const [adminReviewModalOpen, setAdminReviewModalOpen] = useState(false);
+  const [localFeedbackDeadline, setLocalFeedbackDeadline] = useState(null);
 
   const captionOverflows = useCaptionOverflow(captionMeasureRef, submission.caption);
 
@@ -109,6 +110,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           reasons: reasons || [],
           videoId: clientVideo?.id,
         });
+
+        if (response.data?.feedbackDeadline) {
+          setLocalFeedbackDeadline(response.data.feedbackDeadline);
+        }
 
         enqueueSnackbar('Video approved successfully', { variant: 'success' });
 
@@ -187,6 +192,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           videoId: clientVideo?.id,
         });
 
+        if (response.data?.feedbackDeadline) {
+          setLocalFeedbackDeadline(response.data.feedbackDeadline);
+        }
+
         enqueueSnackbar('Changes requested successfully', { variant: 'success' });
 
         if (response.data?.showNPS) {
@@ -249,6 +258,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           feedback: 'Client left detailed feedback via the threaded video comments.',
           reasons: [],
         });
+
+        if (response.data?.feedbackDeadline) {
+          setLocalFeedbackDeadline(response.data.feedbackDeadline);
+        }
 
         if (shouldRefresh) {
           enqueueSnackbar('Feedback for current video locked', { variant: 'success' });
@@ -1065,14 +1078,38 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         onClose={handleCloseModal}
         submission={submission}
         creator={submission.user}
-        rightSideContent={
-          <ClientFeedbackModal
-            submissionId={submission.id}
-            videoId={clientVideo?.id || video?.id}
-            onSendToAdmin={handleSendComments}
-            isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
-          />
-        }
+        rightSideContent={({
+          currentTime: modalCurrentTime,
+          onSeek,
+          videoId: modalVideoId,
+          videoPage,
+          setVideoPage,
+          videoCount,
+          isPastVideo,
+          submission: modalSubmission,
+        }) => {
+          const currentModalVideo =
+            modalSubmission?.video?.find((v) => v.id === modalVideoId) ||
+            submission?.video?.find((v) => v.id === modalVideoId) ||
+            clientVideo ||
+            video;
+
+          return (
+            <ClientFeedbackModal
+              submissionId={submission.id}
+              videoId={modalVideoId || clientVideo?.id || video?.id}
+              currentVideoTime={videoControls.formatTime(modalCurrentTime || 0)}
+              onSeekTo={onSeek}
+              onSendToAdmin={handleSendComments}
+              isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
+              isPastVideo={isPastVideo}
+              videoPage={videoPage}
+              setVideoPage={setVideoPage}
+              videoCount={videoCount}
+              feedbackDeadline={localFeedbackDeadline || currentModalVideo?.feedbackDeadline}
+            />
+          );
+        }}
       />
 
       <VideoSubmissionModal
