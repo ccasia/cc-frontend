@@ -259,6 +259,12 @@ const ReplyBox = ({ value, onChange, onCancel, onSend, currentTime, showTimestam
       placeholder="Reply here..."
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          onSend();
+        }
+      }}
       sx={{
         '& .MuiOutlinedInput-root': {
           fontFamily: FONT_FAMILY,
@@ -514,7 +520,7 @@ const FeedbackCard = ({
               fontFamily: FONT_FAMILY,
               fontSize: { xs: '0.813rem', md: '0.875rem' },
               color: COLORS.primary,
-              fontWeight: 600,
+              fontWeight: 500,
               flexShrink: 0,
               ...(onSeekTo && feedbackItem.timestamp
                 ? {

@@ -94,6 +94,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   const [videoSubmissionModalOpen, setVideoSubmissionModalOpen] = useState(false);
   const [adminReviewModalOpen, setAdminReviewModalOpen] = useState(false);
   const [localFeedbackDeadline, setLocalFeedbackDeadline] = useState(null);
+  const [localFeedbackSentByName, setLocalFeedbackSentByName] = useState(null);
 
   const captionOverflows = useCaptionOverflow(captionMeasureRef, submission.caption);
 
@@ -113,6 +114,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
         if (response.data?.feedbackDeadline) {
           setLocalFeedbackDeadline(response.data.feedbackDeadline);
+          if (response.data?.feedbackSentByName) setLocalFeedbackSentByName(response.data.feedbackSentByName);
         }
 
         enqueueSnackbar('Video approved successfully', { variant: 'success' });
@@ -194,6 +196,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
         if (response.data?.feedbackDeadline) {
           setLocalFeedbackDeadline(response.data.feedbackDeadline);
+          if (response.data?.feedbackSentByName) setLocalFeedbackSentByName(response.data.feedbackSentByName);
         }
 
         enqueueSnackbar('Changes requested successfully', { variant: 'success' });
@@ -261,6 +264,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
         if (response.data?.feedbackDeadline) {
           setLocalFeedbackDeadline(response.data.feedbackDeadline);
+          if (response.data?.feedbackSentByName) setLocalFeedbackSentByName(response.data.feedbackSentByName);
         }
 
         if (shouldRefresh) {
@@ -485,7 +489,15 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                     />
                   ) : (
                     <>
-                      <Box sx={{ flex: '0 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                      <Box
+                        sx={{
+                          flex: '0 1 auto',
+                          minHeight: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          overflow: 'hidden',
+                        }}
+                      >
                         <Typography variant="caption" fontWeight="bold" color="#636366" mb={0.5}>
                           Caption
                         </Typography>
@@ -515,9 +527,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                             return (
                               <Box
                                 sx={{
-                                  maxHeight: submission.status === 'POSTED'
-                                    ? { xs: 150, sm: 250, md: 350 }
-                                    : { xs: 80, sm: 150, md: 260 },
+                                  maxHeight:
+                                    submission.status === 'POSTED'
+                                      ? { xs: 150, sm: 250, md: 350 }
+                                      : { xs: 80, sm: 150, md: 260 },
                                   overflowY: 'auto',
                                   bgcolor: 'background.paper',
                                   borderRadius: 0.5,
@@ -622,8 +635,11 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                               bgcolor: 'transparent',
                               fontWeight: 800,
                               fontSize: 14,
-                              color:
-                                ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status) ? '#1340FF' : '#919191',
+                              color: ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(
+                                submission.status
+                              )
+                                ? '#1340FF'
+                                : '#919191',
                               border: 'none',
                               cursor: 'pointer',
                               outline: 'none',
@@ -1107,6 +1123,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
               setVideoPage={setVideoPage}
               videoCount={videoCount}
               feedbackDeadline={localFeedbackDeadline || currentModalVideo?.feedbackDeadline}
+              feedbackSentByName={localFeedbackSentByName || currentModalVideo?.feedbackSentByName}
             />
           );
         }}
