@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import { toast } from 'sonner';
+import { object, string, boolean } from 'yup';
 import { AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -10,26 +12,81 @@ import {
   Switch,
   colors,
   Divider,
+  Skeleton,
   TextField,
   Typography,
   InputAdornment,
-  Skeleton,
 } from '@mui/material';
+
+import axiosInstance from 'src/utils/axios';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import BoxMotion from '../components/BoxMotion';
-import useGetWhatsappSetting from '../hooks/use-get-whatsapp-setting';
 import useSettingStore from '../hooks/use-setting-store';
+// eslint-disable-next-line import/no-unresolved
+import useGetWhatsappSetting from '../hooks/use-get-whatsapp-setting';
+
+const whatsappSettingSchema = object({
+  isFeatureEnabled: boolean().required(),
+  phoneNumberId: string().required(),
+  accessToken: string().required(),
+  templateName: string().optional(),
+  businessAccountId: string().optional(),
+});
 
 const Setting = () => {
-  const { data, isLoading } = useGetWhatsappSetting();
+  const { data, isLoading, mutate } = useGetWhatsappSetting();
+
   const settingState = useSettingStore((state) => state.data);
   const toggle = useSettingStore((state) => state.toggleFeature);
+  const setData = useSettingStore((state) => state.setData);
 
-  const [isActive, setIsActive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSave = async () => {
+    setIsSubmitting(true);
+    try {
+      const sanitizedData = await whatsappSettingSchema.validate(settingState);
+      const res = await axiosInstance.post('/api/system-settings/whatsapp', sanitizedData);
+      toast.success(res.data.message);
+    } catch (error) {
+      console.log(error);
+      toast.error('Error updating...');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const onToggleChange = async () => {
+    const newValue = !settingState.isFeatureEnabled;
+    toggle();
+    try {
+      await axiosInstance.post('/api/system-settings/whatsapp', {
+        ...settingState,
+        isFeatureEnabled: newValue,
+      });
+      mutate();
+    } catch (error) {
+      if (typeof error === 'string' && error.includes('Too Many Request')) {
+        toast.error(error);
+      } else {
+        toast.error('Error updating setting...');
+      }
+      toggle();
+    }
+  };
+
+  useEffect(() => {
+    if (!data) return;
+
+    setData('isFeatureEnabled', data.isFeatureEnabled);
+    setData('phoneNumberId', data.phoneNumberId ?? '');
+    setData('accessToken', data.accessToken ?? '');
+    setData('templateName', data.templateName ?? '');
+    setData('businessAccountId', data.businessAccountId);
+  }, [data, setData]);
 
   if (isLoading) {
     return <Skeleton sx={{ borderRadius: 0.6, height: 500 }} />;
@@ -73,8 +130,8 @@ const Setting = () => {
                 <Typography variant="subtitle1" fontWeight={600}>
                   WhatsApp OTP Verification
                 </Typography>
-                <Label color={isActive ? 'success' : 'default'} variant="soft">
-                  {isActive ? 'Active' : 'Inactive'}
+                <Label color={settingState.isFeatureEnabled ? 'success' : 'default'} variant="soft">
+                  {settingState.isFeatureEnabled ? 'Active' : 'Inactive'}
                 </Label>
               </Stack>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -84,9 +141,11 @@ const Setting = () => {
           </Stack>
 
           <Switch
-            checked={isActive}
-            onChange={(_, val) => setIsActive(val)}
-            onClick={toggle}
+            checked={settingState.isFeatureEnabled}
+            onClick={async () => {
+              // toggle();
+              await onToggleChange();
+            }}
             sx={{
               '& .MuiSwitch-switchBase.Mui-checked': { color: '#25D366' },
               '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#25D366' },
@@ -127,8 +186,31 @@ const Setting = () => {
                 <Stack gap={1.5}>
                   <TextField
                     fullWidth
+                    name="phoneNumberId"
                     label="Phone Number ID"
                     placeholder="e.g. 1234567890"
+                    value={settingState.phoneNumberId}
+                    onChange={(e) => setData('phoneNumberId', e.target.value)}
+                    InputProps={{
+                      sx: { borderRadius: 1 },
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Iconify
+                            icon="mdi-light:phone"
+                            width={18}
+                            sx={{ color: 'text.disabled' }}
+                          />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <TextField
+                    fullWidth
+                    name="businessAccountId"
+                    label="Business Account ID"
+                    placeholder="e.g. 991289312333"
+                    value={settingState.businessAccountId}
+                    onChange={(e) => setData('businessAccountId', e.target.value)}
                     InputProps={{
                       sx: { borderRadius: 1 },
                       startAdornment: (
@@ -144,9 +226,12 @@ const Setting = () => {
                   />
                   <TextField
                     rows={3}
+                    name="accessToken"
                     multiline
                     fullWidth
                     label="Access Token"
+                    value={settingState.accessToken}
+                    onChange={(e) => setData('accessToken', e.target.value)}
                     placeholder="Paste your permanent access token here"
                     InputProps={{
                       sx: { borderRadius: 1 },
@@ -165,6 +250,9 @@ const Setting = () => {
                     fullWidth
                     label="Template Name"
                     placeholder="e.g. otp_verification"
+                    name="templateName"
+                    value={settingState.templateName}
+                    onChange={(e) => setData('templateName', e.target.value)}
                     InputProps={{
                       sx: { borderRadius: 1 },
                       startAdornment: (
@@ -184,7 +272,7 @@ const Setting = () => {
                   <LoadingButton
                     variant="outlined"
                     loading={isSubmitting}
-                    onClick={() => setIsSubmitting(true)}
+                    onClick={handleSave}
                     startIcon={!isSubmitting && <Iconify icon="solar:diskette-linear" width={18} />}
                     sx={{
                       borderRadius: 1,

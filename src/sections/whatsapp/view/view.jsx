@@ -1,33 +1,14 @@
+import { Toaster } from 'sonner';
 import React, { useState } from 'react';
-import { m, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
-import { Box, Tab, Tabs, Stack, Container, Typography } from '@mui/material';
+import { Tab, Tabs, Stack, Container, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
-import Card from '../components/Card';
 import Message from '../sections/Message';
 import Setting from '../sections/Setting';
-
-const Card_Items = [
-  {
-    id: 1,
-    label: 'Messages sent',
-    icon: 'hugeicons:sent-02',
-  },
-  {
-    id: 2,
-    label: 'Messages delivered',
-    icon: 'solar:check-read-linear',
-  },
-  {
-    id: 3,
-    label: 'Messages read',
-    icon: 'solar:check-read-linear',
-  },
-];
-
-const BoxLayout = m(Box);
+import Insights from '../components/Insights';
 
 const WhatsappDashboard = () => {
   const [activeTab, setActiveTab] = useState('settings');
@@ -45,6 +26,7 @@ const WhatsappDashboard = () => {
           Whatsapp Business Setup
         </Typography>
       </Stack>
+
       <Container
         maxWidth="lg"
         sx={{
@@ -54,21 +36,7 @@ const WhatsappDashboard = () => {
           gap: 1,
         }}
       >
-        <BoxLayout
-          sx={{
-            mt: 5,
-            display: 'flex',
-            gap: 1,
-            p: 1,
-            overflowX: 'scroll',
-            scrollSnapType: 'x mandatory',
-            scrollbarWidth: 'none',
-          }}
-        >
-          {Card_Items.map((data, i) => (
-            <Card key={i} {...data} />
-          ))}
-        </BoxLayout>
+        <Insights />
 
         <Tabs value={activeTab} sx={{ mt: 2 }} onChange={(_, val) => setActiveTab(val)}>
           <Tab
@@ -85,6 +53,8 @@ const WhatsappDashboard = () => {
           {activeTab === 'settings' && <Setting key="setting" />}
         </AnimatePresence>
       </Container>
+
+      <Toaster />
     </Container>
   );
 };

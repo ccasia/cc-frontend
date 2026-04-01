@@ -1,23 +1,38 @@
 import React from 'react';
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { color, m, useMotionValue, useMotionValueEvent, useTransform } from 'framer-motion';
 
-import { Card, Stack, colors, Typography, Box } from '@mui/material';
+import { Box, Card, Stack, colors, Skeleton, Typography } from '@mui/material';
+
 import Iconify from 'src/components/iconify';
 
 const CardMotion = m(Card);
 
-const WhatsappCard = ({ label, id, icon }) => {
-  console.log('Asd');
+const WhatsappCard = ({ label, id, icon, value = 0, isLoading = false }) => {
+  if (isLoading) {
+    return (
+      <Skeleton
+        sx={{
+          height: 120,
+          maxWidth: 350,
+          minWidth: { xs: 1, sm: 0 },
+          bgcolor: colors.background,
+          border: `1px solid ${colors.grey[200]}`,
+          borderRadius: 1,
+          flex: 1,
+          boxShadow: 0,
+          position: 'relative',
+          scrollSnapAlign: 'center',
+        }}
+      />
+    );
+  }
 
   return (
     <CardMotion
-      animate={{ opacity: [0, 1], x: [-100, 0], y: [-100, 0] }}
+      animate={{ opacity: [0, 1] }}
       transition={{
-        type: 'spring',
-        damping: 20,
-        stiffness: 500,
-        delay: id * 0.15,
+        ease: 'easeInOut',
       }}
       sx={{
         p: 3,
@@ -66,7 +81,7 @@ const WhatsappCard = ({ label, id, icon }) => {
             fontSize: '2rem',
           }}
         >
-          10
+          {value}
         </Typography>
       </Stack>
     </CardMotion>
@@ -79,4 +94,6 @@ WhatsappCard.propTypes = {
   id: PropTypes.number,
   label: PropTypes.string,
   icon: PropTypes.string,
+  value: PropTypes.number,
+  isLoading: PropTypes.bool,
 };
