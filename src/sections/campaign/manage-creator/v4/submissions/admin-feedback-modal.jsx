@@ -701,6 +701,7 @@ export default function AdminFeedbackPanel({
 
   // Track which client comments are new (created after admin last viewed)
   const lastViewedRef = useRef(null);
+  useEffect(() => { lastViewedRef.current = null; }, [videoId]);
   const newClientCommentIds = useMemo(() => {
     if (!comments?.length || !videoId) return new Set();
 
@@ -972,11 +973,11 @@ export default function AdminFeedbackPanel({
 
   const hasComments = comments.length > 0;
 
-  const visibleFeedbackCount = comments.reduce((count, c) => {
+  const visibleFeedbackCount = useMemo(() => comments.reduce((count, c) => {
     const parentVisible = c.isVisibleToCreator !== false ? 1 : 0;
     const repliesVisible = (c.replies || []).filter((r) => r.isVisibleToCreator !== false).length;
     return count + parentVisible + repliesVisible;
-  }, 0);
+  }, 0), [comments]);
 
   // ---- Render ----
 
@@ -1154,7 +1155,7 @@ export default function AdminFeedbackPanel({
         >
           <Box sx={{ width: 12, height: 12, borderRadius: 0.5, border: '2px solid #00A76F', flexShrink: 0 }} />
           <Typography sx={{ fontSize: '0.75rem', fontWeight: 500, color: '#374151', lineHeight: 1.4 }}>
-            Tap any comment to include or exclude it from creator feedback
+            Click any comment to include or exclude it from creator feedback
           </Typography>
         </Box>
       )}
@@ -1334,7 +1335,7 @@ export default function AdminFeedbackPanel({
               <Button
                 variant="contained"
                 disableElevation
-                disabled={!hasComments || sending}
+                disabled={!hasComments || sending || visibleFeedbackCount === 0}
                 onClick={() => setConfirmSendToCreatorOpen(true)}
                 sx={{
                   fontWeight: 700,
@@ -1405,7 +1406,7 @@ export default function AdminFeedbackPanel({
       <ConfirmDialogV2
         open={confirmSendToCreatorOpen}
         onClose={() => setConfirmSendToCreatorOpen(false)}
-        title={`Send ${visibleFeedbackCount} Feedback to the Creator?`}
+        title={`Send ${visibleFeedbackCount} ${visibleFeedbackCount === 1 ? 'Comment' : 'Comments'} to the Creator?`}
         emoji={
           <Avatar
             src="/assets/images/modals/sent_to_creator.png"
@@ -1424,7 +1425,7 @@ export default function AdminFeedbackPanel({
             }}
             disabled={sending}
           >
-            {`Send ${visibleFeedbackCount} Feedback to the Creator?`}
+            {`Send ${visibleFeedbackCount} ${visibleFeedbackCount === 1 ? 'Comment' : 'Comments'} to the Creator?`}
           </Button>
         }
       />
