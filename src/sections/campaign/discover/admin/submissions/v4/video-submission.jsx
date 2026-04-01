@@ -607,7 +607,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                             onReviewSubmission={() => setAdminReviewModalOpen(true)}
                             isDisabled={isDisabled}
                           />
-                        ) : (
+                        ) : null
+                          /* Temporarily hidden — feedback text should not show while video is Processing
                           !isClient && (
                             <FeedbackSection
                               onViewLogs={() => setShowFeedbackLogs(true)}
@@ -616,7 +617,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                               isClient={isClient}
                             />
                           )
-                        )}
+                          */
+                        }
                       </Box>
                       {isClient && clientVideo && (
                         <Box sx={{ mt: 2 }}>

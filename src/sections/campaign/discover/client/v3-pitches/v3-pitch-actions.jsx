@@ -191,7 +191,10 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
           <Button
             variant="outlined"
             size="small"
-            onClick={() => setConfirmDialogOpen(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmDialogOpen(true);
+            }}
             disabled={isDisabled}
             sx={{
               cursor: isDisabled ? 'not-allowed' : 'pointer',
