@@ -1150,7 +1150,7 @@ export default function AdminFeedbackPanel({
                       userSelect: 'none',
                     }}
                   >
-                    {i + 1}
+                    {i === 0 ? 'Latest' : i + 1}
                   </Typography>
                 );
               })}
