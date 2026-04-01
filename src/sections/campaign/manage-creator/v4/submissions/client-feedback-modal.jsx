@@ -57,6 +57,58 @@ const formatDisplayTime = (timeStr) => {
   return timeStr;
 };
 
+const AnimatedDigit = ({ digit }) => (
+  <Box
+    component="span"
+    sx={{
+      display: 'inline-block',
+      position: 'relative',
+      width: '0.62em',
+      height: '1.2em',
+      overflow: 'hidden',
+      verticalAlign: 'top',
+    }}
+  >
+    <AnimatePresence mode="popLayout" initial={false}>
+      <m.span
+        key={digit}
+        initial={{ y: '100%', opacity: 0 }}
+        animate={{ y: '0%', opacity: 1 }}
+        exit={{ y: '-100%', opacity: 0 }}
+        transition={{ duration: 0.25, ease: 'easeInOut' }}
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          display: 'inline-block',
+          width: '100%',
+          textAlign: 'center',
+        }}
+      >
+        {digit}
+      </m.span>
+    </AnimatePresence>
+  </Box>
+);
+
+AnimatedDigit.propTypes = { digit: PropTypes.string.isRequired };
+
+const AnimatedTime = ({ time }) => (
+  <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+    {time
+      .split('')
+      .map((char, i) =>
+        char === ':' ? (
+          <span key={`sep-${i}`}>:</span>
+        ) : (
+          <AnimatedDigit key={`pos-${i}`} digit={char} />
+        )
+      )}
+  </Box>
+);
+
+AnimatedTime.propTypes = { time: PropTypes.string.isRequired };
+
 const CommentCard = ({
   comment,
   isReply = false,
@@ -135,7 +187,7 @@ const CommentCard = ({
           p: { xs: 1.25, md: 2 },
           display: 'flex',
           flexDirection: 'column',
-          gap: { xs: 0.75, md: 1.5 },
+          gap: { xs: 0.75, md: 1 },
         }}
       >
         <Box
@@ -199,6 +251,7 @@ const CommentCard = ({
                 component="span"
                 onClick={() => onTimestampClick(comment.timestamp)}
                 sx={{
+                  fontSize: { xs: '0.813rem', md: '0.875rem' },
                   color: '#1340FF',
                   fontWeight: 500,
                   mr: 1,
@@ -408,6 +461,7 @@ const ClientFeedbackModal = forwardRef(
       setVideoPage,
       videoCount,
       feedbackDeadline,
+      feedbackSentByName,
     },
     ref
   ) => {
@@ -973,7 +1027,7 @@ const ClientFeedbackModal = forwardRef(
                     flexShrink: 0,
                   }}
                 >
-                  {currentVideoTime}
+                  <AnimatedTime time={currentVideoTime} />
                 </Box>
 
                 <TextField
@@ -1050,7 +1104,7 @@ const ClientFeedbackModal = forwardRef(
               >
                 {isCountingDown && !effectiveIsLocked && (
                   <DarkGlassTooltip
-                    title="Time left to leave additional feedback for this round of submission"
+                    title={`Feedback sent by ${feedbackSentByName || 'Client'}: Time left to leave additional feedback for this round of submission`}
                     placement="top-start"
                   >
                     <Box

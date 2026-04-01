@@ -440,7 +440,7 @@ export default function MobileVideoSubmission({
         </>
       )}
 
-     <VideoSubmissionModal
+      <VideoSubmissionModal
         open={videoSubmissionModalOpen}
         onClose={handleCloseModal}
         submission={submission}
@@ -455,10 +455,10 @@ export default function MobileVideoSubmission({
           isPastVideo,
           submission: modalSubmission,
         }) => {
-          const currentModalVideo = 
-            modalSubmission?.video?.find(v => v.id === modalVideoId) || 
-            submission?.video?.find(v => v.id === modalVideoId) || 
-            clientVideo || 
+          const currentModalVideo =
+            modalSubmission?.video?.find((v) => v.id === modalVideoId) ||
+            submission?.video?.find((v) => v.id === modalVideoId) ||
+            clientVideo ||
             video;
 
           const formatModalTime = (time) => {
@@ -480,6 +480,7 @@ export default function MobileVideoSubmission({
               setVideoPage={setVideoPage}
               videoCount={videoCount}
               feedbackDeadline={currentModalVideo?.feedbackDeadline}
+              feedbackSentByName={currentModalVideo?.feedbackSentByName}
             />
           );
         }}
