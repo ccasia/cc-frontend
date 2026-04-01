@@ -16,13 +16,14 @@ import Iconify from 'src/components/iconify';
 import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
 import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
 
+import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissions/admin-feedback-modal';
+
 import FeedbackLogs from '../shared/feedback-logs';
 import FeedbackSection from '../shared/feedback-section';
 import FeedbackActions from '../shared/feedback-actions';
 import PostingLinkSection from '../shared/posting-link-section';
 import useSubmissionSocket from '../shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from '../shared/feedback-utils';
-import { VideoModal } from '../../../creator-stuff/submissions/firstDraft/media-modals';
 
 // ----------------------------------------------------------------------
 
@@ -68,10 +69,9 @@ export default function MobileVideoSubmission({
     getDefaultFeedback(isClientFeedback, submission, 'video')
   );
   const [caption, setCaption] = useState(submission.caption || '');
-  const [videoModalOpen, setVideoModalOpen] = useState(false);
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
   const [videoSubmissionModalOpen, setVideoSubmissionModalOpen] = useState(false);
+  const [adminReviewModalOpen, setAdminReviewModalOpen] = useState(false);
 
   const handleApprove = useCallback(async () => {
     try {
@@ -181,10 +181,13 @@ export default function MobileVideoSubmission({
 
   const handleVideoClick = useCallback(() => {
     if (video?.url) {
-      setCurrentVideoIndex(0);
-      setVideoModalOpen(true);
+      if (isClient) {
+        setVideoSubmissionModalOpen(true);
+      } else {
+        setAdminReviewModalOpen(true);
+      }
     }
-  }, [video?.url]);
+  }, [video?.url, isClient]);
 
   const handleCloseModal = useCallback(() => {
     if (submission?.id && video?.id && user?.id) {
@@ -266,7 +269,7 @@ export default function MobileVideoSubmission({
       return (
         <Box
           sx={{
-            maxHeight: 180,
+            maxHeight: 120,
             overflow: 'auto',
           }}
         >
@@ -372,7 +375,8 @@ export default function MobileVideoSubmission({
         <>
           <Box sx={{ mb: 2 }}>
             {!isClient &&
-            (submission.status === 'CLIENT_APPROVED' ||
+            (submission.status === 'APPROVED' ||
+              submission.status === 'CLIENT_APPROVED' ||
               submission.status === 'POSTED' ||
               submission.status === 'REJECTED') &&
             campaign?.campaignType === 'normal' ? (
@@ -380,6 +384,7 @@ export default function MobileVideoSubmission({
                 submission={submission}
                 onUpdate={onUpdate}
                 onViewLogs={() => setShowFeedbackLogs(true)}
+                onReviewSubmission={() => setAdminReviewModalOpen(true)}
                 isDisabled={isDisabled}
               />
             ) : (
@@ -450,20 +455,38 @@ export default function MobileVideoSubmission({
         }
       />
 
-      {/* Video Modal */}
-      {video?.url && (
-        <VideoModal
-          open={videoModalOpen}
-          onClose={() => setVideoModalOpen(false)}
-          videos={[video]}
-          currentIndex={currentVideoIndex}
-          setCurrentIndex={setCurrentVideoIndex}
-          creator={submission.user}
-          submission={submission}
-          showCaption
-          title="Video Submission"
-        />
-      )}
+      {/* Admin Review Modal */}
+      <VideoSubmissionModal
+        open={adminReviewModalOpen}
+        onClose={() => setAdminReviewModalOpen(false)}
+        submission={submission}
+        creator={submission.user}
+        videoOrder="asc"
+        rightSideContent={({
+          currentTime: modalCurrentTime,
+          duration: modalDuration,
+          onSeek,
+          videoId: modalVideoId,
+          videoPage,
+          setVideoPage,
+          videoCount,
+          isPastVideo,
+          submission: modalSubmission,
+        }) => (
+          <AdminFeedbackPanel
+            currentTime={modalCurrentTime}
+            duration={modalDuration}
+            onSeek={onSeek}
+            submission={modalSubmission || submission}
+            videoId={modalVideoId || video?.id}
+            videoPage={videoPage}
+            setVideoPage={setVideoPage}
+            videoCount={videoCount}
+            isPastVideo={isPastVideo}
+            onFeedbackSent={() => setAdminReviewModalOpen(false)}
+          />
+        )}
+      />
     </Box>
   );
 }

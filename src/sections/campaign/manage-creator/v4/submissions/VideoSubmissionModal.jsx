@@ -12,14 +12,15 @@ import {
   Collapse,
   Typography,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { getStatusColor } from 'src/contants/statusColors';
 
 import Iconify from 'src/components/iconify';
-import { GlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
 const formatTime = (timeInSeconds) => {
   const t = Math.floor(Math.max(0, Number(timeInSeconds) || 0));
@@ -52,6 +53,7 @@ const VideoSubmissionModal = ({
 }) => {
   const { user } = useAuthContext();
   const isClient = user?.role === 'client';
+  const isCreator = user?.role === 'creator';
   const [videoPage, setVideoPage] = useState(0);
   const [isCaptionOpen, setIsCaptionOpen] = useState(false);
   const [freshSubmission, setFreshSubmission] = useState(submission);
@@ -178,6 +180,106 @@ const VideoSubmissionModal = ({
     onClose();
   };
 
+  // Role-based status chip helpers
+  const campaignType = effectiveSubmission.campaign?.campaignType;
+  const submissionStatus = effectiveSubmission.status;
+
+  const getModalStatusColor = (status) => {
+    if (isCreator) {
+      const creatorColorMap = {
+        NOT_STARTED: '#8E8E93',
+        IN_PROGRESS: '#8B5CF6',
+        PENDING_REVIEW: '#8B5CF6',
+        SENT_TO_CLIENT: '#8B5CF6',
+        CLIENT_FEEDBACK: '#8B5CF6',
+        CHANGES_REQUIRED: '#FF4842',
+        REJECTED: '#FF4842',
+        APPROVED: '#00AB55',
+        CLIENT_APPROVED: '#00AB55',
+        POSTED: '#1ABF66',
+      };
+      return creatorColorMap[status] || '#8E8E93';
+    }
+
+    if (isClient) {
+      switch (status) {
+        case 'SENT_TO_CLIENT':
+          return getStatusColor('PENDING_REVIEW');
+        case 'PENDING_REVIEW':
+        case 'CHANGES_REQUIRED':
+        case 'CLIENT_FEEDBACK':
+        case 'REJECTED':
+          return getStatusColor('IN_PROGRESS');
+        default:
+          return getStatusColor(status);
+      }
+    }
+
+    // Admin
+    if ((status === 'APPROVED' || status === 'CLIENT_APPROVED') && campaignType === 'normal') {
+      return getStatusColor('PENDING_REVIEW');
+    }
+    return getStatusColor(status);
+  };
+
+  const getModalStatusLabel = (status) => {
+    if (isCreator) {
+      switch (status) {
+        case 'IN_PROGRESS':
+        case 'PENDING_REVIEW':
+        case 'SENT_TO_CLIENT':
+        case 'CLIENT_FEEDBACK':
+          return 'IN REVIEW';
+        case 'CHANGES_REQUIRED':
+        case 'REJECTED':
+          return 'CHANGES REQUIRED';
+        case 'APPROVED':
+        case 'CLIENT_APPROVED':
+          return 'APPROVED';
+        case 'POSTED':
+          return 'POSTED';
+        case 'NOT_STARTED':
+          return 'NOT STARTED';
+        default:
+          return status?.replace(/_/g, ' ') || 'Unknown';
+      }
+    }
+
+    if (isClient) {
+      switch (status) {
+        case 'NOT_STARTED':
+          return 'NOT STARTED';
+        case 'IN_PROGRESS':
+          return 'IN PROGRESS';
+        case 'PENDING_REVIEW':
+          return 'IN PROGRESS';
+        case 'SENT_TO_CLIENT':
+          return 'PENDING REVIEW';
+        case 'CLIENT_APPROVED':
+        case 'APPROVED':
+          return 'APPROVED';
+        case 'POSTED':
+          return 'POSTED';
+        case 'CLIENT_FEEDBACK':
+        case 'CHANGES_REQUIRED':
+        case 'REJECTED':
+          return 'IN PROGRESS';
+        default:
+          return status?.replace(/_/g, ' ') || 'Unknown';
+      }
+    }
+
+    // Admin
+    if (status === 'IN_PROGRESS') return 'PROCESSING';
+    if (campaignType === 'normal' && (status === 'APPROVED' || status === 'CLIENT_APPROVED')) {
+      return 'PENDING LINK';
+    }
+    return status?.replace(/_/g, ' ') || 'Unknown';
+  };
+
+  const statusColor = getModalStatusColor(submissionStatus);
+  const statusLabel = getModalStatusLabel(submissionStatus);
+
   return (
     <>
       <Modal
@@ -261,8 +363,8 @@ const VideoSubmissionModal = ({
                     display: { xs: 'none', sm: 'block' },
                   }}
                 >
-                  {submission.createdAt
-                    ? new Date(submission.createdAt).toLocaleDateString('en-US', {
+                  {(currentVideo?.createdAt || submission.createdAt)
+                    ? new Date(currentVideo?.createdAt || submission.createdAt).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',
@@ -272,22 +374,54 @@ const VideoSubmissionModal = ({
                     : ''}
                 </Typography>
               </Box>
+              {/* Status Chip */}
+              {submissionStatus && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.8,
+                    ml: 1.5,
+                    px: 1.3,
+                    py: 0.6,
+                    border: '1px solid',
+                    borderColor: statusColor,
+                    borderRadius: 0.8,
+                    boxShadow: `0px -2px 0px 0px ${statusColor} inset`,
+                    bgcolor: '#fff',
+                    color: statusColor,
+                  }}
+                >
+                  {submissionStatus === 'IN_PROGRESS' && (
+                    <CircularProgress
+                      size={12}
+                      thickness={5}
+                      sx={{ color: statusColor, display: 'flex' }}
+                    />
+                  )}
+                  <Typography
+                    fontWeight="SemiBold"
+                    fontSize={12}
+                    color={statusColor}
+                    noWrap
+                  >
+                    {statusLabel}
+                  </Typography>
+                </Box>
+              )}
             </Box>
 
             {/* Close Button */}
             <IconButton
               onClick={handleModalCloseRequest}
               sx={{
-                width: { xs: 28, md: 32 },
-                height: { xs: 28, md: 32 },
-                bgcolor: 'white',
-                boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+                p: 0.5,
                 '&:hover': {
-                  bgcolor: '#F5F5F5',
+                  bgcolor: 'transparent',
                 },
               }}
             >
-              <Iconify icon="eva:close-fill" width={{ xs: 18, md: 20 }} color="#636366" />
+              <Iconify icon="eva:close-fill" width={{ xs: 20, md: 24 }} color="#636366" />
             </IconButton>
           </Box>
 
@@ -356,7 +490,7 @@ const VideoSubmissionModal = ({
                 <Collapse in={isCaptionOpen} sx={{ display: { xs: 'block', md: 'none' } }}>
                   <Box
                     sx={{
-                      maxHeight: 300, // <--- Lowered from 120 to 100 for better mobile balance
+                      maxHeight: 300,
                       overflowY: 'auto',
                       mt: 1,
                       pr: 1, // Prevents text from touching scrollbar
@@ -383,59 +517,54 @@ const VideoSubmissionModal = ({
                   </Box>
                 </Collapse>
 
-                {/* Desktop: Always visible scrollable area wrapped in Tooltip */}
-                <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                  <GlassTooltip
-                    title={captionText || 'No caption provided'}
-                    placement="bottom-start"
+                {/* Desktop: Always visible scrollable area */}
+                <Box
+                  sx={{
+                    display: { xs: 'none', md: 'block' },
+                    maxHeight: 150,
+                    overflowY: 'auto',
+                    '&::-webkit-scrollbar': { width: '4px' },
+                    '&::-webkit-scrollbar-thumb': {
+                      background: 'rgba(0,0,0,0.2)',
+                      borderRadius: '4px',
+                    },
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontFamily: 'Inter Display, Inter, sans-serif',
+                      fontSize: '0.875rem',
+                      color: '#1F2937',
+                      lineHeight: 1.6,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}
                   >
-                    <Box
-                      sx={{
-                        maxHeight: 150,
-                        overflowY: 'auto',
-                        '&::-webkit-scrollbar': { width: '4px' },
-                        '&::-webkit-scrollbar-thumb': {
-                          background: 'rgba(0,0,0,0.2)',
-                          borderRadius: '4px',
-                        },
-                      }}
-                    >
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontFamily: 'Inter Display, Inter, sans-serif',
-                          fontSize: '0.875rem',
-                          color: '#1F2937',
-                          lineHeight: 1.6,
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        {captionText || 'No caption provided'}
-                      </Typography>
-                    </Box>
-                  </GlassTooltip>
+                    {captionText || 'No caption provided'}
+                  </Typography>
                 </Box>
               </Box>
 
               {/* Video Player */}
-              {!isCaptionOpen && (
-                <Box
-                  sx={{
-                    flex: 1,
-                    bgcolor: '#000',
-                    borderRadius: { xs: '8px', md: '12px' },
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: { xs: 0, sm: 280, md: 450 },
-                    maxHeight: { xs: '33vh', sm: '42vh', md: 'none' },
-                    // maxHeight: { xs: '55vh', sm: '60vh', md: 'none' },
-                    position: 'relative',
-                  }}
-                >
+              <Box
+                sx={{
+                  flex: 1,
+                  bgcolor: '#000',
+                  borderRadius: { xs: '8px', md: '12px' },
+                  overflow: 'hidden',
+                  display: {
+                    xs: isCaptionOpen ? 'none' : 'flex',
+                    md: 'flex',
+                  },
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: { xs: 0, sm: 200, md: 300 },
+                  maxHeight: { xs: '33vh', sm: '42vh', md: 'none' },
+                  position: 'relative',
+                }}
+              >
                   {videoUrl ? (
                     <video
                       key={currentVideo?.id}
@@ -469,7 +598,6 @@ const VideoSubmissionModal = ({
                     </Typography>
                   )}
                 </Box>
-              )}
             </Box>
 
             {/* Right Side - Flexible Content (Client/Creator/Admin specific) */}

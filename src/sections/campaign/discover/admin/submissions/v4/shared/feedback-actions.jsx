@@ -108,13 +108,11 @@ export default function FeedbackActions({
                 bgcolor: 'transparent',
                 fontWeight: 800,
                 fontSize: 14,
-                color: submission.status === 'CLIENT_FEEDBACK' ? '#1340FF' : '#919191',
+                color: ['PENDING_REVIEW', 'CLIENT_FEEDBACK'].includes(submission.status) ? '#1340FF' : '#919191',
                 border: 'none',
                 cursor: 'pointer',
                 outline: 'none',
                 mr: 'auto',
-                textDecoration: 'underline',
-                textUnderlineOffset: 4,
               }}
             >
               Review Submission
