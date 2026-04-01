@@ -440,19 +440,49 @@ export default function MobileVideoSubmission({
         </>
       )}
 
-      <VideoSubmissionModal
+     <VideoSubmissionModal
         open={videoSubmissionModalOpen}
         onClose={handleCloseModal}
         submission={submission}
         creator={submission.user}
-        rightSideContent={
-          <ClientFeedbackModal
-            submissionId={submission.id}
-            videoId={video?.id}
-            onSendToAdmin={handleSendComments}
-            isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
-          />
-        }
+        rightSideContent={({
+          currentTime: modalCurrentTime,
+          onSeek,
+          videoId: modalVideoId,
+          videoPage,
+          setVideoPage,
+          videoCount,
+          isPastVideo,
+          submission: modalSubmission,
+        }) => {
+          const currentModalVideo = 
+            modalSubmission?.video?.find(v => v.id === modalVideoId) || 
+            submission?.video?.find(v => v.id === modalVideoId) || 
+            clientVideo || 
+            video;
+
+          const formatModalTime = (time) => {
+            const minutes = Math.floor((time || 0) / 60);
+            const seconds = Math.floor((time || 0) % 60);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+          };
+
+          return (
+            <ClientFeedbackModal
+              submissionId={submission.id}
+              videoId={modalVideoId || clientVideo?.id || video?.id}
+              currentVideoTime={formatModalTime(modalCurrentTime)}
+              onSeekTo={onSeek}
+              onSendToAdmin={handleSendComments}
+              isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
+              isPastVideo={isPastVideo}
+              videoPage={videoPage}
+              setVideoPage={setVideoPage}
+              videoCount={videoCount}
+              feedbackDeadline={currentModalVideo?.feedbackDeadline}
+            />
+          );
+        }}
       />
 
       {/* Admin Review Modal */}

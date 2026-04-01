@@ -136,8 +136,7 @@ const VideoSubmissionModal = ({
   // ASC: default to last index (newest); DESC: default to 0 (newest)
   let effectiveVideoPage = videoPage;
   if (videoOrder === 'asc') {
-    effectiveVideoPage =
-      videoPage >= 0 && videoPage < videoCount ? videoPage : videoCount - 1;
+    effectiveVideoPage = videoPage >= 0 && videoPage < videoCount ? videoPage : videoCount - 1;
   }
   const currentVideo = videos[effectiveVideoPage] || videos[0] || null;
   const videoUrl = currentVideo?.url || null;
@@ -718,13 +717,14 @@ const VideoSubmissionModal = ({
             whiteSpace: 'nowrap',
           }}
         >
-          All set with your Feedback?
+          All set with the Feedback?
         </Typography>
         <Typography
           variant="body2"
           sx={{ color: '#636366', fontWeight: 400, fontSize: '16px', mb: 3 }}
         >
-          Your submission for <strong>{campaignName}</strong> has feedback to review
+          If yes, your organisation will have 24 hours to add additional feedback before the current
+          submission round ends
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <LoadingButton
@@ -745,7 +745,7 @@ const VideoSubmissionModal = ({
               },
             }}
           >
-            Yes, I&apos;m done with my feedback
+            Yes, the feedback is ready
           </LoadingButton>
           <Button
             fullWidth
@@ -769,7 +769,7 @@ const VideoSubmissionModal = ({
               },
             }}
           >
-            No, I need more time
+            No, we need more time
           </Button>
         </Box>
       </Dialog>

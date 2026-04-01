@@ -74,10 +74,7 @@ const CommentCard = ({
   const isUser = currentUser?.id === comment?.user?.id;
   const hasAgreed = comment.agreedBy?.some((agreement) => agreement.userId === currentUser?.id);
   const displayName = comment.forwardedBy?.name || comment.user?.name || 'Unknown';
-  const displayPhoto =
-    comment.user?.photoURL ||
-    comment?.user?.client?.company?.logo ||
-    null;
+  const displayPhoto = comment.user?.photoURL || comment?.user?.client?.company?.logo || null;
 
   const isDisabled = isLocked || isPastVideo;
 
@@ -410,6 +407,7 @@ const ClientFeedbackModal = forwardRef(
       videoPage,
       setVideoPage,
       videoCount,
+      feedbackDeadline,
     },
     ref
   ) => {
@@ -426,30 +424,19 @@ const ClientFeedbackModal = forwardRef(
     const [hasInteracted, setHasInteracted] = useState(false);
     const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
 
-    const [timeLeft, setTimeLeft] = useState(0);
-    const [isCountingDown, setIsCountingDown] = useState(false);
-    const [activeVideoId, setActiveVideoId] = useState(videoId);
-
-    const STORAGE_KEY_END_TIME = `send_timer_end_${submissionId}_${videoId}`;
-    // const COUNTDOWN_SECONDS = 24 * 60 * 60;
-    const COUNTDOWN_SECONDS = 3000; // for testing
+    const [timeLeft, setTimeLeft] = useState(() => {
+      if (!feedbackDeadline) return 0;
+      return Math.max(0, Math.floor((new Date(feedbackDeadline).getTime() - Date.now()) / 1000));
+    });
+    const [isCountingDown, setIsCountingDown] = useState(timeLeft > 0);
 
     const commentRefs = useRef({});
-    const effectiveIsLocked = isLocked || isPastVideo;
-
-    if (videoId !== activeVideoId) {
-      setActiveVideoId(videoId);
-
-      const savedEndTime = localStorage.getItem(STORAGE_KEY_END_TIME);
-      if (savedEndTime) {
-        const remaining = Math.max(0, Math.floor((parseInt(savedEndTime, 10) - Date.now()) / 1000));
-        setTimeLeft(remaining > 0 ? remaining : 0);
-        setIsCountingDown(remaining > 0);
-      } else {
-        setTimeLeft(0);
-        setIsCountingDown(false);
-      }
-    }
+    const prevRemainingRef = useRef(-1);
+    const isTimerExpired = Boolean(feedbackDeadline) && timeLeft === 0;
+    const effectiveIsLocked = isLocked || isPastVideo || isTimerExpired;
+    console.log('feedbackDeadline:', feedbackDeadline);
+    console.log('isCountingDown:', isCountingDown);
+    console.log('timeLeft:', timeLeft);
 
     useImperativeHandle(ref, () => ({
       getHasInteracted: () => hasInteracted,
@@ -457,10 +444,6 @@ const ClientFeedbackModal = forwardRef(
       isCountingDown,
       startCountdown: () => {
         if (onSendToAdmin) onSendToAdmin(videoId);
-        const endTime = Date.now() + COUNTDOWN_SECONDS * 1000;
-        localStorage.setItem(STORAGE_KEY_END_TIME, endTime.toString());
-        setTimeLeft(COUNTDOWN_SECONDS);
-        setIsCountingDown(true);
       },
     }));
 
@@ -505,34 +488,32 @@ const ClientFeedbackModal = forwardRef(
     }, [submissionId, videoId, user.id]);
 
     useEffect(() => {
-      let timer;
+      if (!feedbackDeadline) {
+        setTimeLeft(0);
+        setIsCountingDown(false);
+        prevRemainingRef.current = -1;
+        return undefined;
+      }
+
+      const endMs = new Date(feedbackDeadline).getTime();
+
       const tick = () => {
-        const savedEndTime = localStorage.getItem(STORAGE_KEY_END_TIME);
-        if (savedEndTime) {
-          const remaining = Math.max(
-            0,
-            Math.floor((parseInt(savedEndTime, 10) - Date.now()) / 1000)
-          );
-          if (remaining > 0) {
-            setTimeLeft(remaining);
-            setIsCountingDown(true);
-          } else {
-            setTimeLeft(0);
-            setIsCountingDown(false);
-            localStorage.removeItem(STORAGE_KEY_END_TIME);
-            if (parseInt(savedEndTime, 10) > 0 && onSendToAdmin) onSendToAdmin(videoId, true);
-          }
-        } else {
-          setTimeLeft(0);
-          setIsCountingDown(false);
+        const remaining = Math.max(0, Math.floor((endMs - Date.now()) / 1000));
+        setTimeLeft(remaining);
+        setIsCountingDown(remaining > 0);
+
+        if (remaining === 0 && prevRemainingRef.current > 0) {
+          if (onSendToAdmin) onSendToAdmin(videoId, true);
         }
+
+        prevRemainingRef.current = remaining;
       };
 
       tick();
-      timer = setInterval(tick, 1000);
+      const timerId = setInterval(tick, 1000);
 
-      return () => clearInterval(timer);
-    }, [STORAGE_KEY_END_TIME, videoId, onSendToAdmin]);
+      return () => clearInterval(timerId);
+    }, [feedbackDeadline, videoId, onSendToAdmin]);
 
     // Real-time: listen for admin replies to client parent comments
     useEffect(() => {
@@ -1134,7 +1115,7 @@ const ClientFeedbackModal = forwardRef(
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'flex-start',
-                  gap: { xs: 1.75, md: 0.75 },
+                  gap: { xs: 1.75, md: 0.5 },
                   pt: { xs: 0.5, md: 2 },
                   pb: { xs: 0.5, md: 1 },
                   px: { xs: 1, md: 0 },
@@ -1167,7 +1148,7 @@ const ClientFeedbackModal = forwardRef(
                       userSelect: 'none',
                     }}
                   >
-                    {idx + 1}
+                    {idx === 0 ? 'Latest' : idx + 1}
                   </Typography>
                 ))}
                 <IconButton
@@ -1256,8 +1237,8 @@ const ClientFeedbackModal = forwardRef(
             variant="body2"
             sx={{ color: '#636366', fontWeight: 400, fontSize: '16px', mb: 3, lineHeight: 1.2 }}
           >
-            After sending, you&apos;ll have 24 hours to add additional feedback before the current
-            submission round ends
+            After sending, your organisation will have 24 hours to add additional feedback before
+            the current submission round ends
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             <LoadingButton
