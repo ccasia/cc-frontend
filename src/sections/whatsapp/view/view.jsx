@@ -40,10 +40,20 @@ const WhatsappDashboard = () => {
         gap={1}
         sx={{ justifyContent: { xs: 'center', md: 'start' } }}
       >
-        <Iconify icon="ic:baseline-whatsapp" width={29} color="green" />
-        <Typography variant="h4">Whatsapp Business Setup</Typography>
+        <Iconify icon="ic:baseline-whatsapp" width={38} color="black" />
+        <Typography variant="h5" sx={{ textDecoration: 'underline', textUnderlineOffset: 5 }}>
+          Whatsapp Business Setup
+        </Typography>
       </Stack>
-      <Container maxWidth="lg" sx={{ overflowX: 'hidden' }}>
+      <Container
+        maxWidth="lg"
+        sx={{
+          overflowX: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+        }}
+      >
         <BoxLayout
           sx={{
             mt: 5,
@@ -61,8 +71,13 @@ const WhatsappDashboard = () => {
         </BoxLayout>
 
         <Tabs value={activeTab} sx={{ mt: 2 }} onChange={(_, val) => setActiveTab(val)}>
-          <Tab label="Messages" value="messages" />
-          <Tab label="Setting" value="settings" />
+          <Tab
+            label="Messages"
+            value="messages"
+            icon={<Iconify icon="material-symbols:list-rounded" width={18} />}
+          />
+
+          <Tab label="Setting" value="settings" icon={<Iconify icon="uil:setting" width={18} />} />
         </Tabs>
 
         <AnimatePresence mode="wait">
