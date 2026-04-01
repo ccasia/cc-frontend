@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { Box, Avatar, Button, TextField, Typography, IconButton, CircularProgress } from '@mui/material';
 
@@ -124,6 +124,9 @@ const CommentCard = ({
   onInlineReplyTextChange,
   onSendInlineReply,
   onCancelInlineReply,
+  isAdminView = false,
+  onToggleVisibility,
+  isNew = false,
 }) => {
   const isClientComment = comment.user?.role === 'client';
   const isEditedClientComment = isClientComment && !!comment.forwardedBy;
@@ -157,8 +160,22 @@ const CommentCard = ({
 
   const hasLeftActions = !isPastVideo && ((!isReply && isClientComment && !isEditedClientComment) || (isClientComment && !isEditedClientComment && !!onEdit));
 
-  return (
+  const isVisible = comment.isVisibleToCreator !== false;
+  const isCreatorComment = comment.user?.role === 'creator';
+  const showVisibilityBorder = isAdminView && !isCreatorComment;
+
+  const canToggleVisibility = showVisibilityBorder && !isPastVideo && !!onToggleVisibility;
+
+  const handleCardClick = (e) => {
+    if (!canToggleVisibility) return;
+    // Don't toggle when clicking interactive elements inside the card
+    if (e.target.closest('button, input, textarea, [role="button"], a, .MuiIconButton-root, [data-interactive]')) return;
+    onToggleVisibility(comment.id);
+  };
+
+  const cardContent = (
     <Box
+      onClick={handleCardClick}
       sx={{
         bgcolor: 'white',
         p: hasLeftActions ? 2 : 1.5,
@@ -170,6 +187,16 @@ const CommentCard = ({
         gap: hasLeftActions ? 1.5 : 0.75,
         position: 'relative',
         zIndex: 1,
+        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+        ...(showVisibilityBorder && {
+          border: isVisible ? '1.5px solid #00A76F' : '1px solid #EBEBEB',
+        }),
+        ...(canToggleVisibility && {
+          cursor: 'pointer',
+          '&:hover': {
+            boxShadow: '0 0 0 1px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06)',
+          },
+        }),
       }}
     >
       {/* Header */}
@@ -199,9 +226,14 @@ const CommentCard = ({
               {!displayPhoto && displayName.charAt(0)}
             </Avatar>
             <Box>
-              <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#111827' }}>
-                {displayName}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#111827' }}>
+                  {displayName}
+                </Typography>
+                {isNew && (
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#FF5630', flexShrink: 0 }} />
+                )}
+              </Box>
               <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#9CA3AF' }}>
                 {displayRole}
               </Typography>
@@ -406,6 +438,7 @@ const CommentCard = ({
           {hasLeftActions && <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             {!isReply && isClientComment && !isEditedClientComment && (
               <Typography
+                data-interactive
                 onClick={() => onReply?.(comment)}
                 sx={{
                   fontSize: '0.75rem',
@@ -420,6 +453,7 @@ const CommentCard = ({
             )}
             {isClientComment && !isEditedClientComment && onEdit && (
               <Typography
+                data-interactive
                 onClick={() => onEdit(comment)}
                 sx={{
                   fontSize: '0.75rem',
@@ -448,6 +482,7 @@ const CommentCard = ({
                   </Typography>
                 )}
                 <Typography
+                  data-interactive
                   onClick={() => setShowOriginal((prev) => !prev)}
                   sx={{
                     fontSize: '0.75rem',
@@ -604,6 +639,8 @@ const CommentCard = ({
       </AnimatePresence>
     </Box>
   );
+
+  return cardContent;
 };
 
 CommentCard.propTypes = {
@@ -624,6 +661,9 @@ CommentCard.propTypes = {
   onInlineReplyTextChange: PropTypes.func,
   onSendInlineReply: PropTypes.func,
   onCancelInlineReply: PropTypes.func,
+  isAdminView: PropTypes.bool,
+  onToggleVisibility: PropTypes.func,
+  isNew: PropTypes.bool,
 };
 
 // ---------------------------------------------------------------------------
@@ -659,6 +699,46 @@ export default function AdminFeedbackPanel({
 
   const commentsEndRef = useRef(null);
   const initialLoadDone = useRef(false);
+
+  // Track which client comments are new (created after admin last viewed)
+  const lastViewedRef = useRef(null);
+  useEffect(() => { lastViewedRef.current = null; }, [videoId]);
+  const newClientCommentIds = useMemo(() => {
+    if (!comments?.length || !videoId) return new Set();
+
+    const storageKey = `admin_lastViewed_${submission?.id}_${videoId}`;
+    if (lastViewedRef.current === null) {
+      const stored = localStorage.getItem(storageKey);
+      lastViewedRef.current = stored ? new Date(stored).getTime() : 0;
+    }
+    const cutoff = lastViewedRef.current;
+
+    const ids = new Set();
+    const checkComment = (c) => {
+      if (c.user?.role === 'client' && new Date(c.createdAt).getTime() > cutoff) {
+        ids.add(c.id);
+      }
+    };
+    comments.forEach((c) => {
+      checkComment(c);
+      (c.replies || []).forEach(checkComment);
+    });
+    return ids;
+  }, [comments, videoId, submission?.id]);
+
+  // Update last-viewed timestamp after comments load
+  useEffect(() => {
+    if (!commentsLoading && comments?.length && videoId && submission?.id) {
+      const storageKey = `admin_lastViewed_${submission.id}_${videoId}`;
+      // Small delay so the red dots are visible briefly before clearing on next load
+      const timer = setTimeout(() => {
+        localStorage.setItem(storageKey, new Date().toISOString());
+        lastViewedRef.current = Date.now();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [commentsLoading, comments?.length, videoId, submission?.id]);
 
   // Track page-slide direction: 1 = slide from right, -1 = slide from left
   const prevVideoPageRef = useRef(videoPage);
@@ -836,6 +916,27 @@ export default function AdminFeedbackPanel({
     }
   };
 
+  const handleToggleVisibility = async (commentId) => {
+    // Optimistic update to prevent checkbox flicker
+    commentsMutate(
+      (prev) =>
+        prev?.map((c) => {
+          if (c.id === commentId) return { ...c, isVisibleToCreator: c.isVisibleToCreator === false };
+          const updatedReplies = c.replies?.map((r) =>
+            r.id === commentId ? { ...r, isVisibleToCreator: r.isVisibleToCreator === false } : r
+          );
+          return updatedReplies !== c.replies ? { ...c, replies: updatedReplies } : c;
+        }),
+      false
+    );
+    try {
+      await axiosInstance.patch(endpoints.submission.v4.toggleCommentVisibility(commentId));
+    } catch (error) {
+      enqueueSnackbar('Failed to update visibility', { variant: 'error' });
+      commentsMutate(); // revert by revalidating from server
+    }
+  };
+
   const handleSendToCreator = async () => {
     setSending(true);
     try {
@@ -872,6 +973,12 @@ export default function AdminFeedbackPanel({
     submission?.status === 'PENDING_REVIEW' || submission?.status === 'CLIENT_FEEDBACK';
 
   const hasComments = comments.length > 0;
+
+  const visibleFeedbackCount = useMemo(() => comments.reduce((count, c) => {
+    const parentVisible = c.isVisibleToCreator !== false ? 1 : 0;
+    const repliesVisible = (c.replies || []).filter((r) => r.isVisibleToCreator !== false).length;
+    return count + parentVisible + repliesVisible;
+  }, 0), [comments]);
 
   // ---- Render ----
 
@@ -918,7 +1025,7 @@ export default function AdminFeedbackPanel({
               animate="center"
               exit="exit"
               transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}
             >
               {comments.length === 0 ? (
                 <Box
@@ -955,6 +1062,9 @@ export default function AdminFeedbackPanel({
               onInlineReplyTextChange={setInlineReplyText}
               onSendInlineReply={handleSendInlineReply}
               onCancelInlineReply={handleCancelInlineReply}
+              isAdminView
+              onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
+              isNew={newClientCommentIds.has(comment.id)}
             />
 
             {/* Threaded Replies */}
@@ -1010,6 +1120,9 @@ export default function AdminFeedbackPanel({
                         onInlineReplyTextChange={setInlineReplyText}
                         onSendInlineReply={handleSendInlineReply}
                         onCancelInlineReply={handleCancelInlineReply}
+                        isAdminView
+                        onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
+                        isNew={newClientCommentIds.has(reply.id)}
                       />
                     </Box>
                   );
@@ -1026,11 +1139,32 @@ export default function AdminFeedbackPanel({
       </Box>
 
       {/* Input Section */}
+      {!isReadOnly && hasComments && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            px: 1.75,
+            py: 1,
+            flexShrink: 0,
+            bgcolor: '#F9FAFB',
+            border: '1px solid #E7E7E7',
+            borderBottom: 'none',
+            borderRadius: '12px 12px 0 0',
+          }}
+        >
+          <Box sx={{ width: 12, height: 12, borderRadius: 0.5, border: '2px solid #00A76F', flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '0.75rem', fontWeight: 500, color: '#374151', lineHeight: 1.4 }}>
+            Click any comment to include or exclude it from creator feedback
+          </Typography>
+        </Box>
+      )}
       {!isReadOnly && <Box
         sx={{
           flexShrink: 0,
           border: '1px solid #E7E7E7',
-          borderRadius: '12px',
+          borderRadius: hasComments ? '0 0 12px 12px' : '12px',
           bgcolor: '#FFFFFF',
           mb: 0.5,
         }}
@@ -1143,11 +1277,11 @@ export default function AdminFeedbackPanel({
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 1.5,
-          ...(!isReadOnly && { minHeight: 48 }),
+          minHeight: 48,
           flexShrink: 0,
           flexWrap: 'wrap',
-          pt: isReadOnly ? 0.5 : 1,
-          pb: isReadOnly ? 0 : 0.5,
+          pt: 1,
+          pb: 0.5,
         }}
       >
         {/* Pagination - left side (always occupies space) */}
@@ -1202,7 +1336,7 @@ export default function AdminFeedbackPanel({
               <Button
                 variant="contained"
                 disableElevation
-                disabled={!hasComments || sending}
+                disabled={!hasComments || sending || visibleFeedbackCount === 0}
                 onClick={() => setConfirmSendToCreatorOpen(true)}
                 sx={{
                   fontWeight: 700,
@@ -1273,7 +1407,7 @@ export default function AdminFeedbackPanel({
       <ConfirmDialogV2
         open={confirmSendToCreatorOpen}
         onClose={() => setConfirmSendToCreatorOpen(false)}
-        title="Send this Feedback to the Creator?"
+        title={`Send ${visibleFeedbackCount} ${visibleFeedbackCount === 1 ? 'Comment' : 'Comments'} to the Creator?`}
         emoji={
           <Avatar
             src="/assets/images/modals/sent_to_creator.png"
@@ -1292,7 +1426,7 @@ export default function AdminFeedbackPanel({
             }}
             disabled={sending}
           >
-            Send this Feedback to the Creator?
+            {`Send ${visibleFeedbackCount} ${visibleFeedbackCount === 1 ? 'Comment' : 'Comments'} to the Creator?`}
           </Button>
         }
       />

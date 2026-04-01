@@ -812,7 +812,7 @@ const CreatorFeedbackModal = ({
 
         await axiosInstance.post(endpoints.submission.v4.comments(submission.id), {
           text: replyText,
-          parentId: item.id,
+          parentId: item.parentId || item.id,
           videoId: currentVideoId,
           timestamp: formatTimeForBackend(currentTime),
         });
