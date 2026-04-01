@@ -129,7 +129,7 @@ UserAvatar.propTypes = {
   responsive: PropTypes.bool,
 };
 
-const UserInfo = ({ name, roleLabel, photo, date }) => (
+const UserInfo = ({ name, roleLabel, photo, date, sequenceLabel }) => (
   <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: { xs: 0.5, md: 0 } }}>
     <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.5 } }}>
       <UserAvatar src={photo} name={name} responsive />
@@ -143,9 +143,25 @@ const UserInfo = ({ name, roleLabel, photo, date }) => (
       </Box>
     </Box>
     {date && (
-      <Typography variant="caption" sx={{ fontFamily: FONT_FAMILY, fontSize: { xs: '0.688rem', md: '0.75rem' }, color: COLORS.textSecondary }}>
-        {date}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+        {sequenceLabel && (
+          <Typography
+            variant="caption"
+            sx={{
+              fontFamily: FONT_FAMILY,
+              fontSize: { xs: '0.688rem', md: '0.75rem' },
+              color: COLORS.textSecondary,
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {sequenceLabel}
+          </Typography>
+        )}
+        <Typography variant="caption" sx={{ fontFamily: FONT_FAMILY, fontSize: { xs: '0.688rem', md: '0.75rem' }, color: COLORS.textSecondary, whiteSpace: 'nowrap' }}>
+          {date}
+        </Typography>
+      </Box>
     )}
   </Box>
 );
@@ -155,6 +171,7 @@ UserInfo.propTypes = {
   roleLabel: PropTypes.string.isRequired,
   photo: PropTypes.string,
   date: PropTypes.string,
+  sequenceLabel: PropTypes.string,
 };
 
 const ActionButton = ({ onClick, children, variant = 'primary', icon }) => {
@@ -424,6 +441,7 @@ const FeedbackCard = ({
   feedbackItem,
   submission,
   index,
+  sequenceNumber,
   isReplyOpen,
   onToggleReply,
   isRepliesListOpen,
@@ -453,6 +471,11 @@ const FeedbackCard = ({
     [feedbackItem.createdAt, isNewAndUnopened, commentHighlightCutoffMs]
   );
   const showBlueBorder = qualifiesForHighlight && !highlightDismissed;
+  const sequenceLabel = useMemo(() => {
+    const n = Number(sequenceNumber);
+    if (!n || Number.isNaN(n) || n <= 0) return null;
+    return `#${n}`;
+  }, [sequenceNumber]);
 
   return (
     <Box>
@@ -474,6 +497,7 @@ const FeedbackCard = ({
           roleLabel={adminInfo.role}
           photo={adminInfo.photo}
           date={formatDate(feedbackItem.createdAt)}
+          sequenceLabel={sequenceLabel}
         />
 
         <Box sx={{ display: 'flex', gap: { xs: 0.75, md: 1 } }}>
@@ -597,6 +621,7 @@ FeedbackCard.propTypes = {
   feedbackItem: PropTypes.object.isRequired,
   submission: PropTypes.object.isRequired,
   index: PropTypes.number.isRequired,
+  sequenceNumber: PropTypes.number,
   isReplyOpen: PropTypes.bool.isRequired,
   onToggleReply: PropTypes.func.isRequired,
   isRepliesListOpen: PropTypes.bool.isRequired,
@@ -646,6 +671,23 @@ const CreatorFeedbackModal = ({
   // Determine which system to use: if we have comments from submissionComment, use that
   const useCommentSystem = comments && comments.length > 0;
   const displayItems = useCommentSystem ? comments : feedbackToShow;
+
+  // Sequence numbering for TOP-LEVEL comments only (replies excluded):
+  // oldest createdAt => #1 ... newest createdAt => #N
+  const topLevelSequenceByKey = useMemo(() => {
+    const items = displayItems || [];
+    const normalized = items.map((item, idx) => {
+      const key = item?.id ?? `idx-${idx}`;
+      const t = new Date(item?.createdAt || 0).getTime();
+      return { key, idx, t: Number.isNaN(t) ? 0 : t };
+    });
+    normalized.sort((a, b) => (a.t - b.t) || (a.idx - b.idx));
+    const map = new Map();
+    normalized.forEach((n, i) => {
+      map.set(n.key, i + 1);
+    });
+    return map;
+  }, [displayItems]);
   
   const [replyStates, setReplyStates] = useState({});
   const [viewRepliesOpen, setViewRepliesOpen] = useState({});
@@ -923,6 +965,7 @@ const CreatorFeedbackModal = ({
                   feedbackItem={feedbackItem}
                   submission={submission}
                   index={index}
+                  sequenceNumber={topLevelSequenceByKey.get(item?.id ?? `idx-${index}`)}
                   isReplyOpen={replyStates[index] || false}
                   onToggleReply={() => toggleReply(index)}
                   isRepliesListOpen={viewRepliesOpen[index] || false}
@@ -1009,7 +1052,7 @@ const CreatorFeedbackModal = ({
                   p: { xs: 0.25, md: 0.5 },
                 }}
               >
-                {i + 1}
+                {i === 0 ? 'Latest' : i + 1}
               </Typography>
             ))}
           </Box>
