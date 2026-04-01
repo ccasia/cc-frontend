@@ -13,6 +13,7 @@ import {
   TextField,
   Typography,
   IconButton,
+  Collapse,
   useMediaQuery,
 } from '@mui/material';
 
@@ -114,6 +115,9 @@ const CommentCard = ({
   isReply = false,
   isNew = false,
   onReplyClick,
+  replyCount = 0,
+  isRepliesOpen = false,
+  onToggleReplies,
   onAgree,
   onTimestampClick,
   currentUser,
@@ -129,6 +133,8 @@ const CommentCard = ({
   const displayPhoto = comment.user?.photoURL || comment?.user?.client?.company?.logo || null;
 
   const isDisabled = isLocked || isPastVideo;
+  const showRepliesToggle = !isReply && replyCount > 0;
+  const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
 
   const [replyText, setReplyText] = useState('');
   const replyBoxRef = useRef(null);
@@ -276,40 +282,92 @@ const CommentCard = ({
           }}
         >
           {!isDisabled && !isReply && (
-            <Typography
-              onClick={() => onReplyClick(comment.id)}
-              sx={{
-                fontSize: { xs: '0.75rem', md: '0.875rem' },
-                fontWeight: 600,
-                color: '#9CA3AF',
-                cursor: 'pointer',
-                padding: { xs: '2px 0', md: 0 },
-                '&:hover': { color: '#6B7280' },
-              }}
-            >
-              Reply
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+              <Typography
+                onClick={() => onReplyClick(comment.id)}
+                sx={{
+                  fontSize: { xs: '0.75rem', md: '0.875rem' },
+                  fontWeight: 600,
+                  color: '#9CA3AF',
+                  cursor: 'pointer',
+                  padding: { xs: '2px 0', md: 0 },
+                  '&:hover': { color: '#6B7280' },
+                }}
+              >
+                Reply
+              </Typography>
+            </Box>
           )}
 
           {!isUser && (
-            <DarkGlassTooltip title="I agree with this comment" placement="top">
-              <IconButton
-                size="small"
-                sx={{ p: { xs: 0.25, md: 0.5 } }}
-                onClick={() => onAgree(comment.id)}
-                disabled={isDisabled}
-              >
-                <Iconify
-                  icon={hasAgreed ? 'mdi:thumb-up' : 'mdi-light:thumb-up'}
-                  width={{ xs: 16, md: 20 }}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              {showRepliesToggle && (
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={onToggleReplies}
                   sx={{
-                    color: !isDisabled && hasAgreed ? '#1340FF' : '#9CA3AF',
-                    filter: 'drop-shadow(0px 0px 0.2px #000000)',
-                    opacity: isDisabled && !hasAgreed ? 0.6 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.35,
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    '&:hover': { opacity: 0.9 },
                   }}
-                />
-              </IconButton>
-            </DarkGlassTooltip>
+                >
+                  <Typography
+                    sx={{
+                      fontSize: { xs: '0.875rem', md: '0.95rem' },
+                      fontWeight: 700,
+                      color: repliesToggleColor,
+                      lineHeight: 1,
+                      userSelect: 'none',
+                    }}
+                  >
+                    {replyCount}
+                  </Typography>
+                  <Box
+                    aria-label="Replies"
+                    sx={{
+                      width: { xs: 20, md: 22 },
+                      height: { xs: 20, md: 22 },
+                      display: 'block',
+                      flexShrink: 0,
+                      bgcolor: repliesToggleColor,
+                      WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
+                      WebkitMaskRepeat: 'no-repeat',
+                      WebkitMaskPosition: 'center',
+                      WebkitMaskSize: 'contain',
+                      maskImage: 'url(/favicon/repliesicon.svg)',
+                      maskRepeat: 'no-repeat',
+                      maskPosition: 'center',
+                      maskSize: 'contain',
+                    }}
+                  />
+                </Box>
+              )}
+
+              <DarkGlassTooltip title="I agree with this comment" placement="top">
+                <IconButton
+                  size="small"
+                  sx={{ p: { xs: 0.25, md: 0.5 } }}
+                  onClick={() => onAgree(comment.id)}
+                  disabled={isDisabled}
+                >
+                  <Iconify
+                    icon={hasAgreed ? 'mdi:thumb-up' : 'mdi-light:thumb-up'}
+                    width={{ xs: 16, md: 20 }}
+                    sx={{
+                      color: !isDisabled && hasAgreed ? '#1340FF' : '#9CA3AF',
+                      filter: 'drop-shadow(0px 0px 0.2px #000000)',
+                      opacity: isDisabled && !hasAgreed ? 0.6 : 1,
+                    }}
+                  />
+                </IconButton>
+              </DarkGlassTooltip>
+            </Box>
           )}
         </Box>
       </Box>
@@ -435,6 +493,9 @@ CommentCard.propTypes = {
   isReply: PropTypes.bool,
   isNew: PropTypes.bool,
   onReplyClick: PropTypes.func,
+  replyCount: PropTypes.number,
+  isRepliesOpen: PropTypes.bool,
+  onToggleReplies: PropTypes.func,
   onAgree: PropTypes.func,
   onTimestampClick: PropTypes.func,
   currentUser: PropTypes.shape({
@@ -474,6 +535,7 @@ const ClientFeedbackModal = forwardRef(
     const [comments, setComments] = useState([]);
     const [feedbackText, setFeedbackText] = useState('');
     const [replyingToId, setReplyingToId] = useState(null);
+    const [openRepliesById, setOpenRepliesById] = useState({});
 
     const [hasInteracted, setHasInteracted] = useState(false);
     const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
@@ -884,6 +946,11 @@ const ClientFeedbackModal = forwardRef(
                 currentUser={user}
                 isNew={comment.isNew}
                 onReplyClick={(id) => setReplyingToId(id)}
+                replyCount={(comment.replies || []).length}
+                isRepliesOpen={openRepliesById[comment.id] ?? true}
+                onToggleReplies={() =>
+                  setOpenRepliesById((prev) => ({ ...prev, [comment.id]: !(prev[comment.id] ?? true) }))
+                }
                 onAgree={handleAgree}
                 onTimestampClick={handleTimestampClick}
                 isReplying={replyingToId === comment.id}
@@ -894,7 +961,11 @@ const ClientFeedbackModal = forwardRef(
               />
 
               {/* Threaded Replies */}
-              {comment.replies && comment.replies.length > 0 && (
+              <Collapse
+                in={(openRepliesById[comment.id] ?? true) && !!comment.replies && comment.replies.length > 0}
+                timeout="auto"
+                unmountOnExit
+              >
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
                   {comment.replies.map((reply, index) => {
                     const isLast = index === comment.replies.length - 1;
@@ -951,7 +1022,7 @@ const ClientFeedbackModal = forwardRef(
                     );
                   })}
                 </Box>
-              )}
+              </Collapse>
             </Box>
           ))}
         </Box>
