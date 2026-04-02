@@ -1,13 +1,17 @@
 import PropTypes from 'prop-types';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 
-import { Box, Avatar, TextField, Typography, IconButton } from '@mui/material';
+import { m, AnimatePresence } from 'framer-motion';
+
+import { Box, Avatar, Button, TextField, Typography, IconButton, CircularProgress } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
+import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
+import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
 const COLORS = {
   primary: '#1340FF',
@@ -340,7 +344,17 @@ ConnectorLine.propTypes = {
   isSingleReply: PropTypes.bool,
 };
 
-const ReplyItem = ({ reply, isParentResolved, showNewHighlight, highlightCutoffMs }) => {
+const ReplyItem = ({
+  reply,
+  isParentResolved,
+  showNewHighlight,
+  highlightCutoffMs,
+  onDelete,
+  onUndoDelete,
+  pendingDelete = false,
+  pendingDeleteStartTime,
+  currentUserId,
+}) => {
   const [highlightDismissed, setHighlightDismissed] = useState(false);
   const dismissHighlight = useCallback(() => setHighlightDismissed(true), []);
   const isNew = useMemo(
@@ -355,7 +369,136 @@ const ReplyItem = ({ reply, isParentResolved, showNewHighlight, highlightCutoffM
   const displayRole = displayUser?.role || 'Creator';
   const displayPhoto = displayUser?.photoURL || reply.creatorPhoto;
 
-  return (
+  const canDelete = !!onDelete && !pendingDelete
+    && (reply.user?.id === currentUserId || reply.userId === currentUserId);
+
+  // Countdown for pending-delete state
+  const [deleteProgress, setDeleteProgress] = useState(100);
+  const deleteIntervalRef = useRef(null);
+  useEffect(() => {
+    if (!pendingDelete || !pendingDeleteStartTime) {
+      setDeleteProgress(100);
+      return undefined;
+    }
+    setDeleteProgress(100);
+    // Wait one frame so the initial 100% state renders before countdown begins
+    const startDelay = setTimeout(() => {
+      deleteIntervalRef.current = setInterval(() => {
+        const elapsed = Date.now() - pendingDeleteStartTime;
+        const remaining = 100 - (elapsed / 5000) * 100;
+        setDeleteProgress(remaining);
+        // -16 ≈ 800ms past zero (each 1% = 50ms)
+        if (remaining <= -16) {
+          clearInterval(deleteIntervalRef.current);
+          deleteIntervalRef.current = null;
+        }
+      }, 50);
+    }, 16);
+    return () => {
+      clearTimeout(startDelay);
+      if (deleteIntervalRef.current) clearInterval(deleteIntervalRef.current);
+    };
+  }, [pendingDelete, pendingDeleteStartTime]);
+
+  const deleteSecondsLeft = Math.max(0, Math.ceil((deleteProgress / 100) * 5));
+  const deleteRingValue = Math.max(0, deleteProgress);
+  // Show tick ~800ms after the ring reaches 0 (-16% ≈ 800ms past zero, each 1% = 50ms)
+  const deleteTimerDone = deleteProgress <= -16;
+
+  const pendingDeleteContent = (
+    <m.div
+      key="pending-delete"
+      initial={{ opacity: 0, x: 30, filter: 'blur(4px)' }}
+      animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, x: 30, filter: 'blur(4px)' }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+    >
+      <Box
+        sx={{
+          bgcolor: isParentResolved ? COLORS.resolvedBg : COLORS.bgPrimary,
+          py: 1.25,
+          px: 1.5,
+          borderRadius: '16px',
+          border: `1px solid ${COLORS.border}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1.5,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <Box sx={{ position: 'relative', display: 'inline-flex', width: 32, height: 32, flexShrink: 0 }}>
+            <AnimatePresence mode="wait" initial={false}>
+              {deleteTimerDone ? (
+                <m.div
+                  key="tick"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Iconify icon="mdi:check" width={20} sx={{ color: '#1340FF' }} />
+                </m.div>
+              ) : (
+                <m.div
+                  key="ring"
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ position: 'absolute', inset: 0 }}
+                >
+                  <CircularProgress variant="determinate" value={100} size={32} thickness={4} sx={{ color: '#E0E7FF', position: 'absolute' }} />
+                  <CircularProgress variant="determinate" value={deleteRingValue} size={32} thickness={4} sx={{ color: '#1340FF' }} />
+                  <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography sx={{ fontSize: '0.688rem', fontWeight: 700, color: '#1340FF', lineHeight: 1 }}>
+                      {deleteSecondsLeft}
+                    </Typography>
+                  </Box>
+                </m.div>
+              )}
+            </AnimatePresence>
+          </Box>
+          <AnimatePresence mode="wait" initial={false}>
+            <m.span
+              key={deleteTimerDone ? 'done' : 'counting'}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Typography sx={{ fontSize: '0.813rem', fontWeight: 500, color: deleteTimerDone ? '#1340FF' : '#6B7280', fontFamily: FONT_FAMILY }}>
+                {deleteTimerDone ? 'Comment deleted.' : 'Comment has been deleted. Undo?'}
+              </Typography>
+            </m.span>
+          </AnimatePresence>
+        </Box>
+        <AnimatePresence initial={false}>
+          {!deleteTimerDone && (
+            <m.div
+              initial={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Button
+                data-interactive
+                size="small"
+                onClick={() => onUndoDelete?.(reply.id)}
+                sx={{
+                  fontSize: '0.75rem', fontWeight: 600, color: '#1340FF', bgcolor: 'white',
+                  border: '1px solid #E7E7E7', borderBottom: '2px solid #E7E7E7', borderRadius: 1,
+                  px: 1.5, py: 0.25, minWidth: 'unset', minHeight: 'unset', lineHeight: 1.4, textTransform: 'none',
+                  '&:hover': { bgcolor: '#F9F9F9', border: '1px solid #E7E7E7', borderBottom: '2px solid #E7E7E7' },
+                }}
+              >
+                Undo
+              </Button>
+            </m.div>
+          )}
+        </AnimatePresence>
+      </Box>
+    </m.div>
+  );
+
+  const cardContent = (
     <Box
       onMouseEnter={dismissHighlight}
       sx={{
@@ -363,15 +506,39 @@ const ReplyItem = ({ reply, isParentResolved, showNewHighlight, highlightCutoffM
         border: `1px solid ${showBlueBorder ? COLORS.primary : COLORS.border}`,
         borderRadius: '16px',
         p: { xs: '12px 16px', md: '16px 24px' },
-        ml: { xs: 3, md: 4 },
       }}
     >
-      <UserInfo
-        name={displayName}
-        roleLabel={displayRole}
-        photo={displayPhoto}
-        date={formatDate(reply.createdAt)}
-      />
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <UserInfo
+          name={displayName}
+          roleLabel={displayRole}
+          photo={displayPhoto}
+          date={!canDelete ? formatDate(reply.createdAt) : undefined}
+        />
+        {canDelete && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.25, flexShrink: 0 }}>
+            <DarkGlassTooltip title="Delete?" placement="top">
+              <IconButton
+                size="small"
+                onClick={() => onDelete(reply.id)}
+                sx={{
+                  p: 0.25,
+                  bgcolor: 'transparent',
+                  '&:hover': { bgcolor: 'transparent' },
+                  '&:hover img': {
+                    filter: 'brightness(0) saturate(100%) invert(41%) sepia(93%) saturate(1352%) hue-rotate(340deg) brightness(101%) contrast(101%)',
+                  },
+                }}
+              >
+                <Box component="img" src="/assets/icons/components/comment_delete.svg" sx={{ width: 16, height: 16 }} />
+              </IconButton>
+            </DarkGlassTooltip>
+            <Typography variant="caption" sx={{ fontFamily: FONT_FAMILY, fontSize: { xs: '0.688rem', md: '0.75rem' }, color: COLORS.textSecondary, whiteSpace: 'nowrap' }}>
+              {formatDate(reply.createdAt)}
+            </Typography>
+          </Box>
+        )}
+      </Box>
       <Typography
         variant="body2"
         sx={{
@@ -388,15 +555,34 @@ const ReplyItem = ({ reply, isParentResolved, showNewHighlight, highlightCutoffM
       </Typography>
     </Box>
   );
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {pendingDelete ? pendingDeleteContent : (
+        <m.div
+          key="reply-card"
+          initial={{ opacity: 0, x: -30, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, x: -30, filter: 'blur(4px)' }}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        >
+          {cardContent}
+        </m.div>
+      )}
+    </AnimatePresence>
+  );
 };
 
 ReplyItem.propTypes = {
   reply: PropTypes.shape({
+    id: PropTypes.string,
     content: PropTypes.string.isRequired,
     createdAt: PropTypes.string.isRequired,
     creatorName: PropTypes.string,
     creatorPhoto: PropTypes.string,
+    userId: PropTypes.string,
     user: PropTypes.shape({
+      id: PropTypes.string,
       name: PropTypes.string,
       role: PropTypes.string,
       photoURL: PropTypes.string,
@@ -410,29 +596,76 @@ ReplyItem.propTypes = {
   isParentResolved: PropTypes.bool,
   showNewHighlight: PropTypes.bool,
   highlightCutoffMs: PropTypes.number,
+  onDelete: PropTypes.func,
+  onUndoDelete: PropTypes.func,
+  pendingDelete: PropTypes.bool,
+  pendingDeleteStartTime: PropTypes.number,
+  currentUserId: PropTypes.string,
 };
 
-const RepliesList = ({ replies, isParentResolved, showNewHighlight, highlightCutoffMs }) => (
-  <Box sx={{ mt: { xs: 1.5, md: 2 }, position: 'relative' }}>
-    <ConnectorLine isVertical isSingleReply={replies.length === 1} />
-    {replies.map((reply, replyIndex) => (
-      <Box
-        key={reply.id ?? replyIndex}
-        sx={{
-          position: 'relative',
-          ml: { xs: 8, md: 10 },
-          mb: replyIndex < replies.length - 1 ? { xs: 1.5, md: 2 } : 0,
-        }}
-      >
-        <ConnectorLine />
-        <ReplyItem
-          reply={reply}
-          isParentResolved={isParentResolved}
-          showNewHighlight={showNewHighlight}
-          highlightCutoffMs={highlightCutoffMs}
-        />
-      </Box>
-    ))}
+const RepliesList = ({
+  replies,
+  isParentResolved,
+  showNewHighlight,
+  highlightCutoffMs,
+  onDelete,
+  onUndoDelete,
+  pendingDeletes,
+  currentUserId,
+}) => (
+  <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 }, mt: { xs: 1.5, md: 2 } }}>
+    <AnimatePresence initial={false}>
+      {replies.map((reply, replyIndex) => {
+        const isLast = replyIndex === replies.length - 1;
+        return (
+          <m.div
+            key={reply.id ?? replyIndex}
+            initial={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
+            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
+          >
+            <Box sx={{ position: 'relative', ml: { xs: 8, md: 10 } }}>
+              {/* Vertical line */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: { xs: -32, md: -42 },
+                  top: replyIndex === 0 ? -8 : { xs: -12, md: -16 },
+                  bottom: isLast ? 'calc(50% + 20px)' : 0,
+                  borderLeft: `2px solid ${COLORS.connector}`,
+                  zIndex: 0,
+                }}
+              />
+              {/* L-shaped connector */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: { xs: -32, md: -42 },
+                  top: replyIndex === 0 ? 0 : { xs: -12, md: -16 },
+                  bottom: 'calc(50% - 1px)',
+                  width: { xs: 24, md: 30 },
+                  borderLeft: `2px solid ${COLORS.connector}`,
+                  borderBottom: `2px solid ${COLORS.connector}`,
+                  borderBottomLeftRadius: 20,
+                  zIndex: 0,
+                }}
+              />
+              <ReplyItem
+                reply={reply}
+                isParentResolved={isParentResolved}
+                showNewHighlight={showNewHighlight}
+                highlightCutoffMs={highlightCutoffMs}
+                onDelete={onDelete}
+                onUndoDelete={onUndoDelete}
+                pendingDelete={pendingDeletes?.has(reply.id)}
+                pendingDeleteStartTime={pendingDeletes?.get(reply.id)?.startTime}
+                currentUserId={currentUserId}
+              />
+            </Box>
+          </m.div>
+        );
+      })}
+    </AnimatePresence>
   </Box>
 );
 
@@ -441,6 +674,10 @@ RepliesList.propTypes = {
   isParentResolved: PropTypes.bool,
   showNewHighlight: PropTypes.bool,
   highlightCutoffMs: PropTypes.number,
+  onDelete: PropTypes.func,
+  onUndoDelete: PropTypes.func,
+  pendingDeletes: PropTypes.instanceOf(Map),
+  currentUserId: PropTypes.string,
 };
 
 const FeedbackCard = ({
@@ -464,13 +701,20 @@ const FeedbackCard = ({
   useCommentSystem,
   commentHighlightCutoffMs,
   isPastVideo = false,
+  onDeleteReply,
+  onUndoDelete,
+  pendingDeletes,
+  currentUserId,
 }) => {
   const [highlightDismissed, setHighlightDismissed] = useState(false);
   const dismissHighlight = useCallback(() => setHighlightDismissed(true), []);
 
   const adminInfo = getAdminInfo(feedbackItem, submission);
   const replyCount = replies?.length ?? 0;
-  const showRepliesList = isResolved ? isRepliesListOpen && replyCount > 0 : replyCount > 0;
+  // Replies are shown/hidden via toggle for both resolved + latest comments
+  const showRepliesList = isRepliesListOpen && replyCount > 0;
+  const showRepliesToggle = replyCount > 0;
+  const repliesToggleColor = isRepliesListOpen ? COLORS.primary : '#919191';
 
   const qualifiesForHighlight = useMemo(
     () => shouldHighlightAsNew(feedbackItem.createdAt, isNewAndUnopened, commentHighlightCutoffMs),
@@ -555,47 +799,79 @@ const FeedbackCard = ({
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          {!isResolved && (
-            <Typography
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            {!isResolved && (
+              <Typography
+                component="button"
+                onClick={onToggleReply}
+                sx={{
+                  fontFamily: FONT_FAMILY,
+                  fontSize: { xs: '0.813rem', md: '0.875rem' },
+                  color: COLORS.textSecondary,
+                  fontWeight: 500,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  '&:hover': {
+                    color: COLORS.textTertiary,
+                  },
+                }}
+              >
+                Reply
+              </Typography>
+            )}
+          </Box>
+
+          {showRepliesToggle && (
+            <Box
               component="button"
-              onClick={onToggleReply}
-              sx={{
-                fontFamily: FONT_FAMILY,
-                fontSize: { xs: '0.813rem', md: '0.875rem' },
-                color: COLORS.textSecondary,
-                fontWeight: 500,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                '&:hover': {
-                  color: COLORS.textTertiary,
-                },
-              }}
-            >
-              Reply
-            </Typography>
-          )}
-          {isResolved && replyCount > 0 && (
-            <Typography
-              component="button"
+              type="button"
               onClick={onToggleViewReplies}
               sx={{
-                fontFamily: FONT_FAMILY,
-                fontSize: { xs: '0.813rem', md: '0.875rem' },
-                color: COLORS.primary,
-                fontWeight: 500,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.35,
                 background: 'none',
                 border: 'none',
-                cursor: 'pointer',
                 padding: 0,
-                textDecoration: 'underline',
+                cursor: 'pointer',
                 '&:hover': { opacity: 0.9 },
               }}
             >
-              {isRepliesListOpen ? 'Hide' : 'View'} {replyCount} {replyCount !== 1 ? 'Replies' : 'Reply'}
-            </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontFamily: FONT_FAMILY,
+                  fontSize: { xs: '0.875rem', md: '0.95rem' },
+                  fontWeight: 700,
+                  color: repliesToggleColor,
+                  lineHeight: 1,
+                  userSelect: 'none',
+                }}
+              >
+                {replyCount}
+              </Typography>
+              <Box
+                aria-label="Replies"
+                sx={{
+                  width: { xs: 20, md: 22 },
+                  height: { xs: 20, md: 22 },
+                  display: 'block',
+                  flexShrink: 0,
+                  bgcolor: repliesToggleColor,
+                  WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
+                  WebkitMaskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  WebkitMaskSize: 'contain',
+                  maskImage: 'url(/favicon/repliesicon.svg)',
+                  maskRepeat: 'no-repeat',
+                  maskPosition: 'center',
+                  maskSize: 'contain',
+                }}
+              />
+            </Box>
           )}
         </Box>
       </Box>
@@ -617,6 +893,10 @@ const FeedbackCard = ({
           isParentResolved={isResolved}
           showNewHighlight={isNewAndUnopened}
           highlightCutoffMs={commentHighlightCutoffMs}
+          onDelete={onDeleteReply}
+          onUndoDelete={onUndoDelete}
+          pendingDeletes={pendingDeletes}
+          currentUserId={currentUserId}
         />
       )}
     </Box>
@@ -644,6 +924,10 @@ FeedbackCard.propTypes = {
   useCommentSystem: PropTypes.bool,
   commentHighlightCutoffMs: PropTypes.number,
   isPastVideo: PropTypes.bool,
+  onDeleteReply: PropTypes.func,
+  onUndoDelete: PropTypes.func,
+  pendingDeletes: PropTypes.instanceOf(Map),
+  currentUserId: PropTypes.string,
 };
 
 // Main Component
@@ -661,7 +945,16 @@ const CreatorFeedbackModal = ({
 }) => {
   const currentVideoId = currentVideo?.id;
   const { socket } = useSocketContext();
-  
+  const { user } = useAuthContext();
+
+  // Delete reply state
+  const [pendingDeletes, setPendingDeletes] = useState(new Map());
+  const pendingDeletesRef = useRef(pendingDeletes);
+  useEffect(() => { pendingDeletesRef.current = pendingDeletes; }, [pendingDeletes]);
+  useEffect(() => () => {
+    pendingDeletesRef.current.forEach(({ timeoutId }) => clearTimeout(timeoutId));
+  }, []);
+
   // Use submissionComment system when available (admin feedback)
   const { comments, commentsLoading, commentsMutate } = useSubmissionComments(
     submission?.id,
@@ -669,7 +962,7 @@ const CreatorFeedbackModal = ({
   );
   
   // Legacy feedback system (fallback)
-  const allFeedback = submission?.feedback || [];
+  const allFeedback = useMemo(() => submission?.feedback || [], [submission?.feedback]);
   const feedbackToShow = currentVideoId
     ? allFeedback.filter((f) => !f.videoId || f.videoId === currentVideoId)
     : allFeedback;
@@ -719,16 +1012,23 @@ const CreatorFeedbackModal = ({
       }
     };
 
+    const handleDeletedEvent = (data) => {
+      if (data.submissionId === submission.id) {
+        if (pendingDeletesRef.current.has(data.commentId)) return;
+        commentsMutate();
+      }
+    };
+
     socket.on('v4:comment:added', handleCommentEvent);
     socket.on('v4:comment:updated', handleCommentEvent);
     socket.on('v4:comment:reply:added', handleCommentEvent);
-    socket.on('v4:comment:deleted', handleCommentEvent);
+    socket.on('v4:comment:deleted', handleDeletedEvent);
 
     return () => {
       socket.off('v4:comment:added', handleCommentEvent);
       socket.off('v4:comment:updated', handleCommentEvent);
       socket.off('v4:comment:reply:added', handleCommentEvent);
-      socket.off('v4:comment:deleted', handleCommentEvent);
+      socket.off('v4:comment:deleted', handleDeletedEvent);
     };
   }, [socket, submission?.id, commentsMutate, useCommentSystem]);
 
@@ -740,11 +1040,14 @@ const CreatorFeedbackModal = ({
   // Past-video pages: expand reply threads by default (archive / resolved design)
   useEffect(() => {
     if (!isPastVideo) return;
-    const items = useCommentSystem
-      ? comments || []
-      : currentVideoId
-        ? allFeedback.filter((f) => !f.videoId || f.videoId === currentVideoId)
-        : allFeedback;
+    let items;
+    if (useCommentSystem) {
+      items = comments || [];
+    } else if (currentVideoId) {
+      items = allFeedback.filter((f) => !f.videoId || f.videoId === currentVideoId);
+    } else {
+      items = allFeedback;
+    }
     if (!items.length) return;
     setViewRepliesOpen((prev) => {
       const next = { ...prev };
@@ -770,6 +1073,22 @@ const CreatorFeedbackModal = ({
     commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [displayItems?.length]);
 
+  // Default: if a top-level comment has replies, show them (latest + past pages).
+  // User can still hide via the replies icon toggle.
+  useEffect(() => {
+    if (!displayItems?.length) return;
+    setViewRepliesOpen((prev) => {
+      const next = { ...prev };
+      displayItems.forEach((item, index) => {
+        const hasReplies = (item.replies || []).length > 0;
+        if (hasReplies && next[index] === undefined) {
+          next[index] = true;
+        }
+      });
+      return next;
+    });
+  }, [displayItems]);
+
   const toggleReply = (index) => {
     setReplyStates((prev) => ({ ...prev, [index]: !prev[index] }));
   };
@@ -787,6 +1106,41 @@ const CreatorFeedbackModal = ({
     setReplyTexts((prev) => ({ ...prev, [index]: value }));
   };
 
+  const handleDeleteReply = useCallback((commentId) => {
+    if (pendingDeletesRef.current.has(commentId)) return;
+    const startTime = Date.now();
+    const timeoutId = setTimeout(async () => {
+      try {
+        await axiosInstance.delete(endpoints.submission.creator.v4.deleteComment(commentId));
+        await new Promise((r) => setTimeout(r, 1000));
+        commentsMutate();
+      } catch (error) {
+        console.error('Failed to delete reply:', error);
+        commentsMutate();
+      }
+      setPendingDeletes((prev) => {
+        const next = new Map(prev);
+        next.delete(commentId);
+        return next;
+      });
+    }, 6000);
+    setPendingDeletes((prev) => {
+      const next = new Map(prev);
+      next.set(commentId, { timeoutId, startTime });
+      return next;
+    });
+  }, [commentsMutate]);
+
+  const handleUndoDelete = useCallback((commentId) => {
+    setPendingDeletes((prev) => {
+      const entry = prev.get(commentId);
+      if (entry) clearTimeout(entry.timeoutId);
+      const next = new Map(prev);
+      next.delete(commentId);
+      return next;
+    });
+  }, []);
+
   const handleSendReply = async (index) => {
     const replyText = replyTexts[index];
     if (!replyText?.trim()) return;
@@ -802,17 +1156,17 @@ const CreatorFeedbackModal = ({
         const formatTimeForBackend = (seconds) => {
           const t = Math.floor(Math.max(0, Number(seconds) || 0));
           const h = Math.floor(t / 3600);
-          const m = Math.floor((t % 3600) / 60);
+          const min = Math.floor((t % 3600) / 60);
           const s = t % 60;
           if (h > 0) {
-            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            return `${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
           }
-          return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+          return `${min.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         };
 
         await axiosInstance.post(endpoints.submission.v4.comments(submission.id), {
           text: replyText,
-          parentId: item.id,
+          parentId: item.parentId || item.id,
           videoId: currentVideoId,
           timestamp: formatTimeForBackend(currentTime),
         });
@@ -954,12 +1308,12 @@ const CreatorFeedbackModal = ({
               const formatTimeForBackend = (seconds) => {
                 const t = Math.floor(Math.max(0, Number(seconds) || 0));
                 const h = Math.floor(t / 3600);
-                const m = Math.floor((t % 3600) / 60);
+                const min = Math.floor((t % 3600) / 60);
                 const s = t % 60;
                 if (h > 0) {
-                  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                  return `${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                 }
-                return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                return `${min.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
               };
 
               const baseResolved = useCommentSystem ? !!item.resolvedByUserId : item.resolved === true;
@@ -994,6 +1348,10 @@ const CreatorFeedbackModal = ({
                   useCommentSystem={useCommentSystem}
                   commentHighlightCutoffMs={commentHighlightCutoffMs}
                   isPastVideo={isPastVideo}
+                  onDeleteReply={useCommentSystem && !effectiveResolved ? handleDeleteReply : undefined}
+                  onUndoDelete={handleUndoDelete}
+                  pendingDeletes={pendingDeletes}
+                  currentUserId={user?.id}
                 />
               );
             })}
@@ -1078,6 +1436,7 @@ const CreatorFeedbackModal = ({
 
 CreatorFeedbackModal.propTypes = {
   submission: PropTypes.shape({
+    id: PropTypes.string,
     admin: PropTypes.object,
     user: PropTypes.shape({
       name: PropTypes.string,

@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -13,10 +13,12 @@ import {
   TextField,
   Typography,
   IconButton,
+  Collapse,
   useMediaQuery,
+  CircularProgress,
 } from '@mui/material';
 
-import axiosInstance from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -114,6 +116,9 @@ const CommentCard = ({
   isReply = false,
   isNew = false,
   onReplyClick,
+  replyCount = 0,
+  isRepliesOpen = false,
+  onToggleReplies,
   onAgree,
   onTimestampClick,
   currentUser,
@@ -122,6 +127,10 @@ const CommentCard = ({
   onSubmitReply,
   isLocked,
   isPastVideo,
+  onDelete,
+  onUndoDelete,
+  pendingDelete = false,
+  pendingDeleteStartTime,
 }) => {
   const isUser = currentUser?.id === comment?.user?.id;
   const hasAgreed = comment.agreedBy?.some((agreement) => agreement.userId === currentUser?.id);
@@ -129,6 +138,38 @@ const CommentCard = ({
   const displayPhoto = comment.user?.photoURL || comment?.user?.client?.company?.logo || null;
 
   const isDisabled = isLocked || isPastVideo;
+  const canDelete = !!onDelete && !isDisabled && !pendingDelete && isUser;
+
+  // Countdown for pending-delete state
+  const [deleteProgress, setDeleteProgress] = useState(100);
+  const deleteIntervalRef = useRef(null);
+  useEffect(() => {
+    if (!pendingDelete || !pendingDeleteStartTime) {
+      setDeleteProgress(100);
+      return undefined;
+    }
+    setDeleteProgress(100);
+    const startDelay = setTimeout(() => {
+      deleteIntervalRef.current = setInterval(() => {
+        const elapsed = Date.now() - pendingDeleteStartTime;
+        const remaining = 100 - (elapsed / 5000) * 100;
+        setDeleteProgress(remaining);
+        // -16 ≈ 800ms past zero (each 1% = 50ms)
+        if (remaining <= -16) {
+          clearInterval(deleteIntervalRef.current);
+          deleteIntervalRef.current = null;
+        }
+      }, 50);
+    }, 16);
+    return () => {
+      clearTimeout(startDelay);
+      if (deleteIntervalRef.current) clearInterval(deleteIntervalRef.current);
+    };
+  }, [pendingDelete, pendingDeleteStartTime]);
+
+  const deleteSecondsLeft = Math.max(0, Math.ceil((deleteProgress / 100) * 5));
+  const deleteRingValue = Math.max(0, deleteProgress);
+  const deleteTimerDone = deleteProgress <= -16;
 
   const [replyText, setReplyText] = useState('');
   const replyBoxRef = useRef(null);
@@ -168,7 +209,99 @@ const CommentCard = ({
     borderColor = '#1340FF';
   }
 
-  return (
+  const pendingDeleteContent = (
+    <m.div
+      key="pending-delete"
+      initial={{ opacity: 0, x: 30, filter: 'blur(4px)' }}
+      animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, x: 30, filter: 'blur(4px)' }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+    >
+      <Box
+        sx={{
+          bgcolor: 'white',
+          py: 1.25,
+          px: 1.5,
+          borderRadius: 2,
+          border: '1px solid #E5E7EB',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1.5,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <Box sx={{ position: 'relative', display: 'inline-flex', width: 32, height: 32, flexShrink: 0 }}>
+            <AnimatePresence mode="wait" initial={false}>
+              {deleteTimerDone ? (
+                <m.div
+                  key="tick"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Iconify icon="mdi:check" width={20} sx={{ color: '#1340FF' }} />
+                </m.div>
+              ) : (
+                <m.div
+                  key="ring"
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ position: 'absolute', inset: 0 }}
+                >
+                  <CircularProgress variant="determinate" value={100} size={32} thickness={4} sx={{ color: '#E0E7FF', position: 'absolute' }} />
+                  <CircularProgress variant="determinate" value={deleteRingValue} size={32} thickness={4} sx={{ color: '#1340FF' }} />
+                  <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography sx={{ fontSize: '0.688rem', fontWeight: 700, color: '#1340FF', lineHeight: 1 }}>
+                      {deleteSecondsLeft}
+                    </Typography>
+                  </Box>
+                </m.div>
+              )}
+            </AnimatePresence>
+          </Box>
+          <AnimatePresence mode="wait" initial={false}>
+            <m.span
+              key={deleteTimerDone ? 'done' : 'counting'}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Typography sx={{ fontSize: '0.813rem', fontWeight: 500, color: deleteTimerDone ? '#1340FF' : '#6B7280' }}>
+                {deleteTimerDone ? 'Comment deleted.' : 'Comment has been deleted. Undo?'}
+              </Typography>
+            </m.span>
+          </AnimatePresence>
+        </Box>
+        <AnimatePresence initial={false}>
+          {!deleteTimerDone && (
+            <m.div
+              initial={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Button
+                size="small"
+                onClick={() => onUndoDelete?.(comment.id)}
+                sx={{
+                  fontSize: '0.75rem', fontWeight: 600, color: '#1340FF', bgcolor: 'white',
+                  border: '1px solid #E7E7E7', borderBottom: '2px solid #E7E7E7', borderRadius: 1,
+                  px: 1.5, py: 0.25, minWidth: 'unset', minHeight: 'unset', lineHeight: 1.4, textTransform: 'none',
+                  '&:hover': { bgcolor: '#F9F9F9', border: '1px solid #E7E7E7', borderBottom: '2px solid #E7E7E7' },
+                }}
+              >
+                Undo
+              </Button>
+            </m.div>
+          )}
+        </AnimatePresence>
+      </Box>
+    </m.div>
+  );
+
+  const cardContent = (
     <Box
       sx={{
         bgcolor: bgColor,
@@ -191,7 +324,7 @@ const CommentCard = ({
         }}
       >
         <Box
-          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 0.5 }}
+          sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', px: 0.5 }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Avatar
@@ -231,9 +364,33 @@ const CommentCard = ({
               </Typography>
             </Box>
           </Box>
-          <Typography sx={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
-            {formatCommentDate(comment.createdAt)}
-          </Typography>
+          {canDelete ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.25, flexShrink: 0 }}>
+              <DarkGlassTooltip title="Delete?" placement="top">
+                <IconButton
+                  size="small"
+                  onClick={() => onDelete(comment.id)}
+                  sx={{
+                    p: 0.25,
+                    bgcolor: 'transparent',
+                    '&:hover': { bgcolor: 'transparent' },
+                    '&:hover img': {
+                      filter: 'brightness(0) saturate(100%) invert(41%) sepia(93%) saturate(1352%) hue-rotate(340deg) brightness(101%) contrast(101%)',
+                    },
+                  }}
+                >
+                  <Box component="img" src="/assets/icons/components/comment_delete.svg" sx={{ width: 16, height: 16 }} />
+                </IconButton>
+              </DarkGlassTooltip>
+              <Typography sx={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
+                {formatCommentDate(comment.createdAt)}
+              </Typography>
+            </Box>
+          ) : (
+            <Typography sx={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
+              {formatCommentDate(comment.createdAt)}
+            </Typography>
+          )}
         </Box>
 
         {/* Body */}
@@ -276,40 +433,92 @@ const CommentCard = ({
           }}
         >
           {!isDisabled && !isReply && (
-            <Typography
-              onClick={() => onReplyClick(comment.id)}
-              sx={{
-                fontSize: { xs: '0.75rem', md: '0.875rem' },
-                fontWeight: 600,
-                color: '#9CA3AF',
-                cursor: 'pointer',
-                padding: { xs: '2px 0', md: 0 },
-                '&:hover': { color: '#6B7280' },
-              }}
-            >
-              Reply
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+              <Typography
+                onClick={() => onReplyClick(comment.id)}
+                sx={{
+                  fontSize: { xs: '0.75rem', md: '0.875rem' },
+                  fontWeight: 600,
+                  color: '#9CA3AF',
+                  cursor: 'pointer',
+                  padding: { xs: '2px 0', md: 0 },
+                  '&:hover': { color: '#6B7280' },
+                }}
+              >
+                Reply
+              </Typography>
+            </Box>
           )}
 
           {!isUser && (
-            <DarkGlassTooltip title="I agree with this comment" placement="top">
-              <IconButton
-                size="small"
-                sx={{ p: { xs: 0.25, md: 0.5 } }}
-                onClick={() => onAgree(comment.id)}
-                disabled={isDisabled}
-              >
-                <Iconify
-                  icon={hasAgreed ? 'mdi:thumb-up' : 'mdi-light:thumb-up'}
-                  width={{ xs: 16, md: 20 }}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              {showRepliesToggle && (
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={onToggleReplies}
                   sx={{
-                    color: !isDisabled && hasAgreed ? '#1340FF' : '#9CA3AF',
-                    filter: 'drop-shadow(0px 0px 0.2px #000000)',
-                    opacity: isDisabled && !hasAgreed ? 0.6 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.35,
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    '&:hover': { opacity: 0.9 },
                   }}
-                />
-              </IconButton>
-            </DarkGlassTooltip>
+                >
+                  <Typography
+                    sx={{
+                      fontSize: { xs: '0.875rem', md: '0.95rem' },
+                      fontWeight: 700,
+                      color: repliesToggleColor,
+                      lineHeight: 1,
+                      userSelect: 'none',
+                    }}
+                  >
+                    {replyCount}
+                  </Typography>
+                  <Box
+                    aria-label="Replies"
+                    sx={{
+                      width: { xs: 20, md: 22 },
+                      height: { xs: 20, md: 22 },
+                      display: 'block',
+                      flexShrink: 0,
+                      bgcolor: repliesToggleColor,
+                      WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
+                      WebkitMaskRepeat: 'no-repeat',
+                      WebkitMaskPosition: 'center',
+                      WebkitMaskSize: 'contain',
+                      maskImage: 'url(/favicon/repliesicon.svg)',
+                      maskRepeat: 'no-repeat',
+                      maskPosition: 'center',
+                      maskSize: 'contain',
+                    }}
+                  />
+                </Box>
+              )}
+
+              <DarkGlassTooltip title="I agree with this comment" placement="top">
+                <IconButton
+                  size="small"
+                  sx={{ p: { xs: 0.25, md: 0.5 } }}
+                  onClick={() => onAgree(comment.id)}
+                  disabled={isDisabled}
+                >
+                  <Iconify
+                    icon={hasAgreed ? 'mdi:thumb-up' : 'mdi-light:thumb-up'}
+                    width={{ xs: 16, md: 20 }}
+                    sx={{
+                      color: !isDisabled && hasAgreed ? '#1340FF' : '#9CA3AF',
+                      filter: 'drop-shadow(0px 0px 0.2px #000000)',
+                      opacity: isDisabled && !hasAgreed ? 0.6 : 1,
+                    }}
+                  />
+                </IconButton>
+              </DarkGlassTooltip>
+            </Box>
           )}
         </Box>
       </Box>
@@ -403,6 +612,22 @@ const CommentCard = ({
       </AnimatePresence>
     </Box>
   );
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {pendingDelete ? pendingDeleteContent : (
+        <m.div
+          key="comment-card"
+          initial={{ opacity: 0, x: -30, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, x: -30, filter: 'blur(4px)' }}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        >
+          {cardContent}
+        </m.div>
+      )}
+    </AnimatePresence>
+  );
 };
 
 CommentCard.propTypes = {
@@ -435,6 +660,9 @@ CommentCard.propTypes = {
   isReply: PropTypes.bool,
   isNew: PropTypes.bool,
   onReplyClick: PropTypes.func,
+  replyCount: PropTypes.number,
+  isRepliesOpen: PropTypes.bool,
+  onToggleReplies: PropTypes.func,
   onAgree: PropTypes.func,
   onTimestampClick: PropTypes.func,
   currentUser: PropTypes.shape({
@@ -445,6 +673,10 @@ CommentCard.propTypes = {
   onSubmitReply: PropTypes.func,
   isLocked: PropTypes.bool,
   isPastVideo: PropTypes.bool,
+  onDelete: PropTypes.func,
+  onUndoDelete: PropTypes.func,
+  pendingDelete: PropTypes.bool,
+  pendingDeleteStartTime: PropTypes.number,
 };
 
 const ClientFeedbackModal = forwardRef(
@@ -472,8 +704,15 @@ const ClientFeedbackModal = forwardRef(
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     const [comments, setComments] = useState([]);
+    const [pendingDeletes, setPendingDeletes] = useState(new Map());
+    const pendingDeletesRef = useRef(pendingDeletes);
+    useEffect(() => { pendingDeletesRef.current = pendingDeletes; }, [pendingDeletes]);
+    useEffect(() => () => {
+      pendingDeletesRef.current.forEach(({ timeoutId }) => clearTimeout(timeoutId));
+    }, []);
     const [feedbackText, setFeedbackText] = useState('');
     const [replyingToId, setReplyingToId] = useState(null);
+    const [openRepliesById, setOpenRepliesById] = useState({});
 
     const [hasInteracted, setHasInteracted] = useState(false);
     const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
@@ -652,6 +891,8 @@ const ClientFeedbackModal = forwardRef(
 
       const handleCommentDeleted = (data) => {
         if (data.submissionId !== submissionId || data.videoId !== videoId) return;
+        // Skip if we're handling this delete locally (pending undo)
+        if (pendingDeletesRef.current.has(data.commentId)) return;
 
         setComments((prev) => {
           const filtered = prev.filter((c) => c.id !== data.commentId);
@@ -740,7 +981,48 @@ const ClientFeedbackModal = forwardRef(
       }
     };
 
-    // 3. Submits a reply originating from the inline Reply box
+    // 3. Delete comment/reply
+    const handleDeleteComment = useCallback((commentId) => {
+      if (pendingDeletesRef.current.has(commentId)) return;
+      const startTime = Date.now();
+      const timeoutId = setTimeout(async () => {
+        try {
+          await axiosInstance.delete(endpoints.submission.v4.deleteCommentByClient(commentId));
+          await new Promise((r) => setTimeout(r, 1000));
+          setComments((prev) => {
+            const filtered = prev.filter((c) => c.id !== commentId);
+            return filtered.map((c) => ({
+              ...c,
+              replies: c.replies?.filter((r) => r.id !== commentId) || [],
+            }));
+          });
+        } catch (error) {
+          console.error('Failed to delete comment:', error);
+        }
+        setPendingDeletes((prev) => {
+          const next = new Map(prev);
+          next.delete(commentId);
+          return next;
+        });
+      }, 6000);
+      setPendingDeletes((prev) => {
+        const next = new Map(prev);
+        next.set(commentId, { timeoutId, startTime });
+        return next;
+      });
+    }, []);
+
+    const handleUndoDelete = useCallback((commentId) => {
+      setPendingDeletes((prev) => {
+        const entry = prev.get(commentId);
+        if (entry) clearTimeout(entry.timeoutId);
+        const next = new Map(prev);
+        next.delete(commentId);
+        return next;
+      });
+    }, []);
+
+    // 4. Submits a reply originating from the inline Reply box
     const handleInlineReplySubmit = async (targetComment, text) => {
       try {
         // Find the ROOT parent to attach the reply to
@@ -871,9 +1153,15 @@ const ClientFeedbackModal = forwardRef(
             </Divider>
           )}
 
+          <AnimatePresence initial={false}>
           {comments.map((comment) => (
-            <Box
+            <m.div
               key={comment.id}
+              initial={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
+              transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
+            >
+            <Box
               ref={(el) => {
                 if (el) commentRefs.current[comment.id] = el;
               }}
@@ -884,6 +1172,11 @@ const ClientFeedbackModal = forwardRef(
                 currentUser={user}
                 isNew={comment.isNew}
                 onReplyClick={(id) => setReplyingToId(id)}
+                replyCount={(comment.replies || []).length}
+                isRepliesOpen={openRepliesById[comment.id] ?? true}
+                onToggleReplies={() =>
+                  setOpenRepliesById((prev) => ({ ...prev, [comment.id]: !(prev[comment.id] ?? true) }))
+                }
                 onAgree={handleAgree}
                 onTimestampClick={handleTimestampClick}
                 isReplying={replyingToId === comment.id}
@@ -891,19 +1184,33 @@ const ClientFeedbackModal = forwardRef(
                 onSubmitReply={handleInlineReplySubmit}
                 isLocked={effectiveIsLocked}
                 isPastVideo={isPastVideo}
+                onDelete={!effectiveIsLocked ? handleDeleteComment : undefined}
+                onUndoDelete={handleUndoDelete}
+                pendingDelete={pendingDeletes.has(comment.id)}
+                pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
               />
 
               {/* Threaded Replies */}
-              {comment.replies && comment.replies.length > 0 && (
+              <Collapse
+                in={(openRepliesById[comment.id] ?? true) && !!comment.replies && comment.replies.length > 0}
+                timeout="auto"
+                unmountOnExit
+              >
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
+                  <AnimatePresence initial={false}>
                   {comment.replies.map((reply, index) => {
                     const isLast = index === comment.replies.length - 1;
 
                     return (
-                      <Box
+                      <m.div
                         key={reply.id}
+                        initial={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
+                        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
+                      >
+                      <Box
                         ref={(el) => {
-                          if (el) commentRefs.current[reply.id] = el; // Corrected ref target
+                          if (el) commentRefs.current[reply.id] = el;
                         }}
                         sx={{ position: 'relative', ml: { xs: 5, md: 10 } }}
                       >
@@ -946,14 +1253,22 @@ const ClientFeedbackModal = forwardRef(
                           onSubmitReply={handleInlineReplySubmit}
                           isLocked={effectiveIsLocked}
                           isPastVideo={isPastVideo}
+                          onDelete={!effectiveIsLocked ? handleDeleteComment : undefined}
+                          onUndoDelete={handleUndoDelete}
+                          pendingDelete={pendingDeletes.has(reply.id)}
+                          pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
                         />
                       </Box>
+                      </m.div>
                     );
                   })}
+                  </AnimatePresence>
                 </Box>
-              )}
+              </Collapse>
             </Box>
+            </m.div>
           ))}
+          </AnimatePresence>
         </Box>
 
         {/* Bottom Sticky Input Section */}
@@ -1357,6 +1672,8 @@ ClientFeedbackModal.propTypes = {
   videoPage: PropTypes.number,
   setVideoPage: PropTypes.func,
   videoCount: PropTypes.number,
+  feedbackDeadline: PropTypes.string,
+  feedbackSentByName: PropTypes.string,
 };
 
 ClientFeedbackModal.displayName = 'ClientFeedbackModal';

@@ -1,11 +1,13 @@
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Avatar, Button, TextField, Typography, IconButton, CircularProgress } from '@mui/material';
+import { Box, Avatar, Button, TextField, Typography, IconButton, CircularProgress, Collapse } from '@mui/material';
 
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import { fDateTime } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -110,6 +112,9 @@ const CommentCard = ({
   comment,
   onTimestampClick,
   onReply,
+  replyCount = 0,
+  isRepliesOpen = false,
+  onToggleReplies,
   isReply = false,
   isPastVideo = false,
   onEdit,
@@ -124,11 +129,21 @@ const CommentCard = ({
   onInlineReplyTextChange,
   onSendInlineReply,
   onCancelInlineReply,
+  isAdminView = false,
+  onToggleVisibility,
+  isNew = false,
+  onDelete,
+  onUndoDelete,
+  pendingDelete = false,
+  pendingDeleteStartTime,
+  currentUserId,
 }) => {
   const isClientComment = comment.user?.role === 'client';
   const isEditedClientComment = isClientComment && !!comment.forwardedBy;
   const hasAgreed = comment.agreedBy?.length > 0;
   const isResolved = !!comment.resolvedByUserId || isPastVideo;
+  const showRepliesToggle = !isReply && replyCount > 0;
+  const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
 
   const [showOriginal, setShowOriginal] = useState(false);
 
@@ -157,8 +172,199 @@ const CommentCard = ({
 
   const hasLeftActions = !isPastVideo && ((!isReply && isClientComment && !isEditedClientComment) || (isClientComment && !isEditedClientComment && !!onEdit));
 
-  return (
+  const isVisible = comment.isVisibleToCreator !== false;
+  const isCreatorComment = comment.user?.role === 'creator';
+  const showVisibilityBorder = isAdminView && !isCreatorComment;
+
+  const canToggleVisibility = showVisibilityBorder && !isPastVideo && !!onToggleVisibility;
+
+  // Delete permission: own comment, not forwarded, not past video
+  const canDelete = !!onDelete && !isPastVideo && !pendingDelete
+    && comment.userId === currentUserId && !comment.forwardedByUserId;
+
+  // Countdown for pending-delete state
+  const [deleteProgress, setDeleteProgress] = useState(100);
+  const deleteIntervalRef = useRef(null);
+  useEffect(() => {
+    if (!pendingDelete || !pendingDeleteStartTime) {
+      setDeleteProgress(100);
+      return undefined;
+    }
+    setDeleteProgress(100);
+    // Wait one frame so the initial 100% state renders before countdown begins
+    const startDelay = setTimeout(() => {
+      deleteIntervalRef.current = setInterval(() => {
+        const elapsed = Date.now() - pendingDeleteStartTime;
+        const remaining = 100 - (elapsed / 5000) * 100;
+        setDeleteProgress(remaining);
+        // Stop once past the tick threshold to avoid unnecessary re-renders
+        // -16 ≈ 800ms past zero (each 1% = 50ms)
+        if (remaining <= -16) {
+          clearInterval(deleteIntervalRef.current);
+          deleteIntervalRef.current = null;
+        }
+      }, 50);
+    }, 16);
+    return () => {
+      clearTimeout(startDelay);
+      if (deleteIntervalRef.current) clearInterval(deleteIntervalRef.current);
+    };
+  }, [pendingDelete, pendingDeleteStartTime]);
+
+  const handleCardClick = (e) => {
+    if (!canToggleVisibility) return;
+    // Don't toggle when clicking interactive elements inside the card
+    if (e.target.closest('button, input, textarea, [role="button"], a, .MuiIconButton-root, [data-interactive]')) return;
+    onToggleVisibility(comment.id);
+  };
+
+  const deleteSecondsLeft = Math.max(0, Math.ceil((deleteProgress / 100) * 5));
+  const deleteRingValue = Math.max(0, deleteProgress);
+  // Show tick ~800ms after the ring reaches 0 (-16% ≈ 800ms past zero, each 1% = 50ms)
+  const deleteTimerDone = deleteProgress <= -16;
+
+  const pendingDeleteContent = (
+    <m.div
+      key="pending-delete"
+      initial={{ opacity: 0, x: 30, filter: 'blur(4px)' }}
+      animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, x: 30, filter: 'blur(4px)' }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+    >
+      <Box
+        sx={{
+          bgcolor: 'white',
+          py: 1.25,
+          px: 1.5,
+          borderRadius: 2,
+          border: '1px solid #EBEBEB',
+          boxShadow: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1.5,
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        {/* Left: ring/tick + message */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <Box sx={{ position: 'relative', display: 'inline-flex', width: 32, height: 32, flexShrink: 0 }}>
+            <AnimatePresence mode="wait" initial={false}>
+              {deleteTimerDone ? (
+                <m.div
+                  key="tick"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Iconify icon="mdi:check" width={20} sx={{ color: '#1340FF' }} />
+                </m.div>
+              ) : (
+                <m.div
+                  key="ring"
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ position: 'absolute', inset: 0 }}
+                >
+                  <CircularProgress
+                    variant="determinate"
+                    value={100}
+                    size={32}
+                    thickness={4}
+                    sx={{ color: '#E0E7FF', position: 'absolute' }}
+                  />
+                  <CircularProgress
+                    variant="determinate"
+                    value={deleteRingValue}
+                    size={32}
+                    thickness={4}
+                    sx={{ color: '#1340FF' }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Typography sx={{ fontSize: '0.688rem', fontWeight: 700, color: '#1340FF', lineHeight: 1 }}>
+                      {deleteSecondsLeft}
+                    </Typography>
+                  </Box>
+                </m.div>
+              )}
+            </AnimatePresence>
+          </Box>
+          <AnimatePresence mode="wait" initial={false}>
+            <m.span
+              key={deleteTimerDone ? 'done' : 'counting'}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Typography sx={{ fontSize: '0.813rem', fontWeight: 500, color: deleteTimerDone ? '#1340FF' : '#6B7280' }}>
+                {deleteTimerDone ? 'Comment deleted.' : 'Comment has been deleted. Undo?'}
+              </Typography>
+            </m.span>
+          </AnimatePresence>
+        </Box>
+
+        {/* Right: undo pill button — hidden once timer done */}
+        <AnimatePresence initial={false}>
+          {!deleteTimerDone && (
+            <m.div
+              initial={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Button
+                data-interactive
+                size="small"
+                onClick={() => onUndoDelete?.(comment.id)}
+                sx={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: '#1340FF',
+                  bgcolor: 'white',
+                  border: '1px solid #E7E7E7',
+                  borderBottom: '2px solid #E7E7E7',
+                  borderRadius: 1,
+                  px: 1.5,
+                  py: 0.25,
+                  minWidth: 'unset',
+                  minHeight: 'unset',
+                  lineHeight: 1.4,
+                  textTransform: 'none',
+                  '&:hover': {
+                    bgcolor: '#F9F9F9',
+                    border: '1px solid #E7E7E7',
+                    borderBottom: '2px solid #E7E7E7',
+                  },
+                }}
+              >
+                Undo
+              </Button>
+            </m.div>
+          )}
+        </AnimatePresence>
+      </Box>
+    </m.div>
+  );
+
+  const cardContent = (
     <Box
+      onClick={handleCardClick}
       sx={{
         bgcolor: 'white',
         p: hasLeftActions ? 2 : 1.5,
@@ -170,6 +376,16 @@ const CommentCard = ({
         gap: hasLeftActions ? 1.5 : 0.75,
         position: 'relative',
         zIndex: 1,
+        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+        ...(showVisibilityBorder && {
+          border: isVisible ? '1.5px solid #00A76F' : '1px solid #EBEBEB',
+        }),
+        ...(canToggleVisibility && {
+          cursor: 'pointer',
+          '&:hover': {
+            boxShadow: '0 0 0 1px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06)',
+          },
+        }),
       }}
     >
       {/* Header */}
@@ -199,18 +415,47 @@ const CommentCard = ({
               {!displayPhoto && displayName.charAt(0)}
             </Avatar>
             <Box>
-              <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#111827' }}>
-                {displayName}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#111827' }}>
+                  {displayName}
+                </Typography>
+                {isNew && (
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#FF5630', flexShrink: 0 }} />
+                )}
+              </Box>
               <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#9CA3AF' }}>
                 {displayRole}
               </Typography>
             </Box>
           </m.div>
         </AnimatePresence>
-        <Typography sx={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
-          {fDateTime(comment.createdAt)}
-        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.25 }}>
+          {canDelete && (
+            <DarkGlassTooltip title="Delete?" placement="top">
+              <IconButton
+                data-interactive
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(comment.id);
+                }}
+                sx={{
+                  p: 0.25,
+                  bgcolor: 'transparent',
+                  '&:hover': { bgcolor: 'transparent' },
+                  '&:hover img': {
+                    filter: 'brightness(0) saturate(100%) invert(41%) sepia(93%) saturate(1352%) hue-rotate(340deg) brightness(101%) contrast(101%)',
+                  },
+                }}
+              >
+                <Box component="img" src="/assets/icons/components/comment_delete.svg" sx={{ width: 16, height: 16 }} />
+              </IconButton>
+            </DarkGlassTooltip>
+          )}
+          <Typography sx={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
+            {fDateTime(comment.createdAt)}
+          </Typography>
+        </Box>
       </Box>
 
       {/* Body */}
@@ -314,7 +559,6 @@ const CommentCard = ({
                               }
                             }}
                             sx={{
-                              fontSize: { xs: '0.813rem', md: '0.875rem' },
                               color: '#1340FF',
                               fontWeight: 500,
                               fontSize: 'inherit',
@@ -406,6 +650,7 @@ const CommentCard = ({
           {hasLeftActions && <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             {!isReply && isClientComment && !isEditedClientComment && (
               <Typography
+                data-interactive
                 onClick={() => onReply?.(comment)}
                 sx={{
                   fontSize: '0.75rem',
@@ -420,6 +665,7 @@ const CommentCard = ({
             )}
             {isClientComment && !isEditedClientComment && onEdit && (
               <Typography
+                data-interactive
                 onClick={() => onEdit(comment)}
                 sx={{
                   fontSize: '0.75rem',
@@ -434,6 +680,55 @@ const CommentCard = ({
             )}
           </Box>}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+            {showRepliesToggle && (
+              <Box
+                data-interactive
+                component="button"
+                type="button"
+                onClick={() => onToggleReplies?.(comment.id)}
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.35,
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  mr: 0.5,
+                  '&:hover': { opacity: 0.9 },
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: { xs: '0.875rem', md: '0.95rem' },
+                    fontWeight: 700,
+                    color: repliesToggleColor,
+                    lineHeight: 1,
+                    userSelect: 'none',
+                  }}
+                >
+                  {replyCount}
+                </Typography>
+                <Box
+                  aria-label="Replies"
+                  sx={{
+                    width: { xs: 20, md: 22 },
+                    height: { xs: 20, md: 22 },
+                    display: 'block',
+                    flexShrink: 0,
+                    bgcolor: repliesToggleColor,
+                    WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
+                    WebkitMaskRepeat: 'no-repeat',
+                    WebkitMaskPosition: 'center',
+                    WebkitMaskSize: 'contain',
+                    maskImage: 'url(/favicon/repliesicon.svg)',
+                    maskRepeat: 'no-repeat',
+                    maskPosition: 'center',
+                    maskSize: 'contain',
+                  }}
+                />
+              </Box>
+            )}
             {isEditedClientComment && (
               <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
                 {!showOriginal && (
@@ -448,6 +743,7 @@ const CommentCard = ({
                   </Typography>
                 )}
                 <Typography
+                  data-interactive
                   onClick={() => setShowOriginal((prev) => !prev)}
                   sx={{
                     fontSize: '0.75rem',
@@ -604,12 +900,31 @@ const CommentCard = ({
       </AnimatePresence>
     </Box>
   );
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {pendingDelete ? pendingDeleteContent : (
+        <m.div
+          key="comment-card"
+          initial={{ opacity: 0, x: -30, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, x: -30, filter: 'blur(4px)' }}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        >
+          {cardContent}
+        </m.div>
+      )}
+    </AnimatePresence>
+  );
 };
 
 CommentCard.propTypes = {
   comment: PropTypes.object.isRequired,
   onTimestampClick: PropTypes.func,
   onReply: PropTypes.func,
+  replyCount: PropTypes.number,
+  isRepliesOpen: PropTypes.bool,
+  onToggleReplies: PropTypes.func,
   isReply: PropTypes.bool,
   isPastVideo: PropTypes.bool,
   onEdit: PropTypes.func,
@@ -624,6 +939,14 @@ CommentCard.propTypes = {
   onInlineReplyTextChange: PropTypes.func,
   onSendInlineReply: PropTypes.func,
   onCancelInlineReply: PropTypes.func,
+  isAdminView: PropTypes.bool,
+  onToggleVisibility: PropTypes.func,
+  isNew: PropTypes.bool,
+  onDelete: PropTypes.func,
+  onUndoDelete: PropTypes.func,
+  pendingDelete: PropTypes.bool,
+  pendingDeleteStartTime: PropTypes.number,
+  currentUserId: PropTypes.string,
 };
 
 // ---------------------------------------------------------------------------
@@ -647,9 +970,13 @@ export default function AdminFeedbackPanel({
   const [inlineReplyText, setInlineReplyText] = useState('');
   const [editTarget, setEditTarget] = useState(null); // { commentId, originalText }
   const [editText, setEditText] = useState('');
+  const [openRepliesById, setOpenRepliesById] = useState({});
   const [sending, setSending] = useState(false);
   const [confirmSendToClientOpen, setConfirmSendToClientOpen] = useState(false);
   const [confirmSendToCreatorOpen, setConfirmSendToCreatorOpen] = useState(false);
+  const [pendingDeletes, setPendingDeletes] = useState(new Map()); // commentId -> { timeoutId, startTime }
+
+  const { user } = useAuthContext();
 
   const { socket } = useSocketContext();
   const { comments, commentsLoading, commentsMutate } = useSubmissionComments(
@@ -659,6 +986,46 @@ export default function AdminFeedbackPanel({
 
   const commentsEndRef = useRef(null);
   const initialLoadDone = useRef(false);
+
+  // Track which client comments are new (created after admin last viewed)
+  const lastViewedRef = useRef(null);
+  useEffect(() => { lastViewedRef.current = null; }, [videoId]);
+  const newClientCommentIds = useMemo(() => {
+    if (!comments?.length || !videoId) return new Set();
+
+    const storageKey = `admin_lastViewed_${submission?.id}_${videoId}`;
+    if (lastViewedRef.current === null) {
+      const stored = localStorage.getItem(storageKey);
+      lastViewedRef.current = stored ? new Date(stored).getTime() : 0;
+    }
+    const cutoff = lastViewedRef.current;
+
+    const ids = new Set();
+    const checkComment = (c) => {
+      if (c.user?.role === 'client' && new Date(c.createdAt).getTime() > cutoff) {
+        ids.add(c.id);
+      }
+    };
+    comments.forEach((c) => {
+      checkComment(c);
+      (c.replies || []).forEach(checkComment);
+    });
+    return ids;
+  }, [comments, videoId, submission?.id]);
+
+  // Update last-viewed timestamp after comments load
+  useEffect(() => {
+    if (!commentsLoading && comments?.length && videoId && submission?.id) {
+      const storageKey = `admin_lastViewed_${submission.id}_${videoId}`;
+      // Small delay so the red dots are visible briefly before clearing on next load
+      const timer = setTimeout(() => {
+        localStorage.setItem(storageKey, new Date().toISOString());
+        lastViewedRef.current = Date.now();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [commentsLoading, comments?.length, videoId, submission?.id]);
 
   // Track page-slide direction: 1 = slide from right, -1 = slide from left
   const prevVideoPageRef = useRef(videoPage);
@@ -719,17 +1086,25 @@ export default function AdminFeedbackPanel({
       }
     };
 
+    const handleDeletedEvent = (data) => {
+      if (data.submissionId === submission.id) {
+        // Skip revalidation if we're still showing the pending-delete UI
+        if (pendingDeletesRef.current.has(data.commentId)) return;
+        commentsMutate();
+      }
+    };
+
     socket.on('v4:comment:added', handleCommentEvent);
     socket.on('v4:comment:updated', handleCommentEvent);
     socket.on('v4:comment:reply:added', handleCommentEvent);
-    socket.on('v4:comment:deleted', handleCommentEvent);
+    socket.on('v4:comment:deleted', handleDeletedEvent);
     socket.on('v4:comment:agreed', handleCommentEvent);
 
     return () => {
       socket.off('v4:comment:added', handleCommentEvent);
       socket.off('v4:comment:updated', handleCommentEvent);
       socket.off('v4:comment:reply:added', handleCommentEvent);
-      socket.off('v4:comment:deleted', handleCommentEvent);
+      socket.off('v4:comment:deleted', handleDeletedEvent);
       socket.off('v4:comment:agreed', handleCommentEvent);
     };
   }, [socket, submission?.id, commentsMutate]);
@@ -753,7 +1128,52 @@ export default function AdminFeedbackPanel({
     commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [comments?.length, commentsLoading, videoId]);
 
+  // Keep a ref in sync for cleanup on unmount
+  const pendingDeletesRef = useRef(pendingDeletes);
+  useEffect(() => { pendingDeletesRef.current = pendingDeletes; }, [pendingDeletes]);
+
+  // Clear pending delete timeouts on unmount
+  useEffect(() => () => {
+    pendingDeletesRef.current.forEach(({ timeoutId }) => clearTimeout(timeoutId));
+  }, []);
+
   // ---- Handlers ----
+
+  const handleDeleteComment = useCallback((commentId) => {
+    if (pendingDeletesRef.current.has(commentId)) return;
+    const startTime = Date.now();
+    const timeoutId = setTimeout(async () => {
+      try {
+        await axiosInstance.delete(endpoints.submission.v4.deleteComment(commentId));
+        // Hold the "Comment deleted." state for a bit before removing
+        await new Promise((r) => setTimeout(r, 1000));
+        commentsMutate();
+      } catch (error) {
+        enqueueSnackbar('Failed to delete comment', { variant: 'error' });
+        commentsMutate();
+      }
+      setPendingDeletes((prev) => {
+        const next = new Map(prev);
+        next.delete(commentId);
+        return next;
+      });
+    }, 6000);
+    setPendingDeletes((prev) => {
+      const next = new Map(prev);
+      next.set(commentId, { timeoutId, startTime });
+      return next;
+    });
+  }, [commentsMutate]);
+
+  const handleUndoDelete = useCallback((commentId) => {
+    setPendingDeletes((prev) => {
+      const entry = prev.get(commentId);
+      if (entry) clearTimeout(entry.timeoutId);
+      const next = new Map(prev);
+      next.delete(commentId);
+      return next;
+    });
+  }, []);
 
   const handleSendComment = async () => {
     const text = commentText.trim();
@@ -836,6 +1256,27 @@ export default function AdminFeedbackPanel({
     }
   };
 
+  const handleToggleVisibility = async (commentId) => {
+    // Optimistic update to prevent checkbox flicker
+    commentsMutate(
+      (prev) =>
+        prev?.map((c) => {
+          if (c.id === commentId) return { ...c, isVisibleToCreator: c.isVisibleToCreator === false };
+          const updatedReplies = c.replies?.map((r) =>
+            r.id === commentId ? { ...r, isVisibleToCreator: r.isVisibleToCreator === false } : r
+          );
+          return updatedReplies !== c.replies ? { ...c, replies: updatedReplies } : c;
+        }),
+      false
+    );
+    try {
+      await axiosInstance.patch(endpoints.submission.v4.toggleCommentVisibility(commentId));
+    } catch (error) {
+      enqueueSnackbar('Failed to update visibility', { variant: 'error' });
+      commentsMutate(); // revert by revalidating from server
+    }
+  };
+
   const handleSendToCreator = async () => {
     setSending(true);
     try {
@@ -872,6 +1313,12 @@ export default function AdminFeedbackPanel({
     submission?.status === 'PENDING_REVIEW' || submission?.status === 'CLIENT_FEEDBACK';
 
   const hasComments = comments.length > 0;
+
+  const visibleFeedbackCount = useMemo(() => comments.reduce((count, c) => {
+    const parentVisible = c.isVisibleToCreator !== false ? 1 : 0;
+    const repliesVisible = (c.replies || []).filter((r) => r.isVisibleToCreator !== false).length;
+    return count + parentVisible + repliesVisible;
+  }, 0), [comments]);
 
   // ---- Render ----
 
@@ -918,7 +1365,7 @@ export default function AdminFeedbackPanel({
               animate="center"
               exit="exit"
               transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}
             >
               {comments.length === 0 ? (
                 <Box
@@ -934,13 +1381,24 @@ export default function AdminFeedbackPanel({
                   </Typography>
                 </Box>
               ) : (
-                comments.map((comment) => (
-                  <div key={comment.id}>
+                <AnimatePresence initial={false}>
+                {comments.map((comment) => (
+                  <m.div
+                    key={comment.id}
+                    initial={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
+                    transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
+                  >
             {/* Parent Comment */}
             <CommentCard
               comment={comment}
               onTimestampClick={onSeek}
               onReply={handleReply}
+              replyCount={(comment.replies || []).length}
+              isRepliesOpen={openRepliesById[comment.id] ?? true}
+              onToggleReplies={(commentId) =>
+                setOpenRepliesById((prev) => ({ ...prev, [commentId]: !(prev[commentId] ?? true) }))
+              }
               isPastVideo={isPastVideo}
               onEdit={handleEdit}
               onToggleResolve={handleToggleResolve}
@@ -955,10 +1413,22 @@ export default function AdminFeedbackPanel({
               onInlineReplyTextChange={setInlineReplyText}
               onSendInlineReply={handleSendInlineReply}
               onCancelInlineReply={handleCancelInlineReply}
+              isAdminView
+              onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
+              isNew={newClientCommentIds.has(comment.id)}
+              onDelete={!isReadOnly ? handleDeleteComment : undefined}
+              onUndoDelete={handleUndoDelete}
+              pendingDelete={pendingDeletes.has(comment.id)}
+              pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
+              currentUserId={user?.id}
             />
 
             {/* Threaded Replies */}
-            {comment.replies && comment.replies.length > 0 && (
+            <Collapse
+              in={(openRepliesById[comment.id] ?? true) && !!comment.replies && comment.replies.length > 0}
+              timeout="auto"
+              unmountOnExit
+            >
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
                 {comment.replies.map((reply, index) => {
                   const isLast = index === comment.replies.length - 1;
@@ -1010,14 +1480,23 @@ export default function AdminFeedbackPanel({
                         onInlineReplyTextChange={setInlineReplyText}
                         onSendInlineReply={handleSendInlineReply}
                         onCancelInlineReply={handleCancelInlineReply}
+                        isAdminView
+                        onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
+                        isNew={newClientCommentIds.has(reply.id)}
+                        onDelete={!isReadOnly ? handleDeleteComment : undefined}
+                        onUndoDelete={handleUndoDelete}
+                        pendingDelete={pendingDeletes.has(reply.id)}
+                        pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
+                        currentUserId={user?.id}
                       />
                     </Box>
                   );
                 })}
               </Box>
             )}
-          </div>
-                ))
+          </m.div>
+                ))}
+                </AnimatePresence>
               )}
             </m.div>
           </AnimatePresence>
@@ -1026,11 +1505,32 @@ export default function AdminFeedbackPanel({
       </Box>
 
       {/* Input Section */}
+      {!isReadOnly && hasComments && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            px: 1.75,
+            py: 1,
+            flexShrink: 0,
+            bgcolor: '#F9FAFB',
+            border: '1px solid #E7E7E7',
+            borderBottom: 'none',
+            borderRadius: '12px 12px 0 0',
+          }}
+        >
+          <Box sx={{ width: 12, height: 12, borderRadius: 0.5, border: '2px solid #00A76F', flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '0.75rem', fontWeight: 500, color: '#374151', lineHeight: 1.4 }}>
+            Click any comment to include or exclude it from creator feedback
+          </Typography>
+        </Box>
+      )}
       {!isReadOnly && <Box
         sx={{
           flexShrink: 0,
           border: '1px solid #E7E7E7',
-          borderRadius: '12px',
+          borderRadius: hasComments ? '0 0 12px 12px' : '12px',
           bgcolor: '#FFFFFF',
           mb: 0.5,
         }}
@@ -1143,11 +1643,11 @@ export default function AdminFeedbackPanel({
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 1.5,
-          ...(!isReadOnly && { minHeight: 48 }),
+          minHeight: 48,
           flexShrink: 0,
           flexWrap: 'wrap',
-          pt: isReadOnly ? 0.5 : 1,
-          pb: isReadOnly ? 0 : 0.5,
+          pt: 1,
+          pb: 0.5,
         }}
       >
         {/* Pagination - left side (always occupies space) */}
@@ -1202,7 +1702,7 @@ export default function AdminFeedbackPanel({
               <Button
                 variant="contained"
                 disableElevation
-                disabled={!hasComments || sending}
+                disabled={!hasComments || sending || visibleFeedbackCount === 0}
                 onClick={() => setConfirmSendToCreatorOpen(true)}
                 sx={{
                   fontWeight: 700,
@@ -1273,7 +1773,7 @@ export default function AdminFeedbackPanel({
       <ConfirmDialogV2
         open={confirmSendToCreatorOpen}
         onClose={() => setConfirmSendToCreatorOpen(false)}
-        title="Send this Feedback to the Creator?"
+        title={`Send ${visibleFeedbackCount} ${visibleFeedbackCount === 1 ? 'Comment' : 'Comments'} to the Creator?`}
         emoji={
           <Avatar
             src="/assets/images/modals/sent_to_creator.png"
@@ -1292,7 +1792,7 @@ export default function AdminFeedbackPanel({
             }}
             disabled={sending}
           >
-            Send this Feedback to the Creator?
+            {`Send ${visibleFeedbackCount} ${visibleFeedbackCount === 1 ? 'Comment' : 'Comments'} to the Creator?`}
           </Button>
         }
       />
