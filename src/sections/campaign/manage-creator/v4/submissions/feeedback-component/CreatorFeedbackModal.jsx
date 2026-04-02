@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 
 import { m, AnimatePresence } from 'framer-motion';
 
-import { Box, Avatar, Button, TextField, Typography, IconButton, CircularProgress } from '@mui/material';
+import { Box, Avatar, Button, TextField, Typography, IconButton, CircularProgress, Collapse } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
@@ -258,6 +258,7 @@ const ReplyBox = ({ value, onChange, onCancel, onSend, currentTime, showTimestam
       </Box>
     )}
     <TextField
+      autoFocus
       multiline
       minRows={2}
       placeholder="Reply here..."
@@ -825,53 +826,55 @@ const FeedbackCard = ({
           </Box>
 
           {showRepliesToggle && (
-            <Box
-              component="button"
-              type="button"
-              onClick={onToggleViewReplies}
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.35,
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-                '&:hover': { opacity: 0.9 },
-              }}
-            >
-              <Typography
-                variant="caption"
+            <DarkGlassTooltip title={isRepliesListOpen ? 'Hide replies' : 'Show replies'} placement="top">
+              <Box
+                component="button"
+                type="button"
+                onClick={onToggleViewReplies}
                 sx={{
-                  fontFamily: FONT_FAMILY,
-                  fontSize: { xs: '0.875rem', md: '0.95rem' },
-                  fontWeight: 700,
-                  color: repliesToggleColor,
-                  lineHeight: 1,
-                  userSelect: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.35,
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  '&:hover': { opacity: 0.9 },
                 }}
               >
-                {replyCount}
-              </Typography>
-              <Box
-                aria-label="Replies"
-                sx={{
-                  width: { xs: 20, md: 22 },
-                  height: { xs: 20, md: 22 },
-                  display: 'block',
-                  flexShrink: 0,
-                  bgcolor: repliesToggleColor,
-                  WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
-                  WebkitMaskRepeat: 'no-repeat',
-                  WebkitMaskPosition: 'center',
-                  WebkitMaskSize: 'contain',
-                  maskImage: 'url(/favicon/repliesicon.svg)',
-                  maskRepeat: 'no-repeat',
-                  maskPosition: 'center',
-                  maskSize: 'contain',
-                }}
-              />
-            </Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontFamily: FONT_FAMILY,
+                    fontSize: { xs: '0.875rem', md: '0.95rem' },
+                    fontWeight: 700,
+                    color: repliesToggleColor,
+                    lineHeight: 1,
+                    userSelect: 'none',
+                  }}
+                >
+                  {replyCount}
+                </Typography>
+                <Box
+                  aria-label="Replies"
+                  sx={{
+                    width: { xs: 20, md: 22 },
+                    height: { xs: 20, md: 22 },
+                    display: 'block',
+                    flexShrink: 0,
+                    bgcolor: repliesToggleColor,
+                    WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
+                    WebkitMaskRepeat: 'no-repeat',
+                    WebkitMaskPosition: 'center',
+                    WebkitMaskSize: 'contain',
+                    maskImage: 'url(/favicon/repliesicon.svg)',
+                    maskRepeat: 'no-repeat',
+                    maskPosition: 'center',
+                    maskSize: 'contain',
+                  }}
+                />
+              </Box>
+            </DarkGlassTooltip>
           )}
         </Box>
       </Box>
@@ -883,22 +886,28 @@ const FeedbackCard = ({
           onCancel={onCancelReply}
           onSend={onSendReply}
           currentTime={currentTime}
-          showTimestamp={useCommentSystem}
+          showTimestamp={false}
         />
       )}
 
-      {showRepliesList && replies && replies.length > 0 && (
-        <RepliesList
-          replies={replies}
-          isParentResolved={isResolved}
-          showNewHighlight={isNewAndUnopened}
-          highlightCutoffMs={commentHighlightCutoffMs}
-          onDelete={onDeleteReply}
-          onUndoDelete={onUndoDelete}
-          pendingDeletes={pendingDeletes}
-          currentUserId={currentUserId}
-        />
-      )}
+      <Collapse
+        in={isRepliesListOpen && replyCount > 0}
+        timeout="auto"
+        unmountOnExit
+      >
+        {replies && replies.length > 0 && (
+          <RepliesList
+            replies={replies}
+            isParentResolved={isResolved}
+            showNewHighlight={isNewAndUnopened}
+            highlightCutoffMs={commentHighlightCutoffMs}
+            onDelete={onDeleteReply}
+            onUndoDelete={onUndoDelete}
+            pendingDeletes={pendingDeletes}
+            currentUserId={currentUserId}
+          />
+        )}
+      </Collapse>
     </Box>
   );
 };

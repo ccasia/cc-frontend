@@ -139,6 +139,8 @@ const CommentCard = ({
 
   const isDisabled = isLocked || isPastVideo;
   const canDelete = !!onDelete && !isDisabled && !pendingDelete && isUser;
+  const showRepliesToggle = !isReply && replyCount > 0;
+  const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
 
   // Countdown for pending-delete state
   const [deleteProgress, setDeleteProgress] = useState(100);
@@ -453,51 +455,53 @@ const CommentCard = ({
           {!isUser && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               {showRepliesToggle && (
-                <Box
-                  component="button"
-                  type="button"
-                  onClick={onToggleReplies}
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 0.35,
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
-                    cursor: 'pointer',
-                    '&:hover': { opacity: 0.9 },
-                  }}
-                >
-                  <Typography
+                <DarkGlassTooltip title={isRepliesOpen ? 'Hide replies' : 'Show replies'} placement="top">
+                  <Box
+                    component="button"
+                    type="button"
+                    onClick={onToggleReplies}
                     sx={{
-                      fontSize: { xs: '0.875rem', md: '0.95rem' },
-                      fontWeight: 700,
-                      color: repliesToggleColor,
-                      lineHeight: 1,
-                      userSelect: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.35,
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      '&:hover': { opacity: 0.9 },
                     }}
                   >
-                    {replyCount}
-                  </Typography>
-                  <Box
-                    aria-label="Replies"
-                    sx={{
-                      width: { xs: 20, md: 22 },
-                      height: { xs: 20, md: 22 },
-                      display: 'block',
-                      flexShrink: 0,
-                      bgcolor: repliesToggleColor,
-                      WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
-                      WebkitMaskRepeat: 'no-repeat',
-                      WebkitMaskPosition: 'center',
-                      WebkitMaskSize: 'contain',
-                      maskImage: 'url(/favicon/repliesicon.svg)',
-                      maskRepeat: 'no-repeat',
-                      maskPosition: 'center',
-                      maskSize: 'contain',
-                    }}
-                  />
-                </Box>
+                    <Typography
+                      sx={{
+                        fontSize: { xs: '0.875rem', md: '0.95rem' },
+                        fontWeight: 700,
+                        color: repliesToggleColor,
+                        lineHeight: 1,
+                        userSelect: 'none',
+                      }}
+                    >
+                      {replyCount}
+                    </Typography>
+                    <Box
+                      aria-label="Replies"
+                      sx={{
+                        width: { xs: 20, md: 22 },
+                        height: { xs: 20, md: 22 },
+                        display: 'block',
+                        flexShrink: 0,
+                        bgcolor: repliesToggleColor,
+                        WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
+                        WebkitMaskRepeat: 'no-repeat',
+                        WebkitMaskPosition: 'center',
+                        WebkitMaskSize: 'contain',
+                        maskImage: 'url(/favicon/repliesicon.svg)',
+                        maskRepeat: 'no-repeat',
+                        maskPosition: 'center',
+                        maskSize: 'contain',
+                      }}
+                    />
+                  </Box>
+                </DarkGlassTooltip>
               )}
 
               <DarkGlassTooltip title="I agree with this comment" placement="top">
@@ -716,6 +720,9 @@ const ClientFeedbackModal = forwardRef(
 
     const [hasInteracted, setHasInteracted] = useState(false);
     const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
+
+    const COUNTDOWN_SECONDS = 24 * 60 * 60;
+    const STORAGE_KEY_END_TIME = `send_timer_end_${submissionId}_${videoId}`;
 
     const [timeLeft, setTimeLeft] = useState(() => {
       if (!feedbackDeadline) return 0;
@@ -941,7 +948,7 @@ const ClientFeedbackModal = forwardRef(
     }, [socket, submissionId, videoId, user.id]);
 
     const scrollToElement = (id) => {
-      const element = commentRefs.current[id];
+      const element = commentRefs.current?.[id];
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
@@ -1079,7 +1086,7 @@ const ClientFeedbackModal = forwardRef(
 
         setHasInteracted(true);
 
-        const newComment = { ...data, isNew: true };
+        const newComment = { ...data, replies: data.replies || [], isNew: true };
 
         setComments((prev) => [...prev, newComment]);
         setFeedbackText('');
