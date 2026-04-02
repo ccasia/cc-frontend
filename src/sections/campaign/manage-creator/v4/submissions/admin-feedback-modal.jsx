@@ -3,7 +3,7 @@ import { enqueueSnackbar } from 'notistack';
 import { m, AnimatePresence } from 'framer-motion';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Avatar, Button, TextField, Typography, IconButton, CircularProgress } from '@mui/material';
+import { Box, Avatar, Button, TextField, Typography, IconButton, CircularProgress, Collapse } from '@mui/material';
 
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 
@@ -112,6 +112,9 @@ const CommentCard = ({
   comment,
   onTimestampClick,
   onReply,
+  replyCount = 0,
+  isRepliesOpen = false,
+  onToggleReplies,
   isReply = false,
   isPastVideo = false,
   onEdit,
@@ -139,6 +142,8 @@ const CommentCard = ({
   const isEditedClientComment = isClientComment && !!comment.forwardedBy;
   const hasAgreed = comment.agreedBy?.length > 0;
   const isResolved = !!comment.resolvedByUserId || isPastVideo;
+  const showRepliesToggle = !isReply && replyCount > 0;
+  const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
 
   const [showOriginal, setShowOriginal] = useState(false);
 
@@ -675,6 +680,55 @@ const CommentCard = ({
             )}
           </Box>}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+            {showRepliesToggle && (
+              <Box
+                data-interactive
+                component="button"
+                type="button"
+                onClick={() => onToggleReplies?.(comment.id)}
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.35,
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  mr: 0.5,
+                  '&:hover': { opacity: 0.9 },
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: { xs: '0.875rem', md: '0.95rem' },
+                    fontWeight: 700,
+                    color: repliesToggleColor,
+                    lineHeight: 1,
+                    userSelect: 'none',
+                  }}
+                >
+                  {replyCount}
+                </Typography>
+                <Box
+                  aria-label="Replies"
+                  sx={{
+                    width: { xs: 20, md: 22 },
+                    height: { xs: 20, md: 22 },
+                    display: 'block',
+                    flexShrink: 0,
+                    bgcolor: repliesToggleColor,
+                    WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
+                    WebkitMaskRepeat: 'no-repeat',
+                    WebkitMaskPosition: 'center',
+                    WebkitMaskSize: 'contain',
+                    maskImage: 'url(/favicon/repliesicon.svg)',
+                    maskRepeat: 'no-repeat',
+                    maskPosition: 'center',
+                    maskSize: 'contain',
+                  }}
+                />
+              </Box>
+            )}
             {isEditedClientComment && (
               <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
                 {!showOriginal && (
@@ -868,6 +922,9 @@ CommentCard.propTypes = {
   comment: PropTypes.object.isRequired,
   onTimestampClick: PropTypes.func,
   onReply: PropTypes.func,
+  replyCount: PropTypes.number,
+  isRepliesOpen: PropTypes.bool,
+  onToggleReplies: PropTypes.func,
   isReply: PropTypes.bool,
   isPastVideo: PropTypes.bool,
   onEdit: PropTypes.func,
@@ -913,6 +970,7 @@ export default function AdminFeedbackPanel({
   const [inlineReplyText, setInlineReplyText] = useState('');
   const [editTarget, setEditTarget] = useState(null); // { commentId, originalText }
   const [editText, setEditText] = useState('');
+  const [openRepliesById, setOpenRepliesById] = useState({});
   const [sending, setSending] = useState(false);
   const [confirmSendToClientOpen, setConfirmSendToClientOpen] = useState(false);
   const [confirmSendToCreatorOpen, setConfirmSendToCreatorOpen] = useState(false);
@@ -1336,6 +1394,11 @@ export default function AdminFeedbackPanel({
               comment={comment}
               onTimestampClick={onSeek}
               onReply={handleReply}
+              replyCount={(comment.replies || []).length}
+              isRepliesOpen={openRepliesById[comment.id] ?? true}
+              onToggleReplies={(commentId) =>
+                setOpenRepliesById((prev) => ({ ...prev, [commentId]: !(prev[commentId] ?? true) }))
+              }
               isPastVideo={isPastVideo}
               onEdit={handleEdit}
               onToggleResolve={handleToggleResolve}
@@ -1361,7 +1424,11 @@ export default function AdminFeedbackPanel({
             />
 
             {/* Threaded Replies */}
-            {comment.replies && comment.replies.length > 0 && (
+            <Collapse
+              in={(openRepliesById[comment.id] ?? true) && !!comment.replies && comment.replies.length > 0}
+              timeout="auto"
+              unmountOnExit
+            >
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
                 {comment.replies.map((reply, index) => {
                   const isLast = index === comment.replies.length - 1;
