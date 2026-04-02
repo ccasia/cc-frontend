@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 
-import { Box, Avatar, TextField, Typography, IconButton } from '@mui/material';
+import { Box, Avatar, TextField, Typography, IconButton, Collapse } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
@@ -470,7 +470,10 @@ const FeedbackCard = ({
 
   const adminInfo = getAdminInfo(feedbackItem, submission);
   const replyCount = replies?.length ?? 0;
-  const showRepliesList = isResolved ? isRepliesListOpen && replyCount > 0 : replyCount > 0;
+  // Replies are shown/hidden via toggle for both resolved + latest comments
+  const showRepliesList = isRepliesListOpen && replyCount > 0;
+  const showRepliesToggle = replyCount > 0;
+  const repliesToggleColor = isRepliesListOpen ? COLORS.primary : '#919191';
 
   const qualifiesForHighlight = useMemo(
     () => shouldHighlightAsNew(feedbackItem.createdAt, isNewAndUnopened, commentHighlightCutoffMs),
@@ -555,47 +558,79 @@ const FeedbackCard = ({
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          {!isResolved && (
-            <Typography
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            {!isResolved && (
+              <Typography
+                component="button"
+                onClick={onToggleReply}
+                sx={{
+                  fontFamily: FONT_FAMILY,
+                  fontSize: { xs: '0.813rem', md: '0.875rem' },
+                  color: COLORS.textSecondary,
+                  fontWeight: 500,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  '&:hover': {
+                    color: COLORS.textTertiary,
+                  },
+                }}
+              >
+                Reply
+              </Typography>
+            )}
+          </Box>
+
+          {showRepliesToggle && (
+            <Box
               component="button"
-              onClick={onToggleReply}
-              sx={{
-                fontFamily: FONT_FAMILY,
-                fontSize: { xs: '0.813rem', md: '0.875rem' },
-                color: COLORS.textSecondary,
-                fontWeight: 500,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                '&:hover': {
-                  color: COLORS.textTertiary,
-                },
-              }}
-            >
-              Reply
-            </Typography>
-          )}
-          {isResolved && replyCount > 0 && (
-            <Typography
-              component="button"
+              type="button"
               onClick={onToggleViewReplies}
               sx={{
-                fontFamily: FONT_FAMILY,
-                fontSize: { xs: '0.813rem', md: '0.875rem' },
-                color: COLORS.primary,
-                fontWeight: 500,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.35,
                 background: 'none',
                 border: 'none',
-                cursor: 'pointer',
                 padding: 0,
-                textDecoration: 'underline',
+                cursor: 'pointer',
                 '&:hover': { opacity: 0.9 },
               }}
             >
-              {isRepliesListOpen ? 'Hide' : 'View'} {replyCount} {replyCount !== 1 ? 'Replies' : 'Reply'}
-            </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontFamily: FONT_FAMILY,
+                  fontSize: { xs: '0.875rem', md: '0.95rem' },
+                  fontWeight: 700,
+                  color: repliesToggleColor,
+                  lineHeight: 1,
+                  userSelect: 'none',
+                }}
+              >
+                {replyCount}
+              </Typography>
+              <Box
+                aria-label="Replies"
+                sx={{
+                  width: { xs: 20, md: 22 },
+                  height: { xs: 20, md: 22 },
+                  display: 'block',
+                  flexShrink: 0,
+                  bgcolor: repliesToggleColor,
+                  WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
+                  WebkitMaskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  WebkitMaskSize: 'contain',
+                  maskImage: 'url(/favicon/repliesicon.svg)',
+                  maskRepeat: 'no-repeat',
+                  maskPosition: 'center',
+                  maskSize: 'contain',
+                }}
+              />
+            </Box>
           )}
         </Box>
       </Box>
@@ -611,14 +646,20 @@ const FeedbackCard = ({
         />
       )}
 
-      {showRepliesList && replies && replies.length > 0 && (
-        <RepliesList
-          replies={replies}
-          isParentResolved={isResolved}
-          showNewHighlight={isNewAndUnopened}
-          highlightCutoffMs={commentHighlightCutoffMs}
-        />
-      )}
+      <Collapse
+        in={showRepliesList && replies && replies.length > 0}
+        timeout="auto"
+        unmountOnExit
+      >
+        <Box sx={{ mt: { xs: 1.5, md: 2 } }}>
+          <RepliesList
+            replies={replies}
+            isParentResolved={isResolved}
+            showNewHighlight={isNewAndUnopened}
+            highlightCutoffMs={commentHighlightCutoffMs}
+          />
+        </Box>
+      </Collapse>
     </Box>
   );
 };
@@ -769,6 +810,22 @@ const CreatorFeedbackModal = ({
     }
     commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [displayItems?.length]);
+
+  // Default: if a top-level comment has replies, show them (latest + past pages).
+  // User can still hide via the replies icon toggle.
+  useEffect(() => {
+    if (!displayItems?.length) return;
+    setViewRepliesOpen((prev) => {
+      const next = { ...prev };
+      displayItems.forEach((item, index) => {
+        const hasReplies = (item.replies || []).length > 0;
+        if (hasReplies && next[index] === undefined) {
+          next[index] = true;
+        }
+      });
+      return next;
+    });
+  }, [displayItems]);
 
   const toggleReply = (index) => {
     setReplyStates((prev) => ({ ...prev, [index]: !prev[index] }));
