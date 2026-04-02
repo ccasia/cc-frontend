@@ -549,7 +549,7 @@ const CommentCard = ({
                     const displayText = showingOriginal && comment.originalText ? comment.originalText : comment.text;
                     return (
                       <>
-                        {displayTimestamp && (
+                        {displayTimestamp && comment.user?.role !== 'creator' && (
                           <Typography
                             component="span"
                             onClick={(e) => {
@@ -681,53 +681,55 @@ const CommentCard = ({
           </Box>}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
             {showRepliesToggle && (
-              <Box
-                data-interactive
-                component="button"
-                type="button"
-                onClick={() => onToggleReplies?.(comment.id)}
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 0.35,
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  cursor: 'pointer',
-                  mr: 0.5,
-                  '&:hover': { opacity: 0.9 },
-                }}
-              >
-                <Typography
+              <DarkGlassTooltip title={isRepliesOpen ? 'Hide replies' : 'Show replies'} placement="top">
+                <Box
+                  data-interactive
+                  component="button"
+                  type="button"
+                  onClick={() => onToggleReplies?.(comment.id)}
                   sx={{
-                    fontSize: { xs: '0.875rem', md: '0.95rem' },
-                    fontWeight: 700,
-                    color: repliesToggleColor,
-                    lineHeight: 1,
-                    userSelect: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.35,
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    mr: 0.5,
+                    '&:hover': { opacity: 0.9 },
                   }}
                 >
-                  {replyCount}
-                </Typography>
-                <Box
-                  aria-label="Replies"
-                  sx={{
-                    width: { xs: 20, md: 22 },
-                    height: { xs: 20, md: 22 },
-                    display: 'block',
-                    flexShrink: 0,
-                    bgcolor: repliesToggleColor,
-                    WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
-                    WebkitMaskRepeat: 'no-repeat',
-                    WebkitMaskPosition: 'center',
-                    WebkitMaskSize: 'contain',
-                    maskImage: 'url(/favicon/repliesicon.svg)',
-                    maskRepeat: 'no-repeat',
-                    maskPosition: 'center',
-                    maskSize: 'contain',
-                  }}
-                />
-              </Box>
+                  <Typography
+                    sx={{
+                      fontSize: { xs: '0.875rem', md: '0.95rem' },
+                      fontWeight: 700,
+                      color: repliesToggleColor,
+                      lineHeight: 1,
+                      userSelect: 'none',
+                    }}
+                  >
+                    {replyCount}
+                  </Typography>
+                  <Box
+                    aria-label="Replies"
+                    sx={{
+                      width: { xs: 20, md: 22 },
+                      height: { xs: 20, md: 22 },
+                      display: 'block',
+                      flexShrink: 0,
+                      bgcolor: repliesToggleColor,
+                      WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
+                      WebkitMaskRepeat: 'no-repeat',
+                      WebkitMaskPosition: 'center',
+                      WebkitMaskSize: 'contain',
+                      maskImage: 'url(/favicon/repliesicon.svg)',
+                      maskRepeat: 'no-repeat',
+                      maskPosition: 'center',
+                      maskSize: 'contain',
+                    }}
+                  />
+                </Box>
+              </DarkGlassTooltip>
             )}
             {isEditedClientComment && (
               <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
@@ -1493,7 +1495,7 @@ export default function AdminFeedbackPanel({
                   );
                 })}
               </Box>
-            )}
+            </Collapse>
           </m.div>
                 ))}
                 </AnimatePresence>

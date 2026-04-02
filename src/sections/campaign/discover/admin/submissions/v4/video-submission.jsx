@@ -28,6 +28,8 @@ import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissi
 import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
 import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
 
+import TypographyMotion from 'src/components/animate/motion-typography';
+
 import FeedbackLogs from './shared/feedback-logs';
 import FeedbackSection from './shared/feedback-section';
 import FeedbackActions from './shared/feedback-actions';
@@ -35,7 +37,6 @@ import PostingLinkSection from './shared/posting-link-section';
 import useCaptionOverflow from './shared/use-caption-overflow';
 import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
-import TypographyMotion from 'src/components/animate/motion-typography';
 
 export default function V4VideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
