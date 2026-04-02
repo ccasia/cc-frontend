@@ -91,9 +91,7 @@ export default function AuthClassicLayout({ children, image, title }) {
       {renderLogo}
 
       {/* {renderOptions} */}
-
       {mdUp && renderSection}
-
       {renderContent}
     </Stack>
   );
