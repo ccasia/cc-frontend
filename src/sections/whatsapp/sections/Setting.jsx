@@ -24,9 +24,8 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import BoxMotion from '../components/BoxMotion';
-import useSettingStore from '../hooks/use-setting-store';
-// eslint-disable-next-line import/no-unresolved
-import useGetWhatsappSetting from '../hooks/use-get-whatsapp-setting';
+import useGetWhatsappSetting from '../hooks/use-get-whatsapp-setting.js';
+import useSettingStore, { useSettingActions } from '../hooks/use-setting-store';
 
 const whatsappSettingSchema = object({
   isFeatureEnabled: boolean().required(),
@@ -40,8 +39,7 @@ const Setting = () => {
   const { data, isLoading, mutate } = useGetWhatsappSetting();
 
   const settingState = useSettingStore((state) => state.data);
-  const toggle = useSettingStore((state) => state.toggleFeature);
-  const setData = useSettingStore((state) => state.setData);
+  const { toggle, setData } = useSettingActions();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -62,8 +60,9 @@ const Setting = () => {
   const onToggleChange = async () => {
     const newValue = !settingState.isFeatureEnabled;
     toggle();
+
     try {
-      await axiosInstance.post('/api/system-settings/whatsapp', {
+      await axiosInstance.patch('/api/system-settings/whatsapp/toggle', {
         ...settingState,
         isFeatureEnabled: newValue,
       });
@@ -89,7 +88,9 @@ const Setting = () => {
   }, [data, setData]);
 
   if (isLoading) {
-    return <Skeleton sx={{ borderRadius: 0.6, height: 500 }} />;
+    return (
+      <Skeleton sx={{ borderRadius: 0.6, height: settingState.isFeatureEnabled ? 500 : '100%' }} />
+    );
   }
 
   return (

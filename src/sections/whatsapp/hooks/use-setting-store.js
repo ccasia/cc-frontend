@@ -15,6 +15,7 @@
  */
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 
 const useSettingStore = create(
   /** @param {(partial: Partial<SettingStore>) => void} set */
@@ -28,13 +29,15 @@ const useSettingStore = create(
     },
     toggleFeature: () =>
       set((state) => ({
-        data: {
-          ...state.data,
-          isFeatureEnabled: !state.data.isFeatureEnabled,
-        },
+        data: { ...state.data, isFeatureEnabled: !state.data.isFeatureEnabled },
       })),
     setData: (name, value) => set((state) => ({ data: { ...state.data, [name]: value } })),
   })
 );
+
+export const useSettingActions = () =>
+  useSettingStore(
+    useShallow((state) => ({ toggle: state.toggleFeature, setData: state.setData }))
+  );
 
 export default useSettingStore;

@@ -1,17 +1,15 @@
 import useSWR from 'swr';
-import { useMemo } from 'react';
 
 import { fetcher } from 'src/utils/axios';
 
 const useGetWhatsappSetting = () => {
-  const { data, isLoading, mutate } = useSWR('/api/system-settings/whatsapp', fetcher);
+  const { data, isLoading, error, mutate } = useSWR('/api/system-settings/whatsapp', fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
 
-  const memoizedValue = useMemo(
-    () => ({ data: data?.data, isLoading, mutate }),
-    [data, isLoading, mutate]
-  );
-
-  return memoizedValue;
+  return { data: data?.data, isLoading, error, mutate };
 };
 
 export default useGetWhatsappSetting;

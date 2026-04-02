@@ -1,14 +1,15 @@
 import useSWR from 'swr';
-import { useMemo } from 'react';
 
 import { fetcher } from 'src/utils/axios';
 
 const useGetMessageInsights = () => {
-  const { data, isLoading } = useSWR('/api/system-settings/whatsapp-insight', fetcher);
+  const { data, isLoading, error } = useSWR('/api/system-settings/whatsapp-insight', fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
 
-  const memoizedValue = useMemo(() => ({ data, isLoading }), [data, isLoading]);
-
-  return memoizedValue;
+  return { data: data?.data, isLoading, error };
 };
 
 export default useGetMessageInsights;
