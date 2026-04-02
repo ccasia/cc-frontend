@@ -459,6 +459,7 @@ export default function MobileVideoSubmission({
           videoCount,
           isPastVideo,
           submission: modalSubmission,
+          ref: feedbackRef,
         }) => {
           const currentModalVideo =
             modalSubmission?.video?.find((v) => v.id === modalVideoId) ||
@@ -474,6 +475,7 @@ export default function MobileVideoSubmission({
 
           return (
             <ClientFeedbackModal
+              ref={feedbackRef}
               submissionId={submission.id}
               videoId={modalVideoId || clientVideo?.id || video?.id}
               currentVideoTime={formatModalTime(modalCurrentTime)}

@@ -1106,6 +1106,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           videoCount,
           isPastVideo,
           submission: modalSubmission,
+          ref: feedbackRef,
         }) => {
           const currentModalVideo =
             modalSubmission?.video?.find((v) => v.id === modalVideoId) ||
@@ -1115,6 +1116,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
           return (
             <ClientFeedbackModal
+              ref={feedbackRef}
               submissionId={submission.id}
               videoId={modalVideoId || clientVideo?.id || video?.id}
               currentVideoTime={videoControls.formatTime(modalCurrentTime || 0)}
