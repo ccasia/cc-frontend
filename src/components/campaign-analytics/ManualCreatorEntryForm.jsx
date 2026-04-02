@@ -600,7 +600,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                   }}
                 >
                   {/* Engagement Rate (auto-calculated, read-only display) */}
-                  <Box sx={{ textAlign: 'left', pr: { md: 1, lg: 1.5 } }}>
+                  <Box sx={{ textAlign: 'left' }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -640,7 +640,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                   />
 
                   {/* Views - bordered input field */}
-                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden' }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -677,7 +677,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                   />
 
                   {/* Likes - bordered input field */}
-                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden' }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -714,7 +714,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                   />
 
                   {/* Comments - bordered input field */}
-                  <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden' }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -751,7 +751,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                   />
 
                   {/* Shares - bordered input field */}
-                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', px: { md: 1, lg: 1.5 } }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden' }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -789,7 +789,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                           alignSelf: 'stretch'
                         }}
                       />
-                      <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: { md: 0.75, lg: 1 }, overflow: 'hidden' }}>
+                      <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden' }}>
                         <Typography
                           fontFamily="Aileron"
                           fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -828,7 +828,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                   />
 
                   {/* Post Link - bordered input field */}
-                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden', pl: { md: 1, lg: 1.5 } }}>
+                  <Box sx={{ textAlign: 'left', minWidth: 0, overflow: 'hidden' }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
