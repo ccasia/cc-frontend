@@ -1432,8 +1432,8 @@ export default function AdminFeedbackPanel({
               unmountOnExit
             >
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
-                {comment.replies.map((reply, index) => {
-                  const isLast = index === comment.replies.length - 1;
+                {(comment.replies || []).map((reply, index) => {
+                  const isLast = index === (comment.replies || []).length - 1;
 
                   return (
                     <Box key={reply.id} sx={{ position: 'relative', ml: 12 }}>

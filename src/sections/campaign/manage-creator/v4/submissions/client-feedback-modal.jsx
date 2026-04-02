@@ -138,6 +138,8 @@ const CommentCard = ({
   const displayPhoto = comment.user?.photoURL || comment?.user?.client?.company?.logo || null;
 
   const isDisabled = isLocked || isPastVideo;
+  const showRepliesToggle = !isReply && replyCount > 0;
+  const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
   const canDelete = !!onDelete && !isDisabled && !pendingDelete && isUser;
   const showRepliesToggle = !isReply && replyCount > 0;
   const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
@@ -1161,120 +1163,141 @@ const ClientFeedbackModal = forwardRef(
           )}
 
           <AnimatePresence initial={false}>
-          {comments.map((comment) => (
-            <m.div
-              key={comment.id}
-              initial={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
-              transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
-            >
-            <Box
-              ref={(el) => {
-                if (el) commentRefs.current[comment.id] = el;
-              }}
-            >
-              {/* Parent Comment */}
-              <CommentCard
-                comment={comment}
-                currentUser={user}
-                isNew={comment.isNew}
-                onReplyClick={(id) => setReplyingToId(id)}
-                replyCount={(comment.replies || []).length}
-                isRepliesOpen={openRepliesById[comment.id] ?? true}
-                onToggleReplies={() =>
-                  setOpenRepliesById((prev) => ({ ...prev, [comment.id]: !(prev[comment.id] ?? true) }))
-                }
-                onAgree={handleAgree}
-                onTimestampClick={handleTimestampClick}
-                isReplying={replyingToId === comment.id}
-                onCancelReply={() => setReplyingToId(null)}
-                onSubmitReply={handleInlineReplySubmit}
-                isLocked={effectiveIsLocked}
-                isPastVideo={isPastVideo}
-                onDelete={!effectiveIsLocked ? handleDeleteComment : undefined}
-                onUndoDelete={handleUndoDelete}
-                pendingDelete={pendingDeletes.has(comment.id)}
-                pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
-              />
-
-              {/* Threaded Replies */}
-              <Collapse
-                in={(openRepliesById[comment.id] ?? true) && !!comment.replies && comment.replies.length > 0}
-                timeout="auto"
-                unmountOnExit
+            {comments.map((comment) => (
+              <m.div
+                key={comment.id}
+                initial={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
+                transition={{
+                  duration: 0.6,
+                  ease: [0.4, 0, 0.2, 1],
+                  height: { delay: 0.3, duration: 0.3 },
+                }}
               >
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
-                  <AnimatePresence initial={false}>
-                  {comment.replies.map((reply, index) => {
-                    const isLast = index === comment.replies.length - 1;
+                <Box
+                  ref={(el) => {
+                    if (el) commentRefs.current[comment.id] = el;
+                  }}
+                >
+                  {/* Parent Comment */}
+                  <CommentCard
+                    comment={comment}
+                    currentUser={user}
+                    isNew={comment.isNew}
+                    onReplyClick={(id) => setReplyingToId(id)}
+                    replyCount={(comment.replies || []).length}
+                    isRepliesOpen={openRepliesById[comment.id] ?? true}
+                    onToggleReplies={() =>
+                      setOpenRepliesById((prev) => ({
+                        ...prev,
+                        [comment.id]: !(prev[comment.id] ?? true),
+                      }))
+                    }
+                    onAgree={handleAgree}
+                    onTimestampClick={handleTimestampClick}
+                    isReplying={replyingToId === comment.id}
+                    onCancelReply={() => setReplyingToId(null)}
+                    onSubmitReply={handleInlineReplySubmit}
+                    isLocked={effectiveIsLocked}
+                    isPastVideo={isPastVideo}
+                    onDelete={!effectiveIsLocked ? handleDeleteComment : undefined}
+                    onUndoDelete={handleUndoDelete}
+                    pendingDelete={pendingDeletes.has(comment.id)}
+                    pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
+                  />
 
-                    return (
-                      <m.div
-                        key={reply.id}
-                        initial={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
-                        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
-                      >
-                      <Box
-                        ref={(el) => {
-                          if (el) commentRefs.current[reply.id] = el;
-                        }}
-                        sx={{ position: 'relative', ml: { xs: 5, md: 10 } }}
-                      >
-                        {/* Vertical straight line (connects siblings) */}
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            left: { xs: -25, md: -50 },
-                            top: index === 0 ? -4 : -16,
-                            bottom: isLast ? 'calc(50% + 20px)' : -16,
-                            borderLeft: '2px solid #8E8E93',
-                            zIndex: 0,
-                          }}
-                        />
-                        {/* Curved L-shape linking into the card */}
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            left: { xs: -25, md: -50 },
-                            top: index === 0 ? -4 : -16,
-                            bottom: 'calc(50% - 1px)',
-                            width: { xs: 20, md: 45 },
-                            borderLeft: '2px solid #8E8E93',
-                            borderBottom: '2px solid #8E8E93',
-                            borderBottomLeftRadius: 16,
-                            zIndex: 0,
-                          }}
-                        />
+                  {/* Threaded Replies */}
+                  <Collapse
+                    in={
+                      (openRepliesById[comment.id] ?? true) &&
+                      !!comment.replies &&
+                      comment.replies.length > 0
+                    }
+                    timeout="auto"
+                    unmountOnExit
+                  >
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
+                      <AnimatePresence initial={false}>
+                        {comment.replies.map((reply, index) => {
+                          const isLast = index === comment.replies.length - 1;
 
-                        <CommentCard
-                          comment={reply}
-                          isReply
-                          currentUser={user}
-                          isNew={reply.isNew}
-                          onReplyClick={(id) => setReplyingToId(id)}
-                          onAgree={handleAgree}
-                          onTimestampClick={handleTimestampClick}
-                          isReplying={replyingToId === reply.id}
-                          onCancelReply={() => setReplyingToId(null)}
-                          onSubmitReply={handleInlineReplySubmit}
-                          isLocked={effectiveIsLocked}
-                          isPastVideo={isPastVideo}
-                          onDelete={!effectiveIsLocked ? handleDeleteComment : undefined}
-                          onUndoDelete={handleUndoDelete}
-                          pendingDelete={pendingDeletes.has(reply.id)}
-                          pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
-                        />
-                      </Box>
-                      </m.div>
-                    );
-                  })}
-                  </AnimatePresence>
+                          return (
+                            <m.div
+                              key={reply.id}
+                              initial={{ opacity: 1, height: 'auto' }}
+                              exit={{
+                                opacity: 0,
+                                x: '100%',
+                                height: 0,
+                                marginBottom: 0,
+                                overflow: 'hidden',
+                              }}
+                              transition={{
+                                duration: 0.6,
+                                ease: [0.4, 0, 0.2, 1],
+                                height: { delay: 0.3, duration: 0.3 },
+                              }}
+                            >
+                              <Box
+                                ref={(el) => {
+                                  if (el) commentRefs.current[reply.id] = el;
+                                }}
+                                sx={{ position: 'relative', ml: { xs: 5, md: 10 } }}
+                              >
+                                {/* Vertical straight line (connects siblings) */}
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    left: { xs: -25, md: -50 },
+                                    top: index === 0 ? -4 : -16,
+                                    bottom: isLast ? 'calc(50% + 20px)' : -16,
+                                    borderLeft: '2px solid #8E8E93',
+                                    zIndex: 0,
+                                  }}
+                                />
+                                {/* Curved L-shape linking into the card */}
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    left: { xs: -25, md: -50 },
+                                    top: index === 0 ? -4 : -16,
+                                    bottom: 'calc(50% - 1px)',
+                                    width: { xs: 20, md: 45 },
+                                    borderLeft: '2px solid #8E8E93',
+                                    borderBottom: '2px solid #8E8E93',
+                                    borderBottomLeftRadius: 16,
+                                    zIndex: 0,
+                                  }}
+                                />
+
+                                <CommentCard
+                                  comment={reply}
+                                  isReply
+                                  currentUser={user}
+                                  isNew={reply.isNew}
+                                  onReplyClick={(id) => setReplyingToId(id)}
+                                  onAgree={handleAgree}
+                                  onTimestampClick={handleTimestampClick}
+                                  isReplying={replyingToId === reply.id}
+                                  onCancelReply={() => setReplyingToId(null)}
+                                  onSubmitReply={handleInlineReplySubmit}
+                                  isLocked={effectiveIsLocked}
+                                  isPastVideo={isPastVideo}
+                                  onDelete={!effectiveIsLocked ? handleDeleteComment : undefined}
+                                  onUndoDelete={handleUndoDelete}
+                                  pendingDelete={pendingDeletes.has(reply.id)}
+                                  pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
+                                />
+                              </Box>
+                            </m.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </Box>
+                  </Collapse>
                 </Box>
-              </Collapse>
-            </Box>
-            </m.div>
-          ))}
+              </m.div>
+            ))}
           </AnimatePresence>
         </Box>
 
