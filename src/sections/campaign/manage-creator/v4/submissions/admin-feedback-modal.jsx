@@ -3,15 +3,14 @@ import { enqueueSnackbar } from 'notistack';
 import { m, AnimatePresence } from 'framer-motion';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Avatar, Button, TextField, Typography, IconButton, CircularProgress, Collapse } from '@mui/material';
+import { Box, Avatar, Button, Collapse, TextField, Typography, IconButton, CircularProgress } from '@mui/material';
 
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
-
-import { useAuthContext } from 'src/auth/hooks';
 
 import { fDateTime } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
@@ -1493,7 +1492,7 @@ export default function AdminFeedbackPanel({
                   );
                 })}
               </Box>
-            )}
+            </Collapse>
           </m.div>
                 ))}
                 </AnimatePresence>
