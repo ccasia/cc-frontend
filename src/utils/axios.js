@@ -337,6 +337,7 @@ export const endpoints = {
       comments: (submissionId) => `/api/submissions/v4/submission/${submissionId}/comments`,
       updateComment: (commentId) => `/api/submissions/v4/comments/${commentId}`,
       deleteComment: (commentId) => `/api/submissions/v4/comments/${commentId}`,
+      deleteCommentByClient: (commentId) => `/api/submissions/v4/comments/${commentId}/client`,
       sendToCreator: (submissionId) => `/api/submissions/v4/submission/${submissionId}/send-to-creator`,
       sendToClient: (submissionId) => `/api/submissions/v4/submission/${submissionId}/send-to-client`,
       resolveComment: (commentId) => `/api/submissions/v4/comments/${commentId}/resolve`,
@@ -351,6 +352,7 @@ export const endpoints = {
         getMyCampaignOverview: '/api/creator/submissions/v4/campaign-overview',
         submitContent: '/api/creator/submissions/v4/submit-content',
         updatePostingLink: '/api/creator/submissions/v4/posting-link',
+        deleteComment: (commentId) => `/api/creator/submissions/v4/comments/${commentId}`,
       },
     },
     admin: {
