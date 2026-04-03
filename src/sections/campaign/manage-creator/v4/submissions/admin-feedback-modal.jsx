@@ -390,15 +390,17 @@ const CommentCard = ({
     <Box
       onClick={handleCardClick}
       sx={{
+        p: { xs: 1.25, md: 2 },
+        display: 'flex',
+        flexDirection: 'column',
+        gap: { xs: 0.75, md: 1 },
         bgcolor: isResolved ? '#EBEBEB' : 'white',
-        p: hasLeftActions ? 2 : 1.5,
         borderRadius: 2,
         border:
           isClientComment && !isEditedClientComment ? '1px solid #2563EB' : '1px solid #EBEBEB',
         boxShadow: 'none',
         display: 'flex',
         flexDirection: 'column',
-        gap: hasLeftActions ? 1.5 : 0.75,
         position: 'relative',
         zIndex: 1,
         transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
@@ -414,7 +416,14 @@ const CommentCard = ({
       }}
     >
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 0.5 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          px: 0.5,
+        }}
+      >
         <AnimatePresence mode="wait">
           <m.div
             key={showingOriginal ? 'original' : 'edited'}
@@ -433,7 +442,7 @@ const CommentCard = ({
                 bgcolor: '#E5E7EB',
                 color: '#6B7280',
                 border: '1px solid #EBEBEB',
-                fontSize: '0.875rem',
+                fontSize: { xs: '0.75rem', md: '0.875rem' },
                 fontWeight: 500,
               }}
             >
@@ -441,7 +450,13 @@ const CommentCard = ({
             </Avatar>
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#111827' }}>
+                <Typography
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: { xs: '0.813rem', md: '0.875rem' },
+                    color: '#111827',
+                  }}
+                >
                   {displayName}
                 </Typography>
                 {isNew && (
@@ -456,7 +471,14 @@ const CommentCard = ({
                   />
                 )}
               </Box>
-              <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#9CA3AF' }}>
+              <Typography
+                sx={{
+                  fontSize: { xs: '0.688rem', md: '0.75rem' },
+                  fontWeight: 600,
+                  color: '#9CA3AF',
+                  textTransform: 'capitalize',
+                }}
+              >
                 {displayRole}
               </Typography>
             </Box>
@@ -576,7 +598,7 @@ const CommentCard = ({
               >
                 <Typography
                   sx={{
-                    fontSize: '0.875rem',
+                    fontSize: { xs: '0.813rem', md: '0.875rem' },
                     fontWeight: 500,
                     color: '#1F2937',
                     wordBreak: 'break-word',
@@ -703,10 +725,11 @@ const CommentCard = ({
                   data-interactive
                   onClick={() => onReply?.(comment)}
                   sx={{
-                    fontSize: '0.75rem',
+                    fontSize: { xs: '0.75rem', md: '0.875rem' },
                     fontWeight: 600,
                     color: '#9CA3AF',
                     cursor: 'pointer',
+                    padding: { xs: '2px 0', md: 0 },
                     '&:hover': { color: '#6B7280' },
                   }}
                 >
@@ -718,7 +741,7 @@ const CommentCard = ({
                   data-interactive
                   onClick={() => onEdit(comment)}
                   sx={{
-                    fontSize: '0.75rem',
+                    fontSize: { xs: '0.75rem', md: '0.875rem' },
                     fontWeight: 600,
                     color: '#9CA3AF',
                     cursor: 'pointer',
@@ -901,10 +924,10 @@ const CommentCard = ({
                     p: 0,
                   },
                   '& .MuiInputBase-input': {
-                    fontSize: 13,
+                    fontSize: '0.875rem',
                     fontFamily: 'Inter, sans-serif',
                     p: 0,
-                    lineHeight: 1.4,
+                    lineHeight: 1.5,
                     '&::placeholder': {
                       color: '#B0B0B0',
                       opacity: 1,

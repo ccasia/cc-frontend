@@ -1451,6 +1451,7 @@ const ClientFeedbackModal = forwardRef(
                           mt: 1,
                           typography: 'caption',
                           color: '#8E8E93',
+                          fontSize: '0.875rem',
                           '&::before, &::after': { borderColor: '#E5E7EB' },
                         }}
                       >
@@ -1672,7 +1673,6 @@ const ClientFeedbackModal = forwardRef(
               display: 'flex',
               justifyContent: videoCount > 1 ? 'space-between' : 'flex-end',
               alignItems: 'center',
-              mb: { xs: 0, md: 1 },
             }}
           >
             {videoCount > 1 && (
