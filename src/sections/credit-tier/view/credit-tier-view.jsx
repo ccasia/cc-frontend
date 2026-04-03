@@ -29,10 +29,20 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import CreditTierEdit from '../credit-tier-edit';
 import CreditTierCreate from '../credit-tier-create';
 import CreditTierTableRow from '../credit-tier-table-row';
+import useCheckPermission from 'src/hooks/use-check-permission';
 
 // ----------------------------------------------------------------------
 
-const SortableHeader = ({ column, label, align, isFirst, isLast, sortColumn, sortDirection, onSort }) => {
+const SortableHeader = ({
+  column,
+  label,
+  align,
+  isFirst,
+  isLast,
+  sortColumn,
+  sortDirection,
+  onSort,
+}) => {
   const getBorderRadius = () => {
     if (isFirst) return '10px 0 0 10px';
     if (isLast) return '0 10px 10px 0';
@@ -58,7 +68,12 @@ const SortableHeader = ({ column, label, align, isFirst, isLast, sortColumn, sor
       }}
       align={align}
     >
-      <Stack direction="row" alignItems="center" spacing={0.5} justifyContent={align === 'center' ? 'center' : 'flex-start'}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={0.5}
+        justifyContent={align === 'center' ? 'center' : 'flex-start'}
+      >
         {label}
         {sortColumn === column && (
           <Iconify
@@ -103,6 +118,7 @@ const CreditTierView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortColumn, setSortColumn] = useState('minFollowers');
   const [sortDirection, setSortDirection] = useState('asc');
+  const isAllow = useCheckPermission(['credit:create']);
 
   const [tableData, setTableData] = useState([]);
 
@@ -208,6 +224,7 @@ const CreditTierView = () => {
           <Button
             onClick={() => setOpenCreate(true)}
             startIcon={<Iconify icon="mingcute:add-fill" width={16} />}
+            disabled={!isAllow}
             sx={{
               bgcolor: '#FFFFFF',
               border: '1.5px solid #e7e7e7',
@@ -311,10 +328,36 @@ const CreditTierView = () => {
           <Table size="medium" sx={{ minWidth: 800, width: '100%' }}>
             <TableHead>
               <TableRow>
-                <SortableHeader column="name" label="Tier Name" isFirst sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="minFollowers" label="Min Followers" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="maxFollowers" label="Max Followers" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="creditsPerVideo" label="Credits/Video" align="center" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
+                <SortableHeader
+                  column="name"
+                  label="Tier Name"
+                  isFirst
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="minFollowers"
+                  label="Min Followers"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="maxFollowers"
+                  label="Max Followers"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="creditsPerVideo"
+                  label="Credits/Video"
+                  align="center"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
                 <TableCell
                   sx={{
                     py: 1,
@@ -329,8 +372,21 @@ const CreditTierView = () => {
                 >
                   Creators
                 </TableCell>
-                <SortableHeader column="isActive" label="Status" align="center" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="createdAt" label="Created At" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
+                <SortableHeader
+                  column="isActive"
+                  label="Status"
+                  align="center"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="createdAt"
+                  label="Created At"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
                 <TableCell
                   sx={{
                     py: 1,
@@ -362,7 +418,11 @@ const CreditTierView = () => {
         {(!filteredData || filteredData.length === 0) && (
           <EmptyContent
             title="No credit tiers found"
-            description={searchQuery ? 'Try adjusting your search query.' : 'Create your first credit tier to get started.'}
+            description={
+              searchQuery
+                ? 'Try adjusting your search query.'
+                : 'Create your first credit tier to get started.'
+            }
             sx={{ py: 10 }}
           />
         )}

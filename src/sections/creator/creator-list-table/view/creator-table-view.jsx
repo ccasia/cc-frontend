@@ -467,14 +467,18 @@ function CreatorTableView() {
                   return tableData?.filter((user) => user?.mediaKitMandatory).length ?? 0;
                 }
                 if (tab.value === 'connected') {
-                  return tableData?.filter(
-                    (user) =>
-                      user?.creator?.isTiktokConnected || user?.creator?.isFacebookConnected
-                  ).length ?? 0;
+                  return (
+                    tableData?.filter(
+                      (user) =>
+                        user?.creator?.isTiktokConnected || user?.creator?.isFacebookConnected
+                    ).length ?? 0
+                  );
                 }
-                return tableData?.filter(
-                  (user) => user?.status?.toLowerCase() === tab.value?.toLowerCase()
-                ).length ?? 0;
+                return (
+                  tableData?.filter(
+                    (user) => user?.status?.toLowerCase() === tab.value?.toLowerCase()
+                  ).length ?? 0
+                );
               };
               return (
                 <Tab
@@ -485,7 +489,8 @@ function CreatorTableView() {
                   icon={
                     <Label
                       variant={
-                        ((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'
+                        ((tab.value === 'all' || tab.value === filters.status) && 'filled') ||
+                        'soft'
                       }
                       color={
                         (tab.value === 'active' && 'success') ||
@@ -673,9 +678,7 @@ function applyFilter({ inputData, comparator, filters, ageRange }) {
         (user) => user?.creator?.isTiktokConnected || user?.creator?.isFacebookConnected
       );
     } else {
-      inputData = inputData.filter(
-        (user) => user?.status?.toLowerCase() === status.toLowerCase()
-      );
+      inputData = inputData.filter((user) => user?.status?.toLowerCase() === status.toLowerCase());
     }
   }
 
