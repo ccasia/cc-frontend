@@ -3,7 +3,17 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 
 import { m, AnimatePresence } from 'framer-motion';
 
-import { Box, Avatar, Button, TextField, Typography, IconButton, CircularProgress, Collapse } from '@mui/material';
+import {
+  Box,
+  Avatar,
+  Button,
+  TextField,
+  Typography,
+  IconButton,
+  CircularProgress,
+  Collapse,
+  Divider,
+} from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
@@ -28,7 +38,8 @@ const COLORS = {
   resolvedBg: '#EBEBEB',
 };
 
-const FONT_FAMILY = 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+const FONT_FAMILY =
+  'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
 const formatDate = (dateString) => {
   if (!dateString) return '';
@@ -94,7 +105,7 @@ const getAdminInfo = (feedbackItem, submission) => {
       photo: feedbackItem.forwardedBy.photoURL || null,
     };
   }
-  
+
   const feedbackAdmin = feedbackItem.admin || submission.admin || {};
   const adminPhoto =
     feedbackItem.adminPhotoURL ||
@@ -102,14 +113,20 @@ const getAdminInfo = (feedbackItem, submission) => {
     getPhotoFromObject(feedbackItem.user) ||
     null;
   return {
-    name: feedbackItem.adminName || feedbackAdmin?.name || feedbackAdmin?.firstName || feedbackAdmin?.user?.name || feedbackItem.user?.name || 'Admin',
+    name:
+      feedbackItem.adminName ||
+      feedbackAdmin?.name ||
+      feedbackAdmin?.firstName ||
+      feedbackAdmin?.user?.name ||
+      feedbackItem.user?.name ||
+      'Admin',
     role: feedbackItem.adminRole || feedbackAdmin?.role || feedbackItem.role || 'Admin',
     photo: adminPhoto,
   };
 };
 
 // Sub-components
-const UserAvatar = ({ src, name, size = 40, responsive = false }) => (
+const UserAvatar = ({ src, name, size = 36, responsive = false }) => (
   <Avatar
     src={src}
     alt={name}
@@ -118,8 +135,9 @@ const UserAvatar = ({ src, name, size = 40, responsive = false }) => (
       height: responsive ? { xs: 32, md: size } : size,
       bgcolor: COLORS.bgAvatar,
       color: '#6B7280',
+      border: '1px solid #EBEBEB',
       fontSize: responsive ? { xs: '0.75rem', md: '0.875rem' } : '0.875rem',
-      fontWeight: 600,
+      fontWeight: 500,
     }}
   >
     {!src && name?.[0]?.toUpperCase()}
@@ -134,14 +152,36 @@ UserAvatar.propTypes = {
 };
 
 const UserInfo = ({ name, roleLabel, photo, date, sequenceLabel }) => (
-  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: { xs: 0.5, md: 0 } }}>
+  <Box
+    sx={{
+      display: 'flex',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      gap: { xs: 0.5, md: 0 },
+      width: '100%',
+    }}
+  >
     <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.5 } }}>
       <UserAvatar src={photo} name={name} responsive />
       <Box>
-        <Typography variant="body2" sx={{ fontFamily: FONT_FAMILY, fontWeight: 600, fontSize: { xs: '0.813rem', md: '0.875rem' }, color: COLORS.textPrimary }}>
+        <Typography
+          sx={{
+            fontWeight: 600,
+            fontSize: { xs: '0.813rem', md: '0.875rem' },
+            color: COLORS.textPrimary,
+          }}
+        >
           {name}
         </Typography>
-        <Typography variant="caption" sx={{ fontFamily: FONT_FAMILY, fontSize: { xs: '0.688rem', md: '0.75rem' }, color: COLORS.textSecondary }}>
+        <Typography
+          sx={{
+            fontWeight: 600,
+            fontSize: { xs: '0.688rem', md: '0.75rem' },
+            color: COLORS.textSecondary,
+            textTransform: 'capitalize',
+          }}
+        >
           {roleLabel}
         </Typography>
       </Box>
@@ -152,7 +192,6 @@ const UserInfo = ({ name, roleLabel, photo, date, sequenceLabel }) => (
           <Typography
             variant="caption"
             sx={{
-              fontFamily: FONT_FAMILY,
               fontSize: { xs: '0.688rem', md: '0.75rem' },
               color: COLORS.textSecondary,
               fontWeight: 700,
@@ -162,7 +201,14 @@ const UserInfo = ({ name, roleLabel, photo, date, sequenceLabel }) => (
             {sequenceLabel}
           </Typography>
         )}
-        <Typography variant="caption" sx={{ fontFamily: FONT_FAMILY, fontSize: { xs: '0.688rem', md: '0.75rem' }, color: COLORS.textSecondary, whiteSpace: 'nowrap' }}>
+        <Typography
+          variant="caption"
+          sx={{
+            fontSize: { xs: '0.688rem', md: '0.75rem' },
+            color: COLORS.textSecondary,
+            whiteSpace: 'nowrap',
+          }}
+        >
           {date}
         </Typography>
       </Box>
@@ -185,8 +231,9 @@ const ActionButton = ({ onClick, children, variant = 'primary', icon }) => {
       component="button"
       onClick={onClick}
       sx={{
-        fontFamily: FONT_FAMILY,
-        fontSize: isPrimary ? { xs: '0.813rem', md: '0.875rem' } : { xs: '0.688rem', md: '0.75rem' },
+        fontSize: isPrimary
+          ? { xs: '0.813rem', md: '0.875rem' }
+          : { xs: '0.688rem', md: '0.75rem' },
         color: isPrimary ? 'white' : COLORS.primary,
         fontWeight: 600,
         bgcolor: isPrimary ? COLORS.primary : COLORS.bgPrimary,
@@ -200,7 +247,9 @@ const ActionButton = ({ onClick, children, variant = 'primary', icon }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: isPrimary ? 'inset 0px -3px 0px 0px #00000073' : `inset 0px -3px 0px 0px ${COLORS.borderLight}`,
+        boxShadow: isPrimary
+          ? 'inset 0px -3px 0px 0px #00000073'
+          : `inset 0px -3px 0px 0px ${COLORS.borderLight}`,
         '&:hover': {
           bgcolor: isPrimary ? COLORS.primaryHover : '#F9F9F9',
         },
@@ -226,7 +275,7 @@ const ReplyBox = ({ value, onChange, onCancel, onSend, currentTime, showTimestam
       border: `1px solid ${COLORS.border}`,
       borderTop: 'none',
       borderRadius: '0 0 16px 16px',
-      p: { xs: '8px 16px', md: '10px 24px' },
+      p: { xs: 1.25, md: 2 },
       display: 'flex',
       flexDirection: 'column',
       gap: { xs: 1, md: 1.5 },
@@ -246,7 +295,7 @@ const ReplyBox = ({ value, onChange, onCancel, onSend, currentTime, showTimestam
           py: 0.4,
           fontSize: 13,
           fontWeight: 600,
-          fontFamily: FONT_FAMILY,
+
           lineHeight: 1.4,
           userSelect: 'none',
           boxShadow: `0px 1px 0px 0px ${COLORS.borderLight}`,
@@ -272,7 +321,6 @@ const ReplyBox = ({ value, onChange, onCancel, onSend, currentTime, showTimestam
       }}
       sx={{
         '& .MuiOutlinedInput-root': {
-          fontFamily: FONT_FAMILY,
           fontSize: { xs: '0.813rem', md: '0.875rem' },
           padding: 0,
           '& fieldset': { border: 'none' },
@@ -284,8 +332,17 @@ const ReplyBox = ({ value, onChange, onCancel, onSend, currentTime, showTimestam
         },
       }}
     />
-    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: { xs: 0.75, md: 1 }, alignItems: 'center' }}>
-      <ActionButton onClick={onCancel} variant="secondary">Cancel</ActionButton>
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        gap: { xs: 0.75, md: 1 },
+        alignItems: 'center',
+      }}
+    >
+      <ActionButton onClick={onCancel} variant="secondary">
+        Cancel
+      </ActionButton>
       <ActionButton onClick={onSend} variant="primary" icon="ic:round-send" />
     </Box>
   </Box>
@@ -370,8 +427,10 @@ const ReplyItem = ({
   const displayRole = displayUser?.role || 'Creator';
   const displayPhoto = displayUser?.photoURL || reply.creatorPhoto;
 
-  const canDelete = !!onDelete && !pendingDelete
-    && (reply.user?.id === currentUserId || reply.userId === currentUserId);
+  const canDelete =
+    !!onDelete &&
+    !pendingDelete &&
+    (reply.user?.id === currentUserId || reply.userId === currentUserId);
 
   // Countdown for pending-delete state
   const [deleteProgress, setDeleteProgress] = useState(100);
@@ -419,7 +478,7 @@ const ReplyItem = ({
           bgcolor: isParentResolved ? COLORS.resolvedBg : COLORS.bgPrimary,
           py: 1.25,
           px: 1.5,
-          borderRadius: '16px',
+          borderRadius: 2,
           border: `1px solid ${COLORS.border}`,
           display: 'flex',
           alignItems: 'center',
@@ -428,7 +487,15 @@ const ReplyItem = ({
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-          <Box sx={{ position: 'relative', display: 'inline-flex', width: 32, height: 32, flexShrink: 0 }}>
+          <Box
+            sx={{
+              position: 'relative',
+              display: 'inline-flex',
+              width: 32,
+              height: 32,
+              flexShrink: 0,
+            }}
+          >
             <AnimatePresence mode="wait" initial={false}>
               {deleteTimerDone ? (
                 <m.div
@@ -436,7 +503,13 @@ const ReplyItem = ({
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
-                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
                   <Iconify icon="mdi:check" width={20} sx={{ color: '#1340FF' }} />
                 </m.div>
@@ -447,10 +520,37 @@ const ReplyItem = ({
                   transition={{ duration: 0.2 }}
                   style={{ position: 'absolute', inset: 0 }}
                 >
-                  <CircularProgress variant="determinate" value={100} size={32} thickness={4} sx={{ color: '#E0E7FF', position: 'absolute' }} />
-                  <CircularProgress variant="determinate" value={deleteRingValue} size={32} thickness={4} sx={{ color: '#1340FF' }} />
-                  <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography sx={{ fontSize: '0.688rem', fontWeight: 700, color: '#1340FF', lineHeight: 1 }}>
+                  <CircularProgress
+                    variant="determinate"
+                    value={100}
+                    size={32}
+                    thickness={4}
+                    sx={{ color: '#E0E7FF', position: 'absolute' }}
+                  />
+                  <CircularProgress
+                    variant="determinate"
+                    value={deleteRingValue}
+                    size={32}
+                    thickness={4}
+                    sx={{ color: '#1340FF' }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: '0.688rem',
+                        fontWeight: 700,
+                        color: '#1340FF',
+                        lineHeight: 1,
+                      }}
+                    >
                       {deleteSecondsLeft}
                     </Typography>
                   </Box>
@@ -466,7 +566,13 @@ const ReplyItem = ({
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.2 }}
             >
-              <Typography sx={{ fontSize: '0.813rem', fontWeight: 500, color: deleteTimerDone ? '#1340FF' : '#6B7280', fontFamily: FONT_FAMILY }}>
+              <Typography
+                sx={{
+                  fontSize: '0.813rem',
+                  fontWeight: 500,
+                  color: deleteTimerDone ? '#1340FF' : '#6B7280',
+                }}
+              >
                 {deleteTimerDone ? 'Comment deleted.' : 'Comment has been deleted. Undo?'}
               </Typography>
             </m.span>
@@ -484,10 +590,24 @@ const ReplyItem = ({
                 size="small"
                 onClick={() => onUndoDelete?.(reply.id)}
                 sx={{
-                  fontSize: '0.75rem', fontWeight: 600, color: '#1340FF', bgcolor: 'white',
-                  border: '1px solid #E7E7E7', borderBottom: '2px solid #E7E7E7', borderRadius: 1,
-                  px: 1.5, py: 0.25, minWidth: 'unset', minHeight: 'unset', lineHeight: 1.4, textTransform: 'none',
-                  '&:hover': { bgcolor: '#F9F9F9', border: '1px solid #E7E7E7', borderBottom: '2px solid #E7E7E7' },
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: '#1340FF',
+                  bgcolor: 'white',
+                  border: '1px solid #E7E7E7',
+                  borderBottom: '2px solid #E7E7E7',
+                  borderRadius: 1,
+                  px: 1.5,
+                  py: 0.25,
+                  minWidth: 'unset',
+                  minHeight: 'unset',
+                  lineHeight: 1.4,
+                  textTransform: 'none',
+                  '&:hover': {
+                    bgcolor: '#F9F9F9',
+                    border: '1px solid #E7E7E7',
+                    borderBottom: '2px solid #E7E7E7',
+                  },
                 }}
               >
                 Undo
@@ -506,7 +626,7 @@ const ReplyItem = ({
         bgcolor: isParentResolved ? COLORS.resolvedBg : COLORS.bgPrimary,
         border: `1px solid ${showBlueBorder ? COLORS.primary : COLORS.border}`,
         borderRadius: '16px',
-        p: { xs: '12px 16px', md: '16px 24px' },
+        p: { xs: 1.25, md: 2 },
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -517,7 +637,15 @@ const ReplyItem = ({
           date={!canDelete ? formatDate(reply.createdAt) : undefined}
         />
         {canDelete && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.25, flexShrink: 0 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              gap: 0.25,
+              flexShrink: 0,
+            }}
+          >
             <DarkGlassTooltip title="Delete?" placement="top">
               <IconButton
                 size="small"
@@ -527,14 +655,26 @@ const ReplyItem = ({
                   bgcolor: 'transparent',
                   '&:hover': { bgcolor: 'transparent' },
                   '&:hover img': {
-                    filter: 'brightness(0) saturate(100%) invert(41%) sepia(93%) saturate(1352%) hue-rotate(340deg) brightness(101%) contrast(101%)',
+                    filter:
+                      'brightness(0) saturate(100%) invert(41%) sepia(93%) saturate(1352%) hue-rotate(340deg) brightness(101%) contrast(101%)',
                   },
                 }}
               >
-                <Box component="img" src="/assets/icons/components/comment_delete.svg" sx={{ width: 16, height: 16 }} />
+                <Box
+                  component="img"
+                  src="/assets/icons/components/comment_delete.svg"
+                  sx={{ width: 16, height: 16 }}
+                />
               </IconButton>
             </DarkGlassTooltip>
-            <Typography variant="caption" sx={{ fontFamily: FONT_FAMILY, fontSize: { xs: '0.688rem', md: '0.75rem' }, color: COLORS.textSecondary, whiteSpace: 'nowrap' }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: { xs: '0.688rem', md: '0.75rem' },
+                color: COLORS.textSecondary,
+                whiteSpace: 'nowrap',
+              }}
+            >
               {formatDate(reply.createdAt)}
             </Typography>
           </Box>
@@ -543,7 +683,6 @@ const ReplyItem = ({
       <Typography
         variant="body2"
         sx={{
-          fontFamily: FONT_FAMILY,
           fontSize: { xs: '0.813rem', md: '0.875rem' },
           color: COLORS.textPrimary,
           lineHeight: 1.5,
@@ -559,7 +698,9 @@ const ReplyItem = ({
 
   return (
     <AnimatePresence mode="wait" initial={false}>
-      {pendingDelete ? pendingDeleteContent : (
+      {pendingDelete ? (
+        pendingDeleteContent
+      ) : (
         <m.div
           key="reply-card"
           initial={{ opacity: 0, x: -30, filter: 'blur(4px)' }}
@@ -614,7 +755,14 @@ const RepliesList = ({
   pendingDeletes,
   currentUserId,
 }) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 }, mt: { xs: 1.5, md: 2 } }}>
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: { xs: 1.5, md: 2 },
+      mt: { xs: 1.5, md: 2 },
+    }}
+  >
     <AnimatePresence initial={false}>
       {replies.map((reply, replyIndex) => {
         const isLast = replyIndex === replies.length - 1;
@@ -623,7 +771,11 @@ const RepliesList = ({
             key={reply.id ?? replyIndex}
             initial={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
-            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
+            transition={{
+              duration: 0.6,
+              ease: [0.4, 0, 0.2, 1],
+              height: { delay: 0.3, duration: 0.3 },
+            }}
           >
             <Box sx={{ position: 'relative', ml: { xs: 8, md: 10 } }}>
               {/* Vertical line */}
@@ -737,10 +889,10 @@ const FeedbackCard = ({
           bgcolor: isResolved ? COLORS.resolvedBg : COLORS.bgPrimary,
           border: `1px solid ${showBlueBorder ? COLORS.primary : COLORS.border}`,
           borderRadius: isReplyOpen || (isResolved && isRepliesListOpen) ? '16px 16px 0 0' : '16px',
-          p: { xs: '12px 16px', md: '16px 24px' },
+          p: { xs: 1.25, md: 2 },
           display: 'flex',
           flexDirection: 'column',
-          gap: { xs: '8px', md: '10px' },
+          gap: { xs: 0.75, md: 1 },
         }}
       >
         <UserInfo
@@ -762,7 +914,6 @@ const FeedbackCard = ({
                 : undefined
             }
             sx={{
-              fontFamily: FONT_FAMILY,
               fontSize: { xs: '0.813rem', md: '0.875rem' },
               color: COLORS.primary,
               fontWeight: 500,
@@ -788,7 +939,6 @@ const FeedbackCard = ({
           <Typography
             variant="body2"
             sx={{
-              fontFamily: FONT_FAMILY,
               fontSize: { xs: '0.813rem', md: '0.875rem' },
               color: COLORS.textPrimary,
               lineHeight: 1.5,
@@ -800,21 +950,22 @@ const FeedbackCard = ({
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5 }}>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5 }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             {!isResolved && (
               <Typography
                 component="button"
                 onClick={onToggleReply}
                 sx={{
-                  fontFamily: FONT_FAMILY,
-                  fontSize: { xs: '0.813rem', md: '0.875rem' },
+                  fontSize: { xs: '0.75rem', md: '0.875rem' },
                   color: COLORS.textSecondary,
-                  fontWeight: 500,
+                  fontWeight: 600,
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: 0,
+                  padding: { xs: '2px 0', md: 0 },
                   '&:hover': {
                     color: COLORS.textTertiary,
                   },
@@ -826,7 +977,10 @@ const FeedbackCard = ({
           </Box>
 
           {showRepliesToggle && (
-            <DarkGlassTooltip title={isRepliesListOpen ? 'Hide replies' : 'Show replies'} placement="top">
+            <DarkGlassTooltip
+              title={isRepliesListOpen ? 'Hide replies' : 'Show replies'}
+              placement="top"
+            >
               <Box
                 component="button"
                 type="button"
@@ -845,7 +999,6 @@ const FeedbackCard = ({
                 <Typography
                   variant="caption"
                   sx={{
-                    fontFamily: FONT_FAMILY,
                     fontSize: { xs: '0.875rem', md: '0.95rem' },
                     fontWeight: 700,
                     color: repliesToggleColor,
@@ -890,11 +1043,7 @@ const FeedbackCard = ({
         />
       )}
 
-      <Collapse
-        in={isRepliesListOpen && replyCount > 0}
-        timeout="auto"
-        unmountOnExit
-      >
+      <Collapse in={isRepliesListOpen && replyCount > 0} timeout="auto" unmountOnExit>
         {replies && replies.length > 0 && (
           <RepliesList
             replies={replies}
@@ -959,23 +1108,28 @@ const CreatorFeedbackModal = ({
   // Delete reply state
   const [pendingDeletes, setPendingDeletes] = useState(new Map());
   const pendingDeletesRef = useRef(pendingDeletes);
-  useEffect(() => { pendingDeletesRef.current = pendingDeletes; }, [pendingDeletes]);
-  useEffect(() => () => {
-    pendingDeletesRef.current.forEach(({ timeoutId }) => clearTimeout(timeoutId));
-  }, []);
+  useEffect(() => {
+    pendingDeletesRef.current = pendingDeletes;
+  }, [pendingDeletes]);
+  useEffect(
+    () => () => {
+      pendingDeletesRef.current.forEach(({ timeoutId }) => clearTimeout(timeoutId));
+    },
+    []
+  );
 
   // Use submissionComment system when available (admin feedback)
   const { comments, commentsLoading, commentsMutate } = useSubmissionComments(
     submission?.id,
     currentVideoId
   );
-  
+
   // Legacy feedback system (fallback)
   const allFeedback = useMemo(() => submission?.feedback || [], [submission?.feedback]);
   const feedbackToShow = currentVideoId
     ? allFeedback.filter((f) => !f.videoId || f.videoId === currentVideoId)
     : allFeedback;
-  
+
   // Determine which system to use: if we have comments from submissionComment, use that
   const useCommentSystem = comments && comments.length > 0;
   const displayItems = useCommentSystem ? comments : feedbackToShow;
@@ -989,27 +1143,20 @@ const CreatorFeedbackModal = ({
       const t = new Date(item?.createdAt || 0).getTime();
       return { key, idx, t: Number.isNaN(t) ? 0 : t };
     });
-    normalized.sort((a, b) => (a.t - b.t) || (a.idx - b.idx));
+    normalized.sort((a, b) => a.t - b.t || a.idx - b.idx);
     const map = new Map();
     normalized.forEach((n, i) => {
       map.set(n.key, i + 1);
     });
     return map;
   }, [displayItems]);
-  
+
   const [replyStates, setReplyStates] = useState({});
   const [viewRepliesOpen, setViewRepliesOpen] = useState({});
   const [replyTexts, setReplyTexts] = useState({});
   const [replies, setReplies] = useState({});
   const commentsEndRef = useRef(null);
   const initialLoadDone = useRef(false);
-
-  const hasResolvedComments = useCommentSystem 
-    ? comments.some((c) => c.resolvedByUserId) && comments.some((c) => !c.resolvedByUserId)
-    : feedbackToShow.some((item) => item.resolved === true) && feedbackToShow.some((item) => !item.resolved);
-
-  const showResolvedCommentsDivider =
-    displayItems.length > 0 && (isPastVideo || hasResolvedComments);
 
   // Socket listeners for real-time updates (comment system)
   useEffect(() => {
@@ -1115,30 +1262,33 @@ const CreatorFeedbackModal = ({
     setReplyTexts((prev) => ({ ...prev, [index]: value }));
   };
 
-  const handleDeleteReply = useCallback((commentId) => {
-    if (pendingDeletesRef.current.has(commentId)) return;
-    const startTime = Date.now();
-    const timeoutId = setTimeout(async () => {
-      try {
-        await axiosInstance.delete(endpoints.submission.creator.v4.deleteComment(commentId));
-        await new Promise((r) => setTimeout(r, 1000));
-        commentsMutate();
-      } catch (error) {
-        console.error('Failed to delete reply:', error);
-        commentsMutate();
-      }
+  const handleDeleteReply = useCallback(
+    (commentId) => {
+      if (pendingDeletesRef.current.has(commentId)) return;
+      const startTime = Date.now();
+      const timeoutId = setTimeout(async () => {
+        try {
+          await axiosInstance.delete(endpoints.submission.creator.v4.deleteComment(commentId));
+          await new Promise((r) => setTimeout(r, 1000));
+          commentsMutate();
+        } catch (error) {
+          console.error('Failed to delete reply:', error);
+          commentsMutate();
+        }
+        setPendingDeletes((prev) => {
+          const next = new Map(prev);
+          next.delete(commentId);
+          return next;
+        });
+      }, 6000);
       setPendingDeletes((prev) => {
         const next = new Map(prev);
-        next.delete(commentId);
+        next.set(commentId, { timeoutId, startTime });
         return next;
       });
-    }, 6000);
-    setPendingDeletes((prev) => {
-      const next = new Map(prev);
-      next.set(commentId, { timeoutId, startTime });
-      return next;
-    });
-  }, [commentsMutate]);
+    },
+    [commentsMutate]
+  );
 
   const handleUndoDelete = useCallback((commentId) => {
     setPendingDeletes((prev) => {
@@ -1198,9 +1348,12 @@ const CreatorFeedbackModal = ({
           [index]: [...(prev[index] || []), optimisticReply],
         }));
 
-        const res = await axiosInstance.post(`/api/creator/submissions/v4/feedback/${item.id}/replies`, {
-          content: replyText,
-        });
+        const res = await axiosInstance.post(
+          `/api/creator/submissions/v4/feedback/${item.id}/replies`,
+          {
+            content: replyText,
+          }
+        );
 
         const saved = res?.data?.reply;
         if (saved) {
@@ -1255,64 +1408,23 @@ const CreatorFeedbackModal = ({
         }}
       >
         {displayItems.length > 0 ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 2.5 } }}>
-            {showResolvedCommentsDivider && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  mb: 0.5,
-                }}
-              >
-                <Box
-                  sx={{
-                    flex: 1,
-                    height: 0,
-                    borderTop: `1px solid ${COLORS.textSecondary}`,
-                  }}
-                />
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontFamily: FONT_FAMILY,
-                    fontWeight: 600,
-                    fontSize: { xs: '0.813rem', md: '0.875rem' },
-                    color: COLORS.textSecondary,
-                    flexShrink: 0,
-                    px: 0.5,
-                  }}
-                >
-                  resolved comments
-                </Typography>
-                <Box
-                  sx={{
-                    flex: 1,
-                    height: 0,
-                    borderTop: `1px solid ${COLORS.textSecondary}`,
-                  }}
-                />
-              </Box>
-            )}
-            {displayItems.map((item, index) => {
-              // Map comment system data to feedback card format
-              const feedbackItem = useCommentSystem ? {
-                id: item.id,
-                content: item.text,
-                timestamp: item.timestamp,
-                createdAt: item.createdAt,
-                resolved: !!item.resolvedByUserId,
-                resolvedAt: item.resolvedAt,
-                resolvedBy: item.resolvedBy,
-                replies: item.replies || [],
-                // If forwarded by admin, use forwardedBy as the display user
-                forwardedBy: item.forwardedBy,
-                admin: item.forwardedBy || item.user,
-                adminName: item.forwardedBy?.name || item.user?.name,
-                adminRole: item.forwardedBy?.role || item.user?.role,
-                adminPhotoURL: item.forwardedBy?.photoURL || item.user?.photoURL,
-                user: item.user,
-              } : item;
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 1.5 } }}>
+            {(() => {
+              const itemsWithIndex = displayItems.map((item, index) => ({ item, index }));
+
+              const unresolvedItems = itemsWithIndex.filter(({ item }) => {
+                const baseResolved = useCommentSystem
+                  ? !!item.resolvedByUserId
+                  : item.resolved === true;
+                return !baseResolved && !isPastVideo;
+              });
+
+              const resolvedItems = itemsWithIndex.filter(({ item }) => {
+                const baseResolved = useCommentSystem
+                  ? !!item.resolvedByUserId
+                  : item.resolved === true;
+                return baseResolved || isPastVideo;
+              });
 
               const formatTimeForBackend = (seconds) => {
                 const t = Math.floor(Math.max(0, Number(seconds) || 0));
@@ -1325,45 +1437,94 @@ const CreatorFeedbackModal = ({
                 return `${min.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
               };
 
-              const baseResolved = useCommentSystem ? !!item.resolvedByUserId : item.resolved === true;
-              const effectiveResolved = baseResolved || isPastVideo;
+              const renderItem = ({ item, index }) => {
+                const feedbackItem = useCommentSystem
+                  ? {
+                      id: item.id,
+                      content: item.text,
+                      timestamp: item.timestamp,
+                      createdAt: item.createdAt,
+                      resolved: !!item.resolvedByUserId,
+                      resolvedAt: item.resolvedAt,
+                      resolvedBy: item.resolvedBy,
+                      replies: item.replies || [],
+                      forwardedBy: item.forwardedBy,
+                      admin: item.forwardedBy || item.user,
+                      adminName: item.forwardedBy?.name || item.user?.name,
+                      adminRole: item.forwardedBy?.role || item.user?.role,
+                      adminPhotoURL: item.forwardedBy?.photoURL || item.user?.photoURL,
+                      user: item.user,
+                    }
+                  : item;
+
+                const baseResolved = useCommentSystem
+                  ? !!item.resolvedByUserId
+                  : item.resolved === true;
+                const effectiveResolved = baseResolved || isPastVideo;
+
+                return (
+                  <FeedbackCard
+                    key={item.id ?? index}
+                    feedbackItem={feedbackItem}
+                    submission={submission}
+                    index={index}
+                    sequenceNumber={topLevelSequenceByKey.get(item?.id ?? `idx-${index}`)}
+                    isReplyOpen={replyStates[index] || false}
+                    onToggleReply={() => toggleReply(index)}
+                    isRepliesListOpen={viewRepliesOpen[index] || false}
+                    onToggleViewReplies={() => toggleViewReplies(index)}
+                    replyText={replyTexts[index] || ''}
+                    onReplyTextChange={(value) => handleReplyTextChange(index, value)}
+                    onCancelReply={() => handleCancelReply(index)}
+                    onSendReply={() => handleSendReply(index)}
+                    replies={
+                      useCommentSystem
+                        ? (item.replies || []).map((r) => ({
+                            id: r.id,
+                            content: r.text,
+                            createdAt: r.createdAt,
+                            user: r.user,
+                            forwardedBy: r.forwardedBy,
+                          }))
+                        : [...(item.replies || []), ...(replies[index] || [])]
+                    }
+                    isResolved={effectiveResolved}
+                    isNewAndUnopened={showNewCommentBorders && !isPastVideo}
+                    onSeekTo={onSeekTo}
+                    currentTime={formatTimeForBackend(currentTime)}
+                    useCommentSystem={useCommentSystem}
+                    commentHighlightCutoffMs={commentHighlightCutoffMs}
+                    isPastVideo={isPastVideo}
+                    onDeleteReply={
+                      useCommentSystem && !effectiveResolved ? handleDeleteReply : undefined
+                    }
+                    onUndoDelete={handleUndoDelete}
+                    pendingDeletes={pendingDeletes}
+                    currentUserId={user?.id}
+                  />
+                );
+              };
 
               return (
-                <FeedbackCard
-                  key={item.id ?? index}
-                  feedbackItem={feedbackItem}
-                  submission={submission}
-                  index={index}
-                  sequenceNumber={topLevelSequenceByKey.get(item?.id ?? `idx-${index}`)}
-                  isReplyOpen={replyStates[index] || false}
-                  onToggleReply={() => toggleReply(index)}
-                  isRepliesListOpen={viewRepliesOpen[index] || false}
-                  onToggleViewReplies={() => toggleViewReplies(index)}
-                  replyText={replyTexts[index] || ''}
-                  onReplyTextChange={(value) => handleReplyTextChange(index, value)}
-                  onCancelReply={() => handleCancelReply(index)}
-                  onSendReply={() => handleSendReply(index)}
-                  replies={useCommentSystem ? (item.replies || []).map(r => ({
-                    id: r.id,
-                    content: r.text,
-                    createdAt: r.createdAt,
-                    user: r.user,
-                    forwardedBy: r.forwardedBy,
-                  })) : [...(item.replies || []), ...(replies[index] || [])]}
-                  isResolved={effectiveResolved}
-                  isNewAndUnopened={showNewCommentBorders && !isPastVideo}
-                  onSeekTo={onSeekTo}
-                  currentTime={formatTimeForBackend(currentTime)}
-                  useCommentSystem={useCommentSystem}
-                  commentHighlightCutoffMs={commentHighlightCutoffMs}
-                  isPastVideo={isPastVideo}
-                  onDeleteReply={useCommentSystem && !effectiveResolved ? handleDeleteReply : undefined}
-                  onUndoDelete={handleUndoDelete}
-                  pendingDeletes={pendingDeletes}
-                  currentUserId={user?.id}
-                />
+                <>
+                  {unresolvedItems.map(renderItem)}
+                  {resolvedItems.length > 0 && (
+                    <Divider
+                      sx={{
+                        mb: 1,
+                        mt: 1,
+                        typography: 'caption',
+                        color: '#8E8E93',
+                        '&::before, &::after': { borderColor: '#E5E7EB' },
+                      }}
+                    >
+                      resolved comments
+                    </Divider>
+                  )}
+                  {resolvedItems.map(renderItem)}
+                </>
               );
-            })}
+            })()}
             <div ref={commentsEndRef} />
           </Box>
         ) : (
@@ -1378,7 +1539,10 @@ const CreatorFeedbackModal = ({
               color: COLORS.textSecondary,
             }}
           >
-            <Typography variant="body2" sx={{ fontFamily: FONT_FAMILY, textAlign: 'center', fontSize: { xs: '0.813rem', md: '0.875rem' } }}>
+            <Typography
+              variant="body2"
+              sx={{ textAlign: 'center', fontSize: { xs: '0.813rem', md: '0.875rem' } }}
+            >
               No Comments Currently
             </Typography>
           </Box>
@@ -1405,7 +1569,11 @@ const CreatorFeedbackModal = ({
             disabled={videoPage === 0}
             sx={{ p: { xs: 0.25, md: 0.5 } }}
           >
-            <Iconify icon="eva:chevron-left-fill" width={{ xs: 18, md: 20 }} color={videoPage === 0 ? COLORS.textSecondary : COLORS.textPrimary} />
+            <Iconify
+              icon="eva:chevron-left-fill"
+              width={{ xs: 18, md: 20 }}
+              color={videoPage === 0 ? COLORS.textSecondary : COLORS.textPrimary}
+            />
           </IconButton>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.1, md: 0.25 } }}>
             {Array.from({ length: videoCount }, (_, i) => (
@@ -1414,7 +1582,6 @@ const CreatorFeedbackModal = ({
                 component="button"
                 onClick={() => setVideoPage?.(i)}
                 sx={{
-                  fontFamily: FONT_FAMILY,
                   fontSize: { xs: '0.813rem', md: '0.875rem' },
                   fontWeight: videoPage === i ? 700 : 500,
                   color: videoPage === i ? COLORS.textPrimary : COLORS.textSecondary,
@@ -1435,7 +1602,11 @@ const CreatorFeedbackModal = ({
             disabled={videoPage >= videoCount - 1}
             sx={{ p: { xs: 0.25, md: 0.5 } }}
           >
-            <Iconify icon="eva:chevron-right-fill" width={{ xs: 18, md: 20 }} color={videoPage >= videoCount - 1 ? COLORS.textSecondary : COLORS.textPrimary} />
+            <Iconify
+              icon="eva:chevron-right-fill"
+              width={{ xs: 18, md: 20 }}
+              color={videoPage >= videoCount - 1 ? COLORS.textSecondary : COLORS.textPrimary}
+            />
           </IconButton>
         </Box>
       )}
