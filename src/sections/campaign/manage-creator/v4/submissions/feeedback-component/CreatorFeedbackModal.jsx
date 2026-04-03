@@ -162,7 +162,7 @@ const UserInfo = ({ name, roleLabel, photo, date, sequenceLabel }) => (
       width: '100%',
     }}
   >
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.5 } }}>
+    <Box sx={{ px: 0.5, display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.5 } }}>
       <UserAvatar src={photo} name={name} responsive />
       <Box>
         <Typography
@@ -689,6 +689,8 @@ const ReplyItem = ({
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
           mt: { xs: 0.75, md: 1 },
+          px: 0.5,
+          pb: 0.5,
         }}
       >
         {reply.content}
@@ -893,6 +895,7 @@ const FeedbackCard = ({
           display: 'flex',
           flexDirection: 'column',
           gap: { xs: 0.75, md: 1 },
+          px: 0.5,
         }}
       >
         <UserInfo
@@ -903,7 +906,7 @@ const FeedbackCard = ({
           sequenceLabel={sequenceLabel}
         />
 
-        <Box sx={{ display: 'flex', gap: { xs: 0.75, md: 1 } }}>
+        <Box sx={{ px: 0.5, display: 'flex', gap: { xs: 0.75, md: 1 } }}>
           <Typography
             variant="body2"
             component={onSeekTo && feedbackItem.timestamp ? 'button' : 'span'}
@@ -953,7 +956,7 @@ const FeedbackCard = ({
         <Box
           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5 }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ px: 0.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
             {!isResolved && (
               <Typography
                 component="button"
@@ -1011,8 +1014,8 @@ const FeedbackCard = ({
                 <Box
                   aria-label="Replies"
                   sx={{
-                    width: { xs: 20, md: 22 },
-                    height: { xs: 20, md: 22 },
+                    width: { xs: 16, md: 18 },
+                    height: { xs: 16, md: 18 },
                     display: 'block',
                     flexShrink: 0,
                     bgcolor: repliesToggleColor,

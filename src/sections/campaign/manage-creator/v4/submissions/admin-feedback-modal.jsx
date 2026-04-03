@@ -752,6 +752,35 @@ const CommentCard = ({
             </Box>
           )}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+            {isEditedClientComment && (
+              <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
+                {!showOriginal && (
+                  <Typography
+                    sx={{
+                      fontSize: '0.75rem',
+                      fontStyle: 'italic',
+                      color: '#9CA3AF',
+                    }}
+                  >
+                    Edited,
+                  </Typography>
+                )}
+                <Typography
+                  data-interactive
+                  onClick={() => setShowOriginal((prev) => !prev)}
+                  sx={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: '#9CA3AF',
+                    cursor: 'pointer',
+                    ml: showOriginal ? 0 : 0.5,
+                    '&:hover': { color: '#6B7280' },
+                  }}
+                >
+                  {showOriginal ? 'Back to edited' : 'see original'}
+                </Typography>
+              </Box>
+            )}
             {showRepliesToggle && (
               <DarkGlassTooltip title={isRepliesOpen ? 'Hide replies' : 'Show replies'} placement="top">
                 <Box
@@ -785,8 +814,8 @@ const CommentCard = ({
                   <Box
                     aria-label="Replies"
                     sx={{
-                      width: { xs: 20, md: 22 },
-                      height: { xs: 20, md: 22 },
+                      width: { xs: 16, md: 18 },
+                      height: { xs: 16, md: 18 },
                       display: 'block',
                       flexShrink: 0,
                       bgcolor: repliesToggleColor,
@@ -802,35 +831,6 @@ const CommentCard = ({
                   />
                 </Box>
               </DarkGlassTooltip>
-            )}
-            {isEditedClientComment && (
-              <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
-                {!showOriginal && (
-                  <Typography
-                    sx={{
-                      fontSize: '0.75rem',
-                      fontStyle: 'italic',
-                      color: '#9CA3AF',
-                    }}
-                  >
-                    Edited,
-                  </Typography>
-                )}
-                <Typography
-                  data-interactive
-                  onClick={() => setShowOriginal((prev) => !prev)}
-                  sx={{
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    color: '#9CA3AF',
-                    cursor: 'pointer',
-                    ml: showOriginal ? 0 : 0.5,
-                    '&:hover': { color: '#6B7280' },
-                  }}
-                >
-                  {showOriginal ? 'Back to edited' : 'see original'}
-                </Typography>
-              </Box>
             )}
             {hasAgreed && (
               <DarkGlassTooltip

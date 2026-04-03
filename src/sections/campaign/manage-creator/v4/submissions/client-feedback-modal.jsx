@@ -596,8 +596,8 @@ const CommentCard = ({
                   <Box
                     aria-label="Replies"
                     sx={{
-                      width: { xs: 20, md: 22 },
-                      height: { xs: 20, md: 22 },
+                      width: { xs: 16, md: 18 },
+                      height: { xs: 16, md: 18 },
                       display: 'block',
                       flexShrink: 0,
                       bgcolor: repliesToggleColor,
