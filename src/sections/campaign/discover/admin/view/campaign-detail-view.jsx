@@ -48,12 +48,9 @@ import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
-
-// import CampaignLogistics from '../campaign-logistics';
 // HIDE: logistics
 import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 
-// import CampaignLogisticsClient from '../campaign-logistics-client';
 import CampaignFAQ from '../campaign-faq';
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalytics from '../campaign-analytics';
@@ -62,7 +59,6 @@ import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
-// import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailContentClient from '../campaign-detail-content-client';
@@ -85,6 +81,18 @@ if (typeof window !== 'undefined') {
   }
 }
 
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  return format(new Date(dateString), 'MMMM d, yyyy');
+};
+
+const getAllowedTabs = (submissionVersion) => {
+  if (submissionVersion === 'v4') {
+    return clientAllowedTabs.filter((tab) => tab !== 'deliverables');
+  }
+  return clientAllowedTabs.filter((tab) => tab !== 'submissions-v4');
+};
+
 const clientAllowedTabs = [
   'overview',
   'campaign-content',
@@ -99,7 +107,7 @@ const clientAllowedTabs = [
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
   const router = useRouter();
-  // const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
+
   const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -117,6 +125,7 @@ const CampaignDetailView = ({ id }) => {
   // Use centralized permission hook for view-only restrictions
   // Covers: Finance (advanced mode), CSM viewing non-managed campaigns
   const { isViewOnly } = useCampaignPermissions(campaign, user);
+
   const isDisabled = isViewOnly;
 
   const [pages, setPages] = useState(0);
@@ -125,12 +134,10 @@ const CampaignDetailView = ({ id }) => {
   const linking = useBoolean();
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const menuOpen = Boolean(menuAnchorEl);
-  const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
-  const [activateDialogOpen, setActivateDialogOpen] = useState(false);
-  const [initialActivateDialogOpen, setInitialActivateDialogOpen] = useState(false);
-  const [openBulkAssign, setOpenBulkAssign] = useState(false);
-
-  const open = Boolean(anchorEl);
+  const campaignLog = useBoolean();
+  const activateDialog = useBoolean();
+  const initialActivateDialog = useBoolean();
+  const bulkAssign = useBoolean();
 
   // Add this campaign to tabs and save to localStorage
   // useEffect(() => {
@@ -167,12 +174,13 @@ const CampaignDetailView = ({ id }) => {
   //   }
   // }, [id, campaign]);
 
-  const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
+  const isCampaignHasSpreadSheet = campaign?.spreadSheetURL;
 
   const { data: campaignAgreements } = useGetAgreements(campaign?.id);
 
-  const agreementSubmissions = campaign?.submission?.filter(
-    (s) => s.submissionType?.type === 'AGREEMENT_FORM'
+  const agreementSubmissions = useMemo(
+    () => campaign?.submission?.filter((s) => s.submissionType?.type === 'AGREEMENT_FORM'),
+    [campaign?.submission]
   );
 
   const generateNewAgreement = useCallback(async (template) => {
@@ -221,20 +229,7 @@ const CampaignDetailView = ({ id }) => {
 
   // Check if current tab is valid for client users
   useEffect(() => {
-    let allowedTabs = [...clientAllowedTabs];
-
-    if (campaign?.submissionVersion === 'v4') {
-      // For v4: allow submissions-v4, remove deliverables
-      allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
-      allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
-    } else {
-      // For non-v4: allow deliverables, remove submissions-v4
-      allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
-      allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
-    }
-
-    if (isClient && !allowedTabs.includes(currentTab)) {
-      // If client user tries to access a restricted tab, redirect to overview
+    if (isClient && !getAllowedTabs(campaign?.submissionVersion).includes(currentTab)) {
       setCurrentTab('overview');
       localStorage.setItem('campaigndetail', 'overview');
     }
@@ -242,23 +237,9 @@ const CampaignDetailView = ({ id }) => {
 
   const handleChangeTab = useCallback(
     (event, newValue) => {
-      // For client users, only allow specific tabs
-      let allowedTabs = [...clientAllowedTabs];
-
-      if (campaign?.submissionVersion === 'v4') {
-        // For v4: allow submissions-v4, remove deliverables
-        allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
-        allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
-      } else {
-        // For non-v4: allow deliverables, remove submissions-v4
-        allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
-        allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
-      }
-
-      if (isClient && !allowedTabs.includes(newValue)) {
+      if (isClient && !getAllowedTabs(campaign?.submissionVersion).includes(newValue)) {
         return;
       }
-
       localStorage.setItem('campaigndetail', newValue);
       setCurrentTab(newValue);
     },
@@ -270,23 +251,8 @@ const CampaignDetailView = ({ id }) => {
     const handleSwitchTab = (e) => {
       const targetTab = e?.detail;
       if (typeof targetTab !== 'string') return;
-
-      let allowedTabs = [...clientAllowedTabs];
-
-      if (campaign?.submissionVersion === 'v4') {
-        // For v4: allow submissions-v4, remove deliverables
-        allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
-        allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
-      } else {
-        // For non-v4: allow deliverables, remove submissions-v4
-        allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
-        allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
-      }
-
-      if (isClient && !allowedTabs.includes(targetTab)) return;
-
+      if (isClient && !getAllowedTabs(campaign?.submissionVersion).includes(targetTab)) return;
       localStorage.setItem('campaigndetail', targetTab);
-
       setCurrentTab(targetTab);
     };
     window.addEventListener('switchCampaignTab', handleSwitchTab);
@@ -396,7 +362,6 @@ const CampaignDetailView = ({ id }) => {
                   ? [{ label: 'Creator Submissions', value: 'submissions-v4' }]
                   : [{ label: 'Creator Deliverables', value: 'deliverables' }]),
                 { label: 'Campaign Analytics', value: 'analytics' },
-                // HIDE: logistics
                 campaign?.logisticsType && campaign.logisticsType !== ''
                   ? {
                       label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
@@ -413,7 +378,6 @@ const CampaignDetailView = ({ id }) => {
               [
                 { label: 'Overview', value: 'overview' },
                 { label: 'Campaign Details', value: 'campaign-content' },
-                // { label: 'Client Info', value: 'client' },
                 {
                   label: `Creator Master List (${campaign?.pitch?.length || 0})`,
                   value: 'pitch',
@@ -448,7 +412,6 @@ const CampaignDetailView = ({ id }) => {
                   label: `Invoices (${campaignInvoices?.length || 0})`,
                   value: 'invoices',
                 },
-                // HIDE: logistics
                 campaign?.logisticsType && campaign.logisticsType !== ''
                   ? {
                       label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
@@ -525,12 +488,14 @@ const CampaignDetailView = ({ id }) => {
   );
 
   useEffect(() => {
-    window.addEventListener('click', (event) => {
+    const handleClickOutside = (event) => {
       if (reminderRef.current && !reminderRef.current.contains(event.target)) {
         setAnchorEl(false);
       }
-    });
-  }, [open]);
+    };
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const generatePublicUrl = async () => {
     try {
@@ -577,84 +542,82 @@ const CampaignDetailView = ({ id }) => {
     }
   }, [loading, copyDialog, campaignMutate, campaign]);
 
-  const renderTabContent = {
-    overview: isClient ? (
-      <CampaignOverviewClient campaign={campaign} onUpdate={campaignMutate} />
-    ) : (
-      <CampaignOverview campaign={campaign} onUpdate={campaignMutate} isDisabled={isDisabled} />
-    ),
-    'campaign-content': <CampaignDetailContentClient campaign={campaign} />,
-    'creator-master-list': (
-      <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
-    ),
-    agreement: (
-      <CampaignAgreements
-        campaign={campaign}
-        campaignMutate={campaignMutate}
-        isDisabled={isDisabled}
-      />
-    ),
-    // HIDE: logistics
-    logistics: isClient ? (
-      <CampaignLogisticsView
-        campaign={campaign}
-        openBulkAssign={openBulkAssign}
-        setOpenBulkAssign={setOpenBulkAssign}
-        isAdmin={!isClient}
-        isSuperAdmin={isSuperAdmin}
-      />
-    ) : (
-      <CampaignLogisticsView
-        campaign={campaign}
-        openBulkAssign={openBulkAssign}
-        setOpenBulkAssign={setOpenBulkAssign}
-        isAdmin={!isClient}
-        isDisabled={isDisabled}
-        isSuperAdmin={isSuperAdmin}
-      />
-    ),
-    // logistics: isClient ? (
-    //   <CampaignLogisticsClient campaign={campaign} />
-    // ) : (
-    //   <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
-    // ),
-    invoices: (
-      <CampaignInvoicesList
-        campId={campaign?.id}
-        campaignMutate={campaignMutate}
-        isDisabled={isDisabled}
-      />
-    ),
-    client: (
-      <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
-    ),
-    pitch: (
-      <CampaignV3PitchesWrapper
-        campaign={campaign}
-        campaignMutate={campaignMutate}
-        isDisabled={isDisabled}
-      />
-    ),
-    submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
-    deliverables: isClient ? (
-      <CampaignCreatorDeliverablesClient campaign={campaign} campaignMutate={campaignMutate} />
-    ) : (
-      <CampaignCreatorDeliverables campaign={campaign} isDisabled={isDisabled} />
-    ),
-    'submissions-v4': <CampaignCreatorSubmissionsV4 campaign={campaign} isDisabled={isDisabled} />,
-    analytics: (
-      <CampaignAnalytics
-        campaign={campaign}
-        campaignMutate={campaignMutate}
-        isDisabled={isDisabled}
-      />
-    ),
-    faq: <CampaignFAQ />,
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    return format(new Date(dateString), 'MMMM d, yyyy');
+  const renderTabContent = () => {
+    switch (currentTab) {
+      case 'overview':
+        return isClient ? (
+          <CampaignOverviewClient campaign={campaign} onUpdate={campaignMutate} />
+        ) : (
+          <CampaignOverview campaign={campaign} onUpdate={campaignMutate} isDisabled={isDisabled} />
+        );
+      case 'campaign-content':
+        return <CampaignDetailContentClient campaign={campaign} />;
+      case 'creator-master-list':
+        return (
+          <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
+        );
+      case 'agreement':
+        return (
+          <CampaignAgreements
+            campaign={campaign}
+            campaignMutate={campaignMutate}
+            isDisabled={isDisabled}
+          />
+        );
+      case 'logistics':
+        return (
+          <CampaignLogisticsView
+            campaign={campaign}
+            openBulkAssign={bulkAssign.value}
+            setOpenBulkAssign={bulkAssign.setValue}
+            isAdmin={!isClient}
+            isDisabled={isDisabled}
+            isSuperAdmin={isSuperAdmin}
+          />
+        );
+      case 'invoices':
+        return (
+          <CampaignInvoicesList
+            campId={campaign?.id}
+            campaignMutate={campaignMutate}
+            isDisabled={isDisabled}
+          />
+        );
+      case 'client':
+        return (
+          <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
+        );
+      case 'pitch':
+        return (
+          <CampaignV3PitchesWrapper
+            campaign={campaign}
+            campaignMutate={campaignMutate}
+            isDisabled={isDisabled}
+          />
+        );
+      case 'submission':
+        return <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />;
+      case 'deliverables':
+        return isClient ? (
+          <CampaignCreatorDeliverablesClient campaign={campaign} campaignMutate={campaignMutate} />
+        ) : (
+          <CampaignCreatorDeliverables campaign={campaign} isDisabled={isDisabled} />
+        );
+      case 'submissions-v4':
+        return <CampaignCreatorSubmissionsV4 campaign={campaign} isDisabled={isDisabled} />;
+      case 'analytics':
+        return (
+          <CampaignAnalytics
+            campaign={campaign}
+            campaignMutate={campaignMutate}
+            isDisabled={isDisabled}
+          />
+        );
+      case 'faq':
+        return <CampaignFAQ />;
+      default:
+        return null;
+    }
   };
 
   const copyURL = () => {
@@ -741,12 +704,22 @@ const CampaignDetailView = ({ id }) => {
 
   const isPendingCampaign = useMemo(
     () =>
-      campaign?.status === 'PENDING_CSM_REVIEW' ||
-      campaign?.status === 'PENDING_ADMIN_ACTIVATION',
+      campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'PENDING_ADMIN_ACTIVATION',
     [campaign]
   );
 
   const renderActionButtons = () => {
+    const adminRole = user?.admin?.role?.slug || user?.admin?.role?.name;
+    const userRole = user?.role;
+    const campaignAdmins = campaign?.campaignAdmin || [];
+
+    if (
+      userRole === 'admin' &&
+      adminRole === 'sales_and_marketing' &&
+      !campaignAdmins.some((a) => a.adminId === user?.id)
+    )
+      return null;
+
     if (!isClient) {
       // Admin buttons logic...
       if (isPendingCampaign) {
@@ -757,16 +730,13 @@ const CampaignDetailView = ({ id }) => {
             startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
             onClick={() => {
               // For superadmin on pending campaigns: use initial activation (admin assignment only)
-              if (
-                canInitialActivate &&
-                (campaign?.status === 'PENDING_CSM_REVIEW')
-              ) {
+              if (canInitialActivate && campaign?.status === 'PENDING_CSM_REVIEW') {
                 console.log('Opening InitialActivateDialog (admin assignment only)');
-                setInitialActivateDialogOpen(true);
+                initialActivateDialog.onTrue();
               } else {
                 // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
                 console.log('Opening ActivateDialog (full setup)');
-                setActivateDialogOpen(true);
+                activateDialog.onTrue();
               }
             }}
             disabled={isDisabled}
@@ -794,34 +764,6 @@ const CampaignDetailView = ({ id }) => {
           </Button>
         );
       }
-
-      // HIDE: logistics - button moved to logistics view
-      // if (currentTab === 'logistics') {
-      //   return (
-      //     <Button
-      //       variant="contained"
-      //       size="small"
-      //       startIcon={<Iconify icon="eva:edit-2-fill" width={20} />}
-      //       onClick={() => setOpenBulkAssign(true)}
-      //       disabled={isDisabled}
-      //       sx={{
-      //         height: 42,
-      //         borderRadius: 1,
-      //         color: 'white',
-      //         bgcolor: '#1340ff',
-      //         border: '1px solid #1340ff',
-      //         borderBottom: '4px solid #0e2fd6',
-      //         fontWeight: 600,
-      //         fontSize: '0.95rem',
-      //         px: 2,
-      //         whiteSpace: 'nowrap',
-      //         '&:hover': { bgcolor: '#0e2fd6' },
-      //       }}
-      //     >
-      //       Edit & Bulk Assign
-      //     </Button>
-      //   );
-      // }
 
       return (
         <Button
@@ -875,6 +817,7 @@ const CampaignDetailView = ({ id }) => {
         </Button>
       );
     }
+
     return null;
   };
 
@@ -995,85 +938,8 @@ const CampaignDetailView = ({ id }) => {
             <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
               {/* Only show action buttons for non-client users */}
               {renderActionButtons()}
-              {!isClient && (
-                // <>
-                //   {isPendingCampaign ? (
-                //     <Button
-                //       variant="contained"
-                //       size="small"
-                //       startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
-                //       onClick={() => {
-                //         // For superadmin on pending campaigns: use initial activation (admin assignment only)
-                //         if (
-                //           canInitialActivate &&
-                //           (campaign?.status === 'PENDING_CSM_REVIEW' ||
-                //             campaign?.status === 'SCHEDULED')
-                //         ) {
-                //           console.log('Opening InitialActivateDialog (admin assignment only)');
-                //           setInitialActivateDialogOpen(true);
-                //         } else {
-                //           // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
-                //           console.log('Opening ActivateDialog (full setup)');
-                //           setActivateDialogOpen(true);
-                //         }
-                //       }}
-                //       disabled={isDisabled}
-                //       sx={{
-                //         height: 42,
-                //         borderRadius: 1,
-                //         color: 'white',
-                //         backgroundColor: '#1340ff',
-                //         border: '1px solid #1340ff',
-                //         borderBottom: '4px solid #0e2fd6',
-                //         fontWeight: 600,
-                //         fontSize: '0.95rem',
-                //         px: 2,
-                //         whiteSpace: 'nowrap',
-                //         '&:hover': {
-                //           backgroundColor: '#0e2fd6',
-                //         },
-                //       }}
-                //     >
-                //       Activate Campaign
-                //     </Button>
-                //   ) : (
-                //     <Button
-                //       variant="outlined"
-                //       size="small"
-                //       startIcon={
-                //         <img
-                //           src="/assets/icons/overview/editButton.svg"
-                //           alt="edit"
-                //           style={{
-                //             width: 20,
-                //             height: 20,
-                //             opacity: isDisabled ? 0.3 : 1,
-                //           }}
-                //         />
-                //       }
-                //       onClick={() =>
-                //         router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))
-                //       }
-                //       disabled={isDisabled}
-                //       sx={{
-                //         height: 42,
-                //         borderRadius: 1,
-                //         color: '#221f20',
-                //         border: '1px solid #e7e7e7',
-                //         borderBottom: '4px solid #e7e7e7',
-                //         fontWeight: 600,
-                //         fontSize: '0.95rem',
-                //         px: 2,
-                //         whiteSpace: 'nowrap',
-                //         '&:hover': {
-                //           backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                //         },
-                //       }}
-                //     >
-                //       Edit Details
-                //     </Button>
-                //   )}
 
+              {!isClient && (
                 <Box
                   onClick={isDisabled ? undefined : handleMenuOpen}
                   component="button"
@@ -1161,7 +1027,7 @@ const CampaignDetailView = ({ id }) => {
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
-                    setCampaignLogIsOpen(true);
+                    campaignLog.onTrue();
                     handleMenuClose();
                   }}
                   sx={{ py: 1 }}
@@ -1180,7 +1046,7 @@ const CampaignDetailView = ({ id }) => {
 
       {renderTabs}
 
-      {(!campaignLoading ? renderTabContent[currentTab] : <LoadingScreen />) || null}
+      {!campaignLoading ? renderTabContent() : <LoadingScreen />}
 
       {copyDialogContainer}
 
@@ -1199,20 +1065,20 @@ const CampaignDetailView = ({ id }) => {
       />
 
       <CampaignLog
-        open={campaignLogIsOpen}
+        open={campaignLog.value}
         campaign={campaign}
-        onClose={() => setCampaignLogIsOpen(false)}
+        onClose={() => campaignLog.onFalse()}
       />
 
       <ActivateCampaignDialog
-        open={activateDialogOpen}
-        onClose={() => setActivateDialogOpen(false)}
+        open={activateDialog.value}
+        onClose={() => activateDialog.onFalse()}
         campaignId={id}
       />
 
       <InitialActivateCampaignDialog
-        open={initialActivateDialogOpen}
-        onClose={() => setInitialActivateDialogOpen(false)}
+        open={initialActivateDialog.value}
+        onClose={() => initialActivateDialog.onFalse()}
         campaignId={id}
       />
 

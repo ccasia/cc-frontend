@@ -120,7 +120,8 @@ const NavItem = forwardRef(
       user?.role === 'admin' &&
       roles?.length &&
       !roles?.includes(user?.admin?.role?.name) &&
-      !roles?.includes(user?.admin?.mode)
+      !roles?.includes(user?.admin?.mode) &&
+      !roles?.includes(user?.admin?.role?.slug)
     ) {
       return null;
     }

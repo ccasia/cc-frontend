@@ -87,10 +87,6 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
           </Typography>
         </TableCell>
 
-        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{creator?.tiktok || 'null'}</TableCell> */}
-
-        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}> {creator?.instagram || 'null'}</TableCell> */}
-
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{country || 'null'}</TableCell>
 
         <TableCell>
@@ -106,19 +102,6 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
             {status}
           </Label>
         </TableCell>
-
-        {/* <TableCell>
-          <Button
-            variant="outlined"
-            onClick={handleOpenMediaKit}
-            endIcon={<Iconify icon="eva:external-link-fill" />}
-            size="small"
-          >
-            <Typography variant="button" sx={{ fontWeight: 'normal' }}>
-              Media Kit
-            </Typography>
-          </Button>
-        </TableCell> */}
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Label color={creator?.isFormCompleted ? 'success' : 'warning'}>
@@ -172,7 +155,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
             <IconButton
               color={quickEdit.value ? 'inherit' : 'default'}
               onClick={quickEdit.onTrue}
-              disabled={!useCheckPermission(['update:client'])}
+              disabled={!useCheckPermission(['update:creator'])}
             >
               <Iconify icon="solar:pen-bold" />
             </IconButton>
@@ -184,6 +167,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
             }
             placement="top"
             arrow
+            disabled={!useCheckPermission(['update:creator'])}
           >
             <IconButton
               onClick={() => {

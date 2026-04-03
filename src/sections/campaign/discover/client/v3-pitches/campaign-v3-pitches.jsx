@@ -78,11 +78,39 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const location = useLocation();
   const navigate = useNavigate();
   // Merge prop-based isDisabled with existing Finance role check
+
   const financeDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
-  const isDisabled = propIsDisabled || financeDisabled;
+
+  const salesAndMarketingDisabled = useMemo(() => {
+    const adminRole = user?.admin?.role?.slug || user?.admin?.role?.name;
+    const userRole = user?.role;
+    const campaignAdmins = campaign?.campaignAdmin || [];
+
+    return (
+      userRole === 'admin' &&
+      adminRole === 'sales_and_marketing' &&
+      !campaignAdmins.some((a) => a.adminId === user?.id)
+    );
+
+    // if (
+    //   userRole === 'admin' &&
+    //   adminRole === 'sales_and_marketing' &&
+    //   !campaignAdmins.some((a) => a.adminId === user?.id)
+    // )
+    //   return false;
+  }, [
+    campaign?.campaignAdmin,
+    user?.admin?.role?.name,
+    user?.admin?.role?.slug,
+    user?.id,
+    user?.role,
+  ]);
+
+  const isDisabled = propIsDisabled || financeDisabled || salesAndMarketingDisabled;
+
   const smUp = useResponsive('up', 'sm');
   const smDown = useResponsive('down', 'sm');
   const mdUp = useResponsive('up', 'md');

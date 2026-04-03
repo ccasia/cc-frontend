@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { memo, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
-import { Divider, Tooltip } from '@mui/material';
+import { Divider } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -58,7 +58,11 @@ function Group({ items, slotProps }) {
       }
 
       if (user?.role === 'admin') {
-        return roles.includes(user?.admin?.role?.name) || roles.includes(user?.admin?.mode);
+        return (
+          roles.includes(user?.admin?.role?.name) ||
+          roles.includes(user?.admin?.mode) ||
+          roles.includes(user?.admin?.role?.slug)
+        );
       }
 
       return roles.includes(user?.role);

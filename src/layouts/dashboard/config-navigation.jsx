@@ -109,7 +109,7 @@ export function useNavData() {
             title: 'Overview',
             path: paths.dashboard.root,
             icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
-            roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
+            roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL', 'sales_and_marketing'],
           },
           {
             title: 'Dashboard',
@@ -122,7 +122,7 @@ export function useNavData() {
       {
         items: [
           {
-            roles: ['superadmin', 'CSL'],
+            roles: ['superadmin', 'CSL', 'sales_and_marketing'],
             title: 'Analytics',
             path: paths.dashboard.analytics,
             icon: <Iconify icon="icon-park-outline:chart-histogram" width={25} />,
@@ -132,7 +132,7 @@ export function useNavData() {
       {
         items: [
           {
-            roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
+            roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL', 'sales_and_marketing'],
             title: 'Campaigns',
             path: paths.dashboard.campaign.view,
             icon: ICONS.mycampaigns,
@@ -144,7 +144,7 @@ export function useNavData() {
             icon: ICONS.admin,
           },
           {
-            roles: ['superadmin', 'CSM'],
+            roles: ['superadmin', 'CSM', 'sales_and_marketing'],
             title: 'Creator',
             path: paths.dashboard.creator.list,
             icon: ICONS.creator,
@@ -160,13 +160,13 @@ export function useNavData() {
             ],
           },
           {
-            roles: ['superadmin', 'CSM', 'god', 'CSL'],
+            roles: ['superadmin', 'CSM', 'god', 'CSL', 'sales_and_marketing'],
             title: 'Clients',
             path: paths.dashboard.company.discover,
             icon: ICONS.clients,
           },
           {
-            roles: ['superadmin', 'god'],
+            roles: ['superadmin', 'god', 'sales_and_marketing'],
             title: 'Creator Discovery Tool',
             path: paths.dashboard.discoveryTool.root,
             icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
@@ -177,9 +177,9 @@ export function useNavData() {
               },
               {
                 title: 'Non-Platform Creators',
-                path: paths.dashboard.discoveryTool.npc
-              }
-            ]
+                path: paths.dashboard.discoveryTool.npc,
+              },
+            ],
           },
           // {
           //   title: 'My Tasks',
@@ -206,7 +206,7 @@ export function useNavData() {
             icon: <Iconify icon="carbon:package" width={25} />,
           },
           {
-            roles: ['superadmin', 'god'],
+            roles: ['superadmin', 'god', 'sales_and_marketing'],
             title: 'Credit Tier',
             path: paths.dashboard.creditTier.root,
             icon: <Iconify icon="mdi:account-star-outline" width={25} />,
@@ -371,6 +371,11 @@ export function useNavData() {
         return csLeadNavigations;
       }
 
+      // New version uses slug for uniqueness
+      if (user.role === 'admin' && user?.admin?.role?.slug === 'sales_and_marketing') {
+        return adminNavigations;
+      }
+
       return [];
     },
 
@@ -396,27 +401,7 @@ export function useNavData() {
                   icon: ICONS.calendar,
                 },
               ]
-            : [
-                // {
-                //   title: (
-                //     <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-                //       Chats
-                //     </span>
-                //   ),
-                //   path: paths.dashboard.chat.root,
-                //   icon: ICONS.chat,
-                //   msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
-                // },
-                // {
-                //   title: (
-                //     <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-                //       Calendar
-                //     </span>
-                //   ),
-                //   path: paths.dashboard.calendar.root,
-                //   icon: ICONS.calendar,
-                // },
-              ],
+            : [],
       });
     }
 
