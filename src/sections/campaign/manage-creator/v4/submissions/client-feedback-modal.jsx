@@ -563,7 +563,10 @@ const CommentCard = ({
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             {showRepliesToggle && (
-                <DarkGlassTooltip title={isRepliesOpen ? 'Hide replies' : 'Show replies'} placement="top">
+              <DarkGlassTooltip
+                title={isRepliesOpen ? 'Hide replies' : 'Show replies'}
+                placement="top"
+              >
                 <Box
                   component="button"
                   type="button"
@@ -609,7 +612,7 @@ const CommentCard = ({
                     }}
                   />
                 </Box>
-                </DarkGlassTooltip>
+              </DarkGlassTooltip>
             )}
 
             {!isUser && (
@@ -1351,7 +1354,7 @@ const ClientFeedbackModal = forwardRef(
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
                           <AnimatePresence initial={false}>
                             {(comment.replies || []).map((reply, index) => {
-                              const isLast = index === comment.replies?.length - 1;
+                              const isLast = index === (comment.replies?.length ?? 0) - 1;
 
                               return (
                                 <m.div

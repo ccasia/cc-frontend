@@ -391,8 +391,6 @@ const CommentCard = ({
       onClick={handleCardClick}
       sx={{
         p: { xs: 1.25, md: 2 },
-        display: 'flex',
-        flexDirection: 'column',
         gap: { xs: 0.75, md: 1 },
         bgcolor: isResolved ? '#EBEBEB' : 'white',
         borderRadius: 2,
@@ -1037,6 +1035,7 @@ CommentCard.propTypes = {
   pendingDelete: PropTypes.bool,
   pendingDeleteStartTime: PropTypes.number,
   currentUserId: PropTypes.string,
+  parentResolved: PropTypes.bool,
 };
 
 // ---------------------------------------------------------------------------
