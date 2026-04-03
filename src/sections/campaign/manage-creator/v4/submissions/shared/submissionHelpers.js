@@ -100,7 +100,8 @@ export const getButtonStates = ({
       !isPostingLinkEditable) ||
     ((status === 'NOT_STARTED' || status === 'CLIENT_APPROVED') &&
       selectedFiles.length === 0 &&
-      !isPostingLinkEditable);
+      !isPostingLinkEditable) ||
+    (status === 'CHANGES_REQUIRED' && isReuploadMode && selectedFiles.length === 0);
 
   // Determine if showing reupload button
   const isReuploadButton =
