@@ -274,7 +274,9 @@ export default function UserListView() {
         <DialogContent>
           <Stepper activeStep={activeStep} orientation="vertical">
             <Step>
-              <StepLabel>Role</StepLabel>
+              <StepLabel>
+                <Typography variant="subtitle2">Role</Typography>
+              </StepLabel>
               <StepContent>
                 <RHFSelect name="role" label="Role">
                   {!isLoading &&
@@ -298,139 +300,25 @@ export default function UserListView() {
                 </Stack>
                 <Button
                   variant="contained"
-                  color="primary"
+                  size="small"
                   onClick={handleNext}
                   sx={{
                     my: 2,
+                    borderRadius: 0.6,
                   }}
                 >
                   Next
                 </Button>
               </StepContent>
             </Step>
-            {/* <Step>
-            <StepLabel>Permission</StepLabel>
-            <StepContent>
-              {fields.map((elem, index) => {
-                const module = watch(`permission.${[index]}.module`);
-                return (
-                  <Box key={elem.id} display="flex" gap={2} my={2} alignItems="center">
-                    <Controller
-                      name={`permission.${index}.module`}
-                      control={control}
-                      render={({ field }) => (
-                        <FormControl
-                          fullWidth
-                          error={
-                            errors.permission &&
-                            errors.permission[index] &&
-                            errors.permission[index].module
-                          }
-                        >
-                          <InputLabel id="module">Module</InputLabel>
-                          <Select labelId="module" label="Module" {...field}>
-                            {MODULE_ITEMS.map((item, a) => (
-                              <MenuItem value={item.value} key={a}>
-                                {item.name}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      )}
-                    />
 
-                    <Controller
-                      name={`permission.${index}.permissions`}
-                      control={control}
-                      render={({ field }) => (
-                        <FormControl
-                          fullWidth
-                          error={
-                            errors.permission &&
-                            errors.permission[index] &&
-                            errors.permission[index].permissions
-                          }
-                        >
-                          <InputLabel id="permission">Permission</InputLabel>
-                          <Select
-                            labelId="permission"
-                            label="Permission"
-                            {...field}
-                            required
-                            multiple
-                          >
-                            {MODULE_ITEMS.find((item) => item.value === module)?.items.map(
-                              (val, i) => (
-                                <MenuItem key={i} value={val}>
-                                  {val}
-                                </MenuItem>
-                              )
-                            )}
-                          </Select>
-                        </FormControl>
-                      )}
-                    />
-                    <IconButton color="error" onClick={() => remove(index)}>
-                      <Iconify icon="mdi:trash" />
-                    </IconButton>
-                  </Box>
-                );
-              })}
-
-              {fields.length < 5 && (
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={() => append({ module: '', permissions: [] })}
-                  sx={{
-                    my: 2,
-                  }}
-                >
-                  + Add New Role
-                </Button>
-              )}
-              <Stack direction="row" spacing={1}>
-                <Button
-                  variant="outlined"
-                  onClick={handleBack}
-                  sx={{
-                    my: 2,
-                  }}
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleNext}
-                  sx={{
-                    my: 2,
-                  }}
-                >
-                  Next
-                </Button>
-              </Stack>
-            </StepContent>
-          </Step> */}
             <Step>
-              <StepLabel>Email</StepLabel>
+              <StepLabel>
+                <Typography variant="subtitle2">Email</Typography>
+              </StepLabel>
               <StepContent>
                 <RHFTextField name="email" type="email" label="Email" />
-                {/* <Controller
-                  name="email"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      margin="dense"
-                      label="Email Address"
-                      type="email"
-                      fullWidth
-                      variant="outlined"
-                      error={errors.email}
-                    />
-                  )}
-                /> */}
+
                 <Button
                   variant="outlined"
                   color="warning"
@@ -450,10 +338,17 @@ export default function UserListView() {
             onClick={() => {
               handleCloseDialog();
             }}
+            sx={{ borderRadius: 0.5 }}
+            variant="outlined"
           >
             Cancel
           </Button>
-          <LoadingButton type="submit" loading={buttonLoading.value}>
+          <LoadingButton
+            type="submit"
+            loading={buttonLoading.value}
+            variant="contained"
+            sx={{ borderRadius: 0.5 }}
+          >
             Invite
           </LoadingButton>
         </DialogActions>
@@ -465,25 +360,25 @@ export default function UserListView() {
     setTableData(admins && admins.filter((admin) => admin?.id !== user?.id));
   }, [admins, user]);
 
-  if(adminLoading){
+  if (adminLoading) {
     return (
       <Box
-      sx={{
-        position: 'relative',
-        top: 200,
-        textAlign: 'center',
-      }}
-    >
-      <CircularProgress
-        thickness={7}
-        size={25}
         sx={{
-          color: (theme) => theme.palette.common.black,
-          strokeLinecap: 'round',
+          position: 'relative',
+          top: 200,
+          textAlign: 'center',
         }}
-      />
-    </Box>
-)
+      >
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: (theme) => theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
   }
 
   return (
@@ -499,10 +394,22 @@ export default function UserListView() {
           action={
             user?.role === 'superadmin' && (
               <Button
-                variant="contained"
-                size="small"
+                startIcon={<Iconify icon="mdi:invite" width={20} height={20} />}
+                sx={{
+                  bgcolor: 'black',
+                  color: 'white',
+                  borderBottom: '3px solid grey',
+                  borderRadius: '8px',
+                  px: 2.5,
+                  py: 1,
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    bgcolor: 'grey',
+                    opacity: 0.9,
+                  },
+                }}
                 onClick={handleClickOpenDialog}
-                startIcon={<Iconify icon="mdi:invite" width={18} />}
               >
                 Invite admin
               </Button>
@@ -515,7 +422,6 @@ export default function UserListView() {
 
         {inviteAdminDialog}
 
-        {/* <AdminCreateManager open={openCreateDialog} onClose={handleCloseCreateDialog} /> */}
         {adminLoading && (
           <Box
             sx={{
@@ -535,147 +441,144 @@ export default function UserListView() {
           </Box>
         )}
 
-        
-          <Card>
-            <Tabs
-              value={filters.status}
-              onChange={handleFilterStatus}
-              sx={{
-                px: 2.5,
-                boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
-              }}
-            >
-              {STATUS_OPTIONS.map((tab) => (
-                <Tab
-                  key={tab.value}
-                  iconPosition="end"
-                  value={tab.value}
-                  label={tab.label}
-                  icon={
-                    <Label
-                      variant={
-                        ((tab.value === 'all' || tab.value === filters.status) && 'filled') ||
-                        'soft'
-                      }
-                      color={
-                        (tab.value === 'active' && 'success') ||
-                        (tab.value === 'pending' && 'warning') ||
-                        (tab.value === 'banned' && 'error') ||
-                        'default'
-                      }
-                    >
-                      {[
-                        'active',
-                        'pending',
-                        'banned',
-                        'rejected',
-                        'blacklisted',
-                        'suspended',
-                        'spam',
-                      ].includes(tab.value)
-                        ? tableData?.filter((item) => item.status === tab.value).length
-                        : tableData?.length}
-                    </Label>
-                  }
-                />
-              ))}
-            </Tabs>
+        <Card>
+          <Tabs
+            value={filters.status}
+            onChange={handleFilterStatus}
+            sx={{
+              px: 2.5,
+              boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
+            }}
+          >
+            {STATUS_OPTIONS.map((tab) => (
+              <Tab
+                key={tab.value}
+                iconPosition="end"
+                value={tab.value}
+                label={tab.label}
+                icon={
+                  <Label
+                    variant={
+                      ((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'
+                    }
+                    color={
+                      (tab.value === 'active' && 'success') ||
+                      (tab.value === 'pending' && 'warning') ||
+                      (tab.value === 'banned' && 'error') ||
+                      'default'
+                    }
+                  >
+                    {[
+                      'active',
+                      'pending',
+                      'banned',
+                      'rejected',
+                      'blacklisted',
+                      'suspended',
+                      'spam',
+                    ].includes(tab.value)
+                      ? tableData?.filter((item) => item.status === tab.value).length
+                      : tableData?.length}
+                  </Label>
+                }
+              />
+            ))}
+          </Tabs>
 
-            <UserTableToolbar
+          <UserTableToolbar
+            filters={filters}
+            onFilters={handleFilters}
+            roleOptions={!isLoading && roles.map((item) => item.name)}
+          />
+
+          {canReset && (
+            <UserTableFiltersResult
               filters={filters}
               onFilters={handleFilters}
-              roleOptions={!isLoading && roles.map((item) => item.name)}
+              //
+              onResetFilters={handleResetFilters}
+              //
+              results={dataFiltered.length}
+              sx={{ p: 2.5, pt: 0 }}
+            />
+          )}
+
+          <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+            <TableSelectedAction
+              dense={table.dense}
+              numSelected={table.selected.length}
+              rowCount={dataFiltered?.length}
+              onSelectAllRows={(checked) =>
+                table.onSelectAllRows(
+                  checked,
+                  dataFiltered.map((row) => row.id)
+                )
+              }
+              action={
+                <Tooltip title="Delete">
+                  <IconButton color="primary" onClick={confirm.onTrue}>
+                    <Iconify icon="solar:trash-bin-trash-bold" />
+                  </IconButton>
+                </Tooltip>
+              }
             />
 
-            {canReset && (
-              <UserTableFiltersResult
-                filters={filters}
-                onFilters={handleFilters}
-                //
-                onResetFilters={handleResetFilters}
-                //
-                results={dataFiltered.length}
-                sx={{ p: 2.5, pt: 0 }}
-              />
-            )}
+            <Scrollbar>
+              <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
+                <TableHeadCustom
+                  order={table.order}
+                  orderBy={table.orderBy}
+                  headLabel={TABLE_HEAD}
+                  rowCount={dataFiltered?.length}
+                  numSelected={table.selected.length}
+                  onSort={table.onSort}
+                  onSelectAllRows={(checked) =>
+                    table.onSelectAllRows(
+                      checked,
+                      dataFiltered.map((row) => row.id)
+                    )
+                  }
+                />
 
-            <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
-              <TableSelectedAction
-                dense={table.dense}
-                numSelected={table.selected.length}
-                rowCount={dataFiltered?.length}
-                onSelectAllRows={(checked) =>
-                  table.onSelectAllRows(
-                    checked,
-                    dataFiltered.map((row) => row.id)
-                  )
-                }
-                action={
-                  <Tooltip title="Delete">
-                    <IconButton color="primary" onClick={confirm.onTrue}>
-                      <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
-                  </Tooltip>
-                }
-              />
+                <TableBody>
+                  {dataFiltered
+                    ?.slice(
+                      table.page * table.rowsPerPage,
+                      table.page * table.rowsPerPage + table.rowsPerPage
+                    )
+                    .map((row) => (
+                      <UserTableRow
+                        key={row.id}
+                        row={row}
+                        selected={table.selected.includes(row.id)}
+                        onSelectRow={() => table.onSelectRow(row.id)}
+                        onDeleteRow={() => handleDeleteRow(row.id)}
+                        onEditRow={() => handleEditRow(row.id)}
+                      />
+                    ))}
 
-              <Scrollbar>
-                <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
-                  <TableHeadCustom
-                    order={table.order}
-                    orderBy={table.orderBy}
-                    headLabel={TABLE_HEAD}
-                    rowCount={dataFiltered?.length}
-                    numSelected={table.selected.length}
-                    onSort={table.onSort}
-                    onSelectAllRows={(checked) =>
-                      table.onSelectAllRows(
-                        checked,
-                        dataFiltered.map((row) => row.id)
-                      )
-                    }
+                  <TableEmptyRows
+                    height={denseHeight}
+                    emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered?.length)}
                   />
 
-                  <TableBody>
-                    {dataFiltered
-                      ?.slice(
-                        table.page * table.rowsPerPage,
-                        table.page * table.rowsPerPage + table.rowsPerPage
-                      )
-                      .map((row) => (
-                        <UserTableRow
-                          key={row.id}
-                          row={row}
-                          selected={table.selected.includes(row.id)}
-                          onSelectRow={() => table.onSelectRow(row.id)}
-                          onDeleteRow={() => handleDeleteRow(row.id)}
-                          onEditRow={() => handleEditRow(row.id)}
-                        />
-                      ))}
+                  <TableNoData notFound={notFound} />
+                </TableBody>
+              </Table>
+            </Scrollbar>
+          </TableContainer>
 
-                    <TableEmptyRows
-                      height={denseHeight}
-                      emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered?.length)}
-                    />
-
-                    <TableNoData notFound={notFound} />
-                  </TableBody>
-                </Table>
-              </Scrollbar>
-            </TableContainer>
-
-            <TablePaginationCustom
-              count={dataFiltered?.length}
-              page={table.page}
-              rowsPerPage={table.rowsPerPage}
-              onPageChange={table.onChangePage}
-              onRowsPerPageChange={table.onChangeRowsPerPage}
-              //
-              dense={table.dense}
-              onChangeDense={table.onChangeDense}
-            />
-          </Card>
-        
+          <TablePaginationCustom
+            count={dataFiltered?.length}
+            page={table.page}
+            rowsPerPage={table.rowsPerPage}
+            onPageChange={table.onChangePage}
+            onRowsPerPageChange={table.onChangeRowsPerPage}
+            //
+            dense={table.dense}
+            onChangeDense={table.onChangeDense}
+          />
+        </Card>
       </Container>
 
       <ConfirmDialog
@@ -709,7 +612,6 @@ export default function UserListView() {
 
 function applyFilter({ inputData, comparator, filters }) {
   const { name, status, role } = filters;
-  console.log(inputData);
 
   const stabilizedThis = inputData?.map((el, index) => [el, index]);
 

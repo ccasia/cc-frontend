@@ -58,7 +58,11 @@ function Group({ items, slotProps }) {
       }
 
       if (user?.role === 'admin') {
-        return roles.includes(user?.admin?.role?.name) || roles.includes(user?.admin?.mode);
+        return (
+          roles.includes(user?.admin?.role?.name) ||
+          roles.includes(user?.admin?.mode) ||
+          roles.includes(user?.admin?.role?.slug)
+        );
       }
 
       return roles.includes(user?.role);

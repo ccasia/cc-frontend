@@ -44,19 +44,26 @@ function Group({ subheader, items, slotProps, whoCanSee }) {
   }, []);
 
   // Function to check if an item should be visible based on roles
-  const isItemVisible = useCallback((item) => {
-    const { roles } = item;
-    
-    if (!roles || roles.length === 0) {
-      return true; // No role restrictions
-    }
+  const isItemVisible = useCallback(
+    (item) => {
+      const { roles } = item;
 
-    if (user?.role === 'admin') {
-      return roles.includes(user?.admin?.role?.name) || roles.includes(user?.admin?.mode);
-    }
+      if (!roles || roles.length === 0) {
+        return true; // No role restrictions
+      }
 
-    return roles.includes(user?.role);
-  }, [user]);
+      if (user?.role === 'admin') {
+        return (
+          roles.includes(user?.admin?.role?.name) ||
+          roles.includes(user?.admin?.mode) ||
+          roles.includes(user?.admin?.role?.slug)
+        );
+      }
+
+      return roles.includes(user?.role);
+    },
+    [user]
+  );
 
   // Filter items to only include visible ones
   const visibleItems = items?.filter(isItemVisible) || [];
