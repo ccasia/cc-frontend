@@ -1,6 +1,7 @@
 // Export all platform overview components
 export { default as PlatformOverviewMobile } from './PlatformOverviewMobile';
 export { default as ManualCreatorEntryForm } from './ManualCreatorEntryForm';
+export { default as ManualCreatorCard } from './ManualCreatorCard';
 export { default as PlatformOverviewDesktop } from './PlatformOverviewDesktop';
 export {
   ScrollingName,

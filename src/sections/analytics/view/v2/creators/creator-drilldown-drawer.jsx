@@ -68,6 +68,8 @@ const DEFAULT_CONFIG = {
   emptySubtitle: 'No form completions recorded in this period',
   variant: 'days', // 'days' (default) | 'simple'
   renderHeroStats: null, // (hookData) => ReactNode — overrides default hero stats
+  deriveHookOptions: null, // (selectedPoint, points, data, isDaily, creditTiers) => { hookOptions, displayTitle }
+  renderTitle: null, // (displayTitle) => ReactNode — overrides default title
 };
 
 // ---------------------------------------------------------------------------
@@ -237,10 +239,22 @@ export default function CreatorDrilldownDrawer({
   onNavigate,
   config: configProp,
 }) {
-  const config = { ...DEFAULT_CONFIG, ...configProp };
+  const config = useMemo(() => ({ ...DEFAULT_CONFIG, ...configProp }), [configProp]);
 
-  const { startDate, endDate, displayTitle } = useMemo(() => {
-    if (!selectedPoint) return { startDate: null, endDate: null, displayTitle: '' };
+  const { creditTiers } = useDateFilter();
+
+  const { hookOptions: drawerHookOptions, displayTitle } = useMemo(() => {
+    if (!selectedPoint) return { hookOptions: {}, displayTitle: '' };
+
+    // Custom derivation (e.g. country-based)
+    if (config.deriveHookOptions) {
+      return config.deriveHookOptions(selectedPoint, points, data, isDaily, creditTiers);
+    }
+
+    // Default: date-based derivation
+    let startDate = null;
+    let endDate = null;
+    let title = '';
 
     if (isDaily) {
       const idx = points.indexOf(selectedPoint);
@@ -248,27 +262,25 @@ export default function CreatorDrilldownDrawer({
       const iso = item?.isoDate;
       if (iso) {
         const d = new Date(iso);
-        const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
-        const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
-        return { startDate: start, endDate: end, displayTitle: formatDailyLabel(selectedPoint, iso) };
+        startDate = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+        endDate = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+        title = formatDailyLabel(selectedPoint, iso);
+      } else {
+        title = selectedPoint;
       }
-      return { startDate: null, endDate: null, displayTitle: selectedPoint };
+    } else {
+      const d = parseMonthStr(selectedPoint);
+      startDate = new Date(d.getFullYear(), d.getMonth(), 1);
+      endDate = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+      title = formatFullMonth(selectedPoint);
     }
 
-    const d = parseMonthStr(selectedPoint);
-    const start = new Date(d.getFullYear(), d.getMonth(), 1);
-    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
-    return { startDate: start, endDate: end, displayTitle: formatFullMonth(selectedPoint) };
-  }, [selectedPoint, isDaily, points, data]);
+    if (!startDate || !endDate) return { hookOptions: {}, displayTitle: title };
 
-  const { creditTiers } = useDateFilter();
-
-  const drawerHookOptions = useMemo(() => {
-    if (!startDate || !endDate) return {};
     const opts = { startDate, endDate };
     if (creditTiers.length > 0) opts.creditTiers = creditTiers;
-    return opts;
-  }, [startDate, endDate, creditTiers]);
+    return { hookOptions: opts, displayTitle: title };
+  }, [selectedPoint, isDaily, points, data, creditTiers, config]);
 
   const hookData = config.useCreatorsHook(drawerHookOptions);
   const { creators, avgDays, count, isLoading } = hookData;
@@ -341,7 +353,9 @@ export default function CreatorDrilldownDrawer({
       >
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ pt: 2.5, px: 2.5 }}>
           <Stack>
-            <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{displayTitle}</Typography>
+            {config.renderTitle ? config.renderTitle(displayTitle) : (
+              <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{displayTitle}</Typography>
+            )}
             <Typography sx={{ fontSize: '0.8rem', color: '#919EAB', mt: 0.5, lineHeight: 1.5 }}>
               {subtitleContent}
             </Typography>

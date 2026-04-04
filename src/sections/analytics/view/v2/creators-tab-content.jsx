@@ -8,6 +8,7 @@ import PitchRateChart from './creators/pitch-rate-chart';
 import CreatorNpsChart from './creators/creator-nps-chart';
 import CreatorGrowthChart from './creators/creator-growth-chart';
 import ResponseTimeCharts from './creators/response-time-charts';
+import CreatorCountryMapChart from './creators/creator-country-map-chart';
 import ActivationRateChart from './creators/activation-rate-chart';
 import CreatorEarningsChart from './admins/creator-earnings-chart';
 import TimeToActivationChart from './creators/time-to-activation-chart';
@@ -29,6 +30,9 @@ export default function CreatorsTabContent() {
     >
       <Grid item xs={12} component={m.div} variants={itemVariants}>
         <CreatorGrowthChart />
+      </Grid>
+      <Grid item xs={12} component={m.div} variants={itemVariants}>
+        <CreatorCountryMapChart />
       </Grid>
       <Grid item xs={12} md={6} component={m.div} variants={itemVariants}>
         <ActivationRateChart />

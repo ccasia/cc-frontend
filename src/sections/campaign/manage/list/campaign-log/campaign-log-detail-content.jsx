@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { PDFViewer } from '@react-pdf/renderer';
 
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Dialog from '@mui/material/Dialog';
 import Collapse from '@mui/material/Collapse';
@@ -77,7 +78,7 @@ function stripTokens(text) {
 // ---------------------------------------------------------------------------
 
 function JourneyDropdown({ creatorName, creatorPhoto, journey, selectedId, photoMap }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   if (journey.length <= 1) return null;
 
@@ -526,23 +527,507 @@ DetailChangesSection.propTypes = {
 
 // ---------------------------------------------------------------------------
 
-function DetailAmountSection({ amountChange }) {
+function DetailAmountSection({ amountChange, invoices, invoicesLoading }) {
+  const [pdfOpen, setPdfOpen] = useState(false);
+
+  const targetNum = amountChange.invoiceNumber?.trim()?.toUpperCase();
+  const matchedInvoice = targetNum
+    ? invoices?.find((inv) => inv.invoiceNumber?.trim()?.toUpperCase() === targetNum)
+    : null;
+  const isLoading = invoicesLoading && !matchedInvoice;
+
+  const { invoice: fullInvoice, isLoading: fullInvoiceLoading } = useGetInvoiceById(
+    pdfOpen && matchedInvoice?.id ? matchedInvoice.id : null
+  );
+
   return (
-    <DetailCard icon="solar:tag-price-bold" iconColor="#FFAB00" headerBg="#FFF8E6" label="Amount Change">
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-        <Typography sx={{ fontSize: 14, color: '#FF5630', textDecoration: 'line-through', fontWeight: 500 }}>
-          {amountChange.oldAmount}
-        </Typography>
-        <Iconify icon="eva:arrow-forward-fill" width={16} sx={{ color: '#C7C7CC' }} />
-        <Typography sx={{ fontSize: 14, color: '#22C55E', fontWeight: 700 }}>
-          {amountChange.newAmount}
+    <>
+      <DetailCard icon="solar:tag-price-bold" iconColor="#FFAB00" headerBg="#FFF8E6" label="Amount Change">
+        <Stack spacing={1.25}>
+          {amountChange.invoiceNumber && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <Iconify icon="iconamoon:invoice-light" width={14} sx={{ color: '#8e8e93' }} />
+              <Typography sx={{ fontSize: 12, color: '#8e8e93', fontWeight: 600 }}>
+                {amountChange.invoiceNumber}
+              </Typography>
+            </Box>
+          )}
+
+          <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1.5 }}>
+            {/* From */}
+            <Box sx={{ flex: 1, bgcolor: '#FFF', borderRadius: 1, px: 1.25, py: 1 }}>
+              <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#8e8e93', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.25 }}>
+                From
+              </Typography>
+              <Typography sx={{ fontSize: 15, color: '#FF5630', fontWeight: 600 }}>
+                {amountChange.oldAmount}
+              </Typography>
+            </Box>
+
+            {/* Arrow */}
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Iconify icon="eva:arrow-forward-fill" width={16} sx={{ color: '#C7C7CC' }} />
+            </Box>
+
+            {/* To */}
+            <Box sx={{ flex: 1, bgcolor: '#FFF', borderRadius: 1, px: 1.25, py: 1 }}>
+              <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#8e8e93', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.25 }}>
+                To
+              </Typography>
+              <Typography sx={{ fontSize: 15, color: '#22C55E', fontWeight: 700 }}>
+                {amountChange.newAmount}
+              </Typography>
+            </Box>
+          </Box>
+
+          {amountChange.invoiceNumber && !isLoading && matchedInvoice && (
+            <Box
+              component="button"
+              onClick={() => setPdfOpen(true)}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 0.75,
+                width: '100%',
+                mt: 0.25,
+                py: 0.625,
+                border: '1px dashed #E7E7E7',
+                borderRadius: 1,
+                bgcolor: 'transparent',
+                color: '#636366',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                '&:hover': { borderColor: '#636366', color: '#221F20', bgcolor: '#F4F4F5' },
+              }}
+            >
+              <Iconify icon="solar:eye-bold" width={15} />
+              View Invoice
+            </Box>
+          )}
+        </Stack>
+      </DetailCard>
+
+      <Dialog
+        open={pdfOpen}
+        onClose={() => setPdfOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: { bgcolor: '#F4F4F4', borderRadius: 2, height: '90vh', overflow: 'hidden' },
+        }}
+      >
+        <IconButton
+          onClick={() => setPdfOpen(false)}
+          sx={{ position: 'absolute', right: 12, top: 12, color: '#636366', zIndex: 1 }}
+        >
+          <Iconify icon="eva:close-fill" width={22} />
+        </IconButton>
+        <Box sx={{ height: 1, pt: 6, pb: 2, px: 2 }}>
+          {pdfOpen && fullInvoiceLoading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+              <Typography sx={{ color: '#8e8e93' }}>Loading invoice...</Typography>
+            </Box>
+          )}
+          {pdfOpen && fullInvoice && (
+            <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
+              <InvoicePDF invoice={fullInvoice} currentStatus={fullInvoice.status} />
+            </PDFViewer>
+          )}
+        </Box>
+      </Dialog>
+    </>
+  );
+}
+
+DetailAmountSection.propTypes = {
+  amountChange: PropTypes.object.isRequired,
+  invoices: PropTypes.array,
+  invoicesLoading: PropTypes.bool,
+};
+
+// ---------------------------------------------------------------------------
+
+function DetailRow({ label, value, icon }) {
+  if (!value) return null;
+  return (
+    <Box sx={{ display: 'flex', gap: 0.75, mb: 0.75 }}>
+      {icon && <Iconify icon={icon} width={14} sx={{ color: '#8e8e93', mt: '2px', flexShrink: 0 }} />}
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ fontSize: 11, color: '#AEAEB2', fontWeight: 600, mb: '1px' }}>{label}</Typography>
+        <Typography sx={{ fontSize: 12, color: '#221F20', wordBreak: 'break-word', lineHeight: 1.5 }}>{value}</Typography>
+      </Box>
+    </Box>
+  );
+}
+
+DetailRow.propTypes = { label: PropTypes.string, value: PropTypes.node, icon: PropTypes.string };
+
+function TrackingLinkRow({ href }) {
+  if (!href) return null;
+  return (
+    <Box sx={{ display: 'flex', gap: 0.75, mb: 0.75 }}>
+      <Iconify icon="solar:link-bold" width={14} sx={{ color: '#8e8e93', mt: '2px', flexShrink: 0 }} />
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ fontSize: 11, color: '#AEAEB2', fontWeight: 600, mb: '1px' }}>Tracking Link</Typography>
+        <Typography
+          component="a"
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{ fontSize: 12, color: '#1340FF', wordBreak: 'break-all', lineHeight: 1.5, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+        >
+          {href}
         </Typography>
       </Box>
+    </Box>
+  );
+}
+
+TrackingLinkRow.propTypes = { href: PropTypes.string };
+
+function DetailLogisticsSection({ logistic, isLoading, action, rawAction, metadata }) {
+  if (isLoading) {
+    return (
+      <DetailCard icon="solar:box-bold" iconColor="#00B8D9" headerBg="#E6F9FD" label="Shipping Details">
+        <Typography sx={{ fontSize: 12, color: '#8e8e93' }}>Loading logistics...</Typography>
+      </DetailCard>
+    );
+  }
+
+  const delivery = logistic?.deliveryDetails;
+
+  // Simple status confirmations — no detail card needed (unless reservation with outlet)
+  const noDetailActions = new Set(['retry', 'status_change']);
+  const suppressDetail = (action === 'received' || action === 'completed') && !metadata?.outlet;
+  // New-format reservation edits are rendered via DetailChangesSection instead
+  const hasChangesDiff = action === 'reservation_details_updated' && Array.isArray(metadata?.changes);
+  if (noDetailActions.has(action) || suppressDetail || hasChangesDiff) return null;
+
+  // Card label based on action
+  const CARD_LABELS = {
+    assigned: 'Assignment Details',
+    shipped: 'Shipping Details',
+    creator_info: 'Creator Details',
+    creator_details_updated: 'Creator Details',
+    date_change: 'Delivery Date Change',
+    details_updated: 'Updated Details',
+    issue: 'Issue Reported',
+    resolved: 'Issue Resolved',
+    received: 'Check-in Details',
+    completed: 'Visit Details',
+    reservation_details_updated: 'Updated Reservation Details',
+    reservation_submitted: 'Reservation Details',
+    reservation: 'Reservation Details',
+    admin_schedule: 'Reservation Details',
+    admin_reschedule: 'Rescheduled Reservation',
+  };
+  const cardLabel = CARD_LABELS[action] || 'Shipping Details';
+
+  // For assigned action, need items from metadata
+  const hasMetadataItems = metadata?.assignedItems?.length > 0;
+
+  // Guard: nothing to show
+  if (!logistic && !metadata && action !== 'date_change') return null;
+
+  const isIssue = action === 'issue';
+  const isResolved = action === 'resolved';
+  let cardIcon = 'solar:box-bold';
+  let cardIconColor = '#00B8D9';
+  let cardHeaderBg = '#E6F9FD';
+  if (isIssue) { cardIcon = 'solar:danger-triangle-bold'; cardIconColor = '#FF5630'; cardHeaderBg = '#FFF2EE'; }
+  if (isResolved) { cardIcon = 'solar:check-circle-bold'; cardIconColor = '#22C55E'; cardHeaderBg = '#E8FAF0'; }
+
+  return (
+    <DetailCard icon={cardIcon} iconColor={cardIconColor} headerBg={cardHeaderBg} label={cardLabel}>
+      {/* ── assigned ── */}
+      {action === 'assigned' && hasMetadataItems && (
+        <Box sx={{ display: 'flex', gap: 0.75, mb: 0.75 }}>
+          <Iconify icon="solar:box-minimalistic-bold" width={14} sx={{ color: '#8e8e93', mt: '2px', flexShrink: 0 }} />
+          <Box sx={{ minWidth: 0 }}>
+            <Typography sx={{ fontSize: 11, color: '#AEAEB2', fontWeight: 600, mb: '2px' }}>Assigned Items</Typography>
+            {metadata.assignedItems.map((item, idx) => (
+              <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.25 }}>
+                <Typography sx={{ fontSize: 12, color: '#221F20', fontWeight: 500 }}>
+                  {item.name}
+                </Typography>
+                <Typography sx={{ fontSize: 11, color: '#8e8e93' }}>
+                  x{item.quantity}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      )}
+
+      {/* ── shipped ── */}
+      {action === 'shipped' && (() => {
+        const address = metadata?.address || delivery?.address;
+        const trackingLink = metadata?.trackingLink || delivery?.trackingLink;
+        const expectedDate = metadata?.expectedDeliveryDate || delivery?.expectedDeliveryDate;
+        const status = metadata?.status;
+        return (
+          <>
+            {status && (
+              <Box sx={{ display: 'flex', gap: 0.75, mb: 0.75 }}>
+                <Iconify icon="solar:delivery-bold" width={14} sx={{ color: '#8e8e93', mt: '2px', flexShrink: 0 }} />
+                <Box>
+                  <Typography sx={{ fontSize: 11, color: '#AEAEB2', fontWeight: 600, mb: '3px' }}>Status</Typography>
+                  <StatusBadge label={status.toLowerCase()} />
+                </Box>
+              </Box>
+            )}
+            {address && <DetailRow label="Address" icon="solar:map-point-bold" value={address} />}
+            <TrackingLinkRow href={trackingLink} />
+            {expectedDate && (
+              <DetailRow
+                label="Expected Delivery"
+                icon="solar:calendar-bold"
+                value={new Date(expectedDate).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
+              />
+            )}
+          </>
+        );
+      })()}
+
+      {/* ── creator_info ── */}
+      {action === 'creator_info' && (() => {
+        const address = metadata?.address || delivery?.address;
+        const dietary = metadata?.dietaryRestrictions || delivery?.dietaryRestrictions;
+        return (
+          <>
+            {address && <DetailRow label="Address" icon="solar:map-point-bold" value={address} />}
+            {dietary && <DetailRow label="Dietary Restrictions" icon="solar:info-circle-bold" value={dietary} />}
+          </>
+        );
+      })()}
+
+      {/* ── date_change ── */}
+      {action === 'date_change' && (() => {
+        // Try metadata first, fallback to parsing rawAction
+        const oldDate = metadata?.oldDate;
+        const newDate = metadata?.newDate;
+        if (oldDate && newDate) {
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <Iconify icon="solar:calendar-bold" width={14} sx={{ color: '#8e8e93', flexShrink: 0 }} />
+              <Typography sx={{ fontSize: 13, color: '#FF5630', textDecoration: 'line-through', fontWeight: 500 }}>
+                {oldDate}
+              </Typography>
+              <Iconify icon="eva:arrow-forward-fill" width={16} sx={{ color: '#C7C7CC' }} />
+              <Typography sx={{ fontSize: 13, color: '#22C55E', fontWeight: 700 }}>
+                {newDate}
+              </Typography>
+            </Box>
+          );
+        }
+        // Fallback: parse from rawAction for old logs
+        if (!rawAction) return null;
+        const dm = rawAction.match(/changed from (.+?) to (.+)$/i);
+        if (!dm) return null;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <Iconify icon="solar:calendar-bold" width={14} sx={{ color: '#8e8e93', flexShrink: 0 }} />
+            <Typography sx={{ fontSize: 13, color: '#FF5630', textDecoration: 'line-through', fontWeight: 500 }}>
+              {dm[1]}
+            </Typography>
+            <Iconify icon="eva:arrow-forward-fill" width={16} sx={{ color: '#C7C7CC' }} />
+            <Typography sx={{ fontSize: 13, color: '#22C55E', fontWeight: 700 }}>
+              {dm[2]}
+            </Typography>
+          </Box>
+        );
+      })()}
+
+      {/* ── details_updated ── */}
+      {action === 'details_updated' && (() => {
+        const address = metadata?.address || delivery?.address;
+        const trackingLink = metadata?.trackingLink || delivery?.trackingLink;
+        const expectedDate = metadata?.expectedDeliveryDate || delivery?.expectedDeliveryDate;
+        if (!address && !trackingLink && !expectedDate) return null;
+        return (
+          <>
+            {address && <DetailRow label="Address" icon="solar:map-point-bold" value={address} />}
+            <TrackingLinkRow href={trackingLink} />
+            {expectedDate && (
+              <DetailRow
+                label="Expected Delivery"
+                icon="solar:calendar-bold"
+                value={new Date(expectedDate).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
+              />
+            )}
+          </>
+        );
+      })()}
+
+      {/* ── issue ── */}
+      {action === 'issue' && (() => {
+        const reason = metadata?.reason;
+        const products = metadata?.products;
+        const issueOutlet = metadata?.outlet;
+        if (!reason && !products && !issueOutlet) return null;
+        return (
+          <>
+            {issueOutlet && <DetailRow label="Outlet" icon="solar:shop-bold" value={issueOutlet} />}
+            {products?.length > 0 && (
+              <DetailRow label="Product" icon="solar:box-minimalistic-bold" value={products.join(', ')} />
+            )}
+            {reason && <DetailRow label="Reason" icon="solar:document-text-bold" value={reason} />}
+          </>
+        );
+      })()}
+
+      {/* ── resolved ── */}
+      {action === 'resolved' && (() => {
+        const resolvedOutlet = metadata?.outlet;
+        const reason = metadata?.reason;
+        return (
+          <>
+            {resolvedOutlet && <DetailRow label="Outlet" icon="solar:shop-bold" value={resolvedOutlet} />}
+            {reason && <DetailRow label="Reason" icon="solar:document-text-bold" value={reason} />}
+            <Box sx={{ display: 'flex', gap: 0.75, mt: reason || resolvedOutlet ? 0.75 : 0 }}>
+              <Iconify icon="solar:check-circle-bold" width={14} sx={{ color: '#22C55E', mt: '2px', flexShrink: 0 }} />
+              <Box>
+                <Typography sx={{ fontSize: 11, color: '#AEAEB2', fontWeight: 600, mb: '3px' }}>Action</Typography>
+                <StatusBadge label="Mark As Resolved" />
+              </Box>
+            </Box>
+          </>
+        );
+      })()}
+
+      {/* ── reservation_details_updated (legacy flat metadata only — new logs use DetailChangesSection) ── */}
+      {action === 'reservation_details_updated' && !Array.isArray(metadata?.changes) && (() => {
+        const rdOutlet = metadata?.outlet;
+        const picName = metadata?.picName;
+        const picContact = metadata?.picContact;
+        const budget = metadata?.budget;
+        const promoCode = metadata?.promoCode;
+        const clientRemarks = metadata?.clientRemarks;
+        if (!rdOutlet && !picName && !picContact && !budget && !promoCode && !clientRemarks) return null;
+        return (
+          <>
+            {rdOutlet && <DetailRow label="Outlet" icon="solar:shop-bold" value={rdOutlet} />}
+            {picName && <DetailRow label="PIC Name" icon="solar:user-bold" value={picName} />}
+            {picContact && <DetailRow label="PIC Contact" icon="solar:phone-bold" value={picContact} />}
+            {budget && <DetailRow label="Budget" icon="solar:tag-price-bold" value={String(budget)} />}
+            {promoCode && <DetailRow label="Promo Code" icon="solar:ticket-bold" value={promoCode} />}
+            {clientRemarks && <DetailRow label="Client Remarks" icon="solar:chat-round-dots-bold" value={clientRemarks} />}
+          </>
+        );
+      })()}
+
+      {/* ── reservation_submitted ── */}
+      {action === 'reservation_submitted' && (() => {
+        const outlet = metadata?.outlet;
+        const pax = metadata?.pax;
+        const remarks = metadata?.remarks;
+        const slots = metadata?.selectedSlots;
+        if (!outlet && !pax && !remarks && !slots?.length) return null;
+        const utcOpts = { timeZone: 'UTC' };
+        const fmtSlot = (t) => new Date(t).toLocaleString('en-MY', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', ...utcOpts });
+        const fmtTime = (t) => new Date(t).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', ...utcOpts });
+        return (
+          <>
+            {outlet && <DetailRow label="Outlet" icon="solar:shop-bold" value={outlet} />}
+            {pax && <DetailRow label="Pax" icon="solar:users-group-rounded-bold" value={String(pax)} />}
+            {slots?.length > 0 && (
+              <Box sx={{ display: 'flex', gap: 0.75, mb: 0.75 }}>
+                <Iconify icon="solar:clock-circle-bold" width={14} sx={{ color: '#8e8e93', mt: '2px', flexShrink: 0 }} />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography sx={{ fontSize: 11, color: '#AEAEB2', fontWeight: 600, mb: '2px' }}>
+                    {slots.length === 1 ? 'Selected Slot' : 'Proposed Slots'}
+                  </Typography>
+                  {slots.map((slot, idx) => (
+                    <Typography key={idx} sx={{ fontSize: 12, color: '#221F20', lineHeight: 1.6 }}>
+                      {fmtSlot(slot.start)} – {fmtTime(slot.end)}
+                    </Typography>
+                  ))}
+                </Box>
+              </Box>
+            )}
+            {remarks && <DetailRow label="Remarks" icon="solar:chat-round-dots-bold" value={remarks} />}
+          </>
+        );
+      })()}
+
+      {/* ── received (reservation check-in) ── */}
+      {action === 'received' && (() => {
+        const recOutlet = metadata?.outlet;
+        if (!recOutlet) return null;
+        return <DetailRow label="Outlet" icon="solar:shop-bold" value={recOutlet} />;
+      })()}
+
+      {/* ── completed (reservation visit) ── */}
+      {action === 'completed' && (() => {
+        const compOutlet = metadata?.outlet;
+        if (!compOutlet) return null;
+        return <DetailRow label="Outlet" icon="solar:shop-bold" value={compOutlet} />;
+      })()}
+
+      {/* ── creator_details_updated ── */}
+      {action === 'creator_details_updated' && (() => {
+        const address = metadata?.address;
+        const phoneNumber = metadata?.phoneNumber;
+        const dietary = metadata?.dietaryRestrictions;
+        if (!address && !phoneNumber && !dietary) return null;
+        return (
+          <>
+            {address && <DetailRow label="Address" icon="solar:map-point-bold" value={address} />}
+            {phoneNumber && <DetailRow label="Phone Number" icon="solar:phone-bold" value={phoneNumber} />}
+            {dietary && <DetailRow label="Dietary Restrictions" icon="solar:info-circle-bold" value={dietary} />}
+          </>
+        );
+      })()}
+
+      {/* ── reservation (scheduleReservation) ── */}
+      {action === 'reservation' && (() => {
+        const resOutlet = metadata?.outlet;
+        const startTime = metadata?.startTime;
+        const endTime = metadata?.endTime;
+        const picName = metadata?.picName;
+        const picContact = metadata?.picContact;
+        if (!resOutlet && !startTime && !picName) return null;
+        const fmt = (t) => new Date(t).toLocaleString('en-MY', {
+          day: 'numeric', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit',
+        });
+        return (
+          <>
+            {resOutlet && <DetailRow label="Outlet" icon="solar:shop-bold" value={resOutlet} />}
+            {startTime && endTime && (
+              <DetailRow label="Confirmed Slot" icon="solar:clock-circle-bold"
+                value={`${fmt(startTime)} – ${new Date(endTime).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}`}
+              />
+            )}
+            {picName && <DetailRow label="PIC Name" icon="solar:user-bold" value={picName} />}
+            {picContact && <DetailRow label="PIC Contact" icon="solar:phone-bold" value={picContact} />}
+          </>
+        );
+      })()}
+
+      {/* ── admin_schedule / admin_reschedule ── */}
+      {(action === 'admin_schedule' || action === 'admin_reschedule') && (() => {
+        const startTime = metadata?.startTime;
+        const endTime = metadata?.endTime;
+        const schedOutlet = metadata?.outlet;
+        if (!startTime && !endTime && !schedOutlet) return null;
+        const fmt = (t) => new Date(t).toLocaleString('en-MY', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return (
+          <>
+            {schedOutlet && <DetailRow label="Outlet" icon="solar:shop-bold" value={schedOutlet} />}
+            {startTime && <DetailRow label="Start Time" icon="solar:clock-circle-bold" value={fmt(startTime)} />}
+            {endTime && <DetailRow label="End Time" icon="solar:clock-circle-bold" value={fmt(endTime)} />}
+          </>
+        );
+      })()}
     </DetailCard>
   );
 }
 
-DetailAmountSection.propTypes = { amountChange: PropTypes.object.isRequired };
+DetailLogisticsSection.propTypes = { logistic: PropTypes.object, isLoading: PropTypes.bool, action: PropTypes.string, rawAction: PropTypes.string, metadata: PropTypes.object };
 
 // ---------------------------------------------------------------------------
 
@@ -556,6 +1041,7 @@ function StatusBadge({ label }) {
     paid: '#22C55E',
     pending: '#FFAB00',
     rejected: '#FF5630',
+    'mark as resolved': '#22C55E',
   };
 
   const color = STATUS_COLORS[label?.toLowerCase()] || '#8e8e93';
@@ -586,7 +1072,7 @@ StatusBadge.propTypes = { label: PropTypes.string };
 // Main component
 // ---------------------------------------------------------------------------
 
-export default function CampaignLogDetailContent({ log, allLogs, campaign, photoMap, invoices, invoicesLoading }) {
+export default function CampaignLogDetailContent({ log, allLogs, campaign, photoMap, invoices, invoicesLoading, logistics, logisticsLoading }) {
   const meta = getCategoryMeta(log.category);
   const badge = getPerformerBadge(log.performerRole);
   const context = extractLogContext(log, campaign);
@@ -597,10 +1083,17 @@ export default function CampaignLogDetailContent({ log, allLogs, campaign, photo
     extractCreatorNameFromLog(log.action) ||
     extractNameFromFormatted(log.formattedAction, log.performedBy);
 
+  // Find matching logistic for this creator
+  const matchedLogistic = useMemo(() => {
+    if (!context.isLogistics || !logistics?.length || !creatorName) return null;
+    const lower = creatorName.toLowerCase();
+    return logistics.find((l) => l.creator?.name?.toLowerCase() === lower) || null;
+  }, [context.isLogistics, logistics, creatorName]);
+
   const journey = useCreatorJourney(log, allLogs, creatorName);
   const creatorPhoto = creatorName ? (photoMap?.get(creatorName) || context.creator?.photoURL) : null;
 
-  const hasDetailCards = context.campaignInfo || context.editSection || context.changes?.length > 0 || context.invoice || context.amountChange;
+  const hasDetailCards = context.campaignInfo || context.editSection || context.changes?.length > 0 || context.invoice || context.amountChange || context.isLogistics;
 
   return (
     <Box sx={{ height: '100%', overflow: 'auto' }}>
@@ -736,7 +1229,11 @@ export default function CampaignLogDetailContent({ log, allLogs, campaign, photo
           )}
 
           {context.amountChange && (
-            <DetailAmountSection amountChange={context.amountChange} />
+            <DetailAmountSection amountChange={context.amountChange} invoices={invoices} invoicesLoading={invoicesLoading} />
+          )}
+
+          {context.isLogistics && (
+            <DetailLogisticsSection logistic={matchedLogistic} isLoading={logisticsLoading && !matchedLogistic} action={context.logisticsAction} rawAction={log.action} metadata={log.metadata} />
           )}
         </Box>
       )}
@@ -751,4 +1248,6 @@ CampaignLogDetailContent.propTypes = {
   photoMap: PropTypes.instanceOf(Map),
   invoices: PropTypes.array,
   invoicesLoading: PropTypes.bool,
+  logistics: PropTypes.array,
+  logisticsLoading: PropTypes.bool,
 };

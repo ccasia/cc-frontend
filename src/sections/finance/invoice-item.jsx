@@ -27,6 +27,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
     setValue(invoice?.status);
   }, [setValue, invoice]);
 
+  const isPaid = invoice?.status === 'paid';
   const isProcessing = invoice?.status === 'processing';
 
   return (
@@ -52,7 +53,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       }}
     >
       <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
-        <Checkbox checked={selected} onClick={onSelectRow} disabled={isProcessing} />
+        <Checkbox checked={selected} onClick={onSelectRow} disabled={isPaid} />
       </TableCell>
       <TableCell>
         <Typography variant="body2" noWrap>

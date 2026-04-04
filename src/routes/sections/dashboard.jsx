@@ -43,8 +43,12 @@ const AdminCampaignDetail = lazy(
 const AdminCamapaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-detail-manage')
 );
-const PostingLinkCSMView = lazy(() => import('src/pages/dashboard/campaign/admin/posting-link-csm'));
-const PostingLinkSuperadminView = lazy(() => import('src/pages/dashboard/campaign/admin/posting-link-superadmin'));
+const PostingLinkCSMView = lazy(
+  () => import('src/pages/dashboard/campaign/admin/posting-link-csm')
+);
+const PostingLinkSuperadminView = lazy(
+  () => import('src/pages/dashboard/campaign/admin/posting-link-superadmin')
+);
 const AdminEditCampaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
 );
@@ -91,6 +95,7 @@ const Report = lazy(() => import('src/pages/dashboard/report/report'));
 
 // Creator Discovery Tool
 const DiscoveryTool = lazy(() => import('src/pages/dashboard/discovery-tool/discovery-tool'));
+const DiscoveryToolNpc = lazy(() => import ('src/pages/dashboard/discovery-tool/discovery-tool-npc'))
 
 // Roles
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
@@ -122,6 +127,9 @@ const CreatorProfile = lazy(() => import('src/pages/dashboard/creator/profile'))
 
 // FAQ
 const FaqPage = lazy(() => import('src/pages/faq'));
+
+// Report AI Configuration Page
+const ReportAiConfiguration = lazy(() => import('src/pages/dashboard/report-ai-configuration'));
 
 // ----------------------------------------------------------------------
 
@@ -238,11 +246,24 @@ export const dashboardRoutes = [
       },
       {
         path: 'discovery-tool',
-        element: (
-          <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
-            <DiscoveryTool />
-          </RoleBasedGuard>
-        ),
+        children: [
+          {
+            element: (
+              <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+                <DiscoveryTool />
+              </RoleBasedGuard>
+            ),
+            index: true           
+          },
+          {
+            path: 'npc',
+            element: (
+              <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+                <DiscoveryToolNpc />
+              </RoleBasedGuard>
+            )
+          }
+        ]
       },
       // For Finance
       {
@@ -392,7 +413,10 @@ export const dashboardRoutes = [
           {
             index: true,
             element: (
-              <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator', 'Client', 'client']}>
+              <RoleBasedGuard
+                hasContent
+                roles={['admin', 'superadmin', 'creator', 'Client', 'client']}
+              >
                 <ViewCampaign />
               </RoleBasedGuard>
             ),
@@ -456,7 +480,10 @@ export const dashboardRoutes = [
               {
                 index: true,
                 element: (
-                  <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator', 'Client', 'client']}>
+                  <RoleBasedGuard
+                    hasContent
+                    roles={['admin', 'superadmin', 'creator', 'Client', 'client']}
+                  >
                     <ViewCampaign />
                   </RoleBasedGuard>
                 ),
@@ -647,6 +674,10 @@ export const dashboardRoutes = [
       {
         path: 'faq',
         element: <FaqPage />,
+      },
+      {
+        path: 'report-ai',
+        element: <ReportAiConfiguration />,
       },
     ],
   },

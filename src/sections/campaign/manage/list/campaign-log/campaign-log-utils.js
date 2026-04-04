@@ -73,12 +73,38 @@ const RULES = [
   // V4 draft rejection
   { test: (m) => m.includes('draft rejected by'), category: 'Draft Rejected', groups: ['admin'] },
 
-  // Invoice
+  // Invoice details updated (field changes like due date, bank info, etc.)
+  { test: (m) => m.includes('invoice details updated'), category: 'Invoice Details Updated', groups: ['admin', 'invoice'] },
+
+  // Invoice — expanded status logging
   { test: (m) => m.includes('invoice') && m.includes('was generated'), category: 'Invoice', groups: ['invoice'] },
   { test: (m) => m.includes('deleted invoice'), category: 'Invoice', groups: ['invoice'] },
+  { test: (m) => m.includes('rejected invoice') || (m.includes('invoice') && m.includes('status changed to rejected')), category: 'Invoice Rejected', groups: ['invoice'] },
+  { test: (m) => m.includes('was marked as paid') || (m.includes('invoice') && m.includes('status changed to paid')), category: 'Invoice Paid', groups: ['invoice'] },
+  { test: (m) => m.includes('bulk approved invoice'), category: 'Invoice', groups: ['invoice'] },
   { test: (m) => m.includes('approved invoice'), category: 'Invoice', groups: ['invoice'] },
+  { test: (m) => m.includes('invoice') && m.includes('status changed to'), category: 'Invoice', groups: ['invoice'] },
+
+  // Logistics
+  { test: (m) => m.includes('logistics assigned to'), category: 'Logistics', groups: ['logistics'] },
+  { test: (m) => m.includes('scheduled product delivery') || (m.includes('logistics') && m.includes('marked as shipped')), category: 'Logistics Shipped', groups: ['logistics'] },
+  { test: (m) => m.includes('marked logistics as received') || m.includes('checked in at'), category: 'Logistics Received', groups: ['logistics'] },
+  { test: (m) => m.includes('marked logistics as completed') || m.includes('completed their visit at'), category: 'Logistics Completed', groups: ['logistics'] },
+  { test: (m) => m.includes('reported a logistics issue') || m.includes('reported an issue with their reservation'), category: 'Logistics Issue', groups: ['logistics'] },
+  { test: (m) => m.includes('logistics issue resolved') || m.includes('reservation issue resolved'), category: 'Logistics Resolved', groups: ['logistics'] },
+  { test: (m) => m.includes('logistics delivery retry'), category: 'Logistics', groups: ['logistics'] },
+  { test: (m) => m.includes('expected delivery date for') && m.includes('changed from'), category: 'Logistics', groups: ['logistics'] },
+  { test: (m) => m.includes('logistics details updated'), category: 'Logistics', groups: ['logistics'] },
+  { test: (m) => m.includes('logistics status for') && m.includes('changed to'), category: 'Logistics', groups: ['logistics'] },
+  { test: (m) => m.includes('updated delivery details'), category: 'Logistics', groups: ['logistics'] },
+  { test: (m) => m.includes('submitted logistics information'), category: 'Logistics', groups: ['logistics'] },
+  { test: (m) => m.includes('submitted reservation details'), category: 'Logistics', groups: ['logistics'] },
+  { test: (m) => m.includes('reservation details updated for'), category: 'Logistics', groups: ['logistics'] },
+  { test: (m) => m.includes('reservation confirmed for') || m.includes('reservation rescheduled for'), category: 'Logistics', groups: ['logistics'] },
+  { test: (m) => m.includes('admin scheduled reservation for') || m.includes('admin rescheduled reservation for'), category: 'Logistics', groups: ['logistics'] },
 
   // Amount change
+  { test: (m) => m.includes('changed the amount') && m.includes('invoice'), category: 'Amount Changed', groups: ['admin', 'invoice'] },
   { test: (m) => m.includes('changed the amount'), category: 'Amount Changed', groups: ['admin'] },
 
   // Client misc
@@ -121,6 +147,8 @@ export function filterLogsByTab(logs, tab) {
         return log.groups.includes('client') || log.performerRole === 'client';
       case 'invoice':
         return log.groups.includes('invoice');
+      case 'logistics':
+        return log.groups.includes('logistics');
       default:
         return true;
     }
@@ -154,6 +182,15 @@ const CATEGORY_META = {
   'Draft Rejected':   { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:close-circle-bold' },
   'Amount Changed':   { color: '#FFAB00', bg: '#FFF8E6', icon: 'solar:tag-price-bold' },
   Invoice:            { color: '#8E33FF', bg: '#F3E8FF', icon: 'solar:bill-list-bold' },
+  'Invoice Details Updated': { color: '#FFAB00', bg: '#FFF8E6', icon: 'solar:pen-bold' },
+  'Invoice Rejected': { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:bill-cross-bold' },
+  'Invoice Paid':     { color: '#22C55E', bg: '#E8FAF0', icon: 'solar:bill-check-bold' },
+  'Logistics':           { color: '#00B8D9', bg: '#E6F9FD', icon: 'solar:box-bold' },
+  'Logistics Shipped':   { color: '#1340FF', bg: '#EBF0FF', icon: 'solar:delivery-bold' },
+  'Logistics Received':  { color: '#22C55E', bg: '#E8FAF0', icon: 'solar:inbox-in-bold' },
+  'Logistics Completed': { color: '#22C55E', bg: '#E8FAF0', icon: 'solar:check-circle-bold' },
+  'Logistics Issue':     { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:danger-triangle-bold' },
+  'Logistics Resolved':  { color: '#22C55E', bg: '#E8FAF0', icon: 'solar:check-circle-bold' },
   Login:              { color: '#00B8D9', bg: '#E6F9FD', icon: 'solar:login-2-bold' },
   Analytics:          { color: '#00B8D9', bg: '#E6F9FD', icon: 'solar:chart-bold' },
   Activity:           { color: '#8E8E93', bg: '#F4F4F5', icon: 'solar:info-circle-bold' },
@@ -243,9 +280,9 @@ export function formatLogMessage(msg, performer) {
 
   // Withdrawn / removed
   m = msg.match(/(.+?) (?:has been )?withdrawn from the campaign/i);
-  if (m) return `${qn(m[1])} withdrew from campaign`;
+  if (m) return `${qn(m[1])} withdrew from the campaign`;
   m = msg.match(/(.+?) (?:has been )?removed from the campaign/i);
-  if (m) return `${p} removed ${qn(m[1])} from campaign`;
+  if (m) return `${p} removed ${qn(m[1])} from the campaign`;
 
   // Draft submissions by creator
   m = msg.match(/(.+?) submitted [Ff]irst [Dd]raft/i);
@@ -264,12 +301,39 @@ export function formatLogMessage(msg, performer) {
   if (m) return `${p} deleted invoice ${m[1]} for ${qn(m[2])}`;
   if (/deleted invoice/i.test(msg)) return `${p} deleted an invoice`;
 
+  // Rejected
+  m = msg.match(/Rejected invoice\s+([\w-]+)\s+for\s+(.+)$/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('rejected')} by ${p}`;
+
+  // Bulk approved (before generic approved — "bulk approved" contains "approved")
+  m = msg.match(/Bulk approved invoice\s+([\w-]+)\s+for\s+(.+)$/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('approved')} (bulk) by ${p}`;
+
   m = msg.match(/Approved invoice\s+([\w-]+)\s+for\s+(.+)$/i);
   if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('approved')} by ${p}`;
   if (/approved invoice/i.test(msg)) return `Invoice has been ${a('approved')} by ${p}`;
 
-  // Amount change
-  m = msg.match(/changed the amount from (.+?) to (.+?) for (.+)$/i);
+  // Paid (Xero webhook format)
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+was marked as paid/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been marked as ${a('paid')}`;
+
+  // Paid (generic status change format)
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+status changed to paid/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been marked as ${a('paid')} by ${p}`;
+
+  // Generic status change (non-paid)
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+status changed to\s+(\w[\w_]*)/i);
+  if (m) return `${p} changed invoice ${m[1]} for ${qn(m[2])} to ${a(m[3])}`;
+
+  // Invoice details updated
+  m = msg.match(/[Ii]nvoice details updated on\s+([\w-]+)\s+for\s+"?(.+?)"?\s*$/);
+  if (m) return `${p} updated invoice ${m[1]} details for ${qn(m[2])}`;
+
+  // Amount change (invoice)
+  m = msg.match(/changed the amount\s+on\s+invoice\s+[\w-]+\s+from\s+(.+?)\s+to\s+(.+?)\s+for\s+(.+)$/i);
+  if (m) return `${p} changed ${qn(m[3])}'s invoice amount from ${m[1]} to ${m[2]}`;
+  // Amount change (agreement)
+  m = msg.match(/changed the amount\s+from\s+(.+?)\s+to\s+(.+?)\s+for\s+(.+)$/i);
   if (m) return `${p} changed ${qn(m[3])}'s amount from ${m[1]} to ${m[2]}`;
   if (/changed the amount/i.test(msg)) return `${p} updated payment amount`;
 
@@ -310,6 +374,74 @@ export function formatLogMessage(msg, performer) {
   // V4 draft rejection
   m = msg.match(/Draft rejected by (?:admin|client) .+? from Creator (.+)$/i);
   if (m) return `${qn(m[1])}'s draft has been ${a('rejected')} by ${p}`;
+
+  // Logistics — assigned
+  m = msg.match(/Logistics assigned to (.+)$/i);
+  if (m) return `${p} assigned products to ${qn(m[1])}`;
+
+  // Logistics — shipped
+  m = msg.match(/Scheduled product delivery for (.+)$/i);
+  if (m) return `${p} scheduled a product delivery for ${qn(m[1])} ${a('shipped')}`;
+  m = msg.match(/Logistics for (.+?) marked as shipped/i);
+  if (m) return `${p} scheduled a product delivery for ${qn(m[1])} ${a('shipped')}`;
+
+  // Logistics — reservation-specific received/completed/issue/resolved
+  m = msg.match(/(.+?) checked in at (.+)$/i);
+  if (m) return `${qn(m[1])} checked in at ${m[2]} ${a('received')}`;
+  m = msg.match(/(.+?) completed their visit at (.+)$/i);
+  if (m) return `${qn(m[1])} completed their visit at ${m[2]} ${a('completed')}`;
+  m = msg.match(/(.+?) reported an issue with their reservation at (.+)$/i);
+  if (m) return `${qn(m[1])} reported a reservation issue at ${m[2]} ${a('issue')}`;
+  m = msg.match(/Reservation issue resolved for (.+?) at (.+)$/i);
+  if (m) return `${p} resolved reservation issue for ${qn(m[1])} at ${m[2]}`;
+
+  // Logistics — received/completed (creator actions)
+  m = msg.match(/(.+?) marked logistics as received/i);
+  if (m) return `${qn(m[1])} marked logistics as ${a('received')}`;
+  m = msg.match(/(.+?) marked logistics as completed/i);
+  if (m) return `${qn(m[1])} marked logistics as ${a('completed')}`;
+
+  // Logistics — issue
+  m = msg.match(/(.+?) reported a logistics issue/i);
+  if (m) return `${qn(m[1])} reported a logistics ${a('issue')}`;
+  m = msg.match(/Logistics issue resolved for (.+)$/i);
+  if (m) return `${qn(m[1])}'s logistics issue has been ${a('resolved')} by ${p}`;
+
+  // Logistics — delivery date change
+  m = msg.match(/Expected delivery date for (.+?) changed from (.+?) to (.+)$/i);
+  if (m) return `${p} changed ${qn(m[1])}'s expected delivery from ${m[2]} to ${m[3]}`;
+
+  // Logistics — retry / details update
+  m = msg.match(/Logistics delivery retry scheduled for (.+)$/i);
+  if (m) return `${p} scheduled delivery retry for ${qn(m[1])}`;
+  m = msg.match(/Logistics details updated for (.+)$/i);
+  if (m) return `${p} updated logistics details for ${qn(m[1])}`;
+
+  // Logistics — status change
+  m = msg.match(/Logistics status for (.+?) changed to (\w+)/i);
+  if (m) return `${p} changed ${qn(m[1])}'s logistics to ${a(m[2].toLowerCase())}`;
+
+  // Logistics — creator delivery details updated
+  m = msg.match(/(.+?) updated delivery details/i);
+  if (m) return `${qn(m[1])} updated delivery details`;
+
+  // Logistics — creator info submission
+  m = msg.match(/(.+?) submitted logistics information/i);
+  if (m) return `${qn(m[1])} submitted logistics information`;
+
+  // Reservation
+  m = msg.match(/Reservation details updated for (.+)$/i);
+  if (m) return `${p} updated reservation details for ${qn(m[1])}`;
+  m = msg.match(/(.+?) submitted reservation details/i);
+  if (m) return `${qn(m[1])} submitted reservation details`;
+  m = msg.match(/Reservation confirmed for (.+)$/i);
+  if (m) return `${p} confirmed reservation for ${qn(m[1])}`;
+  m = msg.match(/Reservation rescheduled for (.+)$/i);
+  if (m) return `${p} rescheduled reservation for ${qn(m[1])}`;
+  m = msg.match(/Admin rescheduled reservation for (.+)$/i);
+  if (m) return `${p} rescheduled reservation for ${qn(m[1])}`;
+  m = msg.match(/Admin scheduled reservation for (.+)$/i);
+  if (m) return `${p} scheduled reservation for ${qn(m[1])}`;
 
   return msg;
 }
@@ -408,13 +540,40 @@ export function formatLogSummary(msg, performer) {
   if (m) return `Invoice ${m[1]} deleted for ${qn(m[2])}`;
   if (/deleted invoice/i.test(msg)) return `Invoice deleted`;
 
+  // Invoice rejected
+  m = msg.match(/Rejected invoice\s+([\w-]+)\s+for\s+(.+)$/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('rejected')}`;
+
+  // Invoice bulk approved
+  m = msg.match(/Bulk approved invoice\s+([\w-]+)\s+for\s+(.+)$/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('approved')} (bulk)`;
+
   // Invoice approved
   m = msg.match(/Approved invoice\s+([\w-]+)\s+for\s+(.+)$/i);
   if (m) return `Invoice ${m[1]} for ${qn(m[2])} has been ${a('approved')}`;
   if (/approved invoice/i.test(msg)) return `Invoice has been ${a('approved')}`;
 
-  // Amount change
-  m = msg.match(/changed the amount from (.+?) to (.+?) for (.+)$/i);
+  // Invoice paid (Xero webhook format)
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+was marked as paid/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} marked as ${a('paid')}`;
+
+  // Invoice paid (generic status change format)
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+status changed to paid/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} marked as ${a('paid')}`;
+
+  // Invoice generic status change (non-paid)
+  m = msg.match(/Invoice\s+([\w-]+)\s+for\s+(.+?)\s+status changed to\s+(\w[\w_]*)/i);
+  if (m) return `Invoice ${m[1]} for ${qn(m[2])} changed to ${a(m[3])}`;
+
+  // Invoice details updated
+  m = msg.match(/[Ii]nvoice details updated on\s+([\w-]+)\s+for\s+"?(.+?)"?\s*$/);
+  if (m) return `Invoice ${m[1]} details updated for ${qn(m[2])}`;
+
+  // Amount change (invoice)
+  m = msg.match(/changed the amount\s+on\s+invoice\s+[\w-]+\s+from\s+(.+?)\s+to\s+(.+?)\s+for\s+(.+)$/i);
+  if (m) return `${qn(m[3])}'s invoice amount changed from ${m[1]} to ${m[2]}`;
+  // Amount change (agreement)
+  m = msg.match(/changed the amount\s+from\s+(.+?)\s+to\s+(.+?)\s+for\s+(.+)$/i);
   if (m) return `${qn(m[3])}'s amount changed from ${m[1]} to ${m[2]}`;
   if (/changed the amount/i.test(msg)) return `Payment amount updated`;
 
@@ -456,6 +615,74 @@ export function formatLogSummary(msg, performer) {
   m = msg.match(/Draft rejected by (?:admin|client) .+? from Creator (.+)$/i);
   if (m) return `${qn(m[1])}'s draft has been ${a('rejected')}`;
 
+  // Logistics — assigned
+  m = msg.match(/Logistics assigned to (.+)$/i);
+  if (m) return `Products assigned to ${qn(m[1])}`;
+
+  // Logistics — shipped
+  m = msg.match(/Scheduled product delivery for (.+)$/i);
+  if (m) return `Product delivery scheduled for ${qn(m[1])} ${a('shipped')}`;
+  m = msg.match(/Logistics for (.+?) marked as shipped/i);
+  if (m) return `Product delivery scheduled for ${qn(m[1])} ${a('shipped')}`;
+
+  // Logistics — reservation-specific received/completed/issue/resolved
+  m = msg.match(/(.+?) checked in at (.+)$/i);
+  if (m) return `${qn(m[1])} checked in at ${m[2]} ${a('received')}`;
+  m = msg.match(/(.+?) completed their visit at (.+)$/i);
+  if (m) return `${qn(m[1])} completed their visit at ${m[2]} ${a('completed')}`;
+  m = msg.match(/(.+?) reported an issue with their reservation at (.+)$/i);
+  if (m) return `${qn(m[1])} reported a reservation issue at ${m[2]} ${a('issue')}`;
+  m = msg.match(/Reservation issue resolved for (.+?) at (.+)$/i);
+  if (m) return `Reservation issue resolved for ${qn(m[1])} at ${m[2]}`;
+
+  // Logistics — received/completed
+  m = msg.match(/(.+?) marked logistics as received/i);
+  if (m) return `${qn(m[1])} marked logistics as ${a('received')}`;
+  m = msg.match(/(.+?) marked logistics as completed/i);
+  if (m) return `${qn(m[1])} marked logistics as ${a('completed')}`;
+
+  // Logistics — issue
+  m = msg.match(/(.+?) reported a logistics issue/i);
+  if (m) return `${qn(m[1])} reported a logistics ${a('issue')}`;
+  m = msg.match(/Logistics issue resolved for (.+)$/i);
+  if (m) return `${qn(m[1])}'s logistics issue ${a('resolved')}`;
+
+  // Logistics — delivery date change
+  m = msg.match(/Expected delivery date for (.+?) changed from (.+?) to (.+)$/i);
+  if (m) return `${qn(m[1])}'s expected delivery changed from ${m[2]} to ${m[3]}`;
+
+  // Logistics — retry / details
+  m = msg.match(/Logistics delivery retry scheduled for (.+)$/i);
+  if (m) return `Delivery retry scheduled for ${qn(m[1])}`;
+  m = msg.match(/Logistics details updated for (.+)$/i);
+  if (m) return `Logistics details updated for ${qn(m[1])}`;
+
+  // Logistics — status change
+  m = msg.match(/Logistics status for (.+?) changed to (\w+)/i);
+  if (m) return `${qn(m[1])}'s logistics changed to ${a(m[2].toLowerCase())}`;
+
+  // Logistics — creator delivery details updated
+  m = msg.match(/(.+?) updated delivery details/i);
+  if (m) return `${qn(m[1])} updated delivery details`;
+
+  // Logistics — creator info submission
+  m = msg.match(/(.+?) submitted logistics information/i);
+  if (m) return `${qn(m[1])} submitted logistics information`;
+
+  // Reservation
+  m = msg.match(/Reservation details updated for (.+)$/i);
+  if (m) return `Reservation details updated for ${qn(m[1])}`;
+  m = msg.match(/(.+?) submitted reservation details/i);
+  if (m) return `${qn(m[1])} submitted reservation details`;
+  m = msg.match(/Reservation confirmed for (.+)$/i);
+  if (m) return `Reservation confirmed for ${qn(m[1])}`;
+  m = msg.match(/Reservation rescheduled for (.+)$/i);
+  if (m) return `Reservation rescheduled for ${qn(m[1])}`;
+  m = msg.match(/Admin rescheduled reservation for (.+)$/i);
+  if (m) return `Reservation rescheduled for ${qn(m[1])}`;
+  m = msg.match(/Admin scheduled reservation for (.+)$/i);
+  if (m) return `Reservation scheduled for ${qn(m[1])}`;
+
   return msg;
 }
 
@@ -471,22 +698,39 @@ function extractCreatorName(msg) {
   // Pattern: X approved Willy Wong's Final Draft
   m = msg.match(/(?:approved|requested changes on) (.+?)(?:'s|'s)/i);
   if (m) return m[1].replace(/^"|"$/g, '').trim();
+  // Pattern: Invoice INV-X for <Name> (status changed to...|was generated|was marked...)
+  // Also: Approved/Rejected/Deleted/Bulk approved invoice INV-X for <Name>
+  m = msg.match(/invoice\s+[\w-]+\s+for\s+(.+?)(?:\s+(?:status changed|was\s)|\s*$)/i);
+  if (m) return m[1].replace(/^"|"$/g, '').trim();
+  return '';
+}
+
+function extractInvoiceAction(msg) {
+  const lower = msg.toLowerCase();
+  const m = lower.match(/status changed to\s+(\w+)/);
+  if (m) return m[1];
+  if (lower.includes('bulk approved invoice')) return 'approved';
+  if (lower.includes('approved invoice')) return 'approved';
+  if (lower.includes('rejected invoice')) return 'rejected';
+  if (lower.includes('deleted invoice')) return 'deleted';
+  if (lower.includes('was marked as paid')) return 'paid';
+  if (lower.includes('was generated')) return 'generated';
   return '';
 }
 
 export function deduplicateLogs(classifiedLogs) {
   const groups = new Map();
 
-  classifiedLogs.forEach((log, index) => {
-    // Campaign Edit logs should never be deduplicated — each edit is a distinct action
-    if (log.category === 'Campaign Edit') {
+  classifiedLogs.forEach((log, index) => { 
+    if (log.category === 'Campaign Edit' || log.category === 'Invoice Details Updated') {
       groups.set(`edit_${log.id}`, [{ log, index }]);
       return;
     }
     // Round timestamp to nearest 60 seconds for grouping
     const ts = Math.floor(new Date(log.createdAt).getTime() / 60000);
     const creator = extractCreatorName(log.action);
-    const key = `${ts}|${log.category}|${log.performedBy}|${creator}`;
+    const invoiceAction = log.category.startsWith('Invoice') ? extractInvoiceAction(log.action) : '';
+    const key = `${ts}|${log.category}|${log.performedBy}|${creator}|${invoiceAction}`;
 
     if (!groups.has(key)) {
       groups.set(key, []);
@@ -543,7 +787,7 @@ export function filterLogsBySearch(logs, query, creatorName) {
 // ---------------------------------------------------------------------------
 
 export function getTabCounts(classifiedLogs) {
-  const counts = { all: classifiedLogs.length, admin: 0, creator: 0, client: 0, invoice: 0 };
+  const counts = { all: classifiedLogs.length, admin: 0, creator: 0, client: 0, invoice: 0, logistics: 0 };
   classifiedLogs.forEach((log) => {
     if (
       log.groups.includes('admin') ||
@@ -554,6 +798,7 @@ export function getTabCounts(classifiedLogs) {
     if (log.groups.includes('creator')) counts.creator += 1;
     if (log.groups.includes('client') || log.performerRole === 'client') counts.client += 1;
     if (log.groups.includes('invoice')) counts.invoice += 1;
+    if (log.groups.includes('logistics')) counts.logistics += 1;
   });
   return counts;
 }
@@ -615,6 +860,7 @@ export function formatLogTime(createdAt, { relative = false, detailed = false } 
 export function getPerformerBadge(role) {
   if (!role) return null;
   const r = role.toLowerCase();
+  if (r === 'system') return { label: 'System', color: '#00B8D9', bg: '#E6F9FD' };
   if (r === 'client') return { label: 'Client', color: '#F59E0B', bg: '#FFF8E6' };
   if (r !== 'creator') return { label: 'Admin', color: '#1340FF', bg: '#EBF0FF' };
   return null;

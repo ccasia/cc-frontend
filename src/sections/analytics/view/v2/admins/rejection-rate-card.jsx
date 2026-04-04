@@ -13,6 +13,7 @@ import {
   Avatar,
   Button,
   Divider,
+  Tooltip,
   Checkbox,
   MenuItem,
   Skeleton,
@@ -48,6 +49,18 @@ function getRateColor(rate) {
   if (rate <= 25) return SEVERITY_COLORS.warning;
   return SEVERITY_COLORS.error;
 }
+
+const CAMPAIGN_STATUS_COLORS = {
+  ACTIVE: '#22C55E',
+  COMPLETED: '#1340ff',
+  PAUSED: '#919EAB',
+};
+
+const CAMPAIGN_STATUS_LABELS = {
+  ACTIVE: 'Active',
+  COMPLETED: 'Completed',
+  PAUSED: 'Paused',
+};
 
 const SCROLL_SX = {
   '&::-webkit-scrollbar': { width: '3px' },
@@ -413,20 +426,33 @@ function RejectionRateCard() {
                           >
                             {row.campaign?.charAt(0)?.toUpperCase()}
                           </Avatar>
-                          <Typography
-                            title={row.campaign}
-                            sx={{
-                              flex: 1,
-                              minWidth: 0,
-                              fontWeight: 500,
-                              fontSize: 13,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {row.campaign}
-                          </Typography>
+                          <Tooltip title={row.campaign} arrow placement="top">
+                            <Typography
+                              sx={{
+                                flex: 1,
+                                minWidth: 0,
+                                fontWeight: 500,
+                                fontSize: 13,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {row.campaign}
+                            </Typography>
+                          </Tooltip>
+                          <Tooltip title={CAMPAIGN_STATUS_LABELS[row.status] || row.status} arrow placement="top">
+                            <Box
+                              sx={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                bgcolor: CAMPAIGN_STATUS_COLORS[row.status] || '#919EAB',
+                                flexShrink: 0,
+                                ml: 0.75,
+                              }}
+                            />
+                          </Tooltip>
                         </Stack>
 
                         {/* Package chip */}

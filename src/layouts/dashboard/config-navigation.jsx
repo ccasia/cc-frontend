@@ -130,7 +130,6 @@ export function useNavData() {
         ],
       },
       {
-        // subheader: 'Management',
         items: [
           {
             roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
@@ -167,10 +166,20 @@ export function useNavData() {
             icon: ICONS.clients,
           },
           {
-            roles: ['superadmin', 'CSL', 'god'],
+            roles: ['superadmin', 'god'],
             title: 'Creator Discovery Tool',
-            path: paths.dashboard.discoveryTool,
+            path: paths.dashboard.discoveryTool.root,
             icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
+            children: [
+              {
+                title: 'Platform Creators',
+                path: paths.dashboard.discoveryTool.root,
+              },
+              {
+                title: 'Non-Platform Creators',
+                path: paths.dashboard.discoveryTool.npc
+              }
+            ]
           },
           // {
           //   title: 'My Tasks',
@@ -207,6 +216,12 @@ export function useNavData() {
             title: 'Feedback',
             path: paths.dashboard.feedback.root,
             icon: <Iconify icon="material-symbols:rate-review-outline" width={25} />,
+          },
+          {
+            roles: ['superadmin', 'god'],
+            title: 'AI Report Configurations',
+            path: paths.dashboard.reportAi.root,
+            icon: <Iconify icon="mingcute:ai-line" width={25} />,
           },
         ],
       },

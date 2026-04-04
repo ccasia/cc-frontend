@@ -111,7 +111,7 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
               'default'
             }
           >
-            {status}
+            {status === 'banned' ? 'Inactive' : status}
           </Label>
         </TableCell>
 

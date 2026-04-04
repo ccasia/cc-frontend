@@ -232,7 +232,7 @@ const UpdateAdditionalOne = ({ campaign, campaignMutate }) => {
 
             {/* Main Message/Theme */}
             <FormField label="Main Message/Theme - What's the core message?">
-              <RHFTextField name="mainMessage" placeholder="Core Message" />
+              <RHFTextField name="mainMessage" placeholder="Core Message" multiline />
             </FormField>
 
             {/* Key Points to Cover */}
@@ -295,6 +295,7 @@ const UpdateAdditionalOne = ({ campaign, campaignMutate }) => {
               <RHFTextField
                 name="referenceContent"
                 placeholder="references.com"
+                multiline
                 size="small"
                 sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
               />

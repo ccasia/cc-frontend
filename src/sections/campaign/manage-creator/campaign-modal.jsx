@@ -488,7 +488,7 @@ const CampaignModal = ({ open, handleClose, campaign, mutate }) => {
               justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
               sx={{ mt: { xs: 1.5, sm: 0 } }}
             >
-              {campaign?.shortlisted &&
+              {(campaign?.shortlisted) &&
                 (() => {
                   // Check if user is marked as Media Kit Mandatory
                   const isMKM = user?.mediaKitMandatory === true;
