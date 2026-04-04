@@ -94,6 +94,16 @@ const VideoSubmissionModal = ({
     setModalDuration(0);
   }, [videoPage]);
 
+  const refreshSubmission = async () => {
+    if (!submission?.id) return;
+    try {
+      const res = await axiosInstance.get(`${endpoints.submission.v4.getById}/${submission.id}`);
+      setFreshSubmission(res?.data?.submission || submission);
+    } catch (e) {
+      // keep current state on error
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
     const run = async () => {
@@ -690,6 +700,7 @@ const VideoSubmissionModal = ({
                   currentVideoTime: formatTime(modalCurrentTime),
                   onSeekTo: handleModalSeek,
                   ref: feedbackPanelRef,
+                  refreshSubmission,
                   // Admin-facing fields (raw seconds)
                   currentTime: modalCurrentTime,
                   duration: modalDuration,

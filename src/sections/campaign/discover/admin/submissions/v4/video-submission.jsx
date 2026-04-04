@@ -28,6 +28,8 @@ import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissi
 import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
 import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
 
+import TypographyMotion from 'src/components/animate/motion-typography';
+
 import FeedbackLogs from './shared/feedback-logs';
 import FeedbackSection from './shared/feedback-section';
 import FeedbackActions from './shared/feedback-actions';
@@ -35,7 +37,6 @@ import PostingLinkSection from './shared/posting-link-section';
 import useCaptionOverflow from './shared/use-caption-overflow';
 import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
-import TypographyMotion from 'src/components/animate/motion-typography';
 
 export default function V4VideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
@@ -1105,6 +1106,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           videoCount,
           isPastVideo,
           submission: modalSubmission,
+          ref: feedbackRef,
+          refreshSubmission,
         }) => {
           const currentModalVideo =
             modalSubmission?.video?.find((v) => v.id === modalVideoId) ||
@@ -1112,13 +1115,19 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
             clientVideo ||
             video;
 
+          const handleSendAndRefresh = async (videoIdToPublish, shouldRefresh) => {
+            await handleSendComments(videoIdToPublish, shouldRefresh);
+            if (refreshSubmission) refreshSubmission();
+          };
+
           return (
             <ClientFeedbackModal
+              ref={feedbackRef}
               submissionId={submission.id}
               videoId={modalVideoId || clientVideo?.id || video?.id}
               currentVideoTime={videoControls.formatTime(modalCurrentTime || 0)}
               onSeekTo={onSeek}
-              onSendToAdmin={handleSendComments}
+              onSendToAdmin={handleSendAndRefresh}
               isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
               isPastVideo={isPastVideo}
               videoPage={videoPage}

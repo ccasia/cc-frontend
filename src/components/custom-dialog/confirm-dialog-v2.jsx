@@ -74,7 +74,7 @@ export default function ConfirmDialogV2({
               boxShadow: 'none',
             },
             '&:active': {
-              borderBottom: '1px solid #00000073',
+              borderBottom: '3px solid #00000073',
               transform: 'translateY(1px)',
             },
           }}
@@ -101,7 +101,7 @@ export default function ConfirmDialogV2({
             boxShadow: 'none',
           },
           '&:active': {
-            borderBottom: '1px solid #E7E7E7',
+            borderBottom: '3px solid #E7E7E7',
             transform: 'translateY(1px)',
           },
         }}

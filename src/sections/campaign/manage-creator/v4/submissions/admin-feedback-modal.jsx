@@ -3,7 +3,17 @@ import { enqueueSnackbar } from 'notistack';
 import { m, AnimatePresence } from 'framer-motion';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Avatar, Button, Collapse, TextField, Typography, IconButton, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Avatar,
+  Button,
+  Divider,
+  Collapse,
+  TextField,
+  Typography,
+  IconButton,
+  CircularProgress,
+} from '@mui/material';
 
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 
@@ -73,13 +83,15 @@ AnimatedDigit.propTypes = { digit: PropTypes.string.isRequired };
 
 const AnimatedTime = ({ time }) => (
   <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
-    {time.split('').map((char, i) =>
-      char === ':' ? (
-        <span key={`sep-${i}`}>:</span>
-      ) : (
-        <AnimatedDigit key={`pos-${i}`} digit={char} />
-      )
-    )}
+    {time
+      .split('')
+      .map((char, i) =>
+        char === ':' ? (
+          <span key={`sep-${i}`}>:</span>
+        ) : (
+          <AnimatedDigit key={`pos-${i}`} digit={char} />
+        )
+      )}
   </Box>
 );
 
@@ -136,11 +148,14 @@ const CommentCard = ({
   pendingDelete = false,
   pendingDeleteStartTime,
   currentUserId,
+  parentResolved = false,
+  isNewCreatorReply = false,
 }) => {
   const isClientComment = comment.user?.role === 'client';
   const isEditedClientComment = isClientComment && !!comment.forwardedBy;
+  const canAdminReply = isAdminView && isEditedClientComment && !isReply;
   const hasAgreed = comment.agreedBy?.length > 0;
-  const isResolved = !!comment.resolvedByUserId || isPastVideo;
+  const isResolved = !!comment.resolvedByUserId || isPastVideo || parentResolved;
   const showRepliesToggle = !isReply && replyCount > 0;
   const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
 
@@ -149,11 +164,14 @@ const CommentCard = ({
   // Toggle identity along with text: edited view shows admin, original view shows client
   const showingOriginal = showOriginal && isEditedClientComment;
   const displayName = showingOriginal
-    ? (comment.user?.name || 'Unknown')
-    : (comment.forwardedBy?.name || comment.user?.name || 'Unknown');
+    ? comment.user?.name || 'Unknown'
+    : comment.forwardedBy?.name || comment.user?.name || 'Unknown';
   const displayPhoto = showingOriginal
-    ? (comment.user?.photoURL || comment?.user?.client?.company?.logo || null)
-    : (comment.forwardedBy?.photoURL || comment.user?.photoURL || comment?.user?.client?.company?.logo || null);
+    ? comment.user?.photoURL || comment?.user?.client?.company?.logo || null
+    : comment.forwardedBy?.photoURL ||
+      comment.user?.photoURL ||
+      comment?.user?.client?.company?.logo ||
+      null;
   const role = comment.user?.role;
   const capitalizedRole = (role && role.charAt(0).toUpperCase() + role.slice(1)) || '';
   const forwardedRole = comment.forwardedBy ? 'Admin' : capitalizedRole;
@@ -169,7 +187,11 @@ const CommentCard = ({
   }
   prevEditingRef.current = isEditing;
 
-  const hasLeftActions = !isPastVideo && ((!isReply && isClientComment && !isEditedClientComment) || (isClientComment && !isEditedClientComment && !!onEdit));
+  const hasLeftActions =
+    !isPastVideo &&
+    ((!isReply && isClientComment && !isEditedClientComment) ||
+      (isClientComment && !isEditedClientComment && !!onEdit) ||
+      canAdminReply);
 
   const isVisible = comment.isVisibleToCreator !== false;
   const isCreatorComment = comment.user?.role === 'creator';
@@ -177,9 +199,12 @@ const CommentCard = ({
 
   const canToggleVisibility = showVisibilityBorder && !isPastVideo && !!onToggleVisibility;
 
-  // Delete permission: own comment, not forwarded, not past video
+  // Delete permission: own comment, not past video
+  // Allow deletion when forwardedByUserId is absent OR matches the current admin
+  // (backend auto-sets forwardedByUserId on admin replies when the parent is already forwarded)
   const canDelete = !!onDelete && !isPastVideo && !pendingDelete
-    && comment.userId === currentUserId && !comment.forwardedByUserId;
+    && (comment.userId === currentUserId || comment.user?.id === currentUserId)
+    && (!comment.forwardedByUserId || comment.forwardedByUserId === currentUserId);
 
   // Countdown for pending-delete state
   const [deleteProgress, setDeleteProgress] = useState(100);
@@ -213,7 +238,12 @@ const CommentCard = ({
   const handleCardClick = (e) => {
     if (!canToggleVisibility) return;
     // Don't toggle when clicking interactive elements inside the card
-    if (e.target.closest('button, input, textarea, [role="button"], a, .MuiIconButton-root, [data-interactive]')) return;
+    if (
+      e.target.closest(
+        'button, input, textarea, [role="button"], a, .MuiIconButton-root, [data-interactive]'
+      )
+    )
+      return;
     onToggleVisibility(comment.id);
   };
 
@@ -365,17 +395,21 @@ const CommentCard = ({
     <Box
       onClick={handleCardClick}
       sx={{
-        bgcolor: 'white',
-        p: hasLeftActions ? 2 : 1.5,
+        p: { xs: 1.25, md: 2 },
+        gap: { xs: 0.75, md: 1 },
+        bgcolor: isResolved ? '#EBEBEB' : 'white',
         borderRadius: 2,
-        border: isClientComment && !isEditedClientComment ? '1px solid #2563EB' : '1px solid #EBEBEB',
+        border:
+          isClientComment && !isEditedClientComment ? '1px solid #2563EB' : '1px solid #EBEBEB',
         boxShadow: 'none',
         display: 'flex',
         flexDirection: 'column',
-        gap: hasLeftActions ? 1.5 : 0.75,
         position: 'relative',
         zIndex: 1,
         transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+        ...(isNewCreatorReply && {
+          border: '1.5px solid #1340FF',
+        }),
         ...(showVisibilityBorder && {
           border: isVisible ? '1.5px solid #00A76F' : '1px solid #EBEBEB',
         }),
@@ -388,7 +422,14 @@ const CommentCard = ({
       }}
     >
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 0.5 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          px: 0.5,
+        }}
+      >
         <AnimatePresence mode="wait">
           <m.div
             key={showingOriginal ? 'original' : 'edited'}
@@ -407,7 +448,7 @@ const CommentCard = ({
                 bgcolor: '#E5E7EB',
                 color: '#6B7280',
                 border: '1px solid #EBEBEB',
-                fontSize: '0.875rem',
+                fontSize: { xs: '0.75rem', md: '0.875rem' },
                 fontWeight: 500,
               }}
             >
@@ -415,14 +456,35 @@ const CommentCard = ({
             </Avatar>
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#111827' }}>
+                <Typography
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: { xs: '0.813rem', md: '0.875rem' },
+                    color: '#111827',
+                  }}
+                >
                   {displayName}
                 </Typography>
-                {isNew && (
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#FF5630', flexShrink: 0 }} />
+                {(isNew || isNewCreatorReply) && (
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      bgcolor: '#FF5630',
+                      flexShrink: 0,
+                    }}
+                  />
                 )}
               </Box>
-              <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#9CA3AF' }}>
+              <Typography
+                sx={{
+                  fontSize: { xs: '0.688rem', md: '0.75rem' },
+                  fontWeight: 600,
+                  color: '#9CA3AF',
+                  textTransform: 'capitalize',
+                }}
+              >
                 {displayRole}
               </Typography>
             </Box>
@@ -541,14 +603,23 @@ const CommentCard = ({
                 transition={{ duration: 0.2, ease: 'easeInOut' }}
               >
                 <Typography
-                  sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#1F2937', wordBreak: 'break-word' }}
+                  sx={{
+                    fontSize: { xs: '0.813rem', md: '0.875rem' },
+                    fontWeight: 500,
+                    color: '#1F2937',
+                    wordBreak: 'break-word',
+                  }}
                 >
                   {(() => {
-                    const displayTimestamp = showingOriginal && comment.originalTimestamp ? comment.originalTimestamp : comment.timestamp;
-                    const displayText = showingOriginal && comment.originalText ? comment.originalText : comment.text;
+                    const displayTimestamp =
+                      showingOriginal && comment.originalTimestamp
+                        ? comment.originalTimestamp
+                        : comment.timestamp;
+                    const displayText =
+                      showingOriginal && comment.originalText ? comment.originalText : comment.text;
                     return (
                       <>
-                        {displayTimestamp && (
+                        {displayTimestamp && comment.user?.role !== 'creator' && (
                           <Typography
                             component="span"
                             onClick={(e) => {
@@ -645,88 +716,100 @@ const CommentCard = ({
 
       {/* Footer Actions */}
       {!isEditing && (
-        <Box sx={{ pl: 0.5, display: 'flex', alignItems: 'center', justifyContent: hasLeftActions ? 'space-between' : 'flex-end' }}>
-          {hasLeftActions && <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            {!isReply && isClientComment && !isEditedClientComment && (
-              <Typography
-                data-interactive
-                onClick={() => onReply?.(comment)}
-                sx={{
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: '#9CA3AF',
-                  cursor: 'pointer',
-                  '&:hover': { color: '#6B7280' },
-                }}
-              >
-                Reply
-              </Typography>
-            )}
-            {isClientComment && !isEditedClientComment && onEdit && (
-              <Typography
-                data-interactive
-                onClick={() => onEdit(comment)}
-                sx={{
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: '#9CA3AF',
-                  cursor: 'pointer',
-                  '&:hover': { color: '#6B7280' },
-                }}
-              >
-                Edit
-              </Typography>
-            )}
-          </Box>}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-            {showRepliesToggle && (
-              <Box
-                data-interactive
-                component="button"
-                type="button"
-                onClick={() => onToggleReplies?.(comment.id)}
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 0.35,
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  cursor: 'pointer',
-                  mr: 0.5,
-                  '&:hover': { opacity: 0.9 },
-                }}
-              >
+        <Box
+          sx={{
+            pl: 0.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: hasLeftActions ? 'space-between' : 'flex-end',
+          }}
+        >
+          {hasLeftActions && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              {((!isReply && isClientComment && !isEditedClientComment) || canAdminReply) && (
                 <Typography
+                  data-interactive
+                  onClick={() => onReply?.(comment)}
                   sx={{
-                    fontSize: { xs: '0.875rem', md: '0.95rem' },
-                    fontWeight: 700,
-                    color: repliesToggleColor,
-                    lineHeight: 1,
-                    userSelect: 'none',
+                    fontSize: { xs: '0.75rem', md: '0.875rem' },
+                    fontWeight: 600,
+                    color: '#9CA3AF',
+                    cursor: 'pointer',
+                    padding: { xs: '2px 0', md: 0 },
+                    '&:hover': { color: '#6B7280' },
                   }}
                 >
-                  {replyCount}
+                  Reply
                 </Typography>
-                <Box
-                  aria-label="Replies"
+              )}
+              {isClientComment && !isEditedClientComment && onEdit && (
+                <Typography
+                  data-interactive
+                  onClick={() => onEdit(comment)}
                   sx={{
-                    width: { xs: 20, md: 22 },
-                    height: { xs: 20, md: 22 },
-                    display: 'block',
-                    flexShrink: 0,
-                    bgcolor: repliesToggleColor,
-                    WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
-                    WebkitMaskRepeat: 'no-repeat',
-                    WebkitMaskPosition: 'center',
-                    WebkitMaskSize: 'contain',
-                    maskImage: 'url(/favicon/repliesicon.svg)',
-                    maskRepeat: 'no-repeat',
-                    maskPosition: 'center',
-                    maskSize: 'contain',
+                    fontSize: { xs: '0.75rem', md: '0.875rem' },
+                    fontWeight: 600,
+                    color: '#9CA3AF',
+                    cursor: 'pointer',
+                    '&:hover': { color: '#6B7280' },
                   }}
-                />
-              </Box>
+                >
+                  Edit
+                </Typography>
+              )}
+            </Box>
+          )}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+            {showRepliesToggle && (
+              <DarkGlassTooltip title={isRepliesOpen ? 'Hide replies' : 'Show replies'} placement="top">
+                <Box
+                  data-interactive
+                  component="button"
+                  type="button"
+                  onClick={() => onToggleReplies?.(comment.id)}
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.35,
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    mr: 0.5,
+                    '&:hover': { opacity: 0.9 },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: { xs: '0.875rem', md: '0.95rem' },
+                      fontWeight: 700,
+                      color: repliesToggleColor,
+                      lineHeight: 1,
+                      userSelect: 'none',
+                    }}
+                  >
+                    {replyCount}
+                  </Typography>
+                  <Box
+                    aria-label="Replies"
+                    sx={{
+                      width: { xs: 20, md: 22 },
+                      height: { xs: 20, md: 22 },
+                      display: 'block',
+                      flexShrink: 0,
+                      bgcolor: repliesToggleColor,
+                      WebkitMaskImage: 'url(/favicon/repliesicon.svg)',
+                      WebkitMaskRepeat: 'no-repeat',
+                      WebkitMaskPosition: 'center',
+                      WebkitMaskSize: 'contain',
+                      maskImage: 'url(/favicon/repliesicon.svg)',
+                      maskRepeat: 'no-repeat',
+                      maskPosition: 'center',
+                      maskSize: 'contain',
+                    }}
+                  />
+                </Box>
+              </DarkGlassTooltip>
             )}
             {isEditedClientComment && (
               <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
@@ -760,7 +843,10 @@ const CommentCard = ({
             {hasAgreed && (
               <DarkGlassTooltip
                 title={(() => {
-                  const names = comment.agreedBy?.map((a) => a.user?.name).filter(Boolean).join(', ');
+                  const names = comment.agreedBy
+                    ?.map((a) => a.user?.name)
+                    .filter(Boolean)
+                    .join(', ');
                   return names ? `Agreed by ${names}` : 'Agreed';
                 })()}
                 placement="top"
@@ -777,15 +863,26 @@ const CommentCard = ({
                 </IconButton>
               </DarkGlassTooltip>
             )}
-            <DarkGlassTooltip title={isResolved ? `Resolved at ${fDateTime(comment.resolvedAt)}` : 'Mark as Resolved'} placement="top">
-              <IconButton size="small" sx={{ p: 0.5 }} onClick={isPastVideo ? undefined : () => onToggleResolve?.(comment.id)}>
-                <Iconify
-                  icon={isResolved ? 'mdi:check-circle' : 'mdi:check-circle-outline'}
-                  width={20}
-                  sx={{ color: isResolved ? '#00A76F' : '#919191' }}
-                />
-              </IconButton>
-            </DarkGlassTooltip>
+            {!isReply && (
+              <DarkGlassTooltip
+                title={
+                  isResolved ? `Resolved at ${fDateTime(comment.resolvedAt)}` : 'Mark as Resolved'
+                }
+                placement="top"
+              >
+                <IconButton
+                  size="small"
+                  sx={{ p: 0.5 }}
+                  onClick={isPastVideo ? undefined : () => onToggleResolve?.(comment.id)}
+                >
+                  <Iconify
+                    icon={isResolved ? 'mdi:check-circle' : 'mdi:check-circle-outline'}
+                    width={20}
+                    sx={{ color: isResolved ? '#00A76F' : '#919191' }}
+                  />
+                </IconButton>
+              </DarkGlassTooltip>
+            )}
           </Box>
         </Box>
       )}
@@ -833,10 +930,10 @@ const CommentCard = ({
                     p: 0,
                   },
                   '& .MuiInputBase-input': {
-                    fontSize: 13,
+                    fontSize: '0.875rem',
                     fontFamily: 'Inter, sans-serif',
                     p: 0,
-                    lineHeight: 1.4,
+                    lineHeight: 1.5,
                     '&::placeholder': {
                       color: '#B0B0B0',
                       opacity: 1,
@@ -941,11 +1038,19 @@ CommentCard.propTypes = {
   isAdminView: PropTypes.bool,
   onToggleVisibility: PropTypes.func,
   isNew: PropTypes.bool,
+  isNewCreatorReply: PropTypes.bool,
   onDelete: PropTypes.func,
   onUndoDelete: PropTypes.func,
   pendingDelete: PropTypes.bool,
   pendingDeleteStartTime: PropTypes.number,
   currentUserId: PropTypes.string,
+  parentResolved: PropTypes.bool,
+};
+
+const getNewItemLabel = ({ replies, messages }) => {
+  const total = replies + messages;
+  if (replies > 0 && messages === 0) return `${total} New ${replies === 1 ? 'Reply' : 'Replies'}`;
+  return `${total} New ${total === 1 ? 'Message' : 'Messages'}`;
 };
 
 // ---------------------------------------------------------------------------
@@ -984,11 +1089,16 @@ export default function AdminFeedbackPanel({
   );
 
   const commentsEndRef = useRef(null);
+  const scrollContainerRef = useRef(null);
   const initialLoadDone = useRef(false);
+  const [newAbove, setNewAbove] = useState({ replies: 0, messages: 0, targetId: null });
+  const [newBelow, setNewBelow] = useState({ replies: 0, messages: 0, targetId: null });
 
   // Track which client comments are new (created after admin last viewed)
   const lastViewedRef = useRef(null);
-  useEffect(() => { lastViewedRef.current = null; }, [videoId]);
+  useEffect(() => {
+    lastViewedRef.current = null;
+  }, [videoId]);
   const newClientCommentIds = useMemo(() => {
     if (!comments?.length || !videoId) return new Set();
 
@@ -1012,6 +1122,20 @@ export default function AdminFeedbackPanel({
     return ids;
   }, [comments, videoId, submission?.id]);
 
+  const newCreatorReplyIds = useMemo(() => {
+    if (!comments?.length || !videoId) return new Set();
+    const cutoff = lastViewedRef.current || 0;
+    const ids = new Set();
+    comments.forEach((c) => {
+      (c.replies || []).forEach((r) => {
+        if (r.user?.role === 'creator' && new Date(r.createdAt).getTime() > cutoff) {
+          ids.add(r.id);
+        }
+      });
+    });
+    return ids;
+  }, [comments, videoId]);
+
   // Update last-viewed timestamp after comments load
   useEffect(() => {
     if (!commentsLoading && comments?.length && videoId && submission?.id) {
@@ -1025,6 +1149,17 @@ export default function AdminFeedbackPanel({
     }
     return undefined;
   }, [commentsLoading, comments?.length, videoId, submission?.id]);
+
+  // Write localStorage on unmount (modal close) so reopening sees updated timestamp
+  useEffect(() => {
+    const sid = submission?.id;
+    const vid = videoId;
+    if (!sid || !vid) return undefined;
+    return () => {
+      const storageKey = `admin_lastViewed_${sid}_${vid}`;
+      localStorage.setItem(storageKey, new Date().toISOString());
+    };
+  }, [submission?.id, videoId]);
 
   // Track page-slide direction: 1 = slide from right, -1 = slide from left
   const prevVideoPageRef = useRef(videoPage);
@@ -1085,6 +1220,33 @@ export default function AdminFeedbackPanel({
       }
     };
 
+    const handleNewItem = (data, isReply) => {
+      if (data.submissionId !== submission.id || data.comment?.isClientDraft) return;
+      commentsMutate();
+      // Skip indicator for own messages
+      if (data.comment?.userId === user?.id) return;
+      if (!initialLoadDone.current) return;
+      // Determine direction after DOM updates
+      setTimeout(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const parentId = isReply ? data.parentCommentId : data.comment?.id;
+        const parentEl = parentId && container.querySelector(`[data-comment-id="${parentId}"]`);
+        const key = isReply ? 'replies' : 'messages';
+        if (parentEl) {
+          const parentRect = parentEl.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          if (parentRect.bottom < containerRect.top) {
+            setNewAbove((prev) => ({ ...prev, [key]: prev[key] + 1, targetId: prev.targetId || parentId }));
+          } else if (parentRect.bottom > containerRect.bottom) {
+            setNewBelow((prev) => ({ ...prev, [key]: prev[key] + 1, targetId: prev.targetId || parentId }));
+          }
+        } else {
+          setNewBelow((prev) => ({ ...prev, [key]: prev[key] + 1, targetId: prev.targetId || parentId }));
+        }
+      }, 200);
+    };
+
     const handleDeletedEvent = (data) => {
       if (data.submissionId === submission.id) {
         // Skip revalidation if we're still showing the pending-delete UI
@@ -1093,20 +1255,23 @@ export default function AdminFeedbackPanel({
       }
     };
 
-    socket.on('v4:comment:added', handleCommentEvent);
+    const handleNewComment = (data) => handleNewItem(data, false);
+    const handleNewReply = (data) => handleNewItem(data, true);
+
+    socket.on('v4:comment:added', handleNewComment);
     socket.on('v4:comment:updated', handleCommentEvent);
-    socket.on('v4:comment:reply:added', handleCommentEvent);
+    socket.on('v4:comment:reply:added', handleNewReply);
     socket.on('v4:comment:deleted', handleDeletedEvent);
     socket.on('v4:comment:agreed', handleCommentEvent);
 
     return () => {
-      socket.off('v4:comment:added', handleCommentEvent);
+      socket.off('v4:comment:added', handleNewComment);
       socket.off('v4:comment:updated', handleCommentEvent);
-      socket.off('v4:comment:reply:added', handleCommentEvent);
+      socket.off('v4:comment:reply:added', handleNewReply);
       socket.off('v4:comment:deleted', handleDeletedEvent);
       socket.off('v4:comment:agreed', handleCommentEvent);
     };
-  }, [socket, submission?.id, commentsMutate]);
+  }, [socket, submission?.id, user?.id, commentsMutate]);
 
   // Reset scroll state on mount and when switching video pages
   useEffect(() => {
@@ -1126,6 +1291,28 @@ export default function AdminFeedbackPanel({
     }
     commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [comments?.length, commentsLoading, videoId]);
+
+  const clearNewIndicators = () => {
+    setNewAbove({ replies: 0, messages: 0, targetId: null });
+    setNewBelow({ replies: 0, messages: 0, targetId: null });
+  };
+
+  const scrollToThread = (targetId) => {
+    const container = scrollContainerRef.current;
+    if (!container || !targetId) return;
+    const threadEl = container.querySelector(`[data-comment-id="${targetId}"]`);
+    if (threadEl) {
+      const threadRect = threadEl.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      // Scroll so the bottom of the thread (where the new reply is) is visible
+      const scrollOffset = threadRect.bottom - containerRect.bottom;
+      if (scrollOffset > 0) {
+        container.scrollBy({ top: scrollOffset + 16, behavior: 'smooth' });
+      } else if (threadRect.top < containerRect.top) {
+        container.scrollBy({ top: threadRect.top - containerRect.top - 16, behavior: 'smooth' });
+      }
+    }
+  };
 
   // Keep a ref in sync for cleanup on unmount
   const pendingDeletesRef = useRef(pendingDeletes);
@@ -1209,8 +1396,14 @@ export default function AdminFeedbackPanel({
         parentId: inlineReplyTarget,
         ...(timestamp && { timestamp }),
       });
+      const replyParentId = inlineReplyTarget;
       setInlineReplyTarget(null);
       setInlineReplyText('');
+      // Scroll to the thread where the reply was added
+      setTimeout(() => {
+        scrollToThread(replyParentId);
+        clearNewIndicators();
+      }, 300);
     } catch (error) {
       enqueueSnackbar('Failed to send reply', { variant: 'error' });
     }
@@ -1222,7 +1415,11 @@ export default function AdminFeedbackPanel({
   };
 
   const handleEdit = (comment) => {
-    setEditTarget({ commentId: comment.id, originalText: comment.text, timestamp: comment.timestamp });
+    setEditTarget({
+      commentId: comment.id,
+      originalText: comment.text,
+      timestamp: comment.timestamp,
+    });
     setEditText(comment.text);
     setInlineReplyTarget(null);
   };
@@ -1234,7 +1431,10 @@ export default function AdminFeedbackPanel({
     const timestamp = editTarget?.timestamp || null;
 
     try {
-      await axiosInstance.patch(endpoints.submission.v4.updateComment(commentId), { text, timestamp });
+      await axiosInstance.patch(endpoints.submission.v4.updateComment(commentId), {
+        text,
+        timestamp,
+      });
       setEditTarget(null);
       setEditText('');
     } catch (error) {
@@ -1260,7 +1460,8 @@ export default function AdminFeedbackPanel({
     commentsMutate(
       (prev) =>
         prev?.map((c) => {
-          if (c.id === commentId) return { ...c, isVisibleToCreator: c.isVisibleToCreator === false };
+          if (c.id === commentId)
+            return { ...c, isVisibleToCreator: c.isVisibleToCreator === false };
           const updatedReplies = c.replies?.map((r) =>
             r.id === commentId ? { ...r, isVisibleToCreator: r.isVisibleToCreator === false } : r
           );
@@ -1303,7 +1504,13 @@ export default function AdminFeedbackPanel({
   };
 
   // ---- Button visibility ----
-  const isReadOnly = isPastVideo || submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'SENT_TO_CLIENT' || submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED' || submission?.status === 'POSTED';
+  const isReadOnly =
+    isPastVideo ||
+    submission?.status === 'CHANGES_REQUIRED' ||
+    submission?.status === 'SENT_TO_CLIENT' ||
+    submission?.status === 'APPROVED' ||
+    submission?.status === 'CLIENT_APPROVED' ||
+    submission?.status === 'POSTED';
 
   const showSendToClient =
     submission?.status === 'PENDING_REVIEW' && submission?.campaign?.origin !== 'ADMIN';
@@ -1313,11 +1520,17 @@ export default function AdminFeedbackPanel({
 
   const hasComments = comments.length > 0;
 
-  const visibleFeedbackCount = useMemo(() => comments.reduce((count, c) => {
-    const parentVisible = c.isVisibleToCreator !== false ? 1 : 0;
-    const repliesVisible = (c.replies || []).filter((r) => r.isVisibleToCreator !== false).length;
-    return count + parentVisible + repliesVisible;
-  }, 0), [comments]);
+  const visibleFeedbackCount = useMemo(
+    () =>
+      comments.reduce((count, c) => {
+        const parentVisible = c.isVisibleToCreator !== false ? 1 : 0;
+        const repliesVisible = (c.replies || []).filter(
+          (r) => r.isVisibleToCreator !== false
+        ).length;
+        return count + parentVisible + repliesVisible;
+      }, 0),
+    [comments]
+  );
 
   // ---- Render ----
 
@@ -1333,6 +1546,14 @@ export default function AdminFeedbackPanel({
     >
       {/* Scrollable Comments Area */}
       <Box
+        ref={scrollContainerRef}
+        onScroll={() => {
+          const container = scrollContainerRef.current;
+          if (!container) return;
+          const { scrollTop, scrollHeight, clientHeight } = container;
+          if (scrollTop < 100) setNewAbove({ replies: 0, messages: 0, targetId: null });
+          if (scrollHeight - scrollTop - clientHeight < 100) setNewBelow({ replies: 0, messages: 0, targetId: null });
+        }}
         sx={{
           flex: 1,
           minHeight: 0,
@@ -1348,6 +1569,42 @@ export default function AdminFeedbackPanel({
           '&::-webkit-scrollbar-thumb': { background: 'rgba(0,0,0,0.1)', borderRadius: '4px' },
         }}
       >
+        {/* New items above indicator */}
+        <AnimatePresence>
+          {(newAbove.replies > 0 || newAbove.messages > 0) && (
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              style={{ position: 'sticky', top: 0, zIndex: 10, pointerEvents: 'none' }}
+            >
+              <Box
+                onClick={() => {
+                  scrollToThread(newAbove.targetId);
+                  setNewAbove({ replies: 0, messages: 0, targetId: null });
+                }}
+                sx={{
+                  background: 'linear-gradient(to bottom, #F4F4F4 30%, transparent 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 0.5,
+                  pb: 4,
+                  pt: 1,
+                  cursor: 'pointer',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <Iconify icon="mdi:arrow-up" width={14} sx={{ color: '#1340FF' }} />
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                  {getNewItemLabel(newAbove)}
+                </Typography>
+              </Box>
+            </m.div>
+          )}
+        </AnimatePresence>
+
         {commentsLoading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress size={24} />
@@ -1380,92 +1637,28 @@ export default function AdminFeedbackPanel({
                   </Typography>
                 </Box>
               ) : (
-                <AnimatePresence initial={false}>
-                {comments.map((comment) => (
-                  <m.div
-                    key={comment.id}
-                    initial={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
-                    transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
-                  >
-            {/* Parent Comment */}
-            <CommentCard
-              comment={comment}
-              onTimestampClick={onSeek}
-              onReply={handleReply}
-              replyCount={(comment.replies || []).length}
-              isRepliesOpen={openRepliesById[comment.id] ?? true}
-              onToggleReplies={(commentId) =>
-                setOpenRepliesById((prev) => ({ ...prev, [commentId]: !(prev[commentId] ?? true) }))
-              }
-              isPastVideo={isPastVideo}
-              onEdit={handleEdit}
-              onToggleResolve={handleToggleResolve}
-              editTarget={editTarget}
-              onSaveEdit={handleSaveEdit}
-              onCancelEdit={handleCancelEdit}
-              editText={editText}
-              onEditTextChange={setEditText}
+                (() => {
+                  const unresolvedComments = isPastVideo ? [] : comments.filter((c) => !c.resolvedByUserId);
+                  const resolvedComments = isPastVideo ? comments : comments.filter((c) => !!c.resolvedByUserId);
 
-              inlineReplyTarget={inlineReplyTarget}
-              inlineReplyText={inlineReplyText}
-              onInlineReplyTextChange={setInlineReplyText}
-              onSendInlineReply={handleSendInlineReply}
-              onCancelInlineReply={handleCancelInlineReply}
-              isAdminView
-              onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
-              isNew={newClientCommentIds.has(comment.id)}
-              onDelete={!isReadOnly ? handleDeleteComment : undefined}
-              onUndoDelete={handleUndoDelete}
-              pendingDelete={pendingDeletes.has(comment.id)}
-              pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
-              currentUserId={user?.id}
-            />
-
-            {/* Threaded Replies */}
-            <Collapse
-              in={(openRepliesById[comment.id] ?? true) && !!comment.replies && comment.replies.length > 0}
-              timeout="auto"
-              unmountOnExit
-            >
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
-                {comment.replies.map((reply, index) => {
-                  const isLast = index === comment.replies.length - 1;
-
-                  return (
-                    <Box key={reply.id} sx={{ position: 'relative', ml: 12 }}>
-                      {/* Vertical line */}
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          left: -56,
-                          top: index === 0 ? -6 : -16,
-                          bottom: isLast ? 'calc(50% + 20px)' : 0,
-                          borderLeft: '2px solid #8E8E93',
-                          zIndex: 0,
-                        }}
-                      />
-                      {/* L-shaped connector */}
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          left: -56,
-                          top: index === 0 ? 0 : -16,
-                          bottom: 'calc(50% - 1px)',
-                          width: 45,
-                          borderLeft: '2px solid #8E8E93',
-                          borderBottom: '2px solid #8E8E93',
-                          borderBottomLeftRadius: 20,
-                          zIndex: 0,
-                        }}
-                      />
-
+                  const renderCommentThread = (comment) => (
+                    <m.div
+                      key={comment.id}
+                      data-comment-id={comment.id}
+                      initial={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
+                      transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
+                    >
                       <CommentCard
-                        comment={reply}
-                        isReply
-                        isPastVideo={isPastVideo}
+                        comment={comment}
                         onTimestampClick={onSeek}
                         onReply={handleReply}
+                        replyCount={(comment.replies || []).length}
+                        isRepliesOpen={openRepliesById[comment.id] ?? true}
+                        onToggleReplies={(commentId) =>
+                          setOpenRepliesById((prev) => ({ ...prev, [commentId]: !(prev[commentId] ?? true) }))
+                        }
+                        isPastVideo={isPastVideo}
                         onEdit={handleEdit}
                         onToggleResolve={handleToggleResolve}
                         editTarget={editTarget}
@@ -1473,7 +1666,6 @@ export default function AdminFeedbackPanel({
                         onCancelEdit={handleCancelEdit}
                         editText={editText}
                         onEditTextChange={setEditText}
-
                         inlineReplyTarget={inlineReplyTarget}
                         inlineReplyText={inlineReplyText}
                         onInlineReplyTextChange={setInlineReplyText}
@@ -1481,27 +1673,154 @@ export default function AdminFeedbackPanel({
                         onCancelInlineReply={handleCancelInlineReply}
                         isAdminView
                         onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
-                        isNew={newClientCommentIds.has(reply.id)}
-                        onDelete={!isReadOnly ? handleDeleteComment : undefined}
+                        isNew={newClientCommentIds.has(comment.id)}
+                        onDelete={handleDeleteComment}
                         onUndoDelete={handleUndoDelete}
-                        pendingDelete={pendingDeletes.has(reply.id)}
-                        pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
+                        pendingDelete={pendingDeletes.has(comment.id)}
+                        pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
                         currentUserId={user?.id}
                       />
-                    </Box>
+
+                      <Collapse
+                        in={(openRepliesById[comment.id] ?? true) && !!comment.replies && comment.replies.length > 0}
+                        timeout="auto"
+                        unmountOnExit
+                      >
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
+                          {(comment.replies || []).map((reply, index) => {
+                            const isLast = index === (comment.replies || []).length - 1;
+
+                            return (
+                              <Box key={reply.id} sx={{ position: 'relative', ml: 12 }}>
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    left: -56,
+                                    top: index === 0 ? -6 : -16,
+                                    bottom: isLast ? 'calc(50% + 20px)' : 0,
+                                    borderLeft: '2px solid #8E8E93',
+                                    zIndex: 0,
+                                  }}
+                                />
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    left: -56,
+                                    top: index === 0 ? 0 : -16,
+                                    bottom: 'calc(50% - 1px)',
+                                    width: 45,
+                                    borderLeft: '2px solid #8E8E93',
+                                    borderBottom: '2px solid #8E8E93',
+                                    borderBottomLeftRadius: 20,
+                                    zIndex: 0,
+                                  }}
+                                />
+
+                                <CommentCard
+                                  comment={reply}
+                                  isReply
+                                  parentResolved={!!comment.resolvedByUserId}
+                                  isPastVideo={isPastVideo}
+                                  onTimestampClick={onSeek}
+                                  onReply={handleReply}
+                                  onEdit={handleEdit}
+                                  onToggleResolve={handleToggleResolve}
+                                  editTarget={editTarget}
+                                  onSaveEdit={handleSaveEdit}
+                                  onCancelEdit={handleCancelEdit}
+                                  editText={editText}
+                                  onEditTextChange={setEditText}
+                                  inlineReplyTarget={inlineReplyTarget}
+                                  inlineReplyText={inlineReplyText}
+                                  onInlineReplyTextChange={setInlineReplyText}
+                                  onSendInlineReply={handleSendInlineReply}
+                                  onCancelInlineReply={handleCancelInlineReply}
+                                  isAdminView
+                                  onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
+                                  isNew={newClientCommentIds.has(reply.id)}
+                                  isNewCreatorReply={newCreatorReplyIds.has(reply.id)}
+                                  onDelete={handleDeleteComment}
+                                  onUndoDelete={handleUndoDelete}
+                                  pendingDelete={pendingDeletes.has(reply.id)}
+                                  pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
+                                  currentUserId={user?.id}
+                                />
+                              </Box>
+                            );
+                          })}
+                        </Box>
+                      </Collapse>
+                    </m.div>
                   );
-                })}
-              </Box>
-            </Collapse>
-          </m.div>
-                ))}
-                </AnimatePresence>
+
+                  return (
+                    <>
+                      <AnimatePresence initial={false}>
+                        {unresolvedComments.map((comment) => renderCommentThread(comment))}
+                      </AnimatePresence>
+
+                      {resolvedComments.length > 0 && (
+                        <Divider
+                          sx={{
+                            mb: 1,
+                            mt: 1,
+                            typography: 'caption',
+                            color: '#8E8E93',
+                            '&::before, &::after': { borderColor: '#E5E7EB' },
+                          }}
+                        >
+                          resolved comments
+                        </Divider>
+                      )}
+
+                      <AnimatePresence initial={false}>
+                        {resolvedComments.map((comment) => renderCommentThread(comment))}
+                      </AnimatePresence>
+                    </>
+                  );
+                })()
               )}
             </m.div>
           </AnimatePresence>
         )}
         <div ref={commentsEndRef} />
       </Box>
+
+      {/* New items below indicator */}
+      <AnimatePresence>
+        {(newBelow.replies > 0 || newBelow.messages > 0) && (
+          <m.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            style={{ pointerEvents: 'none', marginTop: -48, position: 'relative', zIndex: 10 }}
+          >
+            <Box
+              onClick={() => {
+                scrollToThread(newBelow.targetId);
+                setNewBelow({ replies: 0, messages: 0, targetId: null });
+              }}
+              sx={{
+                background: 'linear-gradient(to top, #F4F4F4 30%, transparent 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 0.5,
+                pt: 4,
+                pb: 1,
+                cursor: 'pointer',
+                pointerEvents: 'auto',
+              }}
+            >
+              <Iconify icon="mdi:arrow-down" width={14} sx={{ color: '#1340FF' }} />
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                {getNewItemLabel(newBelow)}
+              </Typography>
+            </Box>
+          </m.div>
+        )}
+      </AnimatePresence>
 
       {/* Input Section */}
       {!isReadOnly && hasComments && (
@@ -1519,121 +1838,133 @@ export default function AdminFeedbackPanel({
             borderRadius: '12px 12px 0 0',
           }}
         >
-          <Box sx={{ width: 12, height: 12, borderRadius: 0.5, border: '2px solid #00A76F', flexShrink: 0 }} />
-          <Typography sx={{ fontSize: '0.75rem', fontWeight: 500, color: '#374151', lineHeight: 1.4 }}>
+          <Box
+            sx={{
+              width: 12,
+              height: 12,
+              borderRadius: 0.5,
+              border: '2px solid #00A76F',
+              flexShrink: 0,
+            }}
+          />
+          <Typography
+            sx={{ fontSize: '0.75rem', fontWeight: 500, color: '#374151', lineHeight: 1.4 }}
+          >
             Click any comment to include or exclude it from creator feedback
           </Typography>
         </Box>
       )}
-      {!isReadOnly && <Box
-        sx={{
-          flexShrink: 0,
-          border: '1px solid #E7E7E7',
-          borderRadius: hasComments ? '0 0 12px 12px' : '12px',
-          bgcolor: '#FFFFFF',
-          mb: 0.5,
-        }}
-      >
-        <Box
-          sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25, px: 2, pt: 1.5, pb: 0.75 }}
-        >
-          <Box
-            onMouseDown={handleTimerMouseDown}
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              bgcolor: 'background.paper',
-              color: '#1340ff',
-              border: '1px solid #E7E7E7',
-              borderBottom: '2px solid #E7E7E7',
-              borderRadius: 0.85,
-              px: 1,
-              py: 0.4,
-              fontSize: 13,
-              fontWeight: 600,
-              fontFamily: 'Inter, sans-serif',
-              lineHeight: 1.4,
-              userSelect: 'none',
-              boxShadow: '0px 1px 0px 0px #E7E7E7',
-              flexShrink: 0,
-              cursor: duration ? 'ew-resize' : 'default',
-            }}
-          >
-            <AnimatedTime time={formatTime(currentTime)} />
-          </Box>
-          <TextField
-            multiline
-            minRows={2}
-            maxRows={6}
-            placeholder="Leave feedback..."
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendComment();
-              }
-            }}
-            sx={{
-              flex: 1,
-              minWidth: 0,
-              mt: '3px',
-              '& .MuiOutlinedInput-root': {
-                border: 'none',
-                '& fieldset': { border: 'none' },
-                p: 0,
-              },
-              '& .MuiInputBase-input': {
-                fontSize: 15,
-                fontFamily: 'Inter, sans-serif',
-                p: 0,
-                lineHeight: 1.4,
-                '&::placeholder': {
-                  color: '#B0B0B0',
-                  opacity: 1,
-                  fontFamily: 'Inter, sans-serif',
-                },
-              },
-            }}
-            size="small"
-          />
-        </Box>
+      {!isReadOnly && (
         <Box
           sx={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            px: 1.5,
-            pb: 1.25,
+            flexShrink: 0,
+            border: '1px solid #E7E7E7',
+            borderRadius: hasComments ? '0 0 12px 12px' : '12px',
+            bgcolor: '#FFFFFF',
+            mb: 0.5,
           }}
         >
-          <Button
-            variant="contained"
-            disabled={!commentText.trim()}
-            onClick={handleSendComment}
+          <Box
+            sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25, px: 2, pt: 1.5, pb: 0.75 }}
+          >
+            <Box
+              onMouseDown={handleTimerMouseDown}
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                bgcolor: 'background.paper',
+                color: '#1340ff',
+                border: '1px solid #E7E7E7',
+                borderBottom: '2px solid #E7E7E7',
+                borderRadius: 0.85,
+                px: 1,
+                py: 0.4,
+                fontSize: 13,
+                fontWeight: 600,
+                fontFamily: 'Inter, sans-serif',
+                lineHeight: 1.4,
+                userSelect: 'none',
+                boxShadow: '0px 1px 0px 0px #E7E7E7',
+                flexShrink: 0,
+                cursor: duration ? 'ew-resize' : 'default',
+              }}
+            >
+              <AnimatedTime time={formatTime(currentTime)} />
+            </Box>
+            <TextField
+              multiline
+              minRows={2}
+              maxRows={6}
+              placeholder="Leave feedback..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendComment();
+                }
+              }}
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                mt: '3px',
+                '& .MuiOutlinedInput-root': {
+                  border: 'none',
+                  '& fieldset': { border: 'none' },
+                  p: 0,
+                },
+                '& .MuiInputBase-input': {
+                  fontSize: 15,
+                  fontFamily: 'Inter, sans-serif',
+                  p: 0,
+                  lineHeight: 1.4,
+                  '&::placeholder': {
+                    color: '#B0B0B0',
+                    opacity: 1,
+                    fontFamily: 'Inter, sans-serif',
+                  },
+                },
+              }}
+              size="small"
+            />
+          </Box>
+          <Box
             sx={{
-              bgcolor: '#1340ff',
-              borderBottom: '2px solid #0A238C',
-              boxShadow: 'inset 0px -2px 0px 0px #0A238C',
-              borderRadius: 1,
-              minWidth: 'unset',
-              minHeight: 32,
-              height: 28,
+              display: 'flex',
+              justifyContent: 'flex-end',
               px: 1.5,
-              py: 0.5,
-              '&:hover': {
-                bgcolor: '#1a4dff',
-              },
-              '&.Mui-disabled': {
-                bgcolor: 'action.disabledBackground',
-                color: 'action.disabled',
-                borderBottomColor: '#E7E7E7',
-              },
+              pb: 1.25,
             }}
           >
-            <Iconify icon="ic:round-send" width={20} sx={{ color: 'white' }} />
-          </Button>
+            <Button
+              variant="contained"
+              disabled={!commentText.trim()}
+              onClick={handleSendComment}
+              sx={{
+                bgcolor: '#1340ff',
+                borderBottom: '2px solid #0A238C',
+                boxShadow: 'inset 0px -2px 0px 0px #0A238C',
+                borderRadius: 1,
+                minWidth: 'unset',
+                minHeight: 32,
+                height: 28,
+                px: 1.5,
+                py: 0.5,
+                '&:hover': {
+                  bgcolor: '#1a4dff',
+                },
+                '&.Mui-disabled': {
+                  bgcolor: 'action.disabledBackground',
+                  color: 'action.disabled',
+                  borderBottomColor: '#E7E7E7',
+                },
+              }}
+            >
+              <Iconify icon="ic:round-send" width={20} sx={{ color: 'white' }} />
+            </Button>
+          </Box>
         </Box>
-      </Box>}
+      )}
 
       {/* Pagination + Action Buttons */}
       <Box
@@ -1715,7 +2046,7 @@ export default function AdminFeedbackPanel({
                   borderBottom: '3px solid #202021',
                   '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: 'none' },
                   '&:active': {
-                    borderBottom: '1px solid #202021',
+                    borderBottom: '3px solid #202021',
                     transform: 'translateY(1px)',
                   },
                   '&.Mui-disabled': {
@@ -1751,7 +2082,7 @@ export default function AdminFeedbackPanel({
                     boxShadow: 'none',
                   },
                   '&:active': {
-                    borderBottom: '1px solid #E7E7E7',
+                    borderBottom: '3px solid #E7E7E7',
                     transform: 'translateY(1px)',
                   },
                   '&.Mui-disabled': {

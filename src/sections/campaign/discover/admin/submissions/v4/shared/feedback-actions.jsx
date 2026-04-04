@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+
+import { useSubmissionComments } from 'src/hooks/use-submission-comments';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import {
   Box,
@@ -44,6 +47,49 @@ export default function FeedbackActions({
 }) {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+
+  // Detect unread creator replies to highlight "Review Submission" button
+  const { comments, commentsMutate } = useSubmissionComments(submission?.id);
+  const { socket } = useSocketContext();
+
+  // Revalidate comments when new replies arrive via socket
+  useEffect(() => {
+    if (!socket || !submission?.id) return undefined;
+    const handleNewReply = (data) => {
+      if (data.submissionId === submission.id) commentsMutate();
+    };
+    socket.on('v4:comment:reply:added', handleNewReply);
+    socket.on('v4:comment:added', handleNewReply);
+    return () => {
+      socket.off('v4:comment:reply:added', handleNewReply);
+      socket.off('v4:comment:added', handleNewReply);
+    };
+  }, [socket, submission?.id, commentsMutate]);
+
+  const [hasUnreadCreatorReplies, setHasUnreadCreatorReplies] = useState(false);
+
+  // Delay allows AdminFeedbackPanel unmount to write localStorage before re-check
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!comments?.length || !submission?.video?.length) {
+        setHasUnreadCreatorReplies(false);
+        return;
+      }
+      const hasUnread = comments.some((comment) => {
+        const vid = comment.videoId;
+        if (!vid) return false;
+        const storageKey = `admin_lastViewed_${submission.id}_${vid}`;
+        const lastViewed = localStorage.getItem(storageKey);
+        const cutoff = lastViewed ? new Date(lastViewed).getTime() : 0;
+        return (comment.replies || []).some(
+          (reply) => reply.user?.role === 'creator' && new Date(reply.createdAt).getTime() > cutoff
+        );
+      });
+      setHasUnreadCreatorReplies(hasUnread);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [comments, submission?.id, submission?.video?.length, reviewModalOpen]);
+
   if (
     (submission.status === 'APPROVED' ||
       submission.status === 'CLIENT_APPROVED' ||
@@ -108,7 +154,7 @@ export default function FeedbackActions({
                 bgcolor: 'transparent',
                 fontWeight: 800,
                 fontSize: 14,
-                color: ['PENDING_REVIEW', 'CLIENT_FEEDBACK'].includes(submission.status) ? '#1340FF' : '#919191',
+                color: ['PENDING_REVIEW', 'CLIENT_FEEDBACK'].includes(submission.status) || hasUnreadCreatorReplies ? '#1340FF' : '#919191',
                 border: 'none',
                 cursor: 'pointer',
                 outline: 'none',

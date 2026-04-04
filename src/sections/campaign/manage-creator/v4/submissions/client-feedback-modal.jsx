@@ -1,6 +1,14 @@
 import PropTypes from 'prop-types';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import React, {
+  useRef,
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -26,6 +34,12 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Iconify from 'src/components/iconify';
 import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
+const getNewItemLabel = ({ replies, messages }) => {
+  const total = replies + messages;
+  if (replies > 0 && messages === 0) return `${total} New ${replies === 1 ? 'Reply' : 'Replies'}`;
+  return `${total} New ${total === 1 ? 'Message' : 'Messages'}`;
+};
+
 const formatCommentDate = (dateString) => {
   if (!dateString) return '';
   return new Intl.DateTimeFormat('en-US', {
@@ -35,6 +49,28 @@ const formatCommentDate = (dateString) => {
     hour: 'numeric',
     minute: '2-digit',
   }).format(new Date(dateString));
+};
+
+const parseTimeToSeconds = (timeStr) => {
+  if (!timeStr) return Infinity;
+  const parts = timeStr.split(':').map(Number);
+  if (parts.some(Number.isNaN)) return Infinity;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return Infinity;
+};
+
+const insertSortedByTimestamp = (list, comment) => {
+  const newSeconds = parseTimeToSeconds(comment.timestamp);
+  const idx = list.findIndex((c) => {
+    const cSeconds = parseTimeToSeconds(c.timestamp);
+    return (
+      cSeconds > newSeconds ||
+      (cSeconds === newSeconds && new Date(c.createdAt) > new Date(comment.createdAt))
+    );
+  });
+  if (idx === -1) return [...list, comment];
+  return [...list.slice(0, idx), comment, ...list.slice(idx)];
 };
 
 const formatDisplayTime = (timeStr) => {
@@ -131,13 +167,16 @@ const CommentCard = ({
   onUndoDelete,
   pendingDelete = false,
   pendingDeleteStartTime,
+  isResolved = false,
 }) => {
   const isUser = currentUser?.id === comment?.user?.id;
   const hasAgreed = comment.agreedBy?.some((agreement) => agreement.userId === currentUser?.id);
   const displayName = comment.forwardedBy?.name || comment.user?.name || 'Unknown';
   const displayPhoto = comment.user?.photoURL || comment?.user?.client?.company?.logo || null;
 
-  const isDisabled = isLocked || isPastVideo;
+  const isDisabled = isLocked || isPastVideo || isResolved;
+  const showRepliesToggle = !isReply && replyCount > 0;
+  const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
   const canDelete = !!onDelete && !isDisabled && !pendingDelete && isUser;
 
   // Countdown for pending-delete state
@@ -231,7 +270,15 @@ const CommentCard = ({
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-          <Box sx={{ position: 'relative', display: 'inline-flex', width: 32, height: 32, flexShrink: 0 }}>
+          <Box
+            sx={{
+              position: 'relative',
+              display: 'inline-flex',
+              width: 32,
+              height: 32,
+              flexShrink: 0,
+            }}
+          >
             <AnimatePresence mode="wait" initial={false}>
               {deleteTimerDone ? (
                 <m.div
@@ -239,7 +286,13 @@ const CommentCard = ({
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
-                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
                   <Iconify icon="mdi:check" width={20} sx={{ color: '#1340FF' }} />
                 </m.div>
@@ -250,10 +303,37 @@ const CommentCard = ({
                   transition={{ duration: 0.2 }}
                   style={{ position: 'absolute', inset: 0 }}
                 >
-                  <CircularProgress variant="determinate" value={100} size={32} thickness={4} sx={{ color: '#E0E7FF', position: 'absolute' }} />
-                  <CircularProgress variant="determinate" value={deleteRingValue} size={32} thickness={4} sx={{ color: '#1340FF' }} />
-                  <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography sx={{ fontSize: '0.688rem', fontWeight: 700, color: '#1340FF', lineHeight: 1 }}>
+                  <CircularProgress
+                    variant="determinate"
+                    value={100}
+                    size={32}
+                    thickness={4}
+                    sx={{ color: '#E0E7FF', position: 'absolute' }}
+                  />
+                  <CircularProgress
+                    variant="determinate"
+                    value={deleteRingValue}
+                    size={32}
+                    thickness={4}
+                    sx={{ color: '#1340FF' }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: '0.688rem',
+                        fontWeight: 700,
+                        color: '#1340FF',
+                        lineHeight: 1,
+                      }}
+                    >
                       {deleteSecondsLeft}
                     </Typography>
                   </Box>
@@ -269,7 +349,13 @@ const CommentCard = ({
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.2 }}
             >
-              <Typography sx={{ fontSize: '0.813rem', fontWeight: 500, color: deleteTimerDone ? '#1340FF' : '#6B7280' }}>
+              <Typography
+                sx={{
+                  fontSize: '0.813rem',
+                  fontWeight: 500,
+                  color: deleteTimerDone ? '#1340FF' : '#6B7280',
+                }}
+              >
                 {deleteTimerDone ? 'Comment deleted.' : 'Comment has been deleted. Undo?'}
               </Typography>
             </m.span>
@@ -286,10 +372,24 @@ const CommentCard = ({
                 size="small"
                 onClick={() => onUndoDelete?.(comment.id)}
                 sx={{
-                  fontSize: '0.75rem', fontWeight: 600, color: '#1340FF', bgcolor: 'white',
-                  border: '1px solid #E7E7E7', borderBottom: '2px solid #E7E7E7', borderRadius: 1,
-                  px: 1.5, py: 0.25, minWidth: 'unset', minHeight: 'unset', lineHeight: 1.4, textTransform: 'none',
-                  '&:hover': { bgcolor: '#F9F9F9', border: '1px solid #E7E7E7', borderBottom: '2px solid #E7E7E7' },
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: '#1340FF',
+                  bgcolor: 'white',
+                  border: '1px solid #E7E7E7',
+                  borderBottom: '2px solid #E7E7E7',
+                  borderRadius: 1,
+                  px: 1.5,
+                  py: 0.25,
+                  minWidth: 'unset',
+                  minHeight: 'unset',
+                  lineHeight: 1.4,
+                  textTransform: 'none',
+                  '&:hover': {
+                    bgcolor: '#F9F9F9',
+                    border: '1px solid #E7E7E7',
+                    borderBottom: '2px solid #E7E7E7',
+                  },
                 }}
               >
                 Undo
@@ -324,7 +424,12 @@ const CommentCard = ({
         }}
       >
         <Box
-          sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', px: 0.5 }}
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            px: 0.5,
+          }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Avatar
@@ -365,7 +470,15 @@ const CommentCard = ({
             </Box>
           </Box>
           {canDelete ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.25, flexShrink: 0 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-end',
+                gap: 0.25,
+                flexShrink: 0,
+              }}
+            >
               <DarkGlassTooltip title="Delete?" placement="top">
                 <IconButton
                   size="small"
@@ -375,11 +488,16 @@ const CommentCard = ({
                     bgcolor: 'transparent',
                     '&:hover': { bgcolor: 'transparent' },
                     '&:hover img': {
-                      filter: 'brightness(0) saturate(100%) invert(41%) sepia(93%) saturate(1352%) hue-rotate(340deg) brightness(101%) contrast(101%)',
+                      filter:
+                        'brightness(0) saturate(100%) invert(41%) sepia(93%) saturate(1352%) hue-rotate(340deg) brightness(101%) contrast(101%)',
                     },
                   }}
                 >
-                  <Box component="img" src="/assets/icons/components/comment_delete.svg" sx={{ width: 16, height: 16 }} />
+                  <Box
+                    component="img"
+                    src="/assets/icons/components/comment_delete.svg"
+                    sx={{ width: 16, height: 16 }}
+                  />
                 </IconButton>
               </DarkGlassTooltip>
               <Typography sx={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
@@ -450,9 +568,12 @@ const CommentCard = ({
             </Box>
           )}
 
-          {!isUser && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              {showRepliesToggle && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {showRepliesToggle && (
+              <DarkGlassTooltip
+                title={isRepliesOpen ? 'Hide replies' : 'Show replies'}
+                placement="top"
+              >
                 <Box
                   component="button"
                   type="button"
@@ -498,8 +619,10 @@ const CommentCard = ({
                     }}
                   />
                 </Box>
-              )}
+              </DarkGlassTooltip>
+            )}
 
+            {!isUser && (
               <DarkGlassTooltip title="I agree with this comment" placement="top">
                 <IconButton
                   size="small"
@@ -518,8 +641,8 @@ const CommentCard = ({
                   />
                 </IconButton>
               </DarkGlassTooltip>
-            </Box>
-          )}
+            )}
+          </Box>
         </Box>
       </Box>
 
@@ -615,7 +738,9 @@ const CommentCard = ({
 
   return (
     <AnimatePresence mode="wait" initial={false}>
-      {pendingDelete ? pendingDeleteContent : (
+      {pendingDelete ? (
+        pendingDeleteContent
+      ) : (
         <m.div
           key="comment-card"
           initial={{ opacity: 0, x: -30, filter: 'blur(4px)' }}
@@ -677,6 +802,7 @@ CommentCard.propTypes = {
   onUndoDelete: PropTypes.func,
   pendingDelete: PropTypes.bool,
   pendingDeleteStartTime: PropTypes.number,
+  isResolved: PropTypes.bool,
 };
 
 const ClientFeedbackModal = forwardRef(
@@ -706,16 +832,24 @@ const ClientFeedbackModal = forwardRef(
     const [comments, setComments] = useState([]);
     const [pendingDeletes, setPendingDeletes] = useState(new Map());
     const pendingDeletesRef = useRef(pendingDeletes);
-    useEffect(() => { pendingDeletesRef.current = pendingDeletes; }, [pendingDeletes]);
-    useEffect(() => () => {
-      pendingDeletesRef.current.forEach(({ timeoutId }) => clearTimeout(timeoutId));
-    }, []);
+    useEffect(() => {
+      pendingDeletesRef.current = pendingDeletes;
+    }, [pendingDeletes]);
+    useEffect(
+      () => () => {
+        pendingDeletesRef.current.forEach(({ timeoutId }) => clearTimeout(timeoutId));
+      },
+      []
+    );
     const [feedbackText, setFeedbackText] = useState('');
     const [replyingToId, setReplyingToId] = useState(null);
     const [openRepliesById, setOpenRepliesById] = useState({});
 
     const [hasInteracted, setHasInteracted] = useState(false);
     const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
+
+    const COUNTDOWN_SECONDS = 24 * 60 * 60;
+    const STORAGE_KEY_END_TIME = `send_timer_end_${submissionId}_${videoId}`;
 
     const [timeLeft, setTimeLeft] = useState(() => {
       if (!feedbackDeadline) return 0;
@@ -724,12 +858,26 @@ const ClientFeedbackModal = forwardRef(
     const [isCountingDown, setIsCountingDown] = useState(timeLeft > 0);
 
     const commentRefs = useRef({});
+    const scrollContainerRef = useRef(null);
+    const commentsEndRef = useRef(null);
+    const [newAbove, setNewAbove] = useState({ replies: 0, messages: 0, targetId: null });
+    const [newBelow, setNewBelow] = useState({ replies: 0, messages: 0, targetId: null });
     const prevRemainingRef = useRef(-1);
+    const prevVideoPageRef = useRef(videoPage);
+    const slideDirection = useRef(0);
+    if (videoPage !== prevVideoPageRef.current) {
+      slideDirection.current = videoPage < prevVideoPageRef.current ? 1 : -1;
+      prevVideoPageRef.current = videoPage;
+      setNewAbove({ replies: 0, messages: 0, targetId: null });
+      setNewBelow({ replies: 0, messages: 0, targetId: null });
+    }
+    const pageSlideVariants = {
+      enter: (dir) => (dir !== 0 ? { x: `${dir * 40}%`, opacity: 0 } : { opacity: 0 }),
+      center: { x: 0, opacity: 1 },
+      exit: (dir) => ({ x: `${dir * -40}%`, opacity: 0 }),
+    };
     const isTimerExpired = Boolean(feedbackDeadline) && timeLeft === 0;
     const effectiveIsLocked = isLocked || isPastVideo || isTimerExpired;
-    console.log('feedbackDeadline:', feedbackDeadline);
-    console.log('isCountingDown:', isCountingDown);
-    console.log('timeLeft:', timeLeft);
 
     useImperativeHandle(ref, () => ({
       getHasInteracted: () => hasInteracted,
@@ -838,7 +986,23 @@ const ClientFeedbackModal = forwardRef(
           });
         });
 
-        setTimeout(() => scrollToElement(data.comment.id), 100);
+        setTimeout(() => {
+          const container = scrollContainerRef.current;
+          if (!container) return;
+          const pid = data.parentCommentId;
+          const parentEl = pid && container.querySelector(`[data-comment-id="${pid}"]`);
+          if (parentEl) {
+            const parentRect = parentEl.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            if (parentRect.bottom < containerRect.top) {
+              setNewAbove((prev) => ({ ...prev, replies: prev.replies + 1, targetId: prev.targetId || pid }));
+            } else if (parentRect.bottom > containerRect.bottom) {
+              setNewBelow((prev) => ({ ...prev, replies: prev.replies + 1, targetId: prev.targetId || pid }));
+            }
+          } else {
+            setNewBelow((prev) => ({ ...prev, replies: prev.replies + 1, targetId: prev.targetId || pid }));
+          }
+        }, 200);
       };
 
       const handleCommentAdded = (data) => {
@@ -847,10 +1011,31 @@ const ClientFeedbackModal = forwardRef(
 
         setComments((prev) => {
           if (prev.some((c) => c.id === data.comment.id)) return prev;
-          return [...prev, { ...data.comment, replies: [], agreedBy: [], isNew: true }];
+          return insertSortedByTimestamp(prev, {
+            ...data.comment,
+            replies: [],
+            agreedBy: [],
+            isNew: true,
+          });
         });
 
-        setTimeout(() => scrollToElement(data.comment.id), 100);
+        setTimeout(() => {
+          const container = scrollContainerRef.current;
+          if (!container) return;
+          const cid = data.comment?.id;
+          const commentEl = cid && container.querySelector(`[data-comment-id="${cid}"]`);
+          if (commentEl) {
+            const commentRect = commentEl.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            if (commentRect.bottom < containerRect.top) {
+              setNewAbove((prev) => ({ ...prev, messages: prev.messages + 1, targetId: prev.targetId || cid }));
+            } else if (commentRect.bottom > containerRect.bottom) {
+              setNewBelow((prev) => ({ ...prev, messages: prev.messages + 1, targetId: prev.targetId || cid }));
+            }
+          } else {
+            setNewBelow((prev) => ({ ...prev, messages: prev.messages + 1, targetId: prev.targetId || cid }));
+          }
+        }, 200);
       };
 
       const handleCommentUpdated = (data) => {
@@ -941,9 +1126,25 @@ const ClientFeedbackModal = forwardRef(
     }, [socket, submissionId, videoId, user.id]);
 
     const scrollToElement = (id) => {
-      const element = commentRefs.current[id];
+      const element = commentRefs.current?.[id];
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    };
+
+    const scrollToThread = (targetId) => {
+      const container = scrollContainerRef.current;
+      if (!container || !targetId) return;
+      const threadEl = container.querySelector(`[data-comment-id="${targetId}"]`);
+      if (threadEl) {
+        const threadRect = threadEl.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const scrollOffset = threadRect.bottom - containerRect.bottom;
+        if (scrollOffset > 0) {
+          container.scrollBy({ top: scrollOffset + 16, behavior: 'smooth' });
+        } else if (threadRect.top < containerRect.top) {
+          container.scrollBy({ top: threadRect.top - containerRect.top - 16, behavior: 'smooth' });
+        }
       }
     };
 
@@ -1055,6 +1256,8 @@ const ClientFeedbackModal = forwardRef(
         );
 
         setReplyingToId(null);
+        setNewAbove({ replies: 0, messages: 0, targetId: null });
+        setNewBelow({ replies: 0, messages: 0, targetId: null });
         setTimeout(() => scrollToElement(newReply.id), 100);
       } catch (error) {
         console.error('Failed to post reply', error);
@@ -1079,10 +1282,12 @@ const ClientFeedbackModal = forwardRef(
 
         setHasInteracted(true);
 
-        const newComment = { ...data, isNew: true };
+        const newComment = { ...data, replies: data.replies || [], isNew: true };
 
-        setComments((prev) => [...prev, newComment]);
+        setComments((prev) => insertSortedByTimestamp(prev, newComment));
         setFeedbackText('');
+        setNewAbove({ replies: 0, messages: 0, targetId: null });
+        setNewBelow({ replies: 0, messages: 0, targetId: null });
         setTimeout(() => scrollToElement(newComment.id), 100);
       } catch (error) {
         console.error('Failed to post top-level comment', error);
@@ -1115,7 +1320,14 @@ const ClientFeedbackModal = forwardRef(
       >
         {/* Scrollable Comments Area */}
         <Box
-          ref={commentRefs}
+          ref={scrollContainerRef}
+          onScroll={() => {
+            const container = scrollContainerRef.current;
+            if (!container) return;
+            const { scrollTop, scrollHeight, clientHeight } = container;
+            if (scrollTop < 100) setNewAbove({ replies: 0, messages: 0, targetId: null });
+            if (scrollHeight - scrollTop - clientHeight < 100) setNewBelow({ replies: 0, messages: 0, targetId: null });
+          }}
           sx={{
             flex: 1,
             overflowY: 'auto',
@@ -1129,147 +1341,282 @@ const ClientFeedbackModal = forwardRef(
             '&::-webkit-scrollbar-thumb': { background: 'rgba(0,0,0,0.1)', borderRadius: '4px' },
           }}
         >
-          {/* Empty State */}
-          {comments.length === 0 && (
-            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Typography sx={{ color: '#8E8E93', fontSize: '0.875rem' }}>
-                No Comments Currently
-              </Typography>
-            </Box>
-          )}
-
-          {/* Resolved Comments Divider for older videos */}
-          {comments.length > 0 && isPastVideo && (
-            <Divider
-              sx={{
-                mb: 1,
-                mt: 1,
-                typography: 'caption',
-                color: '#8E8E93',
-                '&::before, &::after': { borderColor: '#E5E7EB' },
-              }}
-            >
-              resolved comments
-            </Divider>
-          )}
-
-          <AnimatePresence initial={false}>
-          {comments.map((comment) => (
-            <m.div
-              key={comment.id}
-              initial={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
-              transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
-            >
-            <Box
-              ref={(el) => {
-                if (el) commentRefs.current[comment.id] = el;
-              }}
-            >
-              {/* Parent Comment */}
-              <CommentCard
-                comment={comment}
-                currentUser={user}
-                isNew={comment.isNew}
-                onReplyClick={(id) => setReplyingToId(id)}
-                replyCount={(comment.replies || []).length}
-                isRepliesOpen={openRepliesById[comment.id] ?? true}
-                onToggleReplies={() =>
-                  setOpenRepliesById((prev) => ({ ...prev, [comment.id]: !(prev[comment.id] ?? true) }))
-                }
-                onAgree={handleAgree}
-                onTimestampClick={handleTimestampClick}
-                isReplying={replyingToId === comment.id}
-                onCancelReply={() => setReplyingToId(null)}
-                onSubmitReply={handleInlineReplySubmit}
-                isLocked={effectiveIsLocked}
-                isPastVideo={isPastVideo}
-                onDelete={!effectiveIsLocked ? handleDeleteComment : undefined}
-                onUndoDelete={handleUndoDelete}
-                pendingDelete={pendingDeletes.has(comment.id)}
-                pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
-              />
-
-              {/* Threaded Replies */}
-              <Collapse
-                in={(openRepliesById[comment.id] ?? true) && !!comment.replies && comment.replies.length > 0}
-                timeout="auto"
-                unmountOnExit
+          {/* New items above indicator */}
+          <AnimatePresence>
+            {(newAbove.replies > 0 || newAbove.messages > 0) && (
+              <m.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+                style={{ position: 'sticky', top: 0, zIndex: 10, pointerEvents: 'none' }}
               >
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
-                  <AnimatePresence initial={false}>
-                  {comment.replies.map((reply, index) => {
-                    const isLast = index === comment.replies.length - 1;
-
-                    return (
-                      <m.div
-                        key={reply.id}
-                        initial={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
-                        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
-                      >
-                      <Box
-                        ref={(el) => {
-                          if (el) commentRefs.current[reply.id] = el;
-                        }}
-                        sx={{ position: 'relative', ml: { xs: 5, md: 10 } }}
-                      >
-                        {/* Vertical straight line (connects siblings) */}
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            left: { xs: -25, md: -50 },
-                            top: index === 0 ? -4 : -16,
-                            bottom: isLast ? 'calc(50% + 20px)' : -16,
-                            borderLeft: '2px solid #8E8E93',
-                            zIndex: 0,
-                          }}
-                        />
-                        {/* Curved L-shape linking into the card */}
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            left: { xs: -25, md: -50 },
-                            top: index === 0 ? -4 : -16,
-                            bottom: 'calc(50% - 1px)',
-                            width: { xs: 20, md: 45 },
-                            borderLeft: '2px solid #8E8E93',
-                            borderBottom: '2px solid #8E8E93',
-                            borderBottomLeftRadius: 16,
-                            zIndex: 0,
-                          }}
-                        />
-
-                        <CommentCard
-                          comment={reply}
-                          isReply
-                          currentUser={user}
-                          isNew={reply.isNew}
-                          onReplyClick={(id) => setReplyingToId(id)}
-                          onAgree={handleAgree}
-                          onTimestampClick={handleTimestampClick}
-                          isReplying={replyingToId === reply.id}
-                          onCancelReply={() => setReplyingToId(null)}
-                          onSubmitReply={handleInlineReplySubmit}
-                          isLocked={effectiveIsLocked}
-                          isPastVideo={isPastVideo}
-                          onDelete={!effectiveIsLocked ? handleDeleteComment : undefined}
-                          onUndoDelete={handleUndoDelete}
-                          pendingDelete={pendingDeletes.has(reply.id)}
-                          pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
-                        />
-                      </Box>
-                      </m.div>
-                    );
-                  })}
-                  </AnimatePresence>
+                <Box
+                  onClick={() => {
+                    scrollToThread(newAbove.targetId);
+                    setNewAbove({ replies: 0, messages: 0, targetId: null });
+                  }}
+                  sx={{
+                    background: 'linear-gradient(to bottom, #F4F4F4 30%, transparent 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                    pb: 4,
+                    pt: 1,
+                    cursor: 'pointer',
+                    pointerEvents: 'auto',
+                  }}
+                >
+                  <Iconify icon="mdi:arrow-up" width={14} sx={{ color: '#1340FF' }} />
+                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                    {getNewItemLabel(newAbove)}
+                  </Typography>
                 </Box>
-              </Collapse>
-            </Box>
-            </m.div>
-          ))}
+              </m.div>
+            )}
           </AnimatePresence>
+
+          <AnimatePresence initial={false} mode="wait" custom={slideDirection.current}>
+            <m.div
+              key={videoId}
+              custom={slideDirection.current}
+              variants={pageSlideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}
+            >
+              {/* Empty State */}
+              {comments.length === 0 && (
+                <Box
+                  sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Typography sx={{ color: '#8E8E93', fontSize: '0.875rem' }}>
+                    No Comments Currently
+                  </Typography>
+                </Box>
+              )}
+
+              {(() => {
+                const unresolvedComments = comments.filter((c) => !c.resolvedByUserId);
+                const resolvedComments = comments.filter((c) => !!c.resolvedByUserId);
+
+                const renderCommentThread = (comment, isResolved) => (
+                  <m.div
+                    key={comment.id}
+                    data-comment-id={comment.id}
+                    initial={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
+                    transition={{
+                      duration: 0.6,
+                      ease: [0.4, 0, 0.2, 1],
+                      height: { delay: 0.3, duration: 0.3 },
+                    }}
+                  >
+                    <Box
+                      ref={(el) => {
+                        if (el) commentRefs.current[comment.id] = el;
+                      }}
+                    >
+                      {/* Parent Comment */}
+                      <CommentCard
+                        comment={comment}
+                        currentUser={user}
+                        isNew={comment.isNew}
+                        onReplyClick={(id) => setReplyingToId(id)}
+                        replyCount={(comment.replies || []).length}
+                        isRepliesOpen={openRepliesById[comment.id] ?? true}
+                        onToggleReplies={() =>
+                          setOpenRepliesById((prev) => ({
+                            ...prev,
+                            [comment.id]: !(prev[comment.id] ?? true),
+                          }))
+                        }
+                        onAgree={handleAgree}
+                        onTimestampClick={handleTimestampClick}
+                        isReplying={replyingToId === comment.id}
+                        onCancelReply={() => setReplyingToId(null)}
+                        onSubmitReply={handleInlineReplySubmit}
+                        isLocked={effectiveIsLocked}
+                        isPastVideo={isPastVideo}
+                        isResolved={isResolved}
+                        onDelete={
+                          !effectiveIsLocked && !isResolved ? handleDeleteComment : undefined
+                        }
+                        onUndoDelete={handleUndoDelete}
+                        pendingDelete={pendingDeletes.has(comment.id)}
+                        pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
+                      />
+
+                      {/* Threaded Replies */}
+                      <Collapse
+                        in={
+                          (openRepliesById[comment.id] ?? true) &&
+                          !!comment.replies &&
+                          comment.replies.length > 0
+                        }
+                        timeout="auto"
+                        unmountOnExit
+                      >
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
+                          <AnimatePresence initial={false}>
+                            {(comment.replies || []).map((reply, index) => {
+                              const isLast = index === (comment.replies?.length ?? 0) - 1;
+
+                              return (
+                                <m.div
+                                  key={reply.id}
+                                  initial={{ opacity: 1, height: 'auto' }}
+                                  exit={{
+                                    opacity: 0,
+                                    x: '100%',
+                                    height: 0,
+                                    marginBottom: 0,
+                                    overflow: 'hidden',
+                                  }}
+                                  transition={{
+                                    duration: 0.6,
+                                    ease: [0.4, 0, 0.2, 1],
+                                    height: { delay: 0.3, duration: 0.3 },
+                                  }}
+                                >
+                                  <Box
+                                    ref={(el) => {
+                                      if (el) commentRefs.current[reply.id] = el;
+                                    }}
+                                    sx={{ position: 'relative', ml: { xs: 5, md: 10 } }}
+                                  >
+                                    {/* Vertical straight line (connects siblings) */}
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        left: { xs: -25, md: -50 },
+                                        top: index === 0 ? -4 : -16,
+                                        bottom: isLast ? 'calc(50% + 20px)' : -16,
+                                        borderLeft: '2px solid #8E8E93',
+                                        zIndex: 0,
+                                      }}
+                                    />
+                                    {/* Curved L-shape linking into the card */}
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        left: { xs: -25, md: -50 },
+                                        top: index === 0 ? -4 : -16,
+                                        bottom: 'calc(50% - 1px)',
+                                        width: { xs: 20, md: 45 },
+                                        borderLeft: '2px solid #8E8E93',
+                                        borderBottom: '2px solid #8E8E93',
+                                        borderBottomLeftRadius: 16,
+                                        zIndex: 0,
+                                      }}
+                                    />
+
+                                    <CommentCard
+                                      comment={reply}
+                                      isReply
+                                      currentUser={user}
+                                      isNew={reply.isNew}
+                                      onReplyClick={(id) => setReplyingToId(id)}
+                                      onAgree={handleAgree}
+                                      onTimestampClick={handleTimestampClick}
+                                      isReplying={replyingToId === reply.id}
+                                      onCancelReply={() => setReplyingToId(null)}
+                                      onSubmitReply={handleInlineReplySubmit}
+                                      isLocked={effectiveIsLocked}
+                                      isPastVideo={isPastVideo}
+                                      isResolved={isResolved}
+                                      onDelete={
+                                        !effectiveIsLocked && !isResolved
+                                          ? handleDeleteComment
+                                          : undefined
+                                      }
+                                      onUndoDelete={handleUndoDelete}
+                                      pendingDelete={pendingDeletes.has(reply.id)}
+                                      pendingDeleteStartTime={
+                                        pendingDeletes.get(reply.id)?.startTime
+                                      }
+                                    />
+                                  </Box>
+                                </m.div>
+                              );
+                            })}
+                          </AnimatePresence>
+                        </Box>
+                      </Collapse>
+                    </Box>
+                  </m.div>
+                );
+
+                return (
+                  <>
+                    <AnimatePresence initial={false}>
+                      {unresolvedComments.map((comment) => renderCommentThread(comment, false))}
+                    </AnimatePresence>
+
+                    {resolvedComments.length > 0 && (
+                      <Divider
+                        sx={{
+                          mb: 1,
+                          mt: 1,
+                          typography: 'caption',
+                          color: '#8E8E93',
+                          fontSize: '0.875rem',
+                          '&::before, &::after': { borderColor: '#E5E7EB' },
+                        }}
+                      >
+                        resolved comments
+                      </Divider>
+                    )}
+
+                    <AnimatePresence initial={false}>
+                      {resolvedComments.map((comment) => renderCommentThread(comment, true))}
+                    </AnimatePresence>
+                  </>
+                );
+              })()}
+            </m.div>
+          </AnimatePresence>
+          <div ref={commentsEndRef} />
         </Box>
+
+        {/* New items below indicator */}
+        <AnimatePresence>
+          {(newBelow.replies > 0 || newBelow.messages > 0) && (
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              style={{ pointerEvents: 'none', marginTop: -48, position: 'relative', zIndex: 10 }}
+            >
+              <Box
+                onClick={() => {
+                  scrollToThread(newBelow.targetId);
+                  setNewBelow({ replies: 0, messages: 0, targetId: null });
+                }}
+                sx={{
+                  background: 'linear-gradient(to top, #F4F4F4 30%, transparent 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 0.5,
+                  pt: 4,
+                  pb: 1,
+                  cursor: 'pointer',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <Iconify icon="mdi:arrow-down" width={14} sx={{ color: '#1340FF' }} />
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                  {getNewItemLabel(newBelow)}
+                </Typography>
+              </Box>
+            </m.div>
+          )}
+        </AnimatePresence>
 
         {/* Bottom Sticky Input Section */}
         <Box
@@ -1475,7 +1822,6 @@ const ClientFeedbackModal = forwardRef(
               display: 'flex',
               justifyContent: videoCount > 1 ? 'space-between' : 'flex-end',
               alignItems: 'center',
-              mb: { xs: 0, md: 1 },
             }}
           >
             {videoCount > 1 && (
