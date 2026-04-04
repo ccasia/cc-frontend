@@ -150,9 +150,11 @@ const CommentCard = ({
   pendingDeleteStartTime,
   currentUserId,
   parentResolved = false,
+  isNewCreatorReply = false,
 }) => {
   const isClientComment = comment.user?.role === 'client';
   const isEditedClientComment = isClientComment && !!comment.forwardedBy;
+  const canAdminReply = isAdminView && isEditedClientComment && !isReply;
   const hasAgreed = comment.agreedBy?.length > 0;
   const isResolved = !!comment.resolvedByUserId || isPastVideo || parentResolved;
   const showRepliesToggle = !isReply && replyCount > 0;
@@ -189,7 +191,8 @@ const CommentCard = ({
   const hasLeftActions =
     !isPastVideo &&
     ((!isReply && isClientComment && !isEditedClientComment) ||
-      (isClientComment && !isEditedClientComment && !!onEdit));
+      (isClientComment && !isEditedClientComment && !!onEdit) ||
+      canAdminReply);
 
   const isVisible = comment.isVisibleToCreator !== false;
   const isCreatorComment = comment.user?.role === 'creator';
@@ -197,9 +200,12 @@ const CommentCard = ({
 
   const canToggleVisibility = showVisibilityBorder && !isPastVideo && !!onToggleVisibility;
 
-  // Delete permission: own comment, not forwarded, not past video
+  // Delete permission: own comment, not past video
+  // Allow deletion when forwardedByUserId is absent OR matches the current admin
+  // (backend auto-sets forwardedByUserId on admin replies when the parent is already forwarded)
   const canDelete = !!onDelete && !isPastVideo && !pendingDelete
-    && comment.userId === currentUserId && !comment.forwardedByUserId;
+    && (comment.userId === currentUserId || comment.user?.id === currentUserId)
+    && (!comment.forwardedByUserId || comment.forwardedByUserId === currentUserId);
 
   // Countdown for pending-delete state
   const [deleteProgress, setDeleteProgress] = useState(100);
@@ -402,6 +408,9 @@ const CommentCard = ({
         position: 'relative',
         zIndex: 1,
         transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+        ...(isNewCreatorReply && {
+          border: '1.5px solid #1340FF',
+        }),
         ...(showVisibilityBorder && {
           border: isVisible ? '1.5px solid #00A76F' : '1px solid #EBEBEB',
         }),
@@ -457,7 +466,7 @@ const CommentCard = ({
                 >
                   {displayName}
                 </Typography>
-                {isNew && (
+                {(isNew || isNewCreatorReply) && (
                   <Box
                     sx={{
                       width: 8,
@@ -718,7 +727,7 @@ const CommentCard = ({
         >
           {hasLeftActions && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              {!isReply && isClientComment && !isEditedClientComment && (
+              {((!isReply && isClientComment && !isEditedClientComment) || canAdminReply) && (
                 <Typography
                   data-interactive
                   onClick={() => onReply?.(comment)}
@@ -1030,12 +1039,19 @@ CommentCard.propTypes = {
   isAdminView: PropTypes.bool,
   onToggleVisibility: PropTypes.func,
   isNew: PropTypes.bool,
+  isNewCreatorReply: PropTypes.bool,
   onDelete: PropTypes.func,
   onUndoDelete: PropTypes.func,
   pendingDelete: PropTypes.bool,
   pendingDeleteStartTime: PropTypes.number,
   currentUserId: PropTypes.string,
   parentResolved: PropTypes.bool,
+};
+
+const getNewItemLabel = ({ replies, messages }) => {
+  const total = replies + messages;
+  if (replies > 0 && messages === 0) return `${total} New ${replies === 1 ? 'Reply' : 'Replies'}`;
+  return `${total} New ${total === 1 ? 'Message' : 'Messages'}`;
 };
 
 // ---------------------------------------------------------------------------
@@ -1074,7 +1090,10 @@ export default function AdminFeedbackPanel({
   );
 
   const commentsEndRef = useRef(null);
+  const scrollContainerRef = useRef(null);
   const initialLoadDone = useRef(false);
+  const [newAbove, setNewAbove] = useState({ replies: 0, messages: 0, targetId: null });
+  const [newBelow, setNewBelow] = useState({ replies: 0, messages: 0, targetId: null });
 
   // Track which client comments are new (created after admin last viewed)
   const lastViewedRef = useRef(null);
@@ -1104,6 +1123,20 @@ export default function AdminFeedbackPanel({
     return ids;
   }, [comments, videoId, submission?.id]);
 
+  const newCreatorReplyIds = useMemo(() => {
+    if (!comments?.length || !videoId) return new Set();
+    const cutoff = lastViewedRef.current || 0;
+    const ids = new Set();
+    comments.forEach((c) => {
+      (c.replies || []).forEach((r) => {
+        if (r.user?.role === 'creator' && new Date(r.createdAt).getTime() > cutoff) {
+          ids.add(r.id);
+        }
+      });
+    });
+    return ids;
+  }, [comments, videoId]);
+
   // Update last-viewed timestamp after comments load
   useEffect(() => {
     if (!commentsLoading && comments?.length && videoId && submission?.id) {
@@ -1117,6 +1150,17 @@ export default function AdminFeedbackPanel({
     }
     return undefined;
   }, [commentsLoading, comments?.length, videoId, submission?.id]);
+
+  // Write localStorage on unmount (modal close) so reopening sees updated timestamp
+  useEffect(() => {
+    const sid = submission?.id;
+    const vid = videoId;
+    if (!sid || !vid) return undefined;
+    return () => {
+      const storageKey = `admin_lastViewed_${sid}_${vid}`;
+      localStorage.setItem(storageKey, new Date().toISOString());
+    };
+  }, [submission?.id, videoId]);
 
   // Track page-slide direction: 1 = slide from right, -1 = slide from left
   const prevVideoPageRef = useRef(videoPage);
@@ -1177,6 +1221,33 @@ export default function AdminFeedbackPanel({
       }
     };
 
+    const handleNewItem = (data, isReply) => {
+      if (data.submissionId !== submission.id || data.comment?.isClientDraft) return;
+      commentsMutate();
+      // Skip indicator for own messages
+      if (data.comment?.userId === user?.id) return;
+      if (!initialLoadDone.current) return;
+      // Determine direction after DOM updates
+      setTimeout(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const parentId = isReply ? data.parentCommentId : data.comment?.id;
+        const parentEl = parentId && container.querySelector(`[data-comment-id="${parentId}"]`);
+        const key = isReply ? 'replies' : 'messages';
+        if (parentEl) {
+          const parentRect = parentEl.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          if (parentRect.bottom < containerRect.top) {
+            setNewAbove((prev) => ({ ...prev, [key]: prev[key] + 1, targetId: prev.targetId || parentId }));
+          } else if (parentRect.bottom > containerRect.bottom) {
+            setNewBelow((prev) => ({ ...prev, [key]: prev[key] + 1, targetId: prev.targetId || parentId }));
+          }
+        } else {
+          setNewBelow((prev) => ({ ...prev, [key]: prev[key] + 1, targetId: prev.targetId || parentId }));
+        }
+      }, 200);
+    };
+
     const handleDeletedEvent = (data) => {
       if (data.submissionId === submission.id) {
         // Skip revalidation if we're still showing the pending-delete UI
@@ -1185,20 +1256,23 @@ export default function AdminFeedbackPanel({
       }
     };
 
-    socket.on('v4:comment:added', handleCommentEvent);
+    const handleNewComment = (data) => handleNewItem(data, false);
+    const handleNewReply = (data) => handleNewItem(data, true);
+
+    socket.on('v4:comment:added', handleNewComment);
     socket.on('v4:comment:updated', handleCommentEvent);
-    socket.on('v4:comment:reply:added', handleCommentEvent);
+    socket.on('v4:comment:reply:added', handleNewReply);
     socket.on('v4:comment:deleted', handleDeletedEvent);
     socket.on('v4:comment:agreed', handleCommentEvent);
 
     return () => {
-      socket.off('v4:comment:added', handleCommentEvent);
+      socket.off('v4:comment:added', handleNewComment);
       socket.off('v4:comment:updated', handleCommentEvent);
-      socket.off('v4:comment:reply:added', handleCommentEvent);
+      socket.off('v4:comment:reply:added', handleNewReply);
       socket.off('v4:comment:deleted', handleDeletedEvent);
       socket.off('v4:comment:agreed', handleCommentEvent);
     };
-  }, [socket, submission?.id, commentsMutate]);
+  }, [socket, submission?.id, user?.id, commentsMutate]);
 
   // Reset scroll state on mount and when switching video pages
   useEffect(() => {
@@ -1218,6 +1292,28 @@ export default function AdminFeedbackPanel({
     }
     commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [comments?.length, commentsLoading, videoId]);
+
+  const clearNewIndicators = () => {
+    setNewAbove({ replies: 0, messages: 0, targetId: null });
+    setNewBelow({ replies: 0, messages: 0, targetId: null });
+  };
+
+  const scrollToThread = (targetId) => {
+    const container = scrollContainerRef.current;
+    if (!container || !targetId) return;
+    const threadEl = container.querySelector(`[data-comment-id="${targetId}"]`);
+    if (threadEl) {
+      const threadRect = threadEl.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      // Scroll so the bottom of the thread (where the new reply is) is visible
+      const scrollOffset = threadRect.bottom - containerRect.bottom;
+      if (scrollOffset > 0) {
+        container.scrollBy({ top: scrollOffset + 16, behavior: 'smooth' });
+      } else if (threadRect.top < containerRect.top) {
+        container.scrollBy({ top: threadRect.top - containerRect.top - 16, behavior: 'smooth' });
+      }
+    }
+  };
 
   // Keep a ref in sync for cleanup on unmount
   const pendingDeletesRef = useRef(pendingDeletes);
@@ -1301,8 +1397,14 @@ export default function AdminFeedbackPanel({
         parentId: inlineReplyTarget,
         ...(timestamp && { timestamp }),
       });
+      const replyParentId = inlineReplyTarget;
       setInlineReplyTarget(null);
       setInlineReplyText('');
+      // Scroll to the thread where the reply was added
+      setTimeout(() => {
+        scrollToThread(replyParentId);
+        clearNewIndicators();
+      }, 300);
     } catch (error) {
       enqueueSnackbar('Failed to send reply', { variant: 'error' });
     }
@@ -1445,6 +1547,14 @@ export default function AdminFeedbackPanel({
     >
       {/* Scrollable Comments Area */}
       <Box
+        ref={scrollContainerRef}
+        onScroll={() => {
+          const container = scrollContainerRef.current;
+          if (!container) return;
+          const { scrollTop, scrollHeight, clientHeight } = container;
+          if (scrollTop < 100) setNewAbove({ replies: 0, messages: 0, targetId: null });
+          if (scrollHeight - scrollTop - clientHeight < 100) setNewBelow({ replies: 0, messages: 0, targetId: null });
+        }}
         sx={{
           flex: 1,
           minHeight: 0,
@@ -1460,6 +1570,42 @@ export default function AdminFeedbackPanel({
           '&::-webkit-scrollbar-thumb': { background: 'rgba(0,0,0,0.1)', borderRadius: '4px' },
         }}
       >
+        {/* New items above indicator */}
+        <AnimatePresence>
+          {(newAbove.replies > 0 || newAbove.messages > 0) && (
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              style={{ position: 'sticky', top: 0, zIndex: 10, pointerEvents: 'none' }}
+            >
+              <Box
+                onClick={() => {
+                  scrollToThread(newAbove.targetId);
+                  setNewAbove({ replies: 0, messages: 0, targetId: null });
+                }}
+                sx={{
+                  background: 'linear-gradient(to bottom, #F4F4F4 30%, transparent 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 0.5,
+                  pb: 4,
+                  pt: 1,
+                  cursor: 'pointer',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <Iconify icon="mdi:arrow-up" width={14} sx={{ color: '#1340FF' }} />
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                  {getNewItemLabel(newAbove)}
+                </Typography>
+              </Box>
+            </m.div>
+          )}
+        </AnimatePresence>
+
         {commentsLoading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress size={24} />
@@ -1493,12 +1639,13 @@ export default function AdminFeedbackPanel({
                 </Box>
               ) : (
                 (() => {
-                  const unresolvedComments = comments.filter((c) => !c.resolvedByUserId);
-                  const resolvedComments = comments.filter((c) => !!c.resolvedByUserId);
+                  const unresolvedComments = isPastVideo ? [] : comments.filter((c) => !c.resolvedByUserId);
+                  const resolvedComments = isPastVideo ? comments : comments.filter((c) => !!c.resolvedByUserId);
 
                   const renderCommentThread = (comment) => (
                     <m.div
                       key={comment.id}
+                      data-comment-id={comment.id}
                       initial={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
                       transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
@@ -1528,7 +1675,7 @@ export default function AdminFeedbackPanel({
                         isAdminView
                         onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
                         isNew={newClientCommentIds.has(comment.id)}
-                        onDelete={!isReadOnly ? handleDeleteComment : undefined}
+                        onDelete={handleDeleteComment}
                         onUndoDelete={handleUndoDelete}
                         pendingDelete={pendingDeletes.has(comment.id)}
                         pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
@@ -1592,7 +1739,8 @@ export default function AdminFeedbackPanel({
                                   isAdminView
                                   onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
                                   isNew={newClientCommentIds.has(reply.id)}
-                                  onDelete={!isReadOnly ? handleDeleteComment : undefined}
+                                  isNewCreatorReply={newCreatorReplyIds.has(reply.id)}
+                                  onDelete={handleDeleteComment}
                                   onUndoDelete={handleUndoDelete}
                                   pendingDelete={pendingDeletes.has(reply.id)}
                                   pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
@@ -1638,6 +1786,42 @@ export default function AdminFeedbackPanel({
         )}
         <div ref={commentsEndRef} />
       </Box>
+
+      {/* New items below indicator */}
+      <AnimatePresence>
+        {(newBelow.replies > 0 || newBelow.messages > 0) && (
+          <m.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            style={{ pointerEvents: 'none', marginTop: -48, position: 'relative', zIndex: 10 }}
+          >
+            <Box
+              onClick={() => {
+                scrollToThread(newBelow.targetId);
+                setNewBelow({ replies: 0, messages: 0, targetId: null });
+              }}
+              sx={{
+                background: 'linear-gradient(to top, #F4F4F4 30%, transparent 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 0.5,
+                pt: 4,
+                pb: 1,
+                cursor: 'pointer',
+                pointerEvents: 'auto',
+              }}
+            >
+              <Iconify icon="mdi:arrow-down" width={14} sx={{ color: '#1340FF' }} />
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                {getNewItemLabel(newBelow)}
+              </Typography>
+            </Box>
+          </m.div>
+        )}
+      </AnimatePresence>
 
       {/* Input Section */}
       {!isReadOnly && hasComments && (
@@ -1863,7 +2047,7 @@ export default function AdminFeedbackPanel({
                   borderBottom: '3px solid #202021',
                   '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: 'none' },
                   '&:active': {
-                    borderBottom: '1px solid #202021',
+                    borderBottom: '3px solid #202021',
                     transform: 'translateY(1px)',
                   },
                   '&.Mui-disabled': {
@@ -1899,7 +2083,7 @@ export default function AdminFeedbackPanel({
                     boxShadow: 'none',
                   },
                   '&:active': {
-                    borderBottom: '1px solid #E7E7E7',
+                    borderBottom: '3px solid #E7E7E7',
                     transform: 'translateY(1px)',
                   },
                   '&.Mui-disabled': {

@@ -38,6 +38,12 @@ const COLORS = {
   resolvedBg: '#EBEBEB',
 };
 
+const getNewItemLabel = ({ replies, messages }) => {
+  const total = replies + messages;
+  if (replies > 0 && messages === 0) return `${total} New ${replies === 1 ? 'Reply' : 'Replies'}`;
+  return `${total} New ${total === 1 ? 'Message' : 'Messages'}`;
+};
+
 const FONT_FAMILY =
   'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
@@ -1156,7 +1162,10 @@ const CreatorFeedbackModal = ({
   const [replyTexts, setReplyTexts] = useState({});
   const [replies, setReplies] = useState({});
   const commentsEndRef = useRef(null);
+  const scrollContainerRef = useRef(null);
   const initialLoadDone = useRef(false);
+  const [newAbove, setNewAbove] = useState({ replies: 0, messages: 0, targetId: null });
+  const [newBelow, setNewBelow] = useState({ replies: 0, messages: 0, targetId: null });
 
   // Socket listeners for real-time updates (comment system)
   useEffect(() => {
@@ -1168,6 +1177,35 @@ const CreatorFeedbackModal = ({
       }
     };
 
+    const handleNewItem = (data, isReply) => {
+      if (data.submissionId !== submission.id || data.comment?.isClientDraft) return;
+      commentsMutate();
+      // Skip indicator for own messages
+      if (data.comment?.userId === user?.id) return;
+      if (!initialLoadDone.current) return;
+      setTimeout(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const parentId = isReply ? data.parentCommentId : data.comment?.id;
+        const parentEl = parentId && container.querySelector(`[data-comment-id="${parentId}"]`);
+        const key = isReply ? 'replies' : 'messages';
+        if (parentEl) {
+          const parentRect = parentEl.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          if (parentRect.bottom < containerRect.top) {
+            setNewAbove((prev) => ({ ...prev, [key]: prev[key] + 1, targetId: prev.targetId || parentId }));
+          } else if (parentRect.bottom > containerRect.bottom) {
+            setNewBelow((prev) => ({ ...prev, [key]: prev[key] + 1, targetId: prev.targetId || parentId }));
+          }
+        } else {
+          setNewBelow((prev) => ({ ...prev, [key]: prev[key] + 1, targetId: prev.targetId || parentId }));
+        }
+      }, 200);
+    };
+
+    const handleNewComment = (data) => handleNewItem(data, false);
+    const handleNewReply = (data) => handleNewItem(data, true);
+
     const handleDeletedEvent = (data) => {
       if (data.submissionId === submission.id) {
         if (pendingDeletesRef.current.has(data.commentId)) return;
@@ -1175,18 +1213,18 @@ const CreatorFeedbackModal = ({
       }
     };
 
-    socket.on('v4:comment:added', handleCommentEvent);
+    socket.on('v4:comment:added', handleNewComment);
     socket.on('v4:comment:updated', handleCommentEvent);
-    socket.on('v4:comment:reply:added', handleCommentEvent);
+    socket.on('v4:comment:reply:added', handleNewReply);
     socket.on('v4:comment:deleted', handleDeletedEvent);
 
     return () => {
-      socket.off('v4:comment:added', handleCommentEvent);
+      socket.off('v4:comment:added', handleNewComment);
       socket.off('v4:comment:updated', handleCommentEvent);
-      socket.off('v4:comment:reply:added', handleCommentEvent);
+      socket.off('v4:comment:reply:added', handleNewReply);
       socket.off('v4:comment:deleted', handleDeletedEvent);
     };
-  }, [socket, submission?.id, commentsMutate, useCommentSystem]);
+  }, [socket, submission?.id, user?.id, commentsMutate, useCommentSystem]);
 
   // Reset scroll state on mount
   useEffect(() => {
@@ -1218,7 +1256,7 @@ const CreatorFeedbackModal = ({
     });
   }, [isPastVideo, currentVideoId, useCommentSystem, comments, allFeedback]);
 
-  // Scroll to bottom on initial load (instant) and when new items added (smooth)
+  // Scroll to bottom on initial load (instant) and when new top-level items added (smooth)
   useEffect(() => {
     if (!commentsEndRef.current || !displayItems?.length) return;
     if (!initialLoadDone.current) {
@@ -1228,6 +1266,27 @@ const CreatorFeedbackModal = ({
     }
     commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [displayItems?.length]);
+
+  const clearNewIndicators = () => {
+    setNewAbove({ replies: 0, messages: 0, targetId: null });
+    setNewBelow({ replies: 0, messages: 0, targetId: null });
+  };
+
+  const scrollToThread = (targetId) => {
+    const container = scrollContainerRef.current;
+    if (!container || !targetId) return;
+    const threadEl = container.querySelector(`[data-comment-id="${targetId}"]`);
+    if (threadEl) {
+      const threadRect = threadEl.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const scrollOffset = threadRect.bottom - containerRect.bottom;
+      if (scrollOffset > 0) {
+        container.scrollBy({ top: scrollOffset + 16, behavior: 'smooth' });
+      } else if (threadRect.top < containerRect.top) {
+        container.scrollBy({ top: threadRect.top - containerRect.top - 16, behavior: 'smooth' });
+      }
+    }
+  };
 
   // Default: if a top-level comment has replies, show them (latest + past pages).
   // User can still hide via the replies icon toggle.
@@ -1329,7 +1388,11 @@ const CreatorFeedbackModal = ({
           videoId: currentVideoId,
           timestamp: formatTimeForBackend(currentTime),
         });
-        // Real-time update via socket
+        // Scroll to the thread where the reply was added
+        setTimeout(() => {
+          scrollToThread(item.parentId || item.id);
+          clearNewIndicators();
+        }, 300);
       } else {
         // Legacy feedback reply system
         const optimisticReply = {
@@ -1362,6 +1425,11 @@ const CreatorFeedbackModal = ({
             [index]: (prev[index] || []).map((r) => (r.id === optimisticReply.id ? saved : r)),
           }));
         }
+        // Scroll to the thread where the reply was added
+        setTimeout(() => {
+          scrollToThread(item.id);
+          clearNewIndicators();
+        }, 300);
       }
     } catch (err) {
       // Rollback optimistic reply on failure (legacy system only)
@@ -1390,6 +1458,14 @@ const CreatorFeedbackModal = ({
     >
       {/* Feedback content - scrollable */}
       <Box
+        ref={scrollContainerRef}
+        onScroll={() => {
+          const container = scrollContainerRef.current;
+          if (!container) return;
+          const { scrollTop, scrollHeight, clientHeight } = container;
+          if (scrollTop < 100) setNewAbove({ replies: 0, messages: 0, targetId: null });
+          if (scrollHeight - scrollTop - clientHeight < 100) setNewBelow({ replies: 0, messages: 0, targetId: null });
+        }}
         sx={{
           flex: 1,
           overflowY: 'auto',
@@ -1407,6 +1483,42 @@ const CreatorFeedbackModal = ({
           },
         }}
       >
+        {/* New items above indicator */}
+        <AnimatePresence>
+          {(newAbove.replies > 0 || newAbove.messages > 0) && (
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              style={{ position: 'sticky', top: 0, zIndex: 10, pointerEvents: 'none' }}
+            >
+              <Box
+                onClick={() => {
+                  scrollToThread(newAbove.targetId);
+                  setNewAbove({ replies: 0, messages: 0, targetId: null });
+                }}
+                sx={{
+                  background: `linear-gradient(to bottom, ${COLORS.bgSecondary} 30%, transparent 100%)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 0.5,
+                  pb: 4,
+                  pt: 1,
+                  cursor: 'pointer',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <Iconify icon="mdi:arrow-up" width={14} sx={{ color: '#1340FF' }} />
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                  {getNewItemLabel(newAbove)}
+                </Typography>
+              </Box>
+            </m.div>
+          )}
+        </AnimatePresence>
+
         {displayItems.length > 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 1.5 } }}>
             {(() => {
@@ -1463,8 +1575,8 @@ const CreatorFeedbackModal = ({
                 const effectiveResolved = baseResolved || isPastVideo;
 
                 return (
+                  <div key={item.id ?? index} data-comment-id={item.id}>
                   <FeedbackCard
-                    key={item.id ?? index}
                     feedbackItem={feedbackItem}
                     submission={submission}
                     index={index}
@@ -1502,6 +1614,7 @@ const CreatorFeedbackModal = ({
                     pendingDeletes={pendingDeletes}
                     currentUserId={user?.id}
                   />
+                  </div>
                 );
               };
 
@@ -1547,6 +1660,42 @@ const CreatorFeedbackModal = ({
             </Typography>
           </Box>
         )}
+
+        {/* New items below indicator */}
+        <AnimatePresence>
+          {(newBelow.replies > 0 || newBelow.messages > 0) && (
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              style={{ position: 'sticky', bottom: 0, zIndex: 10, pointerEvents: 'none' }}
+            >
+              <Box
+                onClick={() => {
+                  scrollToThread(newBelow.targetId);
+                  setNewBelow({ replies: 0, messages: 0, targetId: null });
+                }}
+                sx={{
+                  background: `linear-gradient(to top, ${COLORS.bgSecondary} 30%, transparent 100%)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 0.5,
+                  pt: 4,
+                  pb: 1,
+                  cursor: 'pointer',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <Iconify icon="mdi:arrow-down" width={14} sx={{ color: '#1340FF' }} />
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                  {getNewItemLabel(newBelow)}
+                </Typography>
+              </Box>
+            </m.div>
+          )}
+        </AnimatePresence>
       </Box>
 
       {/* Page navigation - at bottom of feedback panel */}
