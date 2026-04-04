@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { m, AnimatePresence } from 'framer-motion';
 import React, {
   useRef,
+  useMemo,
   useState,
   useEffect,
   useCallback,
@@ -32,6 +33,12 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
+
+const getNewItemLabel = ({ replies, messages }) => {
+  const total = replies + messages;
+  if (replies > 0 && messages === 0) return `${total} New ${replies === 1 ? 'Reply' : 'Replies'}`;
+  return `${total} New ${total === 1 ? 'Message' : 'Messages'}`;
+};
 
 const formatCommentDate = (dateString) => {
   if (!dateString) return '';
@@ -851,12 +858,18 @@ const ClientFeedbackModal = forwardRef(
     const [isCountingDown, setIsCountingDown] = useState(timeLeft > 0);
 
     const commentRefs = useRef({});
+    const scrollContainerRef = useRef(null);
+    const commentsEndRef = useRef(null);
+    const [newAbove, setNewAbove] = useState({ replies: 0, messages: 0, targetId: null });
+    const [newBelow, setNewBelow] = useState({ replies: 0, messages: 0, targetId: null });
     const prevRemainingRef = useRef(-1);
     const prevVideoPageRef = useRef(videoPage);
     const slideDirection = useRef(0);
     if (videoPage !== prevVideoPageRef.current) {
       slideDirection.current = videoPage < prevVideoPageRef.current ? 1 : -1;
       prevVideoPageRef.current = videoPage;
+      setNewAbove({ replies: 0, messages: 0, targetId: null });
+      setNewBelow({ replies: 0, messages: 0, targetId: null });
     }
     const pageSlideVariants = {
       enter: (dir) => (dir !== 0 ? { x: `${dir * 40}%`, opacity: 0 } : { opacity: 0 }),
@@ -973,7 +986,23 @@ const ClientFeedbackModal = forwardRef(
           });
         });
 
-        setTimeout(() => scrollToElement(data.comment.id), 100);
+        setTimeout(() => {
+          const container = scrollContainerRef.current;
+          if (!container) return;
+          const pid = data.parentCommentId;
+          const parentEl = pid && container.querySelector(`[data-comment-id="${pid}"]`);
+          if (parentEl) {
+            const parentRect = parentEl.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            if (parentRect.bottom < containerRect.top) {
+              setNewAbove((prev) => ({ ...prev, replies: prev.replies + 1, targetId: prev.targetId || pid }));
+            } else if (parentRect.bottom > containerRect.bottom) {
+              setNewBelow((prev) => ({ ...prev, replies: prev.replies + 1, targetId: prev.targetId || pid }));
+            }
+          } else {
+            setNewBelow((prev) => ({ ...prev, replies: prev.replies + 1, targetId: prev.targetId || pid }));
+          }
+        }, 200);
       };
 
       const handleCommentAdded = (data) => {
@@ -990,7 +1019,23 @@ const ClientFeedbackModal = forwardRef(
           });
         });
 
-        setTimeout(() => scrollToElement(data.comment.id), 100);
+        setTimeout(() => {
+          const container = scrollContainerRef.current;
+          if (!container) return;
+          const cid = data.comment?.id;
+          const commentEl = cid && container.querySelector(`[data-comment-id="${cid}"]`);
+          if (commentEl) {
+            const commentRect = commentEl.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            if (commentRect.bottom < containerRect.top) {
+              setNewAbove((prev) => ({ ...prev, messages: prev.messages + 1, targetId: prev.targetId || cid }));
+            } else if (commentRect.bottom > containerRect.bottom) {
+              setNewBelow((prev) => ({ ...prev, messages: prev.messages + 1, targetId: prev.targetId || cid }));
+            }
+          } else {
+            setNewBelow((prev) => ({ ...prev, messages: prev.messages + 1, targetId: prev.targetId || cid }));
+          }
+        }, 200);
       };
 
       const handleCommentUpdated = (data) => {
@@ -1084,6 +1129,22 @@ const ClientFeedbackModal = forwardRef(
       const element = commentRefs.current?.[id];
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    };
+
+    const scrollToThread = (targetId) => {
+      const container = scrollContainerRef.current;
+      if (!container || !targetId) return;
+      const threadEl = container.querySelector(`[data-comment-id="${targetId}"]`);
+      if (threadEl) {
+        const threadRect = threadEl.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const scrollOffset = threadRect.bottom - containerRect.bottom;
+        if (scrollOffset > 0) {
+          container.scrollBy({ top: scrollOffset + 16, behavior: 'smooth' });
+        } else if (threadRect.top < containerRect.top) {
+          container.scrollBy({ top: threadRect.top - containerRect.top - 16, behavior: 'smooth' });
+        }
       }
     };
 
@@ -1195,6 +1256,8 @@ const ClientFeedbackModal = forwardRef(
         );
 
         setReplyingToId(null);
+        setNewAbove({ replies: 0, messages: 0, targetId: null });
+        setNewBelow({ replies: 0, messages: 0, targetId: null });
         setTimeout(() => scrollToElement(newReply.id), 100);
       } catch (error) {
         console.error('Failed to post reply', error);
@@ -1223,6 +1286,8 @@ const ClientFeedbackModal = forwardRef(
 
         setComments((prev) => insertSortedByTimestamp(prev, newComment));
         setFeedbackText('');
+        setNewAbove({ replies: 0, messages: 0, targetId: null });
+        setNewBelow({ replies: 0, messages: 0, targetId: null });
         setTimeout(() => scrollToElement(newComment.id), 100);
       } catch (error) {
         console.error('Failed to post top-level comment', error);
@@ -1255,7 +1320,14 @@ const ClientFeedbackModal = forwardRef(
       >
         {/* Scrollable Comments Area */}
         <Box
-          ref={commentRefs}
+          ref={scrollContainerRef}
+          onScroll={() => {
+            const container = scrollContainerRef.current;
+            if (!container) return;
+            const { scrollTop, scrollHeight, clientHeight } = container;
+            if (scrollTop < 100) setNewAbove({ replies: 0, messages: 0, targetId: null });
+            if (scrollHeight - scrollTop - clientHeight < 100) setNewBelow({ replies: 0, messages: 0, targetId: null });
+          }}
           sx={{
             flex: 1,
             overflowY: 'auto',
@@ -1269,6 +1341,42 @@ const ClientFeedbackModal = forwardRef(
             '&::-webkit-scrollbar-thumb': { background: 'rgba(0,0,0,0.1)', borderRadius: '4px' },
           }}
         >
+          {/* New items above indicator */}
+          <AnimatePresence>
+            {(newAbove.replies > 0 || newAbove.messages > 0) && (
+              <m.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+                style={{ position: 'sticky', top: 0, zIndex: 10, pointerEvents: 'none' }}
+              >
+                <Box
+                  onClick={() => {
+                    scrollToThread(newAbove.targetId);
+                    setNewAbove({ replies: 0, messages: 0, targetId: null });
+                  }}
+                  sx={{
+                    background: 'linear-gradient(to bottom, #F4F4F4 30%, transparent 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                    pb: 4,
+                    pt: 1,
+                    cursor: 'pointer',
+                    pointerEvents: 'auto',
+                  }}
+                >
+                  <Iconify icon="mdi:arrow-up" width={14} sx={{ color: '#1340FF' }} />
+                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                    {getNewItemLabel(newAbove)}
+                  </Typography>
+                </Box>
+              </m.div>
+            )}
+          </AnimatePresence>
+
           <AnimatePresence initial={false} mode="wait" custom={slideDirection.current}>
             <m.div
               key={videoId}
@@ -1298,6 +1406,7 @@ const ClientFeedbackModal = forwardRef(
                 const renderCommentThread = (comment, isResolved) => (
                   <m.div
                     key={comment.id}
+                    data-comment-id={comment.id}
                     initial={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
                     transition={{
@@ -1470,7 +1579,44 @@ const ClientFeedbackModal = forwardRef(
               })()}
             </m.div>
           </AnimatePresence>
+          <div ref={commentsEndRef} />
         </Box>
+
+        {/* New items below indicator */}
+        <AnimatePresence>
+          {(newBelow.replies > 0 || newBelow.messages > 0) && (
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              style={{ pointerEvents: 'none', marginTop: -48, position: 'relative', zIndex: 10 }}
+            >
+              <Box
+                onClick={() => {
+                  scrollToThread(newBelow.targetId);
+                  setNewBelow({ replies: 0, messages: 0, targetId: null });
+                }}
+                sx={{
+                  background: 'linear-gradient(to top, #F4F4F4 30%, transparent 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 0.5,
+                  pt: 4,
+                  pb: 1,
+                  cursor: 'pointer',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <Iconify icon="mdi:arrow-down" width={14} sx={{ color: '#1340FF' }} />
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                  {getNewItemLabel(newBelow)}
+                </Typography>
+              </Box>
+            </m.div>
+          )}
+        </AnimatePresence>
 
         {/* Bottom Sticky Input Section */}
         <Box

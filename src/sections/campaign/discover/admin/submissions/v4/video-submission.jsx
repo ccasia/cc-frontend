@@ -1107,12 +1107,18 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           isPastVideo,
           submission: modalSubmission,
           ref: feedbackRef,
+          refreshSubmission,
         }) => {
           const currentModalVideo =
             modalSubmission?.video?.find((v) => v.id === modalVideoId) ||
             submission?.video?.find((v) => v.id === modalVideoId) ||
             clientVideo ||
             video;
+
+          const handleSendAndRefresh = async (videoIdToPublish, shouldRefresh) => {
+            await handleSendComments(videoIdToPublish, shouldRefresh);
+            if (refreshSubmission) refreshSubmission();
+          };
 
           return (
             <ClientFeedbackModal
@@ -1121,7 +1127,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
               videoId={modalVideoId || clientVideo?.id || video?.id}
               currentVideoTime={videoControls.formatTime(modalCurrentTime || 0)}
               onSeekTo={onSeek}
-              onSendToAdmin={handleSendComments}
+              onSendToAdmin={handleSendAndRefresh}
               isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
               isPastVideo={isPastVideo}
               videoPage={videoPage}

@@ -460,6 +460,7 @@ export default function MobileVideoSubmission({
           isPastVideo,
           submission: modalSubmission,
           ref: feedbackRef,
+          refreshSubmission,
         }) => {
           const currentModalVideo =
             modalSubmission?.video?.find((v) => v.id === modalVideoId) ||
@@ -473,6 +474,11 @@ export default function MobileVideoSubmission({
             return `${minutes}:${seconds.toString().padStart(2, '0')}`;
           };
 
+          const handleSendAndRefresh = async (videoIdToPublish, shouldRefresh) => {
+            await handleSendComments(videoIdToPublish, shouldRefresh);
+            if (refreshSubmission) refreshSubmission();
+          };
+
           return (
             <ClientFeedbackModal
               ref={feedbackRef}
@@ -480,7 +486,7 @@ export default function MobileVideoSubmission({
               videoId={modalVideoId || clientVideo?.id || video?.id}
               currentVideoTime={formatModalTime(modalCurrentTime)}
               onSeekTo={onSeek}
-              onSendToAdmin={handleSendComments}
+              onSendToAdmin={handleSendAndRefresh}
               isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
               isPastVideo={isPastVideo}
               videoPage={videoPage}
