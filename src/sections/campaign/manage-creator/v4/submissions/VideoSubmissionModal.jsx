@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React, { useRef, useState, useEffect } from 'react';
+import { m, AnimatePresence } from 'framer-motion';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -72,6 +73,7 @@ const VideoSubmissionModal = ({
   const [modalDuration, setModalDuration] = useState(0);
 
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [feedbackTimeLeft, setFeedbackTimeLeft] = useState(0);
 
   const handleModalSeek = (timeStr) => {
@@ -216,6 +218,14 @@ const VideoSubmissionModal = ({
     creatorInfo?.photo ||
     creatorInfo?.image ||
     null;
+
+  const handleCopyLink = () => {
+    if (videoUrl) {
+      navigator.clipboard.writeText(videoUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleModalCloseRequest = () => {
     if (feedbackPanelRef.current) {
@@ -647,6 +657,43 @@ const VideoSubmissionModal = ({
                   position: 'relative',
                 }}
               >
+                  {videoUrl && (
+                    <DarkGlassTooltip title={copied ? 'Copied!' : 'Copy Link'} placement="left">
+                      <IconButton
+                        onClick={handleCopyLink}
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          zIndex: 10,
+                          color: '#F4F4F4',
+                          bgcolor: '#1C1C1C',
+                          borderRadius: '8px',
+                          borderBottom: '2px solid #000',
+                          overflow: 'hidden',
+                          '&:hover': { bgcolor: '#2C2C2C' },
+                        }}
+                      >
+                        <AnimatePresence mode="wait" initial={false}>
+                          <m.div
+                            key={copied ? 'check' : 'copy'}
+                            initial={{ opacity: 0, scale: 0.5, y: 6 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.5, y: -6 }}
+                            transition={{ duration: 0.18, ease: 'easeOut' }}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <Iconify
+                              icon={copied ? 'eva:checkmark-fill' : 'eva:copy-outline'}
+                              width={18}
+                              sx={{ color: copied ? '#00A76F' : '#F4F4F4' }}
+                            />
+                          </m.div>
+                        </AnimatePresence>
+                      </IconButton>
+                    </DarkGlassTooltip>
+                  )}
                   {videoUrl ? (
                     <video
                       key={currentVideo?.id}
