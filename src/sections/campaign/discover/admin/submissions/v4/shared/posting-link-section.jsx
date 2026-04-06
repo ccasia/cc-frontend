@@ -306,23 +306,28 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
                 {new Date(submission.updatedAt).toLocaleDateString('en-GB')}
               </Typography>
             </Box>
-            <Button
-              size="small"
-              variant="text"
-              onClick={onViewLogs}
+            <Typography
+              component="button"
+              onClick={onReviewSubmission}
               sx={{
-                fontSize: 12,
+                pl: 2,
+                pr: 0,
+                py: 1,
+                bgcolor: 'transparent',
+                fontWeight: 800,
+                fontSize: 14,
                 color: '#919191',
-                p: 0,
-                minWidth: 'auto',
-                textTransform: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                outline: 'none',
+                transition: 'all 0.2s ease',
                 '&:hover': {
-                  backgroundColor: 'transparent',
+                  opacity: 0.8,
                 },
               }}
             >
-              view logs
-            </Button>
+              View Feedback
+            </Typography>
           </Box>
         )}
 
