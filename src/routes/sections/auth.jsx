@@ -7,6 +7,7 @@ import CompactLayout from 'src/layouts/compact';
 import AuthModernLayout from 'src/layouts/auth/creator';
 
 import { SplashScreen } from 'src/components/loading-screen';
+import CodeInput from 'src/sections/auth-demo/code-input';
 
 // ----------------------------------------------------------------------
 
@@ -96,11 +97,18 @@ const authCreator = {
       element: (
         <GuestGuard>
           <AuthModernLayout title="Cult Creative">
-            <NewRegisterPage />
-            {/* <CreatorRegister /> */}
+            <Outlet />
+            {/* <NewRegisterPage /> */}
           </AuthModernLayout>
         </GuestGuard>
       ),
+      children: [
+        { index: true, element: <NewRegisterPage /> },
+        {
+          path: 'code',
+          element: <CodeInput />,
+        },
+      ],
     },
     {
       path: 'adminForm',
@@ -147,7 +155,7 @@ const authClient = {
         </Suspense>
       ),
       children: [
-        { 
+        {
           path: 'setup-password',
           element: (
             <GuestGuard>
@@ -168,8 +176,8 @@ const authClient = {
           ),
         },
       ],
-    }
-  ]
+    },
+  ],
 };
 
 export const authRoutes = [
