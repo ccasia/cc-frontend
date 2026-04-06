@@ -152,8 +152,10 @@ const CommentCard = ({
   isNewCreatorReply = false,
 }) => {
   const isClientComment = comment.user?.role === 'client';
+  const isCreatorComment = comment.user?.role === 'creator';
   const isEditedClientComment = isClientComment && !!comment.forwardedBy;
-  const canAdminReply = isAdminView && isEditedClientComment && !isReply;
+  const isAdminComment = !isClientComment && !isCreatorComment;
+  const canAdminReply = isAdminView && !isReply && (isEditedClientComment || isAdminComment);
   const hasAgreed = comment.agreedBy?.length > 0;
   const isResolved = !!comment.resolvedByUserId || isPastVideo || parentResolved;
   const showRepliesToggle = !isReply && replyCount > 0;
@@ -194,7 +196,6 @@ const CommentCard = ({
       canAdminReply);
 
   const isVisible = comment.isVisibleToCreator !== false;
-  const isCreatorComment = comment.user?.role === 'creator';
   const showVisibilityBorder = isAdminView && !isCreatorComment;
 
   const canToggleVisibility = showVisibilityBorder && !isPastVideo && !!onToggleVisibility;
