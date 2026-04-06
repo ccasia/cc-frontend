@@ -63,6 +63,7 @@ const VideoSubmissionModal = ({
   const { user } = useAuthContext();
   const isClient = user?.role === 'client';
   const isCreator = user?.role === 'creator';
+  const isAdmin = !isClient && !isCreator;
   const [videoPage, setVideoPage] = useState(0);
   const [isCaptionOpen, setIsCaptionOpen] = useState(false);
   const [freshSubmission, setFreshSubmission] = useState(submission);
@@ -657,7 +658,7 @@ const VideoSubmissionModal = ({
                   position: 'relative',
                 }}
               >
-                  {videoUrl && (
+                  {videoUrl && isAdmin && (
                     <DarkGlassTooltip title={copied ? 'Copied!' : 'Copy Link'} placement="right">
                       <IconButton
                         onClick={handleCopyLink}
