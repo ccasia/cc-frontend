@@ -658,14 +658,14 @@ const VideoSubmissionModal = ({
                 }}
               >
                   {videoUrl && (
-                    <DarkGlassTooltip title={copied ? 'Copied!' : 'Copy Link'} placement="left">
+                    <DarkGlassTooltip title={copied ? 'Copied!' : 'Copy Link'} placement="right">
                       <IconButton
                         onClick={handleCopyLink}
                         size="small"
                         sx={{
                           position: 'absolute',
                           top: 8,
-                          right: 8,
+                          left: 8,
                           zIndex: 10,
                           color: '#F4F4F4',
                           bgcolor: '#1C1C1C',
