@@ -362,7 +362,8 @@ function CreatorTableView() {
           ]}
           action={
             <Stack direction="row" spacing={1.5}>
-              {admin?.role === 'superadmin' && (
+              {(admin?.role === 'superadmin' ||
+                admin?.admin?.role?.slug === 'sales_and_marketing') && (
                 <>
                   <Button
                     variant="outlined"
