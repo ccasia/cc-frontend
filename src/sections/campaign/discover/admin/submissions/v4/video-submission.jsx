@@ -566,8 +566,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                             'CHANGES_REQUIRED',
                             'SENT_TO_CLIENT',
                             'APPROVED',
+                            'POSTED',
                           ].includes(submission.status) &&
-                          !(hasPostingLink && campaign?.campaignType === 'normal') && (
+                          (submission.status === 'POSTED' ||
+                            !(hasPostingLink && campaign?.campaignType === 'normal')) && (
                             <Button
                               size="small"
                               variant="text"

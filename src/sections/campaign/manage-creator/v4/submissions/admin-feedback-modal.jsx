@@ -150,6 +150,7 @@ const CommentCard = ({
   currentUserId,
   parentResolved = false,
   isNewCreatorReply = false,
+  feedbackSent = false,
 }) => {
   const isClientComment = comment.user?.role === 'client';
   const isCreatorComment = comment.user?.role === 'creator';
@@ -411,8 +412,13 @@ const CommentCard = ({
         ...(isNewCreatorReply && {
           border: '1.5px solid #1340FF',
         }),
-        ...(showVisibilityBorder && {
-          border: isVisible ? '1.5px solid #00A76F' : '1px solid #EBEBEB',
+        ...(showVisibilityBorder && isVisible && {
+          border: 'none',
+          borderLeft: '5px solid #1340FF',
+          borderTop: '1px solid #1340FF',
+        }),
+        ...(showVisibilityBorder && !isVisible && {
+          border: '1px solid #EBEBEB',
         }),
         ...(canToggleVisibility && {
           cursor: 'pointer',
@@ -422,6 +428,32 @@ const CommentCard = ({
         }),
       }}
     >
+      {showVisibilityBorder && isVisible && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 30,
+            transform: 'translateY(-50%)',
+            background: 'linear-gradient(to bottom, #F4F4F4 50%, #ffffff 50%)',
+            px: 1,
+            zIndex: 2,
+            lineHeight: 1,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              color: '#1340FF',
+              lineHeight: 1,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {feedbackSent ? 'Sent to Creator' : 'Included'}
+          </Typography>
+        </Box>
+      )}
       {/* Header */}
       <Box
         sx={{
@@ -1561,6 +1593,7 @@ export default function AdminFeedbackPanel({
           overflowY: 'auto',
           overflowX: 'hidden',
           pr: 1,
+          pt: 1,
           pb: 2,
           display: 'flex',
           flexDirection: 'column',
@@ -1680,6 +1713,7 @@ export default function AdminFeedbackPanel({
                         pendingDelete={pendingDeletes.has(comment.id)}
                         pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
                         currentUserId={user?.id}
+                        feedbackSent={isReadOnly && !isPastVideo}
                       />
 
                       <Collapse
@@ -1745,6 +1779,7 @@ export default function AdminFeedbackPanel({
                                   pendingDelete={pendingDeletes.has(reply.id)}
                                   pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
                                   currentUserId={user?.id}
+                                  feedbackSent={isReadOnly && !isPastVideo}
                                 />
                               </Box>
                             );
@@ -1833,25 +1868,16 @@ export default function AdminFeedbackPanel({
             px: 1.75,
             py: 1,
             flexShrink: 0,
-            bgcolor: '#F9FAFB',
+            bgcolor: '#FFFFFF',
             border: '1px solid #E7E7E7',
             borderBottom: 'none',
             borderRadius: '12px 12px 0 0',
           }}
         >
-          <Box
-            sx={{
-              width: 12,
-              height: 12,
-              borderRadius: 0.5,
-              border: '2px solid #00A76F',
-              flexShrink: 0,
-            }}
-          />
           <Typography
-            sx={{ fontSize: '0.75rem', fontWeight: 500, color: '#374151', lineHeight: 1.4 }}
+            sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' }, fontWeight: 400, color: '#636366', lineHeight: 1.4 }}
           >
-            Click any comment to include or exclude it from creator feedback
+            Click on comments to include/exclude it for Creator&apos;s Feedback
           </Typography>
         </Box>
       )}
