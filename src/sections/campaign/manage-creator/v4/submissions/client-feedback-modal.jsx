@@ -811,7 +811,7 @@ const ClientFeedbackModal = forwardRef(
       submissionId,
       videoId,
       currentVideoTime = '0:00',
-      onSeekTo,
+      onSeek,
       onSendToAdmin,
       isLocked,
       isPastVideo,
@@ -1149,7 +1149,7 @@ const ClientFeedbackModal = forwardRef(
     };
 
     const handleTimestampClick = (timestamp) => {
-      if (onSeekTo) onSeekTo(timestamp);
+      if (onSeek) onSeek(timestamp);
     };
 
     // 2. Toggle Agree (Like) with API
@@ -2011,7 +2011,7 @@ ClientFeedbackModal.propTypes = {
   submissionId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   videoId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   currentVideoTime: PropTypes.string,
-  onSeekTo: PropTypes.func,
+  onSeek: PropTypes.func,
   onSendToAdmin: PropTypes.func,
   isLocked: PropTypes.bool,
   isPastVideo: PropTypes.bool,
