@@ -289,11 +289,16 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
           />
         </Box>
 
-        {/* RIGHT SIDE - Caption, Posting Link & Feedback Sidebar */}
+        {/* RIGHT SIDE - Caption, Posting Link & Feedback Sidebar; actions align to video bottom on md+ */}
         <Box
           sx={{
             width: { xs: '100%', md: '35%' },
             order: { xs: 2, md: 2 },
+            display: 'flex',
+            flexDirection: 'column',
+            '@media (min-width: 1201px)': {
+              minHeight: 450,
+            },
           }}
         >
           <SubmissionSection
@@ -313,27 +318,32 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
             uploading={uploading}
             postingLoading={postingLoading}
           />
+
+          <Box sx={{ mt: 'auto', width: '100%' }}>
+            <SubmissionActionButton
+              isDisabled={isDisabled}
+              isReuploadButton={isReuploadButton}
+              isSubmitButton={isSubmitButton}
+              uploading={uploading}
+              postingLoading={postingLoading}
+              uploadProgress={uploadProgress}
+              onReupload={handleReupload}
+              onSubmit={onSubmit}
+              onPostingLinkSubmit={handleSubmitPostingLink}
+              isPostingLinkEditable={isPostingLinkEditable}
+              reuploadText="Reupload Draft"
+              uploadingText="Uploading videos..."
+              showViewFeedbackButton={showViewFeedbackButton}
+              onViewFeedback={handleViewFeedback}
+              hasNewFeedback={hasNewFeedback}
+              sx={{
+                mt: 2,
+                '@media (min-width: 1201px)': { mt: 0 },
+              }}
+            />
+          </Box>
         </Box>
       </Box>
-
-      {/* ACTION BUTTON */}
-      <SubmissionActionButton
-        isDisabled={isDisabled}
-        isReuploadButton={isReuploadButton}
-        isSubmitButton={isSubmitButton}
-        uploading={uploading}
-        postingLoading={postingLoading}
-        uploadProgress={uploadProgress}
-        onReupload={handleReupload}
-        onSubmit={onSubmit}
-        onPostingLinkSubmit={handleSubmitPostingLink}
-        isPostingLinkEditable={isPostingLinkEditable}
-        reuploadText="Reupload Draft"
-        uploadingText="Uploading videos..."
-        showViewFeedbackButton={showViewFeedbackButton}
-        onViewFeedback={handleViewFeedback}
-        hasNewFeedback={hasNewFeedback}
-      />
 
       {/* VIDEO SUBMISSION MODAL */}
       <VideoSubmissionModal
