@@ -2039,6 +2039,38 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     return manualEntries.filter((entry) => entry.platform === selectedPlatform);
   }, [manualEntries, selectedPlatform]);
 
+  // Creator list: highest engagement rate first (manual entries + submissions in one order)
+  const creatorListRowsSorted = useMemo(() => {
+    const rows = [];
+
+    filteredManualEntries.forEach((entry) => {
+      rows.push({
+        kind: 'manual',
+        key: `manual-${entry.id}`,
+        engagementRate: Number(entry.engagementRate) || 0,
+        entry,
+      });
+    });
+
+    filteredSubmissions.forEach((submission) => {
+      const insightData = insightsData.find((data) => data.submissionId === submission.id);
+      if (!insightData && !loadingInsights) {
+        return;
+      }
+      const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
+      rows.push({
+        kind: 'submission',
+        key: submission.id,
+        engagementRate,
+        submission,
+        insightData,
+      });
+    });
+
+    rows.sort((a, b) => b.engagementRate - a.engagementRate);
+    return rows;
+  }, [filteredManualEntries, filteredSubmissions, insightsData, loadingInsights]);
+
   // Calculate summary statistics based on filtered data or provide empty state
   const summaryStats = useMemo(() => {
     // If we have no insights and no manual entries, return placeholder
