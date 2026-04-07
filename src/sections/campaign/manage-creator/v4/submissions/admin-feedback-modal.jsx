@@ -435,7 +435,7 @@ const CommentCard = ({
             top: 0,
             left: 30,
             transform: 'translateY(-50%)',
-            background: 'linear-gradient(to bottom, #F4F4F4 50%, #ffffff 50%)',
+            background: `linear-gradient(to bottom, #F4F4F4 50%, ${isResolved ? '#EBEBEB' : '#ffffff'} 50%)`,
             px: 1,
             zIndex: 2,
             lineHeight: 1,
