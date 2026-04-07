@@ -1984,7 +1984,10 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                 <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 700 }}>
                   {`${footerTotals.creditsUsed}/${footerTotals.creditsTotal}`}
                 </Typography>
-                <Typography variant="body2" sx={{ color: footerTotals.creditsRemainingColor, fontWeight: 500 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: footerTotals.creditsRemainingColor, fontWeight: 500 }}
+                >
                   ({footerTotals.creditsRemaining} left)
                 </Typography>
               </Stack>

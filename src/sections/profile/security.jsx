@@ -1,12 +1,25 @@
 import * as Yup from 'yup';
 import { enqueueSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, Controller } from 'react-hook-form';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Grid, Fade, Stack, Paper, Modal, Popper, Button, Avatar, IconButton, Typography, InputAdornment } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Fade,
+  Stack,
+  Paper,
+  Modal,
+  Popper,
+  Button,
+  Avatar,
+  IconButton,
+  Typography,
+  InputAdornment,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
@@ -21,15 +34,19 @@ import FormProvider from 'src/components/hook-form/form-provider';
 
 const AccountSecurity = () => {
   const password = useBoolean();
+  const mdDown = useResponsive('down', 'lg');
+  const { user, initialize } = useAuthContext();
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const mdDown = useResponsive('down', 'lg');
   const [anchorEl, setAnchorEl] = useState(null);
+
   const open = Boolean(anchorEl);
   const id = open ? 'popper' : undefined;
-  const { user } = useAuthContext();
-  const navigate = useNavigate();
+
+  // console.log(user.isPasswordExist);
 
   useEffect(() => {
     const handleClose = (event) => {
@@ -46,7 +63,12 @@ const AccountSecurity = () => {
   }, [anchorEl]);
 
   const ChangePassWordSchema = Yup.object().shape({
-    oldPassword: Yup.string().required('Current Password is required'),
+    // oldPassword: Yup.string().required('Current Password is required'),
+    oldPassword: Yup.string().when([], {
+      is: () => user?.isPasswordExist,
+      then: (schema) => schema.required('Current Password is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
     newPassword: Yup.string()
       .required('Password is required')
       .min(8, 'Password must be at least 8 characters long')
@@ -86,6 +108,7 @@ const AccountSecurity = () => {
       setLoading(false);
       enqueueSnackbar(res?.data?.message);
       methods.reset(defaultValues);
+      initialize();
     } catch (error) {
       enqueueSnackbar(error.message, { variant: 'error' });
     } finally {
@@ -141,7 +164,9 @@ const AccountSecurity = () => {
       navigate('/');
     } catch (error) {
       console.error('Error deleting account:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Failed to delete account', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to delete account', {
+        variant: 'error',
+      });
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
@@ -154,65 +179,83 @@ const AccountSecurity = () => {
         <Grid item xs={12}>
           <Stack spacing={3}>
             {/* Current Password Field */}
-            <Box>
-              <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: 1 }}>
-                Current Password <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-              </Typography>
-              <RHFTextField
-                name="oldPassword"
-                placeholder="Current password"
-                type={password.value ? 'text' : 'password'}
-                InputLabelProps={{ shrink: false }}
-                FormHelperTextProps={{ sx: { display: 'none' } }}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={password.onToggle}>
-                        <Box 
-                          component="img" 
-                          src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg' : 'ic_closed_passwordeye.svg'}`} 
-                          sx={{ width: 24, height: 24 }} 
-                        />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  width: '100%',
-                  maxWidth: { xs: '100%', sm: 500 },
-                  '&.MuiTextField-root': {
-                    bgcolor: 'white',
-                    borderRadius: 1,
-                    height: { xs: 40, sm: 48 },
-                    '& .MuiInputLabel-root': {
-                      display: 'none',
+            {user?.isPasswordExist && (
+              <Box>
+                <Typography
+                  variant="body2"
+                  color="#636366"
+                  fontWeight={500}
+                  sx={{ fontSize: '13px', mb: 1 }}
+                >
+                  Current Password{' '}
+                  <Box component="span" sx={{ color: 'error.main' }}>
+                    *
+                  </Box>
+                </Typography>
+                <RHFTextField
+                  name="oldPassword"
+                  placeholder="Current password"
+                  type={password.value ? 'text' : 'password'}
+                  InputLabelProps={{ shrink: false }}
+                  FormHelperTextProps={{ sx: { display: 'none' } }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={password.onToggle}>
+                          <Box
+                            component="img"
+                            src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg' : 'ic_closed_passwordeye.svg'}`}
+                            sx={{ width: 24, height: 24 }}
+                          />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    width: '100%',
+                    maxWidth: { xs: '100%', sm: 500 },
+                    '&.MuiTextField-root': {
+                      bgcolor: 'white',
+                      borderRadius: 1,
+                      height: { xs: 40, sm: 48 },
+                      '& .MuiInputLabel-root': {
+                        display: 'none',
+                      },
+                      '& .MuiInputBase-input::placeholder': {
+                        color: '#B0B0B0',
+                        fontSize: { xs: '14px', sm: '16px' },
+                        opacity: 1,
+                      },
                     },
-                    '& .MuiInputBase-input::placeholder': {
-                      color: '#B0B0B0',
-                      fontSize: { xs: '14px', sm: '16px' },
-                      opacity: 1,
-                    },
-                  },
-                }}
-              />
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: '#F04438',
-                  mt: 1.5,
-                  ml: 0.5,
-                  display: 'block',
-                  fontSize: '12px',
-                }}
-              >
-                {methods.formState.errors.oldPassword?.message}
-              </Typography>
-            </Box>
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: '#F04438',
+                    mt: 1.5,
+                    ml: 0.5,
+                    display: 'block',
+                    fontSize: '12px',
+                  }}
+                >
+                  {methods.formState.errors.oldPassword?.message}
+                </Typography>
+              </Box>
+            )}
 
             {/* New Password Field */}
             <Box>
-              <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: 1 }}>
-                New Password <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+              <Typography
+                variant="body2"
+                color="#636366"
+                fontWeight={500}
+                sx={{ fontSize: '13px', mb: 1 }}
+              >
+                New Password{' '}
+                <Box component="span" sx={{ color: 'error.main' }}>
+                  *
+                </Box>
               </Typography>
               <Controller
                 name="newPassword"
@@ -232,10 +275,10 @@ const AccountSecurity = () => {
                       endAdornment: (
                         <InputAdornment position="end">
                           <IconButton onClick={password.onToggle}>
-                            <Box 
-                              component="img" 
-                              src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg' : 'ic_closed_passwordeye.svg'}`} 
-                              sx={{ width: 24, height: 24 }} 
+                            <Box
+                              component="img"
+                              src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg' : 'ic_closed_passwordeye.svg'}`}
+                              sx={{ width: 24, height: 24 }}
                             />
                           </IconButton>
                         </InputAdornment>
@@ -261,9 +304,9 @@ const AccountSecurity = () => {
                   />
                 )}
               />
-              <Typography 
-                variant="caption" 
-                sx={{ 
+              <Typography
+                variant="caption"
+                sx={{
                   color: '#F04438',
                   mt: 1.5,
                   ml: 0.5,
@@ -277,8 +320,16 @@ const AccountSecurity = () => {
 
             {/* Confirm Password Field */}
             <Box>
-              <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: 1 }}>
-                Confirm New Password <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+              <Typography
+                variant="body2"
+                color="#636366"
+                fontWeight={500}
+                sx={{ fontSize: '13px', mb: 1 }}
+              >
+                Confirm New Password{' '}
+                <Box component="span" sx={{ color: 'error.main' }}>
+                  *
+                </Box>
               </Typography>
               <RHFTextField
                 name="confirmNewPassword"
@@ -290,10 +341,10 @@ const AccountSecurity = () => {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton onClick={password.onToggle}>
-                        <Box 
-                          component="img" 
-                          src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg' : 'ic_closed_passwordeye.svg'}`} 
-                          sx={{ width: 24, height: 24 }} 
+                        <Box
+                          component="img"
+                          src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg' : 'ic_closed_passwordeye.svg'}`}
+                          sx={{ width: 24, height: 24 }}
                         />
                       </IconButton>
                     </InputAdornment>
@@ -317,9 +368,9 @@ const AccountSecurity = () => {
                   },
                 }}
               />
-              <Typography 
-                variant="caption" 
-                sx={{ 
+              <Typography
+                variant="caption"
+                sx={{
                   color: '#F04438',
                   mt: 1.5,
                   ml: 0.5,
@@ -451,7 +502,8 @@ const AccountSecurity = () => {
               lineHeight: 1.5,
             }}
           >
-            Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.
+            Are you sure you want to delete your account? This action cannot be undone and all your
+            data will be permanently deleted.
           </Typography>
 
           {/* Action Buttons */}
@@ -475,7 +527,7 @@ const AccountSecurity = () => {
             >
               Cancel
             </Button>
-            
+
             <LoadingButton
               variant="contained"
               size="large"
@@ -550,3 +602,5 @@ const AccountSecurity = () => {
 };
 
 export default AccountSecurity;
+
+// $2b$10$Lb2hXcc1pGPUc9MvjsQb3ub0voqfiBygX4..Bvl0n6e2YVZjVh/z.

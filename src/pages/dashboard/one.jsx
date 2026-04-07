@@ -18,7 +18,8 @@ export default function Page() {
 
   useEffect(() => {
     // Redirect client users to the client dashboard
-    if (user && user.role.includes('client')) { // Check for client role directly
+    if (user && user.role.includes('client')) {
+      // Check for client role directly
       router.push(paths.dashboard.client); // Ensure this path points to the client dashboard
     }
   }, [user, router]);

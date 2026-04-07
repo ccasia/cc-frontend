@@ -12,6 +12,7 @@ import CreatorCountryMapChart from './creators/creator-country-map-chart';
 import ActivationRateChart from './creators/activation-rate-chart';
 import CreatorEarningsChart from './admins/creator-earnings-chart';
 import TimeToActivationChart from './creators/time-to-activation-chart';
+import CreatorCountryMapChart from './creators/creator-country-map-chart';
 import MediaKitActivationChart from './creators/media-kit-activation-chart';
 
 const containerVariants = varContainer({ staggerIn: 0.08 });

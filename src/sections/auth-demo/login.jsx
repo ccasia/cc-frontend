@@ -484,9 +484,7 @@ const Login = () => {
             p: 3,
             bgcolor: '#F4F4F4',
             borderRadius: 2,
-            width: 350,
-            // width: { xs: '100%', sm: 350 },
-            // maxWidth: { xs: '100%', sm: 350 },
+            maxWidth: 350,
             mx: 'auto',
           }}
         >
