@@ -18,7 +18,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
-import { Box, Grid, Link, Button, Avatar, Dialog, Popover, TextField, Typography, IconButton, DialogTitle, DialogContent, InputAdornment, CircularProgress } from '@mui/material';
+import { Box, Grid, Link, Button, Avatar, Dialog, Popover, TextField, Typography, IconButton, DialogTitle, DialogContent, InputAdornment, CircularProgress, Stack } from '@mui/material';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -2358,171 +2358,148 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
           Platform Interactions
         </Typography>
 
-        {/* Donut Chart with MUI Charts and Custom Leader Lines */}
-        <Box sx={{ position: 'relative', width: '100%', height: '160px', overflow: 'visible', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', paddingLeft: '20px' }}>
-          {/* MUI Charts PieChart - Donut style */}
-          <Box sx={{ position: 'absolute', left: '-35px', top: '0' }}>
-          <PieChart
+        {/* Donut chart + legend: flex layout avoids overlap with MUI default legend */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            width: '100%',
+            minHeight: '160px',
+            overflow: 'visible',
+            gap: 1,
+            pl: '4px',
+          }}
+        >
+          <Box
+            sx={{
+              position: 'relative',
+              width: 200,
+              height: 160,
+              flexShrink: 0,
+              marginLeft: '-35px',
+            }}
+          >
+            <PieChart
+              hideLegend
               width={200}
               height={160}
-            series={[
-              {
-                data: chartData,
+              series={[
+                {
+                  data: chartData,
                   innerRadius: 52,
                   outerRadius: 65,
-                paddingAngle: 2,
+                  paddingAngle: 2,
                   cornerRadius: 8,
                   cx: 100,
                   cy: 80,
-                startAngle,
-              },
-            ]}
-            slotProps={{
-              legend: { hidden: true },
-            }}
-            sx={{
-              '& .MuiChartsArc-root': {
-                stroke: 'none',
-              },
-            }}
-          />
-          </Box>
-          
-          
-          {/* Center text */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '80px',
-              left: '70px',
-              transform: 'translate(-50%, -50%)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: 'Instrument Serif',
-                fontWeight: 400,
-                fontStyle: 'normal',
-                fontSize: '24px',
-                lineHeight: '28px',
-                letterSpacing: '0%',
-                textAlign: 'center',
-                color: '#000000E5',
-                mb: 0.5,
+                  startAngle,
+                },
+              ]}
+              slotProps={{
+                legend: { hidden: true },
               }}
-            >
-              {formatNumber(platformData.total)}
-            </Typography>
-            <Typography
               sx={{
-                fontFamily: 'Aileron',
-                fontWeight: 600,
-                fontStyle: 'normal',
-                fontSize: '10px',
-                lineHeight: '12px',
-                letterSpacing: '0%',
-                textAlign: 'center',
-                color: '#000000E5',
+                '& .MuiChartsArc-root': {
+                  stroke: 'none',
+                },
+                '& .MuiChartsLegend-root': {
+                  display: 'none',
+                },
               }}
-            >
-              Total Interactions
-            </Typography>
-          </Box>
+            />
 
-          {/* Instagram indicator - magenta */}
-          {platformData.instagram > 0 && (
             <Box
               sx={{
                 position: 'absolute',
                 top: '50%',
-                right: '10px',
-                transform: 'translateY(-50%)',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 1.5,
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box
+              <Typography
                 sx={{
+                  fontFamily: 'Instrument Serif',
+                  fontWeight: 400,
+                  fontStyle: 'normal',
+                  fontSize: '24px',
+                  lineHeight: '28px',
+                  letterSpacing: '0%',
+                  textAlign: 'center',
+                  color: '#000000E5',
+                  mb: 0.5,
+                }}
+              >
+                {formatNumber(platformData.total)}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: 'Aileron',
+                  fontWeight: 600,
+                  fontStyle: 'normal',
+                  fontSize: '10px',
+                  lineHeight: '12px',
+                  letterSpacing: '0%',
+                  textAlign: 'center',
+                  color: '#000000E5',
+                }}
+              >
+                Total Interactions
+              </Typography>
+            </Box>
+          </Box>
+
+          <Stack
+            spacing={1.5}
+            sx={{
+              flex: '1 1 auto',
+              minWidth: 0,
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              alignSelf: 'stretch',
+              py: 0.5,
+            }}
+          >
+            {platformData.instagram > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                <Box
+                  sx={{
                     width: 10,
                     height: 10,
-                  borderRadius: '50%',
+                    borderRadius: '50%',
                     bgcolor: '#C13584',
-                  flexShrink: 0,
-                }}
-              />
-              <Box>
+                    flexShrink: 0,
+                  }}
+                />
                 <Typography
                   sx={{
                     fontFamily: 'Aileron',
                     fontWeight: 400,
-                      fontSize: '14px',
-                      lineHeight: '16px',
-                      color: '#231F20',
+                    fontSize: '14px',
+                    lineHeight: '16px',
+                    color: '#231F20',
                   }}
                 >
-                    Instagram ({formatNumber(platformData.instagram)})
+                  Instagram ({formatNumber(platformData.instagram)})
                 </Typography>
-                </Box>
               </Box>
-              
-              {platformData.tiktok > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box
-                    sx={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      bgcolor: '#000000',
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Box>
-                <Typography
+            )}
+            {platformData.tiktok > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                <Box
                   sx={{
-                    fontFamily: 'Aileron',
-                    fontWeight: 400,
-                        fontSize: '14px',
-                        lineHeight: '16px',
-                        color: '#231F20',
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    bgcolor: '#000000',
+                    flexShrink: 0,
                   }}
-                >
-                      TikTok ({formatNumber(platformData.tiktok)})
-                </Typography>
-              </Box>
-                </Box>
-              )}
-            </Box>
-          )}
-
-          {/* TikTok only indicator (when no Instagram) */}
-          {platformData.tiktok > 0 && platformData.instagram === 0 && (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: '50%',
-                right: '10px',
-                transform: 'translateY(-50%)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  bgcolor: '#000000',
-                  flexShrink: 0,
-                }}
-              />
-              <Box>
+                />
                 <Typography
                   sx={{
                     fontFamily: 'Aileron',
@@ -2535,8 +2512,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                   TikTok ({formatNumber(platformData.tiktok)})
                 </Typography>
               </Box>
-            </Box>
-          )}
+            )}
+          </Stack>
         </Box>
       </Box>
     );
