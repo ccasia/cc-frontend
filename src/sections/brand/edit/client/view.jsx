@@ -147,10 +147,9 @@ const CompanyEditView = ({ id }) => {
   const canInviteChildAccounts = hasActiveClient && isPicActivated;
 
   const campaigns = useMemo(() => {
-    if (company?.type === 'agency' || company?.brand?.length) {
-      return company?.brand?.flatMap((item) => item?.campaign);
-    }
-    return company?.campaign;
+    const brandCampaigns = company?.brand?.flatMap((item) => item?.campaign || []) || [];
+    const companyCampaigns = company?.campaign || [];
+    return [...brandCampaigns, ...companyCampaigns];
   }, [company]);
 
   const currentPackage = useMemo(
