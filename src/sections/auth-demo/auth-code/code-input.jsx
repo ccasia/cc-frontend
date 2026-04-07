@@ -1,13 +1,24 @@
+import * as yup from 'yup';
 import { m } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 import { MuiOtpInput } from 'mui-one-time-password-input';
 
 import { LoadingButton } from '@mui/lab';
 import { Box, Link, colors, Typography } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
+import useOtpCooldown from 'src/hooks/use-otp-cooldown';
+import { useResendCooldown } from 'src/hooks/use-resend-cooldown';
+
+import axiosInstance from 'src/utils/axios';
+
 import FormProvider from 'src/components/hook-form';
-import * as yup from 'yup';
-import { yupResolver } from '@hookform/resolvers/yup';
+
+import useAuthCodeContext from './hooks/use-auth-code';
 
 const MotionBox = m(Box);
 
@@ -16,6 +27,12 @@ const schmea = yup.object().shape({
 });
 
 const CodeInput = () => {
+  const { cooldown, canResend, isLoading, restart } = useResendCooldown();
+  const { phoneNumber } = useOtpCooldown();
+  const { onChangeStep, mutate } = useAuthCodeContext();
+
+  const router = useRouter();
+
   const methods = useForm({
     resolver: yupResolver(schmea),
     defaultValues: { code: '' },
@@ -25,71 +42,32 @@ const CodeInput = () => {
   const {
     handleSubmit,
     formState: { isSubmitting },
+    setValue,
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      console.log(data);
+      await axiosInstance.patch('/api/auth/verify-code', data);
+      toast.success('Done');
+      mutate();
+      onChangeStep(1);
     } catch (error) {
-      console.log(error);
+      toast.error(error?.message);
     }
   });
 
-  const handleOpenTerms = () => {
-    window.open('https://cultcreativeasia.com/my/terms-and-conditions', '_blank');
+  const handleResend = async () => {
+    try {
+      await axiosInstance.post('/api/auth/resend-code');
+      setValue('code', '');
+      restart();
+    } catch (error) {
+      if (error?.message.includes('Session expired')) {
+        router.replace(paths.auth.jwt.register);
+      }
+      toast.error(error?.message ?? 'Error resend code');
+    }
   };
-
-  const handleOpenPrivacy = () => {
-    window.open('https://cultcreativeasia.com/my/privacy-policy', '_blank');
-  };
-
-  const renderTerms = (
-    <Typography
-      component="div"
-      sx={{
-        mt: 2.5,
-        textAlign: 'center',
-        typography: 'caption',
-        color: '#8E8E93',
-        fontSize: '13px',
-      }}
-    >
-      By signing up, I agree to
-      <Link
-        component="button"
-        underline="always"
-        onClick={handleOpenTerms}
-        type="button"
-        sx={{
-          verticalAlign: 'baseline',
-          fontSize: '13px',
-          lineHeight: 1,
-          p: 0,
-          color: '#231F20',
-          mx: 0.5,
-        }}
-      >
-        Terms of Service
-      </Link>
-      and
-      <Link
-        component="button"
-        underline="always"
-        onClick={handleOpenPrivacy}
-        type="button"
-        sx={{
-          verticalAlign: 'baseline',
-          fontSize: '13px',
-          lineHeight: 1,
-          p: 0,
-          color: '#231F20',
-          mx: 0.5,
-        }}
-      >
-        Privacy Policy.
-      </Link>
-    </Typography>
-  );
 
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
@@ -107,20 +85,11 @@ const CodeInput = () => {
           borderRadius: 2,
           width: { xs: 350, md: 470 },
           overflow: 'hidden',
+          mx: 'auto',
         }}
       >
-        <Typography
-          sx={{
-            fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-            fontSize: '40px',
-            fontWeight: 400,
-            mb: -0.5,
-          }}
-        >
-          Join The Cult 👽
-        </Typography>
         <Typography variant="subtitle2" sx={{ mt: 2, color: colors.grey[600] }}>
-          Enter the code sent to +60175890307 to continue
+          Your verification code is sent by WhatsApp to {phoneNumber}
         </Typography>
         <Box sx={{ pt: 2 }}>
           <Controller
@@ -135,13 +104,14 @@ const CodeInput = () => {
               />
             )}
           />
-          <Typography
-            component={Link}
+          <Link
             variant="caption"
-            sx={{ cursor: 'pointer', color: colors.grey[500] }}
+            sx={{ cursor: 'pointer', color: colors.grey[500], pointerEvents: !canResend && 'none' }}
+            onClick={handleResend}
           >
-            Didn&apos;t received code ?
-          </Typography>
+            {/* eslint-disable-next-line no-nested-ternary */}
+            {isLoading ? 'Loading...' : canResend ? 'Resend code' : `Resend in ${cooldown}s`}
+          </Link>
           <LoadingButton
             loading={isSubmitting}
             fullWidth
@@ -153,7 +123,6 @@ const CodeInput = () => {
             Continue
           </LoadingButton>
         </Box>
-        {renderTerms}
       </MotionBox>
     </FormProvider>
   );

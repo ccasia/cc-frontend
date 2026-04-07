@@ -23,11 +23,12 @@ import {
   FormHelperText,
 } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import axiosInstance from 'src/utils/axios';
 
 import FormProvider from 'src/components/hook-form';
-import { useRouter } from 'src/routes/hooks';
-import { paths } from 'src/routes/paths';
 
 const PhoneNumberSchema = Yup.object().shape({
   phoneNumber: Yup.string()
@@ -112,9 +113,8 @@ const PhoneNumberInput = ({ onBack }) => {
 
   const onSubmitPhone = handleSubmit(async (data) => {
     try {
-      const res = await axiosInstance.post('/api/auth/sendVerificationCode', data);
-      console.log(res.data);
-      // localStorage.setItem('signedPayload', res.data);
+      await axiosInstance.post('/api/auth/send-code', data);
+
       toast.success('Successfully sent!');
       router.push(paths.auth.jwt.code);
     } catch (error) {

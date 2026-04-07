@@ -9,7 +9,7 @@ const useGetMessageInsights = () => {
     revalidateOnReconnect: false,
   });
 
-  return { data: data?.data, isLoading, error };
+  return { data, isLoading, error };
 };
 
 export default useGetMessageInsights;

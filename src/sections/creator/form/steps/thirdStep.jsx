@@ -1,10 +1,23 @@
-import React from 'react';
 import PropTypes from 'prop-types';
-import { useFormContext } from 'react-hook-form';
+import React, { forwardRef } from 'react';
+import 'react-phone-number-input/style.css';
+import PhoneInput from 'react-phone-number-input';
+import { Controller, useFormContext } from 'react-hook-form';
 
-import { Box, Stack, Select, MenuItem, FormLabel, ListItemText } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Select,
+  colors,
+  Divider,
+  MenuItem,
+  FormLabel,
+  TextField,
+  Typography,
+  ListItemText,
+  FormHelperText,
+} from '@mui/material';
 
-import { countries } from 'src/assets/data';
 import { primaryFont } from 'src/theme/typography';
 
 import { RHFSelect, RHFTextField, RHFDatePicker } from 'src/components/hook-form';
@@ -22,6 +35,63 @@ const ErrorIcon = () => (
     }}
   />
 );
+
+// eslint-disable-next-line react/prop-types
+const MuiPhoneInput = forwardRef(({ value, onChange, ...rest }, ref) => (
+  <TextField
+    {...rest}
+    inputRef={ref}
+    value={value ?? ''}
+    onChange={onChange}
+    fullWidth
+    size="large"
+  />
+));
+
+MuiPhoneInput.displayName = 'MuiPhoneInput';
+
+// react-phone-number-input calls onChange(countryCode) directly, not via a DOM event
+const CountrySelect = ({ value, onChange, options, iconComponent: FlagIcon }) => (
+  <Select
+    value={value ?? ''}
+    onChange={(e) => onChange(e.target.value || undefined)}
+    displayEmpty
+    size="large"
+    sx={{ mr: 1 }}
+    renderValue={(selected) =>
+      selected ? (
+        <Box sx={{ display: 'flex', alignItems: 'center', borderRadius: 1 }}>
+          <FlagIcon country={selected} label={selected} />
+        </Box>
+      ) : (
+        <Typography variant="body2" sx={{ color: colors.grey[500] }}>
+          --
+        </Typography>
+      )
+    }
+  >
+    {options.map((option, index) =>
+      option.divider ? (
+        // eslint-disable-next-line react/no-array-index-key
+        <Divider key={`divider-${index}`} />
+      ) : (
+        <MenuItem key={option.value ?? 'international'} value={option.value ?? ''}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {option.value && <FlagIcon country={option.value} label={option.label} />}
+            <Typography variant="body2">{option.label}</Typography>
+          </Box>
+        </MenuItem>
+      )
+    )}
+  </Select>
+);
+
+CountrySelect.propTypes = {
+  value: PropTypes.string,
+  onChange: PropTypes.func,
+  options: PropTypes.array,
+  iconComponent: PropTypes.elementType,
+};
 
 const ThirdStep = ({ item, setCountryCode, countryCode }) => {
   const {
@@ -79,25 +149,6 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
           px: { xs: 1, sm: 0 },
         }}
       >
-        {/* Employment Status - no longer needed in onboarding form */}
-        {/* <Stack spacing={1}>
-          <FormLabel
-            required
-            sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}
-          >
-            Employment Status
-          </FormLabel>
-          <RHFSelect name="employment" multiple={false}>
-            <MenuItem value="fulltime">I have a full-time job</MenuItem>
-            <MenuItem value="freelance">I&apos;m a freelancer</MenuItem>
-            <MenuItem value="part_time">I only work part-time</MenuItem>
-            <MenuItem value="student">I&apos;m a student</MenuItem>
-            <MenuItem value="in_between">I&apos;m in between jobs/transitioning </MenuItem>
-            <MenuItem value="unemployed">I&apos;m unemployed</MenuItem>
-            <MenuItem value="others">Others </MenuItem>
-          </RHFSelect>
-        </Stack> */}
-
         <Stack spacing={1}>
           <FormLabel
             required
@@ -106,95 +157,27 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
             Phone Number
           </FormLabel>
 
-          <Stack direction="row" alignItems="center">
-            <Stack direction="row" spacing={1} sx={{ flex: 1 }}>
-              <Select
-                sx={{
-                  bgcolor: 'white',
-                  borderRadius: 1,
-                  width: { xs: 80, sm: 90 },
-                  height: { xs: 52, sm: 56 },
-                  '& .MuiSelect-select': {
-                    p: { xs: '8px 8px', sm: '14px 12px' },
-                    fontSize: { xs: '0.875rem', sm: '1rem' },
-                    fontWeight: 500,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  },
-                  '&.MuiInputBase-root': {
-                    fontFamily: 'monospace',
-                  },
-                }}
-                value={countryCode}
-                onChange={(e) => handleChangeCountryCode(e.target.value)}
-                displayEmpty
-                MenuProps={{
-                  PaperProps: {
-                    sx: {
-                      maxHeight: 300,
-                      '& .MuiMenuItem-root': {
-                        fontSize: { xs: '0.875rem', sm: '1rem' },
-                        fontFamily: 'monospace',
-                        py: 1,
-                        display: 'flex',
-                        justifyContent: 'center',
-                      },
-                    },
-                  },
-                }}
-              >
-                <MenuItem
-                  value=""
-                  disabled
-                  sx={{ fontFamily: 'inherit', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                >
-                  Code
-                </MenuItem>
-                {[...new Set(countries.map((c) => c.phone).filter(Boolean))]
-                  .sort((a, b) => {
-                    const phoneA = parseInt(a.replace(/-/g, ''), 10);
-                    const phoneB = parseInt(b.replace(/-/g, ''), 10);
-                    return phoneA - phoneB;
-                  })
-                  .map((val, index) => (
-                    <MenuItem key={index} value={val}>
-                      +{val}
-                    </MenuItem>
-                  ))}
-              </Select>
-
-              <RHFTextField
-                name="phone"
-                placeholder="Phone Number"
-                InputLabelProps={{ shrink: false }}
-                type="number"
-                sx={{
-                  width: '100%',
-                  '&.MuiTextField-root': {
-                    bgcolor: 'white',
-                    borderRadius: 1,
-                    '& .MuiInputLabel-root': {
-                      display: 'none',
-                    },
-                    '& .MuiInputBase-input': {
-                      p: { xs: '13px 14px', sm: '16.5px 14px' },
-                      fontSize: { xs: '0.875rem', sm: '1rem' },
-                    },
-                    '& .MuiInputBase-input::placeholder': {
-                      color: '#B0B0B0',
-                      fontSize: { xs: '14px', sm: '16px' },
-                      opacity: 1,
-                    },
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 1,
-                    },
-                  },
-                }}
-              />
-            </Stack>
-            {errors.phone && <ErrorIcon />}
-          </Stack>
+          <Controller
+            name="phone"
+            render={({ field }) => (
+              <Box>
+                <PhoneInput
+                  value={field.value}
+                  onChange={(value) => field.onChange(value ?? '')}
+                  onBlur={field.onBlur}
+                  defaultCountry="MY"
+                  inputComponent={MuiPhoneInput}
+                  countrySelectComponent={CountrySelect}
+                  placeholder="Eg. 60192399123"
+                />
+                {errors.phoneNumber && (
+                  <FormHelperText error sx={{ mx: 1.5 }}>
+                    {errors.phoneNumber.message}
+                  </FormHelperText>
+                )}
+              </Box>
+            )}
+          />
         </Stack>
 
         <Stack spacing={1}>

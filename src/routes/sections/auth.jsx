@@ -7,7 +7,8 @@ import CompactLayout from 'src/layouts/compact';
 import AuthModernLayout from 'src/layouts/auth/creator';
 
 import { SplashScreen } from 'src/components/loading-screen';
-import CodeInput from 'src/sections/auth-demo/code-input';
+import CodeInput from 'src/sections/auth-demo/auth-code/code-input';
+import AuthCodeLayout from 'src/sections/auth-demo/auth-code/auth-code-layout';
 
 // ----------------------------------------------------------------------
 
@@ -106,7 +107,7 @@ const authCreator = {
         { index: true, element: <NewRegisterPage /> },
         {
           path: 'code',
-          element: <CodeInput />,
+          element: <AuthCodeLayout />,
         },
       ],
     },

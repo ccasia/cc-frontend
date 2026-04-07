@@ -107,19 +107,27 @@ const stepSchemas = Yup.object({
   languages: Yup.array().min(1, 'Choose at least one option'),
   referralCode: Yup.string().optional(),
   instagramProfileLink: Yup.string()
-    .test('social-media-required', 'Please provide at least one social media profile', (value, context) => {
-      const { tiktokProfileLink } = context.parent;
-      return !!(value || tiktokProfileLink);
-    })
+    .test(
+      'social-media-required',
+      'Please provide at least one social media profile',
+      (value, context) => {
+        const { tiktokProfileLink } = context.parent;
+        return !!(value || tiktokProfileLink);
+      }
+    )
     .test('instagram-format', 'URL must contain www.instagram.com', (value) => {
       if (!value) return true; // Skip validation if empty (handled by social-media-required)
       return /instagram\.com/.test(value.toLowerCase());
     }),
   tiktokProfileLink: Yup.string()
-    .test('social-media-required', 'Please provide at least one social media profile', (value, context) => {
-      const { instagramProfileLink } = context.parent;
-      return !!(value || instagramProfileLink);
-    })
+    .test(
+      'social-media-required',
+      'Please provide at least one social media profile',
+      (value, context) => {
+        const { instagramProfileLink } = context.parent;
+        return !!(value || instagramProfileLink);
+      }
+    )
     .test('tiktok-format', 'URL must contain www.tiktok.com', (value) => {
       if (!value) return true; // Skip validation if empty (handled by social-media-required)
       return /tiktok\.com/.test(value.toLowerCase());
@@ -140,7 +148,8 @@ const ErrorIcon = () => (
   />
 );
 
-export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
+export default function CreatorForm({ open, onClose, onSubmit: registerUser, phoneNumber = '' }) {
+  console.log('PHONENUMBER', phoneNumber);
   const [activeStep, setActiveStep] = useState(0);
   const [newCreator, setNewCreator] = useState({});
   const [ratingInterst, setRatingInterst] = useState([]);
@@ -180,7 +189,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
 
   const defaultValues = useMemo(
     () => ({
-      phone: '',
+      phone: phoneNumber || '',
       tiktok: '',
       pronounce: '',
       // location: '',
@@ -196,7 +205,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
       instagramProfileLink: '',
       tiktokProfileLink: '',
     }),
-    []
+    [phoneNumber]
   );
 
   const methods = useForm({
@@ -357,12 +366,12 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
       console.log('CreatorForm data being submitted:', data);
 
       if (registerUser) {
-        await registerUser({ ...data, phone: `${countryCode} ${data.phone}` });
+        await registerUser({ ...data, phone: data.phone });
       } else {
         try {
           const res = await axiosInstance.put(endpoints.auth.updateCreator, {
             ...data,
-            phone: `${countryCode} ${data.phone}`,
+            phone: data.phone,
             pronounce: data.otherPronounce || data.pronounce,
           });
           enqueueSnackbar(`Welcome ${res.data.name}!`);
@@ -385,6 +394,11 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
       setIsSubmitting(false);
     }
   });
+
+  useEffect(() => {
+    if (!phoneNumber) return;
+    setValue('phone', phoneNumber);
+  }, [setValue, phoneNumber]);
 
   useEffect(() => {
     if (languages.includes('All of the above')) {
@@ -679,7 +693,9 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
         }}
       >
         <FormProvider methods={methods} onSubmit={onSubmit}>
-          <Box sx={{ width: '100%', maxWidth: '100%', px: { xs: 2, sm: 0 } }}>{renderForm(steps[activeStep])}</Box>
+          <Box sx={{ width: '100%', maxWidth: '100%', px: { xs: 2, sm: 0 } }}>
+            {renderForm(steps[activeStep])}
+          </Box>
 
           <Box
             sx={{
@@ -827,4 +843,5 @@ CreatorForm.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   onSubmit: PropTypes.func,
+  phoneNumber: PropTypes.string,
 };
