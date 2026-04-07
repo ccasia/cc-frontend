@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useCallback } from 'react';
 
-import { Box, Stack, TextField, Typography } from '@mui/material';
+import { Avatar, Box, Button, Stack, TextField, Typography } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
 
@@ -24,6 +24,7 @@ import FeedbackActions from '../shared/feedback-actions';
 import PostingLinkSection from '../shared/posting-link-section';
 import useSubmissionSocket from '../shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from '../shared/feedback-utils';
+import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
 
 // ----------------------------------------------------------------------
 
@@ -64,7 +65,8 @@ export default function MobileVideoSubmission({
     };
   }, [submission.video, submission.status, submission.content, isClient]);
 
-  const { video, clientVideo, pendingReview, hasPostingLink, isClientFeedback, clientVisible } = submissionProps;
+  const { video, clientVideo, pendingReview, hasPostingLink, isClientFeedback, clientVisible } =
+    submissionProps;
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
@@ -77,6 +79,7 @@ export default function MobileVideoSubmission({
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
   const [videoSubmissionModalOpen, setVideoSubmissionModalOpen] = useState(false);
   const [adminReviewModalOpen, setAdminReviewModalOpen] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   const handleApprove = useCallback(async () => {
     try {
@@ -402,7 +405,7 @@ export default function MobileVideoSubmission({
             )}
           </Box>
           {isClient && (
-            <Box sx={{ mt: 2 }}>
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
               <button
                 type="button"
                 style={{
@@ -411,7 +414,7 @@ export default function MobileVideoSubmission({
                   border: 'none',
                   borderRadius: '8px',
                   fontWeight: 600,
-                  fontSize: '0.875rem',
+                  fontSize: '0.815rem',
                   cursor: 'pointer',
                 }}
                 onClick={() => setVideoSubmissionModalOpen(true)}
@@ -419,6 +422,31 @@ export default function MobileVideoSubmission({
               >
                 Review Submission
               </button>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => setConfirmDialogOpen(true)}
+                disabled={!['SENT_TO_CLIENT'].includes(submission.status)}
+                sx={{
+                  borderRadius: 1.15,
+                  border: '1px solid #E7E7E7',
+                  borderBottom: '3px solid #E7E7E7',
+                  backgroundColor: '#FFFFFF',
+                  boxShadow: 'none',
+                  color: '#1ABF66',
+                  fontWeight: 600,
+                  fontSize: '0.815rem',
+                  textTransform: 'none',
+                  px: { xs: 1.8, sm: 2.25 },
+                  py: { xs: 0.55, sm: 0.65 },
+                  '&:hover': {
+                    backgroundColor: '#F5F5F5',
+                    boxShadow: 'none',
+                  },
+                }}
+              >
+                Approve
+              </Button>
             </Box>
           )}
           {!isClient && (
@@ -452,7 +480,7 @@ export default function MobileVideoSubmission({
         creator={submission.user}
         rightSideContent={({
           currentTime: modalCurrentTime,
-          onSeek,
+          onSeekTo,
           videoId: modalVideoId,
           videoPage,
           setVideoPage,
@@ -485,7 +513,7 @@ export default function MobileVideoSubmission({
               submissionId={submission.id}
               videoId={modalVideoId || clientVideo?.id || video?.id}
               currentVideoTime={formatModalTime(modalCurrentTime)}
-              onSeekTo={onSeek}
+              onSeekTo={onSeekTo}
               onSendToAdmin={handleSendAndRefresh}
               isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
               isPastVideo={isPastVideo}
@@ -530,6 +558,29 @@ export default function MobileVideoSubmission({
             onFeedbackSent={() => setAdminReviewModalOpen(false)}
           />
         )}
+      />
+
+      <ConfirmDialogClient
+        open={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+        title="Approve Submission?"
+        emoji={
+          <Avatar
+            src="/assets/images/modals/tick.png"
+            alt="approve"
+            sx={{ width: 80, height: 80 }}
+          />
+        }
+        content="Approving this submission confirms that the submission is ready to be posted by the Creator."
+        onApprove={() => {
+          setConfirmDialogOpen(false);
+          handleApprove();
+        }}
+        onLeaveFeedback={() => {
+          setConfirmDialogOpen(false);
+          setVideoSubmissionModalOpen(true);
+        }}
+        loading={loading}
       />
     </Box>
   );

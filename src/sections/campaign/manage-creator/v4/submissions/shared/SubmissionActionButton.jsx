@@ -12,31 +12,33 @@ const SubmissionActionButton = ({
   isDisabled,
   isReuploadButton,
   isSubmitButton,
-  
+
   // Loading states
   uploading = false,
   postingLoading = false,
   uploadProgress = 0,
-  
+
   // Actions
   onReupload,
   onSubmit,
   onPostingLinkSubmit,
-  
+
   // Conditional logic
   isPostingLinkEditable = false,
-  
+
   // View Feedback Button (NEW)
   showViewFeedbackButton = false,
   onViewFeedback,
   hasNewFeedback = false,
-  
+
   // Button text overrides
   reuploadText = 'Reupload Draft',
   submitText = 'Submit',
   submittedText = 'Submitted',
   uploadingText = 'Uploading...',
-  postingText = 'Submitting...'
+  postingText = 'Submitting...',
+
+  sx,
 }) => {
   const buttonColor = (() => {
     if (isDisabled) return '#A8A8A8';
@@ -64,38 +66,33 @@ const SubmissionActionButton = ({
     return onSubmit;
   };
 
+  const hasLeadingFeedback = showViewFeedbackButton && onViewFeedback;
+
   return (
     <Box
       sx={{
         display: 'flex',
-        justifyContent: { xs: 'center', md: 'flex-end' },
+        flexDirection: 'row',
         alignItems: 'center',
+        width: '100%',
         mt: { xs: 2 },
         position: 'relative',
         zIndex: 10,
         gap: 2,
+        ...sx,
       }}
     >
-      {/* Upload Progress */}
-      {uploading && (
-        <Box sx={{ flex: 1, mr: 2 }}>
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Uploading... {Math.round(uploadProgress)}%
-            </Typography>
-          </Stack>
-          <LinearProgress variant="determinate" value={uploadProgress} />
-        </Box>
-      )}
-      
-      {/* View Feedback Button */}
-      {showViewFeedbackButton && onViewFeedback && (
+      {/* View Feedback — start / left */}
+      {hasLeadingFeedback && (
         <Typography
           component="button"
+          type="button"
           onClick={onViewFeedback}
           sx={{
-            px: 2,
+            flexShrink: 0,
+            px: 0,
             py: 1,
+            textAlign: 'left',
             bgcolor: 'transparent',
             fontWeight: 800,
             fontSize: 14,
@@ -112,33 +109,59 @@ const SubmissionActionButton = ({
           {hasNewFeedback ? 'View New Feedback' : 'View Feedback'}
         </Typography>
       )}
-      
-      {/* Action Button */}
-      <Typography
-        component="button"
-        onClick={getButtonAction()}
-        disabled={isDisabled}
+
+      {/* Progress + primary action — right; grows when only this cluster is shown */}
+      <Box
         sx={{
-          px: 2,
-          py: 1,
-          bgcolor: buttonColor,
-          fontWeight: 800,
-          fontSize: 14,
-          color: '#fff',
-          border: '1px solid',
-          borderBottom: '3px solid',
-          borderRadius: 1,
-          borderColor: buttonBorderColor,
-          cursor: isDisabled ? 'not-allowed' : 'pointer',
-          outline: 'none',
-          '&:disabled': {
-            bgcolor: '#A8A8A8',
-            color: 'white',
-          },
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 2,
+          flex: hasLeadingFeedback || uploading ? '1 1 auto' : undefined,
+          minWidth: 0,
+          justifyContent: hasLeadingFeedback || uploading ? 'flex-end' : { xs: 'center', md: 'flex-end' },
+          width: hasLeadingFeedback || uploading ? undefined : '100%',
         }}
       >
-        {getButtonText()}
-      </Typography>
+        {uploading && (
+          <Box sx={{ flex: '1 1 auto', minWidth: 0, mr: hasLeadingFeedback ? 0 : 1 }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Uploading... {Math.round(uploadProgress)}%
+              </Typography>
+            </Stack>
+            <LinearProgress variant="determinate" value={uploadProgress} />
+          </Box>
+        )}
+
+        <Typography
+          component="button"
+          type="button"
+          onClick={getButtonAction()}
+          disabled={isDisabled}
+          sx={{
+            flexShrink: 0,
+            px: 2,
+            py: 1,
+            bgcolor: buttonColor,
+            fontWeight: 800,
+            fontSize: 14,
+            color: '#fff',
+            border: '1px solid',
+            borderBottom: '3px solid',
+            borderRadius: 1,
+            borderColor: buttonBorderColor,
+            cursor: isDisabled ? 'not-allowed' : 'pointer',
+            outline: 'none',
+            '&:disabled': {
+              bgcolor: '#A8A8A8',
+              color: 'white',
+            },
+          }}
+        >
+          {getButtonText()}
+        </Typography>
+      </Box>
     </Box>
   );
 };
@@ -173,6 +196,7 @@ SubmissionActionButton.propTypes = {
   submittedText: PropTypes.string,
   uploadingText: PropTypes.string,
   postingText: PropTypes.string,
+  sx: PropTypes.object,
 };
 
 export default SubmissionActionButton;

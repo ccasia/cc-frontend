@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
   IconButton,
+  Avatar,
 } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
@@ -37,6 +38,7 @@ import PostingLinkSection from './shared/posting-link-section';
 import useCaptionOverflow from './shared/use-caption-overflow';
 import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
+import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
 
 export default function V4VideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
@@ -96,6 +98,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   const [adminReviewModalOpen, setAdminReviewModalOpen] = useState(false);
   const [localFeedbackDeadline, setLocalFeedbackDeadline] = useState(null);
   const [localFeedbackSentByName, setLocalFeedbackSentByName] = useState(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   const captionOverflows = useCaptionOverflow(captionMeasureRef, submission.caption);
 
@@ -472,12 +475,11 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                 {/* Caption & Feedback - Left side */}
                 <Box
                   sx={{
-                    flex: 1,
+                    width: { xs: '100%', lg: 600 },
+                    flexShrink: 0,
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    maxWidth: { xs: '100%', lg: 450, xl: 600 },
-                    minWidth: { xs: '100%', lg: 350 },
                     height: { xs: 'auto', lg: 500 },
                     minHeight: { xs: 300, lg: 500 },
                     overflow: 'hidden',
@@ -624,7 +626,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                         }
                       </Box>
                       {isClient && clientVideo && (
-                        <Box sx={{ mt: 2 }}>
+                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
                           <TypographyMotion
                             component="button"
                             onClick={() => setVideoSubmissionModalOpen(true)}
@@ -654,6 +656,32 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           >
                             Review Submission
                           </TypographyMotion>
+                          <Button
+                            variant="contained"
+                            color="success"
+                            onClick={() => setConfirmDialogOpen(true)}
+                            disabled={!['SENT_TO_CLIENT'].includes(submission.status)}
+                            sx={{
+                              borderRadius: 1.15,
+                              border: '1px solid #E7E7E7',
+                              borderBottom: '3px solid #E7E7E7',
+                              backgroundColor: '#FFFFFF',
+                              boxShadow: 'none',
+                              color: '#1ABF66',
+                              fontWeight: 800,
+                              textTransform: 'none',
+                              px: { xs: 1.8, sm: 2.25 },
+                              py: { xs: 0.55, sm: 0.65 },
+                              fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                              '&:hover': {
+                                backgroundColor: '#F5F5F5',
+                                boxShadow: 'none',
+                              },
+                            }}
+                          >
+                            Approve
+                          </Button>
+
                           {/* <button
                             type="button"
                             style={{
@@ -702,14 +730,15 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                 {clientVisible ? (
                   <Box
                     sx={{
-                      width: { xs: '100%', sm: '100%', lg: 550 },
+                      flex: 1,
+                      minWidth: 0,
+                      width: { xs: '100%', lg: 'auto' },
                       height: { xs: 400, sm: 450, lg: 500 },
                       display: 'flex',
                       flexDirection: 'column',
                       borderRadius: 1,
                       overflow: 'hidden',
                       bgcolor: 'background.paper',
-                      flexShrink: 0,
                     }}
                   >
                     <Box
@@ -1058,13 +1087,14 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                       textAlign: 'center',
                       p: 4,
                       bgcolor: '#161616',
-                      width: { xs: '100%', sm: '100%', lg: 550 },
+                      flex: 1,
+                      minWidth: 0,
+                      width: { xs: '100%', lg: 'auto' },
                       height: { xs: 400, sm: 450, lg: 500 },
                       display: 'flex',
                       flexDirection: 'column',
                       borderRadius: 1,
                       overflow: 'hidden',
-                      flexShrink: 0,
                     }}
                   >
                     <Iconify
@@ -1101,7 +1131,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         creator={submission.user}
         rightSideContent={({
           currentTime: modalCurrentTime,
-          onSeek,
+          onSeekTo,
           videoId: modalVideoId,
           videoPage,
           setVideoPage,
@@ -1128,7 +1158,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
               submissionId={submission.id}
               videoId={modalVideoId || clientVideo?.id || video?.id}
               currentVideoTime={videoControls.formatTime(modalCurrentTime || 0)}
-              onSeekTo={onSeek}
+              onSeek={onSeekTo}
               onSendToAdmin={handleSendAndRefresh}
               isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
               isPastVideo={isPastVideo}
@@ -1188,6 +1218,28 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         />
       )}
       */}
+      <ConfirmDialogClient
+        open={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+        title="Approve Submission?"
+        emoji={
+          <Avatar
+            src="/assets/images/modals/tick.png"
+            alt="approve"
+            sx={{ width: 80, height: 80 }}
+          />
+        }
+        content="Approving this submission confirms that the submission is ready to be posted by the Creator."
+        onApprove={() => {
+          setConfirmDialogOpen(false);
+          handleApprove();
+        }}
+        onLeaveFeedback={() => {
+          setConfirmDialogOpen(false);
+          setVideoSubmissionModalOpen(true);
+        }}
+        loading={loading}
+      />
     </Box>
   );
 }
