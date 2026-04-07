@@ -462,7 +462,12 @@ function CreatorTableView() {
               const getTabCount = () => {
                 if (tab.value === 'all') return tableData?.length ?? 0;
                 if (tab.value === 'unmarked') {
-                  return tableData?.filter((user) => !user?.mediaKitMandatory).length ?? 0;
+                  return (
+                    tableData?.filter(
+                      (user) =>
+                        !user?.mediaKitMandatory && user?.status?.toLowerCase() !== 'guest'
+                    ).length ?? 0
+                  );
                 }
                 if (tab.value === 'marked') {
                   return tableData?.filter((user) => user?.mediaKitMandatory).length ?? 0;
@@ -671,7 +676,9 @@ function applyFilter({ inputData, comparator, filters, ageRange }) {
 
   if (status !== 'all') {
     if (status === 'unmarked') {
-      inputData = inputData.filter((user) => !user?.mediaKitMandatory);
+      inputData = inputData.filter(
+        (user) => !user?.mediaKitMandatory && user?.status?.toLowerCase() !== 'guest'
+      );
     } else if (status === 'marked') {
       inputData = inputData.filter((user) => user?.mediaKitMandatory);
     } else if (status === 'connected') {
