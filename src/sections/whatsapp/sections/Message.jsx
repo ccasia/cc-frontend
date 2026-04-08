@@ -109,29 +109,40 @@ const Message = () => {
     const handleUpdateData = (newMessage) => {
       mutate(
         (current) => {
-          const isOutbound = newMessage.direction === 'outbound';
-          let updatedOutbound;
+          const currentInbound = current?.message?.inbound ?? [];
+          const currentOutbound = current?.message?.outbound ?? [];
 
-          if (isOutbound) {
-            updatedOutbound = current.message.outbound.map((item) =>
-              item.messageId === newMessage.messageId ? { ...newMessage } : item
-            );
+          if (newMessage.direction === 'inbound') {
+            return {
+              ...current,
+              message: {
+                ...current?.message,
+                inbound: [newMessage, ...currentInbound],
+              },
+            };
           }
 
-          return {
-            ...current,
-            message: {
-              ...current?.message,
-              inbound:
-                newMessage.direction === 'inbound'
-                  ? [newMessage, ...(current?.message?.inbound ?? [])]
-                  : (current?.message?.inbound ?? []),
-              outbound:
-                newMessage.direction === 'outbound'
-                  ? [...updatedOutbound]
-                  : (current?.message?.outbound ?? []),
-            },
-          };
+          if (newMessage.direction === 'outbound') {
+            const exists = currentOutbound.some((item) => item.messageId === newMessage.messageId);
+
+            const updatedOutbound = exists
+              ? currentOutbound.map(
+                  (
+                    item // ✅ update if exists
+                  ) => (item.messageId === newMessage.messageId ? { ...item, ...newMessage } : item)
+                )
+              : [newMessage, ...currentOutbound]; // ✅ add if new
+
+            return {
+              ...current,
+              message: {
+                ...current?.message,
+                outbound: updatedOutbound,
+              },
+            };
+          }
+
+          return current; // ✅ unknown direction — return unchanged
         },
         { revalidate: false }
       );
