@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import dayjs from 'dayjs';
+import { m } from 'framer-motion';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
+  Tab,
   Chip,
+  Tabs,
   Paper,
   Stack,
   Table,
@@ -18,41 +22,17 @@ import {
   TablePagination,
 } from '@mui/material';
 
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+
 import Iconify from 'src/components/iconify';
 
 import BoxMotion from '../components/BoxMotion';
+import useGetWhatsappMessage from '../hooks/use-get-messages';
 
-// Placeholder rows — replace with real API data
-const MOCK_MESSAGES = [
-  {
-    id: 1,
-    recipient: '+60 12-345 6789',
-    template: 'otp_verification',
-    status: 'read',
-    sentAt: '2026-04-01 09:14',
-  },
-  {
-    id: 2,
-    recipient: '+60 19-876 5432',
-    template: 'otp_verification',
-    status: 'delivered',
-    sentAt: '2026-04-01 08:50',
-  },
-  {
-    id: 3,
-    recipient: '+60 11-222 3344',
-    template: 'otp_verification',
-    status: 'sent',
-    sentAt: '2026-03-31 22:30',
-  },
-  {
-    id: 4,
-    recipient: '+60 16-999 0011',
-    template: 'otp_verification',
-    status: 'failed',
-    sentAt: '2026-03-31 20:05',
-  },
-];
+const HEADERS = {
+  inbound: ['FROM', 'MESSAGE', 'TYPE', 'SENT AT'],
+  outbound: ['RECIPENT', 'STATUS', 'SENT AT'],
+};
 
 const STATUS_CONFIG = {
   read: { label: 'Read', color: 'success', icon: 'solar:check-read-linear' },
@@ -61,6 +41,9 @@ const STATUS_CONFIG = {
   failed: { label: 'Failed', color: 'error', icon: 'solar:close-circle-linear' },
 };
 
+const TableRowMotion = m(TableRow);
+
+// eslint-disable-next-line react/prop-types
 const StatusChip = ({ status }) => {
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.sent;
   return (
@@ -102,13 +85,69 @@ const EmptyState = () => (
 );
 
 const Message = () => {
+  const { inboundMessages, outboundMessages, isLoading, mutate } = useGetWhatsappMessage();
+  const { socket } = useSocketContext();
+
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [activeTab, setActiveTab] = useState('inbound');
 
-  const filtered = MOCK_MESSAGES.filter((msg) =>
-    msg.recipient.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    const messages = activeTab === 'inbound' ? inboundMessages : outboundMessages;
+    const field = activeTab === 'inbound' ? 'from' : 'to';
+    const query = search.toLowerCase();
+
+    if (!query) return messages; // ✅ skip filter if search is empty
+
+    return messages.filter((msg) => msg?.[field]?.toLowerCase().includes(query));
+  }, [activeTab, inboundMessages, outboundMessages, search]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdateData = (newMessage) => {
+      mutate(
+        (current) => {
+          const isOutbound = newMessage.direction === 'outbound';
+          let updatedOutbound;
+
+          if (isOutbound) {
+            updatedOutbound = current.message.outbound.map((item) =>
+              item.messageId === newMessage.messageId ? { ...newMessage } : item
+            );
+          }
+
+          return {
+            ...current,
+            message: {
+              ...current?.message,
+              inbound:
+                newMessage.direction === 'inbound'
+                  ? [newMessage, ...(current?.message?.inbound ?? [])]
+                  : (current?.message?.inbound ?? []),
+              outbound:
+                newMessage.direction === 'outbound'
+                  ? [...updatedOutbound]
+                  : (current?.message?.outbound ?? []),
+            },
+          };
+        },
+        { revalidate: false }
+      );
+    };
+
+    socket.on('whatsapp-message', handleUpdateData);
+
+    // eslint-disable-next-line consistent-return
+    return () => {
+      socket.off('whatsapp-message', handleUpdateData);
+    };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket]);
+
+  if (isLoading) return 'Loading...';
 
   return (
     <BoxMotion
@@ -126,6 +165,15 @@ const Message = () => {
           overflow: 'hidden',
         }}
       >
+        <Tabs
+          value={activeTab}
+          onChange={(_, val) => setActiveTab(val)}
+          sx={{ borderBottom: 1, borderBottomColor: colors.grey[200], px: 5 }}
+        >
+          <Tab value="inbound" label="Inbound Message" />
+          <Tab value="outbound" label="Outbound Message" />
+        </Tabs>
+
         {/* Header */}
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
@@ -139,7 +187,9 @@ const Message = () => {
               Message Logs
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              All OTP messages sent through WhatsApp
+              {activeTab === 'outbound'
+                ? 'All OTP messages sent through WhatsApp'
+                : 'All messages received from users'}
             </Typography>
           </Box>
 
@@ -171,18 +221,14 @@ const Message = () => {
           <Table size="small">
             <TableHead>
               <TableRow sx={{ bgcolor: colors.grey[50] }}>
-                <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem' }}>
-                  RECIPIENT
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem' }}>
-                  TEMPLATE
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem' }}>
-                  STATUS
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem' }}>
-                  SENT AT
-                </TableCell>
+                {HEADERS[activeTab].map((label, index) => (
+                  <TableCell
+                    key={index}
+                    sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem' }}
+                  >
+                    {label}
+                  </TableCell>
+                ))}
               </TableRow>
             </TableHead>
 
@@ -195,7 +241,13 @@ const Message = () => {
                 </TableRow>
               ) : (
                 filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((msg) => (
-                  <TableRow key={msg.id} hover sx={{ '&:last-child td': { border: 0 } }}>
+                  <TableRowMotion
+                    key={msg.id}
+                    hover
+                    sx={{ '&:last-child td': { border: 0 } }}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
                     <TableCell>
                       <Stack direction="row" alignItems="center" gap={1}>
                         <Iconify
@@ -203,23 +255,28 @@ const Message = () => {
                           width={15}
                           sx={{ color: 'text.disabled', flexShrink: 0 }}
                         />
-                        <Typography variant="body2">{msg.recipient}</Typography>
+                        <Typography variant="body2">{msg?.from || msg?.to}</Typography>
                       </Stack>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        {msg.template}
+                        {msg?.message ?? msg?.status}
                       </Typography>
                     </TableCell>
-                    <TableCell>
-                      <StatusChip status={msg.status} />
-                    </TableCell>
+                    {msg?.type && (
+                      <TableCell>
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                          {msg.type}
+                        </Typography>
+                      </TableCell>
+                    )}
+
                     <TableCell>
                       <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        {msg.sentAt}
+                        {dayjs(msg.createdAt).format('LL')}
                       </Typography>
                     </TableCell>
-                  </TableRow>
+                  </TableRowMotion>
                 ))
               )}
             </TableBody>
