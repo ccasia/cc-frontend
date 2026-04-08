@@ -481,7 +481,7 @@ const VideoSubmissionModal = ({
                 </Box>
               )}
               {/* Feedback Deadline Timer */}
-              {feedbackTimeLeft > 0 && !isClient && !isCreator && (
+              {feedbackTimeLeft > 0 && !isClient && !isCreator && submissionStatus === 'CLIENT_FEEDBACK' && (
                 <DarkGlassTooltip
                   title="Client timer to provide additional feedback for current round of submission."
                   placement="top-start"
