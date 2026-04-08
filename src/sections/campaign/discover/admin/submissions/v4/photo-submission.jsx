@@ -377,8 +377,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate, isDi
                           flexDirection: 'column',
                         }}
                       >
-                        {!isClient &&
-                        (submission.status === 'CLIENT_APPROVED' ||
+                        {(submission.status === 'CLIENT_APPROVED' ||
                           submission.status === 'POSTED' ||
                           submission.status === 'REJECTED') &&
                         campaign?.campaignType === 'normal' ? (
@@ -387,6 +386,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate, isDi
                             onUpdate={onUpdate}
                             onViewLogs={() => setShowFeedbackLogs(true)}
                             isDisabled={isDisabled}
+                            isClient={isClient}
                           />
                         ) : (
                           <FeedbackSection
