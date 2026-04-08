@@ -860,7 +860,7 @@ const FeedbackCard = ({
   // Replies are shown/hidden via toggle for both resolved + latest comments
   const showRepliesList = isRepliesListOpen && replyCount > 0;
   const showRepliesToggle = replyCount > 0;
-  const repliesToggleColor = isRepliesListOpen ? COLORS.primary : '#919191';
+  const repliesToggleColor = isRepliesListOpen ? '#919191' : COLORS.primary;
 
   const qualifiesForHighlight = useMemo(
     () => shouldHighlightAsNew(feedbackItem.createdAt, isNewAndUnopened, commentHighlightCutoffMs),

@@ -160,7 +160,7 @@ const CommentCard = ({
   const hasAgreed = comment.agreedBy?.length > 0;
   const isResolved = !!comment.resolvedByUserId || isPastVideo || parentResolved;
   const showRepliesToggle = !isReply && replyCount > 0;
-  const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
+  const repliesToggleColor = isRepliesOpen ? '#919191' : '#1340FF';
 
   const [showOriginal, setShowOriginal] = useState(false);
 

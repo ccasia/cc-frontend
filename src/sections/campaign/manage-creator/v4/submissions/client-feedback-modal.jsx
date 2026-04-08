@@ -176,7 +176,7 @@ const CommentCard = ({
 
   const isDisabled = isLocked || isPastVideo || isResolved;
   const showRepliesToggle = !isReply && replyCount > 0;
-  const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
+  const repliesToggleColor = isRepliesOpen ? '#919191' : '#1340FF';
   const canDelete = !!onDelete && !isDisabled && !pendingDelete && isUser;
 
   // Countdown for pending-delete state
