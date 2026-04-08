@@ -1244,7 +1244,18 @@ const ClientFeedbackModal = forwardRef(
 
         setHasInteracted(true);
 
-        const newReply = { ...data, isNew: true };
+        const newReply = {
+          ...data,
+          user: {
+            id: user.id,
+            name: user.name,
+            photoURL: user.photoURL,
+            role: user.role,
+            client: user.client,
+            ...data.user,
+          },
+          isNew: true,
+        };
 
         setComments((prev) =>
           prev.map((comment) => {
@@ -1282,7 +1293,19 @@ const ClientFeedbackModal = forwardRef(
 
         setHasInteracted(true);
 
-        const newComment = { ...data, replies: data.replies || [], isNew: true };
+        const newComment = {
+          ...data,
+          user: {
+            id: user.id,
+            name: user.name,
+            photoURL: user.photoURL,
+            client: user.client,
+            role: user.role,
+            ...data.user,
+          },
+          replies: data.replies || [],
+          isNew: true,
+        };
 
         setComments((prev) => insertSortedByTimestamp(prev, newComment));
         setFeedbackText('');
