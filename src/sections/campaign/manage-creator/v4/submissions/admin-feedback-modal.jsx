@@ -1717,7 +1717,7 @@ export default function AdminFeedbackPanel({
                         pendingDelete={pendingDeletes.has(comment.id)}
                         pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
                         currentUserId={user?.id}
-                        feedbackSent={isReadOnly && !isPastVideo}
+                        feedbackSent={isReadOnly && !isPastVideo && submission?.status !== 'SENT_TO_CLIENT'}
                       />
 
                       <Collapse
@@ -1783,7 +1783,7 @@ export default function AdminFeedbackPanel({
                                   pendingDelete={pendingDeletes.has(reply.id)}
                                   pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
                                   currentUserId={user?.id}
-                                  feedbackSent={isReadOnly && !isPastVideo}
+                                  feedbackSent={isReadOnly && !isPastVideo && submission?.status !== 'SENT_TO_CLIENT'}
                                 />
                               </Box>
                             );
