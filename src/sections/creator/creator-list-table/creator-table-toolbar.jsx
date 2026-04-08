@@ -67,13 +67,6 @@ export default function CreatorTableToolbar({
           pr: { xs: 2.5, md: 1 },
         }}
       >
-        <Button
-          variant="outlined"
-          onClick={handleOpenFilters}
-          endIcon={<Iconify icon="eva:chevron-down-fill" />}
-        >
-          Filters
-        </Button>
         <TextField
           fullWidth
           value={filters.name}
