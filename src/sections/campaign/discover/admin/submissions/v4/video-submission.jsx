@@ -47,6 +47,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
+  const isPosted = submission.status === 'POSTED'
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
@@ -599,7 +600,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           flexDirection: 'column',
                         }}
                       >
-                        {!isClient &&
+                        {
                         (submission.status === 'APPROVED' ||
                           submission.status === 'CLIENT_APPROVED' ||
                           submission.status === 'POSTED' ||
@@ -609,8 +610,9 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                             submission={submission}
                             onUpdate={onUpdate}
                             onViewLogs={() => setShowFeedbackLogs(true)}
-                            onReviewSubmission={() => setAdminReviewModalOpen(true)}
+                            onReviewSubmission={() =>{isClient ? setVideoSubmissionModalOpen(true) :setAdminReviewModalOpen(true)} }
                             isDisabled={isDisabled}
+                            isClient={isClient}
                           />
                         ) : null
                           /* Temporarily hidden — feedback text should not show while video is Processing
@@ -625,7 +627,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           */
                         }
                       </Box>
-                      {isClient && clientVideo && (
+                      {!isPosted && isClient && clientVideo && (
                         <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
                           <TypographyMotion
                             component="button"
