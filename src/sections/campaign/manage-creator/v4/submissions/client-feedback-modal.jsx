@@ -176,7 +176,7 @@ const CommentCard = ({
 
   const isDisabled = isLocked || isPastVideo || isResolved;
   const showRepliesToggle = !isReply && replyCount > 0;
-  const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
+  const repliesToggleColor = isRepliesOpen ? '#919191' : '#1340FF';
   const canDelete = !!onDelete && !isDisabled && !pendingDelete && isUser;
 
   // Countdown for pending-delete state
@@ -1400,8 +1400,8 @@ const ClientFeedbackModal = forwardRef(
               )}
 
               {(() => {
-                const unresolvedComments = comments.filter((c) => !c.resolvedByUserId);
-                const resolvedComments = comments.filter((c) => !!c.resolvedByUserId);
+                const unresolvedComments = comments.filter((c) => !c.resolvedByUserId && !c.resolvedAt);
+                const resolvedComments = comments.filter((c) => !!c.resolvedByUserId || !!c.resolvedAt);
 
                 const renderCommentThread = (comment, isResolved) => (
                   <m.div

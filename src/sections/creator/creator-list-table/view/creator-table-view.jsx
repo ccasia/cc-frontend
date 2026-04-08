@@ -17,6 +17,8 @@ import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
 import { TableRow, TableBody, TableCell, LinearProgress } from '@mui/material';
 
+import { useSearchParams } from 'react-router-dom';
+
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
@@ -239,7 +241,13 @@ function CreatorTableView() {
     }
   };
 
-  const table = useTable();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialPage = parseInt(searchParams.get('page') || '0', 10);
+  const initialSearch = searchParams.get('search') || '';
+  const initialStatus = searchParams.get('status') || 'all';
+  const initialRowsPerPage = parseInt(searchParams.get('rows') || '5', 10);
+
+  const table = useTable({ defaultCurrentPage: initialPage, defaultRowsPerPage: initialRowsPerPage });
 
   const settings = useSettingsContext();
 
@@ -249,7 +257,25 @@ function CreatorTableView() {
 
   const [tableData, setTableData] = useState([]);
 
-  const [filters, setFilters] = useState(defaultFilters);
+  const [filters, setFilters] = useState({ ...defaultFilters, name: initialSearch, status: initialStatus });
+
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (table.page === 0) next.delete('page');
+        else next.set('page', String(table.page));
+        if (filters.name) next.set('search', filters.name);
+        else next.delete('search');
+        if (filters.status === 'all') next.delete('status');
+        else next.set('status', filters.status);
+        if (table.rowsPerPage === 5) next.delete('rows');
+        else next.set('rows', String(table.rowsPerPage));
+        return next;
+      },
+      { replace: true }
+    );
+  }, [table.page, filters.name, filters.status, table.rowsPerPage, setSearchParams]);
 
   const dataFiltered = applyFilter({
     inputData: tableData,
@@ -334,8 +360,12 @@ function CreatorTableView() {
   useEffect(() => {
     if (!isLoading) {
       setTableData(creators);
+      const maxPage = Math.max(0, Math.ceil((creators?.length || 0) / table.rowsPerPage) - 1);
+      if (table.page > maxPage) {
+        table.onResetPage();
+      }
     }
-  }, [creators, isLoading]);
+  }, [creators, isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>

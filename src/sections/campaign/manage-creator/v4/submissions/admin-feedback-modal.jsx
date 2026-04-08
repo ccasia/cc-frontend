@@ -158,9 +158,9 @@ const CommentCard = ({
   const isAdminComment = !isClientComment && !isCreatorComment;
   const canAdminReply = isAdminView && !isReply && (isEditedClientComment || isAdminComment);
   const hasAgreed = comment.agreedBy?.length > 0;
-  const isResolved = !!comment.resolvedByUserId || isPastVideo || parentResolved;
+  const isResolved = !!comment.resolvedByUserId || !!comment.resolvedAt || isPastVideo || parentResolved;
   const showRepliesToggle = !isReply && replyCount > 0;
-  const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
+  const repliesToggleColor = isRepliesOpen ? '#919191' : '#1340FF';
 
   const [showOriginal, setShowOriginal] = useState(false);
 
@@ -412,7 +412,7 @@ const CommentCard = ({
         ...(isNewCreatorReply && {
           border: '1.5px solid #1340FF',
         }),
-        ...(showVisibilityBorder && isVisible && {
+        ...(showVisibilityBorder && isVisible && (feedbackSent || !!onToggleVisibility) && {
           border: 'none',
           borderLeft: '5px solid #1340FF',
           borderTop: '1px solid #1340FF',
@@ -428,7 +428,7 @@ const CommentCard = ({
         }),
       }}
     >
-      {showVisibilityBorder && isVisible && (
+      {showVisibilityBorder && isVisible && (feedbackSent || !!onToggleVisibility) && (
         <Box
           sx={{
             position: 'absolute',
@@ -899,7 +899,12 @@ const CommentCard = ({
             {!isReply && (
               <DarkGlassTooltip
                 title={
-                  isResolved ? `Resolved at ${fDateTime(comment.resolvedAt)}` : 'Mark as Resolved'
+                  // eslint-disable-next-line no-nested-ternary
+                  isResolved
+                    ? comment.resolvedAt
+                      ? `Resolved at ${fDateTime(comment.resolvedAt)}${comment.resolvedBy?.name ? ` by ${comment.resolvedBy.name}` : ''}`
+                      : 'Resolved'
+                    : 'Mark as Resolved'
                 }
                 placement="top"
               >
@@ -1551,6 +1556,10 @@ export default function AdminFeedbackPanel({
   const showSendToCreator =
     submission?.status === 'PENDING_REVIEW' || submission?.status === 'CLIENT_FEEDBACK';
 
+  // During PENDING_REVIEW (first round) all comments are auto-included — no selection needed.
+  // Selection UI and toggle are only active during CLIENT_FEEDBACK.
+  const isFirstRound = submission?.status === 'PENDING_REVIEW';
+
   const hasComments = comments.length > 0;
 
   const visibleFeedbackCount = useMemo(
@@ -1672,8 +1681,8 @@ export default function AdminFeedbackPanel({
                 </Box>
               ) : (
                 (() => {
-                  const unresolvedComments = isPastVideo ? [] : comments.filter((c) => !c.resolvedByUserId);
-                  const resolvedComments = isPastVideo ? comments : comments.filter((c) => !!c.resolvedByUserId);
+                  const unresolvedComments = isPastVideo ? [] : comments.filter((c) => !c.resolvedByUserId && !c.resolvedAt);
+                  const resolvedComments = isPastVideo ? comments : comments.filter((c) => !!c.resolvedByUserId || !!c.resolvedAt);
 
                   const renderCommentThread = (comment) => (
                     <m.div
@@ -1706,14 +1715,14 @@ export default function AdminFeedbackPanel({
                         onSendInlineReply={handleSendInlineReply}
                         onCancelInlineReply={handleCancelInlineReply}
                         isAdminView
-                        onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
+                        onToggleVisibility={!isReadOnly && !isFirstRound ? handleToggleVisibility : undefined}
                         isNew={newClientCommentIds.has(comment.id)}
                         onDelete={handleDeleteComment}
                         onUndoDelete={handleUndoDelete}
                         pendingDelete={pendingDeletes.has(comment.id)}
                         pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
                         currentUserId={user?.id}
-                        feedbackSent={isReadOnly && !isPastVideo}
+                        feedbackSent={isReadOnly && !isPastVideo && submission?.status !== 'SENT_TO_CLIENT'}
                       />
 
                       <Collapse
@@ -1754,7 +1763,7 @@ export default function AdminFeedbackPanel({
                                 <CommentCard
                                   comment={reply}
                                   isReply
-                                  parentResolved={!!comment.resolvedByUserId}
+                                  parentResolved={!!comment.resolvedByUserId || !!comment.resolvedAt}
                                   isPastVideo={isPastVideo}
                                   onTimestampClick={onSeek}
                                   onReply={handleReply}
@@ -1771,7 +1780,7 @@ export default function AdminFeedbackPanel({
                                   onSendInlineReply={handleSendInlineReply}
                                   onCancelInlineReply={handleCancelInlineReply}
                                   isAdminView
-                                  onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
+                                  onToggleVisibility={!isReadOnly && !isFirstRound ? handleToggleVisibility : undefined}
                                   isNew={newClientCommentIds.has(reply.id)}
                                   isNewCreatorReply={newCreatorReplyIds.has(reply.id)}
                                   onDelete={handleDeleteComment}
@@ -1779,7 +1788,7 @@ export default function AdminFeedbackPanel({
                                   pendingDelete={pendingDeletes.has(reply.id)}
                                   pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
                                   currentUserId={user?.id}
-                                  feedbackSent={isReadOnly && !isPastVideo}
+                                  feedbackSent={isReadOnly && !isPastVideo && submission?.status !== 'SENT_TO_CLIENT'}
                                 />
                               </Box>
                             );
@@ -1859,7 +1868,7 @@ export default function AdminFeedbackPanel({
       </AnimatePresence>
 
       {/* Input Section */}
-      {!isReadOnly && hasComments && (
+      {!isReadOnly && hasComments && !isFirstRound && (
         <Box
           sx={{
             display: 'flex',
