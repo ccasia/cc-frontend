@@ -1400,8 +1400,8 @@ const ClientFeedbackModal = forwardRef(
               )}
 
               {(() => {
-                const unresolvedComments = comments.filter((c) => !c.resolvedByUserId);
-                const resolvedComments = comments.filter((c) => !!c.resolvedByUserId);
+                const unresolvedComments = comments.filter((c) => !c.resolvedByUserId && !c.resolvedAt);
+                const resolvedComments = comments.filter((c) => !!c.resolvedByUserId || !!c.resolvedAt);
 
                 const renderCommentThread = (comment, isResolved) => (
                   <m.div

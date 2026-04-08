@@ -158,7 +158,7 @@ const CommentCard = ({
   const isAdminComment = !isClientComment && !isCreatorComment;
   const canAdminReply = isAdminView && !isReply && (isEditedClientComment || isAdminComment);
   const hasAgreed = comment.agreedBy?.length > 0;
-  const isResolved = !!comment.resolvedByUserId || isPastVideo || parentResolved;
+  const isResolved = !!comment.resolvedByUserId || !!comment.resolvedAt || isPastVideo || parentResolved;
   const showRepliesToggle = !isReply && replyCount > 0;
   const repliesToggleColor = isRepliesOpen ? '#919191' : '#1340FF';
 
@@ -899,7 +899,12 @@ const CommentCard = ({
             {!isReply && (
               <DarkGlassTooltip
                 title={
-                  isResolved ? `Resolved at ${fDateTime(comment.resolvedAt)}` : 'Mark as Resolved'
+                  // eslint-disable-next-line no-nested-ternary
+                  isResolved
+                    ? comment.resolvedAt
+                      ? `Resolved at ${fDateTime(comment.resolvedAt)}${comment.resolvedBy?.name ? ` by ${comment.resolvedBy.name}` : ''}`
+                      : 'Resolved'
+                    : 'Mark as Resolved'
                 }
                 placement="top"
               >
@@ -1676,8 +1681,8 @@ export default function AdminFeedbackPanel({
                 </Box>
               ) : (
                 (() => {
-                  const unresolvedComments = isPastVideo ? [] : comments.filter((c) => !c.resolvedByUserId);
-                  const resolvedComments = isPastVideo ? comments : comments.filter((c) => !!c.resolvedByUserId);
+                  const unresolvedComments = isPastVideo ? [] : comments.filter((c) => !c.resolvedByUserId && !c.resolvedAt);
+                  const resolvedComments = isPastVideo ? comments : comments.filter((c) => !!c.resolvedByUserId || !!c.resolvedAt);
 
                   const renderCommentThread = (comment) => (
                     <m.div
@@ -1758,7 +1763,7 @@ export default function AdminFeedbackPanel({
                                 <CommentCard
                                   comment={reply}
                                   isReply
-                                  parentResolved={!!comment.resolvedByUserId}
+                                  parentResolved={!!comment.resolvedByUserId || !!comment.resolvedAt}
                                   isPastVideo={isPastVideo}
                                   onTimestampClick={onSeek}
                                   onReply={handleReply}
