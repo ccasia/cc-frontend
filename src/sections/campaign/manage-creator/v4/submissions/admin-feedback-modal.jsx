@@ -412,7 +412,7 @@ const CommentCard = ({
         ...(isNewCreatorReply && {
           border: '1.5px solid #1340FF',
         }),
-        ...(showVisibilityBorder && isVisible && {
+        ...(showVisibilityBorder && isVisible && (feedbackSent || !!onToggleVisibility) && {
           border: 'none',
           borderLeft: '5px solid #1340FF',
           borderTop: '1px solid #1340FF',
@@ -428,7 +428,7 @@ const CommentCard = ({
         }),
       }}
     >
-      {showVisibilityBorder && isVisible && (
+      {showVisibilityBorder && isVisible && (feedbackSent || !!onToggleVisibility) && (
         <Box
           sx={{
             position: 'absolute',
@@ -1551,6 +1551,10 @@ export default function AdminFeedbackPanel({
   const showSendToCreator =
     submission?.status === 'PENDING_REVIEW' || submission?.status === 'CLIENT_FEEDBACK';
 
+  // During PENDING_REVIEW (first round) all comments are auto-included — no selection needed.
+  // Selection UI and toggle are only active during CLIENT_FEEDBACK.
+  const isFirstRound = submission?.status === 'PENDING_REVIEW';
+
   const hasComments = comments.length > 0;
 
   const visibleFeedbackCount = useMemo(
@@ -1706,7 +1710,7 @@ export default function AdminFeedbackPanel({
                         onSendInlineReply={handleSendInlineReply}
                         onCancelInlineReply={handleCancelInlineReply}
                         isAdminView
-                        onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
+                        onToggleVisibility={!isReadOnly && !isFirstRound ? handleToggleVisibility : undefined}
                         isNew={newClientCommentIds.has(comment.id)}
                         onDelete={handleDeleteComment}
                         onUndoDelete={handleUndoDelete}
@@ -1771,7 +1775,7 @@ export default function AdminFeedbackPanel({
                                   onSendInlineReply={handleSendInlineReply}
                                   onCancelInlineReply={handleCancelInlineReply}
                                   isAdminView
-                                  onToggleVisibility={!isReadOnly ? handleToggleVisibility : undefined}
+                                  onToggleVisibility={!isReadOnly && !isFirstRound ? handleToggleVisibility : undefined}
                                   isNew={newClientCommentIds.has(reply.id)}
                                   isNewCreatorReply={newCreatorReplyIds.has(reply.id)}
                                   onDelete={handleDeleteComment}
@@ -1859,7 +1863,7 @@ export default function AdminFeedbackPanel({
       </AnimatePresence>
 
       {/* Input Section */}
-      {!isReadOnly && hasComments && (
+      {!isReadOnly && hasComments && !isFirstRound && (
         <Box
           sx={{
             display: 'flex',
