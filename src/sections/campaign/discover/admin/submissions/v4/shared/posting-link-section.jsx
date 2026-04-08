@@ -25,7 +25,7 @@ import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 import { BUTTON_STYLES } from './submission-styles';
 import { posting_link_options_changes } from '../constants';
 
-export default function PostingLinkSection({ submission, onUpdate, onViewLogs, onReviewSubmission, isDisabled = false }) {
+export default function PostingLinkSection({ submission, onUpdate, onViewLogs, onReviewSubmission, isDisabled = false, isClient = false }) {
   const { user } = useAuthContext();
   const [postingLink, setPostingLink] = useState(submission.content || '');
   const [loading, setLoading] = useState(false);
@@ -306,7 +306,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
                 {new Date(submission.updatedAt).toLocaleDateString('en-GB')}
               </Typography>
             </Box>
-            <Typography
+           {(onReviewSubmission && <Typography
               component="button"
               onClick={onReviewSubmission}
               sx={{
@@ -327,11 +327,11 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
               }}
             >
               View Feedback
-            </Typography>
+            </Typography>)}
           </Box>
         )}
 
-        {!isPosted && postingLinkAddedByAdmin && submission.content && (
+        {!isClient && !isPosted && postingLinkAddedByAdmin && submission.content && (
           <Box display="flex" sx={{ mb: 1 }}>
             <Typography variant="caption" color="#636366" sx={{ fontStyle: 'italic' }}>
               Added by admin: {submission.admin?.user?.name} • Requires superadmin approval
@@ -369,13 +369,13 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
         )}
 
         {/* Posting link submitted by creator */}
-        {!postingLinkAddedByAdmin && !isPosted && submission.content && renderActionButtons()}
+        {!isClient && !postingLinkAddedByAdmin && !isPosted && submission.content && renderActionButtons()}
 
         {/* Posting link to be approved by superadmin */}
-        {postingLinkAddedByAdmin && !isPosted && submission.content && isSuperAdmin && renderActionButtons()}
+        {!isClient && postingLinkAddedByAdmin && !isPosted && submission.content && isSuperAdmin && renderActionButtons()}
 
         {/* No posting link yet — admin can enter one */}
-        {!submission.content && (
+        {!isClient && !submission.content && (
           <Box display="flex" flexDirection="column">
             <TextField
               fullWidth
@@ -446,4 +446,5 @@ PostingLinkSection.propTypes = {
   onViewLogs: PropTypes.any,
   onReviewSubmission: PropTypes.func,
   isDisabled: PropTypes.bool,
+  isClient: PropTypes.bool,
 };
