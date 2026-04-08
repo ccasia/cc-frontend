@@ -176,7 +176,7 @@ const CommentCard = ({
 
   const isDisabled = isLocked || isPastVideo || isResolved;
   const showRepliesToggle = !isReply && replyCount > 0;
-  const repliesToggleColor = isRepliesOpen ? '#1340FF' : '#919191';
+  const repliesToggleColor = isRepliesOpen ? '#919191' : '#1340FF';
   const canDelete = !!onDelete && !isDisabled && !pendingDelete && isUser;
 
   // Countdown for pending-delete state
@@ -1244,7 +1244,18 @@ const ClientFeedbackModal = forwardRef(
 
         setHasInteracted(true);
 
-        const newReply = { ...data, isNew: true };
+        const newReply = {
+          ...data,
+          user: {
+            id: user.id,
+            name: user.name,
+            photoURL: user.photoURL,
+            role: user.role,
+            client: user.client,
+            ...data.user,
+          },
+          isNew: true,
+        };
 
         setComments((prev) =>
           prev.map((comment) => {
@@ -1282,7 +1293,19 @@ const ClientFeedbackModal = forwardRef(
 
         setHasInteracted(true);
 
-        const newComment = { ...data, replies: data.replies || [], isNew: true };
+        const newComment = {
+          ...data,
+          user: {
+            id: user.id,
+            name: user.name,
+            photoURL: user.photoURL,
+            client: user.client,
+            role: user.role,
+            ...data.user,
+          },
+          replies: data.replies || [],
+          isNew: true,
+        };
 
         setComments((prev) => insertSortedByTimestamp(prev, newComment));
         setFeedbackText('');
@@ -1400,8 +1423,8 @@ const ClientFeedbackModal = forwardRef(
               )}
 
               {(() => {
-                const unresolvedComments = comments.filter((c) => !c.resolvedByUserId);
-                const resolvedComments = comments.filter((c) => !!c.resolvedByUserId);
+                const unresolvedComments = comments.filter((c) => !c.resolvedByUserId && !c.resolvedAt);
+                const resolvedComments = comments.filter((c) => !!c.resolvedByUserId || !!c.resolvedAt);
 
                 const renderCommentThread = (comment, isResolved) => (
                   <m.div
