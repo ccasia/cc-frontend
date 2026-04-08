@@ -149,7 +149,9 @@ const CompanyEditView = ({ id }) => {
   const campaigns = useMemo(() => {
     const brandCampaigns = company?.brand?.flatMap((item) => item?.campaign || []) || [];
     const companyCampaigns = company?.campaign || [];
-    return [...brandCampaigns, ...companyCampaigns];
+    const allCampaigns = [...brandCampaigns, ...companyCampaigns];
+    const uniqueCampaigns = Array.from(new Map(allCampaigns.map((c) => [c.id, c])).values());
+    return uniqueCampaigns;
   }, [company]);
 
   const currentPackage = useMemo(
