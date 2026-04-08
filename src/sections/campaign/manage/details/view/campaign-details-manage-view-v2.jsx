@@ -401,6 +401,17 @@ const CampaignDetailManageViewV2 = ({ id }) => {
                   Publish
                 </LoadingButton>
               )}
+                {campaign?.status === 'COMPLETED' && (
+                <LoadingButton
+                  variant="contained"
+                  color="success"
+                  onClick={() => handleChangeStatus('ACTIVE')}
+                  size="large"
+                  disabled={isDisabled}
+                >
+                  Reactivate
+                </LoadingButton>
+              )}
           </Stack>
         }
         sx={{
