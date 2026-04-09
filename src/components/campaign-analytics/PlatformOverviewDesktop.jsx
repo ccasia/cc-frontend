@@ -455,14 +455,79 @@ const PlatformOverviewDesktop = ({
       </Grid>
 
       {/* Middle: Platform-specific metrics */}
-      <Grid item xs={12} md={4} alignContent="center" bgcolor="#F5F5F5" borderRadius={3}>
+      <Grid item xs={12} md={selectedPlatform === 'TikTok' ? 3 : 4} alignContent="center" bgcolor="#F5F5F5" borderRadius={3}>
         <Box
           sx={{
             backgroundColor: '#F5F5F5',
             borderRadius: 3,
           }}
         >
-          {summaryStats && (
+          {summaryStats && selectedPlatform === 'TikTok' && (
+            <Grid
+              container
+              sx={{ mt: { xs: 0 } }}
+              px={6}
+              py={2}
+              mb={2}
+            >
+              <Grid item xs={12}>
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography
+                    fontFamily="Instrument Serif"
+                    fontWeight={400}
+                    fontSize={55}
+                    color="#1340FF"
+                  >
+                    {summaryStats.totalPosts}
+                  </Typography>
+                  <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
+                    TikTok Posts
+                  </Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} mt={2} mb={2}>
+                <Box sx={{ borderBottom: '2px solid #1340FF' }} />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography
+                    fontFamily="Instrument Serif"
+                    fontWeight={400}
+                    fontSize={55}
+                    color="#1340FF"
+                  >
+                    {formatNumber(summaryStats.totalShares)}
+                  </Typography>
+                  <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
+                    Total Shares
+                  </Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} mt={2} mb={2}>
+                <Box sx={{ borderBottom: '2px solid #1340FF' }} />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography
+                    fontFamily="Instrument Serif"
+                    fontWeight={400}
+                    fontSize={55}
+                    color="#1340FF"
+                  >
+                    {summaryStats.avgEngagementRate}%
+                  </Typography>
+                  <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
+                    Engagement Rate
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          )}
+          {summaryStats && selectedPlatform !== 'TikTok' && (
             <Grid
               container
               sx={{ mt: { xs: 0 } }}
@@ -497,7 +562,7 @@ const PlatformOverviewDesktop = ({
                     fontSize={55}
                     color="#1340FF"
                   >
-                    {selectedPlatform === 'TikTok' ? 'TBD' : formatNumber(summaryStats.totalReach)}
+                    {formatNumber(summaryStats.totalReach)}
                   </Typography>
                   <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
                     {selectedPlatform === 'ALL' && (
@@ -508,7 +573,6 @@ const PlatformOverviewDesktop = ({
                         </Typography>
                       </Typography>
                     )}
-                    {selectedPlatform === 'TikTok' && 'TBD'}
                     {selectedPlatform === 'Instagram' && 'Reach'}
                   </Typography>
                 </Box>
@@ -562,7 +626,7 @@ const PlatformOverviewDesktop = ({
         (availablePlatforms.length === 1 &&
           insightsData.length > 0 &&
           (insightsData[0].platform === 'Instagram' || insightsData[0].platform === 'TikTok'))) && (
-        <Grid item xs={12} md={2.5} ml={2} alignContent="center" bgcolor="#F5F5F5" borderRadius={3}>
+        <Grid item xs={12} md={selectedPlatform === 'TikTok' ? 3.5 : 2.5} ml={2} alignContent="center" bgcolor="#F5F5F5" borderRadius={3}>
           <TopEngagementCard
             filteredInsightsData={filteredInsightsData}
             filteredSubmissions={filteredSubmissions}
