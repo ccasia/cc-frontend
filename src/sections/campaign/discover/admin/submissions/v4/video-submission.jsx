@@ -30,6 +30,7 @@ import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submis
 import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
 
 import TypographyMotion from 'src/components/animate/motion-typography';
+import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
 
 import FeedbackLogs from './shared/feedback-logs';
 import FeedbackSection from './shared/feedback-section';
@@ -38,7 +39,6 @@ import PostingLinkSection from './shared/posting-link-section';
 import useCaptionOverflow from './shared/use-caption-overflow';
 import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
-import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
 
 export default function V4VideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
@@ -610,7 +610,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                             submission={submission}
                             onUpdate={onUpdate}
                             onViewLogs={() => setShowFeedbackLogs(true)}
-                            onReviewSubmission={() =>{isClient ? setVideoSubmissionModalOpen(true) :setAdminReviewModalOpen(true)} }
+                            onReviewSubmission={() => isClient ? setVideoSubmissionModalOpen(true) : setAdminReviewModalOpen(true)}
                             isDisabled={isDisabled}
                             isClient={isClient}
                           />
