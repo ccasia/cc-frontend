@@ -851,12 +851,14 @@ const FeedbackCard = ({
   onUndoDelete,
   pendingDeletes,
   currentUserId,
+  sessionNewReplies = [],
+  showSessionNewReplies = false,
 }) => {
   const [highlightDismissed, setHighlightDismissed] = useState(false);
   const dismissHighlight = useCallback(() => setHighlightDismissed(true), []);
 
   const adminInfo = getAdminInfo(feedbackItem, submission);
-  const replyCount = replies?.length ?? 0;
+  const replyCount = (replies?.length ?? 0) + (sessionNewReplies?.length ?? 0);
   // Replies are shown/hidden via toggle for both resolved + latest comments
   const showRepliesList = isRepliesListOpen && replyCount > 0;
   const showRepliesToggle = replyCount > 0;
@@ -1031,20 +1033,33 @@ const FeedbackCard = ({
         />
       )}
 
-      <Collapse in={isRepliesListOpen && replyCount > 0} timeout="auto" unmountOnExit>
-        {replies && replies.length > 0 && (
-          <RepliesList
-            replies={replies}
-            isParentResolved={isResolved}
-            showNewHighlight={isNewAndUnopened}
-            highlightCutoffMs={commentHighlightCutoffMs}
-            onDelete={onDeleteReply}
-            onUndoDelete={onUndoDelete}
-            pendingDeletes={pendingDeletes}
-            currentUserId={currentUserId}
-          />
-        )}
+      {/* When expanded: merge all replies into one list so connector lines are continuous */}
+      <Collapse in={showRepliesList} timeout="auto" unmountOnExit>
+        <RepliesList
+          replies={[...(replies || []), ...(sessionNewReplies || [])]}
+          isParentResolved={isResolved}
+          showNewHighlight={isNewAndUnopened}
+          highlightCutoffMs={commentHighlightCutoffMs}
+          onDelete={onDeleteReply}
+          onUndoDelete={onUndoDelete}
+          pendingDeletes={pendingDeletes}
+          currentUserId={currentUserId}
+        />
       </Collapse>
+
+      {/* Initial state only: session-new replies visible before toggle is clicked */}
+      {!isRepliesListOpen && showSessionNewReplies && sessionNewReplies.length > 0 && (
+        <RepliesList
+          replies={sessionNewReplies}
+          isParentResolved={isResolved}
+          showNewHighlight={isNewAndUnopened}
+          highlightCutoffMs={commentHighlightCutoffMs}
+          onDelete={onDeleteReply}
+          onUndoDelete={onUndoDelete}
+          pendingDeletes={pendingDeletes}
+          currentUserId={currentUserId}
+        />
+      )}
     </Box>
   );
 };
@@ -1073,6 +1088,8 @@ FeedbackCard.propTypes = {
   onUndoDelete: PropTypes.func,
   pendingDeletes: PropTypes.instanceOf(Map),
   currentUserId: PropTypes.string,
+  sessionNewReplies: PropTypes.array,
+  showSessionNewReplies: PropTypes.bool,
 };
 
 // Main Component
@@ -1123,6 +1140,7 @@ const CreatorFeedbackModal = ({
 
   const [replyStates, setReplyStates] = useState({});
   const [viewRepliesOpen, setViewRepliesOpen] = useState({});
+  const [sessionNewReplyIds, setSessionNewReplyIds] = useState(new Set());
   const [replyTexts, setReplyTexts] = useState({});
   const [replies, setReplies] = useState({});
   const commentsEndRef = useRef(null);
@@ -1144,6 +1162,10 @@ const CreatorFeedbackModal = ({
     const handleNewItem = (data, isReply) => {
       if (data.submissionId !== submission.id || data.comment?.isClientDraft) return;
       commentsMutate();
+      // Track reply IDs that arrive during this session so they render outside the Collapse
+      if (isReply && data.comment?.id) {
+        setSessionNewReplyIds((prev) => new Set([...prev, data.comment.id]));
+      }
       // Skip indicator for own messages
       if (data.comment?.userId === user?.id) return;
       if (!initialLoadDone.current) return;
@@ -1190,10 +1212,11 @@ const CreatorFeedbackModal = ({
     };
   }, [socket, submission?.id, user?.id, commentsMutate, useCommentSystem]);
 
-  // Reset scroll state on mount
+  // Reset scroll state and session-new reply tracking when video changes
   useEffect(() => {
     initialLoadDone.current = false;
-  }, []);
+    setSessionNewReplyIds(new Set());
+  }, [currentVideoId]);
 
   // Past-video pages: expand reply threads by default (archive / resolved design)
   useEffect(() => {
@@ -1252,28 +1275,14 @@ const CreatorFeedbackModal = ({
     }
   };
 
-  // Default: if a top-level comment has replies, show them (latest + past pages).
-  // User can still hide via the replies icon toggle.
-  useEffect(() => {
-    if (!displayItems?.length) return;
-    setViewRepliesOpen((prev) => {
-      const next = { ...prev };
-      displayItems.forEach((item, index) => {
-        const hasReplies = (item.replies || []).length > 0;
-        if (hasReplies && next[index] === undefined) {
-          next[index] = true;
-        }
-      });
-      return next;
-    });
-  }, [displayItems]);
-
   const toggleReply = (index) => {
     setReplyStates((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
   const toggleViewReplies = (index) => {
-    setViewRepliesOpen((prev) => ({ ...prev, [index]: !prev[index] }));
+    // true → undefined (back to initial: existing hidden, session-new still visible)
+    // undefined/false → true (expand all)
+    setViewRepliesOpen((prev) => ({ ...prev, [index]: prev[index] === true ? undefined : true }));
   };
 
   const handleCancelReply = (index) => {
@@ -1538,6 +1547,24 @@ const CreatorFeedbackModal = ({
                   : item.resolved === true;
                 const effectiveResolved = baseResolved || isPastVideo;
 
+                const allMappedReplies = useCommentSystem
+                  ? (item.replies || []).map((r) => ({
+                      id: r.id,
+                      content: r.text,
+                      createdAt: r.createdAt,
+                      user: r.user,
+                      forwardedBy: r.forwardedBy,
+                    }))
+                  : [...(item.replies || []), ...(replies[index] || [])];
+
+                const existingMappedReplies = allMappedReplies.filter(
+                  (r) => !sessionNewReplyIds.has(r.id)
+                );
+                const sessionNewMappedReplies = allMappedReplies.filter((r) =>
+                  sessionNewReplyIds.has(r.id)
+                );
+                const toggleState = viewRepliesOpen[index]; // undefined | true | false
+
                 return (
                   <div key={item.id ?? index} data-comment-id={item.id}>
                   <FeedbackCard
@@ -1546,23 +1573,26 @@ const CreatorFeedbackModal = ({
                     index={index}
                     isReplyOpen={replyStates[index] || false}
                     onToggleReply={() => toggleReply(index)}
-                    isRepliesListOpen={viewRepliesOpen[index] || false}
-                    onToggleViewReplies={() => toggleViewReplies(index)}
+                    isRepliesListOpen={toggleState === true}
+                    onToggleViewReplies={() => {
+                      // When expanding, acknowledge session-new replies so they
+                      // are treated as existing on the next collapse
+                      if (toggleState !== true && sessionNewMappedReplies.length > 0) {
+                        setSessionNewReplyIds((prev) => {
+                          const next = new Set(prev);
+                          sessionNewMappedReplies.forEach((r) => next.delete(r.id));
+                          return next;
+                        });
+                      }
+                      toggleViewReplies(index);
+                    }}
                     replyText={replyTexts[index] || ''}
                     onReplyTextChange={(value) => handleReplyTextChange(index, value)}
                     onCancelReply={() => handleCancelReply(index)}
                     onSendReply={() => handleSendReply(index)}
-                    replies={
-                      useCommentSystem
-                        ? (item.replies || []).map((r) => ({
-                            id: r.id,
-                            content: r.text,
-                            createdAt: r.createdAt,
-                            user: r.user,
-                            forwardedBy: r.forwardedBy,
-                          }))
-                        : [...(item.replies || []), ...(replies[index] || [])]
-                    }
+                    replies={existingMappedReplies}
+                    sessionNewReplies={sessionNewMappedReplies}
+                    showSessionNewReplies={toggleState !== false}
                     isResolved={effectiveResolved}
                     isNewAndUnopened={showNewCommentBorders && !isPastVideo}
                     onSeekTo={onSeekTo}
