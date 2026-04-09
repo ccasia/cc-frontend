@@ -1007,7 +1007,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
 
   // eslint-disable-next-line react/no-unstable-nested-components
   const PlatformOverviewLayout = () => (
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ pb: selectedPlatform === 'TikTok' ? 4 : 0 }}>
         {/* Mobile Layout */}
         <PlatformOverviewMobile
           platformCounts={platformCounts}
@@ -1230,12 +1230,12 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
       {!loadingInsights && (
         <>
           {/* Section 1: Core Metrics */}
-          <Box>
+          <Box mb={4}>
             <CoreMetricsSection insightsData={filteredInsightsData} summaryStats={summaryStats} />
           </Box>
 
           {/* Section 2: Platform Overview */}
-          <Box>
+          <Box mb={4}>
             {availablePlatforms.length > 0 && (
               <PlatformOverviewLayout
                 postCount={filteredSubmissions.length}
@@ -1254,7 +1254,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
             spacing={4}
             justifyContent="space-between"
             minHeight={{ xs: 'auto', md: 500 }}
-            mb={2}
+            mb={4}
           >
             <Box flex={1} width="100%">
               <EngagementRateHeatmap
