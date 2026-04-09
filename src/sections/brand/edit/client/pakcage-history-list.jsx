@@ -15,7 +15,7 @@ import {
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Scrollbar from 'src/components/scrollbar';
-import { useTable, TableNoData, getComparator, TableSelectedAction } from 'src/components/table';
+import { useTable, TableNoData, TableSelectedAction } from 'src/components/table';
 
 import PackageHistoryRow from './package-history-row';
 
@@ -35,7 +35,7 @@ const TABLE_HEAD = [
 ];
 
 const PackageHistoryList = ({ dataFiltered, onRefresh }) => {
-  const table = useTable();
+  const table = useTable({ defaultOrderBy: 'packageId', defaultOrder: 'desc' });
   const [filters, setFilters] = useState(defaultFilters);
   const confirm = useBoolean();
 
@@ -45,7 +45,6 @@ const PackageHistoryList = ({ dataFiltered, onRefresh }) => {
 
   const filteredData = applyFilter({
     inputData: dataFiltered,
-    comparator: getComparator(table.order, table.orderBy),
     filters,
   });
 
@@ -93,7 +92,7 @@ const PackageHistoryList = ({ dataFiltered, onRefresh }) => {
                 />
               ) : (
                 <>
-                  {dataFiltered?.map((e) => (
+                  {filteredData?.map((e) => (
                     <PackageHistoryRow
                       row={e}
                       key={e.id}
@@ -120,24 +119,22 @@ PackageHistoryList.propTypes = {
   onRefresh: PropTypes.func,
 };
 
-function applyFilter({ inputData, comparator, filters }) {
+function applyFilter({ inputData, filters }) {
   const { type } = filters;
 
-  const stabilizedThis = inputData?.map((el, index) => [el, index]);
+  let data = inputData ? [...inputData] : [];
 
-  stabilizedThis?.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
+  data.sort((a, b) => {
+    const idA = a.id ?? '';
+    const idB = b.id ?? '';
+    if (idA < idB) return 1;
+    if (idA > idB) return -1;
+    return 0;
   });
 
-  inputData = stabilizedThis?.map((el) => el[0]);
-
   if (type) {
-    inputData = inputData.filter(
-      (user) => user?.type?.toLowerCase().indexOf(type.toLowerCase()) !== -1
-    );
+    data = data.filter((user) => user?.type?.toLowerCase().indexOf(type.toLowerCase()) !== -1);
   }
 
-  return inputData;
+  return data;
 }
