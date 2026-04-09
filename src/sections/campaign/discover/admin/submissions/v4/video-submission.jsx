@@ -434,12 +434,14 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                       </Box>
 
                       <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        {!isClient && (submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || submission.status === 'REJECTED') && campaign?.campaignType === 'normal' ? (
+                        {(submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || submission.status === 'REJECTED') && campaign?.campaignType === 'normal' ? (
                           <PostingLinkSection
                             submission={submission}
                             onUpdate={onUpdate}
                             onViewLogs={() => setShowFeedbackLogs(true)}
+                            onReviewSubmission={() => setAdminReviewModalOpen(true)}
                             isDisabled={isDisabled}
+                            isClient={isClient}
                           />
                         ) : (
                           <FeedbackSection

@@ -326,8 +326,8 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate, 
       ) : (
         <>
           <Box sx={{ mb: 2 }}>
-            {!isClient &&
-            (submission.status === 'CLIENT_APPROVED' ||
+            {(
+              submission.status === 'CLIENT_APPROVED' ||
               submission.status === 'POSTED' ||
               submission.status === 'REJECTED') &&
             campaign?.campaignType === 'normal' ? (
@@ -335,7 +335,9 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate, 
                 submission={submission}
                 onUpdate={onUpdate}
                 onViewLogs={() => setShowFeedbackLogs(true)}
+                onReviewSubmission={() => setAdminReviewModalOpen(true)}
                 isDisabled={isDisabled}
+                isClient={isClient}
               />
             ) : (
               <FeedbackSection
