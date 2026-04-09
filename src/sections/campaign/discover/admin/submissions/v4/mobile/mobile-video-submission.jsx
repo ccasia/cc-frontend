@@ -17,6 +17,7 @@ import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submiss
 import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
 
 import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissions/admin-feedback-modal';
+import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
 
 import FeedbackLogs from '../shared/feedback-logs';
 import FeedbackSection from '../shared/feedback-section';
@@ -24,7 +25,6 @@ import FeedbackActions from '../shared/feedback-actions';
 import PostingLinkSection from '../shared/posting-link-section';
 import useSubmissionSocket from '../shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from '../shared/feedback-utils';
-import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
 
 // ----------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ export default function MobileVideoSubmission({
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
-  const isPosted = submission.status === 'POSTED'
+  const isPosted = submission.status === 'POSTED';
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
