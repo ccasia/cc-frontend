@@ -637,7 +637,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
       );
     } else if (selectedFilter === 'sentToCreator') {
       // Sent to creator but not yet submitted
-      result = pitchApprovedAgreements.filter((item) => item.isSent && !item?.submission?.status);
+      result = pitchApprovedAgreements.filter((item) => item.isSent && !['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(item?.submission?.status));
     } else if (selectedFilter === 'rejected') {
       // Rejected agreements
       result = pitchApprovedAgreements.filter((item) => item?.submission?.status === 'REJECTED');
@@ -867,7 +867,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
         (item) => item?.submission?.status === 'PENDING_REVIEW'
       ).length,
       sentToCreator: pitchApprovedAgreements.filter(
-        (item) => item.isSent && !item?.submission?.status
+        (item) => item.isSent && !['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(item?.submission?.status)
       ).length,
       rejected: pitchApprovedAgreements.filter((item) => item?.submission?.status === 'REJECTED')
         .length,
