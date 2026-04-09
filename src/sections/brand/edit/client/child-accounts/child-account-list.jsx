@@ -103,6 +103,11 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
       return;
     }
 
+    if (!formData.email || !formData.firstName || !formData.lastName) {
+      enqueueSnackbar('Please fill in all fields', { variant: 'error' });
+      return;
+    }
+
     try {
       setSubmitting(true);
       const response = await axiosInstance.post(`/api/child-account/client/${clientId}`, formData);
@@ -110,7 +115,7 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
       handleCloseInviteDialog();
       fetchChildAccounts();
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error inviting child account';
+      const errorMessage = error.response?.data?.message || 'This email already exists.';
       enqueueSnackbar(errorMessage, { variant: 'error' });
     } finally {
       setSubmitting(false);
@@ -443,6 +448,7 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               fullWidth
+              required
               placeholder="Enter first name"
             />
             <TextField
@@ -450,6 +456,7 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               fullWidth
+              required
               placeholder="Enter last name"
             />
           </Stack>
@@ -471,7 +478,7 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
             onClick={handleInviteChildAccount}
             variant="contained"
             loading={submitting}
-            disabled={!formData.email}
+            disabled={!formData.email || !formData.firstName || !formData.lastName}
             sx={{
               bgcolor: '#1340FF',
               borderRadius: '8px',
