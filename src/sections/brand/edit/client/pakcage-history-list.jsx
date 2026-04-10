@@ -10,6 +10,7 @@ import {
   TableHead,
   TableCell,
   TableContainer,
+  TablePagination,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -35,7 +36,11 @@ const TABLE_HEAD = [
 ];
 
 const PackageHistoryList = ({ dataFiltered, onRefresh }) => {
-  const table = useTable({ defaultOrderBy: 'packageId', defaultOrder: 'desc' });
+  const table = useTable({
+    defaultOrderBy: 'packageId',
+    defaultOrder: 'desc',
+    defaultRowsPerPage: 5,
+  });
   const [filters, setFilters] = useState(defaultFilters);
   const confirm = useBoolean();
 
@@ -47,6 +52,11 @@ const PackageHistoryList = ({ dataFiltered, onRefresh }) => {
     inputData: dataFiltered,
     filters,
   });
+
+  const dataInPage = filteredData.slice(
+    table.page * table.rowsPerPage,
+    table.page * table.rowsPerPage + table.rowsPerPage
+  );
 
   const notFound = (!filteredData?.length && canReset) || !filteredData?.length;
 
@@ -92,7 +102,7 @@ const PackageHistoryList = ({ dataFiltered, onRefresh }) => {
                 />
               ) : (
                 <>
-                  {filteredData?.map((e) => (
+                  {dataInPage?.map((e) => (
                     <PackageHistoryRow
                       row={e}
                       key={e.id}
@@ -106,7 +116,15 @@ const PackageHistoryList = ({ dataFiltered, onRefresh }) => {
           </Table>
         </Scrollbar>
       </TableContainer>
-
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25]}
+        component="div"
+        count={filteredData.length}
+        rowsPerPage={table.rowsPerPage}
+        page={table.page}
+        onPageChange={table.onChangePage}
+        onRowsPerPageChange={table.onChangeRowsPerPage}
+      />
       <TableSelectedAction selected={table.selected.length} onDelete={() => confirm.onTrue()} />
     </Card>
   );
