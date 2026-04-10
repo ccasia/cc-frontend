@@ -2,9 +2,6 @@
 import PropTypes from 'prop-types';
 import { m, AnimatePresence } from 'framer-motion';
 
-import Markdown from 'react-markdown';
-import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
-
 import {
   Box,
   Grid,
@@ -2092,14 +2089,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     return calculateSummaryStats(filteredInsightsData, filteredManualEntries);
   }, [filteredInsightsData, filteredManualEntries]);
 
-  const handleNextPage = () => {
-    setCurrentPage((prev) => prev + 1);
-  };
-
-  const handlePrevPage = () => {
-    setCurrentPage((prev) => prev - 1);
-  };
-
   // Socket event listener for media kit connections
   useEffect(() => {
     if (!socket || !campaignId) return undefined;
@@ -2243,18 +2232,18 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
 
   // eslint-disable-next-line react/no-unstable-nested-components
   const PlatformOverviewLayout = () => (
-    <Box sx={{ mb: 3 }}>
-      {/* Mobile Layout */}
-      <PlatformOverviewMobile
-        platformCounts={platformCounts}
-        selectedPlatform={selectedPlatform}
-        filteredInsightsData={filteredInsightsData}
-        filteredSubmissions={filteredSubmissions}
-        insightsData={insightsData}
-        summaryStats={summaryStats}
-        availablePlatforms={availablePlatforms}
-        getPlatformLabel={getPlatformLabel}
-      />
+      <Box sx={{ pb: selectedPlatform === 'TikTok' ? 4 : 0 }}>
+        {/* Mobile Layout */}
+        <PlatformOverviewMobile
+          platformCounts={platformCounts}
+          selectedPlatform={selectedPlatform}
+          filteredInsightsData={filteredInsightsData}
+          filteredSubmissions={filteredSubmissions}
+          insightsData={insightsData}
+          summaryStats={summaryStats}
+          availablePlatforms={availablePlatforms}
+          getPlatformLabel={getPlatformLabel}
+        />
 
       {/* Desktop Layout */}
       <PlatformOverviewDesktop
@@ -2468,54 +2457,51 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
             {loadingInsights && <AnalyticsPageSkeleton key="skeleton" lgUp={lgUp} />}
           </AnimatePresence>
 
-          {/* Content sections - no fade animation, just appear when loaded */}
-          {!loadingInsights && (
-            <>
-              {/* Section 1: Core Metrics */}
-              <Box>
-                <CoreMetricsSection
-                  insightsData={filteredInsightsData}
-                  summaryStats={summaryStats}
-                />
-              </Box>
+      {/* Content sections - no fade animation, just appear when loaded */}
+      {!loadingInsights && (
+        <>
+          {/* Section 1: Core Metrics */}
+          <Box mb={4}>
+            <CoreMetricsSection insightsData={filteredInsightsData} summaryStats={summaryStats} />
+          </Box>
 
-              {/* Section 2: Platform Overview */}
-              <Box>
-                {availablePlatforms.length > 0 && (
-                  <PlatformOverviewLayout
-                    postCount={filteredSubmissions.length}
-                    insightsData={filteredInsightsData}
-                    summaryStats={summaryStats}
-                    platformCounts={platformCounts}
-                    selectedPlatform={selectedPlatform}
-                  />
-                )}
-              </Box>
+          {/* Section 2: Platform Overview */}
+          <Box mb={4}>
+            {availablePlatforms.length > 0 && (
+              <PlatformOverviewLayout
+                postCount={filteredSubmissions.length}
+                insightsData={filteredInsightsData}
+                summaryStats={summaryStats}
+                platformCounts={platformCounts}
+                selectedPlatform={selectedPlatform}
+              />
+            )}
+          </Box>
 
-              {/* Section 3: Trends Analysis */}
-              <Stack
-                direction={{ xs: 'column', md: 'row' }}
-                flex={1}
-                spacing={4}
-                justifyContent="space-between"
-                minHeight={{ xs: 'auto', md: 500 }}
-                mb={2}
-              >
-                <Box flex={1} width="100%">
-                  <EngagementRateHeatmap
-                    campaignId={campaignId}
-                    platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
-                    weeks={6}
-                  />
-                </Box>
-                <Box flex={1} width="100%">
-                  <TopCreatorsLineChart
-                    campaignId={campaignId}
-                    platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
-                    days={7}
-                  />
-                </Box>
-              </Stack>
+          {/* Section 3: Trends Analysis */}
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            flex={1}
+            spacing={4}
+            justifyContent="space-between"
+            minHeight={{ xs: 'auto', md: 500 }}
+            mb={4}
+          >
+            <Box flex={1} width="100%">
+              <EngagementRateHeatmap
+                campaignId={campaignId}
+                platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
+                weeks={6}
+              />
+            </Box>
+            <Box flex={1} width="100%">
+              <TopCreatorsLineChart
+                campaignId={campaignId}
+                platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
+                days={7}
+              />
+            </Box>
+          </Stack>
 
               {/* Section 4: Creator List */}
               <Box>
@@ -2660,46 +2646,33 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                   )}
                 </AnimatePresence>
 
-                <Grid container spacing={1}>
-                  {/* Manual Creator Entries */}
-                  {manualEntries
-                    .filter(
-                      (entry) => selectedPlatform === 'ALL' || entry.platform === selectedPlatform
-                    )
-                    .map((entry) => (
+              <Grid container spacing={1}>
+                {/* eslint-disable react/prop-types */}
+                {creatorListRowsSorted.map((row) => {
+                  if (row.kind === 'manual') {
+                    return (
                       <ManualCreatorCard
-                        key={entry.id}
-                        entry={entry}
+                        key={row.key}
+                        entry={row.entry}
                         campaignId={campaignId}
                         onUpdate={mutateManualEntries}
                         onDelete={handleDeleteClick}
                         isDisabled={isDisabled}
                       />
-                    ))}
-
-                  {/* eslint-disable react/prop-types */}
-                  {paginationData.displayedSubmissions.map((submission) => {
-                    const insightData = insightsData.find(
-                      (data) => data.submissionId === submission.id
                     );
-                    const engagementRate = insightData
-                      ? calculateEngagementRate(insightData.insight)
-                      : 0;
+                  }
 
-                    // Don't render card when there's definitively no insight data (after loading)
-                    if (!insightData && !loadingInsights) return null;
-
-                    return (
-                      <UserPerformanceCard
-                        key={submission.id}
-                        submission={submission}
-                        insightData={insightData}
-                        engagementRate={engagementRate}
-                        loadingInsights={loadingInsights}
-                      />
-                    );
-                  })}
-                  {/* eslint-enable react/prop-types */}
+                  return (
+                    <UserPerformanceCard
+                      key={row.key}
+                      submission={row.submission}
+                      insightData={row.insightData}
+                      engagementRate={row.engagementRate}
+                      loadingInsights={loadingInsights}
+                    />
+                  );
+                })}
+                {/* eslint-enable react/prop-types */}
 
                   {postingSubmissions.length === 0 && manualEntries.length === 0 && (
                     <Grid item xs={12}>
@@ -2738,206 +2711,17 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                     </Grid>
                   )}
 
-                  {filteredSubmissions.length === 0 && postingSubmissions.length > 0 && (
-                    <Grid item xs={12}>
-                      <Alert severity="info">
-                        No {selectedPlatform.toLowerCase()} submissions found for this campaign.
-                      </Alert>
-                    </Grid>
-                  )}
-                </Grid>
-              </Box>
-            </>
-          )}
-
-          {/* Pagination Controls */}
-          {paginationData.totalPages > 1 && (
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                alignItems: 'center',
-                mt: 3,
-                pb: 2,
-                gap: 0.3,
-              }}
-            >
-              {/* Previous Button */}
-              <Button
-                onClick={handlePrevPage}
-                disabled={!paginationData.hasPrevPage}
-                sx={{
-                  minWidth: 'auto',
-                  p: 0,
-                  backgroundColor: 'transparent',
-                  color: paginationData.hasPrevPage ? '#000000' : '#8E8E93',
-                  border: 'none',
-                  fontSize: 20,
-                  fontWeight: 400,
-                  '&:hover': {
-                    backgroundColor: 'transparent',
-                  },
-                  '&:disabled': {
-                    backgroundColor: 'transparent',
-                    color: '#8E8E93',
-                  },
-                }}
-              >
-                <ChevronLeftRounded size={16} />
-              </Button>
-
-              {/* Page Numbers */}
-              {(() => {
-                const pageButtons = [];
-                const showEllipsis = paginationData.totalPages > 3;
-
-                if (!showEllipsis) {
-                  // Show all pages if 3 or fewer
-                  for (let i = 1; i <= paginationData.totalPages; i += 1) {
-                    pageButtons.push(
-                      <Button
-                        key={i}
-                        onClick={() => setCurrentPage(i)}
-                        sx={{
-                          minWidth: 'auto',
-                          p: 0,
-                          mx: 1,
-                          backgroundColor: 'transparent',
-                          color: currentPage === i ? '#000000' : '#8E8E93',
-                          border: 'none',
-                          fontSize: 16,
-                          fontWeight: 400,
-                          '&:hover': {
-                            backgroundColor: 'transparent',
-                          },
-                        }}
-                      >
-                        {i}
-                      </Button>
-                    );
-                  }
-                } else {
-                  // Show 1, current-1, current, current+1, ..., last
-                  pageButtons.push(
-                    <Button
-                      key={1}
-                      onClick={() => setCurrentPage(1)}
-                      sx={{
-                        minWidth: 'auto',
-                        p: 0,
-                        mx: 1,
-                        backgroundColor: 'transparent',
-                        color: currentPage === 1 ? '#000000' : '#8E8E93',
-                        border: 'none',
-                        fontSize: 16,
-                        fontWeight: 400,
-                        '&:hover': {
-                          backgroundColor: 'transparent',
-                        },
-                      }}
-                    >
-                      1
-                    </Button>
-                  );
-
-                  if (currentPage > 3) {
-                    pageButtons.push(
-                      <Typography key="ellipsis1" sx={{ mx: 1, color: '#8E8E93', fontSize: 16 }}>
-                        ...
-                      </Typography>
-                    );
-                  }
-
-                  // Show current page and adjacent pages
-                  for (
-                    let i = Math.max(2, currentPage - 1);
-                    i <= Math.min(paginationData.totalPages - 1, currentPage + 1);
-                    i += 1
-                  ) {
-                    pageButtons.push(
-                      <Button
-                        key={i}
-                        onClick={() => setCurrentPage(i)}
-                        sx={{
-                          minWidth: 'auto',
-                          p: 0,
-                          mx: 1,
-                          backgroundColor: 'transparent',
-                          color: currentPage === i ? '#000000' : '#8E8E93',
-                          border: 'none',
-                          fontSize: 16,
-                          fontWeight: 400,
-                          '&:hover': {
-                            backgroundColor: 'transparent',
-                          },
-                        }}
-                      >
-                        {i}
-                      </Button>
-                    );
-                  }
-
-                  if (currentPage < paginationData.totalPages - 2) {
-                    pageButtons.push(
-                      <Typography key="ellipsis2" sx={{ mx: 1, color: '#8E8E93', fontSize: 16 }}>
-                        ...
-                      </Typography>
-                    );
-                  }
-
-                  if (paginationData.totalPages > 1) {
-                    pageButtons.push(
-                      <Button
-                        key={paginationData.totalPages}
-                        onClick={() => setCurrentPage(paginationData.totalPages)}
-                        sx={{
-                          minWidth: 'auto',
-                          p: 0,
-                          mx: 1,
-                          backgroundColor: 'transparent',
-                          color: currentPage === paginationData.totalPages ? '#000000' : '#8E8E93',
-                          border: 'none',
-                          fontSize: 16,
-                          fontWeight: 400,
-                          '&:hover': {
-                            backgroundColor: 'transparent',
-                          },
-                        }}
-                      >
-                        {paginationData.totalPages}
-                      </Button>
-                    );
-                  }
-                }
-
-                return pageButtons;
-              })()}
-
-              {/* Next Button */}
-              <Button
-                onClick={handleNextPage}
-                disabled={!paginationData.hasNextPage}
-                sx={{
-                  minWidth: 'auto',
-                  p: 0,
-                  backgroundColor: 'transparent',
-                  color: paginationData.hasNextPage ? '#000000' : '#8E8E93',
-                  border: 'none',
-                  fontSize: 16,
-                  fontWeight: 400,
-                  '&:hover': {
-                    backgroundColor: 'transparent',
-                  },
-                  '&:disabled': {
-                    backgroundColor: 'transparent',
-                    color: '#8E8E93',
-                  },
-                }}
-              >
-                <ChevronRightRounded size={16} />
-              </Button>
-            </Box>
-          )}
+                {filteredSubmissions.length === 0 && postingSubmissions.length > 0 && (
+                  <Grid item xs={12}>
+                    <Alert severity="info">
+                      No {selectedPlatform.toLowerCase()} submissions found for this campaign.
+                    </Alert>
+                  </Grid>
+                )}
+              </Grid>
+          </Box>
+        </>
+      )}
         </>
       )}
 
