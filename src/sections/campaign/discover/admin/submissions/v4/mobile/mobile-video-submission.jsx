@@ -39,7 +39,7 @@ export default function MobileVideoSubmission({
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
-  const isPosted = submission.status === 'POSTED'
+  const isPosted = ['POSTED', 'APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
