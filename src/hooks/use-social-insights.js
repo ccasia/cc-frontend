@@ -9,16 +9,16 @@ const campaignAveragesCache = new Map();
 // Cache utilities
 const createCacheKey = (postingSubmissions, campaignId) => {
   const urls = postingSubmissions
-    .map(s => `${s.platform}_${s.postUrl}_${s.user}`)
+    .map((s) => `${s.platform}_${s.postUrl}_${s.user}`)
     .sort()
     .join('|');
   return `${campaignId}_${btoa(urls).slice(0, 20)}`;
 };
 
-const isCacheValid = (timestamp, ttl = 300000) =>  // 5 minutes default TTL
-   Date.now() - timestamp < ttl
-;
-
+const isCacheValid = (
+  timestamp,
+  ttl = 300000 // 5 minutes default TTL
+) => Date.now() - timestamp < ttl;
 const cleanOldCache = (cache, maxSize = 20) => {
   if (cache.size > maxSize) {
     const entries = Array.from(cache.entries());
@@ -36,8 +36,8 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
   const [failedUrls, setFailedUrls] = useState([]);
   const [loadingProgress, setLoadingProgress] = useState({ loaded: 0, total: 0 });
 
-  const cacheKey = useMemo(() => 
-    createCacheKey(postingSubmissions, campaignId), 
+  const cacheKey = useMemo(
+    () => createCacheKey(postingSubmissions, campaignId),
     [postingSubmissions, campaignId]
   );
 
@@ -53,6 +53,7 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
     // Check cache first
     if (insightsCache.has(cacheKey)) {
       const cached = insightsCache.get(cacheKey);
+
       if (isCacheValid(cached.timestamp)) {
         console.log('📦 Using cached insights data');
         setData(cached.data);
@@ -60,10 +61,9 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
         setIsLoading(false);
         setLoadingProgress({ loaded: cached.data.length, total: postingSubmissions.length });
         return;
-      } 
-        // Remove expired cache
-        insightsCache.delete(cacheKey);
-      
+      }
+      // Remove expired cache
+      insightsCache.delete(cacheKey);
     }
 
     setIsLoading(true);
@@ -74,19 +74,21 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
 
     try {
       // Create individual submission cache keys for granular caching
-      const submissionCacheKeys = postingSubmissions.map(submission => 
-        `${submission.platform}_${submission.user}_${encodeURIComponent(submission.postUrl)}_${campaignId}`
+      const submissionCacheKeys = postingSubmissions.map(
+        (submission) =>
+          `${submission.platform}_${submission.user}_${encodeURIComponent(submission.postUrl)}_${campaignId}`
       );
 
       // Check which submissions are already cached
       const cachedSubmissions = [];
       const uncachedSubmissions = [];
-      
+
       postingSubmissions.forEach((submission, index) => {
         const subCacheKey = submissionCacheKeys[index];
         if (insightsCache.has(subCacheKey)) {
           const cached = insightsCache.get(subCacheKey);
-          if (isCacheValid(cached.timestamp, 600000)) { // 10 minutes TTL for individual insights
+          if (isCacheValid(cached.timestamp, 600000)) {
+            // 10 minutes TTL for individual insights
             cachedSubmissions.push(cached.data);
           } else {
             insightsCache.delete(subCacheKey);
@@ -97,7 +99,9 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
         }
       });
 
-      console.log(`📊 Found ${cachedSubmissions.length} cached, ${uncachedSubmissions.length} need fetching`);
+      console.log(
+        `📊 Found ${cachedSubmissions.length} cached, ${uncachedSubmissions.length} need fetching`
+      );
 
       // Add cached data immediately
       insights.push(...cachedSubmissions);
@@ -124,7 +128,7 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
                   submissionId: submission.id,
                   reason: 'Missing user ID or post URL',
                   url: submission.postUrl,
-                }
+                },
               };
             }
 
@@ -143,6 +147,8 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
                   campaignId
                 );
               }
+
+              console.log(endpoint);
 
               if (endpoint) {
                 const response = await axiosInstance.get(endpoint);
@@ -164,12 +170,18 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
                 // Cache individual insight
                 insightsCache.set(submissionCacheKey, {
                   data: insightData,
-                  timestamp: Date.now()
+                  timestamp: Date.now(),
                 });
 
                 return { insight: insightData };
               }
-              return { failed: { submissionId: submission.id, reason: 'No endpoint found', url: submission.postUrl } };
+              return {
+                failed: {
+                  submissionId: submission.id,
+                  reason: 'No endpoint found',
+                  url: submission.postUrl,
+                },
+              };
             } catch (fetchError) {
               console.error(`Error fetching insight for ${submission.postUrl}:`, fetchError);
               return {
@@ -180,7 +192,7 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
                   reason: fetchError.response?.data?.message || fetchError.message,
                   url: submission.postUrl,
                   requiresReconnection: fetchError.response?.data?.requiresReconnection || false,
-                }
+                },
               };
             }
           });
@@ -190,7 +202,7 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
           const batchInsights = [];
           const batchFailed = [];
 
-          batchResults.forEach(result => {
+          batchResults.forEach((result) => {
             if (result.insight) {
               batchInsights.push(result.insight);
             } else if (result.failed) {
@@ -208,7 +220,7 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
           // Small delay between batches to respect rate limits
           if (batches.indexOf(batch) < batches.length - 1) {
             // eslint-disable-next-line no-await-in-loop
-            await new Promise(resolve => {
+            await new Promise((resolve) => {
               setTimeout(resolve, 200);
             });
           }
@@ -219,7 +231,7 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
       insightsCache.set(cacheKey, {
         data: insights,
         failedUrls: failed,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // Clean old cache entries
@@ -227,7 +239,7 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
 
       setData(insights);
       setFailedUrls(failed);
-      
+
       console.log(`✅ Completed fetching ${insights.length} insights (${failed.length} failed)`);
     } catch (err) {
       console.error('Error fetching social insights:', err);
@@ -253,7 +265,7 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
         keysToDelete.push(key);
       }
     }
-    keysToDelete.forEach(key => insightsCache.delete(key));
+    keysToDelete.forEach((key) => insightsCache.delete(key));
   }, [cacheKey, campaignId]);
 
   const memoizedValue = useMemo(

@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import PropTypes from 'prop-types';
 import { m, AnimatePresence } from 'framer-motion';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
@@ -23,7 +24,6 @@ import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import { useGetManualCreatorEntries } from 'src/hooks/useSWR/useGetManualCreatorEntries';
 
-import axiosInstance from 'src/utils/axios';
 import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
 import {
   formatNumber,
@@ -2232,18 +2232,18 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
 
   // eslint-disable-next-line react/no-unstable-nested-components
   const PlatformOverviewLayout = () => (
-      <Box sx={{ pb: selectedPlatform === 'TikTok' ? 4 : 0 }}>
-        {/* Mobile Layout */}
-        <PlatformOverviewMobile
-          platformCounts={platformCounts}
-          selectedPlatform={selectedPlatform}
-          filteredInsightsData={filteredInsightsData}
-          filteredSubmissions={filteredSubmissions}
-          insightsData={insightsData}
-          summaryStats={summaryStats}
-          availablePlatforms={availablePlatforms}
-          getPlatformLabel={getPlatformLabel}
-        />
+    <Box sx={{ pb: selectedPlatform === 'TikTok' ? 4 : 0 }}>
+      {/* Mobile Layout */}
+      <PlatformOverviewMobile
+        platformCounts={platformCounts}
+        selectedPlatform={selectedPlatform}
+        filteredInsightsData={filteredInsightsData}
+        filteredSubmissions={filteredSubmissions}
+        insightsData={insightsData}
+        summaryStats={summaryStats}
+        availablePlatforms={availablePlatforms}
+        getPlatformLabel={getPlatformLabel}
+      />
 
       {/* Desktop Layout */}
       <PlatformOverviewDesktop
@@ -2457,51 +2457,54 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
             {loadingInsights && <AnalyticsPageSkeleton key="skeleton" lgUp={lgUp} />}
           </AnimatePresence>
 
-      {/* Content sections - no fade animation, just appear when loaded */}
-      {!loadingInsights && (
-        <>
-          {/* Section 1: Core Metrics */}
-          <Box mb={4}>
-            <CoreMetricsSection insightsData={filteredInsightsData} summaryStats={summaryStats} />
-          </Box>
+          {/* Content sections - no fade animation, just appear when loaded */}
+          {!loadingInsights && (
+            <>
+              {/* Section 1: Core Metrics */}
+              <Box mb={4}>
+                <CoreMetricsSection
+                  insightsData={filteredInsightsData}
+                  summaryStats={summaryStats}
+                />
+              </Box>
 
-          {/* Section 2: Platform Overview */}
-          <Box mb={4}>
-            {availablePlatforms.length > 0 && (
-              <PlatformOverviewLayout
-                postCount={filteredSubmissions.length}
-                insightsData={filteredInsightsData}
-                summaryStats={summaryStats}
-                platformCounts={platformCounts}
-                selectedPlatform={selectedPlatform}
-              />
-            )}
-          </Box>
+              {/* Section 2: Platform Overview */}
+              <Box mb={4}>
+                {availablePlatforms.length > 0 && (
+                  <PlatformOverviewLayout
+                    postCount={filteredSubmissions.length}
+                    insightsData={filteredInsightsData}
+                    summaryStats={summaryStats}
+                    platformCounts={platformCounts}
+                    selectedPlatform={selectedPlatform}
+                  />
+                )}
+              </Box>
 
-          {/* Section 3: Trends Analysis */}
-          <Stack
-            direction={{ xs: 'column', md: 'row' }}
-            flex={1}
-            spacing={4}
-            justifyContent="space-between"
-            minHeight={{ xs: 'auto', md: 500 }}
-            mb={4}
-          >
-            <Box flex={1} width="100%">
-              <EngagementRateHeatmap
-                campaignId={campaignId}
-                platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
-                weeks={6}
-              />
-            </Box>
-            <Box flex={1} width="100%">
-              <TopCreatorsLineChart
-                campaignId={campaignId}
-                platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
-                days={7}
-              />
-            </Box>
-          </Stack>
+              {/* Section 3: Trends Analysis */}
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                flex={1}
+                spacing={4}
+                justifyContent="space-between"
+                minHeight={{ xs: 'auto', md: 500 }}
+                mb={4}
+              >
+                <Box flex={1} width="100%">
+                  <EngagementRateHeatmap
+                    campaignId={campaignId}
+                    platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
+                    weeks={6}
+                  />
+                </Box>
+                <Box flex={1} width="100%">
+                  <TopCreatorsLineChart
+                    campaignId={campaignId}
+                    platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
+                    days={7}
+                  />
+                </Box>
+              </Stack>
 
               {/* Section 4: Creator List */}
               <Box>
@@ -2646,33 +2649,33 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                   )}
                 </AnimatePresence>
 
-              <Grid container spacing={1}>
-                {/* eslint-disable react/prop-types */}
-                {creatorListRowsSorted.map((row) => {
-                  if (row.kind === 'manual') {
+                <Grid container spacing={1}>
+                  {/* eslint-disable react/prop-types */}
+                  {creatorListRowsSorted.map((row) => {
+                    if (row.kind === 'manual') {
+                      return (
+                        <ManualCreatorCard
+                          key={row.key}
+                          entry={row.entry}
+                          campaignId={campaignId}
+                          onUpdate={mutateManualEntries}
+                          onDelete={handleDeleteClick}
+                          isDisabled={isDisabled}
+                        />
+                      );
+                    }
+
                     return (
-                      <ManualCreatorCard
+                      <UserPerformanceCard
                         key={row.key}
-                        entry={row.entry}
-                        campaignId={campaignId}
-                        onUpdate={mutateManualEntries}
-                        onDelete={handleDeleteClick}
-                        isDisabled={isDisabled}
+                        submission={row.submission}
+                        insightData={row.insightData}
+                        engagementRate={row.engagementRate}
+                        loadingInsights={loadingInsights}
                       />
                     );
-                  }
-
-                  return (
-                    <UserPerformanceCard
-                      key={row.key}
-                      submission={row.submission}
-                      insightData={row.insightData}
-                      engagementRate={row.engagementRate}
-                      loadingInsights={loadingInsights}
-                    />
-                  );
-                })}
-                {/* eslint-enable react/prop-types */}
+                  })}
+                  {/* eslint-enable react/prop-types */}
 
                   {postingSubmissions.length === 0 && manualEntries.length === 0 && (
                     <Grid item xs={12}>
@@ -2711,17 +2714,17 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                     </Grid>
                   )}
 
-                {filteredSubmissions.length === 0 && postingSubmissions.length > 0 && (
-                  <Grid item xs={12}>
-                    <Alert severity="info">
-                      No {selectedPlatform.toLowerCase()} submissions found for this campaign.
-                    </Alert>
-                  </Grid>
-                )}
-              </Grid>
-          </Box>
-        </>
-      )}
+                  {filteredSubmissions.length === 0 && postingSubmissions.length > 0 && (
+                    <Grid item xs={12}>
+                      <Alert severity="info">
+                        No {selectedPlatform.toLowerCase()} submissions found for this campaign.
+                      </Alert>
+                    </Grid>
+                  )}
+                </Grid>
+              </Box>
+            </>
+          )}
         </>
       )}
 

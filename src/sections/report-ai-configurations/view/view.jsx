@@ -284,6 +284,7 @@ const TestPromptDrawer = ({ open, onClose, section, prompt, apiKey }) => {
     setRunning(true);
     setResult('');
     setError('');
+
     try {
       const res = await axiosInstance.post(`/api/reports/generate/${selectedCampaign.id}`, {
         sections: [section],
