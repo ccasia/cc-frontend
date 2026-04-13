@@ -1141,6 +1141,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         rightSideContent={({
           currentTime: modalCurrentTime,
           onSeekTo,
+          onPause,
+          onPlay,
           videoId: modalVideoId,
           videoPage,
           setVideoPage,
@@ -1168,6 +1170,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
               videoId={modalVideoId || clientVideo?.id || video?.id}
               currentVideoTime={videoControls.formatTime(modalCurrentTime || 0)}
               onSeek={onSeekTo}
+              onPause={onPause}
+              onPlay={onPlay}
               onSendToAdmin={handleSendAndRefresh}
               isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
               isPastVideo={isPastVideo}
@@ -1190,6 +1194,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           currentTime: modalCurrentTime,
           duration: modalDuration,
           onSeek,
+          onPause,
+          onPlay,
           videoId: modalVideoId,
           videoPage,
           setVideoPage,
@@ -1201,6 +1207,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
             currentTime={modalCurrentTime}
             duration={modalDuration}
             onSeek={onSeek}
+            onPause={onPause}
+            onPlay={onPlay}
             submission={modalSubmission || submission}
             videoId={modalVideoId || video?.id}
             videoPage={videoPage}

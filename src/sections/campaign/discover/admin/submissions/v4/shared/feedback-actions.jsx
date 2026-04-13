@@ -125,8 +125,7 @@ export default function FeedbackActions({
   if (!isVideoSubmission) {
     const legacyShowFeedbackActions =
       (!isClient &&
-        (submission.status === 'PENDING_REVIEW' ||
-          submission.status === 'CLIENT_FEEDBACK')) ||
+        (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) ||
       (isClient && submission.status === 'SENT_TO_CLIENT');
     if (!legacyShowFeedbackActions) return null;
 
@@ -136,12 +135,9 @@ export default function FeedbackActions({
     const legacyShowApproveButton = !isClientFeedback && action !== 'request_revision';
     const legacyShowAdminClientFeedbackActions =
       !isClient && isClientFeedback && action !== 'request_revision';
-    const legacyShowReasonsDropdown =
-      action === 'request_revision' || action === 'request_changes';
+    const legacyShowReasonsDropdown = action === 'request_revision' || action === 'request_changes';
 
-    const legacyActionText = !isClient
-      ? 'Send this Submission to Client?'
-      : 'Approve Submission?';
+    const legacyActionText = !isClient ? 'Send this Submission to Client?' : 'Approve Submission?';
     const legacyIconSrc = !isClient
       ? '/assets/images/modals/send_to_client.png'
       : '/assets/images/modals/approve.png';
@@ -241,10 +237,7 @@ export default function FeedbackActions({
                     );
                     const latestClientFeedback = clientRequestFeedbacks[0];
 
-                    if (
-                      latestClientFeedback?.reasons &&
-                      latestClientFeedback.reasons.length > 0
-                    ) {
+                    if (latestClientFeedback?.reasons && latestClientFeedback.reasons.length > 0) {
                       const clientReasons = latestClientFeedback.reasons;
                       const hasMultipleReasons = clientReasons.length > 1;
 
@@ -378,9 +371,7 @@ export default function FeedbackActions({
                 renderValue={(selected) => {
                   if (selected.length === 0) {
                     return (
-                      <span style={{ color: '#999', fontSize: 14 }}>
-                        Change Request Reasons
-                      </span>
+                      <span style={{ color: '#999', fontSize: 14 }}>Change Request Reasons</span>
                     );
                   }
                   return (
@@ -482,11 +473,7 @@ export default function FeedbackActions({
             onClose={() => setConfirmDialogOpen(false)}
             title={legacyActionText}
             emoji={
-              <Avatar
-                src={legacyIconSrc}
-                alt={legacyIconAlt}
-                sx={{ width: 80, height: 80 }}
-              />
+              <Avatar src={legacyIconSrc} alt={legacyIconAlt} sx={{ width: 80, height: 80 }} />
             }
             content=""
             action={
@@ -869,6 +856,8 @@ export default function FeedbackActions({
             currentTime,
             duration,
             onSeek,
+            onPause,
+            onPlay,
             videoId,
             videoPage,
             setVideoPage,
@@ -879,6 +868,8 @@ export default function FeedbackActions({
               currentTime={currentTime}
               duration={duration}
               onSeek={onSeek}
+              onPause={onPause}
+              onPlay={onPlay}
               submission={submission}
               videoId={videoId || submission.video?.[0]?.id}
               videoPage={videoPage}

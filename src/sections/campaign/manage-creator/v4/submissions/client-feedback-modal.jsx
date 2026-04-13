@@ -811,6 +811,8 @@ const ClientFeedbackModal = forwardRef(
       submissionId,
       videoId,
       currentVideoTime = '0:00',
+      onPause,
+      onPlay,
       onSeek,
       onSendToAdmin,
       isLocked,
@@ -841,7 +843,24 @@ const ClientFeedbackModal = forwardRef(
       },
       []
     );
+    const [draftTimestamp, setDraftTimestamp] = useState(null);
+    const [isInputFocused, setIsInputFocused] = useState(false);
+    const [hasTyped, setHasTyped] = useState(false);
     const [feedbackText, setFeedbackText] = useState('');
+
+    useEffect(() => {
+      const shouldFreeze = isInputFocused && hasTyped;
+      if (shouldFreeze) {
+        if (draftTimestamp == null) {
+          setDraftTimestamp(currentVideoTime);
+          onPause?.();
+        }
+      } else if (draftTimestamp != null) {
+        setDraftTimestamp(null);
+        onPlay?.();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isInputFocused, hasTyped]);
     const [replyingToId, setReplyingToId] = useState(null);
     const [openRepliesById, setOpenRepliesById] = useState({});
     const [sessionNewReplyIds, setSessionNewReplyIds] = useState(new Set());
@@ -1012,12 +1031,24 @@ const ClientFeedbackModal = forwardRef(
             const parentRect = parentEl.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
             if (parentRect.bottom < containerRect.top) {
-              setNewAbove((prev) => ({ ...prev, replies: prev.replies + 1, targetId: prev.targetId || pid }));
+              setNewAbove((prev) => ({
+                ...prev,
+                replies: prev.replies + 1,
+                targetId: prev.targetId || pid,
+              }));
             } else if (parentRect.bottom > containerRect.bottom) {
-              setNewBelow((prev) => ({ ...prev, replies: prev.replies + 1, targetId: prev.targetId || pid }));
+              setNewBelow((prev) => ({
+                ...prev,
+                replies: prev.replies + 1,
+                targetId: prev.targetId || pid,
+              }));
             }
           } else {
-            setNewBelow((prev) => ({ ...prev, replies: prev.replies + 1, targetId: prev.targetId || pid }));
+            setNewBelow((prev) => ({
+              ...prev,
+              replies: prev.replies + 1,
+              targetId: prev.targetId || pid,
+            }));
           }
         }, 200);
       };
@@ -1045,12 +1076,24 @@ const ClientFeedbackModal = forwardRef(
             const commentRect = commentEl.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
             if (commentRect.bottom < containerRect.top) {
-              setNewAbove((prev) => ({ ...prev, messages: prev.messages + 1, targetId: prev.targetId || cid }));
+              setNewAbove((prev) => ({
+                ...prev,
+                messages: prev.messages + 1,
+                targetId: prev.targetId || cid,
+              }));
             } else if (commentRect.bottom > containerRect.bottom) {
-              setNewBelow((prev) => ({ ...prev, messages: prev.messages + 1, targetId: prev.targetId || cid }));
+              setNewBelow((prev) => ({
+                ...prev,
+                messages: prev.messages + 1,
+                targetId: prev.targetId || cid,
+              }));
             }
           } else {
-            setNewBelow((prev) => ({ ...prev, messages: prev.messages + 1, targetId: prev.targetId || cid }));
+            setNewBelow((prev) => ({
+              ...prev,
+              messages: prev.messages + 1,
+              targetId: prev.targetId || cid,
+            }));
           }
         }, 200);
       };
@@ -1301,7 +1344,7 @@ const ClientFeedbackModal = forwardRef(
           `/api/submissions/v4/submission/${submissionId}/comments`,
           {
             text: feedbackText,
-            timestamp: currentVideoTime,
+            timestamp: draftTimestamp ?? currentVideoTime,
             parentId: null,
             videoId,
             isClientDraft: !isCountingDown,
@@ -1326,6 +1369,7 @@ const ClientFeedbackModal = forwardRef(
 
         setComments((prev) => insertSortedByTimestamp(prev, newComment));
         setFeedbackText('');
+        setHasTyped(false);
         setNewAbove({ replies: 0, messages: 0, targetId: null });
         setNewBelow({ replies: 0, messages: 0, targetId: null });
         setTimeout(() => scrollToElement(newComment.id), 100);
@@ -1366,7 +1410,8 @@ const ClientFeedbackModal = forwardRef(
             if (!container) return;
             const { scrollTop, scrollHeight, clientHeight } = container;
             if (scrollTop < 100) setNewAbove({ replies: 0, messages: 0, targetId: null });
-            if (scrollHeight - scrollTop - clientHeight < 100) setNewBelow({ replies: 0, messages: 0, targetId: null });
+            if (scrollHeight - scrollTop - clientHeight < 100)
+              setNewBelow({ replies: 0, messages: 0, targetId: null });
           }}
           sx={{
             flex: 1,
@@ -1410,7 +1455,14 @@ const ClientFeedbackModal = forwardRef(
                   }}
                 >
                   <Iconify icon="mdi:arrow-up" width={14} sx={{ color: '#1340FF' }} />
-                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                  <Typography
+                    sx={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: '#1340FF',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {getNewItemLabel(newAbove)}
                   </Typography>
                 </Box>
@@ -1441,8 +1493,12 @@ const ClientFeedbackModal = forwardRef(
               )}
 
               {(() => {
-                const unresolvedComments = comments.filter((c) => !c.resolvedByUserId && !c.resolvedAt);
-                const resolvedComments = comments.filter((c) => !!c.resolvedByUserId || !!c.resolvedAt);
+                const unresolvedComments = comments.filter(
+                  (c) => !c.resolvedByUserId && !c.resolvedAt
+                );
+                const resolvedComments = comments.filter(
+                  (c) => !!c.resolvedByUserId || !!c.resolvedAt
+                );
 
                 const renderCommentThread = (comment, isResolved) => {
                   const allReplies = comment.replies || [];
@@ -1670,7 +1726,14 @@ const ClientFeedbackModal = forwardRef(
                 }}
               >
                 <Iconify icon="mdi:arrow-down" width={14} sx={{ color: '#1340FF' }} />
-                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                <Typography
+                  sx={{
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    color: '#1340FF',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {getNewItemLabel(newBelow)}
                 </Typography>
               </Box>
@@ -1749,7 +1812,7 @@ const ClientFeedbackModal = forwardRef(
                     flexShrink: 0,
                   }}
                 >
-                  <AnimatedTime time={currentVideoTime} />
+                  <AnimatedTime time={draftTimestamp ?? currentVideoTime} />
                 </Box>
 
                 <TextField
@@ -1759,7 +1822,19 @@ const ClientFeedbackModal = forwardRef(
                   maxRows={isMobile ? 4 : 6}
                   placeholder={effectiveIsLocked ? 'Comments are disabled' : 'Leave feedback...'}
                   value={effectiveIsLocked ? 'Comments are disabled' : feedbackText}
-                  onChange={(e) => setFeedbackText(e.target.value)}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setFeedbackText(next);
+                    if (next.trim().length > 0) setHasTyped(true);
+                  }}
+                  onFocus={() => {
+                    if (effectiveIsLocked) return;
+                    setIsInputFocused(true);
+                  }}
+                  onBlur={() => {
+                    setIsInputFocused(false);
+                    setHasTyped(false);
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
