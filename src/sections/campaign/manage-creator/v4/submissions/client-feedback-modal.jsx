@@ -1371,6 +1371,7 @@ const ClientFeedbackModal = forwardRef(
           sx={{
             flex: 1,
             overflowY: 'auto',
+            scrollbarGutter: 'stable',
             pr: 1,
             pb: 2,
             display: 'flex',

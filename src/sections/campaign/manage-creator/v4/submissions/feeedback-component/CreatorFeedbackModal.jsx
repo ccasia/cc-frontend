@@ -1443,6 +1443,7 @@ const CreatorFeedbackModal = ({
           flex: 1,
           overflowY: 'auto',
           overflowX: 'hidden',
+          scrollbarGutter: 'stable',
           p: { xs: 1, md: 0 },
           '&::-webkit-scrollbar': { width: '4px' },
           '&::-webkit-scrollbar-track': {

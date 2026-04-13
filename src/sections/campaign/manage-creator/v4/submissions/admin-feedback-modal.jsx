@@ -1201,20 +1201,25 @@ export default function AdminFeedbackPanel({
     };
   }, [submission?.id, videoId]);
 
-  // Expand threads that have new unseen client or creator replies
+  // Show new unseen client/creator replies inline (without expanding entire thread)
   useEffect(() => {
     if (!comments?.length || firstViewExpandDone.current) return;
     firstViewExpandDone.current = true;
 
-    const expandMap = {};
+    const newReplyIds = new Set();
     comments.forEach((c) => {
-      const hasNewClientOrCreatorReply = (c.replies || []).some(
-        (r) => newClientCommentIds.has(r.id) || newCreatorReplyIds.has(r.id)
-      );
-      if (hasNewClientOrCreatorReply) expandMap[c.id] = true;
+      (c.replies || []).forEach((r) => {
+        if (newClientCommentIds.has(r.id) || newCreatorReplyIds.has(r.id)) {
+          newReplyIds.add(r.id);
+        }
+      });
     });
-    if (Object.keys(expandMap).length > 0) {
-      setOpenRepliesById((prev) => ({ ...prev, ...expandMap }));
+    if (newReplyIds.size > 0) {
+      setSessionNewReplyIds((prev) => {
+        const next = new Set(prev);
+        newReplyIds.forEach((id) => next.add(id));
+        return next;
+      });
     }
   }, [comments, newClientCommentIds, newCreatorReplyIds]);
 
@@ -1626,6 +1631,7 @@ export default function AdminFeedbackPanel({
           minHeight: 0,
           overflowY: 'auto',
           overflowX: 'hidden',
+          scrollbarGutter: 'stable',
           pr: 1,
           pt: 1,
           pb: 2,
