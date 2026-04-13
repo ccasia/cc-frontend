@@ -758,6 +758,8 @@ const VideoSubmissionModal = ({
                       setModalCurrentTime(seconds);
                     }
                   },
+                  onPause: () => modalVideoRef.current?.pause(),
+                  onPlay: () => modalVideoRef.current?.play(),
                 });
               }
               if (React.isValidElement(rightSideContent)) {

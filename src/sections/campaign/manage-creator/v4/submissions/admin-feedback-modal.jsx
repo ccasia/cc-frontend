@@ -158,7 +158,8 @@ const CommentCard = ({
   const isAdminComment = !isClientComment && !isCreatorComment;
   const canAdminReply = isAdminView && !isReply && (isEditedClientComment || isAdminComment);
   const hasAgreed = comment.agreedBy?.length > 0;
-  const isResolved = !!comment.resolvedByUserId || !!comment.resolvedAt || isPastVideo || parentResolved;
+  const isResolved =
+    !!comment.resolvedByUserId || !!comment.resolvedAt || isPastVideo || parentResolved;
   const showRepliesToggle = !isReply && replyCount > 0;
   const repliesToggleColor = isRepliesOpen ? '#919191' : '#1340FF';
 
@@ -204,9 +205,12 @@ const CommentCard = ({
   // Delete permission: own comment, not past video
   // Allow deletion when forwardedByUserId is absent OR matches the current admin
   // (backend auto-sets forwardedByUserId on admin replies when the parent is already forwarded)
-  const canDelete = !!onDelete && !isPastVideo && !pendingDelete
-    && (comment.userId === currentUserId || comment.user?.id === currentUserId)
-    && (!comment.forwardedByUserId || comment.forwardedByUserId === currentUserId);
+  const canDelete =
+    !!onDelete &&
+    !isPastVideo &&
+    !pendingDelete &&
+    (comment.userId === currentUserId || comment.user?.id === currentUserId) &&
+    (!comment.forwardedByUserId || comment.forwardedByUserId === currentUserId);
 
   // Countdown for pending-delete state
   const [deleteProgress, setDeleteProgress] = useState(100);
@@ -280,7 +284,15 @@ const CommentCard = ({
       >
         {/* Left: ring/tick + message */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-          <Box sx={{ position: 'relative', display: 'inline-flex', width: 32, height: 32, flexShrink: 0 }}>
+          <Box
+            sx={{
+              position: 'relative',
+              display: 'inline-flex',
+              width: 32,
+              height: 32,
+              flexShrink: 0,
+            }}
+          >
             <AnimatePresence mode="wait" initial={false}>
               {deleteTimerDone ? (
                 <m.div
@@ -328,7 +340,14 @@ const CommentCard = ({
                       justifyContent: 'center',
                     }}
                   >
-                    <Typography sx={{ fontSize: '0.688rem', fontWeight: 700, color: '#1340FF', lineHeight: 1 }}>
+                    <Typography
+                      sx={{
+                        fontSize: '0.688rem',
+                        fontWeight: 700,
+                        color: '#1340FF',
+                        lineHeight: 1,
+                      }}
+                    >
                       {deleteSecondsLeft}
                     </Typography>
                   </Box>
@@ -344,7 +363,13 @@ const CommentCard = ({
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.2 }}
             >
-              <Typography sx={{ fontSize: '0.813rem', fontWeight: 500, color: deleteTimerDone ? '#1340FF' : '#6B7280' }}>
+              <Typography
+                sx={{
+                  fontSize: '0.813rem',
+                  fontWeight: 500,
+                  color: deleteTimerDone ? '#1340FF' : '#6B7280',
+                }}
+              >
                 {deleteTimerDone ? 'Comment deleted.' : 'Comment has been deleted. Undo?'}
               </Typography>
             </m.span>
@@ -412,14 +437,17 @@ const CommentCard = ({
         ...(isNewCreatorReply && {
           border: '1.5px solid #1340FF',
         }),
-        ...(showVisibilityBorder && isVisible && (feedbackSent || !!onToggleVisibility) && {
-          border: 'none',
-          borderLeft: '5px solid #1340FF',
-          borderTop: '1px solid #1340FF',
-        }),
-        ...(showVisibilityBorder && !isVisible && {
-          border: '1px solid #EBEBEB',
-        }),
+        ...(showVisibilityBorder &&
+          isVisible &&
+          (feedbackSent || !!onToggleVisibility) && {
+            border: 'none',
+            borderLeft: '5px solid #1340FF',
+            borderTop: '1px solid #1340FF',
+          }),
+        ...(showVisibilityBorder &&
+          !isVisible && {
+            border: '1px solid #EBEBEB',
+          }),
         ...(canToggleVisibility && {
           cursor: 'pointer',
           '&:hover': {
@@ -538,11 +566,16 @@ const CommentCard = ({
                   bgcolor: 'transparent',
                   '&:hover': { bgcolor: 'transparent' },
                   '&:hover img': {
-                    filter: 'brightness(0) saturate(100%) invert(41%) sepia(93%) saturate(1352%) hue-rotate(340deg) brightness(101%) contrast(101%)',
+                    filter:
+                      'brightness(0) saturate(100%) invert(41%) sepia(93%) saturate(1352%) hue-rotate(340deg) brightness(101%) contrast(101%)',
                   },
                 }}
               >
-                <Box component="img" src="/assets/icons/components/comment_delete.svg" sx={{ width: 16, height: 16 }} />
+                <Box
+                  component="img"
+                  src="/assets/icons/components/comment_delete.svg"
+                  sx={{ width: 16, height: 16 }}
+                />
               </IconButton>
             </DarkGlassTooltip>
           )}
@@ -823,7 +856,10 @@ const CommentCard = ({
               </Box>
             )}
             {showRepliesToggle && (
-              <DarkGlassTooltip title={isRepliesOpen ? 'Hide replies' : 'Show replies'} placement="top">
+              <DarkGlassTooltip
+                title={isRepliesOpen ? 'Hide replies' : 'Show replies'}
+                placement="top"
+              >
                 <Box
                   data-interactive
                   component="button"
@@ -1037,7 +1073,9 @@ const CommentCard = ({
 
   return (
     <AnimatePresence mode="wait" initial={false}>
-      {pendingDelete ? pendingDeleteContent : (
+      {pendingDelete ? (
+        pendingDeleteContent
+      ) : (
         <m.div
           key="comment-card"
           initial={{ opacity: 0, x: -30, filter: 'blur(4px)' }}
@@ -1099,6 +1137,8 @@ export default function AdminFeedbackPanel({
   currentTime = 0,
   duration = 0,
   onSeek,
+  onPause,
+  onPlay,
   submission,
   videoId,
   videoPage,
@@ -1118,6 +1158,23 @@ export default function AdminFeedbackPanel({
   const [confirmSendToClientOpen, setConfirmSendToClientOpen] = useState(false);
   const [confirmSendToCreatorOpen, setConfirmSendToCreatorOpen] = useState(false);
   const [pendingDeletes, setPendingDeletes] = useState(new Map()); // commentId -> { timeoutId, startTime }
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [hasTyped, setHasTyped] = useState(false);
+
+  useEffect(() => {
+    const shouldFreeze = isInputFocused && hasTyped;
+    if (shouldFreeze) {
+      if (draftTimestamp == null) {
+        setDraftTimestamp(currentTime);
+        onPause?.();
+      }
+    } else if (draftTimestamp != null) {
+      setDraftTimestamp(null);
+      onPlay?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInputFocused, hasTyped]);
 
   const { user } = useAuthContext();
 
@@ -1303,12 +1360,24 @@ export default function AdminFeedbackPanel({
           const parentRect = parentEl.getBoundingClientRect();
           const containerRect = container.getBoundingClientRect();
           if (parentRect.bottom < containerRect.top) {
-            setNewAbove((prev) => ({ ...prev, [key]: prev[key] + 1, targetId: prev.targetId || parentId }));
+            setNewAbove((prev) => ({
+              ...prev,
+              [key]: prev[key] + 1,
+              targetId: prev.targetId || parentId,
+            }));
           } else if (parentRect.bottom > containerRect.bottom) {
-            setNewBelow((prev) => ({ ...prev, [key]: prev[key] + 1, targetId: prev.targetId || parentId }));
+            setNewBelow((prev) => ({
+              ...prev,
+              [key]: prev[key] + 1,
+              targetId: prev.targetId || parentId,
+            }));
           }
         } else {
-          setNewBelow((prev) => ({ ...prev, [key]: prev[key] + 1, targetId: prev.targetId || parentId }));
+          setNewBelow((prev) => ({
+            ...prev,
+            [key]: prev[key] + 1,
+            targetId: prev.targetId || parentId,
+          }));
         }
       }, 200);
     };
@@ -1384,40 +1453,48 @@ export default function AdminFeedbackPanel({
 
   // Keep a ref in sync for cleanup on unmount
   const pendingDeletesRef = useRef(pendingDeletes);
-  useEffect(() => { pendingDeletesRef.current = pendingDeletes; }, [pendingDeletes]);
+  useEffect(() => {
+    pendingDeletesRef.current = pendingDeletes;
+  }, [pendingDeletes]);
 
   // Clear pending delete timeouts on unmount
-  useEffect(() => () => {
-    pendingDeletesRef.current.forEach(({ timeoutId }) => clearTimeout(timeoutId));
-  }, []);
+  useEffect(
+    () => () => {
+      pendingDeletesRef.current.forEach(({ timeoutId }) => clearTimeout(timeoutId));
+    },
+    []
+  );
 
   // ---- Handlers ----
 
-  const handleDeleteComment = useCallback((commentId) => {
-    if (pendingDeletesRef.current.has(commentId)) return;
-    const startTime = Date.now();
-    const timeoutId = setTimeout(async () => {
-      try {
-        await axiosInstance.delete(endpoints.submission.v4.deleteComment(commentId));
-        // Hold the "Comment deleted." state for a bit before removing
-        await new Promise((r) => setTimeout(r, 1000));
-        commentsMutate();
-      } catch (error) {
-        enqueueSnackbar('Failed to delete comment', { variant: 'error' });
-        commentsMutate();
-      }
+  const handleDeleteComment = useCallback(
+    (commentId) => {
+      if (pendingDeletesRef.current.has(commentId)) return;
+      const startTime = Date.now();
+      const timeoutId = setTimeout(async () => {
+        try {
+          await axiosInstance.delete(endpoints.submission.v4.deleteComment(commentId));
+          // Hold the "Comment deleted." state for a bit before removing
+          await new Promise((r) => setTimeout(r, 1000));
+          commentsMutate();
+        } catch (error) {
+          enqueueSnackbar('Failed to delete comment', { variant: 'error' });
+          commentsMutate();
+        }
+        setPendingDeletes((prev) => {
+          const next = new Map(prev);
+          next.delete(commentId);
+          return next;
+        });
+      }, 6000);
       setPendingDeletes((prev) => {
         const next = new Map(prev);
-        next.delete(commentId);
+        next.set(commentId, { timeoutId, startTime });
         return next;
       });
-    }, 6000);
-    setPendingDeletes((prev) => {
-      const next = new Map(prev);
-      next.set(commentId, { timeoutId, startTime });
-      return next;
-    });
-  }, [commentsMutate]);
+    },
+    [commentsMutate]
+  );
 
   const handleUndoDelete = useCallback((commentId) => {
     setPendingDeletes((prev) => {
@@ -1436,10 +1513,11 @@ export default function AdminFeedbackPanel({
     try {
       await axiosInstance.post(endpoints.submission.v4.comments(submission.id), {
         text,
-        timestamp: formatTime(currentTime),
+        timestamp: formatTime(draftTimestamp ?? currentTime),
         videoId,
       });
       setCommentText('');
+      setHasTyped(false);
     } catch (error) {
       enqueueSnackbar('Failed to send comment', { variant: 'error' });
     }
@@ -1624,7 +1702,8 @@ export default function AdminFeedbackPanel({
           if (!container) return;
           const { scrollTop, scrollHeight, clientHeight } = container;
           if (scrollTop < 100) setNewAbove({ replies: 0, messages: 0, targetId: null });
-          if (scrollHeight - scrollTop - clientHeight < 100) setNewBelow({ replies: 0, messages: 0, targetId: null });
+          if (scrollHeight - scrollTop - clientHeight < 100)
+            setNewBelow({ replies: 0, messages: 0, targetId: null });
         }}
         sx={{
           flex: 1,
@@ -1671,7 +1750,14 @@ export default function AdminFeedbackPanel({
                 }}
               >
                 <Iconify icon="mdi:arrow-up" width={14} sx={{ color: '#1340FF' }} />
-                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                <Typography
+                  sx={{
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    color: '#1340FF',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {getNewItemLabel(newAbove)}
                 </Typography>
               </Box>
@@ -1712,8 +1798,12 @@ export default function AdminFeedbackPanel({
                 </Box>
               ) : (
                 (() => {
-                  const unresolvedComments = isPastVideo ? [] : comments.filter((c) => !c.resolvedByUserId && !c.resolvedAt);
-                  const resolvedComments = isPastVideo ? comments : comments.filter((c) => !!c.resolvedByUserId || !!c.resolvedAt);
+                  const unresolvedComments = isPastVideo
+                    ? []
+                    : comments.filter((c) => !c.resolvedByUserId && !c.resolvedAt);
+                  const resolvedComments = isPastVideo
+                    ? comments
+                    : comments.filter((c) => !!c.resolvedByUserId || !!c.resolvedAt);
 
                   const renderCommentThread = (comment) => {
                     const allReplies = comment.replies || [];
@@ -1921,7 +2011,9 @@ export default function AdminFeedbackPanel({
               }}
             >
               <Iconify icon="mdi:arrow-down" width={14} sx={{ color: '#1340FF' }} />
-              <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+              <Typography
+                sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}
+              >
                 {getNewItemLabel(newBelow)}
               </Typography>
             </Box>
@@ -1946,7 +2038,12 @@ export default function AdminFeedbackPanel({
           }}
         >
           <Typography
-            sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' }, fontWeight: 400, color: '#636366', lineHeight: 1.4 }}
+            sx={{
+              fontSize: { xs: '0.75rem', md: '0.875rem' },
+              fontWeight: 400,
+              color: '#636366',
+              lineHeight: 1.4,
+            }}
           >
             Click on comments to include/exclude it for Creator&apos;s Feedback
           </Typography>
@@ -1987,7 +2084,7 @@ export default function AdminFeedbackPanel({
                 cursor: duration ? 'ew-resize' : 'default',
               }}
             >
-              <AnimatedTime time={formatTime(currentTime)} />
+              <AnimatedTime time={formatTime(draftTimestamp ?? currentTime)} />
             </Box>
             <TextField
               multiline
@@ -1995,7 +2092,16 @@ export default function AdminFeedbackPanel({
               maxRows={6}
               placeholder="Leave feedback..."
               value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setCommentText(next);
+                if (next.trim().length > 0) setHasTyped(true);
+              }}
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => {
+                setIsInputFocused(false);
+                setHasTyped(false);
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
