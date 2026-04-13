@@ -27,7 +27,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFSelectV2, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
+import { RHFSwitch, RHFSelectV2, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
 
 import { useGetAdmins } from '../../create/hooks/get-am';
 
@@ -126,8 +126,9 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
       campaignType: campaign?.campaignType || 'normal',
       deliverables: existingDeliverables,
       isV4Submission: campaign?.submissionVersion === 'v4',
+      isCreditTier: campaign?.isCreditTier || false,
     }),
-    [existingManagers, campaign?.submissionVersion, campaign?.campaignType, existingDeliverables]
+    [existingManagers, campaign?.submissionVersion, campaign?.campaignType, existingDeliverables, campaign?.isCreditTier]
   );
 
   const methods = useForm({
@@ -201,6 +202,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
         campaignType: data.campaignType,
         deliverables: data.deliverables,
         isV4Submission: data.isV4Submission,
+        isCreditTier: data.isCreditTier,
       });
 
       enqueueSnackbar('Campaign finalise settings updated successfully');
@@ -240,12 +242,59 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
               onChange={handleV4ToggleChange}
               color="primary"
               disabled
+              sx={{
+                cursor: 'not-allowed',
+                '& .MuiSwitch-switchBase.Mui-disabled': {
+                  cursor: 'not-allowed',
+                  pointerEvents: 'auto',
+                },
+                '& .MuiSwitch-track': {
+                  cursor: 'not-allowed',
+                },
+              }}
             />
           </Stack>
           <Typography variant="caption" fontWeight={400} color="text.secondary">
             {isV4Submission
               ? 'Client users will be added as campaign managers. Disabling will remove them.'
               : 'Enabling this option makes it a campaign that the previously selected client will manage.'}
+          </Typography>
+        </Stack>
+
+        {/* Credit Tier Toggle */}
+        <Stack>
+          <Stack direction="row" alignItems="center" mb={-0.8}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                color: campaign?.isCreditTier ? '#231F20' : (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+                opacity: campaign?.isCreditTier ? 0.6 : 1,
+                fontSize: '0.875rem',
+                mr: 1,
+              }}
+            >
+              Enable Credit Tier pricing?
+            </Typography>
+            <RHFSwitch
+              name="isCreditTier"
+              color="primary"
+              disabled={!!campaign?.isCreditTier}
+              sx={campaign?.isCreditTier ? {
+                cursor: 'not-allowed',
+                '& .MuiSwitch-switchBase.Mui-disabled': {
+                  cursor: 'not-allowed',
+                  pointerEvents: 'auto',
+                },
+                '& .MuiSwitch-track': {
+                  cursor: 'not-allowed',
+                },
+              } : undefined}
+            />
+          </Stack>
+          <Typography variant="caption" fontWeight={400} color="text.secondary">
+            {campaign?.isCreditTier
+              ? 'Credit tier pricing is enabled for this campaign and cannot be disabled.'
+              : 'When enabled, creator costs are based on their follower count tier instead of flat 1 credit per video.'}
           </Typography>
         </Stack>
 
