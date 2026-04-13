@@ -39,6 +39,7 @@ export default function MobileVideoSubmission({
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
+  const isPosted = ['POSTED', 'APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
@@ -382,8 +383,7 @@ export default function MobileVideoSubmission({
       ) : (
         <>
           <Box sx={{ mb: 2 }}>
-            {!isClient &&
-            (submission.status === 'APPROVED' ||
+            {(submission.status === 'APPROVED' ||
               submission.status === 'CLIENT_APPROVED' ||
               submission.status === 'POSTED' ||
               submission.status === 'REJECTED') &&
@@ -394,6 +394,7 @@ export default function MobileVideoSubmission({
                 onViewLogs={() => setShowFeedbackLogs(true)}
                 onReviewSubmission={() => setAdminReviewModalOpen(true)}
                 isDisabled={isDisabled}
+                isClient={isClient}
               />
             ) : (
               <FeedbackSection
@@ -404,7 +405,7 @@ export default function MobileVideoSubmission({
               />
             )}
           </Box>
-          {isClient && (
+          {!isPosted && isClient && (
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
               <button
                 type="button"

@@ -47,6 +47,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
+  const isPosted = ['POSTED', 'APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
@@ -118,7 +119,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
         if (response.data?.feedbackDeadline) {
           setLocalFeedbackDeadline(response.data.feedbackDeadline);
-          if (response.data?.feedbackSentByName) setLocalFeedbackSentByName(response.data.feedbackSentByName);
+          if (response.data?.feedbackSentByName)
+            setLocalFeedbackSentByName(response.data.feedbackSentByName);
         }
 
         enqueueSnackbar('Video approved successfully', { variant: 'success' });
@@ -200,7 +202,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
         if (response.data?.feedbackDeadline) {
           setLocalFeedbackDeadline(response.data.feedbackDeadline);
-          if (response.data?.feedbackSentByName) setLocalFeedbackSentByName(response.data.feedbackSentByName);
+          if (response.data?.feedbackSentByName)
+            setLocalFeedbackSentByName(response.data.feedbackSentByName);
         }
 
         enqueueSnackbar('Changes requested successfully', { variant: 'success' });
@@ -268,7 +271,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
         if (response.data?.feedbackDeadline) {
           setLocalFeedbackDeadline(response.data.feedbackDeadline);
-          if (response.data?.feedbackSentByName) setLocalFeedbackSentByName(response.data.feedbackSentByName);
+          if (response.data?.feedbackSentByName)
+            setLocalFeedbackSentByName(response.data.feedbackSentByName);
         }
 
         if (shouldRefresh) {
@@ -599,20 +603,25 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           flexDirection: 'column',
                         }}
                       >
-                        {!isClient &&
-                        (submission.status === 'APPROVED' ||
-                          submission.status === 'CLIENT_APPROVED' ||
-                          submission.status === 'POSTED' ||
-                          submission.status === 'REJECTED') &&
-                        campaign?.campaignType === 'normal' ? (
-                          <PostingLinkSection
-                            submission={submission}
-                            onUpdate={onUpdate}
-                            onViewLogs={() => setShowFeedbackLogs(true)}
-                            onReviewSubmission={() => setAdminReviewModalOpen(true)}
-                            isDisabled={isDisabled}
-                          />
-                        ) : null
+                        {
+                          (submission.status === 'APPROVED' ||
+                            submission.status === 'CLIENT_APPROVED' ||
+                            submission.status === 'POSTED' ||
+                            submission.status === 'REJECTED') &&
+                          campaign?.campaignType === 'normal' ? (
+                            <PostingLinkSection
+                              submission={submission}
+                              onUpdate={onUpdate}
+                              onViewLogs={() => setShowFeedbackLogs(true)}
+                              onReviewSubmission={() => {
+                                isClient
+                                  ? setVideoSubmissionModalOpen(true)
+                                  : setAdminReviewModalOpen(true);
+                              }}
+                              isDisabled={isDisabled}
+                              isClient={isClient}
+                            />
+                          ) : null
                           /* Temporarily hidden — feedback text should not show while video is Processing
                           !isClient && (
                             <FeedbackSection
@@ -625,7 +634,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           */
                         }
                       </Box>
-                      {isClient && clientVideo && (
+                      {!isPosted && isClient && clientVideo && (
                         <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
                           <TypographyMotion
                             component="button"
