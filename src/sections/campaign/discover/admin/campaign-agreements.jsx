@@ -39,6 +39,7 @@ import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useNavigate } from 'react-router';
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
@@ -433,6 +434,7 @@ AgreementDialog.propTypes = {
 const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) => {
   const { data, isLoading, mutate: mutateAgreements } = useGetAgreements(campaign?.id);
   const { socket } = useSocketContext();
+  const navigate = useNavigate();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [submissions, setSubmissions] = useState([]);
@@ -810,6 +812,10 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     feedbackDialog.onTrue();
   };
 
+  const handleProfileClick = (creator) => {
+    navigate(`/dashboard/creator/profile/${creator.userId}`);
+  };
+
   const onSubmitFeedback = handleSubmit(async (formData) => {
     try {
       setRejectLoading(true);
@@ -867,7 +873,9 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
         (item) => item?.submission?.status === 'PENDING_REVIEW'
       ).length,
       sentToCreator: pitchApprovedAgreements.filter(
-        (item) => item.isSent && !['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(item?.submission?.status)
+        (item) =>
+          item.isSent &&
+          !['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(item?.submission?.status)
       ).length,
       rejected: pitchApprovedAgreements.filter((item) => item?.submission?.status === 'REJECTED')
         .length,
@@ -1360,7 +1368,16 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                             {item?.user?.name?.charAt(0).toUpperCase()}
                           </Avatar>
                           <Stack spacing={0.5}>
-                            <Typography variant="body2">{item?.user?.name}</Typography>
+                            <Typography
+                              variant="body2"
+                              onClick={() => handleProfileClick(item)}
+                              sx={{
+                                cursor: 'pointer',
+                                '&:hover': { textDecoration: 'underline', color: '#1340FF' },
+                              }}
+                            >
+                              {item?.user?.name}
+                            </Typography>
                             {!smUp && !item?.user?.email?.endsWith('@tempmail.com') && (
                               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                 {item?.user?.email}
