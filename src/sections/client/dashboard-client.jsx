@@ -67,7 +67,7 @@ const ClientDashboard = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const campaignsPerPage = 3; // 3 campaigns per page for table, 1 row (3 cards) for card view
+  const campaignsPerPage = 5;
   const [activeCampaignId, setActiveCampaignId] = useState(null);
 
   const checkClientCompanyAndProfile = React.useCallback(async () => {
