@@ -55,6 +55,7 @@ const CreatorProfileView = ({ id }) => {
   const { data: campaigns = [] } = useGetMyCampaign(id);
   const { initialize, user } = useAuthContext();
   const router = useRouter();
+  const creator = data?.user?.creator;
 
   const [isLoadingImpersonation, setIsLoading] = useState(false);
 
@@ -241,7 +242,7 @@ const CreatorProfileView = ({ id }) => {
             <Box className="header">
               <img
                 src="/assets/icons/overview/bluesmileyface.svg"
-                alt="Campaign Info"
+                alt="Creator Info"
                 style={{
                   width: 20,
                   height: 20,
@@ -256,7 +257,7 @@ const CreatorProfileView = ({ id }) => {
                   fontSize: '0.875rem',
                 }}
               >
-                Campaign Information
+                Creator Information
               </Typography>
             </Box>
             {/* Creator Information Box */}
@@ -451,16 +452,40 @@ const CreatorProfileView = ({ id }) => {
           <Box sx={{ ...BoxStyle, mt: 3 }}>
             <Box className="header">
               <Iconify icon="mdi:share-variant-outline" width={20} color="#1340FF" />
-              <Typography
-                variant="body2"
+              <Box
                 sx={{
-                  color: '#221f20',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flex: 1,
                 }}
               >
-                Social Media
-              </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  Social Media
+                </Typography>
+                <Label
+                  color={
+                    creator?.isTiktokConnected || creator?.isFacebookConnected
+                      ? 'success'
+                      : data?.user?.mediaKitMandatory
+                        ? 'warning'
+                        : 'default'
+                  }
+                >
+                  {creator?.isTiktokConnected || creator?.isFacebookConnected
+                    ? 'Connected'
+                    : data?.user?.mediaKitMandatory
+                      ? 'Marked'
+                      : 'Unmarked'}
+                </Label>
+              </Box>
             </Box>
 
             <Stack direction="row" spacing={1}>
