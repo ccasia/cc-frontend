@@ -140,6 +140,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
 
   const handleRemove = () => {
     setValue('agreementForm', null, { shouldValidate: true });
+    setValue('agreementForm', null, { shouldValidate: true });
   };
 
   const onSubmit = handleSubmit(async (data) => {

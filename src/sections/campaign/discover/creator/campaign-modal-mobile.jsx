@@ -217,12 +217,12 @@ const CampaignModalMobile = ({ campaign }) => {
     requirement?.secondary_user_persona;
 
   return (
-    <Stack spacing={2} sx={{ p: 1 }}>
+    <Stack spacing={2}>
       <Divider
         sx={{
           borderColor: '#EBEBEB',
           width: '100%',
-          borderWidth: 1,
+          borderWidth: 0.8,
           mt: 1,
         }}
       />
@@ -356,141 +356,8 @@ const CampaignModalMobile = ({ campaign }) => {
       </Stack>
 
       {/* Add Divider */}
-      <Divider sx={{ borderColor: '#EBEBEB', width: '100%', borderWidth: 1 }} />
+      <Divider sx={{ borderColor: '#EBEBEB', width: '100%', borderWidth: 0.8, mb: 0.8 }} />
 
-      {/* Campaign Details */}
-      {/* <Box>
-        <SectionHeader
-          icon="/assets/icons/components/ic_bluesmiley.svg"
-          title="CAMPAIGN DETAILS"
-          color="#203ff5"
-        />
-        <Typography
-          variant="body2"
-          sx={{
-            pl: 0.5,
-            textAlign: 'justify',
-            wordWrap: 'break-word',
-            overflowWrap: 'break-word',
-            whiteSpace: 'pre-wrap',
-            maxWidth: '100%',
-          }}
-        >
-          {campaign?.description}
-        </Typography>
-      </Box> */}
-
-      {/* Campaign Objectives */}
-      {/* <Box>
-        <SectionHeader
-          icon="/assets/icons/components/ic_objectives.svg"
-          title="CAMPAIGN OBJECTIVES"
-          color="#835cf5"
-        />
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ pl: 0.5 }}>
-          <Iconify
-            icon="octicon:dot-fill-16"
-            sx={{
-              color: '#000000',
-              width: 12,
-              height: 12,
-              flexShrink: 0,
-            }}
-          />
-          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-            {campaign?.campaignBrief?.objectives}
-          </Typography>
-        </Stack>
-      </Box> */}
-
-      {/* Campaign Deliverables */}
-      {/* <Box>
-        <SectionHeader
-          icon="/assets/icons/components/ic_deliverables.svg"
-          title="CAMPAIGN DELIVERABLES"
-          color="#203ff5"
-        />
-        <Stack spacing={1} sx={{ pl: 0.5 }}>
-          {[
-            { label: 'UGC Videos', value: true },
-            { label: 'Raw Footage', value: campaign?.rawFootage },
-            { label: 'Photos', value: campaign?.photos },
-            { label: 'Ads', value: campaign?.ads },
-          ].map(
-            (deliverable) =>
-              deliverable.value && (
-                <Stack key={deliverable.label} direction="row" spacing={1} alignItems="center">
-                  <Iconify
-                    icon="octicon:dot-fill-16"
-                    sx={{
-                      color: '#000000',
-                      width: 12,
-                      height: 12,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                    {deliverable.label}
-                  </Typography>
-                </Stack>
-              )
-          )}
-        </Stack>
-      </Box> */}
-
-      {/* Campaign Do's */}
-      {/* <Box>
-        <SectionHeader
-          icon="/assets/icons/components/ic_dos.svg"
-          title="CAMPAIGN DO'S!"
-          color="#026D54"
-        />
-        <Stack spacing={1} sx={{ pl: 0.5 }}>
-          {campaign?.campaignBrief?.campaigns_do?.map((item, index) => (
-            <Stack key={index} direction="row" spacing={1} alignItems="center">
-              <Iconify
-                icon="octicon:dot-fill-16"
-                sx={{
-                  color: '#000000',
-                  width: 12,
-                  height: 12,
-                  flexShrink: 0,
-                }}
-              />
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                {item.value}
-              </Typography>
-            </Stack>
-          ))}
-        </Stack>
-      </Box> */}
-
-      {/* Campaign Don'ts */}
-      {/* <Box>
-        <SectionHeader
-          icon="/assets/icons/components/ic_donts.svg"
-          title="CAMPAIGN DONT'S!"
-          color="#eb4a26"
-        />
-        <Stack spacing={1} sx={{ pl: 0.5 }}>
-          {campaign?.campaignBrief?.campaigns_dont?.map((item, index) => (
-            <Stack key={index} direction="row" spacing={1} alignItems="center">
-              <Iconify
-                icon="octicon:dot-fill-16"
-                sx={{
-                  color: '#000000',
-                  width: 12,
-                  height: 12,
-                  flexShrink: 0,
-                }}
-              />
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                {item.value}
-              </Typography>
-            </Stack>
-          ))}
-        </Stack>
-      </Box> */}
       <Stack spacing={1}>
         {/* Campaign General Info */}
         <Accordion
@@ -643,6 +510,7 @@ const CampaignModalMobile = ({ campaign }) => {
                     label={deliverable.label}
                     size="medium"
                     sx={{
+                      mr: 1,
                       bgcolor: '#F5F5F5',
                       borderRadius: 1,
                       color: '#231F20',

@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
@@ -37,7 +38,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
     setOpenMediaKit(false);
   };
 
-  const { name, creator, country, status, photoURL } = row;
+  const { name, creator, country, status, photoURL, mediaKitMandatory } = row;
 
   const confirm = useBoolean();
 
@@ -86,10 +87,6 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
           </Typography>
         </TableCell>
 
-        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{creator?.tiktok || 'null'}</TableCell> */}
-
-        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}> {creator?.instagram || 'null'}</TableCell> */}
-
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{country || 'null'}</TableCell>
 
         <TableCell>
@@ -106,22 +103,27 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
           </Label>
         </TableCell>
 
-        {/* <TableCell>
-          <Button
-            variant="outlined"
-            onClick={handleOpenMediaKit}
-            endIcon={<Iconify icon="eva:external-link-fill" />}
-            size="small"
-          >
-            <Typography variant="button" sx={{ fontWeight: 'normal' }}>
-              Media Kit
-            </Typography>
-          </Button>
-        </TableCell> */}
-
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Label color={creator?.isFormCompleted ? 'success' : 'warning'}>
             {creator?.isFormCompleted ? 'Done' : 'Pending'}
+          </Label>
+        </TableCell>
+
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          <Label
+            color={
+              creator?.isTiktokConnected || creator?.isFacebookConnected
+                ? 'success'
+                : mediaKitMandatory
+                  ? 'warning'
+                  : 'default'
+            }
+          >
+            {creator?.isTiktokConnected || creator?.isFacebookConnected
+              ? 'Connected'
+              : mediaKitMandatory
+                ? 'Marked'
+                : 'Unmarked'}
           </Label>
         </TableCell>
 
@@ -140,7 +142,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
               color: '#221f20',
               minWidth: '65px',
               height: '32px',
-              mr: 1
+              mr: 1,
             }}
             onClick={() => {
               router.push(paths.dashboard.creator.profile(row.id));
@@ -153,7 +155,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
             <IconButton
               color={quickEdit.value ? 'inherit' : 'default'}
               onClick={quickEdit.onTrue}
-              disabled={!useCheckPermission(['update:client'])}
+              disabled={!useCheckPermission(['update:creator'])}
             >
               <Iconify icon="solar:pen-bold" />
             </IconButton>
@@ -165,6 +167,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
             }
             placement="top"
             arrow
+            disabled={!useCheckPermission(['update:creator'])}
           >
             <IconButton
               onClick={() => {

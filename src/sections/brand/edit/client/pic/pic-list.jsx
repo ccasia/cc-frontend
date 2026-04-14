@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { toast } from 'react-hot-toast';
 import { enqueueSnackbar } from 'notistack';
 import React, { useState, useEffect } from 'react';
 
@@ -24,7 +25,11 @@ import {
   TableContainer,
 } from '@mui/material';
 
+import { useRouter } from 'src/routes/hooks';
+
 import axiosInstance from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { useTable } from 'src/components/table';
@@ -40,6 +45,9 @@ const TABLE_HEAD = [
 
 const PICList = ({ personIncharge, companyId, onUpdate }) => {
   const table = useTable();
+  const { initialize } = useAuthContext();
+  const router = useRouter();
+
   const [editDialog, setEditDialog] = useState(false);
   const [selectedPIC, setSelectedPIC] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -54,6 +62,7 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
   const [menuSelectedPIC, setMenuSelectedPIC] = useState(null);
   const [resendDialog, setResendDialog] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const notFound = !personIncharge?.length;
 
@@ -70,7 +79,9 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
         try {
           // Find user by email since PIC email should match User email
           // Normalize email to lowercase for case-insensitive matching
-          const response = await axiosInstance.get(`/api/user/by-email/${pic.email?.toLowerCase()}`);
+          const response = await axiosInstance.get(
+            `/api/user/by-email/${pic.email?.toLowerCase()}`
+          );
           return { picId: pic.id, userData: response.data };
         } catch (error) {
           console.error(`Error fetching user for PIC ${pic.id}:`, error);
@@ -230,6 +241,22 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
     }
   };
 
+  const impersonateClient = async (email) => {
+    try {
+      setIsLoading(true);
+      await axiosInstance.post('/api/admin/impersonate-client', { email });
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      handleMenuClose();
+      initialize();
+      router.replace('/dashboard');
+    } catch (error) {
+      console.log(error);
+      toast.error('Failed to impersonate');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <TableContainer sx={{ overflow: 'unset' }}>
@@ -274,13 +301,23 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
                           justifyContent: 'center',
                         }}
                       >
-                        <Iconify icon="solar:user-id-bold-duotone" width={32} sx={{ color: '#C4CDD5' }} />
+                        <Iconify
+                          icon="solar:user-id-bold-duotone"
+                          width={32}
+                          sx={{ color: '#C4CDD5' }}
+                        />
                       </Box>
                       <Typography variant="subtitle1" color="text.primary" fontWeight={600}>
                         No Person In Charge
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={320}>
-                        A PIC will be added when you activate the client account. They&apos;ll receive an invitation to set up their access.
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        textAlign="center"
+                        maxWidth={320}
+                      >
+                        A PIC will be added when you activate the client account. They&apos;ll
+                        receive an invitation to set up their access.
                       </Typography>
                     </Stack>
                   </TableCell>
@@ -437,8 +474,14 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
             <Typography variant="body1" fontWeight={600} mt={1}>
               {menuSelectedPIC?.email}
             </Typography>
-            <Typography variant="body2" color="text.secondary" mt={2} sx={{ bgcolor: '#FFF8E6', p: 1.5, borderRadius: 1 }}>
-              This will generate a new activation link that expires in 24 hours. The previous link will be invalidated.
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              mt={2}
+              sx={{ bgcolor: '#FFF8E6', p: 1.5, borderRadius: 1 }}
+            >
+              This will generate a new activation link that expires in 24 hours. The previous link
+              will be invalidated.
             </Typography>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
@@ -502,7 +545,10 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
                 '&:hover': { bgcolor: '#F5F5F5' },
               }}
             >
-              <Iconify icon="eva:email-outline" sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }} />
+              <Iconify
+                icon="eva:email-outline"
+                sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
+              />
               Resend Activation Email
             </MenuItem>
             <Divider sx={{ my: 0.5 }} />
@@ -522,6 +568,33 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
         >
           <Iconify icon="eva:edit-fill" sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }} />
           Edit PIC
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            impersonateClient(menuSelectedPIC.email);
+            // if (!isLoading) {
+            //   handleMenuClose();
+            // }
+          }}
+          sx={{
+            py: 1.25,
+            px: 2,
+            fontSize: 14,
+            '&:hover': { bgcolor: '#F5F5F5' },
+          }}
+        >
+          {isLoading ? (
+            <Iconify
+              icon="line-md:loading-loop"
+              sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
+            />
+          ) : (
+            <Iconify
+              icon="boxicons:user-filled"
+              sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
+            />
+          )}
+          Impersonate
         </MenuItem>
       </Menu>
     </>

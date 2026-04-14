@@ -47,8 +47,8 @@ export const extractPostingSubmissions = (submissions) => {
 
   validPostings.forEach(submission => {
     // Enhanced regex patterns for better URL matching
-    const instagramRegex = /https?:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/([A-Za-z0-9_-]+)/g;
-    const tiktokRegex = /https?:\/\/(www\.)?(vm\.|m\.)?tiktok\.com\/[^\s]+/g;
+    const instagramRegex = /https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels|tv)\/[A-Za-z0-9_-]+(?:\?[^\s]*)?/gi;
+    const tiktokRegex = /https?:\/\/(?:www\.|m\.|vm\.|vt\.)?tiktok\.com\/(?:@[^\s/]+\/video\/[0-9]+|t\/[A-Za-z0-9]+|[^\s]+)(?:\?[^\s]*)?/gi;
     
     const instagramMatches = [...(submission.content.matchAll(instagramRegex) || [])];
     const tiktokMatches = [...(submission.content.matchAll(tiktokRegex) || [])];
@@ -90,6 +90,14 @@ export const extractPostingSubmissions = (submissions) => {
     });
   });
   
-  console.log('Extracted submissions with URLs:', extractedSubmissions.length);
-  return extractedSubmissions;
+  // Deduplicate by (user, postUrl) — multiple submissions (VIDEO + PHOTO) can share the same posting URL
+  const seen = new Set();
+  const uniqueSubmissions = extractedSubmissions.filter((sub) => {
+    const key = `${sub.user}_${sub.postUrl}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return uniqueSubmissions;
 };

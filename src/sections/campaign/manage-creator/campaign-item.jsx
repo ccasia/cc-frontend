@@ -1,4 +1,5 @@
 /* eslint-disable no-nested-ternary */
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import { useTheme } from '@mui/material/styles';
@@ -12,6 +13,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Image from 'src/components/image';
@@ -21,7 +24,7 @@ import CampaignModal from './campaign-modal';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({ campaign, user }) {
+export default function CampaignItem({ campaign, user, autoOpen = false }) {
   // const [open, setOpen] = useState(false);
   // const [upload, setUpload] = useState([]);
   // const [, setLoading] = useState(false);
@@ -32,6 +35,7 @@ export default function CampaignItem({ campaign, user }) {
   // const { socket } = useSocketContext();
   // const router = useRouter();
   const theme = useTheme();
+  const router = useRouter();
 
   // const [bookMark, setBookMark] = useState(
   //   campaign?.bookMarkCampaign?.some((item) => item.userId === user?.id) || false
@@ -131,6 +135,22 @@ export default function CampaignItem({ campaign, user }) {
   // };
 
   const campaignInfo = useBoolean();
+
+  useEffect(() => {
+    if (autoOpen) {
+      campaignInfo.onTrue();
+    }
+  }, [campaignInfo, autoOpen]);
+
+  const handleModalClose = () => {
+    campaignInfo.onFalse();
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('campaignId')) {
+      url.searchParams.delete('campaignId');
+      router.replace(`${url.pathname}${url.search}`);
+    }
+  };
 
   const handleCardClick = () => {
     campaignInfo.onTrue();
@@ -334,7 +354,7 @@ export default function CampaignItem({ campaign, user }) {
 
       <CampaignModal
         open={campaignInfo.value}
-        handleClose={campaignInfo.onFalse}
+        handleClose={handleModalClose}
         campaign={campaign}
       />
     </>
@@ -344,4 +364,5 @@ export default function CampaignItem({ campaign, user }) {
 CampaignItem.propTypes = {
   campaign: PropTypes.object,
   user: PropTypes.object,
+  autoOpen: PropTypes.bool,
 };

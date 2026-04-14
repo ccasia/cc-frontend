@@ -17,7 +17,10 @@ const withPermission = (requiredPermission, WrappedComponent) => (props) => {
     (elem) => !permission?.map((item) => item.name).includes(elem)
   );
 
-  if (user?.role === 'superadmin') {
+  if (
+    user?.role === 'superadmin' ||
+    (user?.role === 'admin' && user?.admin?.role?.slug === 'sales_and_marketing')
+  ) {
     return <WrappedComponent {...props} />;
   }
 

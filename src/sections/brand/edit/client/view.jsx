@@ -94,12 +94,6 @@ const CompanyEditView = ({ id }) => {
   const [loading, setLoading] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
-  const [picDialogOpen, setPicDialogOpen] = useState(false);
-  const [picFormData, setPicFormData] = useState({
-    name: '',
-    email: '',
-    designation: '',
-  });
   const router = useRouter();
   const dialog = useBoolean();
   const packageDialog = useBoolean();
@@ -107,6 +101,8 @@ const CompanyEditView = ({ id }) => {
   const [campaignSearch, setCampaignSearch] = useState('');
   const [inviteChildDialog, setInviteChildDialog] = useState(false);
   const [mainPicStatus, setMainPicStatus] = useState(null);
+  const [picDialogOpen, setPicDialogOpen] = useState(false);
+  const [picFormData, setPicFormData] = useState({ name: '', email: '', designation: '' });
 
   // Fetch main PIC user status
   useEffect(() => {
@@ -118,7 +114,9 @@ const CompanyEditView = ({ id }) => {
 
       try {
         // Normalize email to lowercase for case-insensitive matching
-        const response = await axiosInstance.get(`/api/user/by-email/${company.pic[0].email?.toLowerCase()}`);
+        const response = await axiosInstance.get(
+          `/api/user/by-email/${company.pic[0].email?.toLowerCase()}`
+        );
         setMainPicStatus(response.data?.status || null);
       } catch (error) {
         console.error('Error fetching PIC status:', error);
@@ -129,11 +127,15 @@ const CompanyEditView = ({ id }) => {
     fetchPICStatus();
   }, [company?.pic]);
 
-  console.log('Company info: ', company)
-  console.log('Has active client: ', company?.clients?.some(client => client.companyId === company.id))
+  console.log('Company info: ', company);
+  console.log(
+    'Has active client: ',
+    company?.clients?.some((client) => client.companyId === company.id)
+  );
 
   // Check if client is activated: if inviteToken is null/empty, the client has activated
-  const hasActiveClient = company?.clients?.some(client => client.companyId === company.id) || false;
+  const hasActiveClient =
+    company?.clients?.some((client) => client.companyId === company.id) || false;
 
   // Check if company has a valid PIC with email (required for activation)
   const hasValidPIC = company?.pic?.length > 0 && Boolean(company.pic[0]?.email);
@@ -145,10 +147,11 @@ const CompanyEditView = ({ id }) => {
   const canInviteChildAccounts = hasActiveClient && isPicActivated;
 
   const campaigns = useMemo(() => {
-    if (company?.type === 'agency' || company?.brand?.length) {
-      return company?.brand?.flatMap((item) => item?.campaign);
-    }
-    return company?.campaign;
+    const brandCampaigns = company?.brand?.flatMap((item) => item?.campaign || []) || [];
+    const companyCampaigns = company?.campaign || [];
+    const allCampaigns = [...brandCampaigns, ...companyCampaigns];
+    const uniqueCampaigns = Array.from(new Map(allCampaigns.map((c) => [c.id, c])).values());
+    return uniqueCampaigns;
   }, [company]);
 
   const currentPackage = useMemo(
@@ -183,7 +186,12 @@ const CompanyEditView = ({ id }) => {
     defaultValues,
   });
 
-  const { handleSubmit, reset, control, formState: { isDirty } } = methods;
+  const {
+    handleSubmit,
+    reset,
+    control,
+    formState: { isDirty },
+  } = methods;
 
   const fieldsArray = useFieldArray({
     control,
@@ -237,10 +245,11 @@ const CompanyEditView = ({ id }) => {
   });
 
   const handleActivateButtonClick = () => {
-    // Check if PIC exists, if not show PIC creation modal
     if (!hasValidPIC) {
+      // Open PIC dialog if no PIC exists
       setPicDialogOpen(true);
     } else {
+      // Open activation dialog if PIC exists
       setActivateDialogOpen(true);
     }
   };
@@ -248,23 +257,15 @@ const CompanyEditView = ({ id }) => {
   const handleCreatePIC = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.post('/api/pic', {
-        ...picFormData,
-        companyId: company?.id,
-      });
-
-      enqueueSnackbar(response.data.message || 'PIC created successfully', { variant: 'success' });
+      await axiosInstance.post(`/api/pic/company/${id}`, picFormData);
+      enqueueSnackbar('Person In Charge added successfully!', { variant: 'success' });
       setPicDialogOpen(false);
       setPicFormData({ name: '', email: '', designation: '' });
       mutate(); // Refresh company data
-      
-      // After creating PIC, show activation dialog
-      setTimeout(() => {
-        setActivateDialogOpen(true);
-      }, 300);
+      // After creating PIC, open activation dialog
+      setActivateDialogOpen(true);
     } catch (error) {
-      console.error('Error creating PIC:', error);
-      const errorMessage = error.response?.data?.message || 'Error creating PIC';
+      const errorMessage = error.response?.data?.message || 'Error adding Person In Charge';
       enqueueSnackbar(errorMessage, { variant: 'error' });
     } finally {
       setLoading(false);
@@ -275,7 +276,7 @@ const CompanyEditView = ({ id }) => {
     setIsActivating(true);
     try {
       const response = await axiosInstance.post(`${endpoints.company.root}/activateClient/${id}`);
-      
+
       if (response.status === 200) {
         enqueueSnackbar('Client activation email sent successfully!', {
           variant: 'success',
@@ -319,9 +320,9 @@ const CompanyEditView = ({ id }) => {
   }
 
   const handlePackageLinkSuccess = () => {
-    packageDialog.onFalse(); 
-    mutate(); 
-    enqueueSnackbar('New package added successfully!', { variant: 'success' }); 
+    packageDialog.onFalse();
+    mutate();
+    enqueueSnackbar('New package added successfully!', { variant: 'success' });
   };
 
   return (
@@ -601,14 +602,16 @@ const CompanyEditView = ({ id }) => {
                   </Stack>
                 ) : (
                   <PackageHistoryList
-                      dataFiltered={company?.subscriptions}
-                      onRefresh={() => mutate()}
-                    />
+                    dataFiltered={company?.subscriptions}
+                    onRefresh={() => mutate()}
+                  />
                 )}
               </>
             )}
 
-            {activeTab === 'campaign' && <CampaignClientList campaigns={campaigns} searchFilter={campaignSearch} />}
+            {activeTab === 'campaign' && (
+              <CampaignClientList campaigns={campaigns} searchFilter={campaignSearch} />
+            )}
 
             {activeTab === 'pic' && (
               <PICList personIncharge={company?.pic} companyId={company?.id} onUpdate={mutate} />
@@ -742,7 +745,12 @@ const CompanyEditView = ({ id }) => {
       </Dialog>
 
       {/* Client Activation Dialog */}
-      <Dialog open={activateDialogOpen} onClose={() => setActivateDialogOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={activateDialogOpen}
+        onClose={() => setActivateDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
         <Box sx={{ p: 3, pb: 2 }}>
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <Box
@@ -772,17 +780,29 @@ const CompanyEditView = ({ id }) => {
         <DialogContent sx={{ pt: 3 }}>
           <Stack spacing={1.5}>
             <Stack direction="row" justifyContent="space-between">
-              <Typography variant="body2" color="text.secondary">Company Name</Typography>
-              <Typography variant="body2" fontWeight={600}>{company?.name || 'N/A'}</Typography>
-            </Stack>
-            <Stack direction="row" justifyContent="space-between">
-              <Typography variant="body2" color="text.secondary">PIC Email</Typography>
-              <Typography variant="body2" fontWeight={600}>{company?.pic?.[0]?.email || 'N/A'}</Typography>
-            </Stack>
-            <Stack direction="row" justifyContent="space-between">
-              <Typography variant="body2" color="text.secondary">Package</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Company Name
+              </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {currentPackage?.package?.name || currentPackage?.customPackage?.customName || 'No package assigned'}
+                {company?.name || 'N/A'}
+              </Typography>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography variant="body2" color="text.secondary">
+                PIC Email
+              </Typography>
+              <Typography variant="body2" fontWeight={600}>
+                {company?.pic?.[0]?.email || 'N/A'}
+              </Typography>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography variant="body2" color="text.secondary">
+                Package
+              </Typography>
+              <Typography variant="body2" fontWeight={600}>
+                {currentPackage?.package?.name ||
+                  currentPackage?.customPackage?.customName ||
+                  'No package assigned'}
               </Typography>
             </Stack>
           </Stack>

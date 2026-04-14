@@ -34,6 +34,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { NextStepsIcon } from 'src/assets/icons';
+import { useJourneyTracker } from 'src/hooks/use-journey-tracker';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
@@ -72,7 +73,7 @@ const additionalSteps = [
   { title: 'Additional Details 2', logo: '📝', color: '#D8FF01', indicatorIndex: 6 },
 ];
 
-const getSteps = (showAdditionalDetails) => 
+const getSteps = (showAdditionalDetails) =>
   showAdditionalDetails ? [...baseSteps, ...additionalSteps] : baseSteps;
 
 const backSectionLabels = ['General', 'Objective', 'Audience', 'Logistics'];
@@ -89,6 +90,93 @@ const backSectionIndicatorToStepMap = {
 const frontSectionIndicatorToStepMap = {
   0: 7, // Additional Details 1
   1: 8, // Additional Details 2
+};
+
+const getAnalyticsStepName = (stepIndex, showAdditional) => {
+  const allSteps = getSteps(showAdditional);
+  const stepObj = allSteps[stepIndex];
+
+  if (!stepObj) return `UNKNOWN_STEP_${stepIndex}`;
+
+  return stepObj.title.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+};
+
+const getAllAvailableFields = (step) => {
+  switch (step) {
+    case 0:
+      return [
+        'campaignTitle',
+        'campaignDescription',
+        'brandAbout',
+        'campaignIndustries',
+        'campaignCredits',
+        'campaignImages',
+        'campaignStartDate',
+        'campaignEndDate',
+        'postingStartDate',
+        'postingEndDate',
+        'productName',
+        'websiteLink',
+      ];
+    case 1: // Objective
+      return [
+        'campaignObjectives',
+        'secondaryObjectives',
+        'boostContent',
+        'primaryKPI',
+        'performanceBaseline',
+      ];
+    case 2: // Audience
+      return [
+        'audienceGender',
+        'audienceAge',
+        'country',
+        'audienceLanguage',
+        'audienceCreatorPersona',
+        'audienceUserPersona',
+        'geographicFocus',
+        'secondaryAudienceGender',
+        'secondaryAudienceAge',
+        'secondaryCountry',
+        'secondaryAudienceLanguage',
+        'secondaryAudienceCreatorPersona',
+        'secondaryAudienceUserPersona',
+      ];
+    case 3: // Logistics
+      return [
+        'logisticsType',
+        'products',
+        'locations',
+        'allowMultipleBookings',
+        'schedulingOption',
+      ];
+    case 7: // Additional Details 1
+      return [
+        'socialMediaPlatform',
+        'contentFormat',
+        'mainMessage',
+        'keyPoints',
+        'toneAndStyle',
+        'brandGuidelines',
+        'referenceContent',
+        'productImage1',
+        'productImage2',
+      ];
+    case 8: // Additional Details 2
+      return [
+        'hashtagsToUse',
+        'mentionsTagsRequired',
+        'creatorCompensation',
+        'ctaDesiredAction',
+        'ctaLinkUrl',
+        'ctaPromoCode',
+        'ctaLinkInBioRequirements',
+        'specialNotesInstructions',
+        'needAds',
+      ];
+    default:
+      return [];
+  }
 };
 
 // Determine if we're in back section (steps 0-6) or front section (steps 7-8)
@@ -120,6 +208,11 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 
+  const { markCompleted } = useJourneyTracker(
+    'CAMPAIGN_CREATION',
+    getAnalyticsStepName(activeStep, showAdditionalDetails)
+  );
+
   const handleOpenConfirm = () => setConfirmOpen(true);
   const handleCloseConfirm = () => setConfirmOpen(false);
 
@@ -127,7 +220,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
   // Derive steps based on showAdditionalDetails state
   const steps = getSteps(showAdditionalDetails);
-  
+
   // Determine if we're in the front or back section
   const inFrontSection = isInFrontSection(activeStep);
   const inBackSection = isInBackSection(activeStep);
@@ -375,10 +468,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           'productName',
         ];
       case 1: // Objective
-        return [
-          'campaignObjectives',
-          'secondaryObjectives',
-        ];
+        return ['campaignObjectives', 'secondaryObjectives'];
       case 2: // Audience
         return [
           'country',
@@ -417,6 +507,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     // Only validate fields for the current step
     const fieldsToValidate = getFieldsForStep(activeStep);
     const result = fieldsToValidate.length > 0 ? await trigger(fieldsToValidate) : true;
+    const allFields = getAllAvailableFields(activeStep);
     window.removeEventListener('client-campaign-credits-error', listener);
 
     // Also validate locally: if availableCredits is 0 and step is General Campaign Information
@@ -428,6 +519,25 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       (availableCredits <= 0 || requestedCredits <= 0 || requestedCredits > availableCredits);
 
     if (result && !creditsErrorRef.current && !isExceed) {
+      const skippedFields = allFields.filter((fieldName) => {
+        const value = values[fieldName];
+
+        // A field is "skipped" if it's null, undefined, empty string, or an empty array
+        return (
+          value === null ||
+          value === undefined ||
+          value === '' ||
+          (Array.isArray(value) && value.length === 0)
+        );
+      });
+
+      markCompleted({
+        totalFieldsInStep: allFields.length,
+        skippedCount: skippedFields.length,
+        skippedFields,
+        isStepPerfect: skippedFields.length === 0,
+      });
+
       const logisticsType = getValues('logisticsType');
       let nextStep = activeStep + 1;
 
@@ -513,9 +623,20 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
   // Handle clicking "Continue Additional Details" on Next Steps
   const handleContinueAdditionalDetails = () => {
+    markCompleted({ action: 'continue_to_additional_details' });
     setShowAdditionalDetails(true);
     setActiveStep(7); // Go to Additional Details 1
     localStorage.setItem('clientActiveStep', 7);
+  };
+
+  const handleManualClose = () => {
+    markCompleted({
+      status: 'ABANDONED',
+      // skippedFields: getAllAvailableFields(activeStep),
+      reason: 'Manual Close',
+    });
+
+    onClose();
   };
 
   const onSubmit = handleSubmit(async (data, stage) => {
@@ -580,6 +701,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         clientRemarks: data.clientRemarks || '',
         products: data.products?.filter((p) => p.name?.trim().length > 0) || [],
         availabilityRules: data.availabilityRules || [],
+        locations: data.locations?.filter((l) => l.name?.trim().length > 0) || [],
+        schedulingOption: data.schedulingOption,
+        allowMultipleBookings: data.allowMultipleBookings,
         // Additional Details 1 fields
         socialMediaPlatform: Array.isArray(data.socialMediaPlatform)
           ? data.socialMediaPlatform
@@ -663,6 +787,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         'Campaign submitted successfully! CSM will review and activate your campaign.',
         { variant: 'success' }
       );
+      markCompleted({ action: 'final_submit', campaignId: res.data.campaign.id });
 
       // Revalidate client credits so dashboard reflects deduction immediately
       try {
@@ -781,10 +906,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           values.productName
         );
       case 1: // Objective
-        return (
-          values.campaignObjectives?.length > 0 &&
-          values.secondaryObjectives?.length > 0
-        );
+        return values.campaignObjectives?.length > 0 && values.secondaryObjectives?.length > 0;
       case 2: // Audience
         return (
           values.country &&
@@ -795,7 +917,22 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           values.audienceUserPersona &&
           values.geographicFocus
         );
-      case 3: // Logistics - optional
+      case 3: {
+        // Logistics - optional
+        const type = values.logisticsType;
+
+        if (!type) return true;
+
+        if (type === 'PRODUCT_DELIVERY') {
+          return values.products?.some((p) => p.name?.trim().length > 0);
+        }
+
+        if (type === 'RESERVATION') {
+          return values.locations?.some((l) => l.name?.trim().length > 0);
+        }
+
+        return true;
+      }
       case 4: // Reservation Slots - optional (shown only for RESERVATION)
       case 5: // Logistic Remarks - optional
         return true;
@@ -812,7 +949,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   // Get the current indicator indices for both sections
   const backSectionIndicator = getBackSectionIndicatorIndex(activeStep);
   const frontSectionIndicator = getFrontSectionIndicatorIndex(activeStep);
-  
+
   // Determine if Next Steps should be highlighted (step 6 or beyond)
   const isNextStepsActive = activeStep >= 6;
 
@@ -834,7 +971,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             }}
             size="large"
             disabled={isLoading}
-            onClick={onClose}
+            onClick={handleManualClose}
           >
             <Iconify icon="material-symbols:close" width={20} color="#231F20" />
           </IconButton>
@@ -859,57 +996,58 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               sx={{ width: '100%' }}
             >
               {/* Back Section (General, Objective, Audience, Logistics) */}
-              {inBackSection && backSectionLabels.map((label, index) => (
-                <React.Fragment key={label}>
-                  <Box
-                    onClick={() => handleBackSectionStepClick(index)}
-                    sx={{
-                      minWidth: 135,
-                      height: 45,
-                      py: 1.2,
-                      textAlign: 'center',
-                      borderRadius: 1,
-                      fontSize: 14,
-                      fontWeight: 400,
-                      bgcolor:
-                        backSectionIndicator === index
-                          ? '#1340FF'
-                          : backSectionIndicator > index
+              {inBackSection &&
+                backSectionLabels.map((label, index) => (
+                  <React.Fragment key={label}>
+                    <Box
+                      onClick={() => handleBackSectionStepClick(index)}
+                      sx={{
+                        minWidth: 135,
+                        height: 45,
+                        py: 1.2,
+                        textAlign: 'center',
+                        borderRadius: 1,
+                        fontSize: 14,
+                        fontWeight: 400,
+                        bgcolor:
+                          backSectionIndicator === index
                             ? '#1340FF'
-                            : '#fff',
-                      color:
-                        backSectionIndicator === index
-                          ? '#fff'
-                          : backSectionIndicator > index
+                            : backSectionIndicator > index
+                              ? '#1340FF'
+                              : '#fff',
+                        color:
+                          backSectionIndicator === index
                             ? '#fff'
-                            : '#636366',
-                      border: '1px solid #636366',
-                      borderColor: backSectionIndicator >= index ? '#1340FF' : '#636366',
-                      cursor: index <= backSectionIndicator ? 'pointer' : 'default',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        opacity: index <= backSectionIndicator ? 0.85 : 1,
-                      },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Box component="span">{label}</Box>
-                  </Box>
-                  {/* Connector Line after each back section label */}
-                  <Box
-                    sx={{
-                      height: 1.2,
-                      flexGrow: 1,
-                      minWidth: 30,
-                      maxWidth: 50,
-                      bgcolor: backSectionIndicator > index ? '#1340FF' : '#636366',
-                    }}
-                  />
-                </React.Fragment>
-              ))}
+                            : backSectionIndicator > index
+                              ? '#fff'
+                              : '#636366',
+                        border: '1px solid #636366',
+                        borderColor: backSectionIndicator >= index ? '#1340FF' : '#636366',
+                        cursor: index <= backSectionIndicator ? 'pointer' : 'default',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          opacity: index <= backSectionIndicator ? 0.85 : 1,
+                        },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Box component="span">{label}</Box>
+                    </Box>
+                    {/* Connector Line after each back section label */}
+                    <Box
+                      sx={{
+                        height: 1.2,
+                        flexGrow: 1,
+                        minWidth: 30,
+                        maxWidth: 50,
+                        bgcolor: backSectionIndicator > index ? '#1340FF' : '#636366',
+                      }}
+                    />
+                  </React.Fragment>
+                ))}
 
               {/* Next Steps Section (Publish or Continue Additional Details) */}
               <Box
@@ -937,57 +1075,58 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               </Box>
 
               {/* Front Section Labels (Additional Details 1, Additional Details 2) */}
-              {inFrontSection && frontSectionLabels.map((label, index) => (
-                <React.Fragment key={label}>
-                  {/* Connector Line before each front section label */}
-                  <Box
-                    sx={{
-                      height: 1.2,
-                      flexGrow: 1,
-                      minWidth: 30,
-                      maxWidth: 50,
-                      bgcolor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
-                    }}
-                  />
-                  <Box
-                    onClick={() => handleFrontSectionStepClick(index)}
-                    sx={{
-                      minWidth: 135,
-                      height: 45,
-                      py: 1.2,
-                      textAlign: 'center',
-                      borderRadius: 1,
-                      fontSize: 14,
-                      fontWeight: 400,
-                      bgcolor:
-                        frontSectionIndicator === index
-                          ? '#1340FF'
-                          : frontSectionIndicator > index
+              {inFrontSection &&
+                frontSectionLabels.map((label, index) => (
+                  <React.Fragment key={label}>
+                    {/* Connector Line before each front section label */}
+                    <Box
+                      sx={{
+                        height: 1.2,
+                        flexGrow: 1,
+                        minWidth: 30,
+                        maxWidth: 50,
+                        bgcolor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
+                      }}
+                    />
+                    <Box
+                      onClick={() => handleFrontSectionStepClick(index)}
+                      sx={{
+                        minWidth: 135,
+                        height: 45,
+                        py: 1.2,
+                        textAlign: 'center',
+                        borderRadius: 1,
+                        fontSize: 14,
+                        fontWeight: 400,
+                        bgcolor:
+                          frontSectionIndicator === index
                             ? '#1340FF'
-                            : '#fff',
-                      color:
-                        frontSectionIndicator === index
-                          ? '#fff'
-                          : frontSectionIndicator > index
+                            : frontSectionIndicator > index
+                              ? '#1340FF'
+                              : '#fff',
+                        color:
+                          frontSectionIndicator === index
                             ? '#fff'
-                            : '#636366',
-                      border: '1px solid #636366',
-                      borderColor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
-                      cursor: index <= frontSectionIndicator ? 'pointer' : 'default',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        opacity: index <= frontSectionIndicator ? 0.85 : 1,
-                      },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Box component="span">{label}</Box>
-                  </Box>
-                </React.Fragment>
-              ))}
+                            : frontSectionIndicator > index
+                              ? '#fff'
+                              : '#636366',
+                        border: '1px solid #636366',
+                        borderColor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
+                        cursor: index <= frontSectionIndicator ? 'pointer' : 'default',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          opacity: index <= frontSectionIndicator ? 0.85 : 1,
+                        },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Box component="span">{label}</Box>
+                    </Box>
+                  </React.Fragment>
+                ))}
             </Stack>
           </Box>
 

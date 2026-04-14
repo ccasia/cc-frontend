@@ -6,11 +6,11 @@ import { _mock } from './_mock';
 
 export const USER_STATUS_OPTIONS = [
   { value: 'active', label: 'Active' },
+  { value: 'banned', label: 'Inactive' },
   { value: 'blacklisted', label: 'Blacklisted' },
   { value: 'pending', label: 'Pending' },
   { value: 'suspended', label: 'Suspended' },
   { value: 'spam', label: 'Spam' },
-  { value: 'banned', label: 'Banned' },
   { value: 'rejected', label: 'Rejected' },
 ];
 

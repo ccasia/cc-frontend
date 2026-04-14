@@ -1,14 +1,14 @@
 const CURRENCY_PREFIXES = {
-  SGD: {
-    prefix: '$',
-    label: 'SGD',
-  },
   MYR: {
     prefix: 'RM',
     label: 'MYR',
   },
+  SGD: {
+    prefix: 'S$',
+    label: 'SGD',
+  },
   AUD: {
-    prefix: '$',
+    prefix: 'A$',
     label: 'AUD',
   },
   JPY: {

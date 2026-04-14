@@ -72,15 +72,15 @@ const formatTotalAudience = (num) => {
 };
 
 // eslint-disable-next-line react/prop-types
-const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = false }) => {
+const MediaKit = ({ id, hideBackButton = false, hideShareButton = false }) => {
   const theme = useTheme();
   const router = useRouter();
-  const smDown = useResponsive('down', 'sm');
   const mdDown = useResponsive('down', 'md');
-  const isDesktop = useResponsive('up', 'md');
 
   const { data, isLoading, isError } = useSWRGetCreatorByID(id);
   const [currentTab, setCurrentTab] = useState('instagram');
+  const [instagramData, setInstagramData] = useState(null);
+  const [instagramLoading, setInstagramLoading] = useState(false);
   const [tiktokData, setTiktokData] = useState(null);
   const [tiktokLoading, setTiktokLoading] = useState(false);
 
@@ -109,6 +109,21 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
 
   // Preload TikTok data when component mounts
   useEffect(() => {
+    const fetchInstagramData = async () => {
+      if (!data?.id || instagramData) return;
+
+      try {
+        setInstagramLoading(true);
+        const res = await axiosInstance.get(endpoints.creators.social.instagramV2(data.id));
+        setInstagramData(res.data);
+      } catch (error) {
+        console.error('Error fetching Instagram data:', error);
+        setInstagramData(null);
+      } finally {
+        setInstagramLoading(false);
+      }
+    };
+
     const fetchTikTokData = async () => {
       if (!data?.id || tiktokData) return; 
       
@@ -125,10 +140,14 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
     };
 
     // Preload TikTok data immediately when creator data is available
+    if (data?.creator?.isFacebookConnected && !instagramData) {
+      fetchInstagramData();
+    }
+
     if (data?.creator?.isTiktokConnected && !tiktokData) {
       fetchTikTokData();
     }
-  }, [data, tiktokData]);
+  }, [data, tiktokData, instagramData]);
 
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
@@ -149,11 +168,6 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
 
     if (currentTab === 'tiktok') {
       // Use live TikTok data if available, fallback to database
-      const totalEngagement =
-        (tiktokData?.medias?.totalLikes ?? 0) + 
-        (tiktokData?.medias?.totalComments ?? 0) + 
-        (tiktokData?.medias?.totalShares ?? 0);
-      
       return {
         followers: tiktokData?.overview?.follower_count || data?.creator?.tiktokUser?.follower_count || 0,
         engagement_rate: `${
@@ -1576,7 +1590,15 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
           {/* {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`} */}
         </Typography>
 
-        <MediaKitSocial currentTab={currentTab} data={data} tiktokData={tiktokData} sx={{ mb: 4 }} />
+        <MediaKitSocial
+          currentTab={currentTab}
+          data={data}
+          instagramData={instagramData}
+          instagramLoading={instagramLoading}
+          tiktokData={tiktokData}
+          tiktokLoading={tiktokLoading}
+          sx={{ mb: 4 }}
+        />
       </Container>
 
       {/* ----------------------------------------------------------------------------------------------------------------------------------------------------------*/}
@@ -1928,7 +1950,10 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
           <MediaKitSocial
             currentTab={currentTab}
             data={data}
+            instagramData={instagramData}
+            instagramLoading={instagramLoading}
             tiktokData={tiktokData}
+            tiktokLoading={tiktokLoading}
             className="desktop-screenshot-mediakit"
             forceDesktop
             sx={{

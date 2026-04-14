@@ -29,7 +29,7 @@ const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
 const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));
 
 // Analytics
-const AnalyticsView = lazy(() => import('src/sections/analytics/view/analytic-view'));
+const AnalyticsView = lazy(() => import('src/sections/analytics/view/analytic-view-v2'));
 
 // Campaign
 const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCampaign'));
@@ -43,8 +43,12 @@ const AdminCampaignDetail = lazy(
 const AdminCamapaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-detail-manage')
 );
-const PostingLinkCSMView = lazy(() => import('src/pages/dashboard/campaign/admin/posting-link-csm'));
-const PostingLinkSuperadminView = lazy(() => import('src/pages/dashboard/campaign/admin/posting-link-superadmin'));
+const PostingLinkCSMView = lazy(
+  () => import('src/pages/dashboard/campaign/admin/posting-link-csm')
+);
+const PostingLinkSuperadminView = lazy(
+  () => import('src/pages/dashboard/campaign/admin/posting-link-superadmin')
+);
 const AdminEditCampaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
 );
@@ -88,7 +92,12 @@ const AdminTaskPage = lazy(() => import('src/pages/dashboard/admin/tasks'));
 
 // Performance report
 const Report = lazy(() => import('src/pages/dashboard/report/report'));
-const ReportView = lazy(() => import('src/sections/report/view/reporting-view'));
+
+// Creator Discovery Tool
+const DiscoveryTool = lazy(() => import('src/pages/dashboard/discovery-tool/discovery-tool'));
+const DiscoveryToolNpc = lazy(
+  () => import('src/pages/dashboard/discovery-tool/discovery-tool-npc')
+);
 
 // Roles
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
@@ -107,6 +116,9 @@ const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 // Credit Tier
 const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tier'));
 
+// Feedback
+const Feedback = lazy(() => import('src/pages/dashboard/feedback/feedback'));
+
 // Mobile View
 const MobileModalView = lazy(
   () => import('src/sections/campaign/discover/creator/mobile-modal-view')
@@ -117,6 +129,9 @@ const CreatorProfile = lazy(() => import('src/pages/dashboard/creator/profile'))
 
 // FAQ
 const FaqPage = lazy(() => import('src/pages/faq'));
+
+// Report AI Configuration Page
+const ReportAiConfiguration = lazy(() => import('src/pages/dashboard/report-ai-configuration'));
 
 // ----------------------------------------------------------------------
 
@@ -165,7 +180,7 @@ export const dashboardRoutes = [
         children: [
           {
             element: (
-              <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'admin', 'sales_and_marketing']} hasContent>
                 <CreatorList />
               </RoleBasedGuard>
             ),
@@ -174,7 +189,7 @@ export const dashboardRoutes = [
           {
             path: 'lists',
             element: (
-              <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'admin', 'sales_and_marketing']} hasContent>
                 <CreatorList />
               </RoleBasedGuard>
             ),
@@ -184,7 +199,7 @@ export const dashboardRoutes = [
             children: [
               {
                 element: (
-                  <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+                  <RoleBasedGuard roles={['superadmin', 'admin', 'sales_and_marketing']} hasContent>
                     <MeditKitsCards />
                   </RoleBasedGuard>
                 ),
@@ -193,7 +208,7 @@ export const dashboardRoutes = [
               {
                 path: ':id',
                 element: (
-                  <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+                  <RoleBasedGuard roles={['superadmin', 'admin', 'sales_and_marketing']} hasContent>
                     <CreatorMediaKit />
                   </RoleBasedGuard>
                 ),
@@ -203,7 +218,7 @@ export const dashboardRoutes = [
           {
             path: 'profile/:id',
             element: (
-              <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'admin', 'sales_and_marketing']} hasContent>
                 <CreatorProfile />
               </RoleBasedGuard>
             ),
@@ -228,6 +243,27 @@ export const dashboardRoutes = [
           {
             path: 'view',
             element: <ReportingView />,
+          },
+        ],
+      },
+      {
+        path: 'discovery-tool',
+        children: [
+          {
+            element: (
+              <RoleBasedGuard roles={['superadmin', 'god', 'sales_and_marketing']} hasContent>
+                <DiscoveryTool />
+              </RoleBasedGuard>
+            ),
+            index: true,
+          },
+          {
+            path: 'npc',
+            element: (
+              <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+                <DiscoveryToolNpc />
+              </RoleBasedGuard>
+            ),
           },
         ],
       },
@@ -379,7 +415,10 @@ export const dashboardRoutes = [
           {
             index: true,
             element: (
-              <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator', 'Client', 'client']}>
+              <RoleBasedGuard
+                hasContent
+                roles={['admin', 'superadmin', 'creator', 'Client', 'client']}
+              >
                 <ViewCampaign />
               </RoleBasedGuard>
             ),
@@ -443,7 +482,10 @@ export const dashboardRoutes = [
               {
                 index: true,
                 element: (
-                  <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator', 'Client', 'client']}>
+                  <RoleBasedGuard
+                    hasContent
+                    roles={['admin', 'superadmin', 'creator', 'Client', 'client']}
+                  >
                     <ViewCampaign />
                   </RoleBasedGuard>
                 ),
@@ -542,7 +584,7 @@ export const dashboardRoutes = [
       {
         path: 'analytics',
         element: (
-          <RoleBasedGuard hasContent roles={['superadmin', 'god', 'CSL']}>
+          <RoleBasedGuard hasContent roles={['superadmin', 'god', 'CSL', 'sales_and_marketing']}>
             <AnalyticsView />
           </RoleBasedGuard>
         ),
@@ -610,8 +652,16 @@ export const dashboardRoutes = [
       {
         path: 'credit-tier',
         element: (
-          <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+          <RoleBasedGuard roles={['superadmin', 'god', 'sales_and_marketing']} hasContent>
             <CreditTier />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'feedback',
+        element: (
+          <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+            <Feedback />
           </RoleBasedGuard>
         ),
       },
@@ -626,6 +676,10 @@ export const dashboardRoutes = [
       {
         path: 'faq',
         element: <FaqPage />,
+      },
+      {
+        path: 'report-ai',
+        element: <ReportAiConfiguration />,
       },
     ],
   },

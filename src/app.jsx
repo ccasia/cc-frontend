@@ -19,6 +19,7 @@ import { SnackbarProvider } from './components/snackbar';
 import { UnreadMessageCountProvider } from './context/UnreadMessageCountContext';
 import SocketProvider from './socket/context/socket';
 import PopupProvider from './components/popup/popup-provider';
+import NpsProvider from './components/nps-feedback/nps-provider';
 import 'core-js/stable';
 // import CreatorOnBoardingForm from './components/CreatorOnBoardingForm';
 
@@ -57,12 +58,14 @@ export default function App() {
               <MotionLazy>
                 <SocketProvider>
                   <PopupProvider>
-                    <UnreadMessageCountProvider>
-                      {/* <CreatorOnBoardingForm /> */}
-                      <SettingsDrawer />
-                      <ProgressBar />
-                      <Router />
-                    </UnreadMessageCountProvider>
+                    <NpsProvider>
+                      <UnreadMessageCountProvider>
+                        {/* <CreatorOnBoardingForm /> */}
+                        <SettingsDrawer />
+                        <ProgressBar />
+                        <Router />
+                      </UnreadMessageCountProvider>
+                    </NpsProvider>
                   </PopupProvider>
                 </SocketProvider>
               </MotionLazy>

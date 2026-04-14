@@ -7,6 +7,11 @@ export function fDate(date, newFormat) {
   
   if (!date) return '';
   
+  // Handle Date objects directly
+  if (date instanceof Date) {
+    return format(date, fm);
+  }
+
   // Handle TikTok's numeric timestamp format
   if (typeof date === 'number' || !Number.isNaN(Number(date))) {
     // TikTok uses seconds, we need milliseconds

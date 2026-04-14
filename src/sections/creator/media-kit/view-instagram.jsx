@@ -38,11 +38,11 @@ export const formatNumber = (num) => {
   return num.toString();
 };
 
-const TopContentGrid = ({ topContents, mobileCarousel }) => {
-  const { isMobile, theme } = useMediaKitResponsive();
+const TopContentGrid = ({ topContents }) => {
+  const { isMobile } = useMediaKitResponsive();
 
   const displayContent = (topContents || [])
-    .sort((a, b) => a?.like_count > b?.like_count)
+    .sort((a, b) => b?.like_count > a?.like_count)
     .slice(0, 3);
 
   if (isMobile) {
@@ -336,13 +336,12 @@ TopContentGrid.propTypes = {
       image_url: PropTypes.string.isRequired,
     })
   ).isRequired,
-  mobileCarousel: PropTypes.bool,
 };
 
 const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
   const { user } = useAuthContext();
   const instagramData = useSocialMediaData((state) => state.instagram);
-  const { isMobile, isTablet, theme } = useMediaKitResponsive(forceDesktop);
+  const { isMobile, isTablet } = useMediaKitResponsive(forceDesktop);
 
   const [showOAuthWarning, setShowOAuthWarning] = useState(false);
 

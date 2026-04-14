@@ -30,6 +30,10 @@ export const paths = {
     kanban: `${ROOTS.DASHBOARD}/kanban`,
     analytics: `${ROOTS.DASHBOARD}/analytics`,
     client: `${ROOTS.DASHBOARD}/client`,
+    discoveryTool: {
+      root: `${ROOTS.DASHBOARD}/discovery-tool`,
+      npc: `${ROOTS.DASHBOARD}/discovery-tool/npc`,
+    },
     faq: `${ROOTS.DASHBOARD}/faq`,
     company: {
       root: `${ROOTS.DASHBOARD}/company`,
@@ -134,6 +138,9 @@ export const paths = {
     creditTier: {
       root: `${ROOTS.DASHBOARD}/credit-tier`,
     },
+    feedback: {
+      root: `${ROOTS.DASHBOARD}/feedback`,
+    },
     report: {
       root: `${ROOTS.DASHBOARD}/report`,
     },
@@ -142,6 +149,9 @@ export const paths = {
     },
     overview: {
       root: `${ROOTS.DASHBOARD}/overview`,
+    },
+    reportAi: {
+      root: `${ROOTS.DASHBOARD}/report-ai`,
     },
   },
   public: {

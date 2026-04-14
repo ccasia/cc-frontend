@@ -22,6 +22,18 @@ export const formatNumber = (num) => {
   return num.toString();
 };
 
+const getContentPreviewUrl = (content) => {
+  if (!content) return '';
+
+  if (content?.cached_thumbnail_url) return content.cached_thumbnail_url;
+
+  if (content?.media_type === 'VIDEO') {
+    return content?.thumbnail_url || content?.media_url || '';
+  }
+
+  return content?.media_url || content?.thumbnail_url || '';
+};
+
 // const typeAnimation = keyframes`
 //   from { width: 0; }
 //   to { width: 100%; }
@@ -31,7 +43,9 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const topThreeContents = topContents.sort((a, b) => a?.like_count > b?.like_count).slice(0, 3);
+  const topThreeContents = [...(topContents || [])]
+    .sort((a, b) => (b?.like_count || 0) - (a?.like_count || 0))
+    .slice(0, 3);
 
   // Carousel layout for mobile
   if (isMobile) {
@@ -96,7 +110,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                   width: '100%',
                   transition: 'all .3s ease',
                   objectFit: 'cover',
-                  background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.media_type === 'VIDEO' ? content?.thumbnail_url : content?.media_url}) center/cover no-repeat`,
+                  background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${getContentPreviewUrl(content)}) center/cover no-repeat`,
                 }}
               />
               <Box
@@ -142,7 +156,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                 lineHeight: 1.5,
               }}
             >
-              {`${content.caption.slice(0, 100)}...`}
+              {`${content?.caption?.slice(0, 100) || ''}...`}
             </Typography>
           </Box>
         ))}
@@ -218,7 +232,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                 height: 1,
                 transition: 'all .2s linear',
                 objectFit: 'cover',
-                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.media_type === 'VIDEO' ? content?.thumbnail_url : content?.media_url}) lightgray 50% / cover no-repeat`,
+                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${getContentPreviewUrl(content)}) lightgray 50% / cover no-repeat`,
               }}
             />
 
@@ -284,9 +298,29 @@ TopContentGrid.propTypes = {
   mobileCarousel: PropTypes.bool,
 };
 
-const MediaKitSocialContent = ({ instagramVideos, forceDesktop = false }) => {
+const MediaKitSocialContent = ({ instagramVideos, isLoading = false, forceDesktop = false }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm')) && !forceDesktop;
+
+  if (isLoading)
+    return (
+      <Label
+        color="info"
+        sx={{
+          height: 250,
+          textAlign: 'center',
+          borderStyle: 'dashed',
+          borderColor: theme.palette.divider,
+          borderWidth: 1.5,
+          bgcolor: alpha(theme.palette.info.main, 0.08),
+          width: 1,
+        }}
+      >
+        <Stack spacing={1} alignItems="center">
+          <Typography variant="subtitle2">Loading Instagram content...</Typography>
+        </Stack>
+      </Label>
+    );
 
   if (!instagramVideos?.length)
     return (
@@ -355,5 +389,6 @@ export default MediaKitSocialContent;
 
 MediaKitSocialContent.propTypes = {
   instagramVideos: PropTypes.array,
+  isLoading: PropTypes.bool,
   forceDesktop: PropTypes.bool,
 };

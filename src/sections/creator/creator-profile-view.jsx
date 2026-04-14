@@ -53,7 +53,7 @@ const BoxStyle = {
 const CreatorProfileView = ({ id }) => {
   const { data, isLoading } = useGetCreatorById(id);
   const { data: campaigns = [] } = useGetMyCampaign(id);
-  const { initialize } = useAuthContext();
+  const { initialize, user } = useAuthContext();
   const router = useRouter();
 
   const [isLoadingImpersonation, setIsLoading] = useState(false);
@@ -172,7 +172,7 @@ const CreatorProfileView = ({ id }) => {
         >
           Back
         </Button>
-        {data.user.status === 'active' && (
+        {data.user.status === 'active' && user.role === 'superadmin' && (
           <LoadingButton
             variant="outlined"
             startIcon={<Iconify icon="solar:user-linear" width={20} />}

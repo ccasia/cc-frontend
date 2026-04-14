@@ -664,6 +664,8 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
       );
     });
 
+    console.log(pills);
+
     return pills;
   };
 

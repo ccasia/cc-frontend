@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import useSWR from 'swr';
+import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 
 import { Tab, Box, Tabs, Grid, Container, Typography, CircularProgress } from '@mui/material';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import { fetcher, endpoints } from 'src/utils/axios';
 
 import CreatorSendDrafts from './components/creators/drafts';
 import ApprovePitch from './components/admins/PitchAnalytics';
@@ -12,43 +13,49 @@ import CreatorSendPosting from './components/creators/posting';
 import TotalCreators from './components/creators/totalcreators';
 import CreatorSendAgreement from './components/creators/agreements';
 import PostingAnalytics from './components/admins/PostingAnalytics';
+import LanguageAnalytics from './components/creators/language-analytics';
 import ApproveDraftsAnalytics from './components/admins/DraftsAnalytics';
 import ShortlistedCreators from './components/creators/shortlisted-creators';
 import CampaignParticipation from './components/creators/campaign-participants';
 import SendAgreementsAnalytics from './components/admins/SendAgreementsAnalytics';
 import ApproveAgreementsAnalytics from './components/admins/ApproveAgreementsAnalytics';
-
-
+import ClientAnalytics from './components/clients/client-analytics';
 
 export default function AnalyticsView() {
-  const [creators, setCreators] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [creatorsRes, usersRes] = await Promise.all([
-          axiosInstance.get(endpoints.creators.getCreators),
-          axiosInstance.get(endpoints.users.allusers),
-        ]);
+  // OPTIMIZED: Only fetch data for the active tab to reduce initial load time
+  const shouldFetchCreatorData = activeTab === 0;
 
-        setCreators(creatorsRes.data);
-        setUsers(usersRes.data);
-      } catch (err) {
-        setError('Failed to load data');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // OPTIMIZED: Use SWR with caching - only fetch when needed
+  const { data: creators, isLoading: creatorsLoading } = useSWR(
+    shouldFetchCreatorData ? endpoints.creators.getCreators : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnMount: true,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      dedupingInterval: 60000, // Cache for 1 minute
+    }
+  );
 
-    fetchData();
-  }, []);
+  const { data: users, isLoading: usersLoading } = useSWR(
+    shouldFetchCreatorData ? endpoints.users.allusers : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnMount: true,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      dedupingInterval: 60000, // Cache for 1 minute
+    }
+  );
 
-  // Show loading indicator while data is being fetched
-  if (loading) return <CircularProgress />;
+  // OPTIMIZED: Memoize data to prevent unnecessary re-renders
+  const creatorsData = useMemo(() => creators || [], [creators]);
+  const usersData = useMemo(() => users || [], [users]);
+
   return (
     <>
       <Helmet>
@@ -63,52 +70,74 @@ export default function AnalyticsView() {
         <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
           <Tab label="Creators Analytics" />
           <Tab label="Admin Analytics" />
+          <Tab label="Client" />
         </Tabs>
 
         {/* Tab Content */}
         <Box sx={{ mt: 3 }}>
           {activeTab === 0 && (
             <>
-             <Grid container spacing={3}>
-              {/* Total Creators Analytics */}
-              <Grid item xs={12} md={6}>
-                <TotalCreators creators={creators} />
-              </Grid>
+             {creatorsLoading || usersLoading ? (
+               <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+                 <CircularProgress />
+               </Box>
+             ) : (
+               <>
+                 <Grid container spacing={3}>
+                   {/* Total Creators Analytics - Left Column */}
+                   <Grid item xs={12} md={6}>
+                     <TotalCreators creators={creatorsData} />
+                   </Grid>
 
-              {/* Shortlisted Creators */}
-              <Grid item xs={12} md={6}>
-                <ShortlistedCreators creators={creators} />
-              </Grid>
+                   {/* Right Column - Shortlisted Creators and Language Analytics stacked */}
+                   <Grid item xs={12} md={6}>
+                     <Grid container spacing={3}>
+                       {/* Shortlisted Creators */}
+                       <Grid item xs={12}>
+                         <ShortlistedCreators creators={creatorsData} />
+                       </Grid>
 
-              {/* Total Pitches */}
-              <Grid item xs={12} md={6}>
-                <TotalPitches users={users} />
-              </Grid>
+                       {/* Language Analytics - Below Shortlisted Creators */}
+                       <Grid item xs={12}>
+                         <LanguageAnalytics creators={creatorsData} />
+                       </Grid>
+                     </Grid>
+                   </Grid>
 
-              {/* Campaign Participation */}
-              <Grid item xs={12} md={6} mb={2}>
-                <CampaignParticipation creators={creators} />
-              </Grid>
-            </Grid>
+                    {/* Total Pitches */}
+                    <Grid item xs={12} md={6}>
+                      <TotalPitches users={usersData} />
+                    </Grid>
 
-            <CreatorSendAgreement/>
+                    {/* Campaign Participation */}
+                    <Grid item xs={12} md={6} mb={2}>
+                      <CampaignParticipation creators={creatorsData} />
+                    </Grid>
+                  </Grid>
 
-            <CreatorSendDrafts/>
+                  <CreatorSendAgreement />
 
-            <CreatorSendPosting/>
+                  <CreatorSendDrafts />
 
-            
+                  <CreatorSendPosting />
+                </>
+              )}
             </>
-           
           )}
 
           {activeTab === 1 && (
             <>
-              <ApprovePitch/>
-              <SendAgreementsAnalytics/>
-              <ApproveAgreementsAnalytics/>
-              <ApproveDraftsAnalytics/>
-              <PostingAnalytics/>
+              <ApprovePitch />
+              <SendAgreementsAnalytics />
+              <ApproveAgreementsAnalytics />
+              <ApproveDraftsAnalytics />
+              <PostingAnalytics />
+            </>
+          )}
+
+          {activeTab === 2 && (
+            <>
+              <ClientAnalytics />
             </>
           )}
         </Box>

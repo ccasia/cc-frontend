@@ -7,49 +7,25 @@ import CampaignItem from './campaign-item';
 // ----------------------------------------------------------------------
 
 export default function CampaignLists({ campaigns, showAdmins = false }) {
-  // const [page, setPage] = useState(1);
-  // const MAX_ITEM = 9;
-
-  // const handleChange = (event, value) => {
-  //   setPage(value);
-  // };
-
-  // const indexOfLastItem = page * MAX_ITEM;
-  // const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
-
   return (
-    <>
-      <Box
-        gap={2}
-        display="grid"
-        gridTemplateColumns={{
-          xs: 'repeat(1, 1fr)',
-          sm: 'repeat(2, 1fr)',
-          md: 'repeat(3, 1fr)',
-        }}
-      >
-        {/* {campaigns?.slice(indexOfFirstItem, indexOfLastItem)?.map((campaign) => (
-          <CampaignItem key={campaign.id} campaign={campaign} status={campaign?.status} />
-        ))} */}
-        {campaigns?.map((campaign) => (
-          <CampaignItem key={campaign?.id} campaign={campaign} status={campaign?.status} showAdmins={showAdmins} />
-        ))}
-      </Box>
-
-      {/* {campaigns?.length > 9 && (
-        <Pagination
-          count={Math.ceil(campaigns.length / MAX_ITEM)}
-          page={page}
-          onChange={handleChange}
-          sx={{
-            mt: 8,
-            [`& .${paginationClasses.ul}`]: {
-              justifyContent: 'center',
-            },
-          }}
+    <Box
+      gap={2}
+      display="grid"
+      gridTemplateColumns={{
+        xs: 'repeat(1, 1fr)',
+        sm: 'repeat(2, 1fr)',
+        md: 'repeat(3, 1fr)',
+      }}
+    >
+      {campaigns?.map((campaign) => (
+        <CampaignItem
+          key={campaign?.id}
+          campaign={campaign}
+          status={campaign?.status}
+          showAdmins={showAdmins}
         />
-      )} */}
-    </>
+      ))}
+    </Box>
   );
 }
 

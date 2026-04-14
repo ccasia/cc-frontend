@@ -555,24 +555,15 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
               Connect TikTok
             </Button>
           ) : (
-            <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 1 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Iconify icon="eva:refresh-fill" width={16} />}
-                onClick={() => window.location.reload()}
-              >
-                Refresh Data
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Iconify icon="logos:tiktok-icon" width={16} />}
-                onClick={connectTiktok}
-              >
-                Reconnect TikTok
-              </Button>
-            </Stack>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Iconify icon="logos:tiktok-icon" width={16} />}
+              onClick={connectTiktok}
+              sx={{ mt: 1 }}
+            >
+              Reconnect TikTok
+            </Button>
           )}
         </Box>
       )}

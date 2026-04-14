@@ -1,8 +1,9 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable perfectionist/sort-imports */
 
-import { useState, useEffect } from "react";
-import axiosInstance, { endpoints } from "src/utils/axios";
+import useSWR from 'swr';
+import { useMemo } from "react";
+import { fetcher, endpoints } from "src/utils/axios";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -23,32 +24,30 @@ import {
 dayjs.extend(duration);
 
 export default function PostingAnalytics() {
-    const [submissions, setSubmissions] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        async function fetchSubmissions() {
-            try {
-                const response = await axiosInstance.get(endpoints.submission.all);
-                setSubmissions(response.data.submissions || []); // Ensure submissions is an array
-            } catch (err) {
-                setError(err.response?.data?.message || "Failed to fetch submissions");
-            } finally {
-                setLoading(false);
-            }
+    // OPTIMIZED: Use SWR with aggressive caching - shared across multiple components
+    const { data, isLoading: loading, error } = useSWR(
+        endpoints.submission.all,
+        fetcher,
+        {
+            revalidateOnFocus: false,
+            revalidateOnMount: true,
+            revalidateOnReconnect: false,
+            revalidateIfStale: false,
+            dedupingInterval: 120000, // Cache for 2 minutes - shared cache
+            keepPreviousData: true,
         }
-
-        fetchSubmissions();
-    }, []);
-
-    // Filter submissions of type "AGREEMENT_FORM" that have both submissionDate & completedAt
-    const validSubmissions = submissions.filter(
-        (submission) =>
-            submission.type === "POSTING" &&
-            submission.submissionDate &&
-            submission.completedAt
     );
+
+    // OPTIMIZED: Memoize filtered data to prevent unnecessary re-calculations
+    const validSubmissions = useMemo(() => {
+        const submissions = data?.submissions || [];
+        return submissions.filter(
+            (submission) =>
+                submission.type === "POSTING" &&
+                submission.submissionDate &&
+                submission.completedAt
+        );
+    }, [data]);
 
     //  console.log("posting submissions", validSubmissions);
 

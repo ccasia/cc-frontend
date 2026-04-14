@@ -286,6 +286,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
           <Chip
             label={campaign.status.replace(/_/g, ' ')}
             size="medium"
+            variant='outlined'
             sx={{
               fontWeight: 600,
               fontSize: '0.75rem',
@@ -398,6 +399,17 @@ const CampaignDetailManageViewV2 = ({ id }) => {
                   }}
                 >
                   Publish
+                </LoadingButton>
+              )}
+                {campaign?.status === 'COMPLETED' && (
+                <LoadingButton
+                  variant="contained"
+                  color="success"
+                  onClick={() => handleChangeStatus('ACTIVE')}
+                  size="large"
+                  disabled={isDisabled}
+                >
+                  Reactivate
                 </LoadingButton>
               )}
           </Stack>

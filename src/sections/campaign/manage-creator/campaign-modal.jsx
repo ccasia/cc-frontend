@@ -1,30 +1,42 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
 import 'react-quill/dist/quill.snow.css';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 
-import Dialog from '@mui/material/Dialog';
 import { useTheme } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
-import DialogContent from '@mui/material/DialogContent';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import { Box, Chip, Stack, Button, Avatar, Divider, Typography, IconButton } from '@mui/material';
+import {
+  Box,
+  Chip,
+  Link,
+  Stack,
+  Button,
+  Avatar,
+  Dialog,
+  Divider,
+  Typography,
+  IconButton,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { fDate } from 'src/utils/format-time';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
-import CampaignModalMobile from 'src/sections/campaign/discover/creator/campaign-modal-mobile';
+import CampaignModalMobile from './campaign-modal-mobile';
 
 const ChipStyle = {
   bgcolor: '#FFF',
@@ -86,17 +98,12 @@ const getProperCase = (value) => {
     .join(' ');
 };
 
-const CampaignModal = ({
-  open,
-  handleClose,
-  campaign,
-  bookMark,
-  onSaveCampaign,
-  onUnsaveCampaign,
-}) => {
+const CampaignModal = ({ open, handleClose, campaign, mutate }) => {
   const [fullImageOpen, setFullImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const dialogContentRef = useRef(null);
   const images = campaign?.campaignBrief?.images || [];
 
@@ -177,11 +184,50 @@ const CampaignModal = ({
   //   setVideoPitchOpen(false);
   // };
 
+  const invitedCreator = useMemo(
+    () => {
+      if (Array.isArray(campaign?.pitch)) {
+        return campaign.pitch.find((item) => item.userId === user?.id && item.isInvited === true);
+      }
+      return campaign?.pitch?.isInvited ? campaign.pitch : null;
+    },
+    [campaign, user]
+  );
+
   const handleManageClick = (campaignId) => {
     const targetTab = campaign?.submissionVersion === 'v4' ? 'tasks-v4' : 'tasks';
     router.push(paths.dashboard.campaign.creator.detail(campaignId), {
       state: { tab: targetTab },
     });
+  };
+
+  const handleJoinNowClick = () => {
+    setJoinDialogOpen(true);
+  };
+
+  const handleCloseAllModals = () => {
+    setJoinDialogOpen(false);
+    setFullImageOpen(false);
+    if (handleClose) handleClose();
+  };
+
+  const handleJoinConfirm = async () => {
+    if (!invitedCreator?.id) return;
+    try {
+      setIsJoining(true);
+      await axiosInstance.patch(endpoints.campaign.pitch.v3.acceptInvite(invitedCreator.id));
+      if (mutate) mutate();
+      handleCloseAllModals();
+      handleManageClick(campaign.id);
+    } catch (error) {
+      console.error('Error joining campaign:', error);
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleJoinDialogClose = () => {
+    handleCloseAllModals();
   };
 
   // const handleDraftClick = () => {
@@ -213,6 +259,8 @@ const CampaignModal = ({
     requirement?.secondary_creator_persona?.length > 0 ||
     requirement?.secondary_user_persona;
 
+  const additionalDetails = campaign?.campaignAdditionalDetails;
+
   // Helper to render Geographic Focus without nested ternary
   const getGeographicFocus = () => {
     if (!requirement?.geographic_focus) return 'Not specified';
@@ -230,10 +278,8 @@ const CampaignModal = ({
     return capitalizeFirstLetter(type);
   };
 
-  console.log(campaign.company)
-
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" scroll="body">
+    <Dialog open={open} onClose={handleCloseAllModals} fullWidth maxWidth="md" scroll="body">
       <DialogContent sx={{ p: 0 }}>
         {/* Campaign image */}
         <Box
@@ -255,7 +301,7 @@ const CampaignModal = ({
           onClick={handleImageClick}
         >
           <IconButton
-            onClick={handleClose}
+            onClick={handleCloseAllModals}
             sx={{
               position: 'absolute',
               top: 8,
@@ -442,43 +488,53 @@ const CampaignModal = ({
               justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
               sx={{ mt: { xs: 1.5, sm: 0 } }}
             >
-              {campaign?.shortlisted &&
+              {(campaign?.shortlisted) &&
                 (() => {
-                  // Check if user is in the target list for media kit requirement
-                  const targetUserIds = [
-                    'cm8gvqtcv01hwph01uof2u9xu',
-                    'cm4132k9p00wb54qgcrs71v0t',
-                    'cmauqo8oy03ioky0157sbr2jg',
-                    'cm8jxuuvy0272ph01nr0h7din',
-                    'cm5b5p0zu00r2ylfpo241kqki',
-                    'cmewrex4p054ipx01u5xqkqhj',
-                    'cm7oe0q15005bms010ujmjb3r',
-                    'cm44lei3t00si132zq87a5lan',
-                    'cm9kzqz1u00ziqe01q2tsdptg',
-                    'cmj9pz1n40a3hs40154b31l90',
-                    'cm8mh5ic5032sph011r87rw4e',
-                    'cm40womsf001k54qg4epuacmu',
-                    'cm4utxiyv02mu9wevfkpyt8qj',
-                    'cmj7kdxxi05sqs401pro45vik',
-                    'cmj21yl0102ghpc01xmy9zkwa',
-                    'cm3pyp3vm006qm9m8qm1ep02d',
-                    'cm4ey6g9401w4trd2ip0zf1et',
-                    'cmh0bsyrv0bftp301prsp7y2k',
-                    'cm857tk4w03rhmr01r0pjlxkq',
-                    'cmang4buw01afn7010m7uzuni',
-                    'cmbvekkhd00sxqh01ittftmd4',
-                    'cmdgbxxdx01l7mc01xz9bx3v8',
-                    'cm5q6r86y007p11jxkphbe7ht',
-                  ];
-                  const isTargetUser = targetUserIds.includes(user?.id);
+                  // Check if user is marked as Media Kit Mandatory
+                  const isMKM = user?.mediaKitMandatory === true;
 
                   // Check if media kit is connected
                   const hasMediaKit =
                     user?.creator &&
                     (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
 
-                  // For target users, disable manage button if no media kit
-                  const isDisabled = isTargetUser && !hasMediaKit;
+                  // For MKM users, disable manage button if no media kit
+                  const isDisabled = isMKM && !hasMediaKit;
+
+                  // If creator was invited, show "Join Now" instead of "Manage"
+                  if (invitedCreator) {
+                    return (
+                      <Button
+                        variant="contained"
+                        onClick={handleJoinNowClick}
+                        disabled={isDisabled}
+                        sx={{
+                          backgroundColor: isDisabled ? '#f5f5f5' : '#203ff5',
+                          color: isDisabled ? '#a1a1a1' : 'white',
+                          borderBottom: isDisabled
+                            ? '4px solid #d1d1d1 !important'
+                            : '4px solid #102387 !important',
+                          border: 'none',
+                          '&:hover': {
+                            backgroundColor: isDisabled ? '#f5f5f5' : '#1935dd',
+                            borderBottom: isDisabled
+                              ? '4px solid #d1d1d1 !important'
+                              : '4px solid #102387 !important',
+                          },
+                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          padding: { xs: '4px 12px', sm: '6px 18px' },
+                          minWidth: '100px',
+                          height: '42px',
+                          boxShadow: 'none',
+                          textTransform: 'none',
+                          fontWeight: 650,
+                          opacity: isDisabled ? 0.7 : 1,
+                        }}
+                      >
+                        Join Now
+                      </Button>
+                    );
+                  }
 
                   return (
                     <Button
@@ -666,34 +722,15 @@ const CampaignModal = ({
           {/* Warning message for incomplete media kit */}
           {campaign?.shortlisted &&
             (() => {
-              // Check if user is in the target list for media kit requirement
-              const targetUserIds = [
-                'cm8gvqtcv01hwph01uof2u9xu',
-                'cm4132k9p00wb54qgcrs71v0t',
-                'cmauqo8oy03ioky0157sbr2jg',
-                'cm8jxuuvy0272ph01nr0h7din',
-                'cm5b5p0zu00r2ylfpo241kqki',
-                'cmewrex4p054ipx01u5xqkqhj',
-                'cm7oe0q15005bms010ujmjb3r',
-                'cm44lei3t00si132zq87a5lan',
-                'cm9kzqz1u00ziqe01q2tsdptg',
-                'cmj9pz1n40a3hs40154b31l90',
-                'cm8mh5ic5032sph011r87rw4e',
-                'cm40womsf001k54qg4epuacmu',
-                'cm4utxiyv02mu9wevfkpyt8qj',
-                'cmj7kdxxi05sqs401pro45vik',
-                'cmj21yl0102ghpc01xmy9zkwa',
-                'cm3pyp3vm006qm9m8qm1ep02d',
-                'cm4ey6g9401w4trd2ip0zf1et',
-              ];
-              const isTargetUser = targetUserIds.includes(user?.id);
+              // Check if user is marked as Media Kit Mandatory
+              const isMKM = user?.mediaKitMandatory === true;
 
               // Check if media kit is connected
               const hasMediaKit =
                 user?.creator &&
                 (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
 
-              if (isTargetUser && !hasMediaKit) {
+              if (isMKM && !hasMediaKit) {
                 return (
                   <Typography
                     sx={{
@@ -883,6 +920,45 @@ const CampaignModal = ({
 
                 {/* Right column */}
                 <Stack flex={1}>
+                  {/* Brand Guidelines url */}
+                  {additionalDetails?.brandGuidelinesUrl &&
+                    (() => {
+                      const urls = additionalDetails.brandGuidelinesUrl
+                        .split(',')
+                        .map((u) => u.trim())
+                        .filter(Boolean);
+                      return (
+                        <Box mt={2}>
+                          <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                            Brand Guidelines Document{urls.length > 1 ? 's' : ''}
+                          </Typography>
+                          <Stack spacing={0.5}>
+                            {urls.map((url, idx) => {
+                              let filename = url.split('/').pop().split('?')[0];
+                              filename = filename.replace(/_v=.*$/, '');
+                              return (
+                                <Link
+                                  key={url}
+                                  href={url}
+                                  target="_blank"
+                                  sx={{
+                                    fontSize: 14,
+                                    color: '#0062CD',
+                                    textDecoration: 'none',
+                                    overflowWrap: 'anywhere',
+                                    whiteSpace: 'normal',
+                                    '&:hover': { textDecoration: 'underline' },
+                                  }}
+                                >
+                                  {filename}
+                                </Link>
+                              );
+                            })}
+                          </Stack>
+                        </Box>
+                      );
+                    })()}
+
                   {/* Campaign Deliverables */}
                   <Box>
                     <Box
@@ -1312,6 +1388,69 @@ const CampaignModal = ({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Join Campaign Confirmation Dialog */}
+      <Dialog
+        open={joinDialogOpen}
+        onClose={handleJoinDialogClose}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            p: 1,
+          },
+        }}
+      >
+        <DialogTitle sx={{ textAlign: 'center', fontWeight: 600, fontSize: '1.25rem' }}>
+          Join Campaign
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ textAlign: 'center', color: '#636366' }}>
+            You have been invited to join <strong>{campaign?.name}</strong>. Would you like to
+            accept and join this campaign?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 2, gap: 1.5 }}>
+          <Button
+            variant="outlined"
+            onClick={handleJoinDialogClose}
+            sx={{
+              borderColor: '#e7e7e7',
+              color: '#636366',
+              borderBottom: '3px solid #e7e7e7',
+              textTransform: 'none',
+              fontWeight: 600,
+              minWidth: '120px',
+              '&:hover': {
+                borderColor: '#d1d1d1',
+                backgroundColor: '#f5f5f5',
+              },
+            }}
+          >
+            No Thanks
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleJoinConfirm}
+            disabled={isJoining}
+            sx={{
+              backgroundColor: '#203ff5',
+              color: 'white',
+              borderBottom: '4px solid #102387 !important',
+              border: 'none',
+              textTransform: 'none',
+              fontWeight: 600,
+              minWidth: '120px',
+              '&:hover': {
+                backgroundColor: '#1935dd',
+              },
+            }}
+          >
+            {isJoining ? 'Joining...' : 'Join Campaign'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 };
@@ -1322,9 +1461,5 @@ CampaignModal.propTypes = {
   open: PropTypes.bool,
   handleClose: PropTypes.func,
   campaign: PropTypes.object,
-  bookMark: PropTypes.bool,
-  onSaveCampaign: PropTypes.func,
-  onUnsaveCampaign: PropTypes.func,
-  // openForm: PropTypes.func,
-  // dialog: PropTypes.object,
+  mutate: PropTypes.func,
 };

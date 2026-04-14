@@ -242,9 +242,8 @@ const CampaignDetailContent = ({ campaign }) => {
                 {[
                   { label: 'Gender', data: requirement?.gender?.map(capitalizeFirstLetter) },
                   {
-                    label: 'Countries',
-                    data: requirement?.countries || [],
-                    isCountries: true,
+                    label: 'Country',
+                    data: requirement?.country || '',
                   },
                   { label: 'Geo Location', data: requirement?.geoLocation },
                   {
@@ -256,13 +255,12 @@ const CampaignDetailContent = ({ campaign }) => {
                 ]
                   .filter((item, _, arr) => {
                     if (item.label === 'Geo Location') {
-                      const countriesData = arr.find((i) => i.label === 'Countries')?.data;
                       const hasMalaysia =
-                        Array.isArray(countriesData) && countriesData.includes('Malaysia');
+                        arr.find((i) => i.label === 'Country')?.data === 'Malaysia';
                       return hasMalaysia;
                     }
-                    if (item.label === 'Countries') {
-                      return Array.isArray(item.data) && item.data.length > 0;
+                    if (item.label === 'Country') {
+                      return item.data;
                     }
                     return true;
                   })
@@ -410,24 +408,27 @@ const CampaignDetailContent = ({ campaign }) => {
 
             <Stack spacing={1} sx={{ pl: 0.5 }}>
               {campaign?.campaignBrief?.campaigns_do?.length > 0 &&
-              campaign?.campaignBrief?.campaigns_do?.some(item => item.value) ? (
+              campaign?.campaignBrief?.campaigns_do?.some((item) => item.value) ? (
                 campaign?.campaignBrief?.campaigns_do?.map((item, index) => (
-                <Stack key={index} direction="row" spacing={1} alignItems="center">
-                  {item.value && (
-                    <Iconify
-                      icon="octicon:dot-fill-16"
-                      sx={{
-                        color: '#000000',
-                        width: 12,
-                        height: 12,
-                        flexShrink: 0,
-                      }}
-                    />
-                  )}
-                  <Typography variant={item?.value ? 'body2' : 'caption'} sx={{ color: '#221f20' }}>
-                    {item?.value || 'No campaign do.'}
-                  </Typography>
-                </Stack>
+                  <Stack key={index} direction="row" spacing={1} alignItems="center">
+                    {item.value && (
+                      <Iconify
+                        icon="octicon:dot-fill-16"
+                        sx={{
+                          color: '#000000',
+                          width: 12,
+                          height: 12,
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                    <Typography
+                      variant={item?.value ? 'body2' : 'caption'}
+                      sx={{ color: '#221f20' }}
+                    >
+                      {item?.value || 'No campaign do.'}
+                    </Typography>
+                  </Stack>
                 ))
               ) : (
                 <Typography variant="caption" color="text.secondary">
@@ -461,7 +462,7 @@ const CampaignDetailContent = ({ campaign }) => {
             </Box>
 
             {campaign?.campaignBrief?.campaigns_dont?.length > 0 &&
-            campaign?.campaignBrief?.campaigns_dont?.some(item => item.value) ? (
+            campaign?.campaignBrief?.campaigns_dont?.some((item) => item.value) ? (
               <Stack spacing={1} sx={{ pl: 0.5 }}>
                 {campaign?.campaignBrief?.campaigns_dont?.map((item, index) => (
                   <Stack key={index} direction="row" spacing={1} alignItems="center">

@@ -142,6 +142,7 @@ export default function CampaignLogisticsView({
                 logistics={safeLogistics}
                 isReservation={isReservation}
                 reservationConfig={reservationConfig}
+                campaignBrief={campaign?.campaignBrief}
               />
             </Box>
             {/* Vertical Divider (Desktop) */}

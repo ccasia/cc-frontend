@@ -45,7 +45,7 @@ import FormProvider, {
 
 export default function AccountGeneral() {
   const { enqueueSnackbar } = useSnackbar();
-  const { user } = useAuthContext();
+  const { user, initialize } = useAuthContext();
   const [image, setImage] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [openImageDialog, setOpenImageDialog] = useState(false);
@@ -143,6 +143,7 @@ export default function AccountGeneral() {
         },
       });
       enqueueSnackbar(res?.data.message);
+      initialize();
     } catch (error) {
       console.error('Error updating profile:', error);
       enqueueSnackbar(error?.response?.data?.message || 'Error updating profile', {

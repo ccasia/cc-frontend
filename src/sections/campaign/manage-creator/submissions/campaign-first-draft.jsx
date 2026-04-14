@@ -158,7 +158,7 @@ const CampaignFirstDraft = ({
   );
 
   const totalUGCVideos = useMemo(
-    () => campaign.shortlisted?.find((x) => x.userId === submission.userId)?.ugcVideos || null,
+    () => campaign.shortlisted?.find((x) => x?.userId === submission?.userId)?.ugcVideos || null,
     [campaign, submission]
   );
 
@@ -911,59 +911,243 @@ const CampaignFirstDraft = ({
               feedbacksTesting &&
               feedbacksTesting.length > 0)) && (
             <>
-              <Stack gap={2}>
-                <Box>
-                  <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                    {(() => {
-                      if (submission?.status === 'CHANGES_REQUIRED') {
-                        return 'Please review the feedback below and resubmit your first draft with the requested changes.';
-                      }
-                      if (
-                        submission?.status === 'NOT_STARTED' &&
-                        feedbacksTesting &&
-                        feedbacksTesting.length > 0
-                      ) {
-                        return 'Please review the feedback below and submit your first draft with the requested changes.';
-                      }
-                      return "It's time to submit your first draft for this campaign!";
-                    })()}
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                    {(() => {
-                      if (submission?.status === 'CHANGES_REQUIRED') {
-                        return 'Make sure to address all the feedback points mentioned in the review.';
-                      }
-                      if (
-                        submission?.status === 'NOT_STARTED' &&
-                        feedbacksTesting &&
-                        feedbacksTesting.length > 0
-                      ) {
-                        return 'Make sure to address all the feedback points mentioned in the review.';
-                      }
-                      return "Do ensure to read through the brief, and the do's and dont's for the creatives over at the";
-                    })()}
-                    {submission?.status !== 'CHANGES_REQUIRED' &&
-                      submission?.status !== 'NOT_STARTED' && (
-                        <>
-                          {' '}
-                          <Box
-                            component="span"
-                            onClick={() => setCurrentTab('info')}
-                            sx={{
-                              color: '#203ff5',
-                              cursor: 'pointer',
-                              fontWeight: 650,
-                              '&:hover': {
-                                opacity: 0.8,
-                              },
-                            }}
-                          >
-                            Campaign Details
-                          </Box>{' '}
-                          page.
-                        </>
-                      )}
-                  </Typography>
+              {uploadProgress.length ? (
+                <Stack spacing={1}>
+                  {uploadProgress.length &&
+                    uploadProgress.map((currentFile) => (
+                      <Box
+                        sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}
+                        key={currentFile.fileName}
+                      >
+                        <Stack spacing={2}>
+                          <Stack direction="row" spacing={2} alignItems="center">
+                            {currentFile?.type?.startsWith('video') ? (
+                              <Box
+                                sx={{
+                                  width: 120,
+                                  height: 68,
+                                  borderRadius: 1,
+                                  overflow: 'hidden',
+                                  position: 'relative',
+                                  bgcolor: 'background.paper',
+                                  boxShadow: (theme) => theme.customShadows.z8,
+                                }}
+                              >
+                                {currentFile.preview ? (
+                                  <Box
+                                    component="img"
+                                    src={currentFile.preview}
+                                    sx={{
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'cover',
+                                    }}
+                                  />
+                                ) : (
+                                  <Box
+                                    sx={{
+                                      width: '100%',
+                                      height: '100%',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      bgcolor: 'background.neutral',
+                                    }}
+                                  >
+                                    <Iconify
+                                      icon="solar:video-library-bold"
+                                      width={24}
+                                      sx={{ color: 'text.secondary' }}
+                                    />
+                                  </Box>
+                                )}
+                              </Box>
+                            ) : (
+                              <Box
+                                component="img"
+                                src="/assets/icons/files/ic_img.svg"
+                                sx={{ width: 40, height: 40 }}
+                              />
+                            )}
+
+                            <Stack spacing={1} flexGrow={1}>
+                              <Typography fontSize={{ xs: 12, md: 14 }} noWrap>
+                                {truncateText(currentFile?.fileName, 25) || 'Uploading file...'}
+                              </Typography>
+                              <Stack direction="row" spacing={2} alignItems="center">
+                                <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                                  {(() => {
+                                    const server = Number(currentFile?.serverProgress || 0);
+                                    const shown = Number(currentFile?.progressShown || 0);
+                                    let progressValue = 0;
+                                    if (server >= 100) {
+                                      progressValue = 100;
+                                    } else {
+                                      // map server 0-90 to shown 1-90
+                                      const mapped = Math.max(1, Math.min(90, server));
+                                      // ease towards mapped
+                                      const step = Math.max(0.5, (mapped - shown) * 0.2);
+                                      const next = Math.min(mapped, shown + step);
+                                      currentFile.progressShown = next;
+                                      progressValue = next;
+                                    }
+                                    const isComplete =
+                                      Number(currentFile?.serverProgress || 0) >= 100;
+                                    return (
+                                      <>
+                                        <CircularProgress
+                                          variant="determinate"
+                                          value={100}
+                                          size={56}
+                                          thickness={4}
+                                          sx={{
+                                            color: 'grey.200',
+                                            position: 'absolute',
+                                          }}
+                                        />
+                                        <CircularProgress
+                                          variant="determinate"
+                                          value={progressValue}
+                                          size={56}
+                                          thickness={4}
+                                          sx={{
+                                            color: isComplete ? 'success.main' : 'primary.main',
+                                            strokeLinecap: 'round',
+                                            transition: 'stroke-dashoffset 0.3s ease 0s',
+                                          }}
+                                        />
+                                        <Box
+                                          sx={{
+                                            top: 0,
+                                            left: 0,
+                                            bottom: 0,
+                                            right: 0,
+                                            position: 'absolute',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                          }}
+                                        >
+                                          <Typography
+                                            variant="caption"
+                                            component="div"
+                                            sx={{
+                                              fontSize: '0.75rem',
+                                              fontWeight: 600,
+                                              color: isComplete ? 'success.main' : 'text.primary',
+                                            }}
+                                          >
+                                            {`${Math.round(progressValue)}%`}
+                                          </Typography>
+                                        </Box>
+                                      </>
+                                    );
+                                  })()}
+                                </Box>
+                                <Stack spacing={0.5} flexGrow={1}>
+                                  <Stack
+                                    direction="row"
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                  >
+                                    <Typography
+                                      fontSize={{ xs: 11, md: 12 }}
+                                      sx={{ color: 'text.secondary' }}
+                                    >
+                                      {Number(currentFile?.serverProgress || 0) >= 100 ? (
+                                        <Box
+                                          component="span"
+                                          sx={{ color: 'success.main', fontWeight: 600 }}
+                                        >
+                                          Upload Complete
+                                        </Box>
+                                      ) : (
+                                        `${currentFile?.name || 'Uploading'}...`
+                                      )}
+                                    </Typography>
+                                    <Typography
+                                      fontSize={{ xs: 11, md: 12 }}
+                                      sx={{ color: 'text.secondary' }}
+                                    >
+                                      {formatFileSize(currentFile?.fileSize || 0)}
+                                    </Typography>
+                                  </Stack>
+                                </Stack>
+                              </Stack>
+                            </Stack>
+                          </Stack>
+                        </Stack>
+                      </Box>
+                    ))}
+                </Stack>
+              ) : (
+                <Stack gap={2}>
+                  <Box>
+                    <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
+                      {(() => {
+                        if (submission?.status === 'CHANGES_REQUIRED') {
+                          return 'Please review the feedback below and resubmit your first draft with the requested changes.';
+                        }
+                        if (
+                          submission?.status === 'NOT_STARTED' &&
+                          feedbacksTesting &&
+                          feedbacksTesting.length > 0
+                        ) {
+                          return 'Please review the feedback below and submit your first draft with the requested changes.';
+                        }
+                        return "It's time to submit your first draft for this campaign!";
+                      })()}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
+                      {(() => {
+                        if (submission?.status === 'CHANGES_REQUIRED') {
+                          return 'Make sure to address all the feedback points mentioned in the review.';
+                        }
+                        if (
+                          submission?.status === 'NOT_STARTED' &&
+                          feedbacksTesting &&
+                          feedbacksTesting.length > 0
+                        ) {
+                          return 'Make sure to address all the feedback points mentioned in the review.';
+                        }
+                        return "Do ensure to read through the brief, and the do's and dont's for the creatives over at the";
+                      })()}
+                      {submission?.status !== 'CHANGES_REQUIRED' &&
+                        submission?.status !== 'NOT_STARTED' && (
+                          <>
+                            {' '}
+                            <Box
+                              component="span"
+                              onClick={() => setCurrentTab('info')}
+                              sx={{
+                                color: '#203ff5',
+                                cursor: 'pointer',
+                                fontWeight: 650,
+                                '&:hover': {
+                                  opacity: 0.8,
+                                },
+                              }}
+                            >
+                              Campaign Details
+                            </Box>{' '}
+                            page.
+                          </>
+                        )}
+                    </Typography>
+
+                    {/* {totalUGCVideos && (
+                      <ListItemText
+                        primary="Notes:"
+                        secondary={`1. 🎥 Upload ${totalUGCVideos} UGC Videos`}
+                        sx={{ color: '#221f20', mb: 2, ml: -1 }}
+                        primaryTypographyProps={{
+                          variant: 'subtitle1',
+                        }}
+                        secondaryTypographyProps={{
+                          variant: 'subtitle2',
+                        }}
+                      />
+                    )} */}
 
                   {/* Deliverables incomplete message */}
                   <>

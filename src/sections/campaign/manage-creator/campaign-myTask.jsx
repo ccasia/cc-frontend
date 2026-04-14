@@ -213,7 +213,7 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
     };
   }, [campaign, submissionMutate, socket]);
 
-  // Auto-select posting stage when it becomes available (only on initial load)
+  // Auto-select posting stage when it becomes available (only on initial load or when submissions change)
   useEffect(() => {
     // Don't auto-select if user has manually selected a stage
     if (hasManualSelection.current || !submissions) {
@@ -240,13 +240,11 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
       console.log('Auto-selecting POSTING stage');
       setSelectedStage('POSTING');
     }
-
-    // DO NOT auto-select Final Draft - let creator manually choose
   }, [submissions, selectedStage]);
 
   const getVisibleStages = useCallback(() => {
     let stages = [];
-    const addedStages = new Set(); // Track which stages have been added
+    const addedStages = new Set();
     const agreementSubmission = value('AGREEMENT_FORM');
     const firstDraftSubmission = value('FIRST_DRAFT');
     const finalDraftSubmission = value('FINAL_DRAFT');
@@ -463,9 +461,9 @@ const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, on
         case 'PENDING_REVIEW':
           return 'Pending Review';
         case 'SENT_TO_CLIENT':
-          return 'In Review'; // For creators, SENT_TO_CLIENT means "In Review"
+          return 'In Review';
         case 'CLIENT_FEEDBACK':
-          return 'In Review'; // For creators, CLIENT_FEEDBACK means "In Review" (client requested changes, admin reviewing)
+          return 'In Review';
         case 'CHANGES_REQUIRED':
           return 'Revision Requested';
         case 'APPROVED':

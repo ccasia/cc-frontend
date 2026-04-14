@@ -2,7 +2,7 @@ import useSWR from 'swr';
 import { debounce } from 'lodash';
 import useSWRInfinite from 'swr/infinite';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -25,6 +25,8 @@ import { useResponsive } from 'src/hooks/use-responsive';
 // Removed useGetAdminsForSuperadmin - using direct SWR call to /api/user/alladmins for CSM access
 // import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
+import { useVirtualizer } from '@tanstack/react-virtual';
+
 import { fetcher } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -33,11 +35,10 @@ import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CampaignTabs from 'src/components/campaign/CampaignTabs';
-import EmptyContent from 'src/components/empty-content/empty-content';
 
 import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 
-import CampaignLists from '../campaign-list';
+import CampaignItem from '../campaign-item';
 
 const CampaignView = () => {
   const settings = useSettingsContext();
@@ -65,6 +66,8 @@ const CampaignView = () => {
   const [showAllCampaigns, setShowAllCampaigns] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const hasRestoredRef = useRef(false);
+  const isRestoringScroll = useRef(null);
 
   // Fetch admins list for filter dropdown - only when in "All" tab
   // Using /api/user/alladmins endpoint which is accessible by all admins (not just superadmin)
@@ -105,6 +108,7 @@ const CampaignView = () => {
   const { mainRef } = useMainContext();
 
   const lgUp = useResponsive('up', 'lg');
+  const mdUp = useResponsive('up', 'md');
 
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
@@ -162,6 +166,33 @@ const CampaignView = () => {
     () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
     [data]
   );
+
+  // eslint-disable-next-line no-nested-ternary
+  const columns = lgUp ? 3 : mdUp ? 2 : 1;
+  // eslint-disable-next-line no-unsafe-optional-chaining
+  const rowCount = Math.ceil(dataFiltered?.length / columns);
+
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => mainRef?.current,
+    estimateSize: () => 370 + 16,
+    overscan: 2,
+  });
+
+  const virtualRows = rowVirtualizer.getVirtualItems();
+  const isLoadingMore = isValidating && dataFiltered && dataFiltered?.length > size;
+  const isReachingEnd = data && data[data.length - 1]?.metaData?.lastCursor === null;
+
+  useEffect(() => {
+    const [lastItem] = [...virtualRows].reverse();
+
+    if (!lastItem) return;
+
+    // Trigger load when scrolled to last 2 rows (not items)
+    if (lastItem.index >= rowCount - 2 && !isValidating && !isReachingEnd) {
+      setSize(size + 1);
+    }
+  }, [virtualRows, rowCount, isReachingEnd, setSize, size, isValidating]);
 
   // Make mutate function available globally for campaign activation
   useEffect(() => {
@@ -223,22 +254,6 @@ const CampaignView = () => {
     }
   }, [filter, isSuperAdmin, user]);
 
-  const handleScroll = useCallback(() => {
-    const scrollContainer = mainRef?.current;
-
-    const bottom =
-      scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
-
-    if (lastCampaignOpenId) {
-      localStorage.removeItem('lastCampaignOpenId');
-    }
-
-    if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
-      setSize(size + 1);
-      localStorage.setItem('pageSizing', size + 1);
-    }
-  }, [data, isValidating, setSize, size, mainRef, lastCampaignOpenId]);
-
   const handleChangeTab = (value) => {
     setFilter(value);
     if (scrollTop) {
@@ -247,49 +262,63 @@ const CampaignView = () => {
   };
 
   useEffect(() => {
-    const scrollContainer = mainRef?.current;
+    const scrollElement = mainRef.current;
+    if (!scrollElement) return;
 
-    scrollContainer.addEventListener('scroll', handleScroll);
+    const handleScroll = () => {
+      // Don't save scroll position while we're restoring it
+      if (isRestoringScroll.current) {
+        if (localStorage.getItem('lastOpenedIndex')) {
+          localStorage.removeItem('lastOpenedIndex');
+        }
+        return;
+      }
 
-    return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll);
+      localStorage.setItem('lastScrollPosition', scrollElement.scrollTop.toString());
     };
-  }, [handleScroll, mainRef, lgUp]);
 
-  useEffect(() => {
-    if (pageSizing) {
-      setSize(Number(pageSizing));
-    }
-  }, [setSize, pageSizing]);
+    scrollElement.addEventListener('scroll', handleScroll, { passive: true });
 
-  useEffect(() => {
-    if (!isLoading && lastCampaignOpenId) {
-      const el = document.getElementById(`campaign-${lastCampaignOpenId}`);
-
-      if (!el) return;
-
-      el.scrollIntoView({
-        behavior: 'auto',
-        block: 'center',
-      });
-    } else if (scrollTop) {
-      const main = mainRef?.current;
-
-      if (!main) return;
-
-      main.scrollTo({
-        behavior: 'auto',
-        top: Number(scrollTop),
-      });
-    }
-  }, [mainRef, lastCampaignOpenId, setSize, isLoading, scrollTop]);
-
-  useEffect(() => {
-    const scrollContainer = mainRef?.current;
-    window.addEventListener('beforeunload', (event) => {
-      localStorage.setItem('scrollTop', scrollContainer.scrollTop);
-    });
+    // eslint-disable-next-line consistent-return
+    return () => {
+      scrollElement.removeEventListener('scroll', handleScroll);
+    };
   }, [mainRef]);
+
+  useEffect(() => {
+    if (hasRestoredRef.current) return;
+    if (!dataFiltered.length) return;
+
+    const lastScrollPosition = Number(localStorage.getItem('lastScrollPosition'));
+    const lastOpenedIndex = Number(localStorage.getItem('lastOpenedIndex'));
+
+    requestAnimationFrame(() => {
+      isRestoringScroll.current = true;
+
+      if (
+        lastOpenedIndex &&
+        !Number.isNaN(lastOpenedIndex) &&
+        lastOpenedIndex >= 0 &&
+        lastOpenedIndex < dataFiltered.length
+      ) {
+        // eslint-disable-next-line no-nested-ternary
+        const cols = lgUp ? 3 : mdUp ? 2 : 1;
+        const rowIndex = Math.floor(lastOpenedIndex / cols);
+        rowVirtualizer.scrollToIndex(rowIndex, { align: 'start' });
+        localStorage.setItem('lastScrollPosition', mainRef?.current.scrollTop.toString());
+      } else if (!Number.isNaN(lastScrollPosition) && lastScrollPosition > 0 && mainRef.current) {
+        mainRef.current.scrollTo({
+          top: lastScrollPosition,
+          behavior: 'auto',
+        });
+      }
+
+      // Allow scroll tracking after a short delay
+      setTimeout(() => {
+        isRestoringScroll.current = false;
+      }, 50);
+    });
+  }, [dataFiltered, lastCampaignOpenId, lgUp, mainRef, mdUp, rowVirtualizer, scrollTop]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
@@ -828,38 +857,71 @@ const CampaignView = () => {
         </Box>
       )}
 
-      {!isLoading &&
-        (dataFiltered?.length > 0 ? (
-          <Box mt={2}>
-            <CampaignLists campaigns={dataFiltered} showAdmins={showAllCampaigns} />
-            {isValidating && (
-              <Box sx={{ textAlign: 'center', my: 2 }}>
-                <CircularProgress
-                  thickness={7}
-                  size={25}
-                  sx={{
-                    color: theme.palette.common.black,
-                    strokeLinecap: 'round',
-                  }}
-                />
+      <div
+        style={{
+          height: `${rowVirtualizer.getTotalSize()}px`,
+          position: 'relative',
+          marginBottom: 40,
+        }}
+      >
+        {virtualRows.map((virtualRow) => {
+          // eslint-disable-next-line no-nested-ternary
+          const cols = lgUp ? 3 : mdUp ? 2 : 1;
+
+          const startIndex = virtualRow.index * cols;
+
+          const endIndex = Math.min(startIndex + cols, dataFiltered.length);
+          const rowCampaigns = dataFiltered.slice(startIndex, endIndex);
+
+          return (
+            <div
+              key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              <Box
+                gap={2}
+                display="grid"
+                gridTemplateColumns={
+                  // eslint-disable-next-line no-nested-ternary
+                  `repeat(${cols}, 1fr)`
+                }
+                sx={{ mt: 2 }}
+              >
+                {rowCampaigns?.map((a, index) => (
+                  <CampaignItem
+                    index={index + startIndex}
+                    key={a?.id}
+                    campaign={a}
+                    status={a?.status}
+                    showAdmins={showAllCampaigns}
+                  />
+                ))}
               </Box>
-            )}
-          </Box>
-        ) : (
-          <EmptyContent
-            title={
-              showAllCampaigns
-                ? 'No campaigns from other admins'
-                : `No ${(() => {
-                    if (filter === 'active') return 'active';
-                    if (filter === 'completed') return 'completed';
-                    if (filter === 'pending') return 'pending';
-                    if (filter === 'paused') return 'paused';
-                    return filter;
-                  })()} campaigns available`
-            }
+            </div>
+          );
+        })}
+      </div>
+
+      {isLoadingMore && (
+        <Box sx={{ textAlign: 'center', my: 2 }}>
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
           />
-        ))}
+        </Box>
+      )}
 
       <Dialog
         fullWidth
