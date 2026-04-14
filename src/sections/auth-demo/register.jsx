@@ -60,7 +60,7 @@ const Register = () => {
 
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [formData, setFormData] = useState(null);
-  const [isPhoneOption, setIsPhoneOption] = useState(false);
+  const [isPhoneOption, setIsPhoneOption] = useState(true);
 
   const handleOpenTerms = () => {
     window.open('https://cultcreativeasia.com/my/terms-and-conditions', '_blank');

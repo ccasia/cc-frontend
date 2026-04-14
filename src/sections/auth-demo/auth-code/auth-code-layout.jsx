@@ -11,13 +11,14 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useCreator } from 'src/hooks/zustands/useCreator';
 
+import { fetcher } from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import CreatorForm from 'src/sections/creator/form/creatorForm';
 
 import CodeInput from './code-input';
 import CredentialsInput from './credentials-input';
-import { fetcher } from 'src/utils/axios';
 
 const MotionBox = m(Box);
 
@@ -26,7 +27,7 @@ const steps = [{ label: 'Enter Verification code' }, { label: 'Create account' }
 export const AuthCodeProvider = createContext(null);
 
 const AuthCodeLayout = () => {
-  const { data, isLoading, mutate } = useSWR('/api/auth/session-status', fetcher);
+  const { data, mutate } = useSWR('/api/auth/session-status', fetcher);
 
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState(null);

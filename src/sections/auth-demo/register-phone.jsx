@@ -19,6 +19,7 @@ import {
   Divider,
   MenuItem,
   TextField,
+  FormLabel,
   Typography,
   FormHelperText,
 } from '@mui/material';
@@ -48,7 +49,7 @@ const MuiPhoneInput = forwardRef(({ value, onChange, ...rest }, ref) => (
     value={value ?? ''}
     onChange={onChange}
     fullWidth
-    size="small"
+    size="large"
   />
 ));
 
@@ -60,7 +61,7 @@ const CountrySelect = ({ value, onChange, options, iconComponent: FlagIcon }) =>
     value={value ?? ''}
     onChange={(e) => onChange(e.target.value || undefined)}
     displayEmpty
-    size="small"
+    size="large"
     sx={{ mr: 1 }}
     renderValue={(selected) =>
       selected ? (
@@ -131,20 +132,28 @@ const PhoneNumberInput = ({ onBack }) => {
         exit={{ opacity: 0, x: 50 }}
         transition={{ type: 'spring', duration: 0.2 }}
         gap={1.5}
+        sx={{ mt: 3 }}
       >
-        <Typography variant="h4" sx={{ alignSelf: 'start', textAlign: 'start' }}>
-          Enter your phone 📱
-          <br />
-          <Typography variant="subtitle2" sx={{ color: colors.grey[500] }}>
-            We&apos;ll send a verification code to confirm it&apos;s you.
-          </Typography>
-        </Typography>
-
         <Stack gap={1.5}>
           <Controller
             name="phoneNumber"
             render={({ field }) => (
               <Box>
+                <FormLabel>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      alignSelf: 'start',
+                      textAlign: 'start',
+                      textTransform: 'uppercase',
+                      mb: 1,
+                    }}
+                    fontSize={12}
+                  >
+                    Phone number
+                  </Typography>
+                </FormLabel>
+
                 <PhoneInput
                   value={field.value}
                   onChange={(value) => field.onChange(value ?? '')}
@@ -154,6 +163,11 @@ const PhoneNumberInput = ({ onBack }) => {
                   countrySelectComponent={CountrySelect}
                   placeholder="Eg. 60192399123"
                 />
+                <FormHelperText>
+                  <Typography variant="subtitle2" sx={{ color: colors.grey[500] }}>
+                    We&apos;ll send a verification code to confirm it&apos;s you.
+                  </Typography>
+                </FormHelperText>
                 {errors.phoneNumber && (
                   <FormHelperText error sx={{ mx: 1.5 }}>
                     {errors.phoneNumber.message}
@@ -176,7 +190,8 @@ const PhoneNumberInput = ({ onBack }) => {
           <Button
             // startIcon={<Iconify icon="mingcute:back-fill" />}
             onClick={onBack}
-            // variant="outlined"
+            variant="outlined"
+            size="large"
           >
             Sign up with email
           </Button>

@@ -35,9 +35,6 @@ const errorSx = {
 
 const RegisterSchema = Yup.object().shape({
   name: Yup.string().required('Name is required.'),
-  email: Yup.string()
-    .required('Email is required')
-    .email('Invalid email entered. Please try again.'),
   password: Yup.string()
     .required('Password is required.')
     .min(8, 'Password must be at least 8 characters long.')
@@ -47,7 +44,7 @@ const RegisterSchema = Yup.object().shape({
     .matches(/[@$!%*?&#]/, 'Password must contain at least one special character.'),
 });
 
-const defaultValues = { name: '', email: '', password: '' };
+const defaultValues = { name: '', password: '' };
 
 const CredentialsInput = () => {
   const password = useBoolean();
@@ -166,25 +163,6 @@ const CredentialsInput = () => {
           />
           <Typography variant="caption" sx={errorSx}>
             {methods.formState.errors.name?.message}
-          </Typography>
-        </Box>
-
-        <Typography variant="body2" color="#636366" fontWeight={500} sx={labelSx}>
-          Email{' '}
-          <Box component="span" sx={{ color: 'error.main' }}>
-            *
-          </Box>
-        </Typography>
-        <Box>
-          <RHFTextField
-            name="email"
-            placeholder="Email"
-            InputLabelProps={{ shrink: false }}
-            FormHelperTextProps={{ sx: { display: 'none' } }}
-            sx={fieldSx}
-          />
-          <Typography variant="caption" sx={errorSx}>
-            {methods.formState.errors.email?.message}
           </Typography>
         </Box>
 

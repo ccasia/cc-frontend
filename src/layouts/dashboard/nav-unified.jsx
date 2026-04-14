@@ -195,7 +195,7 @@ export default function NavUnified({ openNav, onCloseNav }) {
             CULT CREATIVE
           </Typography>
           <Typography fontSize="12px" color="#636366" fontWeight={500}>
-            {`${user?.role.slice(0, 1).toUpperCase()}${user?.role.slice(1)}`}
+            {`${user?.role?.slice(0, 1).toUpperCase()}${user?.role?.slice(1)}`}
           </Typography>
         </Stack>
         <IconButton

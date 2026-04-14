@@ -1,9 +1,14 @@
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import 'croppie/croppie.css';
-import { useForm } from 'react-hook-form';
-import { useState, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import 'react-phone-number-input/style.css';
+import flags from 'react-phone-number-input/flags';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useState, forwardRef, useCallback } from 'react';
 import { formatIncompletePhoneNumber } from 'libphonenumber-js';
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -16,10 +21,14 @@ import {
   Dialog,
   Avatar,
   Select,
+  colors,
+  Divider,
   MenuItem,
+  TextField,
   DialogTitle,
   DialogActions,
   DialogContent,
+  FormHelperText,
   DialogContentText,
 } from '@mui/material';
 
@@ -33,6 +42,7 @@ import { typography } from 'src/theme/typography';
 import { countriesCities } from 'src/contants/countries';
 
 import Image from 'src/components/image';
+import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, {
   RHFSelect,
@@ -42,6 +52,92 @@ import FormProvider, {
 } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
+
+// Wraps MUI TextField so react-phone-number-input can forward its ref to the input element
+// eslint-disable-next-line react/prop-types
+const MuiPhoneInput = forwardRef(({ value, onChange, ...rest }, ref) => (
+  <TextField
+    {...rest}
+    inputRef={ref}
+    value={value ?? ''}
+    onChange={onChange}
+    fullWidth
+    size="large"
+    sx={{
+      width: '100%',
+      '&.MuiTextField-root': {
+        bgcolor: 'white',
+        borderRadius: 1,
+        '& .MuiInputLabel-root': {
+          display: 'none',
+        },
+        '& .MuiInputBase-input::placeholder': {
+          color: '#B0B0B0',
+          fontSize: { xs: '14px', sm: '16px' },
+          opacity: 1,
+        },
+        '& .MuiOutlinedInput-root': {
+          borderRadius: 1,
+        },
+      },
+    }}
+  />
+));
+
+MuiPhoneInput.displayName = 'MuiPhoneInput';
+
+// react-phone-number-input calls onChange(countryCode) directly, not via a DOM event
+const CountrySelect = ({ value, onChange, options, iconComponent: FlagIcon }) => (
+  <Select
+    value={value ?? ''}
+    onChange={(e) => onChange(e.target.value || undefined)}
+    displayEmpty
+    size="large"
+    sx={{ mr: 1 }}
+    renderValue={(selected) =>
+      selected ? (
+        <Box>
+          <Iconify icon={`circle-flags:${selected.toLowerCase()}`} width={20} />
+        </Box>
+      ) : (
+        <Typography variant="body2" sx={{ color: colors.grey[500] }}>
+          --
+        </Typography>
+      )
+    }
+  >
+    {options.map((option, index) =>
+      option.divider ? (
+        // eslint-disable-next-line react/no-array-index-key
+        <Divider key={`divider-${index}`} />
+      ) : (
+        <MenuItem key={option.value ?? 'international'} value={option.value ?? ''}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {option?.value && (
+              <Iconify icon={`circle-flags:${option.value.toLowerCase()}`} width={25} />
+            )}
+            <Typography variant="body2">{option.label}</Typography>
+          </Box>
+        </MenuItem>
+      )
+    )}
+  </Select>
+);
+
+CountrySelect.propTypes = {
+  value: PropTypes.string,
+  onChange: PropTypes.func,
+  options: PropTypes.array,
+  iconComponent: PropTypes.elementType,
+};
+
+const PhoneNumberSchema = Yup.object().shape({
+  phoneNumber: Yup.string()
+    .required('Phone number is required')
+    .test('is-valid-phone', 'Please enter a valid phone number', (value) =>
+      value ? isValidPhoneNumber(value) : false
+    ),
+});
 
 export default function AccountGeneral() {
   const { enqueueSnackbar } = useSnackbar();
@@ -73,7 +169,8 @@ export default function AccountGeneral() {
     photoURL: user?.photoURL || null,
     photoBackgroundURL: user?.photoBackgroundURL || null,
     employment: user?.creator?.employment || '',
-    phoneNumber: user?.phoneNumber?.split(' ')[1] || '',
+    // phoneNumber: user?.phoneNumber?.split(' ')[1] || '',
+    phoneNumber: user?.phoneNumber || '',
     birthDate: dayjs(user?.creator?.birthDate) || '',
     country: user?.country || '',
     address: user?.creator?.address || '',
@@ -89,21 +186,17 @@ export default function AccountGeneral() {
   };
 
   const methods = useForm({
-    // resolver: yupResolver(UpdateUserSchema),
+    resolver: yupResolver(PhoneNumberSchema),
     defaultValues,
+    mode: 'onChange',
   });
 
   const {
     setValue,
     handleSubmit,
     watch,
-    formState: { isSubmitting, isDirty },
+    formState: { isSubmitting, isDirty, errors },
   } = methods;
-
-  // const { fields, remove, insert } = useFieldArray({
-  //   control,
-  //   name: 'allergies',
-  // });
 
   const countrySelected = watch('country');
 
@@ -129,7 +222,7 @@ export default function AccountGeneral() {
         ? data.interests.map((interest) => ({ name: interest }))
         : [],
       pronounce: data.pronounce || '',
-      phoneNumber: `${countryCode} ${data.phoneNumber}`,
+      phoneNumber: data.phoneNumber,
     };
 
     formData.append('image', data?.photoURL);
@@ -331,12 +424,12 @@ export default function AccountGeneral() {
                 </Stack>
               </Stack>
             </Stack>
+
             {/* Form Fields Section */}
             <Box
               spacing={2}
               alignItems="center"
               bgcolor={!mdDown ? '#F4F4F4' : 'white'}
-              // bgcolor="#F4F4F4"
               borderRadius={2}
               p={2}
               width={mdDown ? 1 : 600}
@@ -345,7 +438,7 @@ export default function AccountGeneral() {
                 sx={{
                   display: 'grid',
                   gridTemplateColumns: { xs: 'repeat(1,1fr)', md: 'repeat(2,1fr)' },
-                  gap: 1,
+                  gap: 2,
                 }}
               >
                 {/* Name field */}
@@ -434,110 +527,45 @@ export default function AccountGeneral() {
                   </RHFSelect>
                 </Box>
 
-                {/* Phone number */}
-                <Box>
-                  <Typography
-                    variant="body2"
-                    color="#636366"
-                    fontWeight={typography.fontWeightMedium}
-                    sx={{
-                      fontSize: { xs: '12px', sm: '13px' },
-                      mb: 1,
-                      color: '#636366',
-                    }}
-                  >
-                    Phone Number{' '}
-                    <Box component="span" sx={{ color: 'error.main' }}>
-                      *
-                    </Box>
-                  </Typography>
-                  <Stack direction="row" spacing={1}>
-                    <Select
-                      sx={{
-                        bgcolor: 'white',
-                        borderRadius: 1,
-                        width: 80,
-                      }}
-                      value={countryCode}
-                      onChange={(e) => handleChangeCountryCode(e.target.value)}
-                    >
-                      {countries
-                        .filter((item) => item.phone)
-                        .sort((a, b) => {
-                          const phoneA = parseInt(a.phone.replace(/-/g, ''), 10);
-                          const phoneB = parseInt(b.phone.replace(/-/g, ''), 10);
-                          return phoneA - phoneB;
-                        })
-                        .map((item, index) => (
-                          <MenuItem key={index} value={item.phone}>
-                            + {item.phone}
-                          </MenuItem>
-                        ))}
-                    </Select>
+                <Controller
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <Box>
+                      <Typography
+                        variant="body2"
+                        color="#636366"
+                        fontWeight={typography.fontWeightMedium}
+                        sx={{
+                          fontSize: { xs: '12px', sm: '13px' },
+                          mb: 1,
+                          color: '#636366',
+                        }}
+                      >
+                        Phone number{' '}
+                        <Box component="span" sx={{ color: 'error.main' }}>
+                          *
+                        </Box>
+                      </Typography>
 
-                    {/* <Controller
-                      name="phone"
-                      control={control}
-                      defaultValue=""
-                      rules={{ required: 'Phone number is required' }}
-                      render={({ field, fieldState }) => (
-                        <TextField
-                          {...field}
-                          sx={{
-                            width: '100%',
-                            '&.MuiTextField-root': {
-                              bgcolor: 'white',
-                              borderRadius: 1,
-                              '& .MuiInputLabel-root': {
-                                display: 'none',
-                              },
-                              '& .MuiInputBase-input::placeholder': {
-                                color: '#B0B0B0',
-                                fontSize: { xs: '14px', sm: '16px' },
-                                opacity: 1,
-                              },
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: 1,
-                              },
-                            },
-                          }}
-                          placeholder="Phone Number"
-                          variant="outlined"
-                          fullWidth
-                          error={!!fieldState.error}
-                          helperText={fieldState.error ? fieldState.error.message : ''}
-                          onChange={(event) => handlePhoneChange(event, field.onChange)}
-                        />
+                      <PhoneInput
+                        value={field.value}
+                        onChange={(value) => field.onChange(value ?? '')}
+                        onBlur={field.onBlur}
+                        // defaultCountry="MY"
+                        inputComponent={MuiPhoneInput}
+                        countrySelectComponent={CountrySelect}
+                        placeholder="Phone Number"
+                        InputLabelProps={{ shrink: false }}
+                        flags={flags}
+                      />
+                      {errors.phoneNumber && (
+                        <FormHelperText error sx={{ mx: 1.5 }}>
+                          {errors.phoneNumber.message}
+                        </FormHelperText>
                       )}
-                    /> */}
-
-                    <RHFTextField
-                      name="phoneNumber"
-                      placeholder="Phone Number"
-                      InputLabelProps={{ shrink: false }}
-                      type="number"
-                      sx={{
-                        width: '100%',
-                        // maxWidth: { xs: '100%', sm: 500 },
-                        '&.MuiTextField-root': {
-                          bgcolor: 'white',
-                          borderRadius: 1,
-                          '& .MuiInputLabel-root': {
-                            display: 'none',
-                          },
-                          '& .MuiInputBase-input::placeholder': {
-                            color: '#B0B0B0',
-                            fontSize: { xs: '14px', sm: '16px' },
-                            opacity: 1,
-                          },
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 1,
-                          },
-                        },
-                      }}
-                    />
-                  </Stack>
-                </Box>
+                    </Box>
+                  )}
+                />
 
                 {/* Email address */}
                 <Box>
