@@ -7,6 +7,7 @@ import {
   Stack,
   Avatar,
   Button,
+  Collapse,
   Tooltip,
   TextField,
   Typography,
@@ -145,6 +146,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const [expandedSubmission, setExpandedSubmission] = useState(null);
+  const [renderedSubmission, setRenderedSubmission] = useState(null);
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
@@ -159,12 +161,26 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
     submissionsMutate
   } = useGetV4Submissions(campaign?.id, creator?.userId);
 
+  const handleListUpdate = useCallback(() => {
+    submissionsMutate();
+  }, [submissionsMutate]);
+
+  const handleSubmissionUpdate = useCallback(
+    (shouldCollapse = false) => {
+      if (shouldCollapse) {
+        setExpandedSubmission(null);
+      }
+      submissionsMutate();
+    },
+    [submissionsMutate]
+  );
+
   // Listen for real-time submission updates for this creator
   useV4SubmissionListSocket({
     socket,
     campaignId: campaign?.id,
     creatorUserId: creator?.userId,
-    onUpdate: () => submissionsMutate(),
+    onUpdate: handleListUpdate,
     userId: user?.id,
   });
 
@@ -183,6 +199,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
         } catch (error) {
           console.error('Error refreshing submission:', error);
         }
+        setRenderedSubmission(key);
       }
 
       setExpandedSubmission((prev) => (prev === key ? null : key));
@@ -670,9 +687,10 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
   };
 
   const renderExpandedSubmission = () => {
-    if (!expandedSubmission) return null;
+    const activeKey = expandedSubmission || renderedSubmission;
+    if (!activeKey) return null;
 
-    const [type, id] = expandedSubmission.split('-');
+    const [type, id] = activeKey.split('-');
 
     if (type === 'video') {
       const submission = grouped.videos?.find((v) => v.id === id);
@@ -683,7 +701,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
             submission={submission}
             campaign={campaign}
             index={grouped.videos.findIndex((v) => v.id === id) + 1}
-            onUpdate={submissionsMutate}
+            onUpdate={handleSubmissionUpdate}
             expanded
             isDisabled={isDisabled}
           />
@@ -700,7 +718,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
             submission={submission}
             campaign={campaign}
             index={grouped.photos.findIndex((p) => p.id === id) + 1}
-            onUpdate={submissionsMutate}
+            onUpdate={handleSubmissionUpdate}
             expanded
             isDisabled={isDisabled}
           />
@@ -717,7 +735,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
             submission={submission}
             campaign={campaign}
             index={grouped.rawFootage.findIndex((rf) => rf.id === id) + 1}
-            onUpdate={submissionsMutate}
+            onUpdate={handleSubmissionUpdate}
             expanded
             isDisabled={isDisabled}
           />
@@ -827,9 +845,14 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
       </Box>
 
       {/* Expanded Submission Content */}
-      {expandedSubmission && (
+      <Collapse
+        in={Boolean(expandedSubmission)}
+        timeout={250}
+        unmountOnExit
+        onExited={() => setRenderedSubmission(null)}
+      >
         <Box sx={{ p: 0, overflow: 'hidden' }}>{renderExpandedSubmission()}</Box>
-      )}
+      </Collapse>
     </Box>
   );
 }
