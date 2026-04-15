@@ -1033,7 +1033,7 @@ const LogisticsForm = ({ user, campaignId, onUpdate }) => {
   );
 };
 
-const CampaignV4Activity = ({ campaign, mutateLogistic, logistic }) => {
+const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoading = false }) => {
   const [expandedSections, setExpandedSections] = useState({});
   const [numPages, setNumPages] = useState(null);
   const [uploadingSubmissions, setUploadingSubmissions] = useState({}); // Track which submissions are uploading
@@ -1784,7 +1784,11 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic }) => {
 
           <Collapse in={expandedSections.logistics}>
             <Divider />
-            {isLogisticsCompleted ? (
+            {logisticLoading ? (
+              <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : isLogisticsCompleted ? (
               <Box sx={{ p: 3 }}>
                 <Stack spacing={4}>
                   <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 3, md: 10 }}>
@@ -1870,7 +1874,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic }) => {
         </Card>
       )}
       {/* Collapsible Submission Cards */}
-      {isAgreementApproved && (!isDelivery || isLogisticsCompleted) && (
+      {isAgreementApproved && (!isDelivery || (isLogisticsCompleted && !logisticLoading)) && (
         <Stack spacing={2} sx={{ p: 1, mx: -1 }}>
           {/* Video Submissions */}
           {grouped?.videos?.map((video, index) => {
@@ -2322,6 +2326,7 @@ CampaignV4Activity.propTypes = {
     }),
   }).isRequired,
   mutateLogistic: PropTypes.func,
+  logisticLoading: PropTypes.bool,
   logistic: PropTypes.shape({
     deliveryDetails: PropTypes.shape({
       dietaryRestrictions: PropTypes.string,

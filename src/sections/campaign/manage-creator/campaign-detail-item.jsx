@@ -27,7 +27,14 @@ const CampaignDetailItem = ({ campaign, mutate }) => {
   const { user } = useAuthContext();
   const location = useLocation();
 
-  const { logistic: myLogistic, mutate: mutateLogistic } = useGetCreatorLogistic(campaign?.id);
+  const {
+    logistic: myLogistic,
+    logisticLoading,
+    mutate: mutateLogistic,
+  } = useGetCreatorLogistic(campaign?.id);
+  const campaignLogistic = campaign?.logistics?.find((item) => item.creatorId === user?.id) || null;
+  const resolvedLogistic = myLogistic || campaignLogistic;
+  const resolvedLogisticLoading = logisticLoading && !campaignLogistic;
 
   const [currentTab, setCurrentTab] = useState(() => {
     if (location.state?.tab) {
@@ -44,9 +51,9 @@ const CampaignDetailItem = ({ campaign, mutate }) => {
 
   const invoiceId = campaign?.invoice?.find((invoice) => invoice?.creatorId === user?.id)?.id;
   const isReservation = campaign?.logisticsType === 'RESERVATION';
-  const needsAction = isReservation && myLogistic && myLogistic.status === 'NOT_STARTED';
+  const needsAction = isReservation && resolvedLogistic && resolvedLogistic.status === 'NOT_STARTED';
   const hasLogistics =
-    !!myLogistic || campaign?.logistics?.some((item) => item.creatorId === user?.id);
+    !!resolvedLogistic || campaign?.logistics?.some((item) => item.creatorId === user?.id);
 
   const openLogisticTab = () => {
     setCurrentTab('logistics');
@@ -61,29 +68,29 @@ const CampaignDetailItem = ({ campaign, mutate }) => {
   }, [campaign?.submissionVersion, location.state?.tab]);
 
   useEffect(() => {
-    if (!myLogistic?.id) return;
+    if (!resolvedLogistic?.id) return;
 
-    const hasDismissed = localStorage.getItem(`dismissed-res-${myLogistic?.id}`);
+    const hasDismissed = localStorage.getItem(`dismissed-res-${resolvedLogistic?.id}`);
 
     if (currentTab === 'logistics') {
       if (!hasDismissed) {
-        localStorage.setItem(`dismissed-res-${myLogistic?.id}`, 'true');
+        localStorage.setItem(`dismissed-res-${resolvedLogistic?.id}`, 'true');
       }
       showReservationModal.onFalse();
     } else if (needsAction && !hasDismissed) {
       showReservationModal.onTrue();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [needsAction, showReservationModal, currentTab, myLogistic?.id]);
+  }, [needsAction, showReservationModal, currentTab, resolvedLogistic?.id]);
 
   const handleGoToLogistics = () => {
-    localStorage.setItem(`dismissed-res-${myLogistic?.id}`, 'true');
+    localStorage.setItem(`dismissed-res-${resolvedLogistic?.id}`, 'true');
     setCurrentTab('logistics');
     showReservationModal.onFalse();
   };
 
   const handleDismiss = () => {
-    localStorage.setItem(`dismissed-res-${myLogistic?.id}`, 'true');
+    localStorage.setItem(`dismissed-res-${resolvedLogistic?.id}`, 'true');
     showReservationModal.onFalse();
   };
 
@@ -195,7 +202,7 @@ const CampaignDetailItem = ({ campaign, mutate }) => {
           {currentTab === 'tasks' && (
             <CampaignMyTasks
               campaign={campaign}
-              logistic={myLogistic}
+              logistic={resolvedLogistic}
               mutateLogistic={mutateLogistic}
               onConfirm={handleGoToLogistics}
               setCurrentTab={setCurrentTab}
@@ -205,7 +212,8 @@ const CampaignDetailItem = ({ campaign, mutate }) => {
             <CampaignV4Activity
               campaign={campaign}
               mutateLogistic={mutateLogistic}
-              logistic={myLogistic}
+              logistic={resolvedLogistic}
+              logisticLoading={resolvedLogisticLoading}
             />
           )}
           {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
