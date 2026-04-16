@@ -57,13 +57,13 @@ const UpdateGeneralInfoSchema = Yup.object().shape({
   campaignEndDate: Yup.mixed().required('End date is required'),
   postingStartDate: Yup.mixed().nullable(),
   postingEndDate: Yup.mixed().nullable(),
-  productName: Yup.string().nullable(),
+  productName: Yup.string().required('Product Name/Service is required'),
   websiteLink: Yup.string().nullable(),
   campaignIndustries: Yup.array(),
   campaignImages: Yup.mixed(),
 });
 
-const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
+const UpdateGeneralInformation = ({ campaign, campaignMutate, isDraft }) => {
   // Get existing values from campaign
   const defaultValues = useMemo(
     () => ({
@@ -230,7 +230,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
             <Box mb={2}>
               <FormField label="About the Brand" required={false}>
                 <Typography mt={-1} mb={0.5} variant="caption" color="#8E8E93">
-                  Let us know a bit more about you!
+                  Additional information about the brand.
                 </Typography>
                 <RHFTextField
                   name="brandAbout"
@@ -376,7 +376,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
           <Grid item xs={12} sm={6}>
             {/* Product/Service Name - Full width */}
             <Box mb={2}>
-              <FormField label="Product/Service Name" required={false}>
+              <FormField label="Product/Service Name" >
                 <RHFTextField
                   name="productName"
                   placeholder="Product/Service Name"

@@ -177,9 +177,9 @@ export function useNavData() {
               },
               {
                 title: 'Non-Platform Creators',
-                path: paths.dashboard.discoveryTool.npc
-              }
-            ]
+                path: paths.dashboard.discoveryTool.npc,
+              },
+            ],
           },
           // {
           //   title: 'My Tasks',
@@ -239,6 +239,18 @@ export function useNavData() {
             title: 'Invoices',
             path: paths.dashboard.finance.invoice,
             icon: <Iconify icon="iconamoon:invoice" width={25} />,
+          },
+          {
+            roles: ['superadmin', 'god'],
+            title: 'Draft Campaigns',
+            path: paths.dashboard.campaign.drafts,
+            icon: <Iconify icon="material-symbols:save-outline-rounded" width={25} />,
+          },
+          {
+            roles: ['superadmin', 'BD', 'god'],
+            title: 'My Invite Link',
+            path: paths.dashboard.bd.inviteLink,
+            icon: <Iconify icon="material-symbols:qr-code-rounded" width={25} />,
           },
         ],
       },
@@ -345,6 +357,26 @@ export function useNavData() {
     []
   );
 
+  const bdNavigations = useMemo(
+    () => [
+      {
+        items: [
+          {
+            title: 'Draft Campaigns',
+            path: paths.dashboard.campaign.drafts,
+            icon: <Iconify icon="material-symbols:save-outline-rounded" width={25} />,
+          },
+          {
+            title: 'My Invite Link',
+            path: paths.dashboard.bd.inviteLink,
+            icon: <Iconify icon="material-symbols:qr-code-rounded" width={25} />,
+          },
+        ],
+      },
+    ],
+    []
+  );
+
   // CS Lead navigations - adminNavigations without calendar and chats
   const csLeadNavigations = useMemo(() => adminNavigations, [adminNavigations]);
 
@@ -374,6 +406,9 @@ export function useNavData() {
       // New version uses slug for uniqueness
       if (user.role === 'admin' && user?.admin?.role?.slug === 'sales_and_marketing') {
         return adminNavigations;
+      }
+      if (user?.admin?.role?.name === 'BD') {
+        return bdNavigations;
       }
 
       return [];

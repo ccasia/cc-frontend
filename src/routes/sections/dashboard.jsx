@@ -52,6 +52,8 @@ const PostingLinkSuperadminView = lazy(
 const AdminEditCampaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
 );
+const DraftCampaignList = lazy(() => import('src/pages/dashboard/campaign/draftList'));
+const DraftCampaignDetail = lazy(() => import('src/pages/dashboard/campaign/draftDetail'));
 const CampaignPitchDetail = lazy(
   () => import('src/pages/dashboard/campaign/admin/pitch/campaign-pitch-detail')
 );
@@ -95,7 +97,9 @@ const Report = lazy(() => import('src/pages/dashboard/report/report'));
 
 // Creator Discovery Tool
 const DiscoveryTool = lazy(() => import('src/pages/dashboard/discovery-tool/discovery-tool'));
-const DiscoveryToolNpc = lazy(() => import ('src/pages/dashboard/discovery-tool/discovery-tool-npc'))
+const DiscoveryToolNpc = lazy(
+  () => import('src/pages/dashboard/discovery-tool/discovery-tool-npc')
+);
 
 // Roles
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
@@ -133,6 +137,9 @@ const ReportAiConfiguration = lazy(() => import('src/pages/dashboard/report-ai-c
 
 // Whatsapp Dashboard Page
 const WhatsappDashboardPage = lazy(() => import('src/pages/dashboard/whatsapp-page'));
+
+// BD Dashboard Page
+const BDInviteLinkPage = lazy(() => import('src/pages/dashboard/bd/invite-link'));
 
 // ----------------------------------------------------------------------
 
@@ -256,7 +263,7 @@ export const dashboardRoutes = [
                 <DiscoveryTool />
               </RoleBasedGuard>
             ),
-            index: true           
+            index: true,
           },
           {
             path: 'npc',
@@ -264,9 +271,9 @@ export const dashboardRoutes = [
               <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
                 <DiscoveryToolNpc />
               </RoleBasedGuard>
-            )
-          }
-        ]
+            ),
+          },
+        ],
       },
       // For Finance
       {
@@ -478,6 +485,27 @@ export const dashboardRoutes = [
             ),
           },
           {
+            path: 'drafts',
+            children: [
+              {
+                index: true,
+                element: (
+                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin']}>
+                    <DraftCampaignList />
+                  </RoleBasedGuard>
+                ),
+              },
+              {
+                path: ':id',
+                element: (
+                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin']}>
+                    <DraftCampaignDetail />
+                  </RoleBasedGuard>
+                ),
+              },
+            ],
+          },
+          {
             path: 'discover',
             children: [
               {
@@ -687,6 +715,14 @@ export const dashboardRoutes = [
         element: (
           <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
             <WhatsappDashboardPage />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'bd/invite-link',
+        element: (
+          <RoleBasedGuard roles={['superadmin', 'god', 'BD', 'bd']} hasContent>
+            <BDInviteLinkPage />,
           </RoleBasedGuard>
         ),
       },
