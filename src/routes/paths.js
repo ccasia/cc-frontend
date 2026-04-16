@@ -58,6 +58,8 @@ export const paths = {
       adminCampaignDetail: (id) => `${ROOTS.DASHBOARD}/campaign/discover/detail/${id}`,
       adminCampaignManageDetail: (id) => `${ROOTS.DASHBOARD}/campaign/manage/${id}`,
       adminCampaignEdit: (id) => `${ROOTS.DASHBOARD}/campaign/manage/edit/${id}`,
+      drafts: `${ROOTS.DASHBOARD}/campaign/drafts`,
+      draftDetails: (id) => `${ROOTS.DASHBOARD}/campaign/drafts/${id}`,
       // pitch: (id) => `${ROOTS.DASHBOARD}/campaign/pitch/${id}`,
       pitch: (campaignId, pitchId) =>
         `${ROOTS.DASHBOARD}/campaign/discover/detail/${campaignId}/pitch/${pitchId}`,
@@ -157,6 +159,10 @@ export const paths = {
     whatsapp: {
       root: `${ROOTS.DASHBOARD}/whatsapp`,
     },
+    bd: {
+      root: `${ROOTS.DASHBOARD}/bd`,
+      inviteLink: `${ROOTS.DASHBOARD}/bd/invite-link`,
+    },
   },
   public: {
     creator: {
@@ -166,5 +172,6 @@ export const paths = {
       const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
       return `${ROOTS.PUBLIC}/campaign/discover/detail/${campaignId}/creator/${creatorId}${queryString}`;
     },
+    bdBrief: (token) => `/public/bd/${token}`,
   },
 };

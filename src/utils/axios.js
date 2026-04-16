@@ -240,6 +240,10 @@ export const endpoints = {
     shortlistCreator: '/api/campaign/shortlistCreator',
     guestShortListCreator: '/api/campaign/v3/shortlistCreator/guest',
     activateClientCampaign: (id) => `/api/campaign/activateClientCampaign/${id}`,
+    getDrafts: '/api/campaign/drafts',
+    deleteDraft: (id) => `/api/campaign/${id}/draft`,
+    submitDraftForReview: (id) => `/api/campaign/${id}/submit-for-review`,
+    unlinkCompany: (id) => `/api/campaign/${id}/unlink-company`,
     timeline: {
       createNewTimeline: '/api/campaign/createNewTimeline',
       defaultTimeline: '/api/campaign/defaultTimeline',
@@ -321,6 +325,7 @@ export const endpoints = {
     exportActiveCompleted: '/api/campaign/export/active-completed',
     exportCampaignCreators: '/api/campaign/export/campaign-creators',
     removeCreator: `/api/campaign/removeCreatorFromCampaign`,
+    submitDraftForReview: (id) => `/api/campaign/${id}/submit-for-review`,
   },
   submission: {
     root: '/api/submission/',
@@ -339,10 +344,13 @@ export const endpoints = {
       updateComment: (commentId) => `/api/submissions/v4/comments/${commentId}`,
       deleteComment: (commentId) => `/api/submissions/v4/comments/${commentId}`,
       deleteCommentByClient: (commentId) => `/api/submissions/v4/comments/${commentId}/client`,
-      sendToCreator: (submissionId) => `/api/submissions/v4/submission/${submissionId}/send-to-creator`,
-      sendToClient: (submissionId) => `/api/submissions/v4/submission/${submissionId}/send-to-client`,
+      sendToCreator: (submissionId) =>
+        `/api/submissions/v4/submission/${submissionId}/send-to-creator`,
+      sendToClient: (submissionId) =>
+        `/api/submissions/v4/submission/${submissionId}/send-to-client`,
       resolveComment: (commentId) => `/api/submissions/v4/comments/${commentId}/resolve`,
-      toggleCommentVisibility: (commentId) => `/api/submissions/v4/comments/${commentId}/visibility`,
+      toggleCommentVisibility: (commentId) =>
+        `/api/submissions/v4/comments/${commentId}/visibility`,
     },
     creator: {
       agreement: '/api/submission/submitAgreement',
@@ -444,5 +452,11 @@ export const endpoints = {
     checkCompany: '/api/client/checkCompany',
     createCompany: '/api/client/createCompany',
     createCampaign: '/api/client/createClientCampaign',
+  },
+  bd: {
+    myInviteLink: '/api/bd/my-invite-link',
+    rotateInviteLink: '/api/bd/my-invite-link/rotate',
+    publicInfo: (token) => `/api/bd/invite/public/${token}`,
+    publicSubmit: (token) => `/api/bd/invite/public/${token}/submit`,
   },
 };
