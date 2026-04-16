@@ -1345,17 +1345,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
       )}
 
       {/* Pitch Modal */}
-      {selectedPitch && (
-        <V3PitchModal
-          open={openPitchModal}
-          onClose={handleClosePitchModal}
-          pitch={selectedPitch}
-          campaign={campaign}
-          onUpdate={handlePitchUpdate}
-          isDisabled={isDisabled}
-        />
-      )}
-
       {smDown ? (
         <PitchModalMobile
           pitch={selectedPitch}
