@@ -29,7 +29,7 @@ export const useGetSubmissions = (id, campaignId) => {
 
 export const useGetAllSubmissions = () => {
   const { data, isLoading, mutate } = useSWR(
-    `${endpoints.submission.all}`,
+    `${endpoints.submission.all}?onlyValidSocialInsights=true`,
     fetcher,
     {
       revalidateIfStale: true,
