@@ -325,7 +325,6 @@ export const endpoints = {
     exportActiveCompleted: '/api/campaign/export/active-completed',
     exportCampaignCreators: '/api/campaign/export/campaign-creators',
     removeCreator: `/api/campaign/removeCreatorFromCampaign`,
-    submitDraftForReview: (id) => `/api/campaign/${id}/submit-for-review`,
   },
   submission: {
     root: '/api/submission/',

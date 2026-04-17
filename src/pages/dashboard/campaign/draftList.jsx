@@ -8,7 +8,7 @@ export default function Page() {
   return (
     <>
       <Helmet>
-        <title>Draft Campaigns</title>
+        <title>Draft Briefs</title>
       </Helmet>
 
       <DraftCampaignListView />

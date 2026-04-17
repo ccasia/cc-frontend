@@ -470,21 +470,20 @@ const CreatorProfileView = ({ id }) => {
                 >
                   Social Media
                 </Typography>
-                <Label
-                  color={
-                    creator?.isTiktokConnected || creator?.isFacebookConnected
-                      ? 'success'
-                      : data?.user?.mediaKitMandatory
-                        ? 'warning'
-                        : 'default'
+                {(() => {
+                  const isConnected = creator?.isTiktokConnected || creator?.isFacebookConnected;
+                  const isMandatory = data?.user?.mediaKitMandatory;
+                  let labelColor = 'default';
+                  let labelText = 'Unmarked';
+                  if (isConnected) {
+                    labelColor = 'success';
+                    labelText = 'Connected';
+                  } else if (isMandatory) {
+                    labelColor = 'warning';
+                    labelText = 'Marked';
                   }
-                >
-                  {creator?.isTiktokConnected || creator?.isFacebookConnected
-                    ? 'Connected'
-                    : data?.user?.mediaKitMandatory
-                      ? 'Marked'
-                      : 'Unmarked'}
-                </Label>
+                  return <Label color={labelColor}>{labelText}</Label>;
+                })()}
               </Box>
             </Box>
 

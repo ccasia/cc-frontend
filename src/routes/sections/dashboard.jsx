@@ -490,7 +490,7 @@ export const dashboardRoutes = [
               {
                 index: true,
                 element: (
-                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin']}>
+                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}>
                     <DraftCampaignList />
                   </RoleBasedGuard>
                 ),
@@ -498,7 +498,7 @@ export const dashboardRoutes = [
               {
                 path: ':id',
                 element: (
-                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin']}>
+                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}>
                     <DraftCampaignDetail />
                   </RoleBasedGuard>
                 ),
@@ -721,7 +721,7 @@ export const dashboardRoutes = [
       {
         path: 'bd/invite-link',
         element: (
-          <RoleBasedGuard roles={['superadmin', 'god', 'BD', 'bd']} hasContent>
+          <RoleBasedGuard roles={['superadmin', 'god', 'BD', 'bd', 'sales_and_marketing']} hasContent>
             <BDInviteLinkPage />,
           </RoleBasedGuard>
         ),
