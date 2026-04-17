@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router';
 import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
+import { ChevronLeftRounded, ChevronRightRounded, ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import {
   Box,
   Avatar,
@@ -22,6 +22,7 @@ import useGetClientCredits from 'src/hooks/use-get-client-credits';
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
@@ -39,6 +40,9 @@ const CampaignPerformanceTable = () => {
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get('search') || ''
   );
+
+  const [sortBy, setSortBy] = useState('campaignName');
+  const [sortDirection, setSortDirection] = useState('asc');
 
   const itemsPerPage = 7;
 
@@ -84,24 +88,38 @@ const CampaignPerformanceTable = () => {
         // For non-client users (admin, etc.), show all submissions
         return true;
       })
-      .map((submission) => ({
-        id: submission.id,
-        creatorName: submission.user?.name || 'N/A',
-        creatorEmail: submission.user?.email || 'N/A',
-        campaignName: submission.campaign?.name || 'N/A',
-        creatorAvatar: submission.user?.photoURL || null,
-        content: submission.content,
-        submissionId: submission.id,
-        campaignId: submission.campaignId,
-        userId: submission.user?.id,
-      }))
+      .map((submission) => {
+        const instagramPostRegex2 =
+          /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
+        const isInstagram = instagramPostRegex2.test(submission.content);
+        return {
+          id: submission.id,
+          creatorName: submission.user?.name || 'N/A',
+          campaignName: submission.campaign?.name || 'N/A',
+          creatorAvatar: submission.user?.photoURL || null,
+          tiktokUsername: submission.user?.creator?.tiktok || null,
+          instagramUsername: submission.user?.creator?.instagram || null,
+          platform: isInstagram ? 'Instagram' : 'TikTok',
+          socialUsername: isInstagram
+            ? submission.user?.creator?.instagram
+            : submission.user?.creator?.tiktok,
+          socialProfileUrl: createSocialProfileUrl(
+            isInstagram
+              ? submission.user?.creator?.instagram
+              : submission.user?.creator?.tiktok,
+            isInstagram ? 'instagram' : 'tiktok'
+          ),
+          content: submission.content,
+          submissionId: submission.id,
+          campaignId: submission.campaignId,
+          userId: submission.user?.id,
+        };
+      })
       .sort((a, b) => {
         const campaignCompare = a.campaignName.localeCompare(b.campaignName);
         return campaignCompare === 0 ? a.creatorName.localeCompare(b.creatorName) : campaignCompare;
       });
   }, [submissionData, user, company]);
-
-  console.log(reportList)
 
   // Get unique campaigns for filter dropdown
   const uniqueCampaigns = useMemo(() => {
@@ -109,7 +127,7 @@ const CampaignPerformanceTable = () => {
     return campaigns.filter((name) => name !== 'N/A').sort();
   }, [reportList]);
 
-  // Filter reports based on selected campaign and search query
+  // Filter and sort reports
   const filteredReports = useMemo(() => {
     let filtered = reportList;
     if (selectedCampaign !== 'all') {
@@ -123,8 +141,13 @@ const CampaignPerformanceTable = () => {
           report.creatorName.toLowerCase().includes(query)
       );
     }
-    return filtered;
-  }, [reportList, selectedCampaign, searchQuery]);
+    return [...filtered].sort((a, b) => {
+      const aVal = (a[sortBy] || '').toLowerCase();
+      const bVal = (b[sortBy] || '').toLowerCase();
+      const cmp = aVal.localeCompare(bVal);
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+  }, [reportList, selectedCampaign, searchQuery, sortBy, sortDirection]);
 
   const updateUrlParams = (page, campaign, search) => {
     const params = new URLSearchParams();
@@ -136,8 +159,6 @@ const CampaignPerformanceTable = () => {
     const newUrl = params.toString() ? `?${params.toString()}` : '';
     window.history.replaceState({}, '', `/dashboard/report${newUrl}`);
   };
-
-
 
   const handleViewReport = (row) => {
     // Include current pagination state in the navigation
@@ -192,6 +213,16 @@ const CampaignPerformanceTable = () => {
     setSearchQuery('');
     setCurrentPage(1);
     updateUrlParams(1, selectedCampaign, '');
+  };
+
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(column);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
   };
 
   // Calculate pagination
@@ -346,49 +377,108 @@ const CampaignPerformanceTable = () => {
           <Box
             sx={{
               width: '100%',
-              height: { xs: 28, md: 32 },
               backgroundColor: '#F5F5F5',
-              borderRadius: '8px',
+              borderRadius: 1,
               display: { xs: 'none', md: 'flex' },
               alignItems: 'center',
-              px: { xs: 2, md: 3 },
-              mb: 0,
             }}
           >
-            <Box sx={{ flex: '0 0 30%' }}>
+            <Box
+              sx={{
+                flex: '0 0 30%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 2,
+                py: 1,
+                borderRadius: 1,
+                userSelect: 'none',
+              }}
+              onClick={() => handleSort('creatorName')}
+            >
               <Typography
                 sx={{
                   fontWeight: 600,
                   fontSize: 14,
-                  color: '#666',
+                  color: sortBy === 'creatorName' ? '#1340FF' : '#666',
                 }}
               >
                 Creator
               </Typography>
+              {sortBy === 'creatorName' ? (
+                sortDirection === 'asc'
+                  ? <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />
+                  : <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />
+              ) : (
+                <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />
+              )}
             </Box>
-            <Box sx={{ flex: '0 0 25%' }}>
+            <Box
+              sx={{
+                flex: '0 0 30%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 2,
+                py: 1,
+                borderRadius: 1,
+                userSelect: 'none',
+                borderRadius: '4px',
+              }}
+              onClick={() => handleSort('campaignName')}
+            >
               <Typography
                 sx={{
                   fontWeight: 600,
                   fontSize: 14,
-                  color: '#666',
-                }}
-              >
-                Creator&apos;s Email
-              </Typography>
-            </Box>
-            <Box sx={{ flex: '0 0 25%' }}>
-              <Typography
-                sx={{
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: '#666',
+                  color: sortBy === 'campaignName' ? '#1340FF' : '#666',
                 }}
               >
                 Campaign Name
               </Typography>
+              {sortBy === 'campaignName' ? (
+                sortDirection === 'asc'
+                  ? <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />
+                  : <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />
+              ) : (
+                <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />
+              )}
             </Box>
-            <Box sx={{ flex: '0 0 15%', textAlign: 'right' }}>
+            <Box
+              sx={{
+                flex: '0 0 10%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 2,
+                py: 1,
+                borderRadius: 1,
+                userSelect: 'none',
+                borderRadius: '4px',
+              }}
+              onClick={() => handleSort('platform')}
+            >
+              <Typography
+                sx={{
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: sortBy === 'platform' ? '#1340FF' : '#666',
+                }}
+              >
+                Platform
+              </Typography>
+              {sortBy === 'platform' ? (
+                sortDirection === 'asc'
+                  ? <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />
+                  : <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />
+              ) : (
+                <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />
+              )}
+            </Box>
+            <Box sx={{ flex: '0 0 30%', textAlign: 'right' }}>
               {/* Empty space for action column */}
             </Box>
           </Box>
@@ -408,10 +498,7 @@ const CampaignPerformanceTable = () => {
                   display: 'flex',
                   flexDirection: { xs: 'column', md: 'row' },
                   alignItems: { xs: 'stretch', md: 'center' },
-                  px: { xs: 2, md: 3 },
-                  py: { xs: 2, md: 2.5 },
                   borderBottom: '1px solid #f0f0f0',
-                  gap: { xs: 1.5, md: 0 },
                   '&:hover': {
                     backgroundColor: '#f8f9fa',
                   },
@@ -453,19 +540,50 @@ const CampaignPerformanceTable = () => {
                       >
                         {row.creatorName}
                       </Typography>
-                      <Typography
-                        sx={{
-                          fontWeight: 400,
-                          fontSize: 12,
-                          color: '#666',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {row.creatorEmail}
-                      </Typography>
+                      {row.socialUsername && (
+                        <Typography
+                          component="a"
+                          href={row.socialProfileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            fontWeight: 400,
+                            fontSize: 12,
+                            color: '#666',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            textDecoration: 'none',
+                            '&:hover': { textDecoration: 'underline' },
+                          }}
+                        >
+                          {row.platform === 'Instagram' ? row.socialUsername : `@${row.socialUsername}`}
+                        </Typography>
+                      )}
                     </Box>
+                  </Box>
+
+                  {/* Platform */}
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        color: '#999',
+                        fontWeight: 500,
+                        mb: 0.25,
+                      }}
+                    >
+                      Platform
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 13,
+                        color: '#333',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {row.platform}
+                    </Typography>
                   </Box>
 
                   {/* Campaign Name */}
@@ -526,17 +644,18 @@ const CampaignPerformanceTable = () => {
                   sx={{
                     display: { xs: 'none', md: 'flex' },
                     alignItems: 'center',
-                    width: '100%',
+                    width: '100%'
                   }}
                 >
                   <Box
                     sx={{
                       flex: '0 0 30%',
-                      minWidth: 200,
+                      maxWidth: '30%',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 1,
-                      pr: 2,
+                      px: 2,
+                      py: 1.5,
                     }}
                   >
                     <Avatar
@@ -552,34 +671,42 @@ const CampaignPerformanceTable = () => {
                     >
                       {row.creatorName.charAt(0)}
                     </Avatar>
-                    <Typography
-                      sx={{
-                        fontWeight: 400,
-                        fontSize: 14,
-                        color: '#333',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {row.creatorName}
-                    </Typography>
+                    <Stack sx={{ minWidth: 0 }}>
+                      <Typography
+                        sx={{
+                          fontWeight: 400,
+                          fontSize: 14,
+                          color: '#333',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {row.creatorName}
+                      </Typography>
+                      {row.socialUsername && (
+                        <Typography
+                          component="a"
+                          href={row.socialProfileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            fontWeight: 400,
+                            fontSize: 13,
+                            color: '#666',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            textDecoration: 'none',
+                            '&:hover': { textDecoration: 'underline', color: '#1340FF' },
+                          }}
+                        >
+                          {row.platform === 'Instagram' ? row.socialUsername : `@${row.socialUsername}`}
+                        </Typography>
+                      )}
+                    </Stack>
                   </Box>
-                  <Box sx={{ flex: '0 0 25%', pr: 2 }}>
-                    <Typography
-                      sx={{
-                        fontWeight: 400,
-                        fontSize: 14,
-                        maxWidth: 260,
-                        color: '#666',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {row.creatorEmail}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ flex: '0 0 25%', pr: 2 }}>
+                  <Box sx={{ flex: '0 0 30%', px: 2, py: 1.5, }}>
                     <Typography
                       sx={{
                         fontSize: 14,
@@ -593,7 +720,18 @@ const CampaignPerformanceTable = () => {
                       {row.campaignName}
                     </Typography>
                   </Box>
-                  <Box sx={{ flex: '0 0 15%', textAlign: 'right' }}>
+                  <Box sx={{ flex: '0 0 10%', px: 2, py: 1.5, }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 400,
+                        fontSize: 14,
+                        color: '#333',
+                      }}
+                    >
+                      {row.platform}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ flex: '0 0 30%', textAlign: 'right', px: 2 }}>
                     <Button
                       variant="text"
                       onClick={() => handleViewReport(row)}
