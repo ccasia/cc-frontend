@@ -400,7 +400,7 @@ const CampaignPerformanceTable = () => {
           >
             <Box
               sx={{
-                flex: '0 0 25%',
+                flex: '0 0 30%',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -433,7 +433,7 @@ const CampaignPerformanceTable = () => {
             </Box>
             <Box
               sx={{
-                flex: '0 0 35%',
+                flex: '0 0 30%',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -499,7 +499,7 @@ const CampaignPerformanceTable = () => {
             </Box>
             <Box
               sx={{
-                flex: '0 0 10%',
+                flex: '0 0 15%',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -726,8 +726,8 @@ const CampaignPerformanceTable = () => {
                 >
                   <Box
                     sx={{
-                      flex: '0 0 25%',
-                      maxWidth: '25%',
+                      flex: '0 0 30%',
+                      maxWidth: '30%',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 1,
@@ -783,7 +783,7 @@ const CampaignPerformanceTable = () => {
                       )}
                     </Stack>
                   </Box>
-                  <Box sx={{ flex: '0 0 35%', px: 2, py: 1.5, maxWidth: '35%' }}>
+                  <Box sx={{ flex: '0 0 30%', px: 2, py: 1.5, maxWidth: '30%' }}>
                     <Typography
                       sx={{
                         fontSize: 14,
@@ -819,7 +819,7 @@ const CampaignPerformanceTable = () => {
                       {fDate(row.updatedAt)}
                     </Typography>
                   </Box>
-                  <Box sx={{ flex: '0 0 20%', textAlign: 'right', px: 2 }}>
+                  <Box sx={{ flex: '0 0 20%', textAlign: 'right', px: 1 }}>
                     <Button
                       variant="text"
                       onClick={() => handleViewReport(row)}
