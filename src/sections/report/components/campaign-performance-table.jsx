@@ -21,6 +21,7 @@ import useGetClientCredits from 'src/hooks/use-get-client-credits';
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
 
 import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
+import { fDate } from 'src/utils/format-time';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -44,7 +45,7 @@ const CampaignPerformanceTable = () => {
   const [sortBy, setSortBy] = useState('campaignName');
   const [sortDirection, setSortDirection] = useState('asc');
 
-  const itemsPerPage = 7;
+  const itemsPerPage = 8;
 
   const { user } = useAuthContext();
   const { company } = useGetClientCredits();
@@ -74,6 +75,10 @@ const CampaignPerformanceTable = () => {
         // Only show creators who have connected their media kit for the relevant platform
         if (isInstagramPost && !submission.isInstagramConnected) return false;
         if (isTiktokPost && !isInstagramPost && !submission.isTiktokConnected) return false;
+
+        // Exclude reports where token validation already failed on backend
+        if (isInstagramPost && submission.isInstagramTokenValid === false) return false;
+        if (isTiktokPost && !isInstagramPost && submission.isTiktokTokenValid === false) return false;
 
         // Filter by company/client association
         if (user?.role === 'client') {
@@ -113,6 +118,7 @@ const CampaignPerformanceTable = () => {
           submissionId: submission.id,
           campaignId: submission.campaignId,
           userId: submission.user?.id,
+          updatedAt: submission.updatedAt,
         };
       })
       .sort((a, b) => {
@@ -142,12 +148,21 @@ const CampaignPerformanceTable = () => {
       );
     }
     return [...filtered].sort((a, b) => {
+      if (sortBy === 'updatedAt') {
+        const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        const cmp = aTime - bTime;
+        return sortDirection === 'asc' ? -cmp : cmp;
+      }
+
       const aVal = (a[sortBy] || '').toLowerCase();
       const bVal = (b[sortBy] || '').toLowerCase();
       const cmp = aVal.localeCompare(bVal);
       return sortDirection === 'asc' ? cmp : -cmp;
     });
   }, [reportList, selectedCampaign, searchQuery, sortBy, sortDirection]);
+
+  console.log('Report List: ', reportList)
 
   const updateUrlParams = (page, campaign, search) => {
     const params = new URLSearchParams();
@@ -385,7 +400,7 @@ const CampaignPerformanceTable = () => {
           >
             <Box
               sx={{
-                flex: '0 0 30%',
+                flex: '0 0 25%',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -418,7 +433,7 @@ const CampaignPerformanceTable = () => {
             </Box>
             <Box
               sx={{
-                flex: '0 0 30%',
+                flex: '0 0 35%',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -482,8 +497,41 @@ const CampaignPerformanceTable = () => {
                 return <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />;
               })()}
             </Box>
-            <Box sx={{ flex: '0 0 30%', textAlign: 'right' }}>
-              {/* Empty space for action column */}
+            <Box
+              sx={{
+                flex: '0 0 10%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 1,
+                py: 1,
+                borderRadius: '4px',
+                userSelect: 'none',
+              }}
+              onClick={() => handleSort('updatedAt')}
+            >
+              <Typography
+                sx={{
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: sortBy === 'updatedAt' ? '#1340FF' : '#666',
+                }}
+              >
+                Posting Date
+              </Typography>
+              {(() => {
+                if (sortBy === 'updatedAt') {
+                  if (sortDirection === 'asc') {
+                    return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                  }
+                  return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                }
+                return <ArrowDownward sx={{ fontSize: 14, color: '#bbb' }} />;
+              })()}
+            </Box>
+            <Box sx={{ flex: '0 0 20%', textAlign: 'right' }}>
+              {/* Action column */}
             </Box>
           </Box>
 
@@ -514,6 +562,7 @@ const CampaignPerformanceTable = () => {
                     display: { xs: 'flex', md: 'none' },
                     flexDirection: 'column',
                     gap: 1.5,
+                    p: 2,
                   }}
                 >
                   {/* Creator Info */}
@@ -613,6 +662,29 @@ const CampaignPerformanceTable = () => {
                     </Typography>
                   </Box>
 
+                  {/* Posting Date */}
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        color: '#999',
+                        fontWeight: 500,
+                        mb: 0.25,
+                      }}
+                    >
+                      Posting Date
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 13,
+                        color: '#333',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {fDate(row.updatedAt)}
+                    </Typography>
+                  </Box>
+
                   {/* Action Button */}
                   <Button
                     variant="text"
@@ -648,13 +720,14 @@ const CampaignPerformanceTable = () => {
                   sx={{
                     display: { xs: 'none', md: 'flex' },
                     alignItems: 'center',
-                    width: '100%'
+                    width: '100%',
+                    minHeight: 80,
                   }}
                 >
                   <Box
                     sx={{
-                      flex: '0 0 30%',
-                      maxWidth: '30%',
+                      flex: '0 0 25%',
+                      maxWidth: '25%',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 1,
@@ -710,13 +783,13 @@ const CampaignPerformanceTable = () => {
                       )}
                     </Stack>
                   </Box>
-                  <Box sx={{ flex: '0 0 30%', px: 2, py: 1.5, }}>
+                  <Box sx={{ flex: '0 0 35%', px: 2, py: 1.5, maxWidth: '35%' }}>
                     <Typography
                       sx={{
                         fontSize: 14,
                         color: '#333',
                         fontWeight: 500,
-                        whiteSpace: 'nowrap',
+                        whiteSpace: 'wrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                       }}
@@ -735,7 +808,18 @@ const CampaignPerformanceTable = () => {
                       {row.platform}
                     </Typography>
                   </Box>
-                  <Box sx={{ flex: '0 0 30%', textAlign: 'right', px: 2 }}>
+                  <Box sx={{ flex: '0 0 10%', px: 1, py: 1.5 }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 400,
+                        fontSize: 14,
+                        color: '#333',
+                      }}
+                    >
+                      {fDate(row.updatedAt)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ flex: '0 0 20%', textAlign: 'right', px: 2 }}>
                     <Button
                       variant="text"
                       onClick={() => handleViewReport(row)}
