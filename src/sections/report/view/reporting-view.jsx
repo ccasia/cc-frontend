@@ -35,6 +35,8 @@ const ReportingView = () => {
     hasCampaignData: false,
     error: null,
   });
+  
+  console.log(content)
 
   const formatNumber = (num) => {
     if (num >= 1000000) {
@@ -64,6 +66,7 @@ const ReportingView = () => {
             platform: 'Instagram',
             type: 'Reel',
             id: shortcode,
+            url: urlObj.href
           };
         }
         if (urlObj.pathname.includes('/p/')) {
@@ -72,18 +75,30 @@ const ReportingView = () => {
             platform: 'Instagram',
             type: 'Post',
             id: shortcode,
+            url: urlObj.href
           };
         }
       }
 
       // TikTok
       if (urlObj.hostname.includes('tiktok.com')) {
+        // Short URLs (vt.tiktok.com, vm.tiktok.com, m.tiktok.com)
+        if (/^(vt|vm|m)\.tiktok\.com$/.test(urlObj.hostname)) {
+          const shortcode = urlObj.pathname.split('/').filter(Boolean)[0] || '';
+          return {
+            platform: 'TikTok',
+            type: 'Video',
+            id: shortcode,
+            url: urlObj.href
+          };
+        }
         if (urlObj.pathname.includes('/video/')) {
           const videoId = urlObj.pathname.split('/video/')[1].split('?')[0];
           return {
             platform: 'TikTok',
             type: 'Video',
             id: videoId,
+            url: urlObj.href
           };
         }
         if (urlObj.pathname.match(/\/@[^/]+\/[^/]+/)) {
@@ -92,6 +107,7 @@ const ReportingView = () => {
             platform: 'TikTok',
             type: 'Video',
             id: videoId,
+            url: urlObj.href
           };
         }
       }
@@ -148,6 +164,7 @@ const ReportingView = () => {
             ...prev,
             account: 'Instagram',
             contentType: parsedUrl.type,
+            pathname: parsedUrl.url,
             datePosted: fDate(video.timestamp),
             mediaUrl: video.thumbnail_url || video.media_url,
             caption: video.caption,
@@ -183,6 +200,7 @@ const ReportingView = () => {
             ...prev,
             account: 'TikTok',
             contentType: parsedUrl.type,
+            pathname: parsedUrl.url,
             datePosted: fDate(video.timestamp),
             mediaUrl: video.cover_image_url,
             caption: video.description,
@@ -243,10 +261,13 @@ const ReportingView = () => {
     }
   }, [searchParams, fetchContentData]);
 
+  console.log('Content data: ', content)
+
   const handleBack = () => {
     // Get return navigation state from URL params
     const returnPage = searchParams.get('returnPage');
     const returnCampaign = searchParams.get('returnCampaign');
+    const returnSearch = searchParams.get('returnSearch');
     
     // Build the return URL with preserved state
     let returnUrl = '/dashboard/report';
@@ -258,6 +279,10 @@ const ReportingView = () => {
     
     if (returnCampaign && returnCampaign !== 'all') {
       params.set('campaign', returnCampaign);
+    }
+    
+    if (returnSearch) {
+      params.set('search', returnSearch);
     }
     
     if (params.toString()) {
@@ -381,16 +406,18 @@ const ReportingView = () => {
             </Typography>
 
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-              <Iconify
-                icon={isAboveAverage ? 'mdi:arrow-up' : 'mdi:arrow-down'}
-                color={isAboveAverage ? '#4CAF50' : '#F44336'}
-                width={15}
-                height={15}
-              />
+              {percentageDiff !== 0 && (
+                <Iconify
+                  icon={isAboveAverage ? 'mdi:arrow-up' : 'mdi:arrow-down'}
+                  color={isAboveAverage ? '#4CAF50' : '#F44336'}
+                  width={15}
+                  height={15}
+                />
+              )}
               <Typography
                 sx={{
                   fontSize: 12,
-                  color: isAboveAverage ? '#4CAF50' : '#F44336',
+                  color: percentageDiff === 0 ? '#666' : isAboveAverage ? '#4CAF50' : '#F44336',
                   ml: 0.5,
                 }}
               >
@@ -595,7 +622,6 @@ const ReportingView = () => {
         </Typography>
 
         {/* Campaign Info Banner - for dev testing only */}
-        {/* {content.hasCampaignData && (
           <Card sx={{ p: 2, mb: 3, backgroundColor: '#f8f9fa', border: '1px solid #e3f2fd' }}>
             <Typography variant="h6" sx={{ color: '#1976d2', mb: 1 }}>
               📊 Campaign Analysis Active
@@ -604,7 +630,6 @@ const ReportingView = () => {
               Comparing with <strong>{content.campaignName || 'campaign'}</strong> averages from {content.campaignAverages?.postCount || 0} posts
             </Typography>
           </Card>
-        )} */}
 
         {/* Conditionally render platform-specific layouts */}
         {content.account === 'Instagram' ? (

@@ -9,10 +9,14 @@ import {
   Button,
   Select,
   MenuItem,
+  TextField,
   Typography,
   FormControl,
+  InputAdornment,
   CircularProgress,
+  Stack,
 } from '@mui/material';
+import { Search, Clear } from '@mui/icons-material';
 
 import useGetClientCredits from 'src/hooks/use-get-client-credits';
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
@@ -32,11 +36,15 @@ const CampaignPerformanceTable = () => {
     () => searchParams.get('campaign') || 'all'
   );
 
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get('search') || ''
+  );
+
   const itemsPerPage = 7;
 
   const { user } = useAuthContext();
   const { company } = useGetClientCredits();
-  const { data: submissionData, isLoadingSubmissions } = useGetAllSubmissions();
+  const { data: submissionData, isLoading: isLoadingSubmissions } = useGetAllSubmissions();
 
   const reportList = React.useMemo(() => {
     if (!submissionData) return [];
@@ -50,11 +58,18 @@ const CampaignPerformanceTable = () => {
           /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
         const tiktokPostRegex =
           /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/i;
+        const tiktokMobileRegex =
+          /(?:https?:\/\/)?(?:vt|vm|m)\.tiktok\.com\/[A-Za-z0-9_-]+/i;
 
-        const hasValidContent =
-          instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
+        const isInstagramPost = instagramPostRegex.test(submission.content);
+        const isTiktokPost =
+          tiktokPostRegex.test(submission.content) || tiktokMobileRegex.test(submission.content);
 
-        if (!hasValidContent) return false;
+        if (!isInstagramPost && !isTiktokPost) return false;
+
+        // Only show creators who have connected their media kit for the relevant platform
+        if (isInstagramPost && !submission.isInstagramConnected) return false;
+        if (isTiktokPost && !isInstagramPost && !submission.isTiktokConnected) return false;
 
         // Filter by company/client association
         if (user?.role === 'client') {
@@ -86,35 +101,43 @@ const CampaignPerformanceTable = () => {
       });
   }, [submissionData, user, company]);
 
+  console.log(reportList)
+
   // Get unique campaigns for filter dropdown
   const uniqueCampaigns = useMemo(() => {
     const campaigns = [...new Set(reportList.map((item) => item.campaignName))];
     return campaigns.filter((name) => name !== 'N/A').sort();
   }, [reportList]);
 
-  // Filter reports based on selected campaign
+  // Filter reports based on selected campaign and search query
   const filteredReports = useMemo(() => {
-    if (selectedCampaign === 'all') return reportList;
-    return reportList.filter((report) => report.campaignName === selectedCampaign);
-  }, [reportList, selectedCampaign]);
+    let filtered = reportList;
+    if (selectedCampaign !== 'all') {
+      filtered = filtered.filter((report) => report.campaignName === selectedCampaign);
+    }
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (report) =>
+          report.campaignName.toLowerCase().includes(query) ||
+          report.creatorName.toLowerCase().includes(query)
+      );
+    }
+    return filtered;
+  }, [reportList, selectedCampaign, searchQuery]);
 
-  const updateUrlParams = (page, campaign) => {
+  const updateUrlParams = (page, campaign, search) => {
     const params = new URLSearchParams();
     if (page > 1) params.set('page', page.toString());
     if (campaign !== 'all') params.set('campaign', campaign);
+    if (search) params.set('search', search);
 
     // Update URL without causing a page refresh
     const newUrl = params.toString() ? `?${params.toString()}` : '';
     window.history.replaceState({}, '', `/dashboard/report${newUrl}`);
   };
 
-  if (isLoadingSubmissions) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+
 
   const handleViewReport = (row) => {
     // Include current pagination state in the navigation
@@ -128,6 +151,7 @@ const CampaignPerformanceTable = () => {
       // Add return state for back navigation
       returnPage: currentPage.toString(),
       returnCampaign: selectedCampaign,
+      returnSearch: searchQuery,
     });
 
     navigate(`/dashboard/report/view?${params.toString()}`);
@@ -136,27 +160,38 @@ const CampaignPerformanceTable = () => {
   const handleNextPage = () => {
     const newPage = currentPage + 1;
     setCurrentPage(newPage);
-    updateUrlParams(newPage, selectedCampaign);
+    updateUrlParams(newPage, selectedCampaign, searchQuery);
   };
 
   const handlePrevPage = () => {
     const newPage = currentPage - 1;
     setCurrentPage(newPage);
-    updateUrlParams(newPage, selectedCampaign);
+    updateUrlParams(newPage, selectedCampaign, searchQuery);
   };
 
-  // Add this new function:
   const handlePageClick = (page) => {
     setCurrentPage(page);
-    updateUrlParams(page, selectedCampaign);
+    updateUrlParams(page, selectedCampaign, searchQuery);
   };
 
-  // Replace handleCampaignFilterChange:
   const handleCampaignFilterChange = (event) => {
     const newCampaign = event.target.value;
     setSelectedCampaign(newCampaign);
-    setCurrentPage(1); // Reset to first page when filter changes
-    updateUrlParams(1, newCampaign);
+    setCurrentPage(1);
+    updateUrlParams(1, newCampaign, searchQuery);
+  };
+
+  const handleSearchChange = (event) => {
+    const newSearch = event.target.value;
+    setSearchQuery(newSearch);
+    setCurrentPage(1);
+    updateUrlParams(1, selectedCampaign, newSearch);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setCurrentPage(1);
+    updateUrlParams(1, selectedCampaign, '');
   };
 
   // Calculate pagination
@@ -183,8 +218,8 @@ const CampaignPerformanceTable = () => {
         Your Campaigns
       </Typography>
 
-      {/* Campaign Filter Dropdown - Left aligned above table */}
-      <Box sx={{ mb: 2 }}>
+      {/* Campaign Filter Dropdown + Search Bar */}
+      <Box sx={{ mb: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', gap: 2 }}>
         <FormControl sx={{ width: { xs: '100%', sm: 400 } }}>
           <Select
             value={selectedCampaign}
@@ -222,6 +257,11 @@ const CampaignPerformanceTable = () => {
                 width: 20,
               },
             }}
+            MenuProps={{
+              sx: {
+                maxHeight: 400,
+              },
+            }}
           >
             <MenuItem value="all" sx={{ fontSize: '14px', fontWeight: 400 }}>
               All Campaigns
@@ -233,6 +273,49 @@ const CampaignPerformanceTable = () => {
             ))}
           </Select>
         </FormControl>
+
+        <TextField
+          value={searchQuery}
+          onChange={handleSearchChange}
+          placeholder="Search campaigns or creators..."
+          sx={{
+            width: { xs: '100%', sm: 400 },
+            '& .MuiOutlinedInput-root': {
+              backgroundColor: '#FFFFFF',
+              borderRadius: '8px',
+              height: { xs: 44, sm: 48 },
+              fontSize: { xs: '14px', sm: '16px' },
+              fontWeight: 400,
+              color: '#000000',
+              '& fieldset': {
+                borderColor: '#E7E7E7',
+                borderRadius: '8px',
+                borderWidth: '1px',
+              },
+              '&:hover fieldset': {
+                borderColor: '#E7E7E7',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#E7E7E7',
+              },
+            },
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search sx={{ color: '#999', fontSize: 20 }} />
+              </InputAdornment>
+            ),
+            endAdornment: searchQuery && (
+              <InputAdornment position="end">
+                <Clear
+                  sx={{ color: '#999', fontSize: 18, cursor: 'pointer' }}
+                  onClick={handleClearSearch}
+                />
+              </InputAdornment>
+            ),
+          }}
+        />
       </Box>
 
       {/* Scrollable Container */}
@@ -311,6 +394,12 @@ const CampaignPerformanceTable = () => {
           </Box>
 
           {/* Table Body */}
+          {isLoadingSubmissions ? (
+            <Stack p={3} spacing={2} alignItems={'center'}>
+              <Typography>Loading reports...</Typography>
+              <CircularProgress />
+            </Stack>
+          ) : (
           <Box sx={{ width: '100%' }}>
             {displayedReports.map((row, index) => (
               <Box
@@ -539,13 +628,14 @@ const CampaignPerformanceTable = () => {
               </Box>
             ))}
           </Box>
+          )}
 
           {/* Pagination Controls - Clean minimal design */}
-          {totalPages > 1 && (
+          {!isLoadingSubmissions && totalPages > 1 && (
             <Box
               sx={{
                 display: 'flex',
-                justifyContent: { xs: 'center', md: 'flex-end' },
+                justifyContent: 'center',
                 alignItems: 'center',
                 mt: { xs: 2, md: 3 },
                 pb: 2,
@@ -579,7 +669,7 @@ const CampaignPerformanceTable = () => {
               {/* Page Numbers */}
               {(() => {
                 const pageButtons = [];
-                const showEllipsis = totalPages > 3;
+                const showEllipsis = totalPages > 5;
 
                 if (!showEllipsis) {
                   // Show all pages if 3 or fewer
@@ -732,7 +822,7 @@ const CampaignPerformanceTable = () => {
           )}
 
           {/* Empty state - show when no data */}
-          {filteredReports.length === 0 && (
+          {!isLoadingSubmissions && filteredReports.length === 0 && (
             <Box
               sx={{
                 p: 6,
