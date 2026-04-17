@@ -24,6 +24,8 @@ import UpdateGeneralInformation from 'src/sections/campaign/manage/details/Updat
 import UpdateObjectives from 'src/sections/campaign/manage/details/UpdateObjectives';
 import UpdateAudience from 'src/sections/campaign/manage/details/UpdateAudience';
 import DraftPackageSection from 'src/sections/campaign/drafts/draft-package-section';
+import { LoadingButton } from '@mui/lab';
+import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
 function SectionCard({ title, missingCount, children }) {
   return (
@@ -52,6 +54,7 @@ export default function DraftCampaignDetailView() {
   } = useSWR(id ? endpoints.campaign.getCampaignById(id) : null, fetcher);
 
   const [submitting, setSubmitting] = useState(false);
+  const [campaignCredits, setCampaignCredits] = useState('');
 
   const missing = useMemo(
     () => (campaign ? collectMissingBDDraftFields(campaign) : []),
@@ -69,7 +72,9 @@ export default function DraftCampaignDetailView() {
   const handleSubmitForReview = async () => {
     setSubmitting(true);
     try {
-      await axiosInstance.post(endpoints.campaign.submitDraftForReview(id));
+      await axiosInstance.post(endpoints.campaign.submitDraftForReview(id), {
+        campaignCredits: Number(campaignCredits),
+      });
       enqueueSnackbar('Sent to CSM for review', { variant: 'success' });
       navigate(paths.dashboard.campaign.drafts);
     } catch (error) {
@@ -105,7 +110,17 @@ export default function DraftCampaignDetailView() {
     );
   }
 
-  const canSubmit = missing.length === 0;
+  const resolvedCompany = campaign?.brand?.company || campaign?.company || null;
+  const activeSub = resolvedCompany?.subscriptions?.find((s) => s.status === 'ACTIVE') || null;
+  const availableCredits = activeSub
+    ? (activeSub.totalCredits ?? 0) - (activeSub.creditsUsed ?? 0)
+    : 0;
+
+  const canSubmit =
+    missing.length === 0 &&
+    campaignCredits !== '' &&
+    Number(campaignCredits) > 0 &&
+    Number(campaignCredits) <= availableCredits;
 
   return (
     <Container maxWidth="md" sx={{ pb: 12 }}>
@@ -148,7 +163,12 @@ export default function DraftCampaignDetailView() {
 
       {/* Section 4: Company / Brand */}
       <SectionCard title="Company & Package" missingCount={missingBySection.package}>
-        <DraftPackageSection campaign={campaign} onSaved={mutate} />
+        <DraftPackageSection
+          campaign={campaign}
+          onSaved={mutate}
+          campaignCredits={campaignCredits}
+          onCreditsChange={setCampaignCredits}
+        />
       </SectionCard>
 
       {/* Sticky footer */}
@@ -168,20 +188,41 @@ export default function DraftCampaignDetailView() {
       >
         <Container maxWidth="lg">
           <Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={2}>
-            <Typography variant="body2" color="#FF3500">
-              {canSubmit ? 'Ready to submit.' : `${missing.length} required field${missing.length === 1 ? '': 's'} remaining.`}
+            <Typography variant="body2" color={canSubmit ? 'text.primary' : '#FF3500'}>
+              {canSubmit
+                ? 'Ready to submit.'
+                : missing.length > 0
+                  ? `${missing.length} required field${missing.length === 1 ? '' : 's'} remaining.`
+                  : 'Set campaign credits to submit.'}
             </Typography>
-            <Tooltip title={canSubmit ? '' : 'Fill all required fields to submit for review.'}>
+            <DarkGlassTooltip
+              title={canSubmit ? '' : 'Fill all required fields and set campaign credits to submit.'}
+            >
               <span>
-                <Button
+                <LoadingButton
+                  type="submit"
                   variant="contained"
+                  loading={submitting}
                   disabled={!canSubmit || submitting}
                   onClick={handleSubmitForReview}
+                  size="large"
+                  sx={{
+                    bgcolor: '#1340ff',
+                    boxShadow: '0px -3px 0px 0px rgba(0,0,0,0.45) inset',
+                    '&:hover': {
+                      bgcolor: '#1340ff',
+                    },
+                    '&:disabled': {
+                      bgcolor: 'rgba(19, 64, 255, 0.3)',
+                      color: '#fff',
+                      boxShadow: '0px -3px 0px 0px inset rgba(0, 0, 0, 0.1)',
+                    },
+                  }}
                 >
                   Create Campaign
-                </Button>
+                </LoadingButton>
               </span>
-            </Tooltip>
+            </DarkGlassTooltip>
           </Stack>
         </Container>
       </Box>

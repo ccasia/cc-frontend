@@ -23,8 +23,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 export default function MyInviteLinkView() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [rotateOpen, setRotateOpen] = useState(false);
-  const [rotating, setRotating] = useState(false);
+  const [refreshOpen, setRefreshOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -48,17 +48,17 @@ export default function MyInviteLinkView() {
     enqueueSnackbar('Link copied');
   };
 
-  const rotate = async () => {
-    setRotating(true);
+  const refresh = async () => {
+    setRefreshing(true);
     try {
       const res = await axiosInstance.post(endpoints.bd.rotateInviteLink);
       setData(res.data);
       enqueueSnackbar('New link generated — the old one no longer works');
-      setRotateOpen(false);
+      setRefreshOpen(false);
     } catch (err) {
-      enqueueSnackbar('Failed to rotate link', { variant: 'error' });
+      enqueueSnackbar('Failed to refresh link', { variant: 'error' });
     } finally {
-      setRotating(false);
+      setRefreshing(false);
     }
   };
 
@@ -98,16 +98,16 @@ export default function MyInviteLinkView() {
             </Box>
 
             <Stack direction="row" justifyContent="flex-end">
-              <Button color="error" variant="outlined" onClick={() => setRotateOpen(true)}>
-                Rotate link
+              <Button color="error" variant="outlined" onClick={() => setRefreshOpen(true)}>
+                Refresh link
               </Button>
             </Stack>
           </Stack>
         )}
       </Card>
 
-      <Dialog open={rotateOpen} onClose={() => setRotateOpen(false)}>
-        <DialogTitle>Rotate invite link?</DialogTitle>
+      <Dialog open={refreshOpen} onClose={() => setRefreshOpen(false)}>
+        <DialogTitle>Refresh invite link?</DialogTitle>
         <DialogContent>
           <Typography>
             The current link will stop working immediately. Anyone who has it (including QR codes
@@ -116,9 +116,9 @@ export default function MyInviteLinkView() {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRotateOpen(false)}>Cancel</Button>
-          <Button color="error" variant="contained" onClick={rotate} disabled={rotating}>
-            {rotating ? 'Rotating...' : 'Rotate'}
+          <Button onClick={() => setRefreshOpen(false)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={refresh} disabled={refreshing}>
+            {refreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
         </DialogActions>
       </Dialog>

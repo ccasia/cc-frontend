@@ -14,6 +14,7 @@ import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -186,7 +187,7 @@ function getActiveSubscription(company) {
 
 // --- Main section ---
 
-export default function DraftPackageSection({ campaign, onSaved }) {
+export default function DraftPackageSection({ campaign, onSaved, campaignCredits, onCreditsChange }) {
   const [linkOpen, setLinkOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [packageOpen, setPackageOpen] = useState(false);
@@ -268,27 +269,53 @@ export default function DraftPackageSection({ campaign, onSaved }) {
       {linked && company && (
         <>
           {activeSub ? (
-            <Box
-              sx={{
-                p: 2,
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 2,
-                bgcolor: 'background.neutral',
-              }}
-            >
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography variant="subtitle2">
-                    Package: {packageName}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Credits: {remaining} remaining of {totalCredits} &bull; Expires: {expiresAt}
-                  </Typography>
-                </Box>
-                <Chip size="small" label="Active" color="success" variant="outlined" />
-              </Stack>
-            </Box>
+            <Stack spacing={2}>
+              <Box
+                sx={{
+                  p: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  bgcolor: 'background.neutral',
+                }}
+              >
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Box>
+                    <Typography variant="subtitle2">
+                      Package: {packageName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Credits: {remaining} remaining of {totalCredits} &bull; Expires: {expiresAt}
+                    </Typography>
+                  </Box>
+                  <Chip size="small" label="Active" color="success" variant="outlined" />
+                </Stack>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Campaign Credits
+                </Typography>
+                <TextField
+                  type="number"
+                  size="small"
+                  placeholder="Enter credits to allocate"
+                  value={campaignCredits}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    onCreditsChange(Number.isNaN(val) ? '' : val);
+                  }}
+                  inputProps={{ min: 1, max: remaining }}
+                  error={campaignCredits !== '' && campaignCredits > remaining}
+                  helperText={
+                    campaignCredits !== '' && campaignCredits > remaining
+                      ? `Exceeds available credits (${remaining})`
+                      : `Available: ${remaining} credits`
+                  }
+                  fullWidth
+                />
+              </Box>
+            </Stack>
           ) : (
             <Box>
               <Alert severity="info" sx={{ mb: 2 }}>
@@ -337,4 +364,6 @@ export default function DraftPackageSection({ campaign, onSaved }) {
 DraftPackageSection.propTypes = {
   campaign: PropTypes.object.isRequired,
   onSaved: PropTypes.func.isRequired,
+  campaignCredits: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  onCreditsChange: PropTypes.func.isRequired,
 };
