@@ -2,9 +2,10 @@ import { useNavigate } from 'react-router';
 import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { ChevronLeftRounded, ChevronRightRounded, ArrowUpward, ArrowDownward } from '@mui/icons-material';
+import { Clear, Search , ArrowUpward, ArrowDownward, ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 import {
   Box,
+  Stack,
   Avatar,
   Button,
   Select,
@@ -14,15 +15,14 @@ import {
   FormControl,
   InputAdornment,
   CircularProgress,
-  Stack,
 } from '@mui/material';
-import { Search, Clear } from '@mui/icons-material';
 
 import useGetClientCredits from 'src/hooks/use-get-client-credits';
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
 
-import { useAuthContext } from 'src/auth/hooks';
 import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
@@ -406,13 +406,15 @@ const CampaignPerformanceTable = () => {
               >
                 Creator
               </Typography>
-              {sortBy === 'creatorName' ? (
-                sortDirection === 'asc'
-                  ? <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />
-                  : <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />
-              ) : (
-                <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />
-              )}
+              {(() => {
+                if (sortBy === 'creatorName') {
+                  if (sortDirection === 'asc') {
+                    return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                  }
+                  return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                }
+                return <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />;
+              })()}
             </Box>
             <Box
               sx={{
@@ -423,9 +425,8 @@ const CampaignPerformanceTable = () => {
                 gap: 0.5,
                 px: 2,
                 py: 1,
-                borderRadius: 1,
+                borderRadius: '4px', // Only one borderRadius key
                 userSelect: 'none',
-                borderRadius: '4px',
               }}
               onClick={() => handleSort('campaignName')}
             >
@@ -438,13 +439,15 @@ const CampaignPerformanceTable = () => {
               >
                 Campaign Name
               </Typography>
-              {sortBy === 'campaignName' ? (
-                sortDirection === 'asc'
-                  ? <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />
-                  : <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />
-              ) : (
-                <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />
-              )}
+              {(() => {
+                if (sortBy === 'campaignName') {
+                  if (sortDirection === 'asc') {
+                    return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                  }
+                  return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                }
+                return <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />;
+              })()}
             </Box>
             <Box
               sx={{
@@ -455,9 +458,8 @@ const CampaignPerformanceTable = () => {
                 gap: 0.5,
                 px: 2,
                 py: 1,
-                borderRadius: 1,
+                borderRadius: '4px', // Only one borderRadius key
                 userSelect: 'none',
-                borderRadius: '4px',
               }}
               onClick={() => handleSort('platform')}
             >
@@ -470,13 +472,15 @@ const CampaignPerformanceTable = () => {
               >
                 Platform
               </Typography>
-              {sortBy === 'platform' ? (
-                sortDirection === 'asc'
-                  ? <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />
-                  : <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />
-              ) : (
-                <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />
-              )}
+              {(() => {
+                if (sortBy === 'platform') {
+                  if (sortDirection === 'asc') {
+                    return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                  }
+                  return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                }
+                return <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />;
+              })()}
             </Box>
             <Box sx={{ flex: '0 0 30%', textAlign: 'right' }}>
               {/* Empty space for action column */}
@@ -485,7 +489,7 @@ const CampaignPerformanceTable = () => {
 
           {/* Table Body */}
           {isLoadingSubmissions ? (
-            <Stack p={3} spacing={2} alignItems={'center'}>
+            <Stack p={3} spacing={2} alignItems="center">
               <Typography>Loading reports...</Typography>
               <CircularProgress />
             </Stack>
