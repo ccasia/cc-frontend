@@ -111,7 +111,7 @@ export default function MyInviteLinkView() {
         <DialogContent>
           <Typography>
             The current link will stop working immediately. Anyone who has it (including QR codes
-            already shared) won't be able to submit. Only do this if you think the link has been
+            already shared) won&apos;t be able to submit. Only do this if you think the link has been
             leaked.
           </Typography>
         </DialogContent>

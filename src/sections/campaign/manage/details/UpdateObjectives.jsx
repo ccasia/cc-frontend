@@ -57,7 +57,7 @@ const UpdateObjectivesSchema = Yup.object().shape({
   performanceBaseline: Yup.string().nullable(),
 });
 
-const UpdateObjectives = ({ campaign, campaignMutate }) => {
+const UpdateObjectives = ({ campaign, campaignMutate, onDirtyChange }) => {
   const prevPrimaryObjective = useRef(null);
 
   // Get existing values from campaign
@@ -92,6 +92,10 @@ const UpdateObjectives = ({ campaign, campaignMutate }) => {
       reset(defaultValues);
     }
   }, [campaign, defaultValues, reset]);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   const primaryObjective = watch('campaignObjectives');
   const secondaryOptions = secondaryObjectivesByPrimary[primaryObjective] || [];
@@ -253,6 +257,7 @@ const UpdateObjectives = ({ campaign, campaignMutate }) => {
 UpdateObjectives.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
+  onDirtyChange: PropTypes.func,
 };
 
 export default memo(UpdateObjectives);

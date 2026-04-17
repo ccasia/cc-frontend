@@ -1,5 +1,5 @@
-import dayjs from 'dayjs';
 import useSWR from 'swr';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
@@ -25,8 +25,10 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { Delete as DeleteIcon, Launch as LaunchIcon } from '@mui/icons-material';
 
 import { paths } from 'src/routes/paths';
-import { useAuthContext } from 'src/auth/hooks';
+
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 import { collectMissingBDDraftFields } from 'src/contants/bd-draft-fields';
 
 export default function DraftCampaignListView() {
@@ -67,7 +69,7 @@ export default function DraftCampaignListView() {
     <Container maxWidth="xl">
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <Box>
-          <Typography variant="h4">Draft Campaigns</Typography>
+          <Typography variant="h4">Draft Briefs</Typography>
           <Typography variant="body2" color="text.secondary">
             {isSuperadmin
               ? 'All drafts created via BD invite links.'
@@ -76,15 +78,19 @@ export default function DraftCampaignListView() {
         </Box>
       </Stack>
 
-      {isLoading ? (
+      {isLoading && (
         <Stack alignItems="center" py={8}>
           <CircularProgress />
         </Stack>
-      ) : !data?.length ? (
+      )}
+
+      {!isLoading && !data?.length && (
         <Stack alignItems="center" py={8}>
           <Typography color="text.secondary">No draft campaigns yet.</Typography>
         </Stack>
-      ) : (
+      )}
+
+      {!isLoading && data?.length > 0 && (
         <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
           <Table>
             <TableHead>

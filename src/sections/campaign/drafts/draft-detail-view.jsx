@@ -1,7 +1,8 @@
-import dayjs from 'dayjs';
 import useSWR from 'swr';
-import { useMemo, useState } from 'react';
+import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
+import { useMemo, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
@@ -9,23 +10,25 @@ import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
+import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import Tooltip from '@mui/material/Tooltip';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
+
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
+
 import { collectMissingBDDraftFields } from 'src/contants/bd-draft-fields';
 
-import UpdateGeneralInformation from 'src/sections/campaign/manage/details/UpdateGeneralInformation';
-import UpdateObjectives from 'src/sections/campaign/manage/details/UpdateObjectives';
-import UpdateAudience from 'src/sections/campaign/manage/details/UpdateAudience';
-import DraftPackageSection from 'src/sections/campaign/drafts/draft-package-section';
-import { LoadingButton } from '@mui/lab';
 import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
+
+import UpdateAudience from 'src/sections/campaign/manage/details/UpdateAudience';
+import UpdateObjectives from 'src/sections/campaign/manage/details/UpdateObjectives';
+import DraftPackageSection from 'src/sections/campaign/drafts/draft-package-section';
+import UpdateGeneralInformation from 'src/sections/campaign/manage/details/UpdateGeneralInformation';
 
 function SectionCard({ title, missingCount, children }) {
   return (
@@ -42,6 +45,12 @@ function SectionCard({ title, missingCount, children }) {
   );
 }
 
+SectionCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  missingCount: PropTypes.number,
+  children: PropTypes.node,
+};
+
 export default function DraftCampaignDetailView() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -55,6 +64,26 @@ export default function DraftCampaignDetailView() {
 
   const [submitting, setSubmitting] = useState(false);
   const [campaignCredits, setCampaignCredits] = useState('');
+  const [dirtySections, setDirtySections] = useState({});
+
+  const handleDirtyChange = useCallback(
+    (section) => (isDirty) => {
+      setDirtySections((prev) => {
+        if (Boolean(prev[section]) === Boolean(isDirty)) return prev;
+        return { ...prev, [section]: isDirty };
+      });
+    },
+    []
+  );
+
+  const onGeneralDirty = useMemo(() => handleDirtyChange('General Information'), [handleDirtyChange]);
+  const onObjectivesDirty = useMemo(() => handleDirtyChange('Campaign Objectives'), [handleDirtyChange]);
+  const onAudienceDirty = useMemo(() => handleDirtyChange('Target Audience'), [handleDirtyChange]);
+
+  const dirtyLabels = useMemo(
+    () => Object.entries(dirtySections).filter(([, v]) => v).map(([k]) => k),
+    [dirtySections]
+  );
 
   const missing = useMemo(
     () => (campaign ? collectMissingBDDraftFields(campaign) : []),
@@ -70,6 +99,13 @@ export default function DraftCampaignDetailView() {
   }, [missing]);
 
   const handleSubmitForReview = async () => {
+    if (dirtyLabels.length > 0) {
+      enqueueSnackbar(
+        `Unsaved changes in: ${dirtyLabels.join(', ')}. Please save each section before creating the campaign.`,
+        { variant: 'warning' }
+      );
+      return;
+    }
     setSubmitting(true);
     try {
       await axiosInstance.post(endpoints.campaign.submitDraftForReview(id), {
@@ -122,6 +158,17 @@ export default function DraftCampaignDetailView() {
     Number(campaignCredits) > 0 &&
     Number(campaignCredits) <= availableCredits;
 
+  let footerMessage = 'Ready to submit.';
+  if (!canSubmit) {
+    if (missing.length > 0) {
+      footerMessage = `${missing.length} required field${missing.length === 1 ? '' : 's'} remaining.`;
+    } else if (campaignCredits === '' || Number(campaignCredits) <= 0) {
+      footerMessage = 'Set campaign credits to submit.';
+    } else {
+      footerMessage = `Credits exceed available (${availableCredits}).`;
+    }
+  }
+
   return (
     <Container maxWidth="md" sx={{ pb: 12 }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
@@ -148,17 +195,29 @@ export default function DraftCampaignDetailView() {
         title="General Information"
         missingCount={missingBySection.campaign + missingBySection.brief}
       >
-        <UpdateGeneralInformation campaign={campaign} campaignMutate={mutate} />
+        <UpdateGeneralInformation
+          campaign={campaign}
+          campaignMutate={mutate}
+          onDirtyChange={onGeneralDirty}
+        />
       </SectionCard>
 
       {/* Section 2: Objectives */}
       <SectionCard title="Campaign Objectives" missingCount={0}>
-        <UpdateObjectives campaign={campaign} campaignMutate={mutate} />
+        <UpdateObjectives
+          campaign={campaign}
+          campaignMutate={mutate}
+          onDirtyChange={onObjectivesDirty}
+        />
       </SectionCard>
 
       {/* Section 3: Target Audience */}
       <SectionCard title="Target Audience" missingCount={missingBySection.requirement}>
-        <UpdateAudience campaign={campaign} campaignMutate={mutate} />
+        <UpdateAudience
+          campaign={campaign}
+          campaignMutate={mutate}
+          onDirtyChange={onAudienceDirty}
+        />
       </SectionCard>
 
       {/* Section 4: Company / Brand */}
@@ -189,14 +248,12 @@ export default function DraftCampaignDetailView() {
         <Container maxWidth="lg">
           <Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={2}>
             <Typography variant="body2" color={canSubmit ? 'text.primary' : '#FF3500'}>
-              {canSubmit
-                ? 'Ready to submit.'
-                : missing.length > 0
-                  ? `${missing.length} required field${missing.length === 1 ? '' : 's'} remaining.`
-                  : 'Set campaign credits to submit.'}
+              {footerMessage}
             </Typography>
             <DarkGlassTooltip
-              title={canSubmit ? '' : 'Fill all required fields and set campaign credits to submit.'}
+              title={
+                canSubmit ? '' : 'Fill all required fields and set campaign credits to submit.'
+              }
             >
               <span>
                 <LoadingButton
