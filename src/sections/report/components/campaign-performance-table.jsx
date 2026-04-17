@@ -2,20 +2,25 @@ import { useNavigate } from 'react-router';
 import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
+import { Clear, Search , ArrowUpward, ArrowDownward, ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 import {
   Box,
+  Stack,
   Avatar,
   Button,
   Select,
   MenuItem,
+  TextField,
   Typography,
   FormControl,
+  InputAdornment,
   CircularProgress,
 } from '@mui/material';
 
 import useGetClientCredits from 'src/hooks/use-get-client-credits';
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
+
+import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -32,11 +37,18 @@ const CampaignPerformanceTable = () => {
     () => searchParams.get('campaign') || 'all'
   );
 
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get('search') || ''
+  );
+
+  const [sortBy, setSortBy] = useState('campaignName');
+  const [sortDirection, setSortDirection] = useState('asc');
+
   const itemsPerPage = 7;
 
   const { user } = useAuthContext();
   const { company } = useGetClientCredits();
-  const { data: submissionData, isLoadingSubmissions } = useGetAllSubmissions();
+  const { data: submissionData, isLoading: isLoadingSubmissions } = useGetAllSubmissions();
 
   const reportList = React.useMemo(() => {
     if (!submissionData) return [];
@@ -50,11 +62,18 @@ const CampaignPerformanceTable = () => {
           /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
         const tiktokPostRegex =
           /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/i;
+        const tiktokMobileRegex =
+          /(?:https?:\/\/)?(?:vt|vm|m)\.tiktok\.com\/[A-Za-z0-9_-]+/i;
 
-        const hasValidContent =
-          instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
+        const isInstagramPost = instagramPostRegex.test(submission.content);
+        const isTiktokPost =
+          tiktokPostRegex.test(submission.content) || tiktokMobileRegex.test(submission.content);
 
-        if (!hasValidContent) return false;
+        if (!isInstagramPost && !isTiktokPost) return false;
+
+        // Only show creators who have connected their media kit for the relevant platform
+        if (isInstagramPost && !submission.isInstagramConnected) return false;
+        if (isTiktokPost && !isInstagramPost && !submission.isTiktokConnected) return false;
 
         // Filter by company/client association
         if (user?.role === 'client') {
@@ -69,17 +88,33 @@ const CampaignPerformanceTable = () => {
         // For non-client users (admin, etc.), show all submissions
         return true;
       })
-      .map((submission) => ({
-        id: submission.id,
-        creatorName: submission.user?.name || 'N/A',
-        creatorEmail: submission.user?.email || 'N/A',
-        campaignName: submission.campaign?.name || 'N/A',
-        creatorAvatar: submission.user?.photoURL || null,
-        content: submission.content,
-        submissionId: submission.id,
-        campaignId: submission.campaignId,
-        userId: submission.user?.id,
-      }))
+      .map((submission) => {
+        const instagramPostRegex2 =
+          /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
+        const isInstagram = instagramPostRegex2.test(submission.content);
+        return {
+          id: submission.id,
+          creatorName: submission.user?.name || 'N/A',
+          campaignName: submission.campaign?.name || 'N/A',
+          creatorAvatar: submission.user?.photoURL || null,
+          tiktokUsername: submission.user?.creator?.tiktok || null,
+          instagramUsername: submission.user?.creator?.instagram || null,
+          platform: isInstagram ? 'Instagram' : 'TikTok',
+          socialUsername: isInstagram
+            ? submission.user?.creator?.instagram
+            : submission.user?.creator?.tiktok,
+          socialProfileUrl: createSocialProfileUrl(
+            isInstagram
+              ? submission.user?.creator?.instagram
+              : submission.user?.creator?.tiktok,
+            isInstagram ? 'instagram' : 'tiktok'
+          ),
+          content: submission.content,
+          submissionId: submission.id,
+          campaignId: submission.campaignId,
+          userId: submission.user?.id,
+        };
+      })
       .sort((a, b) => {
         const campaignCompare = a.campaignName.localeCompare(b.campaignName);
         return campaignCompare === 0 ? a.creatorName.localeCompare(b.creatorName) : campaignCompare;
@@ -92,29 +127,38 @@ const CampaignPerformanceTable = () => {
     return campaigns.filter((name) => name !== 'N/A').sort();
   }, [reportList]);
 
-  // Filter reports based on selected campaign
+  // Filter and sort reports
   const filteredReports = useMemo(() => {
-    if (selectedCampaign === 'all') return reportList;
-    return reportList.filter((report) => report.campaignName === selectedCampaign);
-  }, [reportList, selectedCampaign]);
+    let filtered = reportList;
+    if (selectedCampaign !== 'all') {
+      filtered = filtered.filter((report) => report.campaignName === selectedCampaign);
+    }
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (report) =>
+          report.campaignName.toLowerCase().includes(query) ||
+          report.creatorName.toLowerCase().includes(query)
+      );
+    }
+    return [...filtered].sort((a, b) => {
+      const aVal = (a[sortBy] || '').toLowerCase();
+      const bVal = (b[sortBy] || '').toLowerCase();
+      const cmp = aVal.localeCompare(bVal);
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+  }, [reportList, selectedCampaign, searchQuery, sortBy, sortDirection]);
 
-  const updateUrlParams = (page, campaign) => {
+  const updateUrlParams = (page, campaign, search) => {
     const params = new URLSearchParams();
     if (page > 1) params.set('page', page.toString());
     if (campaign !== 'all') params.set('campaign', campaign);
+    if (search) params.set('search', search);
 
     // Update URL without causing a page refresh
     const newUrl = params.toString() ? `?${params.toString()}` : '';
     window.history.replaceState({}, '', `/dashboard/report${newUrl}`);
   };
-
-  if (isLoadingSubmissions) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
 
   const handleViewReport = (row) => {
     // Include current pagination state in the navigation
@@ -128,6 +172,7 @@ const CampaignPerformanceTable = () => {
       // Add return state for back navigation
       returnPage: currentPage.toString(),
       returnCampaign: selectedCampaign,
+      returnSearch: searchQuery,
     });
 
     navigate(`/dashboard/report/view?${params.toString()}`);
@@ -136,27 +181,48 @@ const CampaignPerformanceTable = () => {
   const handleNextPage = () => {
     const newPage = currentPage + 1;
     setCurrentPage(newPage);
-    updateUrlParams(newPage, selectedCampaign);
+    updateUrlParams(newPage, selectedCampaign, searchQuery);
   };
 
   const handlePrevPage = () => {
     const newPage = currentPage - 1;
     setCurrentPage(newPage);
-    updateUrlParams(newPage, selectedCampaign);
+    updateUrlParams(newPage, selectedCampaign, searchQuery);
   };
 
-  // Add this new function:
   const handlePageClick = (page) => {
     setCurrentPage(page);
-    updateUrlParams(page, selectedCampaign);
+    updateUrlParams(page, selectedCampaign, searchQuery);
   };
 
-  // Replace handleCampaignFilterChange:
   const handleCampaignFilterChange = (event) => {
     const newCampaign = event.target.value;
     setSelectedCampaign(newCampaign);
-    setCurrentPage(1); // Reset to first page when filter changes
-    updateUrlParams(1, newCampaign);
+    setCurrentPage(1);
+    updateUrlParams(1, newCampaign, searchQuery);
+  };
+
+  const handleSearchChange = (event) => {
+    const newSearch = event.target.value;
+    setSearchQuery(newSearch);
+    setCurrentPage(1);
+    updateUrlParams(1, selectedCampaign, newSearch);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setCurrentPage(1);
+    updateUrlParams(1, selectedCampaign, '');
+  };
+
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(column);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
   };
 
   // Calculate pagination
@@ -183,8 +249,8 @@ const CampaignPerformanceTable = () => {
         Your Campaigns
       </Typography>
 
-      {/* Campaign Filter Dropdown - Left aligned above table */}
-      <Box sx={{ mb: 2 }}>
+      {/* Campaign Filter Dropdown + Search Bar */}
+      <Box sx={{ mb: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', gap: 2 }}>
         <FormControl sx={{ width: { xs: '100%', sm: 400 } }}>
           <Select
             value={selectedCampaign}
@@ -222,6 +288,11 @@ const CampaignPerformanceTable = () => {
                 width: 20,
               },
             }}
+            MenuProps={{
+              sx: {
+                maxHeight: 400,
+              },
+            }}
           >
             <MenuItem value="all" sx={{ fontSize: '14px', fontWeight: 400 }}>
               All Campaigns
@@ -233,6 +304,49 @@ const CampaignPerformanceTable = () => {
             ))}
           </Select>
         </FormControl>
+
+        <TextField
+          value={searchQuery}
+          onChange={handleSearchChange}
+          placeholder="Search campaigns or creators..."
+          sx={{
+            width: { xs: '100%', sm: 400 },
+            '& .MuiOutlinedInput-root': {
+              backgroundColor: '#FFFFFF',
+              borderRadius: '8px',
+              height: { xs: 44, sm: 48 },
+              fontSize: { xs: '14px', sm: '16px' },
+              fontWeight: 400,
+              color: '#000000',
+              '& fieldset': {
+                borderColor: '#E7E7E7',
+                borderRadius: '8px',
+                borderWidth: '1px',
+              },
+              '&:hover fieldset': {
+                borderColor: '#E7E7E7',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#E7E7E7',
+              },
+            },
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search sx={{ color: '#999', fontSize: 20 }} />
+              </InputAdornment>
+            ),
+            endAdornment: searchQuery && (
+              <InputAdornment position="end">
+                <Clear
+                  sx={{ color: '#999', fontSize: 18, cursor: 'pointer' }}
+                  onClick={handleClearSearch}
+                />
+              </InputAdornment>
+            ),
+          }}
+        />
       </Box>
 
       {/* Scrollable Container */}
@@ -263,54 +377,123 @@ const CampaignPerformanceTable = () => {
           <Box
             sx={{
               width: '100%',
-              height: { xs: 28, md: 32 },
               backgroundColor: '#F5F5F5',
-              borderRadius: '8px',
+              borderRadius: 1,
               display: { xs: 'none', md: 'flex' },
               alignItems: 'center',
-              px: { xs: 2, md: 3 },
-              mb: 0,
             }}
           >
-            <Box sx={{ flex: '0 0 30%' }}>
+            <Box
+              sx={{
+                flex: '0 0 30%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 2,
+                py: 1,
+                borderRadius: 1,
+                userSelect: 'none',
+              }}
+              onClick={() => handleSort('creatorName')}
+            >
               <Typography
                 sx={{
                   fontWeight: 600,
                   fontSize: 14,
-                  color: '#666',
+                  color: sortBy === 'creatorName' ? '#1340FF' : '#666',
                 }}
               >
                 Creator
               </Typography>
+              {(() => {
+                if (sortBy === 'creatorName') {
+                  if (sortDirection === 'asc') {
+                    return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                  }
+                  return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                }
+                return <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />;
+              })()}
             </Box>
-            <Box sx={{ flex: '0 0 25%' }}>
+            <Box
+              sx={{
+                flex: '0 0 30%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 2,
+                py: 1,
+                borderRadius: '4px', // Only one borderRadius key
+                userSelect: 'none',
+              }}
+              onClick={() => handleSort('campaignName')}
+            >
               <Typography
                 sx={{
                   fontWeight: 600,
                   fontSize: 14,
-                  color: '#666',
-                }}
-              >
-                Creator&apos;s Email
-              </Typography>
-            </Box>
-            <Box sx={{ flex: '0 0 25%' }}>
-              <Typography
-                sx={{
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: '#666',
+                  color: sortBy === 'campaignName' ? '#1340FF' : '#666',
                 }}
               >
                 Campaign Name
               </Typography>
+              {(() => {
+                if (sortBy === 'campaignName') {
+                  if (sortDirection === 'asc') {
+                    return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                  }
+                  return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                }
+                return <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />;
+              })()}
             </Box>
-            <Box sx={{ flex: '0 0 15%', textAlign: 'right' }}>
+            <Box
+              sx={{
+                flex: '0 0 10%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 2,
+                py: 1,
+                borderRadius: '4px', // Only one borderRadius key
+                userSelect: 'none',
+              }}
+              onClick={() => handleSort('platform')}
+            >
+              <Typography
+                sx={{
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: sortBy === 'platform' ? '#1340FF' : '#666',
+                }}
+              >
+                Platform
+              </Typography>
+              {(() => {
+                if (sortBy === 'platform') {
+                  if (sortDirection === 'asc') {
+                    return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                  }
+                  return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                }
+                return <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />;
+              })()}
+            </Box>
+            <Box sx={{ flex: '0 0 30%', textAlign: 'right' }}>
               {/* Empty space for action column */}
             </Box>
           </Box>
 
           {/* Table Body */}
+          {isLoadingSubmissions ? (
+            <Stack p={3} spacing={2} alignItems="center">
+              <Typography>Loading reports...</Typography>
+              <CircularProgress />
+            </Stack>
+          ) : (
           <Box sx={{ width: '100%' }}>
             {displayedReports.map((row, index) => (
               <Box
@@ -319,10 +502,7 @@ const CampaignPerformanceTable = () => {
                   display: 'flex',
                   flexDirection: { xs: 'column', md: 'row' },
                   alignItems: { xs: 'stretch', md: 'center' },
-                  px: { xs: 2, md: 3 },
-                  py: { xs: 2, md: 2.5 },
                   borderBottom: '1px solid #f0f0f0',
-                  gap: { xs: 1.5, md: 0 },
                   '&:hover': {
                     backgroundColor: '#f8f9fa',
                   },
@@ -364,19 +544,50 @@ const CampaignPerformanceTable = () => {
                       >
                         {row.creatorName}
                       </Typography>
-                      <Typography
-                        sx={{
-                          fontWeight: 400,
-                          fontSize: 12,
-                          color: '#666',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {row.creatorEmail}
-                      </Typography>
+                      {row.socialUsername && (
+                        <Typography
+                          component="a"
+                          href={row.socialProfileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            fontWeight: 400,
+                            fontSize: 12,
+                            color: '#666',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            textDecoration: 'none',
+                            '&:hover': { textDecoration: 'underline' },
+                          }}
+                        >
+                          {row.platform === 'Instagram' ? row.socialUsername : `@${row.socialUsername}`}
+                        </Typography>
+                      )}
                     </Box>
+                  </Box>
+
+                  {/* Platform */}
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        color: '#999',
+                        fontWeight: 500,
+                        mb: 0.25,
+                      }}
+                    >
+                      Platform
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 13,
+                        color: '#333',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {row.platform}
+                    </Typography>
                   </Box>
 
                   {/* Campaign Name */}
@@ -437,17 +648,18 @@ const CampaignPerformanceTable = () => {
                   sx={{
                     display: { xs: 'none', md: 'flex' },
                     alignItems: 'center',
-                    width: '100%',
+                    width: '100%'
                   }}
                 >
                   <Box
                     sx={{
                       flex: '0 0 30%',
-                      minWidth: 200,
+                      maxWidth: '30%',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 1,
-                      pr: 2,
+                      px: 2,
+                      py: 1.5,
                     }}
                   >
                     <Avatar
@@ -463,34 +675,42 @@ const CampaignPerformanceTable = () => {
                     >
                       {row.creatorName.charAt(0)}
                     </Avatar>
-                    <Typography
-                      sx={{
-                        fontWeight: 400,
-                        fontSize: 14,
-                        color: '#333',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {row.creatorName}
-                    </Typography>
+                    <Stack sx={{ minWidth: 0 }}>
+                      <Typography
+                        sx={{
+                          fontWeight: 400,
+                          fontSize: 14,
+                          color: '#333',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {row.creatorName}
+                      </Typography>
+                      {row.socialUsername && (
+                        <Typography
+                          component="a"
+                          href={row.socialProfileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            fontWeight: 400,
+                            fontSize: 13,
+                            color: '#666',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            textDecoration: 'none',
+                            '&:hover': { textDecoration: 'underline', color: '#1340FF' },
+                          }}
+                        >
+                          {row.platform === 'Instagram' ? row.socialUsername : `@${row.socialUsername}`}
+                        </Typography>
+                      )}
+                    </Stack>
                   </Box>
-                  <Box sx={{ flex: '0 0 25%', pr: 2 }}>
-                    <Typography
-                      sx={{
-                        fontWeight: 400,
-                        fontSize: 14,
-                        maxWidth: 260,
-                        color: '#666',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {row.creatorEmail}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ flex: '0 0 25%', pr: 2 }}>
+                  <Box sx={{ flex: '0 0 30%', px: 2, py: 1.5, }}>
                     <Typography
                       sx={{
                         fontSize: 14,
@@ -504,7 +724,18 @@ const CampaignPerformanceTable = () => {
                       {row.campaignName}
                     </Typography>
                   </Box>
-                  <Box sx={{ flex: '0 0 15%', textAlign: 'right' }}>
+                  <Box sx={{ flex: '0 0 10%', px: 2, py: 1.5, }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 400,
+                        fontSize: 14,
+                        color: '#333',
+                      }}
+                    >
+                      {row.platform}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ flex: '0 0 30%', textAlign: 'right', px: 2 }}>
                     <Button
                       variant="text"
                       onClick={() => handleViewReport(row)}
@@ -539,13 +770,14 @@ const CampaignPerformanceTable = () => {
               </Box>
             ))}
           </Box>
+          )}
 
           {/* Pagination Controls - Clean minimal design */}
-          {totalPages > 1 && (
+          {!isLoadingSubmissions && totalPages > 1 && (
             <Box
               sx={{
                 display: 'flex',
-                justifyContent: { xs: 'center', md: 'flex-end' },
+                justifyContent: 'center',
                 alignItems: 'center',
                 mt: { xs: 2, md: 3 },
                 pb: 2,
@@ -579,7 +811,7 @@ const CampaignPerformanceTable = () => {
               {/* Page Numbers */}
               {(() => {
                 const pageButtons = [];
-                const showEllipsis = totalPages > 3;
+                const showEllipsis = totalPages > 5;
 
                 if (!showEllipsis) {
                   // Show all pages if 3 or fewer
@@ -732,7 +964,7 @@ const CampaignPerformanceTable = () => {
           )}
 
           {/* Empty state - show when no data */}
-          {filteredReports.length === 0 && (
+          {!isLoadingSubmissions && filteredReports.length === 0 && (
             <Box
               sx={{
                 p: 6,
