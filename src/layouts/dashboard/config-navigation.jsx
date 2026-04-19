@@ -177,9 +177,9 @@ export function useNavData() {
               },
               {
                 title: 'Non-Platform Creators',
-                path: paths.dashboard.discoveryTool.npc,
-              },
-            ],
+                path: paths.dashboard.discoveryTool.npc
+              }
+            ]
           },
           // {
           //   title: 'My Tasks',

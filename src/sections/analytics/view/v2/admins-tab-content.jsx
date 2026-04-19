@@ -5,9 +5,9 @@ import Grid from '@mui/material/Grid';
 import { varFade, varContainer } from 'src/components/animate/variants';
 
 import RejectionRateCard from './admins/rejection-rate-card';
+import CreditsPerCSChart from './admins/credits-per-cs-chart';
 import RequireChangesChart from './admins/require-changes-chart';
 import RejectionReasonsChart from './admins/rejection-reasons-chart';
-import CreditsPerCSChart from './admins/credits-per-cs-chart';
 import TopShortlistedCreatorsChart from './admins/top-shortlisted-creators-chart';
 
 const containerVariants = varContainer({ staggerIn: 0.08 });

@@ -93,14 +93,15 @@ export const getButtonStates = ({
     postingLoading ||
     status === 'PENDING_REVIEW' ||
     status === 'POSTED' ||
-    status === 'APPROVED' || // Added - prevent submission when already approved
+    (status === 'APPROVED' && !isPostingLinkEditable) || // prevent submission when approved, but allow posting link
     (status !== 'CHANGES_REQUIRED' &&
       status !== 'NOT_STARTED' &&
       status !== 'CLIENT_APPROVED' &&
       !isPostingLinkEditable) ||
     ((status === 'NOT_STARTED' || status === 'CLIENT_APPROVED') &&
       selectedFiles.length === 0 &&
-      !isPostingLinkEditable);
+      !isPostingLinkEditable) ||
+    (status === 'CHANGES_REQUIRED' && isReuploadMode && selectedFiles.length === 0);
 
   // Determine if showing reupload button
   const isReuploadButton =

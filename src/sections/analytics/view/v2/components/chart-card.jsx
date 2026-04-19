@@ -23,7 +23,7 @@ const ChartCard = forwardRef(({ title, icon: Icon, subtitle, children, tooltipKe
         bgcolor: colors.background,
         boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
         overflow: 'visible',
-        height: '100%',
+        minHeight: '100%',
         display: 'flex',
         flexDirection: 'column',
       }}

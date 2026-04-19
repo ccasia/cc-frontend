@@ -15,6 +15,7 @@ import {
   Radio,
   Button,
   Dialog,
+  Divider,
   MenuItem,
   Container,
   Typography,
@@ -120,6 +121,8 @@ const CampaignDetailView = ({ id }) => {
   const [publicUrl, setPublicUrl] = useState(null);
   const [password, setPassword] = useState(null);
   const [openModal, setOpenModal] = useState(false);
+  const [isOffset, setIsOffset] = useState({ left: false, right: false });
+
   const { user } = useAuthContext();
 
   // Use centralized permission hook for view-only restrictions
@@ -316,31 +319,70 @@ const CampaignDetailView = ({ id }) => {
     return `Agreements (${totalAgreements})`;
   };
 
+  useEffect(() => {
+    if (!tabsContainerRef.current) return;
+    const container = tabsContainerRef.current;
+
+    const handleScroll = (e) => {
+      setIsOffset(() => ({
+        left: e.target.scrollLeft > 5,
+        right: e.target.scrollLeft + e.target.clientWidth + 0.5 < e.target.scrollWidth,
+      }));
+    };
+
+    container.addEventListener('scroll', handleScroll);
+
+    // eslint-disable-next-line consistent-return
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, [tabsContainerRef]);
+
   const renderTabs = (
-    <Box sx={{ mt: 2, mb: 2.5 }} overflow="hidden">
+    <Box
+      sx={{
+        mt: 2,
+        mb: 2.5,
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          display: !isOffset.left && 'none',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 32,
+          background: 'linear-gradient(to right, white, transparent)',
+          zIndex: 1,
+          pointerEvents: 'none',
+        },
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          display: !isOffset.right && 'none',
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: 32,
+          background: 'linear-gradient(to left, white, transparent)',
+          zIndex: 1,
+          pointerEvents: 'none',
+        },
+      }}
+      overflow="hidden"
+    >
+      <Divider sx={{ position: 'absolute', bottom: 0, left: 0, width: 1 }} />
       <Stack
         ref={tabsContainerRef}
         direction="row"
-        spacing={0.5}
+        spacing={2}
         sx={{
-          position: 'relative',
-          width: '100%',
-          overflowX: 'auto',
+          width: 1,
+          overflowX: 'scroll',
           overflowY: 'hidden',
           scrollbarWidth: 'none',
-          scrollBehavior: 'smooth',
-          WebkitOverflowScrolling: 'touch',
           '&::-webkit-scrollbar': {
             display: 'none',
-          },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '1px',
-            bgcolor: 'divider',
           },
         }}
       >
@@ -348,7 +390,8 @@ const CampaignDetailView = ({ id }) => {
           direction="row"
           justifyContent="space-between"
           sx={{
-            width: { xs: '100%', sm: 'auto' },
+            // width: { xs: '100%', sm: 'auto' },
+            width: 'max-content',
           }}
         >
           {/* Show different tabs based on user role */}

@@ -12,7 +12,7 @@ import { FEEDBACK_CHIP_STYLES } from './submission-styles';
 
 export default function FeedbackLogs({ submission, onClose }) {
   const feedbackLogs = submission.feedback || [];
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(1);
   const [captionHistory, setCaptionHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
@@ -204,6 +204,7 @@ export default function FeedbackLogs({ submission, onClose }) {
           width: { xs: '100%', sm: 'auto' },
           justifyContent: { xs: 'flex-start', sm: 'flex-start' }
         }}>
+          {/* Feedback & Comments tab - commented out, only showing Caption History
           <Box
             onClick={() => handleTabChange(0)}
             sx={{
@@ -224,6 +225,7 @@ export default function FeedbackLogs({ submission, onClose }) {
           >
             Feedback & Comments
           </Box>
+          */}
           <Box
             onClick={() => handleTabChange(1)}
             sx={{
@@ -239,7 +241,7 @@ export default function FeedbackLogs({ submission, onClose }) {
               borderBottomRightRadius: 0,
               transition: 'all 0.2s',
               bgcolor: activeTab === 1 ? '#fff' : '#E7E7E7',
-              color: activeTab === 0 ? '#8E8E93' : '#000',
+              color: activeTab === 1 ? '#000' : '#8E8E93',
             }}
           >
             Caption History
@@ -278,9 +280,9 @@ export default function FeedbackLogs({ submission, onClose }) {
           },
         }}
       >
-        {(() => {
+        {/* Feedback & Comments content - commented out, only showing Caption History */}
+        {/* {(() => {
           if (activeTab === 0) {
-            // Feedback & Comments Tab
             if (commentsAndFeedback.length === 0) {
               return (
                 <Box
@@ -314,12 +316,11 @@ export default function FeedbackLogs({ submission, onClose }) {
                     py: { xs: 1.5, sm: 2 }
                   }}
                 >
-                  {/* Reasons (if any) */}
                   {log.reasons && log.reasons.length > 0 && (
-                    <Box sx={{ 
-                      display: 'flex', 
+                    <Box sx={{
+                      display: 'flex',
                       alignItems: 'center',
-                      flexWrap: 'wrap',  
+                      flexWrap: 'wrap',
                       mb: { xs: 0.5, sm: 1 }
                     }}>
                       <Chip
@@ -329,7 +330,6 @@ export default function FeedbackLogs({ submission, onClose }) {
                         variant="outlined"
                         color="warning"
                       />
-
                       {log.reasons.length > 1 && (
                         <Tooltip
                           title={
@@ -395,8 +395,6 @@ export default function FeedbackLogs({ submission, onClose }) {
                       )}
                     </Box>
                   )}
-                  
-                  {/* Feedback */}
                   <Box
                     sx={{
                       display: 'flex',
@@ -407,18 +405,18 @@ export default function FeedbackLogs({ submission, onClose }) {
                       gap: { xs: 0.3, sm: 0 }
                     }}
                   >
-                    <Typography 
-                      fontSize={{ xs: 11, sm: 12 }} 
-                      fontWeight="bold" 
+                    <Typography
+                      fontSize={{ xs: 11, sm: 12 }}
+                      fontWeight="bold"
                       color={getFeedbackLabel(log.type, log.sentToCreator, log.admin.role) === 'CS Comments' ? '#1340FF' : '#636366'}
                     >
                       {getFeedbackLabel(log.type, log.sentToCreator, log.admin.role)}
                     </Typography>
-                    <Typography 
-                      fontSize={{ xs: 10, sm: 12 }} 
-                      fontWeight="bold" 
+                    <Typography
+                      fontSize={{ xs: 10, sm: 12 }}
+                      fontWeight="bold"
                       color={getFeedbackLabel(log.type, log.sentToCreator, log.admin.role) === 'CS Comments' ? '#1340FF' : '#636366'}
-                      sx={{ 
+                      sx={{
                         textAlign: { xs: 'left', sm: 'right' },
                         minWidth: 0
                       }}
@@ -426,12 +424,10 @@ export default function FeedbackLogs({ submission, onClose }) {
                       {getActionLabel(log.type, log.sentToCreator, log.admin.role)} {formatDateTime(log.createdAt)}
                     </Typography>
                   </Box>
-
-                  {/* Feedback Message */}
-                  <Typography 
-                    variant="body2" 
-                    color="text.primary" 
-                    sx={{ 
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    sx={{
                       whiteSpace: 'pre-wrap',
                       fontSize: { xs: '0.8rem', sm: '0.875rem' },
                       lineHeight: { xs: 1.4, sm: 1.5 }
@@ -439,14 +435,40 @@ export default function FeedbackLogs({ submission, onClose }) {
                   >
                     {log.content || ''}
                   </Typography>
+                  {log.replies && log.replies.length > 0 && (
+                    <Box sx={{ mt: 1.5, pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
+                      <Typography fontSize={11} fontWeight="bold" color="#1340FF" sx={{ mb: 0.5 }}>
+                        Creator replies ({log.replies.length})
+                      </Typography>
+                      <Stack spacing={1}>
+                        {log.replies.map((reply) => (
+                          <Box key={reply.id}>
+                            <Typography fontSize={10} color="text.secondary">
+                              {reply.user?.name || 'Creator'} · {formatDateTime(reply.createdAt)}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                whiteSpace: 'pre-wrap',
+                                fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                                lineHeight: 1.4,
+                              }}
+                            >
+                              {reply.content || reply.text || ''}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
                 </Box>
               ))}
               </Stack>
             );
           }
-          // Caption History Tab
           return renderCaptionHistoryContent();
-        })()}
+        })()} */}
+        {renderCaptionHistoryContent()}
       </Box>
     </Box>
   );

@@ -3,19 +3,17 @@ import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
 import {
-  Box,
   Stack,
   Avatar,
-  Button,
   Checkbox,
   TableRow,
   TableCell,
   Typography,
-  Tooltip,
   CircularProgress,
 } from '@mui/material';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
+
 import { STATUS_COLORS } from './invoice-constants';
 
 const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditInvoice }) => {

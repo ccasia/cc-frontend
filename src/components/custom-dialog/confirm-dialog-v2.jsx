@@ -63,13 +63,20 @@ export default function ConfirmDialogV2({
           sx={{
             bgcolor: '#3A3A3C',
             color: '#fff',
+            fontSize: '0.95rem',
             py: 1,
             mb: 1,
             borderRadius: 1,
+            borderBottom: '3px solid #00000073',
+            boxShadow: 'none',
             '&:hover': {
               bgcolor: '#1F2937',
+              boxShadow: 'none',
             },
-            boxShadow: 'inset 0px -2px 0px 0px #00000073',
+            '&:active': {
+              borderBottom: '3px solid #00000073',
+              transform: 'translateY(1px)',
+            },
           }}
           onClick={action.props.onClick}
         >
@@ -82,15 +89,21 @@ export default function ConfirmDialogV2({
         fullWidth
         onClick={onClose}
         sx={{
-          borderColor: '#E5E7EB',
+          border: '1px solid #E7E7E7',
+          borderBottom: '3px solid #E7E7E7',
           color: '#000',
+          fontSize: '0.95rem',
           py: 1,
           borderRadius: 1,
+          boxShadow: 'none',
           '&:hover': {
-            backgroundColor: '#F5F5F5',
-            boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
+            bgcolor: '#F9F9F9',
+            boxShadow: 'none',
           },
-          boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
+          '&:active': {
+            borderBottom: '3px solid #E7E7E7',
+            transform: 'translateY(1px)',
+          },
         }}
       >
         Cancel

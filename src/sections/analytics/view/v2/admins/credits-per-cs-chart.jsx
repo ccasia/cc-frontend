@@ -1,31 +1,19 @@
-import { memo, useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
+import { memo, useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Stack, Avatar, Skeleton, Typography } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { useDrawingArea, useXScale, useYScale } from '@mui/x-charts/hooks';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import { Box, Stack, Avatar, Skeleton, Typography } from '@mui/material';
+import { useXScale, useYScale, useDrawingArea } from '@mui/x-charts/hooks';
 
 import useGetCreditsPerCS from 'src/hooks/use-get-credits-per-cs';
 
 import ChartCard from '../components/chart-card';
-import { useDateFilter } from '../date-filter-context';
 import ChartLegend from '../components/chart-legend';
+import { useDateFilter } from '../date-filter-context';
 import CreditsPerCSDrawer from './credits-per-cs-drawer';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
-import { UI_COLORS, CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, TICK_LABEL_STYLE } from '../chart-config';
-
-const MIN_CHART_HEIGHT = 300;
-const MIN_BAR_WIDTH = 80;
-const AXIS_MARGIN_H = 60;
-
-const SCROLL_SX_HORIZONTAL = {
-  '&::-webkit-scrollbar': { height: '3px' },
-  '&::-webkit-scrollbar-track': { background: 'transparent' },
-  '&::-webkit-scrollbar-thumb': { background: 'transparent', borderRadius: '1.5px' },
-  '&:hover::-webkit-scrollbar-thumb': { background: '#D0D5DA' },
-  scrollbarWidth: 'thin',
-};
+import { CHART_SX, UI_COLORS, CHART_GRID, CHART_COLORS, CHART_MARGIN, TICK_LABEL_STYLE } from '../chart-config';
 
 const LEGEND_ITEMS = [
   { label: 'Basic', color: CHART_COLORS.primary },
@@ -42,6 +30,19 @@ const ALL_SERIES = [
 ];
 
 const AVATAR_SIZE = 28;
+const MIN_CHART_HEIGHT = 420;
+const MIN_BAR_WIDTH = 48;
+const AXIS_MARGIN_H = CHART_MARGIN.left + CHART_MARGIN.right;
+
+const SCROLL_SX_HORIZONTAL = {
+  '&::-webkit-scrollbar': { height: '3px' },
+  '&::-webkit-scrollbar-track': { background: 'transparent' },
+  '&::-webkit-scrollbar-thumb': { background: 'transparent', borderRadius: '1.5px' },
+  '&:hover::-webkit-scrollbar-thumb': { background: '#D0D5DA' },
+  scrollbarWidth: 'thin',
+  scrollbarColor: 'transparent transparent',
+  '&:hover': { scrollbarColor: '#D0D5DA transparent' },
+};
 
 function getInitials(name) {
   if (!name) return '?';

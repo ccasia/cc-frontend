@@ -38,3 +38,4 @@ yarn-error.log*
 cc-backend
 .cursorignore
 .DS_Store
+CLAUDE.md

@@ -335,6 +335,14 @@ export const endpoints = {
       approve: '/api/submissions/v4/approve',
       postingLink: '/api/submissions/v4/posting-link',
       approvePostingLink: '/api/submissions/v4/posting-link/approve',
+      comments: (submissionId) => `/api/submissions/v4/submission/${submissionId}/comments`,
+      updateComment: (commentId) => `/api/submissions/v4/comments/${commentId}`,
+      deleteComment: (commentId) => `/api/submissions/v4/comments/${commentId}`,
+      deleteCommentByClient: (commentId) => `/api/submissions/v4/comments/${commentId}/client`,
+      sendToCreator: (submissionId) => `/api/submissions/v4/submission/${submissionId}/send-to-creator`,
+      sendToClient: (submissionId) => `/api/submissions/v4/submission/${submissionId}/send-to-client`,
+      resolveComment: (commentId) => `/api/submissions/v4/comments/${commentId}/resolve`,
+      toggleCommentVisibility: (commentId) => `/api/submissions/v4/comments/${commentId}/visibility`,
     },
     creator: {
       agreement: '/api/submission/submitAgreement',
@@ -345,6 +353,7 @@ export const endpoints = {
         getMyCampaignOverview: '/api/creator/submissions/v4/campaign-overview',
         submitContent: '/api/creator/submissions/v4/submit-content',
         updatePostingLink: '/api/creator/submissions/v4/posting-link',
+        deleteComment: (commentId) => `/api/creator/submissions/v4/comments/${commentId}`,
       },
     },
     admin: {

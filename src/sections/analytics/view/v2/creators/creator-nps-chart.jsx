@@ -1,30 +1,45 @@
-import { memo, useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import { memo, useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
-import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import RemoveIcon from '@mui/icons-material/Remove';
-import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Box, Chip, Popover, Rating, Stack, Typography } from '@mui/material';
 import { LineChart } from '@mui/x-charts/LineChart';
+import StarOutlineIcon from '@mui/icons-material/StarOutline';
+import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
+import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { Box, Chip, Stack, Rating, Popover, Typography } from '@mui/material';
 
-import { RouterLink } from 'src/routes/components';
 import { paths } from 'src/routes/paths';
+import { RouterLink } from 'src/routes/components';
 
-import Iconify from 'src/components/iconify';
 import useChartZoom from 'src/hooks/use-chart-zoom';
 import useGetCreatorSatisfaction from 'src/hooks/use-get-creator-satisfaction';
 
-import { useDateFilter, useFilteredData, useFilterLabel } from '../date-filter-context';
+import Iconify from 'src/components/iconify';
+
 import ChartCard from '../components/chart-card';
 import ZoomableChart from '../components/zoomable-chart';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
-import { CHART_SX, CHART_GRID, CHART_MARGIN, CHART_HEIGHT, TICK_LABEL_STYLE, getTrendProps } from '../chart-config';
+import { useDateFilter, useFilterLabel, useFilteredData } from '../date-filter-context';
+import { CHART_SX, CHART_GRID, CHART_MARGIN, CHART_HEIGHT, getTrendProps, TICK_LABEL_STYLE } from '../chart-config';
 
 const AMBER = '#FFAB00';
 const BAR_BG = '#F4F6F8';
 
 function CreatorNpsChart() {
+  const chartContainerRef = useRef(null);
+  const [chartHeight, setChartHeight] = useState(CHART_HEIGHT);
+
+  useEffect(() => {
+    const el = chartContainerRef.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(([entry]) => {
+      const h = Math.floor(entry.contentRect.height);
+      if (h > 0) setChartHeight(Math.max(h, CHART_HEIGHT));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const { creditTiers } = useDateFilter();
 
   const hookOptions = useMemo(() => {
@@ -63,21 +78,6 @@ function CreatorNpsChart() {
   const trend = getTrendProps(isNeutral, isUp);
   let TrendIcon = RemoveIcon;
   if (!isNeutral) TrendIcon = isUp ? ArrowDropUpIcon : ArrowDropDownIcon;
-
-  // Dynamic height: grow to match adjacent sibling (e.g. Top Creator Earnings)
-  const fillRef = useRef(null);
-  const [chartHeight, setChartHeight] = useState(CHART_HEIGHT);
-
-  useEffect(() => {
-    const el = fillRef.current;
-    if (!el) return undefined;
-    const ro = new ResizeObserver(([entry]) => {
-      const h = Math.max(CHART_HEIGHT, Math.floor(entry.contentRect.height));
-      setChartHeight(h);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   const { min: xMin, max: xMax } = xDomain;
   const xAxisConfig = useMemo(() => [{
@@ -254,24 +254,22 @@ function CreatorNpsChart() {
       </Popover>
 
       {/* Line chart */}
-      <Box ref={fillRef} sx={{ flex: 1, position: 'relative', minHeight: CHART_HEIGHT }}>
-        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-          <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
-            <LineChart
-              series={[{ data: ratings, label: 'Avg Rating', color: AMBER, area: true, curve: 'linear', connectNulls: true, valueFormatter: (val) => val != null ? `${val} / 5` : 'No data' }]}
-              xAxis={xAxisConfig}
-              yAxis={[{ ...yDomain, valueFormatter: (val) => `${val}`, tickLabelStyle: TICK_LABEL_STYLE }]}
-              height={chartHeight}
-              margin={CHART_MARGIN}
-              grid={CHART_GRID}
-              tooltip={{ trigger: 'axis' }}
-              slots={{ axisContent: ChartAxisTooltip }}
-              skipAnimation={isZoomed}
-              hideLegend
-              sx={CHART_SX}
-            />
-          </ZoomableChart>
-        </Box>
+      <Box ref={chartContainerRef} sx={{ flex: 1, minHeight: CHART_HEIGHT }}>
+        <ZoomableChart containerProps={containerProps} isZoomed={isZoomed} resetZoom={resetZoom}>
+          <LineChart
+            series={[{ data: ratings, label: 'Avg Rating', color: AMBER, area: true, curve: 'linear', connectNulls: true, valueFormatter: (val) => val != null ? `${val} / 5` : 'No data' }]}
+            xAxis={xAxisConfig}
+            yAxis={[{ ...yDomain, valueFormatter: (val) => `${val}`, tickLabelStyle: TICK_LABEL_STYLE }]}
+            height={chartHeight}
+            margin={CHART_MARGIN}
+            grid={CHART_GRID}
+            tooltip={{ trigger: 'axis' }}
+            slots={{ axisContent: ChartAxisTooltip }}
+            skipAnimation={isZoomed}
+            hideLegend
+            sx={CHART_SX}
+          />
+        </ZoomableChart>
       </Box>
     </ChartCard>
   );

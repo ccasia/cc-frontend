@@ -1,6 +1,8 @@
-import { useEffect, useRef, useCallback, useMemo } from 'react';
-import { useAuthContext } from 'src/auth/hooks';
+import { useRef, useMemo, useEffect, useCallback } from 'react';
+
 import { trackJourneyStep } from 'src/utils/trackJourneyStep';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 export const useJourneyTracker = (flow, step) => {
   const { user } = useAuthContext();

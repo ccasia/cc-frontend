@@ -1,29 +1,29 @@
-import { memo, useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { m, AnimatePresence } from 'framer-motion';
+import { memo, useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import RemoveIcon from '@mui/icons-material/Remove';
+import { LineChart } from '@mui/x-charts/LineChart';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SplitscreenIcon from '@mui/icons-material/Splitscreen';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import StackedLineChartIcon from '@mui/icons-material/StackedLineChart';
 import { Box, Stack, Divider, Tooltip, IconButton, Typography } from '@mui/material';
-import { LineChart } from '@mui/x-charts/LineChart';
 
 import useChartZoom from 'src/hooks/use-chart-zoom';
-import useGetAvgAgreementResponse from 'src/hooks/use-get-avg-agreement-response';
 import useGetAvgFirstCampaign from 'src/hooks/use-get-avg-first-campaign';
+import useGetAvgAgreementResponse from 'src/hooks/use-get-avg-agreement-response';
 import useGetAvgSubmissionResponse from 'src/hooks/use-get-avg-submission-response';
 
-import { useIsDaily, useDateFilter, useFilteredData, useTrendLabel } from '../date-filter-context';
 import ChartCard from '../components/chart-card';
 import ChartLegend from '../components/chart-legend';
+import ResponseTimeDrawer from './response-time-drawer';
 import ZoomableChart from '../components/zoomable-chart';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
-import ResponseTimeDrawer from './response-time-drawer';
-import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, TICK_LABEL_STYLE, getTrendProps } from '../chart-config';
+import { useIsDaily, useDateFilter, useTrendLabel, useFilteredData } from '../date-filter-context';
+import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, CHART_HEIGHT, getTrendProps, TICK_LABEL_STYLE } from '../chart-config';
 
 const LEGEND_ITEMS = [
   { label: 'Agreement Response', color: CHART_COLORS.primary },

@@ -1,5 +1,9 @@
-import { memo, useState, useMemo, useCallback } from 'react';
+import { memo, useMemo, useState, useEffect, useCallback } from 'react';
 
+import BlockIcon from '@mui/icons-material/Block';
+import { LineChart } from '@mui/x-charts/LineChart';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import {
   Box,
   Card,
@@ -15,30 +19,28 @@ import {
   Skeleton,
   Typography,
 } from '@mui/material';
-import { LineChart } from '@mui/x-charts/LineChart';
-import BlockIcon from '@mui/icons-material/Block';
-import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
-import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
+import useGetPackages from 'src/hooks/use-get-packges';
 import useGetClientRejectionRate from 'src/hooks/use-get-client-rejection-rate';
 
-import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, TICK_LABEL_STYLE, UI_COLORS } from '../chart-config';
 import { useDateFilter, useFilteredData } from '../date-filter-context';
+import { CHART_SX, UI_COLORS, CHART_GRID, CHART_COLORS, CHART_MARGIN, TICK_LABEL_STYLE } from '../chart-config';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const PACKAGE_TYPES = ['Basic', 'Essential', 'Pro', 'Custom'];
-
-const PACKAGE_COLOR_MAP = {
+const KNOWN_PACKAGE_COLORS = {
   Basic: CHART_COLORS.primary,
   Essential: CHART_COLORS.secondary,
   Pro: CHART_COLORS.success,
   Custom: CHART_COLORS.warning,
 };
+
+const DEFAULT_PACKAGE_COLOR = '#919EAB';
 
 const SEVERITY_COLORS = { error: '#EF4444', success: '#10B981', warning: '#F59E0B' };
 
@@ -78,22 +80,40 @@ function RejectionRateCard() {
   const router = useRouter();
   const { startDate, endDate } = useDateFilter();
   const { breakdown, trend, isLoading } = useGetClientRejectionRate({ startDate, endDate });
+  const { data: packages } = useGetPackages();
 
   const filteredTrend = useFilteredData(trend);
 
-  const [selectedPackages, setSelectedPackages] = useState(PACKAGE_TYPES);
+  // Build dynamic package type list: named packages from API + 'Custom' catch-all
+  const packageTypes = useMemo(() => {
+    const apiNames = (packages || []).map((p) => p.name).filter(Boolean);
+    if (!apiNames.includes('Custom')) apiNames.push('Custom');
+    return apiNames;
+  }, [packages]);
+
+  const [selectedPackages, setSelectedPackages] = useState([]);
+
+  // Re-sync selected packages when packageTypes changes (e.g. on initial load)
+  useEffect(() => {
+    setSelectedPackages(packageTypes);
+  }, [packageTypes]);
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
 
   // -- Filter logic ---------------------------------------------------------
 
-  const filteredBreakdown = useMemo(
-    () =>
-      [...breakdown]
-        .filter((row) => selectedPackages.includes(row.package))
-        .sort((a, b) => b.rate - a.rate),
-    [breakdown, selectedPackages]
-  );
+  const filteredBreakdown = useMemo(() => {
+    const namedPackages = (packages || []).map((p) => p.name).filter(Boolean);
+    return [...breakdown]
+      .filter((row) => {
+        if (namedPackages.includes(row.package)) {
+          return selectedPackages.includes(row.package);
+        }
+        // Custom packages (names not in named packages list) filter under 'Custom'
+        return selectedPackages.includes('Custom');
+      })
+      .sort((a, b) => b.rate - a.rate);
+  }, [breakdown, selectedPackages, packages]);
 
   const { filteredAvgRate, totalRejected, totalSubmissions } = useMemo(() => {
     const rej = filteredTrend.reduce((sum, t) => sum + t.rejected, 0);
@@ -136,13 +156,13 @@ function RejectionRateCard() {
   }, []);
 
   const handleToggleAll = useCallback(() => {
-    setSelectedPackages((prev) => (prev.length === PACKAGE_TYPES.length ? [] : [...PACKAGE_TYPES]));
-  }, []);
+    setSelectedPackages((prev) => (prev.length === packageTypes.length ? [] : [...packageTypes]));
+  }, [packageTypes]);
 
   // -- Dropdown label -------------------------------------------------------
 
-  let filterLabel = `${selectedPackages.length} of ${PACKAGE_TYPES.length}`;
-  if (selectedPackages.length === PACKAGE_TYPES.length) filterLabel = 'All Packages';
+  let filterLabel = `${selectedPackages.length} of ${packageTypes.length}`;
+  if (selectedPackages.length === packageTypes.length) filterLabel = 'All Packages';
   else if (selectedPackages.length === 0) filterLabel = 'No Packages';
 
   // -- Render ---------------------------------------------------------------
@@ -312,7 +332,7 @@ function RejectionRateCard() {
               <Typography sx={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: UI_COLORS.textMuted, pl: 0.5 }}>
                 Campaign
               </Typography>
-              <Typography sx={{ width: 72, flexShrink: 0, fontSize: 12, fontWeight: 600, color: UI_COLORS.textMuted, textAlign: 'center', ml: 2 }}>
+              <Typography sx={{ width: 100, flexShrink: 0, fontSize: 12, fontWeight: 600, color: UI_COLORS.textMuted, textAlign: 'center', ml: 2 }}>
                 Package
               </Typography>
               <Typography sx={{ width: 80, flexShrink: 0, fontSize: 12, fontWeight: 600, color: UI_COLORS.textMuted, textAlign: 'center', ml: 2 }}>
@@ -358,7 +378,7 @@ function RejectionRateCard() {
                 <Stack spacing={0} sx={{ py: 0.5 }}>
                   {filteredBreakdown.map((row, index) => {
                     const rateColor = getRateColor(row.rate);
-                    const pkgColor = PACKAGE_COLOR_MAP[row.package];
+                    const pkgColor = KNOWN_PACKAGE_COLORS[row.package] || DEFAULT_PACKAGE_COLOR;
 
                     return (
                       <Stack
@@ -436,16 +456,23 @@ function RejectionRateCard() {
                         </Stack>
 
                         {/* Package chip */}
-                        <Box sx={{ width: 72, flexShrink: 0, display: 'flex', justifyContent: 'center', ml: 2 }}>
+                        <Box sx={{ width: 100, flexShrink: 0, display: 'flex', justifyContent: 'center', ml: 2 }}>
                           <Chip
                             label={row.package}
                             size="small"
+                            title={row.package}
                             sx={{
                               bgcolor: `${pkgColor}14`,
                               color: pkgColor,
                               fontWeight: 600,
                               fontSize: '0.65rem',
                               height: 20,
+                              maxWidth: 100,
+                              '& .MuiChip-label': {
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              },
                               '&:hover': { bgcolor: `${pkgColor}14` },
                             }}
                           />
@@ -538,9 +565,9 @@ function RejectionRateCard() {
         >
           <Checkbox
             size="small"
-            checked={selectedPackages.length === PACKAGE_TYPES.length}
+            checked={selectedPackages.length === packageTypes.length}
             indeterminate={
-              selectedPackages.length > 0 && selectedPackages.length < PACKAGE_TYPES.length
+              selectedPackages.length > 0 && selectedPackages.length < packageTypes.length
             }
             sx={{ p: 0.5, mr: 1 }}
           />
@@ -552,7 +579,7 @@ function RejectionRateCard() {
         <Divider sx={{ my: 0.5 }} />
 
         {/* Individual package items */}
-        {PACKAGE_TYPES.map((pkg) => (
+        {packageTypes.map((pkg) => (
           <MenuItem
             key={pkg}
             dense
@@ -569,7 +596,7 @@ function RejectionRateCard() {
                 width: 8,
                 height: 8,
                 borderRadius: '50%',
-                bgcolor: PACKAGE_COLOR_MAP[pkg],
+                bgcolor: KNOWN_PACKAGE_COLORS[pkg] || DEFAULT_PACKAGE_COLOR,
                 mr: 1,
                 flexShrink: 0,
               }}

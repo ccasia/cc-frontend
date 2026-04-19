@@ -24,8 +24,16 @@ import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 
 import { BUTTON_STYLES } from './submission-styles';
 import { posting_link_options_changes } from '../constants';
+import TypographyMotion from 'src/components/animate/motion-typography';
 
-export default function PostingLinkSection({ submission, onUpdate, onViewLogs, onReviewSubmission, isDisabled = false, isClient = false }) {
+export default function PostingLinkSection({
+  submission,
+  onUpdate,
+  onViewLogs,
+  onReviewSubmission,
+  isDisabled = false,
+  isClient = false,
+}) {
   const { user } = useAuthContext();
   const [postingLink, setPostingLink] = useState(submission.content || '');
   const [loading, setLoading] = useState(false);
@@ -46,7 +54,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
       // eslint-disable-next-line no-new
       new URL(postingLink.trim());
     } catch {
-      enqueueSnackbar('Please entcer a valid URL', { variant: 'error' });
+      enqueueSnackbar('Please enter a valid URL', { variant: 'error' });
       return;
     }
 
@@ -119,9 +127,176 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
 
   const actionText = 'Approve Posting Link?';
 
+  const actionButtonSx = {
+    borderRadius: 1.15,
+    border: '1px solid #E7E7E7',
+    borderBottom: '3px solid #E7E7E7',
+    backgroundColor: '#FFFFFF',
+    boxShadow: 'none',
+    fontWeight: 800,
+    textTransform: 'none',
+    px: { xs: 1.8, sm: 2.25 },
+    py: { xs: 0.55, sm: 0.65 },
+    fontSize: { xs: '0.85rem', sm: '0.95rem' },
+    '&:hover': {
+      backgroundColor: '#F5F5F5',
+      boxShadow: 'none',
+    },
+  };
+
+  // Shared action buttons for approve/request-change (used by both creator-submitted and admin-submitted flows)
+  const renderActionButtons = () => (
+    <Stack spacing={1}>
+      <Stack direction="row" spacing={1} justifyContent="space-between">
+        {action === 'approve' && (
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => setAction('request_revision')}
+            disabled={loading || isDisabled}
+            sx={{
+              ...actionButtonSx,
+              color: '#D4321C',
+            }}
+          >
+            {loading ? 'Processing...' : 'Request a Change'}
+          </Button>
+        )}
+        {action === 'request_revision' && (
+          <Box display="flex" flexDirection="row" width="100%" gap={1} justifyContent="flex-end">
+            <Button
+              variant="contained"
+              color="secondary"
+              size="small"
+              onClick={() => {
+                setAction('approve');
+                setReasons([]);
+              }}
+              disabled={loading || isDisabled}
+              sx={{
+                ...BUTTON_STYLES.base,
+                ...BUTTON_STYLES.secondary,
+              }}
+            >
+              Cancel Change Request
+            </Button>
+            <Button
+              variant="contained"
+              color="warning"
+              size="small"
+              onClick={handleRejectPosting}
+              disabled={loading || isDisabled}
+              sx={{
+                ...BUTTON_STYLES.base,
+                ...BUTTON_STYLES.warning,
+              }}
+            >
+              {loading ? 'Processing...' : 'Send to Creator'}
+            </Button>
+          </Box>
+        )}
+        {action === 'approve' && (
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => setConfirmDialogOpen(true)}
+            disabled={loading || isDisabled}
+            sx={{
+              ...actionButtonSx,
+              color: '#1ABF66',
+            }}
+          >
+            {loading ? 'Processing...' : 'Approve'}
+          </Button>
+        )}
+      </Stack>
+      {action === 'request_revision' && (
+        <FormControl
+          fullWidth
+          style={{ backgroundColor: '#fff', borderRadius: 10 }}
+          hiddenLabel
+          size="small"
+        >
+          <Select
+            multiple
+            value={reasons}
+            onChange={(e) => setReasons(e.target.value)}
+            displayEmpty
+            renderValue={(selected) => {
+              if (selected.length === 0) {
+                return <span style={{ color: '#999' }}>Change Request Reasons</span>;
+              }
+              return (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxHeight: 35 }}>
+                  {selected.map((value) => (
+                    <Chip key={value} label={value} size="small" />
+                  ))}
+                </Box>
+              );
+            }}
+          >
+            {posting_link_options_changes.map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
+    </Stack>
+  );
+
   return (
     <Box sx={{ flex: '0 0 auto' }}>
       <Box>
+        {/* Header row: "Posting Link" title + "Review Submission" button */}
+        {!isPosted && (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              mb: 1,
+            }}
+          >
+            {!isClient && (
+              <Typography sx={{ fontWeight: 800, fontSize: 14, color: '#636366' }}>
+                Posting Link
+              </Typography>
+            )}
+            {onReviewSubmission && (
+              <TypographyMotion
+                component="button"
+                onClick={onReviewSubmission}
+                initial={{ scale: 1 }}
+                whileHover={{
+                  scale: 1.1,
+                  transition: { duration: 0.1 },
+                }}
+                transition={{ duration: 0.1 }}
+                sx={{
+                  px: 2,
+                  py: 1,
+                  bgcolor: 'transparent',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  color: ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)
+                    ? '#1340FF'
+                    : '#919191',
+                  border: 'none',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  // mr: 'auto',
+                  textUnderlineOffset: 4,
+                }}
+              >
+                View Feedback
+              </TypographyMotion>
+            )}
+          </Box>
+        )}
+
         {isPosted && (
           <Box
             sx={{
@@ -140,23 +315,34 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
                 {new Date(submission.updatedAt).toLocaleDateString('en-GB')}
               </Typography>
             </Box>
-            <Button
-              size="small"
-              variant="text"
-              onClick={onViewLogs}
-              sx={{
-                fontSize: 12,
-                color: '#919191',
-                p: 0,
-                minWidth: 'auto',
-                textTransform: 'none',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                },
-              }}
-            >
-              view logs
-            </Button>
+            {onReviewSubmission && (
+              <TypographyMotion
+                component="button"
+                onClick={onReviewSubmission}
+                initial={{ scale: 1 }}
+                whileHover={{
+                  scale: 1.1,
+                  transition: { duration: 0.1 },
+                }}
+                transition={{ duration: 0.1 }}
+                sx={{
+                  px: 2,
+                  py: 1,
+                  bgcolor: 'transparent',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  color: ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)
+                    ? '#1340FF'
+                    : '#919191',
+                  border: 'none',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  textUnderlineOffset: 4,
+                }}
+              >
+                View Feedback
+              </TypographyMotion>
+            )}
           </Box>
         )}
 
@@ -198,6 +384,10 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
         )}
 
         {/* Posting link submitted by creator */}
+//         {!isClient && !postingLinkAddedByAdmin && !isPosted && submission.content && renderActionButtons()}
+
+        {/* Posting link to be approved by superadmin */}
+//         {!isClient && postingLinkAddedByAdmin && !isPosted && submission.content && isSuperAdmin && renderActionButtons()}
         {!isClient && !postingLinkAddedByAdmin && !isPosted && submission.content && (
           <Stack spacing={1}>
             <Stack direction="row" spacing={1} justifyContent="flex-end">
@@ -420,35 +610,6 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
         {/* No posting link yet — admin can enter one */}
         {!isClient && !submission.content && (
           <Box display="flex" flexDirection="column">
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <Typography variant="caption" fontWeight="bold" color="#636366">
-                Posting Link
-              </Typography>
-              <Button
-                size="small"
-                variant="text"
-                onClick={onViewLogs}
-                sx={{
-                  fontSize: 12,
-                  color: '#919191',
-                  p: 0,
-                  minWidth: 'auto',
-                  textTransform: 'none',
-                  '&:hover': {
-                    backgroundColor: 'transparent',
-                  },
-                }}
-              >
-                view logs
-              </Button>
-            </Box>
             <TextField
               fullWidth
               size="medium"
@@ -457,7 +618,6 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
               onChange={(e) => setPostingLink(e.target.value)}
               disabled={loading || isDisabled}
               sx={{
-                mt: 1,
                 mb: 2,
                 '& .MuiOutlinedInput-root': {
                   bgcolor: 'background.paper',
@@ -468,13 +628,11 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
               <Button
                 variant="contained"
                 color="success"
-                size="small"
                 onClick={handleSubmitPostingLink}
                 disabled={loading || isDisabled}
                 sx={{
-                  display: 'flex',
-                  ...BUTTON_STYLES.base,
-                  ...BUTTON_STYLES.success,
+                  ...actionButtonSx,
+                  color: '#1ABF66',
                 }}
               >
                 {loading ? 'Saving...' : 'Submit'}

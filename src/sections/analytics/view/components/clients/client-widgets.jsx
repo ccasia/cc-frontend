@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
+
 import {
-  Card,
   Box,
-  Typography,
+  Card,
   Stack,
   useTheme,
+  Typography,
   useMediaQuery,
   LinearProgress,
 } from '@mui/material';
@@ -14,18 +15,18 @@ import {
   BarChart,
   axisClasses,
   ScatterChart,
-  ChartsReferenceLine,
   legendClasses,
+  ChartsReferenceLine,
 } from '@mui/x-charts';
+
 import Iconify from 'src/components/iconify';
 
 import {
-  ClientItemTooltipSlot,
-  ClientAxisTooltipSlot,
+  PieTooltipSlot,
   MatrixTooltipSlot,
   RenewalTooltipSlot,
+  ClientAxisTooltipSlot,
   TurnaroundTooltipSlot,
-  PieTooltipSlot,
 } from './client-tooltip-wrappers';
 
 // Your Brand Colors
@@ -182,11 +183,13 @@ export function TopKPICard({
 TopKPICard.propTypes = {
   title: PropTypes.string.isRequired,
   mainValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onClick: PropTypes.func,
   trend: PropTypes.number,
   trendLabel: PropTypes.string,
   trendSuffix: PropTypes.string,
   color: PropTypes.string,
   children: PropTypes.node,
+  clickable: PropTypes.bool,
 };
 
 // --- 2. Row 2: Time Spent (Horizontal Bar) ---
@@ -853,6 +856,7 @@ ReviewEfficiencyScatter.propTypes = {
     scatterPoints: PropTypes.array,
     avgReviewTimeHours: PropTypes.number,
     avgRoundsToApproval: PropTypes.number,
+    onClick: PropTypes.func, 
   }),
 };
 

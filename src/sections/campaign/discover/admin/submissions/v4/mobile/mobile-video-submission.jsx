@@ -2,12 +2,7 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useCallback } from 'react';
 
-import {
-  Box,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Avatar, Box, Button, Stack, TextField, Typography } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
 
@@ -18,34 +13,52 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 
+import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
+import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
+
+import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissions/admin-feedback-modal';
+
 import FeedbackLogs from '../shared/feedback-logs';
 import FeedbackSection from '../shared/feedback-section';
 import FeedbackActions from '../shared/feedback-actions';
 import PostingLinkSection from '../shared/posting-link-section';
 import useSubmissionSocket from '../shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from '../shared/feedback-utils';
-import { VideoModal } from '../../../creator-stuff/submissions/firstDraft/media-modals';
+import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
 
 // ----------------------------------------------------------------------
 
-export default function MobileVideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
+export default function MobileVideoSubmission({
+  submission,
+  campaign,
+  onUpdate,
+  isDisabled = false,
+}) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
+  const isPosted = ['POSTED', 'APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
+    const clientAllowedStatuses = ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'APPROVED'];
+    const clientVideo = isClient
+      ? ((submission.video || []).find((v) => clientAllowedStatuses.includes(v.status)) ?? null)
+      : video;
     const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
     const hasPostingLink = Boolean(submission.content);
     const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
     const clientVisible =
       !isClient ||
-      ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
+      ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(
+        submission.status
+      );
 
     return {
       video,
+      clientVideo,
       pendingReview,
       hasPostingLink,
       isClientFeedback,
@@ -53,7 +66,8 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate, 
     };
   }, [submission.video, submission.status, submission.content, isClient]);
 
-  const { video, pendingReview, hasPostingLink, isClientFeedback, clientVisible } = submissionProps;
+  const { video, clientVideo, pendingReview, hasPostingLink, isClientFeedback, clientVisible } =
+    submissionProps;
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
@@ -63,9 +77,10 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate, 
     getDefaultFeedback(isClientFeedback, submission, 'video')
   );
   const [caption, setCaption] = useState(submission.caption || '');
-  const [videoModalOpen, setVideoModalOpen] = useState(false);
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
+  const [videoSubmissionModalOpen, setVideoSubmissionModalOpen] = useState(false);
+  const [adminReviewModalOpen, setAdminReviewModalOpen] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   const handleApprove = useCallback(async () => {
     try {
@@ -175,10 +190,60 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate, 
 
   const handleVideoClick = useCallback(() => {
     if (video?.url) {
-      setCurrentVideoIndex(0);
-      setVideoModalOpen(true);
+      if (isClient) {
+        setVideoSubmissionModalOpen(true);
+      } else {
+        setAdminReviewModalOpen(true);
+      }
     }
-  }, [video?.url]);
+  }, [video?.url, isClient]);
+
+  const handleCloseModal = useCallback(() => {
+    if (submission?.id && video?.id && user?.id) {
+      const storageKey = `lastViewed_sub_${submission.id}_vid_${video?.id}_user${user?.id}`;
+      localStorage.setItem(storageKey, new Date().toISOString());
+    }
+    setVideoSubmissionModalOpen(false);
+  }, [submission?.id, video?.id, user?.id]);
+
+  const handleSendComments = useCallback(
+    async (videoIdToPublish, shouldRefresh = false) => {
+      try {
+        setLoading(true);
+        setLocalActionInProgress(true);
+
+        const response = await axiosInstance.post('/api/submissions/v4/approve/client', {
+          submissionId: submission.id,
+          action: 'request_changes',
+          videoId: videoIdToPublish,
+          feedback: 'Client left detailed feedback via the threaded video comments.',
+          reasons: [],
+        });
+
+        if (shouldRefresh) {
+          enqueueSnackbar('Feedback for current video locked', { variant: 'success' });
+        } else {
+          enqueueSnackbar('Feedback sent to Admin', { variant: 'success' });
+        }
+
+        if (shouldRefresh) {
+          onUpdate?.(true);
+        }
+
+        setTimeout(() => {
+          setLocalActionInProgress(false);
+        }, 500);
+      } catch (error) {
+        enqueueSnackbar(error.message || 'Failed to send feedback', { variant: 'error' });
+      } finally {
+        setLoading(false);
+        if (localActionInProgress) {
+          setTimeout(() => setLocalActionInProgress(false), 300);
+        }
+      }
+    },
+    [submission.id, onUpdate, localActionInProgress]
+  );
 
   useSubmissionSocket({
     socket,
@@ -239,19 +304,6 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate, 
     );
   };
 
-  if (!clientVisible) {
-    return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Stack spacing={2} alignItems="center">
-          <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
-          <Typography variant="body2" color="text.secondary">
-            Video content is being processed.
-          </Typography>
-        </Stack>
-      </Box>
-    );
-  }
-
   if (!video?.url) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -274,7 +326,12 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate, 
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         {/* Caption Section - Left Side */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="caption" fontWeight="bold" color="#636366" sx={{ display: 'block', mb: 0.5 }}>
+          <Typography
+            variant="caption"
+            fontWeight="bold"
+            color="#636366"
+            sx={{ display: 'block', mb: 0.5 }}
+          >
             Caption
           </Typography>
           {renderCaptionContent()}
@@ -326,7 +383,7 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate, 
       ) : (
         <>
           <Box sx={{ mb: 2 }}>
-            {(
+            {(submission.status === 'APPROVED' ||
               submission.status === 'CLIENT_APPROVED' ||
               submission.status === 'POSTED' ||
               submission.status === 'REJECTED') &&
@@ -348,43 +405,192 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate, 
               />
             )}
           </Box>
-
-          <FeedbackActions
-            submission={submission}
-            campaign={campaign}
-            isClient={isClient}
-            clientVisible={clientVisible}
-            isClientFeedback={isClientFeedback}
-            action={action}
-            setAction={setAction}
-            reasons={reasons}
-            setReasons={setReasons}
-            feedback={feedback}
-            setFeedback={setFeedback}
-            loading={loading}
-            handleApprove={handleApprove}
-            handleRequestChanges={handleRequestChanges}
-            hasPostingLink={hasPostingLink}
-            onViewLogs={() => setShowFeedbackLogs(true)}
-            isDisabled={isDisabled}
-          />
+          {!isPosted && isClient && (
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
+              <button
+                type="button"
+                style={{
+                  background: 'none',
+                  color: '#1340FF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  fontSize: '0.815rem',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setVideoSubmissionModalOpen(true)}
+                disabled={isDisabled}
+              >
+                Review Submission
+              </button>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => setConfirmDialogOpen(true)}
+                disabled={!['SENT_TO_CLIENT'].includes(submission.status)}
+                sx={{
+                  borderRadius: 1.15,
+                  border: '1px solid #E7E7E7',
+                  borderBottom: '3px solid #E7E7E7',
+                  backgroundColor: '#FFFFFF',
+                  boxShadow: 'none',
+                  color: '#1ABF66',
+                  fontWeight: 600,
+                  fontSize: '0.815rem',
+                  textTransform: 'none',
+                  px: { xs: 1.8, sm: 2.25 },
+                  py: { xs: 0.55, sm: 0.65 },
+                  '&:hover': {
+                    backgroundColor: '#F5F5F5',
+                    boxShadow: 'none',
+                  },
+                }}
+              >
+                Approve
+              </Button>
+            </Box>
+          )}
+          {!isClient && (
+            <FeedbackActions
+              submission={submission}
+              campaign={campaign}
+              isClient={isClient}
+              clientVisible={clientVisible}
+              isClientFeedback={isClientFeedback}
+              action={action}
+              setAction={setAction}
+              reasons={reasons}
+              setReasons={setReasons}
+              feedback={feedback}
+              setFeedback={setFeedback}
+              loading={loading}
+              handleApprove={handleApprove}
+              handleRequestChanges={handleRequestChanges}
+              hasPostingLink={hasPostingLink}
+              onViewLogs={() => setShowFeedbackLogs(true)}
+              isDisabled={isDisabled}
+            />
+          )}
         </>
       )}
 
-      {/* Video Modal */}
-      {video?.url && (
-        <VideoModal
-          open={videoModalOpen}
-          onClose={() => setVideoModalOpen(false)}
-          videos={[video]}
-          currentIndex={currentVideoIndex}
-          setCurrentIndex={setCurrentVideoIndex}
-          creator={submission.user}
-          submission={submission}
-          showCaption
-          title="Video Submission"
-        />
-      )}
+      <VideoSubmissionModal
+        open={videoSubmissionModalOpen}
+        onClose={handleCloseModal}
+        submission={submission}
+        creator={submission.user}
+        rightSideContent={({
+          currentTime: modalCurrentTime,
+          onSeekTo,
+          onPause,
+          onPlay,
+          videoId: modalVideoId,
+          videoPage,
+          setVideoPage,
+          videoCount,
+          isPastVideo,
+          submission: modalSubmission,
+          ref: feedbackRef,
+          refreshSubmission,
+        }) => {
+          const currentModalVideo =
+            modalSubmission?.video?.find((v) => v.id === modalVideoId) ||
+            submission?.video?.find((v) => v.id === modalVideoId) ||
+            clientVideo ||
+            video;
+
+          const formatModalTime = (time) => {
+            const minutes = Math.floor((time || 0) / 60);
+            const seconds = Math.floor((time || 0) % 60);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+          };
+
+          const handleSendAndRefresh = async (videoIdToPublish, shouldRefresh) => {
+            await handleSendComments(videoIdToPublish, shouldRefresh);
+            if (refreshSubmission) refreshSubmission();
+          };
+
+          return (
+            <ClientFeedbackModal
+              ref={feedbackRef}
+              submissionId={submission.id}
+              videoId={modalVideoId || clientVideo?.id || video?.id}
+              currentVideoTime={formatModalTime(modalCurrentTime)}
+              onSeek={onSeekTo}
+              onPause={onPause}
+              onPlay={onPlay}
+              onSendToAdmin={handleSendAndRefresh}
+              isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
+              isPastVideo={isPastVideo}
+              videoPage={videoPage}
+              setVideoPage={setVideoPage}
+              videoCount={videoCount}
+              feedbackDeadline={currentModalVideo?.feedbackDeadline}
+              feedbackSentByName={currentModalVideo?.feedbackSentByName}
+            />
+          );
+        }}
+      />
+
+      {/* Admin Review Modal */}
+      <VideoSubmissionModal
+        open={adminReviewModalOpen}
+        onClose={() => setAdminReviewModalOpen(false)}
+        submission={submission}
+        creator={submission.user}
+        videoOrder="asc"
+        rightSideContent={({
+          currentTime: modalCurrentTime,
+          duration: modalDuration,
+          onSeek,
+          onPause,
+          onPlay,
+          videoId: modalVideoId,
+          videoPage,
+          setVideoPage,
+          videoCount,
+          isPastVideo,
+          submission: modalSubmission,
+        }) => (
+          <AdminFeedbackPanel
+            currentTime={modalCurrentTime}
+            duration={modalDuration}
+            onSeek={onSeek}
+            onPause={onPause}
+            onPlay={onPlay}
+            submission={modalSubmission || submission}
+            videoId={modalVideoId || video?.id}
+            videoPage={videoPage}
+            setVideoPage={setVideoPage}
+            videoCount={videoCount}
+            isPastVideo={isPastVideo}
+            onFeedbackSent={() => setAdminReviewModalOpen(false)}
+          />
+        )}
+      />
+
+      <ConfirmDialogClient
+        open={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+        title="Approve Submission?"
+        emoji={
+          <Avatar
+            src="/assets/images/modals/tick.png"
+            alt="approve"
+            sx={{ width: 80, height: 80 }}
+          />
+        }
+        content="Approving this submission confirms that the submission is ready to be posted by the Creator."
+        onApprove={() => {
+          setConfirmDialogOpen(false);
+          handleApprove();
+        }}
+        onLeaveFeedback={() => {
+          setConfirmDialogOpen(false);
+          setVideoSubmissionModalOpen(true);
+        }}
+        loading={loading}
+      />
     </Box>
   );
 }

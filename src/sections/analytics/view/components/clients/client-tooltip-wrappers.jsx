@@ -1,7 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+
 import { Popper } from '@mui/material';
-import { useItemTooltip, useMouseTracker, useAxesTooltip } from '@mui/x-charts';
+import { useItemTooltip, useAxesTooltip, useMouseTracker } from '@mui/x-charts';
+
 import {
   PieTooltip,
   ClientTooltip,

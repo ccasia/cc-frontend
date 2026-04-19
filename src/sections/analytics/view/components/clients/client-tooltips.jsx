@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Typography, Stack, Divider, Avatar } from '@mui/material';
+import { Box, Stack, Avatar, Divider, Typography } from '@mui/material';
+
 import Iconify from 'src/components/iconify';
 
 // --- Glassmorphism base style ---
@@ -294,7 +295,6 @@ export function RenewalTooltip({ series, dataIndex }) {
 }
 
 RenewalTooltip.propTypes = {
-  axisValue: PropTypes.string,
   series: PropTypes.arrayOf(
     PropTypes.shape({
       color: PropTypes.string,
@@ -302,6 +302,7 @@ RenewalTooltip.propTypes = {
       data: PropTypes.arrayOf(PropTypes.number),
     })
   ),
+  dataIndex: PropTypes.number, 
 };
 
 // ─────────────────────────────────────────────

@@ -95,9 +95,7 @@ const Report = lazy(() => import('src/pages/dashboard/report/report'));
 
 // Creator Discovery Tool
 const DiscoveryTool = lazy(() => import('src/pages/dashboard/discovery-tool/discovery-tool'));
-const DiscoveryToolNpc = lazy(
-  () => import('src/pages/dashboard/discovery-tool/discovery-tool-npc')
-);
+const DiscoveryToolNpc = lazy(() => import ('src/pages/dashboard/discovery-tool/discovery-tool-npc'))
 
 // Roles
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));

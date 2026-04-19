@@ -1,16 +1,16 @@
-import { memo, useState, useMemo, useCallback } from 'react';
+import { memo, useMemo, useState, useCallback } from 'react';
 
 import EditIcon from '@mui/icons-material/Edit';
-import { Stack, Skeleton, Typography } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
+import { Stack, Skeleton, Typography } from '@mui/material';
 
 import useGetRequireChangesRate from 'src/hooks/use-get-require-changes-rate';
 
 import ChartCard from '../components/chart-card';
 import ChartLegend from '../components/chart-legend';
+import { useFilteredData } from '../date-filter-context';
 import ChartAxisTooltip from '../components/chart-axis-tooltip';
 import { CHART_SX, CHART_GRID, CHART_COLORS, CHART_MARGIN, TICK_LABEL_STYLE } from '../chart-config';
-import { useFilteredData } from '../date-filter-context';
 
 const LEGEND_ITEMS = [
   { label: 'V2 Campaigns', color: CHART_COLORS.warning },

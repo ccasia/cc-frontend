@@ -1,27 +1,26 @@
-import PropTypes from "prop-types";
 import { useMemo } from "react";
+import PropTypes from "prop-types";
 
 import { BarChart } from '@mui/x-charts';
 import { Box, Card, Typography, CardContent } from '@mui/material';
 
+const colorPalette = [
+  '#1340ff', // Blue
+  '#bc5090', // Pink
+  '#ff6361', // Red
+  '#58508d', // Purple
+  '#ffa600', // Orange
+  '#003f5c', // Dark Blue
+  '#665191', // Purple
+  '#a05195', // Magenta
+  '#d45087', // Pink Red
+  '#f95d6a', // Light Red
+  '#ff7c43', // Orange Red
+  '#2f4b7c', // Navy
+];
+
 export default function LanguageAnalytics({ creators }) {
-  
-  // Color palette for different languages
-  const colorPalette = [
-    '#1340ff', // Blue
-    '#bc5090', // Pink
-    '#ff6361', // Red
-    '#58508d', // Purple
-    '#ffa600', // Orange
-    '#003f5c', // Dark Blue
-    '#665191', // Purple
-    '#a05195', // Magenta
-    '#d45087', // Pink Red
-    '#f95d6a', // Light Red
-    '#ff7c43', // Orange Red
-    '#2f4b7c', // Navy
-  ];
-  
+
   const languageData = useMemo(() => {
     const languageCount = {};
 

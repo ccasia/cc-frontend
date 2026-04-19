@@ -13,19 +13,30 @@ export function getFeedbackActionsVisibility({
   submission,
   clientVisible,
   isClientFeedback,
-  action
+  action,
 }) {
   const showFeedbackActions =
-    (!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) ||
+    (!isClient &&
+      (submission.status === 'PENDING_REVIEW' ||
+        submission.status === 'CLIENT_FEEDBACK' ||
+        submission.status === 'CHANGES_REQUIRED' ||
+        submission.status === 'SENT_TO_CLIENT' ||
+        submission.status === 'APPROVED')) ||
     (isClient && submission.status === 'SENT_TO_CLIENT');
 
-  const showRequestChangeButton = clientVisible && !isClientFeedback && action !== 'request_revision';
+  const isReadOnlyStatus =
+    submission.status === 'CHANGES_REQUIRED' ||
+    (submission.status === 'SENT_TO_CLIENT' && !isClient) ||
+    submission.status === 'APPROVED';
+
+  const showRequestChangeButton =
+    clientVisible && !isClientFeedback && action !== 'request_revision' && !isReadOnlyStatus;
 
   const showChangeRequestForm = action === 'request_revision' && clientVisible;
 
-  const showApproveButton = !isClientFeedback && action !== 'request_revision';
+  const showApproveButton = action !== 'request_revision' && !isReadOnlyStatus;
 
-  const showAdminClientFeedbackActions = !isClient && isClientFeedback && action !== 'request_revision';
+  const showAdminClientFeedbackActions = false;
 
   const showReasonsDropdown = action === 'request_revision' || action === 'request_changes';
 
@@ -35,13 +46,13 @@ export function getFeedbackActionsVisibility({
     showChangeRequestForm,
     showApproveButton,
     showAdminClientFeedbackActions,
-    showReasonsDropdown
+    showReasonsDropdown,
   };
 }
 
 export function getDefaultFeedback(isClientFeedback, submission, mediaKey = 'video') {
   if (isClientFeedback) {
-    const requestFeedbacks = submission.feedback?.filter(fb => fb.type === 'REQUEST') || [];
+    const requestFeedbacks = submission.feedback?.filter((fb) => fb.type === 'REQUEST') || [];
     const latestRequestFeedback = requestFeedbacks[0];
     return latestRequestFeedback?.content || submission[mediaKey]?.[0]?.feedback || '';
   }
@@ -50,8 +61,8 @@ export function getDefaultFeedback(isClientFeedback, submission, mediaKey = 'vid
 
 export function getInitialReasons(isClientFeedback, submission) {
   if (isClientFeedback && submission.feedback && submission.feedback.length > 0) {
-    const clientRequestFeedbacks = submission.feedback.filter(fb =>
-      fb.admin?.role === 'client' && fb.type === 'REQUEST'
+    const clientRequestFeedbacks = submission.feedback.filter(
+      (fb) => fb.admin?.role === 'client' && fb.type === 'REQUEST'
     );
     const latestClientFeedback = clientRequestFeedbacks[0];
     return latestClientFeedback?.reasons || [];

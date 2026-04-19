@@ -269,7 +269,10 @@ HeroStats.propTypes = {
 export default function InactiveBrandsDrawer({ open, onClose, brands }) {
   const [search, setSearch] = useState('');
 
-  const companies = brands?.inactiveCompaniesDetail || [];
+  const companies = useMemo(
+    () => brands?.inactiveCompaniesDetail || [],
+    [brands?.inactiveCompaniesDetail]
+  );
 
   const filteredCompanies = useMemo(() => {
     if (!search.trim()) return companies;

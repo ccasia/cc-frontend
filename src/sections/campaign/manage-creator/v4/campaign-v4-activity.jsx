@@ -1960,18 +1960,6 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
                       </Typography>
                     </Box>
 
-                    {isNew && (
-                      <Chip
-                        label="NEW"
-                        size="small"
-                        sx={{
-                          bgcolor: 'error.main',
-                          color: 'white',
-                          fontWeight: 'bold',
-                          fontSize: '0.75rem',
-                        }}
-                      />
-                    )}
                   </Stack>
                   <IconButton size="small">
                     <Iconify
@@ -2111,18 +2099,6 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
                       </Typography>
                     </Box>
 
-                    {isNew && (
-                      <Chip
-                        label="NEW"
-                        size="small"
-                        sx={{
-                          bgcolor: 'error.main',
-                          color: 'white',
-                          fontWeight: 'bold',
-                          fontSize: '0.75rem',
-                        }}
-                      />
-                    )}
                   </Stack>
                   <IconButton size="small">
                     <Iconify
@@ -2269,18 +2245,6 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
                       </Typography>
                     </Box>
 
-                    {isNew && (
-                      <Chip
-                        label="NEW"
-                        size="small"
-                        sx={{
-                          bgcolor: 'error.main',
-                          color: 'white',
-                          fontWeight: 'bold',
-                          fontSize: '0.75rem',
-                        }}
-                      />
-                    )}
                   </Stack>
                   <IconButton size="small">
                     <Iconify

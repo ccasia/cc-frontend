@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
-import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
+import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect, useCallback } from 'react';
@@ -897,13 +897,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
           justifyContent="flex-start"
           sx={{ mb: 1 }}
         >
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            sx={{ width: '100%' }}
-            alignSelf="start"
-            spacing={2}
-            mb={0.5}
-          >
+          <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ width: '100%'}} alignSelf="start" spacing={2} mb={0.5}>
             <TextField
               placeholder="Search creators..."
               value={searchQuery}
@@ -940,7 +934,11 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
+                    <Iconify
+                      icon="eva:search-fill"
+                      width={18}
+                      sx={{ color: '#637381' }}
+                    />
                   </InputAdornment>
                 ),
               }}
@@ -989,7 +987,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                     width={12}
                   />
                 </Stack>
-              }
+                    }
               sx={{
                 px: 1.5,
                 py: 0.75,
