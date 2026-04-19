@@ -178,7 +178,7 @@ export const dashboardRoutes = [
         children: [
           {
             element: (
-              <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'admin', 'sales_and_marketing']} hasContent>
                 <CreatorList />
               </RoleBasedGuard>
             ),
@@ -187,7 +187,7 @@ export const dashboardRoutes = [
           {
             path: 'lists',
             element: (
-              <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'admin', 'sales_and_marketing']} hasContent>
                 <CreatorList />
               </RoleBasedGuard>
             ),
@@ -197,7 +197,7 @@ export const dashboardRoutes = [
             children: [
               {
                 element: (
-                  <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+                  <RoleBasedGuard roles={['superadmin', 'admin', 'sales_and_marketing']} hasContent>
                     <MeditKitsCards />
                   </RoleBasedGuard>
                 ),
@@ -206,7 +206,7 @@ export const dashboardRoutes = [
               {
                 path: ':id',
                 element: (
-                  <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+                  <RoleBasedGuard roles={['superadmin', 'admin', 'sales_and_marketing']} hasContent>
                     <CreatorMediaKit />
                   </RoleBasedGuard>
                 ),
@@ -216,7 +216,7 @@ export const dashboardRoutes = [
           {
             path: 'profile/:id',
             element: (
-              <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'admin', 'sales_and_marketing']} hasContent>
                 <CreatorProfile />
               </RoleBasedGuard>
             ),
@@ -249,11 +249,11 @@ export const dashboardRoutes = [
         children: [
           {
             element: (
-              <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'god', 'sales_and_marketing']} hasContent>
                 <DiscoveryTool />
               </RoleBasedGuard>
             ),
-            index: true           
+            index: true,
           },
           {
             path: 'npc',
@@ -261,9 +261,9 @@ export const dashboardRoutes = [
               <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
                 <DiscoveryToolNpc />
               </RoleBasedGuard>
-            )
-          }
-        ]
+            ),
+          },
+        ],
       },
       // For Finance
       {
@@ -582,7 +582,7 @@ export const dashboardRoutes = [
       {
         path: 'analytics',
         element: (
-          <RoleBasedGuard hasContent roles={['superadmin', 'god', 'CSL']}>
+          <RoleBasedGuard hasContent roles={['superadmin', 'god', 'CSL', 'sales_and_marketing']}>
             <AnalyticsView />
           </RoleBasedGuard>
         ),
@@ -650,7 +650,7 @@ export const dashboardRoutes = [
       {
         path: 'credit-tier',
         element: (
-          <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+          <RoleBasedGuard roles={['superadmin', 'god', 'sales_and_marketing']} hasContent>
             <CreditTier />
           </RoleBasedGuard>
         ),

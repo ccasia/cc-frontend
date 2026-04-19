@@ -23,7 +23,12 @@ const Roles = () => {
           { name: 'Lists' },
         ]}
         action={
-          <Button size="small" variant="contained" startIcon={<Iconify icon="mingcute:add-fill" />}>
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-fill" />}
+            disabled
+          >
             Create New Role
           </Button>
         }

@@ -811,6 +811,38 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     return manualEntries.filter((entry) => entry.platform === selectedPlatform);
   }, [manualEntries, selectedPlatform]);
 
+  // Creator list: highest engagement rate first (manual entries + submissions in one order)
+  const creatorListRowsSorted = useMemo(() => {
+    const rows = [];
+
+    filteredManualEntries.forEach((entry) => {
+      rows.push({
+        kind: 'manual',
+        key: `manual-${entry.id}`,
+        engagementRate: Number(entry.engagementRate) || 0,
+        entry,
+      });
+    });
+
+    filteredSubmissions.forEach((submission) => {
+      const insightData = insightsData.find((data) => data.submissionId === submission.id);
+      if (!insightData && !loadingInsights) {
+        return;
+      }
+      const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
+      rows.push({
+        kind: 'submission',
+        key: submission.id,
+        engagementRate,
+        submission,
+        insightData,
+      });
+    });
+
+    rows.sort((a, b) => b.engagementRate - a.engagementRate);
+    return rows;
+  }, [filteredManualEntries, filteredSubmissions, insightsData, loadingInsights]);
+
   // Calculate summary statistics based on filtered data or provide empty state
   const summaryStats = useMemo(() => {
     // If we have no insights and no manual entries, return placeholder
@@ -975,7 +1007,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
 
   // eslint-disable-next-line react/no-unstable-nested-components
   const PlatformOverviewLayout = () => (
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ pb: selectedPlatform === 'TikTok' ? 4 : 0 }}>
         {/* Mobile Layout */}
         <PlatformOverviewMobile
           platformCounts={platformCounts}
@@ -1198,12 +1230,12 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
       {!loadingInsights && (
         <>
           {/* Section 1: Core Metrics */}
-          <Box>
+          <Box mb={4}>
             <CoreMetricsSection insightsData={filteredInsightsData} summaryStats={summaryStats} />
           </Box>
 
           {/* Section 2: Platform Overview */}
-          <Box>
+          <Box mb={4}>
             {availablePlatforms.length > 0 && (
               <PlatformOverviewLayout
                 postCount={filteredSubmissions.length}
@@ -1222,7 +1254,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
             spacing={4}
             justifyContent="space-between"
             minHeight={{ xs: 'auto', md: 500 }}
-            mb={2}
+            mb={4}
           >
             <Box flex={1} width="100%">
               <EngagementRateHeatmap
@@ -1369,36 +1401,27 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
               </AnimatePresence>
 
               <Grid container spacing={1}>
-                {/* Manual Creator Entries */}
-                {manualEntries
-                  .filter(
-                    (entry) => selectedPlatform === 'ALL' || entry.platform === selectedPlatform
-                  )
-                  .map((entry) => (
-                    <ManualCreatorCard
-                      key={entry.id}
-                      entry={entry}
-                      campaignId={campaignId}
-                      onUpdate={mutateManualEntries}
-                      onDelete={handleDeleteClick}
-                      isDisabled={isDisabled}
-                    />
-                  ))}
-
                 {/* eslint-disable react/prop-types */}
-                {filteredSubmissions.map((submission) => {
-                  const insightData = insightsData.find((data) => data.submissionId === submission.id);
-                  const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
-
-                  // Don't render card when there's definitively no insight data (after loading)
-                  if (!insightData && !loadingInsights) return null;
+                {creatorListRowsSorted.map((row) => {
+                  if (row.kind === 'manual') {
+                    return (
+                      <ManualCreatorCard
+                        key={row.key}
+                        entry={row.entry}
+                        campaignId={campaignId}
+                        onUpdate={mutateManualEntries}
+                        onDelete={handleDeleteClick}
+                        isDisabled={isDisabled}
+                      />
+                    );
+                  }
 
                   return (
                     <UserPerformanceCard
-                      key={submission.id}
-                      submission={submission}
-                      insightData={insightData}
-                      engagementRate={engagementRate}
+                      key={row.key}
+                      submission={row.submission}
+                      insightData={row.insightData}
+                      engagementRate={row.engagementRate}
                       loadingInsights={loadingInsights}
                     />
                   );

@@ -6,35 +6,49 @@ import { useMemo } from 'react';
  *
  * @param {Object} campaign - The campaign object with campaignAdmin array
  * @param {Object} user - The current user object from auth context
- * @returns {Object} - { isViewOnly: boolean, isManagingAdmin: boolean }
+ * @returns {{ isViewOnly: boolean, isManagingAdmin: boolean }}
  */
-export const useCampaignPermissions = (campaign, user) => useMemo(() => {
-    // Superadmin/god always have full access
-    if (user?.role === 'superadmin' || user?.admin?.mode === 'god') {
+export const useCampaignPermissions = (campaign, user) => {
+  const userId = user?.id;
+  const userRole = user?.role;
+  const adminMode = user?.admin?.mode;
+  const adminRoleName = user?.admin?.role?.name;
+  const adminRoleSlug = user?.admin?.role?.slug;
+  const campaignAdmin = campaign?.campaignAdmin;
+
+  return useMemo(() => {
+    if (userRole === 'superadmin' || adminMode === 'god') {
       return { isViewOnly: false, isManagingAdmin: true };
     }
 
-    // Finance role with advanced mode - existing view-only behavior
-    if (user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced') {
+    if (
+      userRole === 'admin' &&
+      adminRoleSlug === 'sales_and_marketing' &&
+      !campaignAdmin?.some((a) => a.adminId === userId)
+    ) {
+      return {
+        isViewOnly: true,
+        isManagingAdmin: false,
+      };
+    }
+    if (adminRoleName === 'Finance' && adminMode === 'advanced') {
       return { isViewOnly: true, isManagingAdmin: false };
     }
 
-    // CSM role check (handles both 'CSM' and 'Customer Success Manager' naming)
-    const isCSM =
-      user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
+    const isCSM = adminRoleName === 'CSM' || adminRoleName === 'Customer Success Manager';
 
     if (isCSM) {
-      // Check if user is assigned to this campaign
-      // Handle multiple possible ID matching patterns based on data structure
-      const isManagingAdmin = campaign?.campaignAdmin?.some((admin) => (
-          admin.adminId === user?.id ||
-          admin.admin?.userId === user?.id ||
-          admin.admin?.user?.id === user?.id
-        ));
+      const isManagingAdmin =
+        campaignAdmin?.some(
+          (admin) =>
+            admin.adminId === userId ||
+            admin.admin?.userId === userId ||
+            admin.admin?.user?.id === userId
+        ) ?? false;
 
       return { isViewOnly: !isManagingAdmin, isManagingAdmin };
     }
 
-    // Default: full access for other admin roles (BD, Growth, etc.)
     return { isViewOnly: false, isManagingAdmin: true };
-  }, [campaign, user]);
+  }, [userId, userRole, adminMode, adminRoleName, adminRoleSlug, campaignAdmin]);
+};

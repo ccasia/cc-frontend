@@ -30,6 +30,8 @@ export default function useV4SubmissionListSocket({
 
     const handleSubmissionUpdated = (data) => {
       if (data.campaignId !== campaignId) return;
+      if (data.creatorId === userId) return;
+      if (creatorUserId && data.creatorId && data.creatorId !== creatorUserId) return;
       onUpdate?.();
     };
 

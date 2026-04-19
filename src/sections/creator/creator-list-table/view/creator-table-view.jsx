@@ -53,7 +53,17 @@ import CreatorTableRow from '../creator-table-row';
 import CreatorTableToolbar from '../creator-table-toolbar';
 import CreatorTableFilter from '../creator-table-filters-result';
 
-const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
+const MEDIA_KIT_TAB_OPTIONS = [
+  { value: 'unmarked', label: 'Unmarked' },
+  { value: 'marked', label: 'Marked' },
+  { value: 'connected', label: 'Connected' },
+];
+
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'All' },
+  ...USER_STATUS_OPTIONS,
+  ...MEDIA_KIT_TAB_OPTIONS,
+];
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', width: 180 },
@@ -131,7 +141,10 @@ function CreatorTableView() {
           // Provide URL in console for manual copying
           console.log('Spreadsheet URL:', response.data.url);
         } else {
-          enqueueSnackbar('Creators exported to spreadsheet successfully', { variant: 'success' });
+          enqueueSnackbar(
+            'Creators and Media Kit Status exported successfully! Check the tabs in the spreadsheet.',
+            { variant: 'success', autoHideDuration: 5000 }
+          );
         }
       } else {
         throw new Error('Invalid response from server');
@@ -379,7 +392,8 @@ function CreatorTableView() {
           ]}
           action={
             <Stack direction="row" spacing={1.5}>
-              {admin?.role === 'superadmin' && (
+              {(admin?.role === 'superadmin' ||
+                admin?.admin?.role?.slug === 'sales_and_marketing') && (
                 <>
                   <Button
                     variant="outlined"
@@ -474,41 +488,60 @@ function CreatorTableView() {
               boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
             }}
           >
-            {STATUS_OPTIONS.map((tab) => (
-              <Tab
-                key={tab.value}
-                iconPosition="end"
-                value={tab.value}
-                label={tab.label}
-                icon={
-                  <Label
-                    variant={
-                      ((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'
-                    }
-                    color={
-                      (tab.value === 'active' && 'success') ||
-                      (tab.value === 'pending' && 'warning') ||
-                      (tab.value === 'banned' && 'error') ||
-                      'default'
-                    }
-                  >
-                    {[
-                      'active',
-                      'pending',
-                      'banned',
-                      'rejected',
-                      'blacklisted',
-                      'suspended',
-                      'spam',
-                    ].includes(tab.value)
-                      ? tableData?.filter(
-                          (user) => user.status.toLowerCase() === tab.value.toLowerCase()
-                        ).length
-                      : tableData?.length}
-                  </Label>
+            {STATUS_OPTIONS.map((tab) => {
+              const getTabCount = () => {
+                if (tab.value === 'all') return tableData?.length ?? 0;
+                if (tab.value === 'unmarked') {
+                  return (
+                    tableData?.filter(
+                      (user) =>
+                        !user?.mediaKitMandatory && user?.status?.toLowerCase() !== 'guest'
+                    ).length ?? 0
+                  );
                 }
-              />
-            ))}
+                if (tab.value === 'marked') {
+                  return tableData?.filter((user) => user?.mediaKitMandatory).length ?? 0;
+                }
+                if (tab.value === 'connected') {
+                  return (
+                    tableData?.filter(
+                      (user) =>
+                        user?.creator?.isTiktokConnected || user?.creator?.isFacebookConnected
+                    ).length ?? 0
+                  );
+                }
+                return (
+                  tableData?.filter(
+                    (user) => user?.status?.toLowerCase() === tab.value?.toLowerCase()
+                  ).length ?? 0
+                );
+              };
+              return (
+                <Tab
+                  key={tab.value}
+                  iconPosition="end"
+                  value={tab.value}
+                  label={tab.label}
+                  icon={
+                    <Label
+                      variant={
+                        ((tab.value === 'all' || tab.value === filters.status) && 'filled') ||
+                        'soft'
+                      }
+                      color={
+                        (tab.value === 'active' && 'success') ||
+                        (tab.value === 'pending' && 'warning') ||
+                        (tab.value === 'banned' && 'error') ||
+                        (tab.value === 'connected' && 'info') ||
+                        'default'
+                      }
+                    >
+                      {getTabCount()}
+                    </Label>
+                  }
+                />
+              );
+            })}
           </Tabs>
 
           <CreatorTableToolbar
@@ -672,7 +705,19 @@ function applyFilter({ inputData, comparator, filters, ageRange }) {
   }
 
   if (status !== 'all') {
-    inputData = inputData.filter((user) => user?.status?.toLowerCase() === status.toLowerCase());
+    if (status === 'unmarked') {
+      inputData = inputData.filter(
+        (user) => !user?.mediaKitMandatory && user?.status?.toLowerCase() !== 'guest'
+      );
+    } else if (status === 'marked') {
+      inputData = inputData.filter((user) => user?.mediaKitMandatory);
+    } else if (status === 'connected') {
+      inputData = inputData.filter(
+        (user) => user?.creator?.isTiktokConnected || user?.creator?.isFacebookConnected
+      );
+    } else {
+      inputData = inputData.filter((user) => user?.status?.toLowerCase() === status.toLowerCase());
+    }
   }
 
   // Filter by age range

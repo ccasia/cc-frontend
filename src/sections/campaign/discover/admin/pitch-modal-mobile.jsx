@@ -79,11 +79,14 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
 
   // Fetch full creator profile to hydrate Languages/Age/Pronouns when modal opens
   useEffect(() => {
+    let cancelled = false;
     const userId = currentPitch?.user?.id;
     if (open && userId) {
+      setCreatorProfileFull(null);
       axiosInstance
         .get(endpoints.creators.getCreatorFullInfo(userId))
         .then((res) => {
+          if (cancelled) return;
           // API may return { user } or the user directly
           const payload = res?.data?.user || res?.data || null;
           if (payload) setCreatorProfileFull(payload);
@@ -92,6 +95,9 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
           // non-blocking; keep UI as-is on error
         });
     }
+    return () => {
+      cancelled = true;
+    };
   }, [open, currentPitch?.user?.id]);
 
   // Derive creator profile data from multiple possible sources

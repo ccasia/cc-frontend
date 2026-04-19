@@ -22,13 +22,28 @@ const RoleItem = ({ role, key, onView }) => {
   return (
     <TableRow key={role.id}>
       <TableCell>
-        <Chip label={role.id} size="small" color="info" />
+        <Chip label={role.id} size="small" color="default" variant="" sx={{ borderRadius: 0.6 }} />
       </TableCell>
       <TableCell>{role.name}</TableCell>
       <TableCell>{dayjs(role.createdAt).format('LL')}</TableCell>
       <TableCell>
         {role.admin.length ? (
-          <AvatarGroup max={3}>
+          <AvatarGroup
+            max={3}
+            slotProps={{
+              additionalAvatar: {
+                sx: {
+                  width: 25,
+                  height: 25,
+                },
+              },
+            }}
+            renderSurplus={(val) => (
+              <Typography fontSize={9} variant="subtitle2">
+                +{val}
+              </Typography>
+            )}
+          >
             {role.admin.map((admin) => (
               <Avatar
                 key={admin?.user?.id}

@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -67,7 +67,7 @@ const ClientDashboard = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const campaignsPerPage = 3; // 3 campaigns per page for table, 1 row (3 cards) for card view
+  const campaignsPerPage = 5;
   const [activeCampaignId, setActiveCampaignId] = useState(null);
 
   const checkClientCompanyAndProfile = React.useCallback(async () => {
@@ -124,6 +124,7 @@ const ClientDashboard = () => {
     if (!Array.isArray(campaigns)) return new Set();
     return new Set(campaigns.map((c) => c.id));
   }, [campaigns]);
+
   const {
     totalCredits,
     usedCredits,
@@ -172,7 +173,14 @@ const ClientDashboard = () => {
     ).length;
   }, [allPitches, clientCampaignIds]);
 
-  const draftsToApprove = 0; // V3 submissions removed
+  // Need to change here
+  const draftsToApprove = useMemo(() => {
+    const submissions = campaigns?.map((campaign) => campaign.submission) || [];
+
+    const flattedSubmissions = submissions.flat();
+
+    return flattedSubmissions.filter((s) => s.status === 'SENT_TO_CLIENT')?.length;
+  }, [campaigns]);
 
   // Debug logging for counts and data shapes
   useEffect(() => {
