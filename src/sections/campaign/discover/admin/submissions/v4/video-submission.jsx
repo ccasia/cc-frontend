@@ -9,10 +9,10 @@ import {
   Stack,
   Button,
   Slider,
+  Avatar,
   TextField,
   Typography,
   IconButton,
-  Avatar,
 } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
@@ -24,21 +24,19 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { useNps } from 'src/components/nps-feedback/nps-provider';
+import TypographyMotion from 'src/components/animate/motion-typography';
+import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
 
 import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissions/admin-feedback-modal';
 import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
 import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
 
-import TypographyMotion from 'src/components/animate/motion-typography';
-
 import FeedbackLogs from './shared/feedback-logs';
-import FeedbackSection from './shared/feedback-section';
 import FeedbackActions from './shared/feedback-actions';
 import PostingLinkSection from './shared/posting-link-section';
 import useCaptionOverflow from './shared/use-caption-overflow';
 import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
-import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
 
 export default function V4VideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
@@ -614,6 +612,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                               onUpdate={onUpdate}
                               onViewLogs={() => setShowFeedbackLogs(true)}
                               onReviewSubmission={() => {
+                                // eslint-disable-next-line no-unused-expressions
                                 isClient
                                   ? setVideoSubmissionModalOpen(true)
                                   : setAdminReviewModalOpen(true);

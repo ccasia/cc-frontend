@@ -8,11 +8,12 @@ import Checkbox from '@mui/material/Checkbox';
 import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
 
+import { CURRENCY_PREFIXES } from 'src/utils/currency';
+
 import Iconify from 'src/components/iconify';
 import usePopover from 'src/components/custom-popover/use-popover';
 import CustomPopover from 'src/components/custom-popover/custom-popover';
 import InlineDateRangePicker from 'src/components/custom-date-range-picker/inline-date-range-picker';
-import { CURRENCY_PREFIXES } from 'src/utils/currency';
 
 // ----------------------------------------------------------------------
 

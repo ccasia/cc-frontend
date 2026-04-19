@@ -1,22 +1,23 @@
 import PropTypes from 'prop-types';
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-
 import { m, AnimatePresence } from 'framer-motion';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
   Avatar,
   Button,
+  Divider,
+  Collapse,
   TextField,
   Typography,
   IconButton,
   CircularProgress,
-  Collapse,
-  Divider,
 } from '@mui/material';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 

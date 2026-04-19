@@ -1,8 +1,5 @@
-import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-
-import { useSubmissionComments } from 'src/hooks/use-submission-comments';
-import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { useState, useEffect } from 'react';
 
 import {
   Box,
@@ -17,6 +14,10 @@ import {
   Typography,
   FormControl,
 } from '@mui/material';
+
+import { useSubmissionComments } from 'src/hooks/use-submission-comments';
+
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import TypographyMotion from 'src/components/animate/motion-typography';
 import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';

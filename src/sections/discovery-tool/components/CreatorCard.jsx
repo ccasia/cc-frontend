@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useRef, useState, useEffect } from 'react';
 
 import { Box, Chip, Stack, Avatar, Checkbox, Typography } from '@mui/material';
 

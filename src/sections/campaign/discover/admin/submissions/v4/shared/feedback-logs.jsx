@@ -2,13 +2,12 @@ import axios from 'axios';
 import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
 
-import { Box, Chip, Stack, Tooltip, IconButton, Typography } from '@mui/material';
+import { Box, Stack, IconButton, Typography } from '@mui/material';
 
 import { formatDateTime } from 'src/utils/format-time';
 
 import Iconify from 'src/components/iconify';
 
-import { FEEDBACK_CHIP_STYLES } from './submission-styles';
 
 export default function FeedbackLogs({ submission, onClose }) {
   const feedbackLogs = submission.feedback || [];

@@ -40,6 +40,7 @@ function PackageFilterSelect({ value, onChange }) {
       }
       setInitialized(true);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialized, packageTypes, value.length, onChange]);
 
   const handleMenuOpen = useCallback((e) => setAnchorEl(e.currentTarget), []);

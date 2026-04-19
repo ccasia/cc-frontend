@@ -3,6 +3,7 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
@@ -39,7 +40,6 @@ import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import { useNavigate } from 'react-router';
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';

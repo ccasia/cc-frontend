@@ -4,8 +4,9 @@ import React, { useMemo, useState, useCallback } from 'react';
 
 import { Box } from '@mui/material';
 
-import CustomV4Upload from 'src/components/upload/custom-v4-upload';
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
+
+import CustomV4Upload from 'src/components/upload/custom-v4-upload';
 
 import VideoSubmissionModal from './VideoSubmissionModal';
 import { CreatorFeedbackModal } from './feeedback-component';

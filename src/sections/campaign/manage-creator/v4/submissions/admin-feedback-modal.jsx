@@ -1807,7 +1807,9 @@ export default function AdminFeedbackPanel({
 
                   const renderCommentThread = (comment) => {
                     const allReplies = comment.replies || [];
-                    const sessionNewReplies = allReplies.filter((r) => sessionNewReplyIds.has(r.id));
+                    const sessionNewReplies = allReplies.filter((r) =>
+                      sessionNewReplyIds.has(r.id)
+                    );
                     const isExpanded = openRepliesById[comment.id] === true;
 
                     const renderReplyItem = (reply, index, list) => {
@@ -1857,7 +1859,9 @@ export default function AdminFeedbackPanel({
                             onSendInlineReply={handleSendInlineReply}
                             onCancelInlineReply={handleCancelInlineReply}
                             isAdminView
-                            onToggleVisibility={!isReadOnly && !isFirstRound ? handleToggleVisibility : undefined}
+                            onToggleVisibility={
+                              !isReadOnly && !isFirstRound ? handleToggleVisibility : undefined
+                            }
                             isNew={newClientCommentIds.has(reply.id)}
                             isNewCreatorReply={newCreatorReplyIds.has(reply.id)}
                             onDelete={handleDeleteComment}
@@ -1865,88 +1869,104 @@ export default function AdminFeedbackPanel({
                             pendingDelete={pendingDeletes.has(reply.id)}
                             pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
                             currentUserId={user?.id}
-                            feedbackSent={isReadOnly && !isPastVideo && submission?.status !== 'SENT_TO_CLIENT'}
+                            feedbackSent={
+                              isReadOnly && !isPastVideo && submission?.status !== 'SENT_TO_CLIENT'
+                            }
                           />
                         </Box>
                       );
                     };
 
                     return (
-                    <m.div
-                      key={comment.id}
-                      data-comment-id={comment.id}
-                      initial={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
-                      transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], height: { delay: 0.3, duration: 0.3 } }}
-                    >
-                      <CommentCard
-                        comment={comment}
-                        onTimestampClick={onSeek}
-                        onReply={handleReply}
-                        replyCount={allReplies.length}
-                        isRepliesOpen={isExpanded}
-                        onToggleReplies={(commentId) => {
-                          // When expanding, acknowledge session-new replies so they
-                          // become existing on the next collapse
-                          if (!isExpanded && sessionNewReplies.length > 0) {
-                            setSessionNewReplyIds((prev) => {
-                              const next = new Set(prev);
-                              sessionNewReplies.forEach((r) => next.delete(r.id));
-                              return next;
-                            });
-                          }
-                          // true → undefined (back to initial), undefined → true (expand all)
-                          setOpenRepliesById((prev) => ({
-                            ...prev,
-                            [commentId]: prev[commentId] === true ? undefined : true,
-                          }));
+                      <m.div
+                        key={comment.id}
+                        data-comment-id={comment.id}
+                        initial={{ opacity: 1, height: 'auto' }}
+                        exit={{
+                          opacity: 0,
+                          x: '100%',
+                          height: 0,
+                          marginBottom: 0,
+                          overflow: 'hidden',
                         }}
-                        isPastVideo={isPastVideo}
-                        onEdit={handleEdit}
-                        onToggleResolve={handleToggleResolve}
-                        editTarget={editTarget}
-                        onSaveEdit={handleSaveEdit}
-                        onCancelEdit={handleCancelEdit}
-                        editText={editText}
-                        onEditTextChange={setEditText}
-                        inlineReplyTarget={inlineReplyTarget}
-                        inlineReplyText={inlineReplyText}
-                        onInlineReplyTextChange={setInlineReplyText}
-                        onSendInlineReply={handleSendInlineReply}
-                        onCancelInlineReply={handleCancelInlineReply}
-                        isAdminView
-                        onToggleVisibility={!isReadOnly && !isFirstRound ? handleToggleVisibility : undefined}
-                        isNew={newClientCommentIds.has(comment.id)}
-                        onDelete={handleDeleteComment}
-                        onUndoDelete={handleUndoDelete}
-                        pendingDelete={pendingDeletes.has(comment.id)}
-                        pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
-                        currentUserId={user?.id}
-                        feedbackSent={isReadOnly && !isPastVideo && submission?.status !== 'SENT_TO_CLIENT'}
-                      />
-
-                      {/* When expanded: merge all replies for continuous connector lines */}
-                      <Collapse
-                        in={isExpanded && allReplies.length > 0}
-                        timeout="auto"
-                        unmountOnExit
+                        transition={{
+                          duration: 0.6,
+                          ease: [0.4, 0, 0.2, 1],
+                          height: { delay: 0.3, duration: 0.3 },
+                        }}
                       >
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
-                          {allReplies.map((reply, index) =>
-                            renderReplyItem(reply, index, allReplies)
-                          )}
-                        </Box>
-                      </Collapse>
+                        <CommentCard
+                          comment={comment}
+                          onTimestampClick={onSeek}
+                          onReply={handleReply}
+                          replyCount={allReplies.length}
+                          isRepliesOpen={isExpanded}
+                          onToggleReplies={(commentId) => {
+                            // When expanding, acknowledge session-new replies so they
+                            // become existing on the next collapse
+                            if (!isExpanded && sessionNewReplies.length > 0) {
+                              setSessionNewReplyIds((prev) => {
+                                const next = new Set(prev);
+                                sessionNewReplies.forEach((r) => next.delete(r.id));
+                                return next;
+                              });
+                            }
+                            // true → undefined (back to initial), undefined → true (expand all)
+                            setOpenRepliesById((prev) => ({
+                              ...prev,
+                              [commentId]: prev[commentId] === true ? undefined : true,
+                            }));
+                          }}
+                          isPastVideo={isPastVideo}
+                          onEdit={handleEdit}
+                          onToggleResolve={handleToggleResolve}
+                          editTarget={editTarget}
+                          onSaveEdit={handleSaveEdit}
+                          onCancelEdit={handleCancelEdit}
+                          editText={editText}
+                          onEditTextChange={setEditText}
+                          inlineReplyTarget={inlineReplyTarget}
+                          inlineReplyText={inlineReplyText}
+                          onInlineReplyTextChange={setInlineReplyText}
+                          onSendInlineReply={handleSendInlineReply}
+                          onCancelInlineReply={handleCancelInlineReply}
+                          isAdminView
+                          onToggleVisibility={
+                            !isReadOnly && !isFirstRound ? handleToggleVisibility : undefined
+                          }
+                          isNew={newClientCommentIds.has(comment.id)}
+                          onDelete={handleDeleteComment}
+                          onUndoDelete={handleUndoDelete}
+                          pendingDelete={pendingDeletes.has(comment.id)}
+                          pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
+                          currentUserId={user?.id}
+                          feedbackSent={
+                            isReadOnly && !isPastVideo && submission?.status !== 'SENT_TO_CLIENT'
+                          }
+                        />
 
-                      {/* Initial state only: session-new replies visible before toggle is clicked */}
-                      {!isExpanded && sessionNewReplies.length > 0 && (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
-                          {sessionNewReplies.map((reply, index) =>
-                            renderReplyItem(reply, index, sessionNewReplies)
-                          )}
-                        </Box>
-                      )}
-                    </m.div>
+                        {/* When expanded: merge all replies for continuous connector lines */}
+                        <Collapse
+                          in={isExpanded && allReplies.length > 0}
+                          timeout="auto"
+                          unmountOnExit
+                        >
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
+                            {allReplies.map((reply, index) =>
+                              renderReplyItem(reply, index, allReplies)
+                            )}
+                          </Box>
+                        </Collapse>
+
+                        {/* Initial state only: session-new replies visible before toggle is clicked */}
+                        {!isExpanded && sessionNewReplies.length > 0 && (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
+                            {sessionNewReplies.map((reply, index) =>
+                              renderReplyItem(reply, index, sessionNewReplies)
+                            )}
+                          </Box>
+                        )}
+                      </m.div>
                     );
                   };
 

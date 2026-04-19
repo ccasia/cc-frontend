@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import PropTypes from 'prop-types';
+import { format, endOfDay, startOfDay, isWithinInterval } from 'date-fns';
 
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';

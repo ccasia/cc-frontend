@@ -20,11 +20,11 @@ import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import TypographyMotion from 'src/components/animate/motion-typography';
 import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 
 import { BUTTON_STYLES } from './submission-styles';
 import { posting_link_options_changes } from '../constants';
-import TypographyMotion from 'src/components/animate/motion-typography';
 
 export default function PostingLinkSection({
   submission,
@@ -296,7 +296,6 @@ export default function PostingLinkSection({
             )}
           </Box>
         )}
-
         {isPosted && (
           <Box
             sx={{
@@ -345,7 +344,6 @@ export default function PostingLinkSection({
             )}
           </Box>
         )}
-
         {!isClient && !isPosted && postingLinkAddedByAdmin && submission.content && (
           <Box display="flex" sx={{ mb: 1 }}>
             <Typography variant="caption" color="#636366" sx={{ fontStyle: 'italic' }}>
@@ -353,7 +351,6 @@ export default function PostingLinkSection({
             </Typography>
           </Box>
         )}
-
         {submission.content && (
           <Box
             sx={{
@@ -382,12 +379,19 @@ export default function PostingLinkSection({
             </Link>
           </Box>
         )}
-
-        {/* Posting link submitted by creator */}
-//         {!isClient && !postingLinkAddedByAdmin && !isPosted && submission.content && renderActionButtons()}
-
+        {/* Posting link submitted by creator */} {/* To be review */}
+        {!isClient &&
+          !postingLinkAddedByAdmin &&
+          !isPosted &&
+          submission.content &&
+          renderActionButtons()}
         {/* Posting link to be approved by superadmin */}
-//         {!isClient && postingLinkAddedByAdmin && !isPosted && submission.content && isSuperAdmin && renderActionButtons()}
+        {!isClient &&
+          postingLinkAddedByAdmin &&
+          !isPosted &&
+          submission.content &&
+          isSuperAdmin &&
+          renderActionButtons()}
         {!isClient && !postingLinkAddedByAdmin && !isPosted && submission.content && (
           <Stack spacing={1}>
             <Stack direction="row" spacing={1} justifyContent="flex-end">
@@ -496,117 +500,119 @@ export default function PostingLinkSection({
             )}
           </Stack>
         )}
-
         {/* Posting link to be approved by superadmin */}
-        {!isClient && postingLinkAddedByAdmin && !isPosted && submission.content && isSuperAdmin && (
-          <Stack spacing={1}>
-            <Stack direction="row" spacing={1} justifyContent="flex-end">
-              {action === 'approve' && (
-                <Button
-                  variant="contained"
-                  color="warning"
-                  size="small"
-                  onClick={() => setAction('request_revision')}
-                  disabled={loading || isDisabled}
-                  sx={{
-                    ...BUTTON_STYLES.base,
-                    ...BUTTON_STYLES.warning,
-                  }}
-                >
-                  {loading ? 'Processing...' : 'Request a Change'}
-                </Button>
-              )}
-              {action === 'request_revision' && (
-                <Box
-                  display="flex"
-                  flexDirection="row"
-                  width="100%"
-                  gap={1}
-                  justifyContent="flex-end"
-                >
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    size="small"
-                    onClick={() => {
-                      setAction('approve');
-                      setReasons([]);
-                    }}
-                    disabled={loading || isDisabled}
-                    sx={{
-                      ...BUTTON_STYLES.base,
-                      ...BUTTON_STYLES.secondary,
-                    }}
-                  >
-                    Cancel Change Request
-                  </Button>
+        {!isClient &&
+          postingLinkAddedByAdmin &&
+          !isPosted &&
+          submission.content &&
+          isSuperAdmin && (
+            <Stack spacing={1}>
+              <Stack direction="row" spacing={1} justifyContent="flex-end">
+                {action === 'approve' && (
                   <Button
                     variant="contained"
                     color="warning"
                     size="small"
-                    onClick={handleRejectPosting}
+                    onClick={() => setAction('request_revision')}
                     disabled={loading || isDisabled}
                     sx={{
                       ...BUTTON_STYLES.base,
                       ...BUTTON_STYLES.warning,
                     }}
                   >
-                    {loading ? 'Processing...' : 'Send to Creator'}
+                    {loading ? 'Processing...' : 'Request a Change'}
                   </Button>
-                </Box>
-              )}
-              {action === 'approve' && (
-                <Button
-                  variant="contained"
-                  color="success"
+                )}
+                {action === 'request_revision' && (
+                  <Box
+                    display="flex"
+                    flexDirection="row"
+                    width="100%"
+                    gap={1}
+                    justifyContent="flex-end"
+                  >
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      size="small"
+                      onClick={() => {
+                        setAction('approve');
+                        setReasons([]);
+                      }}
+                      disabled={loading || isDisabled}
+                      sx={{
+                        ...BUTTON_STYLES.base,
+                        ...BUTTON_STYLES.secondary,
+                      }}
+                    >
+                      Cancel Change Request
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="warning"
+                      size="small"
+                      onClick={handleRejectPosting}
+                      disabled={loading || isDisabled}
+                      sx={{
+                        ...BUTTON_STYLES.base,
+                        ...BUTTON_STYLES.warning,
+                      }}
+                    >
+                      {loading ? 'Processing...' : 'Send to Creator'}
+                    </Button>
+                  </Box>
+                )}
+                {action === 'approve' && (
+                  <Button
+                    variant="contained"
+                    color="success"
+                    size="small"
+                    onClick={() => setConfirmDialogOpen(true)}
+                    disabled={loading || isDisabled}
+                    sx={{
+                      ...BUTTON_STYLES.base,
+                      ...BUTTON_STYLES.success,
+                    }}
+                  >
+                    {loading ? 'Processing...' : 'Approve'}
+                  </Button>
+                )}
+              </Stack>
+              {action === 'request_revision' && (
+                <FormControl
+                  fullWidth
+                  style={{ backgroundColor: '#fff', borderRadius: 10 }}
+                  hiddenLabel
                   size="small"
-                  onClick={() => setConfirmDialogOpen(true)}
-                  disabled={loading || isDisabled}
-                  sx={{
-                    ...BUTTON_STYLES.base,
-                    ...BUTTON_STYLES.success,
-                  }}
                 >
-                  {loading ? 'Processing...' : 'Approve'}
-                </Button>
+                  <Select
+                    multiple
+                    value={reasons}
+                    onChange={(e) => setReasons(e.target.value)}
+                    displayEmpty
+                    renderValue={(selected) => {
+                      if (selected.length === 0) {
+                        return <span style={{ color: '#999' }}>Change Request Reasons</span>;
+                      }
+                      return (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxHeight: 35 }}>
+                          {selected.map((value) => (
+                            <Chip key={value} label={value} size="small" />
+                          ))}
+                        </Box>
+                      );
+                    }}
+                  >
+                    {posting_link_options_changes.map((option) => (
+                      <MenuItem key={option} value={option}>
+                        {option}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               )}
             </Stack>
-            {action === 'request_revision' && (
-              <FormControl
-                fullWidth
-                style={{ backgroundColor: '#fff', borderRadius: 10 }}
-                hiddenLabel
-                size="small"
-              >
-                <Select
-                  multiple
-                  value={reasons}
-                  onChange={(e) => setReasons(e.target.value)}
-                  displayEmpty
-                  renderValue={(selected) => {
-                    if (selected.length === 0) {
-                      return <span style={{ color: '#999' }}>Change Request Reasons</span>;
-                    }
-                    return (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxHeight: 35 }}>
-                        {selected.map((value) => (
-                          <Chip key={value} label={value} size="small" />
-                        ))}
-                      </Box>
-                    );
-                  }}
-                >
-                  {posting_link_options_changes.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-          </Stack>
-        )}
-
+          )}
         {/* No posting link yet — admin can enter one */}
         {!isClient && !submission.content && (
           <Box display="flex" flexDirection="column">
@@ -640,7 +646,6 @@ export default function PostingLinkSection({
             </Box>
           </Box>
         )}
-
         <ConfirmDialogV2
           open={confirmDialogOpen}
           onClose={() => setConfirmDialogOpen(false)}

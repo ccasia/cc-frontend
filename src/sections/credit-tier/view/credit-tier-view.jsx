@@ -21,6 +21,7 @@ import {
 import { paths } from 'src/routes/paths';
 
 import useGetCreditTiers from 'src/hooks/use-get-credit-tiers';
+import useCheckPermission from 'src/hooks/use-check-permission';
 
 import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
@@ -29,7 +30,6 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import CreditTierEdit from '../credit-tier-edit';
 import CreditTierCreate from '../credit-tier-create';
 import CreditTierTableRow from '../credit-tier-table-row';
-import useCheckPermission from 'src/hooks/use-check-permission';
 
 // ----------------------------------------------------------------------
 

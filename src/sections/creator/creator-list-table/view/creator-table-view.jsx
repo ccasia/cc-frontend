@@ -2,6 +2,7 @@
 import { mutate } from 'swr';
 import isEqual from 'lodash/isEqual';
 import { Toaster } from 'react-hot-toast';
+import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
@@ -16,8 +17,6 @@ import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
 import { TableRow, TableBody, TableCell, LinearProgress } from '@mui/material';
-
-import { useSearchParams } from 'react-router-dom';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
