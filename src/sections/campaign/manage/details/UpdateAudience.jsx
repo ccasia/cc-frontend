@@ -113,7 +113,7 @@ const UpdateAudienceSchema = Yup.object().shape({
   }),
 });
 
-const UpdateAudience = ({ campaign, campaignMutate }) => {
+const UpdateAudience = ({ campaign, campaignMutate, onDirtyChange }) => {
   // Get existing values from campaign
   const defaultValues = useMemo(
     () => ({
@@ -156,6 +156,10 @@ const UpdateAudience = ({ campaign, campaignMutate }) => {
       reset(defaultValues);
     }
   }, [campaign, defaultValues, reset]);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   const country = watch('country');
   const secondaryCountry = watch('secondaryCountry');
@@ -526,6 +530,7 @@ const UpdateAudience = ({ campaign, campaignMutate }) => {
 UpdateAudience.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
+  onDirtyChange: PropTypes.func,
 };
 
 export default memo(UpdateAudience);

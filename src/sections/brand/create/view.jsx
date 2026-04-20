@@ -19,7 +19,7 @@ import CreateCompany from './brandForms/FirstForms/create-company';
 
 const TABS = [
   { label: 'Create Company', value: 'client', form: <CreateCompany isDialog={false} /> },
-  { label: 'Create Brand', value: 'brand', form: <CompanyBrandForm /> },
+  // { label: 'Create Brand', value: 'brand', form: <CompanyBrandForm /> },
   // { label: 'Sup Sup Brand', value: 'subSubClient', form: <h1>supSupBrand</h1>, disabled: true },
 ];
 
@@ -51,7 +51,7 @@ function CreateBrand() {
 
       <CustomBreadcrumbs
         sx={{ mt: 3 }}
-        heading="Create Company & Brand"
+        heading="Create Company"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Brand', href: paths.dashboard.company.discover },
