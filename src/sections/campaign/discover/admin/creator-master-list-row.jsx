@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
 
-import { Box, Link, Stack, Avatar, Button, Tooltip, TableRow, TableCell, Typography } from '@mui/material';
+import { Box, Link, Stack, Avatar, Button, Tooltip, TableRow, TableCell, Typography, CircularProgress } from '@mui/material';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
@@ -14,7 +16,8 @@ import Iconify from 'src/components/iconify';
  * CreatorMasterListRow component renders a single creator row in the master list table
  * Displays creator insights sourced directly from pitch payloads
  */
-const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isCreditTier }) => {
+const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isCreditTier, isSelected, onToggleSelect, approverPitchIds }) => {
+  const [approveRejectLoading, setApproveRejectLoading] = useState(false);
   const theme = useTheme();
   // Profile link is stored on Creator model
   const instagramStats = pitch?.user?.creator?.instagramUser || null;
@@ -107,10 +110,36 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
 
   const statusInfo = getStatusInfo(pitch);
 
+  // Approver role: pitch is assigned to this approver and still pending
+  const isAssignedToApprover = approverPitchIds !== null && approverPitchIds !== undefined
+    ? approverPitchIds.includes(pitch.id)
+    : false;
+  const showApproveReject = isAssignedToApprover && pitch.status === 'AWAITING_APPROVAL';
+
+  const handleApproverAction = async (e, action) => {
+    e.stopPropagation();
+    setApproveRejectLoading(true);
+    try {
+      if (action === 'approve') {
+        await axiosInstance.patch(endpoints.pitch.v3.approveClient(pitch.id));
+      } else {
+        await axiosInstance.patch(endpoints.pitch.v3.rejectClient(pitch.id));
+      }
+    } catch (err) {
+      console.error('Approver action failed', err);
+    } finally {
+      setApproveRejectLoading(false);
+    }
+  };
+
   return (
     <TableRow
       hover
-      onClick={() => onViewPitch(pitch)}
+      onClick={(e) => {
+        // Don't open pitch modal when clicking the checkbox cell
+        if (e.target.closest('[data-checkbox-cell]')) return;
+        onViewPitch(pitch);
+      }}
       sx={{
         bgcolor: 'transparent',
         '& td': {
@@ -119,6 +148,38 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
         },
       }}
     >
+      {onToggleSelect && (
+        <TableCell data-checkbox-cell="true" sx={{ width: 32, pr: 0 }}>
+          <Box
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelect(pitch);
+            }}
+            sx={{
+              width: 18,
+              height: 18,
+              borderRadius: 0,
+              border: `2px solid ${isSelected ? '#1340FF' : '#7B7B7B'}`,
+              bgcolor: 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {isSelected && (
+              <Iconify
+                icon="eva:checkmark-fill"
+                width={13}
+                height={13}
+                sx={{ color: '#1340FF' }}
+              />
+            )}
+          </Box>
+        </TableCell>
+      )}
       <TableCell>
         <Stack direction="row" alignItems="center" spacing={2}>
           <Avatar
@@ -319,37 +380,94 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
                 </Box>
               </Tooltip>
             )}
+          {(statusInfo.normalizedStatus === 'APPROVED' ||
+            statusInfo.normalizedStatus === 'REJECTED') &&
+            pitch.clientVisibleApprovalNote?.trim() && (
+              <Tooltip title="Note from approver" arrow>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                  <Iconify
+                    icon="cuida:long-text-outline"
+                    width={18}
+                    height={18}
+                    sx={{ color: statusInfo.color }}
+                  />
+                </Box>
+              </Tooltip>
+            )}
         </Box>
       </TableCell>
       <TableCell>
-        <Button
-          onClick={() => onViewPitch(pitch)}
-          sx={{
-            bgcolor: '#FFFFFF',
-            border: '1.5px solid #e7e7e7',
-            borderBottom: '3px solid #e7e7e7',
-            borderRadius: 1,
-            color: '#1340FF',
-            height: 36,
-            px: 2,
-            py: 1.5,
-            fontWeight: 600,
-            fontSize: '0.85rem',
-            textTransform: 'none',
-            whiteSpace: 'nowrap',
-            minWidth: '90px',
-            display: 'flex',
-            alignItems: 'center',
-            '&:hover': {
-              bgcolor: 'rgba(19, 64, 255, 0.08)',
-              border: '1.5px solid #1340FF',
-              borderBottom: '3px solid #1340FF',
+        {showApproveReject ? (
+          <Stack direction="row" spacing={1}>
+            <Button
+              size="small"
+              variant="outlined"
+              disabled={approveRejectLoading}
+              onClick={(e) => handleApproverAction(e, 'reject')}
+              sx={{
+                color: '#FF4842',
+                borderColor: '#FF4842',
+                borderBottom: '3px solid #FF4842',
+                fontWeight: 700,
+                textTransform: 'none',
+                borderRadius: 1,
+                minWidth: 70,
+                height: 34,
+                '&:hover': { bgcolor: 'rgba(255,72,66,0.08)', borderColor: '#FF4842' },
+              }}
+            >
+              {approveRejectLoading ? <CircularProgress size={14} /> : 'Reject'}
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              disabled={approveRejectLoading}
+              onClick={(e) => handleApproverAction(e, 'approve')}
+              sx={{
+                color: '#1ABF66',
+                borderColor: '#1ABF66',
+                borderBottom: '3px solid #1ABF66',
+                fontWeight: 700,
+                textTransform: 'none',
+                borderRadius: 1,
+                minWidth: 70,
+                height: 34,
+                '&:hover': { bgcolor: 'rgba(26,191,102,0.08)', borderColor: '#1ABF66' },
+              }}
+            >
+              {approveRejectLoading ? <CircularProgress size={14} /> : 'Approve'}
+            </Button>
+          </Stack>
+        ) : (
+          <Button
+            onClick={() => onViewPitch(pitch)}
+            sx={{
+              bgcolor: '#FFFFFF',
+              border: '1.5px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1,
               color: '#1340FF',
-            },
-          }}
-        >
-          View Profile
-        </Button>
+              height: 36,
+              px: 2,
+              py: 1.5,
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              textTransform: 'none',
+              whiteSpace: 'nowrap',
+              minWidth: '90px',
+              display: 'flex',
+              alignItems: 'center',
+              '&:hover': {
+                bgcolor: 'rgba(19, 64, 255, 0.08)',
+                border: '1.5px solid #1340FF',
+                borderBottom: '3px solid #1340FF',
+                color: '#1340FF',
+              },
+            }}
+          >
+            View
+          </Button>
+        )}
       </TableCell>
     </TableRow>
   );
@@ -361,6 +479,9 @@ CreatorMasterListRow.propTypes = {
   onViewPitch: PropTypes.func.isRequired,
   campaign: PropTypes.object,
   isCreditTier: PropTypes.bool,
+  isSelected: PropTypes.bool,
+  onToggleSelect: PropTypes.func,
+  approverPitchIds: PropTypes.array,
 };
 
 export default CreatorMasterListRow;

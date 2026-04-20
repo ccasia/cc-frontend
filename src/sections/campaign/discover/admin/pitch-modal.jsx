@@ -37,7 +37,16 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
 
-const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
+const PitchModal = ({
+  pitch,
+  open,
+  onClose,
+  campaign,
+  onUpdate,
+  readOnly = false,
+  /** When true, show external approver note (client portal only; not for admin routes). */
+  showClientApprovalNote = false,
+}) => {
   const { enqueueSnackbar } = useSnackbar();
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1345,6 +1354,37 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                       </Stack>
                     </Box>
                   )}
+                  {showClientApprovalNote && currentPitch?.clientVisibleApprovalNote?.trim() && (
+                    <Box sx={{ mt: 1.5, width: 220, ml: 'auto', mr: 1 }}>
+                      <Stack spacing={0.25} alignItems="flex-start">
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: '#FFC702',
+                            fontWeight: 700,
+                            letterSpacing: 0.5,
+                            textAlign: 'left',
+                          }}
+                        >
+                          NOTE FROM APPROVER
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: '#000',
+                            fontWeight: 400,
+                            fontFamily: 'Inter Display, Inter, sans-serif',
+                            lineHeight: 1.35,
+                            textAlign: 'left',
+                            wordBreak: 'break-word',
+                            fontSize: '0.75rem',
+                          }}
+                        >
+                          {currentPitch.clientVisibleApprovalNote.trim()}
+                        </Typography>
+                      </Stack>
+                    </Box>
+                  )}
                 </Grid>
               </Grid>
             </Box>
@@ -1431,7 +1471,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         </DialogContent>
 
         {/* Action Buttons - Only show if pitch hasn't been acted upon */}
-        {(currentPitch?.status === 'PENDING_REVIEW' ||
+        {!readOnly && (currentPitch?.status === 'PENDING_REVIEW' ||
           currentPitch?.displayStatus === 'PENDING_REVIEW' ||
           currentPitch?.status === 'undecided' ||
           currentPitch?.displayStatus === 'undecided') && (
@@ -1771,6 +1811,8 @@ PitchModal.propTypes = {
   onClose: PropTypes.func,
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
+  readOnly: PropTypes.bool,
+  showClientApprovalNote: PropTypes.bool,
 };
 
 export default PitchModal;

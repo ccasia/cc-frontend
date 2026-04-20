@@ -245,6 +245,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
       ].includes(status);
       const isRejected = ['rejected', 'REJECTED'].includes(status);
       const withdrawn = ['WITHDRAWN'].includes(status);
+      const isAwaitingApproval = status === 'AWAITING_APPROVAL';
 
       // V4: Show all pitches in approval flow
       if (isV4) {
@@ -255,11 +256,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
           isMaybe ||
           isApproved ||
           isRejected ||
-          withdrawn
+          withdrawn ||
+          isAwaitingApproval
         );
       }
 
-      return isApproved || isPending || sentToClient || isMaybe || isRejected || withdrawn;
+      return isApproved || isPending || sentToClient || isMaybe || isRejected || withdrawn || isAwaitingApproval;
     });
 
     if (selectedFilter === 'PENDING_REVIEW') {
@@ -446,7 +448,10 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   };
 
   const getStatusInfo = (status, pitch) => {
-    if ((status === 'APPROVED' || status === 'approved') && pitch?.isInvited === true) {
+    const canonical =
+      typeof status === 'string' ? status.toUpperCase().replace(/\s+/g, '_') : status;
+
+    if (canonical === 'APPROVED' && pitch?.isInvited === true) {
       return {
         color: '#FFC702',
         borderColor: '#FFC702',
@@ -455,7 +460,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
     }
 
     // Check for AGREEMENT_PENDING status with PENDING_REVIEW agreement form
-    if (status === 'AGREEMENT_PENDING' && campaign?.submission) {
+    if (canonical === 'AGREEMENT_PENDING' && campaign?.submission) {
       const agreementFormSubmission = campaign.submission.find(
         (sub) => sub?.submissionType?.type === 'AGREEMENT_FORM'
       );
@@ -535,10 +540,16 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         borderColor: '#1ABF66',
         tooltip: 'Agreement has been submitted by creator',
       },
+      AWAITING_APPROVAL: {
+        color: '#8B5CF6',
+        borderColor: '#8B5CF6',
+        tooltip: 'Awaiting approval from external approver',
+      },
     };
 
     return (
-      statusMap[status] || {
+      statusMap[status] ||
+      statusMap[canonical] || {
         color: '#8E8E93',
         borderColor: '#8E8E93',
         tooltip: 'Unknown status',

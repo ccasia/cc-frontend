@@ -445,4 +445,9 @@ export const endpoints = {
     createCompany: '/api/client/createCompany',
     createCampaign: '/api/client/createClientCampaign',
   },
+  approvalRequests: {
+    create: '/api/approval-requests',
+    get: (token) => `/api/approval-requests/${token}`,
+    action: (token, pitchId) => `/api/approval-requests/${token}/creators/${pitchId}`,
+  },
 };

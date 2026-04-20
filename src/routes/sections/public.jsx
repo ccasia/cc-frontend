@@ -11,6 +11,8 @@ const PublicManageCreatorView = lazy(
   () => import('src/sections/public-access/publicCreatorManage')
 );
 
+const ApprovalPage = lazy(() => import('src/pages/public/approval'));
+
 // ----------------------------------------------------------------------
 
 export const publicRoutes = [
@@ -37,6 +39,10 @@ export const publicRoutes = [
       {
         path: 'view/:id',
         element: <PublicAccessPage />,
+      },
+      {
+        path: 'approval/:token',
+        element: <ApprovalPage />,
       },
     ],
   },

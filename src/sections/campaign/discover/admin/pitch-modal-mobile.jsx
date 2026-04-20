@@ -35,7 +35,14 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
 
-const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
+const PitchModalMobile = ({
+  pitch,
+  open,
+  onClose,
+  campaign,
+  onUpdate,
+  showClientApprovalNote = false,
+}) => {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
@@ -876,6 +883,36 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
               </Box>
             </Stack>
 
+            {showClientApprovalNote && currentPitch?.clientVisibleApprovalNote?.trim() && (
+              <Box sx={{ mt: 1.5 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: '#FFC702',
+                    fontWeight: 700,
+                    fontSize: '10px',
+                    letterSpacing: 0.5,
+                    display: 'block',
+                    mb: 0.5,
+                  }}
+                >
+                  NOTE FROM APPROVER
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: 13,
+                    fontWeight: 400,
+                    color: '#231F20',
+                    lineHeight: 1.4,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {currentPitch.clientVisibleApprovalNote.trim()}
+                </Typography>
+              </Box>
+            )}
+
             <Divider />
 
             {/* Pitch Content */}
@@ -1332,6 +1369,7 @@ PitchModalMobile.propTypes = {
   onClose: PropTypes.func,
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
+  showClientApprovalNote: PropTypes.bool,
 };
 
 export default PitchModalMobile;
