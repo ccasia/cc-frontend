@@ -105,7 +105,7 @@ const clientAllowedTabs = [
   'faq',
 ];
 
-const CampaignDetailView = ({ id, publicReadonly = false }) => {
+const CampaignDetailView = ({ id, publicReadonly = false, forcedTab = null }) => {
   const settings = useSettingsContext();
   const router = useRouter();
   // const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
@@ -223,7 +223,7 @@ const CampaignDetailView = ({ id, publicReadonly = false }) => {
   };
 
   const [currentTab, setCurrentTab] = useState(
-    localStorage.getItem('campaigndetail') || 'campaign-content'
+    forcedTab || localStorage.getItem('campaigndetail') || 'campaign-content'
   );
 
   // Check if user is client
@@ -243,6 +243,13 @@ const CampaignDetailView = ({ id, publicReadonly = false }) => {
       localStorage.setItem('campaigndetail', 'overview');
     }
   }, [currentTab, isClient, campaign?.submissionVersion]);
+
+  // Approval public page can force a specific readonly background tab.
+  useEffect(() => {
+    if (!forcedTab) return;
+    if (isClient && !getAllowedTabs(campaign?.submissionVersion).includes(forcedTab)) return;
+    setCurrentTab(forcedTab);
+  }, [forcedTab, isClient, campaign?.submissionVersion]);
 
   const handleChangeTab = useCallback(
     (event, newValue) => {
@@ -1263,4 +1270,5 @@ export default CampaignDetailView;
 CampaignDetailView.propTypes = {
   id: PropTypes.string,
   publicReadonly: PropTypes.bool,
+  forcedTab: PropTypes.string,
 };
