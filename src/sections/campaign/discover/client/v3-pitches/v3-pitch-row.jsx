@@ -53,8 +53,11 @@ PitchTypeCell.propTypes = {
 };
 
 const getStatusText = (status, pitch, campaign) => {
+  const canonical =
+    typeof status === 'string' ? status.toUpperCase().replace(/\s+/g, '_') : status;
+
   // Check for AGREEMENT_PENDING status with PENDING_REVIEW agreement form
-  if (status === 'AGREEMENT_PENDING') {
+  if (canonical === 'AGREEMENT_PENDING') {
     const agreementFormSubmission = campaign?.submission?.find(
       (sub) => sub?.submissionType?.type === 'AGREEMENT_FORM'
     );
@@ -64,8 +67,8 @@ const getStatusText = (status, pitch, campaign) => {
     }
   }
 
-  if (status === 'APPROVED' && pitch.isInvited) {
-    return 'INVITED'
+  if (canonical === 'APPROVED' && pitch.isInvited) {
+    return 'INVITED';
   }
 
   const statusTextMap = {
@@ -76,12 +79,16 @@ const getStatusText = (status, pitch, campaign) => {
     MAYBE: 'MAYBE',
     maybe: 'MAYBE',
     APPROVED: 'APPROVED',
+    approved: 'APPROVED',
     REJECTED: 'REJECTED',
+    rejected: 'REJECTED',
+    WITHDRAWN: 'WITHDRAWN',
     AGREEMENT_PENDING: 'AGREEMENT PENDING',
     AGREEMENT_SUBMITTED: 'AGREEMENT SUBMITTED',
+    AWAITING_APPROVAL: 'AWAITING APPROVAL',
   };
 
-  return statusTextMap[status] || status;
+  return statusTextMap[status] || statusTextMap[canonical] || status;
 };
 
 const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedCreator, campaign, isCreditTier, onViewPitch, onRemoved, onOutreachUpdate, isDisabled = false }) => {

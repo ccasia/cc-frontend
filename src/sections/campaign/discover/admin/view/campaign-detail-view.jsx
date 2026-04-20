@@ -31,7 +31,7 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
-import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
+import { useGetCampaignById, useGetCampaignByIdPublic } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 import { useCampaignPermissions } from 'src/hooks/use-campaign-permissions';
 
@@ -105,11 +105,17 @@ const clientAllowedTabs = [
   'faq',
 ];
 
-const CampaignDetailView = ({ id }) => {
+const CampaignDetailView = ({ id, publicReadonly = false }) => {
   const settings = useSettingsContext();
   const router = useRouter();
-
-  const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
+  // const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
+  const protectedCampaignQuery = useGetCampaignById(publicReadonly ? null : id);
+  const publicCampaignQuery = useGetCampaignByIdPublic(publicReadonly ? id : null);
+  const campaign = publicReadonly ? publicCampaignQuery.campaign : protectedCampaignQuery.campaign;
+  const campaignLoading = publicReadonly
+    ? publicCampaignQuery.campaignLoading
+    : protectedCampaignQuery.campaignLoading;
+  const campaignMutate = publicReadonly ? publicCampaignQuery.mutate : protectedCampaignQuery.mutate;
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
@@ -221,7 +227,7 @@ const CampaignDetailView = ({ id }) => {
   );
 
   // Check if user is client
-  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'Client';
+  const isClient = publicReadonly || user?.role === 'client' || user?.admin?.role?.name === 'Client';
 
   // Check user roles for activation
   const isCSL = user?.admin?.role?.name === 'CSL';
@@ -1256,4 +1262,5 @@ export default CampaignDetailView;
 
 CampaignDetailView.propTypes = {
   id: PropTypes.string,
+  publicReadonly: PropTypes.bool,
 };

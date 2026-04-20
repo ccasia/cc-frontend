@@ -456,6 +456,11 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
   const smUp = useResponsive('up', 'sm');
   const lgUp = useResponsive('up', 'lg');
 
+  // Guest creators must link a platform account before send; submissions merge by userId.
+  // Platform creators often have no AGREEMENT_FORM row until after the agreement is sent (v4 flow).
+  const guestNeedsLinkBeforeSend = (item) =>
+    item?.user?.creator?.isGuest === true && !item?.submission;
+
   // Get tier data for an agreement item
   const getTierDataForItem = (item) => {
     if (!campaign?.isCreditTier) return null;
@@ -1563,14 +1568,16 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                               // For pending (not sent) agreements, show Send Agreement button
                               <Tooltip
                                 title={
-                                  !item?.submission ? 'Link creator before sending agreement' : ''
+                                  guestNeedsLinkBeforeSend(item)
+                                    ? 'Link creator before sending agreement'
+                                    : ''
                                 }
                                 arrow
                               >
                                 <span>
                                   <Button
                                     onClick={() => handleEditAgreement(item)}
-                                    disabled={isDisabled || !item?.submission}
+                                    disabled={isDisabled || guestNeedsLinkBeforeSend(item)}
                                     size="small"
                                     variant="contained"
                                     startIcon={
