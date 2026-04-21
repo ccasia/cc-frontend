@@ -18,6 +18,7 @@ import {
   Avatar,
   Divider,
   Tooltip,
+  MenuItem,
   TableRow,
   TableBody,
   TextField,
@@ -52,6 +53,48 @@ import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import usePitchSocket from './use-pitch-socket';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
+
+const PLATFORM_OPTIONS = [
+  { value: 'instagram', label: 'Instagram', icon: 'ri:instagram-fill' },
+  { value: 'tiktok', label: 'TikTok', icon: 'ic:baseline-tiktok' },
+];
+
+const getPlatformFollowerCount = (creator, selectedPlatform) => {
+  if (!creator) return 0;
+
+  const igFollowers = creator?.creator?.instagramUser?.followers_count || 0;
+  const tkFollowers = creator?.creator?.tiktokUser?.follower_count || 0;
+  const hasInstagramConnected = !!creator?.creator?.instagramUser;
+  const hasTiktokConnected = !!creator?.creator?.tiktokUser;
+  const manualInstagramFollowers = creator?.creator?.manualInstagramFollowerCount || 0;
+  const manualTiktokFollowers = creator?.creator?.manualTiktokFollowerCount || 0;
+  const normalizedPlatform = selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram';
+
+  if (normalizedPlatform === 'instagram') {
+    if (hasInstagramConnected) return igFollowers;
+    if (manualInstagramFollowers > 0) return manualInstagramFollowers;
+  } else {
+    if (hasTiktokConnected) return tkFollowers;
+    if (manualTiktokFollowers > 0) return manualTiktokFollowers;
+  }
+
+  return 0;
+};
+
+const hasMediaKitForPlatform = (creator, selectedPlatform) => {
+  if (!creator) return false;
+  if (selectedPlatform === 'tiktok') return !!creator?.creator?.tiktokUser;
+  return !!creator?.creator?.instagramUser;
+};
+
+const hasAnyMediaKitLinked = (creator) =>
+  !!(creator?.creator?.instagramUser || creator?.creator?.tiktokUser);
+
+const getDefaultPlatformFromMediaKit = (creator) => {
+  if (creator?.creator?.instagramUser) return 'instagram';
+  if (creator?.creator?.tiktokUser) return 'tiktok';
+  return '';
+};
 
 const countPitchesByStatus = (pitches, statusList) =>
   pitches?.filter((pitch) => {
@@ -1605,7 +1648,14 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   const { data, isLoading } = useGetAllCreators();
   const { enqueueSnackbar } = useSnackbar();
   const [creatorRows, setCreatorRows] = useState([
-    { id: 1, creator: null, followerCount: '', adminComments: '', hasMediaKit: false },
+    {
+      id: 1,
+      creator: null,
+      followerCount: '',
+      adminComments: '',
+      hasMediaKit: false,
+      selectedPlatform: '',
+    },
   ]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -1618,27 +1668,6 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
 
   // Determine if this is a credit tier campaign (controls follower count field visibility)
   const isCreditTier = campaign?.isCreditTier || false;
-
-  // Get highest follower count from creator's connected accounts or manual entry
-  const getHighestFollowerCount = (creator) => {
-    const igFollowers = creator?.creator?.instagramUser?.followers_count || 0;
-    const tkFollowers = creator?.creator?.tiktokUser?.follower_count || 0;
-    const manualFollowers = creator?.creator?.manualFollowerCount || 0;
-
-    // If media kit exists, use highest between IG and TikTok
-    if (igFollowers > 0 || tkFollowers > 0) {
-      return Math.max(igFollowers, tkFollowers);
-    }
-
-    // Otherwise use manual follower count
-    return manualFollowers;
-  };
-
-  // Check if creator has media kit (connected Instagram or TikTok)
-  const hasMediaKitLinked = (creator) => {
-    if (!creator) return false;
-    return !!(creator?.creator?.instagramUser || creator?.creator?.tiktokUser);
-  };
 
   // Filter options - exclude already shortlisted and already selected in other rows
   const getFilteredOptions = (currentRowId) => {
@@ -1657,7 +1686,14 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
     if (creatorRows.length < 3) {
       setCreatorRows([
         ...creatorRows,
-        { id: Date.now(), creator: null, followerCount: '', adminComments: '', hasMediaKit: false },
+        {
+          id: Date.now(),
+          creator: null,
+          followerCount: '',
+          adminComments: '',
+          hasMediaKit: false,
+          selectedPlatform: '',
+        },
       ]);
     }
   };
@@ -1674,9 +1710,18 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
     setCreatorRows((rows) =>
       rows.map((row) => {
         if (row.id === rowId) {
-          const hasMediaKit = hasMediaKitLinked(selectedCreator);
-          // Always use getHighestFollowerCount - it handles priority: media kit > manualFollowerCount
-          const followerCount = getHighestFollowerCount(selectedCreator) || '';
+          const hasAnyMediaKit = hasAnyMediaKitLinked(selectedCreator);
+          const selectedPlatform = hasAnyMediaKit
+            ? getDefaultPlatformFromMediaKit(selectedCreator)
+            : row.selectedPlatform || '';
+          const hasMediaKit =
+            selectedCreator && selectedPlatform
+              ? hasMediaKitForPlatform(selectedCreator, selectedPlatform)
+              : false;
+          const followerCount =
+            selectedCreator && selectedPlatform
+              ? getPlatformFollowerCount(selectedCreator, selectedPlatform) || ''
+              : '';
           // Only reset adminComments when clearing creator (null), preserve when switching creators
           const shouldResetComments = selectedCreator === null;
           return {
@@ -1684,10 +1729,44 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
             creator: selectedCreator,
             followerCount,
             hasMediaKit,
+            selectedPlatform,
             adminComments: shouldResetComments ? '' : row.adminComments,
           };
         }
         return row;
+      })
+    );
+  };
+
+  const handlePlatformChange = (rowId, platform) => {
+    setCreatorRows((rows) =>
+      rows.map((row) => {
+        if (row.id !== rowId) return row;
+        const hasMediaKit = hasMediaKitForPlatform(row.creator, platform);
+        const resolvedFollowerCount = getPlatformFollowerCount(row.creator, platform);
+        const previousPlatform = row.selectedPlatform;
+        const previousResolvedFollowerCount =
+          row.creator && previousPlatform
+            ? getPlatformFollowerCount(row.creator, previousPlatform)
+            : 0;
+        const isUsingPreviousPlatformStoredValue =
+          previousResolvedFollowerCount > 0 &&
+          Number(row.followerCount || 0) === Number(previousResolvedFollowerCount);
+        const nextFollowerCount = row.creator
+          ? hasMediaKit
+            ? resolvedFollowerCount || ''
+            : resolvedFollowerCount > 0
+              ? resolvedFollowerCount
+              : isUsingPreviousPlatformStoredValue
+                ? ''
+                : row.followerCount
+          : '';
+        return {
+          ...row,
+          selectedPlatform: platform,
+          hasMediaKit,
+          followerCount: nextFollowerCount,
+        };
       })
     );
   };
@@ -1719,10 +1798,23 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   // Get valid creators from rows
   const getValidCreatorsFromRows = () =>
     creatorRows.filter((row) => row.creator !== null).map((row) => row.creator);
+  const hasMissingPlatformSelection = creatorRows.some(
+    (row) => row.creator && !hasAnyMediaKitLinked(row.creator) && !row.selectedPlatform
+  );
+  const hasMissingFollowerCount = creatorRows.some(
+    (row) => row.creator && !hasAnyMediaKitLinked(row.creator) && (!row.followerCount || Number(row.followerCount) <= 0)
+  );
 
   const resetState = () => {
     setCreatorRows([
-      { id: 1, creator: null, followerCount: '', adminComments: '', hasMediaKit: false },
+      {
+        id: 1,
+        creator: null,
+        followerCount: '',
+        adminComments: '',
+        hasMediaKit: false,
+        selectedPlatform: '',
+      },
     ]);
     setSubmitting(false);
   };
@@ -1750,6 +1842,27 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
       return;
     }
 
+    const missingPlatformRow = validRows.find(
+      (row) => !hasAnyMediaKitLinked(row.creator) && !row.selectedPlatform
+    );
+    if (missingPlatformRow) {
+      enqueueSnackbar('Please select Instagram or TikTok for each creator.', {
+        variant: 'error',
+      });
+      return;
+    }
+
+    const missingFollowerRow = validRows.find(
+      (row) =>
+        !hasAnyMediaKitLinked(row.creator) && (!row.followerCount || Number(row.followerCount) <= 0)
+    );
+    if (missingFollowerRow) {
+      enqueueSnackbar('Please fill in follower count for each creator.', {
+        variant: 'error',
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
 
@@ -1762,6 +1875,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
           return {
             id: row.creator.id,
             followerCount: !Number.isNaN(parsedFollowerCount) ? parsedFollowerCount : undefined,
+            selectedPlatform: row.selectedPlatform,
             adminComments: row.adminComments?.trim() || undefined,
           };
         }),
@@ -2014,9 +2128,57 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                         />
                       </Box>
 
+                      {row.creator && !hasAnyMediaKitLinked(row.creator) && (
+                        <Box
+                          sx={{
+                            minWidth: { xs: '100%', md: 138 },
+                            maxWidth: { xs: '100%', md: 138 },
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              mb: 0.5,
+                              display: 'block',
+                              color: '#636366',
+                              fontSize: '14px !important',
+                              fontWeight: 600,
+                            }}
+                          >
+                            Platform
+                          </Typography>
+                          <TextField
+                            select
+                            fullWidth
+                            value={row.selectedPlatform}
+                            onChange={(e) => handlePlatformChange(row.id, e.target.value)}
+                            disabled={!row.creator}
+                            placeholder="Select"
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                bgcolor: '#fff',
+                                minHeight: 48,
+                                borderRadius: 1,
+                              },
+                            }}
+                          >
+                            <MenuItem value="" disabled>
+                              Select
+                            </MenuItem>
+                            {PLATFORM_OPTIONS.map((platform) => (
+                              <MenuItem key={platform.value} value={platform.value}>
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                  <Iconify icon={platform.icon} width={16} />
+                                  <span>{platform.label}</span>
+                                </Stack>
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                        </Box>
+                      )}
+
                       {/* Conditional Follower Count Field with Animation */}
                       <AnimatePresence mode="wait">
-                        {row.creator && !row.hasMediaKit && (
+                        {row.creator && !hasAnyMediaKitLinked(row.creator) && (
                           <Box
                             key={`follower-${row.id}`}
                             component={m.div}
@@ -2076,7 +2238,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                       </AnimatePresence>
 
                       {/* CS Comments (Optional) */}
-                      <Box sx={{ flex: { xs: 1, md: 1.5 }, minWidth: { xs: '100%', md: 'auto' } }}>
+                      <Box sx={{ flex: { xs: 1, md: 1.2 }, minWidth: { xs: '100%', md: 'auto' } }}>
                         <Typography
                           sx={{
                             mb: 0.5,
@@ -2182,7 +2344,11 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
 
           <LoadingButton
             onClick={handleSubmit}
-            disabled={getValidCreatorsFromRows().length === 0}
+            disabled={
+              getValidCreatorsFromRows().length === 0 ||
+              hasMissingPlatformSelection ||
+              hasMissingFollowerCount
+            }
             loading={submitting}
             loadingIndicator={<CircularProgress size={20} sx={{ color: '#fff' }} />}
             sx={{
@@ -2228,7 +2394,16 @@ PlatformCreatorModal.propTypes = {
 
 export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaignId }) {
   const [formValues, setFormValues] = useState({
-    creators: [{ id: 1, name: '', followerCount: '', profileLink: '', adminComments: '' }],
+    creators: [
+      {
+        id: 1,
+        name: '',
+        followerCount: '',
+        profileLink: '',
+        adminComments: '',
+        selectedPlatform: 'instagram',
+      },
+    ],
   });
 
   const loading = useBoolean();
@@ -2252,6 +2427,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
             followerCount: '',
             profileLink: '',
             adminComments: '',
+            selectedPlatform: 'instagram',
           },
         ],
       }));
@@ -2299,6 +2475,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
       name: creator.name.trim(),
       profileLink: creator.profileLink.trim(),
       followerCount: creator.followerCount || undefined,
+      selectedPlatform: creator.selectedPlatform || 'instagram',
       adminComments: creator.adminComments?.trim() || undefined,
     }));
 
@@ -2327,6 +2504,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
             followerCount: '',
             profileLink: '',
             adminComments: '',
+            selectedPlatform: 'instagram',
           },
         ],
       });
@@ -2499,10 +2677,55 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
                     }}
                   />
                 </Box>
+
+                <Box
+                  sx={{
+                    minWidth: { xs: '100%', md: 138 },
+                    maxWidth: { xs: '100%', md: 138 },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      mb: 0.5,
+                      display: 'block',
+                      color: '#636366',
+                      fontSize: '14px !important',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Platform
+                  </Typography>
+                  <Stack direction="row" spacing={1}>
+                    {PLATFORM_OPTIONS.map((platform) => (
+                      <Button
+                        key={platform.value}
+                        variant={creator.selectedPlatform === platform.value ? 'contained' : 'outlined'}
+                        onClick={() => {
+                          const updatedCreators = [...formValues.creators];
+                          updatedCreators[index].selectedPlatform = platform.value;
+                          setFormValues({ ...formValues, creators: updatedCreators });
+                        }}
+                        sx={{
+                          minWidth: 58,
+                          px: 1,
+                          borderRadius: 1,
+                          borderColor: '#E7E7E7',
+                          color: creator.selectedPlatform === platform.value ? '#fff' : '#636366',
+                          bgcolor: creator.selectedPlatform === platform.value ? '#203ff5' : '#fff',
+                          '&:hover': {
+                            bgcolor: creator.selectedPlatform === platform.value ? '#1933cc' : '#f9f9f9',
+                          },
+                        }}
+                      >
+                        <Iconify icon={platform.icon} width={18} />
+                      </Button>
+                    ))}
+                  </Stack>
+                </Box>
               </Stack>
 
               {/* CS Comments - separate row below */}
-              <Box sx={{ mt: 2 }}>
+              <Box sx={{ mt: 2, maxWidth: { md: '75%' } }}>
                 <Typography
                   sx={{
                     mb: 0.5,
@@ -2689,6 +2912,16 @@ export function ViewNonPlatformCreatorsModal({
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.primary' }}>
                   {creator?.followerCount || '—'}
+                </Typography>
+              </Box>
+
+              {/* Platform */}
+              <Box flex={1}>
+                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
+                  Platform
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.primary', textTransform: 'capitalize' }}>
+                  {creator?.selectedPlatform || '—'}
                 </Typography>
               </Box>
 
