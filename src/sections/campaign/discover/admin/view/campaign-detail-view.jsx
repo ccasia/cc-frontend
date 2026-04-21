@@ -5,6 +5,7 @@ import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
 import { deepOrange } from '@mui/material/colors';
@@ -108,14 +109,9 @@ const clientAllowedTabs = [
 const CampaignDetailView = ({ id, publicReadonly = false, forcedTab = null }) => {
   const settings = useSettingsContext();
   const router = useRouter();
-  // const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
-  const protectedCampaignQuery = useGetCampaignById(publicReadonly ? null : id);
-  const publicCampaignQuery = useGetCampaignByIdPublic(publicReadonly ? id : null);
-  const campaign = publicReadonly ? publicCampaignQuery.campaign : protectedCampaignQuery.campaign;
-  const campaignLoading = publicReadonly
-    ? publicCampaignQuery.campaignLoading
-    : protectedCampaignQuery.campaignLoading;
-  const campaignMutate = publicReadonly ? publicCampaignQuery.mutate : protectedCampaignQuery.mutate;
+  const [searchParams] = useSearchParams();
+
+  const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
@@ -232,6 +228,28 @@ const CampaignDetailView = ({ id, publicReadonly = false, forcedTab = null }) =>
   // Check user roles for activation
   const isCSL = user?.admin?.role?.name === 'CSL';
   const isSuperAdmin = user?.admin?.mode === 'god';
+
+  const returnTo = searchParams.get('returnTo');
+  const safeReturnTo = returnTo && returnTo.startsWith('/') ? returnTo : null;
+
+  const handleBackNavigation = () => {
+    if (safeReturnTo) {
+      router.push(safeReturnTo);
+      return;
+    }
+
+    const historyIndex = window.history.state?.idx;
+    if (typeof historyIndex === 'number' && historyIndex > 0) {
+      router.back();
+      return;
+    }
+
+    if (isClient) {
+      router.push(paths.dashboard.client);
+    } else {
+      router.push(paths.dashboard.campaign.root);
+    }
+  };
 
   // Check if user can perform initial activation (CSL or Superadmin)
   const canInitialActivate = isCSL || isSuperAdmin;
@@ -888,13 +906,7 @@ const CampaignDetailView = ({ id, publicReadonly = false, forcedTab = null }) =>
         <Button
           color="inherit"
           startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
-          onClick={() => {
-            if (isClient) {
-              router.push(paths.dashboard.client);
-            } else {
-              router.push(paths.dashboard.campaign.root);
-            }
-          }}
+          onClick={handleBackNavigation}
           sx={{
             alignSelf: 'flex-start',
             color: '#636366',

@@ -1,11 +1,12 @@
 /* eslint-disable no-nested-ternary */
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Box, Card, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { paths } from 'src/routes/paths';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -16,6 +17,7 @@ import InstagramLayout from '../components/InstagramLayout';
 
 const ReportingView = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const settings = useSettingsContext();
   const [searchParams] = useSearchParams();
@@ -64,7 +66,7 @@ const ReportingView = () => {
             platform: 'Instagram',
             type: 'Reel',
             id: shortcode,
-            url: urlObj.href
+            url: urlObj.href,
           };
         }
         if (urlObj.pathname.includes('/p/')) {
@@ -73,7 +75,7 @@ const ReportingView = () => {
             platform: 'Instagram',
             type: 'Post',
             id: shortcode,
-            url: urlObj.href
+            url: urlObj.href,
           };
         }
       }
@@ -87,7 +89,7 @@ const ReportingView = () => {
             platform: 'TikTok',
             type: 'Video',
             id: shortcode,
-            url: urlObj.href
+            url: urlObj.href,
           };
         }
         if (urlObj.pathname.includes('/video/')) {
@@ -96,7 +98,7 @@ const ReportingView = () => {
             platform: 'TikTok',
             type: 'Video',
             id: videoId,
-            url: urlObj.href
+            url: urlObj.href,
           };
         }
         if (urlObj.pathname.match(/\/@[^/]+\/[^/]+/)) {
@@ -105,7 +107,7 @@ const ReportingView = () => {
             platform: 'TikTok',
             type: 'Video',
             id: videoId,
-            url: urlObj.href
+            url: urlObj.href,
           };
         }
       }
@@ -264,28 +266,33 @@ const ReportingView = () => {
     const returnPage = searchParams.get('returnPage');
     const returnCampaign = searchParams.get('returnCampaign');
     const returnSearch = searchParams.get('returnSearch');
-    
+
     // Build the return URL with preserved state
     let returnUrl = '/dashboard/report';
     const params = new URLSearchParams();
-    
+
     if (returnPage && returnPage !== '1') {
       params.set('page', returnPage);
     }
-    
+
     if (returnCampaign && returnCampaign !== 'all') {
       params.set('campaign', returnCampaign);
     }
-    
+
     if (returnSearch) {
       params.set('search', returnSearch);
     }
-    
+
     if (params.toString()) {
       returnUrl += `?${params.toString()}`;
     }
-    
+
     navigate(returnUrl);
+  };
+
+  const buildCampaignDetailsPath = (campaignId) => {
+    const returnTo = `${location.pathname}${location.search}`;
+    return `${paths.dashboard.campaign.details(campaignId)}?returnTo=${encodeURIComponent(returnTo)}`;
   };
 
   const renderCircularStat = ({ width, label, value, metricKey }) => {
@@ -605,18 +612,7 @@ const ReportingView = () => {
     if (!content.account) return null;
 
     return (
-      <Box sx={{ mt: 4, mr: { sm: 4, xs: 0 } }}>
-        <Typography
-          variant="h4"
-          sx={{
-            fontSize: 24,
-            fontWeight: 600,
-            mb: 3,
-          }}
-        >
-          Selected Content
-        </Typography>
-
+      <Box sx={{ mr: { sm: 4, xs: 0 } }}>
         {/* Campaign Info Banner - for dev testing only
           <Card sx={{ p: 2, mb: 3, backgroundColor: '#f8f9fa', border: '1px solid #e3f2fd' }}>
             <Typography variant="h6" sx={{ color: '#1976d2', mb: 1 }}>
@@ -648,7 +644,7 @@ const ReportingView = () => {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       {/* Header Section */}
-      <Stack direction="column" alignItems="flex-start" sx={{ mb: 5 }}>
+      <Stack direction="column" alignItems="flex-start" sx={{ mb: 3 }}>
         <Button
           startIcon={<Iconify icon="ion:chevron-back" />}
           onClick={handleBack}
@@ -689,10 +685,29 @@ const ReportingView = () => {
                 fontSize: { xs: 32, md: 42 },
                 fontWeight: 400,
                 lineHeight: { xs: '35px', sm: '50px' },
+                mb: 4,
               }}
             >
               Content Performance Report
             </Typography>
+
+            {content.campaignId && (
+              <Typography
+                component={RouterLink}
+                to={buildCampaignDetailsPath(content.campaignId)}
+                sx={{
+                  fontSize: { xs: 16, md: 24 },
+                  fontWeight: 800,
+                  color: '#1340FF',
+                  textDecoration: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                {content.campaignName || 'View campaign'}
+              </Typography>
+            )}
           </Box>
           {/* Right side: Logo */}
           <Box
