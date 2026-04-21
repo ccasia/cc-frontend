@@ -5,6 +5,7 @@ import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
@@ -31,7 +32,12 @@ import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import { collectMissingBDDraftFields } from 'src/contants/bd-draft-fields';
 
+import EmptyContent from 'src/components/empty-content/empty-content';
+import { useSettingsContext } from 'src/components/settings';
+import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
+
 export default function DraftCampaignListView() {
+  const settings = useSettingsContext();
   const { user } = useAuthContext();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
@@ -65,86 +71,158 @@ export default function DraftCampaignListView() {
     return owner?.admin?.user?.name || '—';
   };
 
+  const subtitle = isSuperadmin
+    ? 'All drafts created via BD invite links.'
+    : 'Drafts created from your invite link.';
+
   return (
-    <Container maxWidth="xl">
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Box>
-          <Typography variant="h4">Draft Briefs</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {isSuperadmin
-              ? 'All drafts created via BD invite links.'
-              : 'Drafts created from your invite link.'}
-          </Typography>
-        </Box>
-      </Stack>
+    <Container
+      maxWidth={settings.themeStretch ? false : 'xl'}
+      sx={{
+        px: { xs: 2, sm: 3, md: 4 },
+      }}
+    >
+      <CustomBreadcrumbs
+        heading="Draft Briefs"
+        links={[
+          { name: 'Dashboard', href: paths.dashboard.root },
+          { name: 'Campaign', href: paths.dashboard.campaign.root },
+          { name: 'Drafts' },
+        ]}
+        sx={{ mb: 1 }}
+      />
+
+      <Typography
+        variant="body1"
+        sx={{
+          color: '#636366',
+          mb: 3,
+          maxWidth: 720,
+        }}
+      >
+        {subtitle}
+      </Typography>
 
       {isLoading && (
-        <Stack alignItems="center" py={8}>
-          <CircularProgress />
-        </Stack>
+        <Box
+          sx={{
+            position: 'relative',
+            py: 12,
+            textAlign: 'center',
+          }}
+        >
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: (theme) => theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
       )}
 
       {!isLoading && !data?.length && (
-        <Stack alignItems="center" py={8}>
-          <Typography color="text.secondary">No draft campaigns yet.</Typography>
-        </Stack>
+        <EmptyContent
+          filled
+          title="No draft campaigns yet"
+          description={subtitle}
+          sx={{ py: 10, mt: 1 }}
+        />
       )}
 
       {!isLoading && data?.length > 0 && (
-        <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Brand name</TableCell>
-                <TableCell>Industry</TableCell>
-                <TableCell>Created</TableCell>
-                {isSuperadmin && <TableCell>BD owner</TableCell>}
-                <TableCell>Missing fields</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {data.map((campaign) => {
-                const missing = collectMissingBDDraftFields(campaign);
-                return (
-                  <TableRow key={campaign.id} hover>
-                    <TableCell>
-                      <Typography variant="subtitle2">{campaign.name}</Typography>
+        <Card variant="outlined" sx={{ borderRadius: 2, borderColor: 'divider' }}>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ typography: 'subtitle2', color: 'text.secondary' }}>
+                    Brand name
+                  </TableCell>
+                  <TableCell sx={{ typography: 'subtitle2', color: 'text.secondary' }}>
+                    Industry
+                  </TableCell>
+                  <TableCell sx={{ typography: 'subtitle2', color: 'text.secondary' }}>
+                    Created
+                  </TableCell>
+                  {isSuperadmin && (
+                    <TableCell sx={{ typography: 'subtitle2', color: 'text.secondary' }}>
+                      BD owner
                     </TableCell>
-                    <TableCell>{campaign.campaignBrief?.industries || '—'}</TableCell>
-                    <TableCell>{dayjs(campaign.createdAt).format('DD MMM YYYY')}</TableCell>
-                    {isSuperadmin && <TableCell>{getOwnerName(campaign)}</TableCell>}
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        label={missing.length === 0 ? 'Ready' : `${missing.length} missing`}
-                        color={missing.length === 0 ? 'success' : 'warning'}
-                        variant="outlined"
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        size="small"
-                        onClick={() => navigate(paths.dashboard.campaign.draftDetails(campaign.id))}
-                      >
-                        <LaunchIcon fontSize="small" />
-                      </IconButton>
+                  )}
+                  <TableCell sx={{ typography: 'subtitle2', color: 'text.secondary' }}>
+                    Missing fields
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ typography: 'subtitle2', color: 'text.secondary', width: 120 }}
+                  >
+                    Actions
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data.map((campaign) => {
+                  const missing = collectMissingBDDraftFields(campaign);
+                  return (
+                    <TableRow key={campaign.id} hover>
+                      <TableCell>
+                        <Typography variant="subtitle2">{campaign.name}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {campaign.campaignBrief?.industries || '—'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {dayjs(campaign.createdAt).format('DD MMM YYYY')}
+                        </Typography>
+                      </TableCell>
                       {isSuperadmin && (
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {getOwnerName(campaign)}
+                          </Typography>
+                        </TableCell>
+                      )}
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={missing.length === 0 ? 'Ready' : `${missing.length} missing`}
+                          color={missing.length === 0 ? 'success' : 'warning'}
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell align="right">
                         <IconButton
                           size="small"
-                          color="error"
-                          onClick={() => setConfirmDelete(campaign)}
+                          onClick={() =>
+                            navigate(paths.dashboard.campaign.draftDetails(campaign.id))
+                          }
+                          aria-label="Open draft"
                         >
-                          <DeleteIcon fontSize="small" />
+                          <LaunchIcon fontSize="small" />
                         </IconButton>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                        {isSuperadmin && (
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => setConfirmDelete(campaign)}
+                            aria-label="Delete draft"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Card>
       )}
 
       <Dialog open={!!confirmDelete} onClose={() => setConfirmDelete(null)}>
