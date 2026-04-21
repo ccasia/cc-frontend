@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { m, AnimatePresence } from 'framer-motion';
 import React, {
   useRef,
+  useMemo,
   useState,
   useEffect,
   forwardRef,
@@ -863,8 +864,6 @@ const ClientFeedbackModal = forwardRef(
     const [replyingToId, setReplyingToId] = useState(null);
     const [openRepliesById, setOpenRepliesById] = useState({});
     const [sessionNewReplyIds, setSessionNewReplyIds] = useState(new Set());
-
-    const [hasInteracted, setHasInteracted] = useState(false);
     const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
 
     const COUNTDOWN_SECONDS = 24 * 60 * 60;
@@ -898,8 +897,16 @@ const ClientFeedbackModal = forwardRef(
     const isTimerExpired = Boolean(feedbackDeadline) && timeLeft === 0;
     const effectiveIsLocked = isLocked || isPastVideo || isTimerExpired;
 
+    const hasClientInteraction = useMemo(() => {
+      const isClientNode = (node) => node?.user?.role === 'client' && node?.user?.id === user.id;
+      const isLikedByClient = (node) => node?.agreedBy?.some((a) => a.userId === user.id);
+      const walk = (list) =>
+        (list || []).some((c) => isClientNode(c) || isLikedByClient(c) || walk(c.replies));
+      return walk(comments);
+    }, [comments, user.id]);
+
     useImperativeHandle(ref, () => ({
-      getHasInteracted: () => hasInteracted,
+      getHasInteracted: () => hasClientInteraction,
       isLocked,
       isCountingDown,
       startCountdown: () => {
@@ -1218,7 +1225,6 @@ const ClientFeedbackModal = forwardRef(
           `/api/submissions/v4/comments/${commentId}/agree`
         );
 
-        setHasInteracted(true);
         setComments((prevComments) => {
           const toggleAgree = (list) =>
             list.map((comment) => {
@@ -1301,8 +1307,6 @@ const ClientFeedbackModal = forwardRef(
           }
         );
 
-        setHasInteracted(true);
-
         const newReply = {
           ...data,
           user: {
@@ -1349,8 +1353,6 @@ const ClientFeedbackModal = forwardRef(
             isClientDraft: !isCountingDown,
           }
         );
-
-        setHasInteracted(true);
 
         const newComment = {
           ...data,
@@ -1567,15 +1569,11 @@ const ClientFeedbackModal = forwardRef(
                             isPastVideo={isPastVideo}
                             isResolved={isResolved}
                             onDelete={
-                              !effectiveIsLocked && !isResolved
-                                ? handleDeleteComment
-                                : undefined
+                              !effectiveIsLocked && !isResolved ? handleDeleteComment : undefined
                             }
                             onUndoDelete={handleUndoDelete}
                             pendingDelete={pendingDeletes.has(reply.id)}
-                            pendingDeleteStartTime={
-                              pendingDeletes.get(reply.id)?.startTime
-                            }
+                            pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
                           />
                         </Box>
                       </m.div>
@@ -1583,85 +1581,91 @@ const ClientFeedbackModal = forwardRef(
                   };
 
                   return (
-                  <m.div
-                    key={comment.id}
-                    data-comment-id={comment.id}
-                    initial={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
-                    transition={{
-                      duration: 0.6,
-                      ease: [0.4, 0, 0.2, 1],
-                      height: { delay: 0.3, duration: 0.3 },
-                    }}
-                  >
-                    <Box
-                      ref={(el) => {
-                        if (el) commentRefs.current[comment.id] = el;
+                    <m.div
+                      key={comment.id}
+                      data-comment-id={comment.id}
+                      initial={{ opacity: 1, height: 'auto' }}
+                      exit={{
+                        opacity: 0,
+                        x: '100%',
+                        height: 0,
+                        marginBottom: 0,
+                        overflow: 'hidden',
+                      }}
+                      transition={{
+                        duration: 0.6,
+                        ease: [0.4, 0, 0.2, 1],
+                        height: { delay: 0.3, duration: 0.3 },
                       }}
                     >
-                      <CommentCard
-                        comment={comment}
-                        currentUser={user}
-                        isNew={comment.isNew}
-                        onReplyClick={(id) => setReplyingToId(id)}
-                        replyCount={allReplies.length}
-                        isRepliesOpen={isExpanded}
-                        onToggleReplies={() => {
-                          if (!isExpanded && sessionNewReplies.length > 0) {
-                            setSessionNewReplyIds((prev) => {
-                              const next = new Set(prev);
-                              sessionNewReplies.forEach((r) => next.delete(r.id));
-                              return next;
-                            });
-                          }
-                          setOpenRepliesById((prev) => ({
-                            ...prev,
-                            [comment.id]: prev[comment.id] === true ? undefined : true,
-                          }));
+                      <Box
+                        ref={(el) => {
+                          if (el) commentRefs.current[comment.id] = el;
                         }}
-                        onAgree={handleAgree}
-                        onTimestampClick={handleTimestampClick}
-                        isReplying={replyingToId === comment.id}
-                        onCancelReply={() => setReplyingToId(null)}
-                        onSubmitReply={handleInlineReplySubmit}
-                        isLocked={effectiveIsLocked}
-                        isPastVideo={isPastVideo}
-                        isResolved={isResolved}
-                        onDelete={
-                          !effectiveIsLocked && !isResolved ? handleDeleteComment : undefined
-                        }
-                        onUndoDelete={handleUndoDelete}
-                        pendingDelete={pendingDeletes.has(comment.id)}
-                        pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
-                      />
-
-                      {/* When expanded: merge all replies for continuous connector lines */}
-                      <Collapse
-                        in={isExpanded && allReplies.length > 0}
-                        timeout="auto"
-                        unmountOnExit
                       >
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
-                          <AnimatePresence initial={false}>
-                            {allReplies.map((reply, index) =>
-                              renderReplyItem(reply, index, allReplies)
-                            )}
-                          </AnimatePresence>
-                        </Box>
-                      </Collapse>
+                        <CommentCard
+                          comment={comment}
+                          currentUser={user}
+                          isNew={comment.isNew}
+                          onReplyClick={(id) => setReplyingToId(id)}
+                          replyCount={allReplies.length}
+                          isRepliesOpen={isExpanded}
+                          onToggleReplies={() => {
+                            if (!isExpanded && sessionNewReplies.length > 0) {
+                              setSessionNewReplyIds((prev) => {
+                                const next = new Set(prev);
+                                sessionNewReplies.forEach((r) => next.delete(r.id));
+                                return next;
+                              });
+                            }
+                            setOpenRepliesById((prev) => ({
+                              ...prev,
+                              [comment.id]: prev[comment.id] === true ? undefined : true,
+                            }));
+                          }}
+                          onAgree={handleAgree}
+                          onTimestampClick={handleTimestampClick}
+                          isReplying={replyingToId === comment.id}
+                          onCancelReply={() => setReplyingToId(null)}
+                          onSubmitReply={handleInlineReplySubmit}
+                          isLocked={effectiveIsLocked}
+                          isPastVideo={isPastVideo}
+                          isResolved={isResolved}
+                          onDelete={
+                            !effectiveIsLocked && !isResolved ? handleDeleteComment : undefined
+                          }
+                          onUndoDelete={handleUndoDelete}
+                          pendingDelete={pendingDeletes.has(comment.id)}
+                          pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
+                        />
 
-                      {/* Initial state: only session-new replies visible */}
-                      {!isExpanded && sessionNewReplies.length > 0 && (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
-                          <AnimatePresence initial={false}>
-                            {sessionNewReplies.map((reply, index) =>
-                              renderReplyItem(reply, index, sessionNewReplies)
-                            )}
-                          </AnimatePresence>
-                        </Box>
-                      )}
-                    </Box>
-                  </m.div>
+                        {/* When expanded: merge all replies for continuous connector lines */}
+                        <Collapse
+                          in={isExpanded && allReplies.length > 0}
+                          timeout="auto"
+                          unmountOnExit
+                        >
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
+                            <AnimatePresence initial={false}>
+                              {allReplies.map((reply, index) =>
+                                renderReplyItem(reply, index, allReplies)
+                              )}
+                            </AnimatePresence>
+                          </Box>
+                        </Collapse>
+
+                        {/* Initial state: only session-new replies visible */}
+                        {!isExpanded && sessionNewReplies.length > 0 && (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
+                            <AnimatePresence initial={false}>
+                              {sessionNewReplies.map((reply, index) =>
+                                renderReplyItem(reply, index, sessionNewReplies)
+                              )}
+                            </AnimatePresence>
+                          </Box>
+                        )}
+                      </Box>
+                    </m.div>
                   );
                 };
 
@@ -2013,7 +2017,7 @@ const ClientFeedbackModal = forwardRef(
             <Button
               variant="contained"
               disableElevation
-              disabled={effectiveIsLocked || isCountingDown}
+              disabled={effectiveIsLocked || isCountingDown || !hasClientInteraction}
               onClick={handleSendToAdmin}
               sx={{
                 fontWeight: 600,
