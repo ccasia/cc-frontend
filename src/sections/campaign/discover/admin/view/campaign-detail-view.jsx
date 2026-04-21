@@ -5,6 +5,7 @@ import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
 import { deepOrange } from '@mui/material/colors';
@@ -108,6 +109,7 @@ const clientAllowedTabs = [
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
   const router = useRouter();
+  const [searchParams] = useSearchParams();
 
   const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -226,6 +228,28 @@ const CampaignDetailView = ({ id }) => {
   // Check user roles for activation
   const isCSL = user?.admin?.role?.name === 'CSL';
   const isSuperAdmin = user?.admin?.mode === 'god';
+
+  const returnTo = searchParams.get('returnTo');
+  const safeReturnTo = returnTo && returnTo.startsWith('/') ? returnTo : null;
+
+  const handleBackNavigation = () => {
+    if (safeReturnTo) {
+      router.push(safeReturnTo);
+      return;
+    }
+
+    const historyIndex = window.history.state?.idx;
+    if (typeof historyIndex === 'number' && historyIndex > 0) {
+      router.back();
+      return;
+    }
+
+    if (isClient) {
+      router.push(paths.dashboard.client);
+    } else {
+      router.push(paths.dashboard.campaign.root);
+    }
+  };
 
   // Check if user can perform initial activation (CSL or Superadmin)
   const canInitialActivate = isCSL || isSuperAdmin;
@@ -875,13 +899,7 @@ const CampaignDetailView = ({ id }) => {
         <Button
           color="inherit"
           startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
-          onClick={() => {
-            if (isClient) {
-              router.push(paths.dashboard.client);
-            } else {
-              router.push(paths.dashboard.campaign.root);
-            }
-          }}
+          onClick={handleBackNavigation}
           sx={{
             alignSelf: 'flex-start',
             color: '#636366',
