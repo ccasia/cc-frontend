@@ -561,7 +561,7 @@ export default function BDBriefForm({ token }) {
           {/* Logo */}
           <Box
             component="img"
-            src="/cc_logo.png"
+            src="/Cult Creative Logo.svg"
             alt="Cult Creative"
             sx={{
               width: { xs: 122, md: 150 },
