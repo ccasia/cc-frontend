@@ -48,6 +48,11 @@ import PitchModal from '../pitch-modal';
 import MediaKitModal from '../media-kit-modal';
 import { useShortlistedCreators } from '../campaign-detail-creator/hooks/shortlisted-creator';
 
+const PLATFORM_OPTIONS = [
+  { value: 'instagram', icon: 'ri:instagram-fill' },
+  { value: 'tiktok', icon: 'ic:baseline-tiktok' },
+];
+
 const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -964,7 +969,15 @@ PlatformCreatorModal.propTypes = {
 
 export function NonPlatformCreatorFormDialog({ open, onClose, campaignId }) {
   const [formValues, setFormValues] = useState({
-    creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
+    creators: [
+      {
+        name: '',
+        followerCount: '',
+        profileLink: '',
+        adminComments: '',
+        selectedPlatform: 'instagram',
+      },
+    ],
   });
 
   const loading = useBoolean();
@@ -981,7 +994,13 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId }) {
         ...prev,
         creators: [
           ...prev.creators,
-          { name: '', followerCount: '', profileLink: '', adminComments: '' },
+          {
+            name: '',
+            followerCount: '',
+            profileLink: '',
+            adminComments: '',
+            selectedPlatform: 'instagram',
+          },
         ],
       }));
     }
@@ -1005,7 +1024,15 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId }) {
 
       onClose();
       setFormValues({
-        creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
+        creators: [
+          {
+            name: '',
+            followerCount: '',
+            profileLink: '',
+            adminComments: '',
+            selectedPlatform: 'instagram',
+          },
+        ],
       });
 
       enqueueSnackbar(res?.data?.message || 'Creators shortlisted successfully!');
@@ -1083,8 +1110,40 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId }) {
                   onChange={handleCreatorChange(index, 'profileLink')}
                 />
               </Box>
+
+              <Box sx={{ minWidth: 128 }}>
+                <Typography variant="caption" fontWeight="600" mb={0.5} display="block">
+                  Platform
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  {PLATFORM_OPTIONS.map((platform) => (
+                    <Button
+                      key={platform.value}
+                      variant={creator.selectedPlatform === platform.value ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        const updatedCreators = [...formValues.creators];
+                        updatedCreators[index].selectedPlatform = platform.value;
+                        setFormValues({ ...formValues, creators: updatedCreators });
+                      }}
+                      sx={{
+                        minWidth: 52,
+                        px: 1,
+                        borderRadius: 1,
+                        borderColor: '#E7E7E7',
+                        color: creator.selectedPlatform === platform.value ? '#fff' : '#636366',
+                        bgcolor: creator.selectedPlatform === platform.value ? '#203ff5' : '#fff',
+                        '&:hover': {
+                          bgcolor: creator.selectedPlatform === platform.value ? '#1933cc' : '#f9f9f9',
+                        },
+                      }}
+                    >
+                      <Iconify icon={platform.icon} width={16} />
+                    </Button>
+                  ))}
+                </Stack>
+              </Box>
             </Box>
-            <Box mb={2}>
+            <Box mb={2} sx={{ maxWidth: { md: '70%' } }}>
               <Typography variant="caption" fontWeight="600" mb={0.5} display="block">
                 CS Comments (Optional)
               </Typography>
