@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
 import React, { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams, Link as RouterLink } from 'react-router-dom';
 
 import { Clear, Search , ArrowUpward, ArrowDownward, ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 import {
@@ -17,16 +17,19 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
+
 import useGetClientCredits from 'src/hooks/use-get-client-credits';
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
 
-import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 import { fDate } from 'src/utils/format-time';
+import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import { useAuthContext } from 'src/auth/hooks';
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
 
   const [currentPage, setCurrentPage] = useState(() => {
@@ -163,6 +166,11 @@ const CampaignPerformanceTable = () => {
   }, [reportList, selectedCampaign, searchQuery, sortBy, sortDirection]);
 
   console.log('Report List: ', reportList)
+
+  const buildCampaignDetailsPath = (campaignId) => {
+    const returnTo = `${location.pathname}${location.search}`;
+    return `${paths.dashboard.campaign.details(campaignId)}?returnTo=${encodeURIComponent(returnTo)}`;
+  };
 
   const updateUrlParams = (page, campaign, search) => {
     const params = new URLSearchParams();
@@ -651,15 +659,34 @@ const CampaignPerformanceTable = () => {
                     >
                       Campaign
                     </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: 13,
-                        color: '#333',
-                        fontWeight: 500,
-                      }}
-                    >
-                      {row.campaignName}
-                    </Typography>
+                    {row.campaignId ? (
+                      <Typography
+                        component={RouterLink}
+                        to={buildCampaignDetailsPath(row.campaignId)}
+                        sx={{
+                          fontSize: 13,
+                          color: '#333',
+                          fontWeight: 500,
+                          textDecoration: 'none',
+                          '&:hover': {
+                            textDecoration: 'underline',
+                            color: '#1340FF',
+                          },
+                        }}
+                      >
+                        {row.campaignName}
+                      </Typography>
+                    ) : (
+                      <Typography
+                        sx={{
+                          fontSize: 13,
+                          color: '#333',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {row.campaignName}
+                      </Typography>
+                    )}
                   </Box>
 
                   {/* Posting Date */}
@@ -784,18 +811,40 @@ const CampaignPerformanceTable = () => {
                     </Stack>
                   </Box>
                   <Box sx={{ flex: '0 0 30%', px: 2, py: 1.5, maxWidth: '30%' }}>
-                    <Typography
-                      sx={{
-                        fontSize: 14,
-                        color: '#333',
-                        fontWeight: 500,
-                        whiteSpace: 'wrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {row.campaignName}
-                    </Typography>
+                    {row.campaignId ? (
+                      <Typography
+                        component={RouterLink}
+                        to={buildCampaignDetailsPath(row.campaignId)}
+                        sx={{
+                          fontSize: 14,
+                          color: '#333',
+                          fontWeight: 500,
+                          whiteSpace: 'wrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          textDecoration: 'none',
+                          '&:hover': {
+                            textDecoration: 'underline',
+                            color: '#1340FF',
+                          },
+                        }}
+                      >
+                        {row.campaignName}
+                      </Typography>
+                    ) : (
+                      <Typography
+                        sx={{
+                          fontSize: 14,
+                          color: '#333',
+                          fontWeight: 500,
+                          whiteSpace: 'wrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {row.campaignName}
+                      </Typography>
+                    )}
                   </Box>
                   <Box sx={{ flex: '0 0 10%', px: 2, py: 1.5, }}>
                     <Typography
