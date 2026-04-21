@@ -1,12 +1,13 @@
 /* eslint-disable no-nested-ternary */
 import { useState, useEffect, useCallback } from 'react';
-import { Link as RouterLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams, Link as RouterLink } from 'react-router-dom';
 
 import { Box, Card, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
+
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
-import { paths } from 'src/routes/paths';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
