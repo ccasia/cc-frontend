@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -6,91 +6,67 @@ import * as Yup from 'yup';
 import dayjs from 'dayjs';
 
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
-import LinearProgress from '@mui/material/LinearProgress';
-import CheckIcon from '@mui/icons-material/Check';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useSnackbar } from 'notistack';
-import Image from 'src/components/image';
 import FormProvider, { RHFTextField, RHFDatePicker } from 'src/components/hook-form';
 import { RHFSelect } from 'src/components/hook-form/rhf-select';
 
-const BRAND = {
-  blue: '#1340FF',
-  blueDark: '#0A2DB3',
-  blueMid: '#2D4FCC',
-  bluePale: '#EEF1FF',
-  blueBorder: '#B3C0FF',
-  bg: '#F7F6F3',
-  ink: '#1A1A1A',
-  mute: '#666',
-  mute2: '#888',
-  mute3: '#999',
-  mute4: '#BBB',
-  hairline: '#E0DDD8',
-  hairline2: '#D5D2CC',
-  hairline3: '#EEECEA',
-  neutral: '#FAFAF9',
-  hover: '#F0EDE8',
-  successBg: '#EAF3DE',
-  successInk: '#3B6D11',
+/* ─────────────────────────────────────────
+   Design tokens
+───────────────────────────────────────── */
+const T = {
+  ink: '#0a0910',
+  ink2: '#3a3848',
+  ink3: '#9896a8',
+  off: '#f6f5f1',
+  white: '#ffffff',
+  border: '#e5e3ee',
+  purple: '#8a5afe',
+  blue: '#1340ff',
+  grad: 'linear-gradient(135deg, #8a5afe, #1340ff)',
+  panel: '#09080f',
+  sans: '"Inter Display", Inter, sans-serif',
+  serif: '"Instrument Serif", serif',
+  dm: '"Inter Display", Inter, sans-serif',
 };
 
+/* ─────────────────────────────────────────
+   Data
+───────────────────────────────────────── */
 const INDUSTRIES = [
-  'F&B',
-  'Fashion',
-  'Beauty & Skincare',
-  'FMCG',
-  'Health & Wellness',
-  'Hotel & Travel',
-  'Home & Living',
-  'Technology',
-  'Banking & Finance',
-  'Lifestyle',
-  'Others',
+  'F&B', 'Fashion', 'Beauty & Skincare', 'FMCG', 'Health & Wellness',
+  'Hotel & Travel', 'Home & Living', 'Technology', 'Banking & Finance',
+  'Lifestyle', 'Others',
 ];
 
 const OBJECTIVES = [
-  {
-    val: 'Brand Awareness (Introduce brands to new audiences)',
-    title: 'Brand awareness',
-    desc: 'Introduce your brand to a new audience',
-  },
-  {
-    val: 'Product Launch (Generate buzz for new product/service)',
-    title: 'Product launch',
-    desc: 'Generate buzz for a new product or service',
-  },
-  {
-    val: 'Education (Educate audiences about product category)',
-    title: 'Education',
-    desc: 'Educate audiences about your brand or product category',
-  },
-  {
-    val: 'Community Building (Foster a loyal community around the brand’s values or lifestyle)',
-    title: 'Community building',
-    desc: 'Foster a loyal community around your brand values',
-  },
+  { val: 'Brand Awareness (Introduce brands to new audiences)', title: 'Brand awareness', desc: 'Introduce your brand to a new audience' },
+  { val: 'Product Launch (Generate buzz for new product/service)', title: 'Product launch', desc: 'Generate buzz for a new product or service' },
+  { val: 'Education (Educate audiences about product category)', title: 'Education', desc: 'Educate audiences about your brand or product' },
+  { val: "Community Building (Foster a loyal community around the brand's values or lifestyle)", title: 'Community building', desc: 'Foster loyalty around your brand values' },
 ];
 
 const KPI_OPTIONS = [
-  'Views (100k – 1M+)',
-  'Reach & impressions',
-  'Engagement rate',
-  'Link clicks',
-  'Foot traffic',
-  'App downloads',
-  'Sales / conversions',
-  'Follower growth',
-  'UGC volume',
+  'Views (100k – 1M+)', 'Reach & impressions', 'Engagement rate',
+  'Link clicks', 'Foot traffic', 'App downloads', 'Sales / conversions',
+  'Follower growth', 'UGC volume',
 ];
 
+const STEPS = [
+  { key: 'brand',      label: 'Brand',      check: (v) => v.brandName?.trim() && v.industry },
+  { key: 'timeline',   label: 'Timeline',   check: (v) => v.dateFrom && v.dateTo },
+  { key: 'objectives', label: 'Objectives', check: (v) => (v.secondaryObjectives ?? []).length > 0 },
+  { key: 'kpis',       label: 'KPIs',       check: (v) => (v.kpis ?? []).length > 0 },
+  { key: 'details',    label: 'Details',    check: () => true },
+];
+
+/* ─────────────────────────────────────────
+   Validation schema (unchanged)
+───────────────────────────────────────── */
 const schema = Yup.object().shape({
   brandName: Yup.string().trim().required('Please enter your brand name.'),
   industry: Yup.string().required('Please select an industry.'),
@@ -127,60 +103,223 @@ const defaultValues = {
   extraNotes: '',
 };
 
-// shared input styling so every TextField/Select matches the artifact
-const fieldSx = {
+/* ─────────────────────────────────────────
+   Shared input sx — underline style, no box
+───────────────────────────────────────── */
+const noBoxSx = {
+  '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
   '& .MuiOutlinedInput-root': {
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    fontSize: 14,
-    color: BRAND.ink,
-    '& fieldset': { borderColor: BRAND.hairline2, borderWidth: '0.5px' },
-    '&:hover fieldset': { borderColor: BRAND.hairline2 },
-    '&.Mui-focused fieldset': { borderColor: BRAND.blue, borderWidth: '1px' },
-    '&.Mui-focused': { boxShadow: '0 0 0 3px rgba(19,64,255,0.1)' },
+    borderRadius: 0,
+    fontFamily: T.dm,
+    fontSize: 16,
+    color: T.ink,
+    padding: 0,
+    background: 'transparent',
   },
   '& .MuiOutlinedInput-input': {
-    padding: '9px 13px',
-    '&::placeholder': { color: BRAND.mute4, opacity: 1 },
+    padding: '10px 0 12px',
+    fontFamily: T.dm,
+    fontSize: 16,
+    color: T.ink,
+    '&::placeholder': { color: '#cbc9d8', fontWeight: 300, opacity: 1 },
   },
-  '& .MuiInputBase-inputMultiline': { padding: 0 },
+  '& .MuiInputBase-inputMultiline': {
+    padding: '10px 0 12px',
+    fontFamily: T.dm,
+  },
+  '& .MuiSelect-icon': { right: 0 },
 };
 
-const labelSx = { fontSize: 13, fontWeight: 500, color: BRAND.ink, mb: '5px', display: 'block' };
-const hintSx = { fontSize: 12, color: BRAND.mute2, mb: '7px', lineHeight: 1.5 };
-const sectionTitleSx = {
-  fontSize: 10,
-  fontWeight: 600,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: BRAND.mute3,
-  mb: '14px',
-};
-
-function SectionCard({ title, children }) {
+/* ─────────────────────────────────────────
+   FieldWrap — adds animated gradient underline
+───────────────────────────────────────── */
+function FieldWrap({ children }) {
   return (
-    <Card
-      elevation={0}
+    <Box
       sx={{
-        bgcolor: '#fff',
-        border: `0.5px solid ${BRAND.hairline}`,
-        borderRadius: '12px',
-        px: 3,
-        py: '20px',
-        mb: '14px',
+        position: 'relative',
+        borderBottom: `1.5px solid ${T.border}`,
+        transition: 'border-color 0.2s',
+        '&:focus-within': { borderBottomColor: 'transparent' },
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          bottom: '-1px',
+          left: '50%',
+          right: '50%',
+          height: '2px',
+          background: T.grad,
+          transition: 'left 0.3s cubic-bezier(0.4,0,0.2,1), right 0.3s cubic-bezier(0.4,0,0.2,1)',
+          borderRadius: '2px',
+          pointerEvents: 'none',
+        },
+        '&:focus-within::after': { left: 0, right: 0 },
       }}
     >
-      <Typography sx={sectionTitleSx}>{title}</Typography>
       {children}
-    </Card>
+    </Box>
   );
 }
+FieldWrap.propTypes = { children: PropTypes.node };
 
-SectionCard.propTypes = {
-  title: PropTypes.string.isRequired,
-  children: PropTypes.node,
+/* ─────────────────────────────────────────
+   AnimSec — fade-up on scroll
+───────────────────────────────────────── */
+function AnimSec({ children, delay = 0 }) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold: 0.05 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <Box
+      ref={ref}
+      sx={{
+        mb: '72px',
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(20px)',
+        transition: `opacity 0.55s ease ${delay}ms, transform 0.55s ease ${delay}ms`,
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+AnimSec.propTypes = { children: PropTypes.node, delay: PropTypes.number };
+
+/* ─────────────────────────────────────────
+   InlineCheckIcon
+───────────────────────────────────────── */
+function CheckSvg({ stroke = 'currentColor', size = 9 }) {
+  return (
+    <Box
+      component="svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={stroke}
+      strokeWidth="3.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </Box>
+  );
+}
+CheckSvg.propTypes = { stroke: PropTypes.string, size: PropTypes.number };
+
+/* ─────────────────────────────────────────
+   FieldLabel
+───────────────────────────────────────── */
+function FieldLabel({ children, required }) {
+  return (
+    <Stack direction="row" alignItems="center" gap="5px" sx={{ mb: '10px' }}>
+      <Typography
+        sx={{
+          fontSize: 12,
+          fontWeight: 600,
+          letterSpacing: '0.3px',
+          textTransform: 'uppercase',
+          color: T.ink2,
+          fontFamily: T.sans,
+        }}
+      >
+        {children}
+      </Typography>
+      {required && (
+        <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: T.purple, flexShrink: 0 }} />
+      )}
+    </Stack>
+  );
+}
+FieldLabel.propTypes = { children: PropTypes.node, required: PropTypes.bool };
+
+/* ─────────────────────────────────────────
+   ErrorMsg
+───────────────────────────────────────── */
+function ErrMsg({ message }) {
+  if (!message) return null;
+  return (
+    <Stack direction="row" alignItems="center" gap="5px" sx={{ mt: '6px' }}>
+      <Box
+        component="svg"
+        width={11}
+        height={11}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#dc2626"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </Box>
+      <Typography sx={{ fontSize: 12, color: '#dc2626', fontFamily: T.dm }}>{message}</Typography>
+    </Stack>
+  );
+}
+ErrMsg.propTypes = { message: PropTypes.string };
+
+/* ─────────────────────────────────────────
+   SectionHeader — with ghost number
+───────────────────────────────────────── */
+function SectionHeader({ num, tag, title, sub }) {
+  return (
+    <Box sx={{ position: 'relative', mb: { xs: '16px', md: '20px' } }}>
+      {/* Ghost number */}
+      <Typography
+        sx={{
+          position: 'absolute',
+          top: { xs: '-8px', md: '-14px' },
+          right: 0,
+          fontSize: { xs: 44, sm: 56, md: 80 },
+          fontWeight: 700,
+          lineHeight: 1,
+          background: T.grad,
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          opacity: 0.1,
+          letterSpacing: '-4px',
+          pointerEvents: 'none',
+          fontFamily: T.sans,
+          userSelect: 'none',
+        }}
+      >
+        {num}
+      </Typography>
+      <Typography sx={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: T.ink3, mb: '10px', fontFamily: T.sans }}>
+        {tag}
+      </Typography>
+      <Typography component="h2" sx={{ fontSize: { xs: 22, md: 24 }, fontWeight: 700, color: T.ink, letterSpacing: '-0.6px', lineHeight: 1.15, mb: '6px', fontFamily: T.sans }}>
+        {title}
+      </Typography>
+      <Typography sx={{ fontSize: { xs: 13, md: 13.5 }, color: T.ink3, lineHeight: 1.7, fontFamily: T.dm }}>
+        {sub}
+      </Typography>
+    </Box>
+  );
+}
+SectionHeader.propTypes = {
+  num: PropTypes.string,
+  tag: PropTypes.string,
+  title: PropTypes.string,
+  sub: PropTypes.string,
 };
 
+/* ═══════════════════════════════════════════
+   MAIN COMPONENT
+═══════════════════════════════════════════ */
 export default function BDBriefForm({ token }) {
   const { enqueueSnackbar } = useSnackbar();
   const [bdName, setBdName] = useState(null);
@@ -197,61 +336,58 @@ export default function BDBriefForm({ token }) {
   } = methods;
   const values = watch();
 
+  /* Google Fonts */
+  useEffect(() => {
+    const id = 'cc-design-fonts';
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href =
+      'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,400;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap';
+    document.head.appendChild(link);
+  }, []);
+
+  /* BD lookup */
   useEffect(() => {
     let cancelled = false;
     axiosInstance
       .get(endpoints.bd.publicInfo(token))
-      .then((res) => {
-        if (!cancelled) setBdName(res.data?.bdName ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setLookupError(true);
-      });
-    return () => {
-      cancelled = true;
-    };
+      .then((res) => { if (!cancelled) setBdName(res.data?.bdName ?? null); })
+      .catch(() => { if (!cancelled) setLookupError(true); });
+    return () => { cancelled = true; };
   }, [token]);
 
+  /* body background */
   useEffect(() => {
     const prev = document.body.style.background;
-    document.body.style.background = BRAND.bg;
-    return () => {
-      document.body.style.background = prev;
-    };
+    document.body.style.background = T.off;
+    return () => { document.body.style.background = prev; };
   }, []);
 
-  const filled = useMemo(() => {
-    let n = 0;
-    if (values.brandName?.trim()) n += 1;
-    if (values.industry) n += 1;
-    if (values.dateFrom && values.dateTo) n += 1;
-    if ((values.secondaryObjectives ?? []).length === 2) n += 1;
-    if ((values.kpis ?? []).length > 0) n += 1;
-    return n;
-  }, [values]);
-  const pct = Math.round((filled / 5) * 100);
+  /* stepper active step */
+  const activeStep = STEPS.findIndex((s) => !s.check(values));
+  const progressSteps = STEPS.slice(0, -1);
+  const completedSteps = progressSteps.filter((s) => s.check(values)).length;
+  const progressPct = Math.round((completedSteps / progressSteps.length) * 100);
 
+  /* toggles */
   const toggleKpi = (k) => {
-    const set = new Set(values.kpis ?? []);
-    if (set.has(k)) set.delete(k);
-    else set.add(k);
-    setValue('kpis', Array.from(set), { shouldValidate: true });
+    const s = new Set(values.kpis ?? []);
+    if (s.has(k)) s.delete(k); else s.add(k);
+    setValue('kpis', Array.from(s), { shouldValidate: true });
   };
-
   const toggleObjective = (v) => {
-    const current = values.secondaryObjectives ?? [];
-    if (current.includes(v)) {
-      setValue(
-        'secondaryObjectives',
-        current.filter((x) => x !== v),
-        { shouldValidate: true }
-      );
+    const cur = values.secondaryObjectives ?? [];
+    if (cur.includes(v)) {
+      setValue('secondaryObjectives', cur.filter((x) => x !== v), { shouldValidate: true });
       return;
     }
-    if (current.length >= 2) return;
-    setValue('secondaryObjectives', [...current, v], { shouldValidate: true });
+    if (cur.length >= 2) return;
+    setValue('secondaryObjectives', [...cur, v], { shouldValidate: true });
   };
 
+  /* submit */
   const onSubmit = handleSubmit(
     async (data) => {
       const payload = {
@@ -278,10 +414,8 @@ export default function BDBriefForm({ token }) {
         if (payload.additionalInfo) rows.push(['Additional context', payload.additionalInfo]);
         setSubmittedRows(rows);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      } catch (err) {
-        enqueueSnackbar('Something went wrong submitting your brief. Please try again.', {
-          variant: 'error',
-        });
+      } catch {
+        enqueueSnackbar('Something went wrong submitting your brief. Please try again.', { variant: 'error' });
       }
     },
     (errs) => {
@@ -291,382 +425,608 @@ export default function BDBriefForm({ token }) {
   );
 
   const clearForm = () => reset(defaultValues);
-  const startOver = () => {
-    clearForm();
-    setSubmittedRows(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const startOver = () => { clearForm(); setSubmittedRows(null); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
+  /* ── Error page ── */
   if (lookupError) {
     return (
-      <Box sx={{ minHeight: '100vh', py: '2rem', px: '1rem' }}>
-        <Box sx={{ maxWidth: 660, mx: 'auto' }}>
-          <Card
-            elevation={0}
-            sx={{
-              textAlign: 'center',
-              p: '3rem 2rem',
-              bgcolor: '#fff',
-              border: `0.5px solid ${BRAND.hairline}`,
-              borderRadius: '12px',
-            }}
-          >
-            <Typography sx={{ fontSize: 18, fontWeight: 600, mb: 1, color: BRAND.ink }}>
-              Link not valid
-            </Typography>
-            <Typography sx={{ fontSize: 13, color: BRAND.mute }}>
-              This invite link isn&apos;t valid anymore. Please ask your contact at Cult Creative
-              for a new one.
-            </Typography>
-          </Card>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', px: 3, bgcolor: T.off }}>
+        <Box sx={{ textAlign: 'center', p: '3rem 2rem', bgcolor: T.white, border: `1.5px solid ${T.border}`, borderRadius: '16px', maxWidth: 440 }}>
+          <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 1, color: T.ink, fontFamily: T.sans }}>Link not valid</Typography>
+          <Typography sx={{ fontSize: 14, color: T.ink3, lineHeight: 1.6, fontFamily: T.dm }}>
+            This invite link isn&apos;t valid anymore. Please ask your contact at Cult Creative for a new one.
+          </Typography>
         </Box>
       </Box>
     );
   }
 
+  /* ════════════════════════════════════════════════
+     RENDER
+  ═══════════════════════════════════════════════ */
   return (
     <Box
       sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', lg: '480px 1fr' },
         minHeight: '100vh',
-        pt: '2rem',
-        pb: '4rem',
-        px: '1rem',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        width: '100%',
+        maxWidth: '100vw',
+        overflowX: 'clip',
       }}
     >
-      <Box sx={{ maxWidth: 660, mx: 'auto' }}>
-        {/* Topbar */}
-        <Stack direction="row" alignItems="center" spacing="10px">
-          <Box
-            component="div"
-            sx={{
-              position: 'relative',
-              width: 25,
-              height: 25,
-              // borderRadius: 1,
-              my: 3,
-            }}
-          >
-            <Image
-              src="/assets/icons/navbar/ic_navlogo.svg"
-              alt="Cult Creative Logo"
-              style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: 'inherit',
-              }}
-            />
-          </Box>
-          <Typography sx={{ fontSize: 14, fontWeight: 600, color: BRAND.ink }}>
-            Cult Creative
-          </Typography>
-          <Box sx={{ flex: 1 }} />
-          <Box
-            sx={{
-              fontSize: 11,
-              px: '10px',
-              py: '3px',
-              borderRadius: '20px',
-              bgcolor: BRAND.bluePale,
-              color: BRAND.blueDark,
-              border: `0.5px solid ${BRAND.blueBorder}`,
-              fontWeight: 500,
-            }}
-          >
-            Content Strategy Intake
-          </Box>
-        </Stack>
 
-        {submittedRows ? (
-          <Card
-            elevation={0}
+      {/* ══════════════════════════════
+          LEFT PANEL
+      ══════════════════════════════ */}
+      <Box
+        component="aside"
+        sx={{
+          bgcolor: T.panel,
+          position: { xs: 'relative', lg: 'sticky' },
+          top: { lg: 0 },
+          height: { xs: 'auto', lg: '100vh' },
+          display: 'flex',
+          flexDirection: 'column',
+          p: { xs: '26px 18px 24px', sm: '30px 22px 30px', lg: '44px 48px 40px' },
+          overflow: 'hidden',
+        }}
+      >
+        {/* Animated aurora blobs */}
+        {[
+          {
+            sx: {
+              width: { xs: 280, md: 480 }, height: { xs: 280, md: 480 },
+              background: 'radial-gradient(circle, rgba(138,90,254,.65) 0%, transparent 70%)',
+              top: -120, left: -80,
+              animation: 'blob1 14s ease-in-out infinite alternate',
+            },
+          },
+          {
+            sx: {
+              width: { xs: 240, md: 400 }, height: { xs: 240, md: 400 },
+              background: 'radial-gradient(circle, rgba(19,64,255,.6) 0%, transparent 70%)',
+              bottom: -100, right: -60,
+              animation: 'blob2 18s ease-in-out infinite alternate',
+            },
+          },
+          {
+            sx: {
+              width: { xs: 200, md: 300 }, height: { xs: 200, md: 300 },
+              background: 'radial-gradient(circle, rgba(138,90,254,.4) 0%, transparent 70%)',
+              top: '42%', left: '52%',
+              animation: 'blob3 11s ease-in-out infinite alternate',
+            },
+          },
+          {
+            sx: {
+              width: { xs: 160, md: 220 }, height: { xs: 160, md: 220 },
+              background: 'radial-gradient(circle, rgba(19,64,255,.35) 0%, transparent 70%)',
+              top: '18%', right: -10,
+              animation: 'blob4 9s ease-in-out infinite alternate',
+            },
+          },
+        ].map((blob, i) => (
+          <Box
+            key={i}
             sx={{
-              textAlign: 'center',
-              bgcolor: '#fff',
-              border: `0.5px solid ${BRAND.hairline}`,
-              borderRadius: '12px',
-              p: '3rem 2rem',
+              position: 'absolute',
+              borderRadius: '50%',
+              filter: 'blur(80px)',
+              pointerEvents: 'none',
+              willChange: 'transform',
+              '@keyframes blob1': {
+                '0%': { transform: 'translate(0,0) scale(1)' },
+                '35%': { transform: 'translate(55px,80px) scale(1.1)' },
+                '70%': { transform: 'translate(-30px,40px) scale(.93)' },
+                '100%': { transform: 'translate(75px,-45px) scale(1.06)' },
+              },
+              '@keyframes blob2': {
+                '0%': { transform: 'translate(0,0) scale(1)' },
+                '25%': { transform: 'translate(-65px,-55px) scale(1.12)' },
+                '65%': { transform: 'translate(45px,-75px) scale(.91)' },
+                '100%': { transform: 'translate(-55px,55px) scale(1.08)' },
+              },
+              '@keyframes blob3': {
+                '0%': { transform: 'translate(0,0) scale(1)' },
+                '45%': { transform: 'translate(-85px,65px) scale(1.14)' },
+                '100%': { transform: 'translate(65px,-75px) scale(.88)' },
+              },
+              '@keyframes blob4': {
+                '0%': { transform: 'translate(0,0) scale(1)' },
+                '55%': { transform: 'translate(-55px,80px) scale(1.18)' },
+                '100%': { transform: 'translate(35px,-55px) scale(.85)' },
+              },
+              ...blob.sx,
             }}
-          >
-            <Box
+          />
+        ))}
+
+        {/* Noise overlay */}
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0.04,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            backgroundSize: '180px',
+            pointerEvents: 'none',
+            zIndex: 1,
+          }}
+        />
+
+        {/* Panel content (above blobs) */}
+        <Box sx={{ position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+          {/* Logo */}
+          <Box
+            component="img"
+            src="/cc_logo.png"
+            alt="Cult Creative"
+            sx={{
+              width: { xs: 122, md: 150 },
+              height: 'auto',
+            }}
+          />
+
+          {/* Hero text */}
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', py: { xs: '28px', lg: '36px 0 28px' } }}>
+            <Typography sx={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(255,255,255,.55)', mb: '16px', fontFamily: T.sans }}>
+              Content Strategy Intake
+            </Typography>
+
+            <Typography
+              component="h1"
               sx={{
-                width: 52,
-                height: 52,
-                borderRadius: '50%',
-                bgcolor: BRAND.successBg,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mx: 'auto',
-                mb: '14px',
-                color: BRAND.successInk,
+                fontSize: { xs: 38, lg: 'clamp(38px, 4vw, 58px)' },
+                fontWeight: 700,
+                color: 'white',
+                lineHeight: 1.03,
+                letterSpacing: '-2px',
+                mb: '18px',
+                fontFamily: T.sans,
               }}
             >
-              <CheckIcon sx={{ fontSize: 22 }} />
-            </Box>
-            <Typography sx={{ fontSize: 18, fontWeight: 600, mb: 1, color: BRAND.ink }}>
-              Brief received!
-            </Typography>
-            <Typography sx={{ fontSize: 13, color: BRAND.mute, lineHeight: 1.6, mb: '1.5rem' }}>
-              Our team{bdName ? ` (${bdName})` : ''} will review your submission and come back with
-              a content strategy and creator recommendation shortly.
-            </Typography>
-
-            <Box
-              sx={{
-                bgcolor: BRAND.neutral,
-                border: `0.5px solid ${BRAND.hairline}`,
-                borderRadius: '10px',
-                p: '1rem 1.25rem',
-                textAlign: 'left',
-                mb: '1.5rem',
-              }}
-            >
-              <Typography
+              Let&apos;s build
+              <br />
+              <Box
+                component="em"
                 sx={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  letterSpacing: '0.07em',
-                  textTransform: 'uppercase',
-                  color: BRAND.mute3,
-                  mb: '10px',
+                  display: 'block',
+                  fontFamily: T.serif,
+                  fontStyle: 'italic',
+                  fontWeight: 400,
+                  background: T.grad,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  letterSpacing: '-1px',
                 }}
               >
-                Submission summary
-              </Typography>
-              {submittedRows.map(([k, v], i) => (
-                <Box
-                  key={k}
-                  sx={{
-                    display: 'flex',
-                    gap: 1,
-                    fontSize: 13,
-                    py: '5px',
-                    borderBottom:
-                      i === submittedRows.length - 1 ? 'none' : `0.5px solid ${BRAND.hairline3}`,
-                  }}
+                your campaign.
+              </Box>
+            </Typography>
+
+            <Typography sx={{ fontSize: 13.5, color: 'rgba(255,255,255,.62)', lineHeight: 1.8, maxWidth: { xs: '100%', md: 280 }, mb: { xs: '20px', lg: '36px' }, fontFamily: T.dm }}>
+              Fill in your brief and our team will prepare a tailored content strategy and creator
+              recommendations — no commitment required.
+            </Typography>
+
+            {/* Process steps */}
+            <Box sx={{ borderTop: '1px solid rgba(255,255,255,.07)', display: { xs: 'none', md: 'block' } }}>
+              {[
+                ['Share your brief', 'Tell us your goals, audience, and budget'],
+                ['Get strategy + shortlist', 'Our team maps your plan and recommends suitable creators'],
+                ['Launch with confidence', 'Approve the direction and we help you go live smoothly'],
+              ].map(([title, desc], i) => (
+                <Stack
+                  key={i}
+                  direction="row"
+                  alignItems="flex-start"
+                  gap="13px"
+                  sx={{ py: '15px', borderBottom: '1px solid rgba(255,255,255,.07)' }}
                 >
-                  <Box sx={{ color: BRAND.mute2, width: 130, flexShrink: 0 }}>{k}</Box>
-                  <Box sx={{ color: BRAND.ink, fontWeight: 500 }}>{v}</Box>
-                </Box>
+                  <Box
+                    sx={{
+                      width: 20, height: 20,
+                      borderRadius: '50%',
+                      border: '1px solid rgba(255,255,255,.18)',
+                      fontSize: 10, fontWeight: 700,
+                      color: 'rgba(255,255,255,.3)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, mt: '2px',
+                      fontFamily: T.sans,
+                    }}
+                  >
+                    {i + 1}
+                  </Box>
+                  <Box>
+                    <Typography sx={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'rgba(255,255,255,.7)', mb: '2px', fontFamily: T.sans }}>
+                      {title}
+                    </Typography>
+                    <Typography sx={{ fontSize: 11.5, color: 'rgba(255,255,255,.56)', lineHeight: 1.5, fontFamily: T.dm }}>
+                      {desc}
+                    </Typography>
+                  </Box>
+                </Stack>
               ))}
             </Box>
+          </Box>
 
-            <Button
-              variant="outlined"
-              onClick={startOver}
+          {/* Trust 2×2 grid */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '1px',
+              background: 'rgba(255,255,255,.07)',
+              border: '1px solid rgba(255,255,255,.07)',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              mt: 'auto',
+              minHeight: 0,
+              display: { xs: 'none', lg: 'grid' },
+            }}
+          >
+            {[
+              ['400+', 'Campaigns Launched'],
+              ['600K+', 'Total Reach Across Campaigns'],
+              ['3.7K+', 'Creators On Our Platform'],
+              ['1.9M+', 'Creator Payments Processed'],
+            ].map(([num, label], i) => (
+              <Box
+                key={i}
+                sx={{
+                  bgcolor: 'rgba(255,255,255,.025)',
+                  p: '14px 16px',
+                  borderTop: i >= 2 ? '1px solid rgba(255,255,255,.07)' : undefined,
+                  borderLeft: i % 2 === 1 ? '1px solid rgba(255,255,255,.07)' : undefined,
+                }}
+              >
+                <Typography sx={{ fontSize: 20, fontWeight: 700, color: 'white', letterSpacing: '-0.8px', lineHeight: 1, mb: '3px', fontFamily: T.sans }}>
+                  {num}
+                </Typography>
+                <Typography sx={{ fontSize: 10.5, color: 'rgba(255,255,255,.58)', fontWeight: 500, fontFamily: T.sans }}>
+                  {label}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Box>
+
+      {/* ══════════════════════════════
+          RIGHT FORM SIDE
+      ══════════════════════════════ */}
+      <Box
+        component="main"
+        sx={{
+          bgcolor: T.off,
+          position: 'relative',
+          minWidth: 0,
+          width: '100%',
+          // subtle purple tint at left edge
+          '&::before': {
+            content: '""',
+            position: 'fixed',
+            left: { xs: 0, lg: '480px' },
+            top: 0,
+            width: '120px',
+            height: '100vh',
+            background: 'linear-gradient(to right, rgba(138,90,254,.06), transparent)',
+            pointerEvents: 'none',
+            zIndex: 0,
+            display: { xs: 'none', lg: 'block' },
+          },
+        }}
+      >
+
+        {/* ── Named stepper bar ── */}
+        <Box
+          sx={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 50,
+            bgcolor: 'rgba(246,245,241,.93)',
+            backdropFilter: 'blur(16px)',
+            borderBottom: `1px solid ${T.border}`,
+            px: { xs: '14px', sm: '20px', md: '52px' },
+          }}
+        >
+          <Box sx={{ py: '12px' }}>
+            <Stack direction="row" justifyContent="flex-end" alignItems="center" sx={{ mb: '8px' }}>
+              {/* <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: T.blue, fontFamily: T.sans }}>
+                {progressPct}%
+              </Typography> */}
+            </Stack>
+
+            <Box
               sx={{
-                textTransform: 'none',
-                px: '20px',
-                py: '10px',
-                fontSize: 14,
-                fontWeight: 400,
-                borderRadius: '8px',
-                border: `0.5px solid ${BRAND.hairline2}`,
-                color: BRAND.mute,
-                '&:hover': { bgcolor: BRAND.hover, border: `0.5px solid ${BRAND.hairline2}` },
+                width: '100%',
+                height: 8,
+                borderRadius: '999px',
+                bgcolor: '#e9e7f2',
+                overflow: 'hidden',
               }}
             >
-              Submit another brief
-            </Button>
-          </Card>
-        ) : (
-          <>
-            {/* Header */}
-            <Box sx={{ mb: '1.75rem' }}>
-              <Typography sx={{ fontSize: 22, fontWeight: 600, color: BRAND.ink, mb: '6px' }}>
-                Tell us about your campaign
-              </Typography>
-              <Typography sx={{ fontSize: 14, color: BRAND.mute, lineHeight: 1.6 }}>
-                Fill in the details below and our team will prepare a tailored content strategy and
-                influencer recommendations for your brand.
-              </Typography>
-            </Box>
-
-            {/* Progress */}
-            <Box sx={{ mb: '1.5rem' }}>
-              <Stack direction="row" justifyContent="space-between" sx={{ mb: '5px' }}>
-                <Typography sx={{ fontSize: 12, color: BRAND.mute2 }}>
-                  {filled} of 5 required fields filled
-                </Typography>
-                <Typography sx={{ fontSize: 12, color: BRAND.mute2 }}>{pct}%</Typography>
-              </Stack>
-              <LinearProgress
-                variant="determinate"
-                value={pct}
+              <Box
                 sx={{
-                  height: 3,
-                  borderRadius: '3px',
-                  bgcolor: '#EEE',
-                  '& .MuiLinearProgress-bar': { bgcolor: BRAND.blue, borderRadius: '3px' },
+                  width: `${progressPct}%`,
+                  height: '100%',
+                  borderRadius: '999px',
+                  background: 'linear-gradient(90deg, #8a5afe 0%, #1340ff 100%)',
+                  transition: 'width 0.35s ease',
                 }}
               />
             </Box>
+          </Box>
+        </Box>
 
-            <FormProvider methods={methods} onSubmit={onSubmit}>
-              {/* Brand info */}
-              <SectionCard title="Brand info">
-                <Box sx={{ mb: '1.2rem' }}>
-                  <Typography component="label" sx={labelSx}>
-                    Brand name{' '}
-                    <Box component="span" sx={{ color: BRAND.blue, ml: '2px' }}>
-                      *
-                    </Box>
+        {/* ── SUCCESS SCREEN ── */}
+        {submittedRows ? (
+          <Box
+            sx={{
+                p: { xs: '46px 18px 60px', sm: '60px 20px', md: '80px 52px' },
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              minHeight: { xs: 'auto', md: '80vh' },
+              position: 'relative',
+              zIndex: 1,
+              animation: 'fadeUpSuccess 0.6s ease forwards',
+              '@keyframes fadeUpSuccess': {
+                from: { opacity: 0, transform: 'translateY(24px)' },
+                to: { opacity: 1, transform: 'translateY(0)' },
+              },
+            }}
+          >
+            {/* Check icon */}
+            <Box
+              sx={{
+                width: 56, height: 56,
+                background: T.grad,
+                borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                mb: '28px',
+                boxShadow: '0 8px 32px rgba(138,90,254,.35)',
+              }}
+            >
+              <Box
+                component="svg"
+                width={24}
+                height={24}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </Box>
+            </Box>
+
+            <Typography
+              component="h2"
+              sx={{
+                fontSize: { xs: 30, md: 44 },
+                fontWeight: 700,
+                color: T.ink,
+                letterSpacing: '-1.5px',
+                lineHeight: 1.05,
+                mb: '14px',
+                fontFamily: T.sans,
+              }}
+            >
+              Brief received.
+              <br />
+              <Box
+                component="em"
+                sx={{
+                  fontFamily: T.serif,
+                  fontStyle: 'italic',
+                  fontWeight: 400,
+                  background: T.grad,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                We&apos;ll be in touch.
+              </Box>
+            </Typography>
+
+            <Typography sx={{ fontSize: 15, color: T.ink3, maxWidth: 380, lineHeight: 1.75, mb: '36px', fontFamily: T.dm }}>
+              Our team{bdName ? ` (${bdName})` : ''} will review your campaign brief and reach out
+              within 1–2 business days with creator recommendations tailored to your goals.
+            </Typography>
+
+            {/* Next steps */}
+            <Box sx={{ maxWidth: 380, borderTop: `1px solid ${T.border}` }}>
+              {['Brief reviewed by your strategist', 'Creator shortlist prepared', 'Strategy call scheduled'].map((step, i) => (
+                <Stack
+                  key={i}
+                  direction="row"
+                  alignItems="center"
+                  gap="14px"
+                  sx={{ py: '16px', borderBottom: `1px solid ${T.border}` }}
+                >
+                  <Box
+                    sx={{
+                      width: 22, height: 22,
+                      borderRadius: '50%',
+                      border: `1px solid ${T.border}`,
+                      fontSize: 11, fontWeight: 700, color: T.ink3,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                      fontFamily: T.sans,
+                    }}
+                  >
+                    {i + 1}
+                  </Box>
+                  <Typography sx={{ fontSize: 14, fontWeight: 500, color: T.ink2, fontFamily: T.dm }}>
+                    {step}
                   </Typography>
-                  <RHFTextField
-                    name="brandName"
-                    size="small"
-                    placeholder="e.g. Spritzer, Levain Bakery"
-                    sx={fieldSx}
-                  />
+                </Stack>
+              ))}
+            </Box>
+
+            <Box
+              component="button"
+              onClick={startOver}
+              sx={{
+                mt: '32px',
+                fontFamily: T.sans,
+                fontSize: 13.5,
+                fontWeight: 600,
+                color: T.ink3,
+                bgcolor: 'transparent',
+                border: `1.5px solid ${T.border}`,
+                borderRadius: '100px',
+                px: '24px',
+                py: '12px',
+                cursor: 'pointer',
+                alignSelf: 'flex-start',
+                transition: 'all 0.15s',
+                '&:hover': { borderColor: '#ccc9e0', color: T.ink },
+              }}
+            >
+              Submit another brief
+            </Box>
+          </Box>
+        ) : (
+          /* ── FORM CONTENT ── */
+          <FormProvider methods={methods} onSubmit={onSubmit}>
+            <Box
+              sx={{
+                p: { xs: '28px 16px 72px', sm: '36px 20px 80px', md: '56px 52px 100px' },
+                maxWidth: { xs: '100%', lg: 920 },
+                position: 'relative',
+                zIndex: 1,
+                // RHF field components already render MUI helper text for errors.
+                // This page uses custom ErrMsg, so hide built-in helper to avoid duplicate warnings.
+                '& .MuiFormHelperText-root': { display: 'none' },
+              }}
+            >
+
+              {/* ── 01 BRAND ── */}
+              <AnimSec delay={0}>
+                <SectionHeader
+                  num="01"
+                  tag="Brand Info"
+                  title="Who are you?"
+                  sub="Tell us about your brand so we can match you with the right creators."
+                />
+                <Box sx={{ mb: '28px' }}>
+                  <FieldLabel required>Brand name</FieldLabel>
+                  <FieldWrap>
+                    <RHFTextField
+                      name="brandName"
+                      size="small"
+                      placeholder="e.g. Spritzer, Levain Bakery"
+                      sx={noBoxSx}
+                    />
+                  </FieldWrap>
+                  <ErrMsg message={errors.brandName?.message} />
                 </Box>
                 <Box>
-                  <Typography component="label" sx={labelSx}>
-                    Industry{' '}
-                    <Box component="span" sx={{ color: BRAND.blue, ml: '2px' }}>
-                      *
-                    </Box>
-                  </Typography>
-                  <RHFSelect
-                    name="industry"
-                    size="small"
-                    SelectProps={{
-                      displayEmpty: true,
-                      sx: { textTransform: 'none' },
-                    }}
-                    sx={fieldSx}
-                  >
-                    <MenuItem value="" disabled>
-                      Select your industry
-                    </MenuItem>
-                    {INDUSTRIES.map((i) => (
-                      <MenuItem key={i} value={i}>
-                        {i}
-                      </MenuItem>
-                    ))}
-                  </RHFSelect>
+                  <FieldLabel required>Industry</FieldLabel>
+                  <FieldWrap>
+                    <RHFSelect
+                      name="industry"
+                      size="small"
+                      SelectProps={{ displayEmpty: true, sx: { textTransform: 'none' } }}
+                      sx={noBoxSx}
+                    >
+                      <MenuItem value="" disabled>Select your industry</MenuItem>
+                      {INDUSTRIES.map((ind) => (
+                        <MenuItem key={ind} value={ind}>{ind}</MenuItem>
+                      ))}
+                    </RHFSelect>
+                  </FieldWrap>
+                  <ErrMsg message={errors.industry?.message} />
                 </Box>
-              </SectionCard>
+              </AnimSec>
 
-              {/* Timeline */}
-              <SectionCard title="Timeline">
-                <Typography component="label" sx={labelSx}>
-                  When do you want the content to go live?{' '}
-                  <Box component="span" sx={{ color: BRAND.blue, ml: '2px' }}>
-                    *
-                  </Box>
-                </Typography>
-                <Typography sx={hintSx}>
-                  This helps us plan creator briefing, production, and review schedules.
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                    gap: '12px',
-                  }}
-                >
+              {/* ── 02 TIMELINE ── */}
+              <AnimSec delay={60}>
+                <SectionHeader
+                  num="02"
+                  tag="Timeline"
+                  title="When does the content go live?"
+                  sub="Helps us plan creator briefing, production, and review schedules."
+                />
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: '28px' }}>
                   <Box>
-                    <Typography sx={{ fontSize: 11, color: BRAND.mute2, mb: '4px' }}>
-                      Earliest posting date{' '}
-                      <Box component="span" sx={{ color: BRAND.blue }}>
-                        *
-                      </Box>
-                    </Typography>
-                    <RHFDatePicker name="dateFrom" sx={fieldSx} />
+                    <FieldLabel required>Earliest date</FieldLabel>
+                    <FieldWrap>
+                      <RHFDatePicker name="dateFrom" sx={noBoxSx} />
+                    </FieldWrap>
+                    <ErrMsg message={errors.dateFrom?.message} />
                   </Box>
                   <Box>
-                    <Typography sx={{ fontSize: 11, color: BRAND.mute2, mb: '4px' }}>
-                      Latest posting date{' '}
-                      <Box component="span" sx={{ color: BRAND.blue }}>
-                        *
-                      </Box>
-                    </Typography>
-                    <RHFDatePicker name="dateTo" sx={fieldSx} />
+                    <FieldLabel required>Latest date</FieldLabel>
+                    <FieldWrap>
+                      <RHFDatePicker name="dateTo" sx={noBoxSx} />
+                    </FieldWrap>
+                    <ErrMsg message={errors.dateTo?.message} />
                   </Box>
                 </Box>
-              </SectionCard>
+              </AnimSec>
 
-              {/* Objective */}
-              <SectionCard title="Campaign objective">
-                <Typography component="label" sx={labelSx}>
-                  What are the secondary objectives of this campaign?{' '}
-                  <Box component="span" sx={{ color: BRAND.blue, ml: '2px' }}>
-                    *
-                  </Box>
-                </Typography>
-                <Typography sx={hintSx}>
-                  Select 2 that best describe what you want to achieve. (
-                  {(values.secondaryObjectives ?? []).length}/2 selected)
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                    gap: '8px',
-                  }}
-                >
+              {/* ── 03 OBJECTIVES ── */}
+              <AnimSec delay={80}>
+                <SectionHeader
+                  num="03"
+                  tag="Campaign Objective"
+                  title="Secondary objectives"
+                  sub={`Select up to 2 goals for this campaign. (${(values.secondaryObjectives ?? []).length}/2 selected)`}
+                />
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: '10px' }}>
                   {OBJECTIVES.map((o) => {
-                    const current = values.secondaryObjectives ?? [];
-                    const selected = current.includes(o.val);
-                    const disabled = !selected && current.length >= 2;
+                    const cur = values.secondaryObjectives ?? [];
+                    const on = cur.includes(o.val);
+                    const disabled = !on && cur.length >= 2;
                     return (
                       <Box
                         key={o.val}
                         onClick={() => !disabled && toggleObjective(o.val)}
                         sx={{
-                          cursor: disabled ? 'not-allowed' : 'pointer',
-                          userSelect: 'none',
-                          opacity: disabled ? 0.5 : 1,
-                          border: `0.5px solid ${selected ? BRAND.blue : BRAND.hairline}`,
-                          bgcolor: selected ? BRAND.bluePale : '#fff',
-                          borderRadius: '10px',
-                          p: '11px 13px',
                           display: 'flex',
                           alignItems: 'flex-start',
-                          gap: '9px',
-                          transition: 'border-color 0.15s, background 0.15s',
-                          '&:hover': !selected &&
-                            !disabled && {
-                              borderColor: '#C0BDB8',
-                              bgcolor: BRAND.neutral,
-                            },
+                          gap: '13px',
+                          p: '16px 18px',
+                          border: `1.5px solid ${on ? 'transparent' : T.border}`,
+                          borderRadius: '12px',
+                          cursor: disabled ? 'not-allowed' : 'pointer',
+                          userSelect: 'none',
+                          background: on ? T.grad : T.white,
+                          boxShadow: on ? '0 4px 16px rgba(138,90,254,.3)' : 'none',
+                          transition: 'border-color 0.15s, background 0.15s, transform 0.1s, box-shadow 0.2s',
+                          opacity: disabled ? 0.3 : 1,
+                          '&:hover': !on && !disabled ? { borderColor: '#ccc9e0', transform: 'translateY(-1px)' } : {},
+                          '&:active': !disabled ? { transform: 'translateY(0)' } : {},
                         }}
                       >
+                        {/* Checkbox */}
                         <Box
                           sx={{
-                            width: 15,
-                            height: 15,
-                            borderRadius: '4px',
-                            border: `1.5px solid ${selected ? BRAND.blue : '#CCC'}`,
-                            bgcolor: selected ? BRAND.blue : 'transparent',
-                            mt: '1px',
-                            flexShrink: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                            width: 19, height: 19,
+                            borderRadius: '6px',
+                            border: `1.5px solid ${on ? 'rgba(255,255,255,.95)' : T.border}`,
+                            bgcolor: on ? 'white' : 'transparent',
+                            flexShrink: 0, mt: '1px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.15s',
                           }}
                         >
-                          {selected && <CheckIcon sx={{ fontSize: 11, color: '#fff' }} />}
+                          {on && <CheckSvg stroke={T.ink} size={9} />}
                         </Box>
                         <Box>
-                          <Typography
-                            sx={{
-                              fontSize: 13,
-                              fontWeight: 500,
-                              color: selected ? BRAND.blueDark : BRAND.ink,
-                              mb: '2px',
-                            }}
-                          >
+                          <Typography sx={{ display: 'block', fontSize: 13.5, fontWeight: 600, color: on ? 'white' : T.ink, mb: '2px', fontFamily: T.sans }}>
                             {o.title}
                           </Typography>
-                          <Typography
-                            sx={{
-                              fontSize: 11,
-                              lineHeight: 1.4,
-                              color: selected ? BRAND.blueMid : BRAND.mute2,
-                            }}
-                          >
+                          <Typography sx={{ fontSize: 11.5, color: on ? 'rgba(255,255,255,.82)' : T.ink3, lineHeight: 1.4, fontFamily: T.dm }}>
                             {o.desc}
                           </Typography>
                         </Box>
@@ -674,164 +1034,194 @@ export default function BDBriefForm({ token }) {
                     );
                   })}
                 </Box>
-                {errors.secondaryObjectives && (
-                  <Typography sx={{ mt: '8px', fontSize: 12, color: '#D32F2F' }}>
-                    {errors.secondaryObjectives.message}
-                  </Typography>
-                )}
-              </SectionCard>
+                <ErrMsg message={errors.secondaryObjectives?.message} />
+              </AnimSec>
 
-              {/* KPIs */}
-              <SectionCard title="KPIs & success metrics">
-                <Box sx={{ mb: '1.2rem' }}>
-                  <Typography component="label" sx={labelSx}>
-                    Do you have specific KPIs in mind?{' '}
-                    <Box component="span" sx={{ color: BRAND.blue, ml: '2px' }}>
-                      *
-                    </Box>
-                  </Typography>
-                  <Typography sx={hintSx}>
-                    Select at least one that applies — these help us calibrate creator tier,
-                    content format, and posting strategy.
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '7px', mb: '10px' }}>
+              {/* ── 04 KPIs ── */}
+              <AnimSec delay={100}>
+                <SectionHeader
+                  num="04"
+                  tag="KPIs & Success Metrics"
+                  title="What does success look like?"
+                  sub="Select all that apply — these calibrate creator tier, format, and posting strategy."
+                />
+
+                <Box sx={{ mb: '28px' }}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '8px', mb: '8px' }}>
                     {KPI_OPTIONS.map((k) => {
-                      const selected = values.kpis?.includes(k);
+                      const active = values.kpis?.includes(k);
                       return (
-                        <Chip
+                        <Box
                           key={k}
-                          label={k}
+                          component="button"
+                          type="button"
                           onClick={() => toggleKpi(k)}
                           sx={{
-                            height: 'auto',
-                            px: '12px',
-                            py: '5px',
-                            borderRadius: '20px',
-                            fontSize: 12,
-                            fontWeight: 500,
-                            border: `0.5px solid ${selected ? BRAND.blue : BRAND.hairline}`,
-                            bgcolor: selected ? BRAND.bluePale : BRAND.neutral,
-                            color: selected ? BRAND.blueDark : '#555',
+                            fontFamily: T.dm,
+                            px: '18px',
+                            py: '9px',
+                            borderRadius: '100px',
+                            border: `1.5px solid ${active ? 'transparent' : T.border}`,
+                            background: active ? T.grad : T.white,
+                            color: active ? 'white' : T.ink2,
+                            fontSize: 13,
+                            fontWeight: 400,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: active ? '0 4px 16px rgba(138,90,254,.3)' : 'none',
+                            transform: active ? 'translateY(-1px)' : 'none',
                             '&:hover': {
-                              bgcolor: selected ? BRAND.bluePale : BRAND.neutral,
-                              borderColor: selected ? BRAND.blue : '#C0BDB8',
+                              borderColor: active ? 'transparent' : '#ccc9e0',
+                              color: active ? 'white' : T.ink,
+                              transform: 'translateY(-1px)',
                             },
-                            '& .MuiChip-label': { px: 0 },
                           }}
-                        />
+                        >
+                          {k}
+                        </Box>
                       );
                     })}
                   </Box>
-                  {errors.kpis && (
-                    <Typography sx={{ mt: '4px', fontSize: 12, color: '#D32F2F' }}>
-                      {errors.kpis.message}
-                    </Typography>
-                  )}
+                  <ErrMsg message={errors.kpis?.message} />
                 </Box>
+
                 <Box>
-                  <Typography component="label" sx={labelSx}>
-                    Any specific targets or context?
+                  <FieldLabel>Specific targets or context</FieldLabel>
+                  <Typography sx={{ fontSize: 12, color: T.ink3, mb: '8px', lineHeight: 1.6, fontFamily: T.dm }}>
+                    e.g. &quot;500k views per video&quot; or &quot;200 store visits over the campaign period&quot;
                   </Typography>
-                  <Typography sx={hintSx}>
-                    e.g. &quot;I want at least 500k views per video&quot; or &quot;We&apos;re
-                    targeting 200 store visits over the campaign period&quot;
-                  </Typography>
-                  <RHFTextField
-                    name="kpiNotes"
-                    multiline
-                    minRows={3}
-                    placeholder="Describe your targets here…"
-                    inputProps={{ maxLength: 300 }}
-                    sx={{
-                      ...fieldSx,
-                      '& .MuiOutlinedInput-root': {
-                        ...fieldSx['& .MuiOutlinedInput-root'],
-                        padding: '9px 13px',
-                      },
-                    }}
-                  />
-                  <Typography
-                    sx={{ fontSize: 11, color: BRAND.mute4, textAlign: 'right', mt: '4px' }}
-                  >
+                  <FieldWrap>
+                    <RHFTextField
+                      name="kpiNotes"
+                      multiline
+                      minRows={3}
+                      placeholder="Describe your targets here…"
+                      inputProps={{ maxLength: 300 }}
+                      sx={noBoxSx}
+                    />
+                  </FieldWrap>
+                  <Typography sx={{ fontSize: 11, color: T.ink3, textAlign: 'right', mt: '5px', fontFamily: T.dm, fontWeight: 300 }}>
                     {(values.kpiNotes ?? '').length} / 300
                   </Typography>
                 </Box>
-              </SectionCard>
+              </AnimSec>
 
-              {/* Extra */}
-              <SectionCard title="Anything else?">
-                <Typography component="label" sx={labelSx}>
-                  Additional context or requirements
-                </Typography>
-                <Typography sx={hintSx}>
-                  Budget range, key messages, content do&apos;s &amp; don&apos;ts, past campaigns —
-                  anything useful for our team.
-                </Typography>
-                <RHFTextField
-                  name="extraNotes"
-                  multiline
-                  minRows={3}
-                  placeholder="Optional notes…"
-                  inputProps={{ maxLength: 500 }}
-                  sx={{
-                    ...fieldSx,
-                    '& .MuiOutlinedInput-root': {
-                      ...fieldSx['& .MuiOutlinedInput-root'],
-                      padding: '9px 13px',
-                    },
-                  }}
+              {/* ── 05 EXTRA ── */}
+              <AnimSec delay={120}>
+                <SectionHeader
+                  num="05"
+                  tag="Anything Else?"
+                  title="Additional context"
+                  sub="Budget range, key messages, content do's & don'ts, past campaigns — anything useful for our team."
                 />
-                <Typography
-                  sx={{ fontSize: 11, color: BRAND.mute4, textAlign: 'right', mt: '4px' }}
-                >
+                <FieldWrap>
+                  <RHFTextField
+                    name="extraNotes"
+                    multiline
+                    minRows={4}
+                    placeholder="Optional notes…"
+                    inputProps={{ maxLength: 500 }}
+                    sx={noBoxSx}
+                  />
+                </FieldWrap>
+                <Typography sx={{ fontSize: 11, color: T.ink3, textAlign: 'right', mt: '5px', fontFamily: T.dm, fontWeight: 300 }}>
                   {(values.extraNotes ?? '').length} / 500
                 </Typography>
-              </SectionCard>
+              </AnimSec>
 
-              {/* Actions */}
-              <Stack direction="row" spacing="10px" justifyContent="flex-end" sx={{ mt: '6px' }}>
-                <Button
-                  type="button"
-                  variant="outlined"
-                  onClick={clearForm}
-                  disabled={isSubmitting}
-                  sx={{
-                    textTransform: 'none',
-                    px: '20px',
-                    py: '10px',
-                    fontSize: 14,
-                    fontWeight: 400,
-                    borderRadius: '8px',
-                    border: `0.5px solid ${BRAND.hairline2}`,
-                    color: BRAND.mute,
-                    bgcolor: 'transparent',
-                    '&:hover': { bgcolor: BRAND.hover, border: `0.5px solid ${BRAND.hairline2}` },
-                  }}
-                >
-                  Clear form
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={isSubmitting}
-                  sx={{
-                    textTransform: 'none',
-                    px: '24px',
-                    py: '10px',
-                    fontSize: 14,
-                    fontWeight: 500,
-                    borderRadius: '8px',
-                    bgcolor: BRAND.blue,
-                    color: '#fff',
-                    boxShadow: 'none',
-                    '&:hover': { bgcolor: BRAND.blue, opacity: 0.88, boxShadow: 'none' },
-                  }}
-                >
-                  {isSubmitting ? 'Submitting…' : 'Submit brief →'}
-                </Button>
-              </Stack>
-            </FormProvider>
-          </>
+              {/* ── SUBMIT ── */}
+              <AnimSec delay={140}>
+                <Box sx={{ borderTop: `1px solid ${T.border}`, pt: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} gap="12px">
+                    <Box
+                      component="button"
+                      type="button"
+                      onClick={clearForm}
+                      disabled={isSubmitting}
+                      sx={{
+                        fontFamily: T.sans,
+                        width: { xs: '100%', sm: 'auto' },
+                        px: '24px',
+                        py: '15px',
+                        bgcolor: 'transparent',
+                        border: `1.5px solid ${T.border}`,
+                        borderRadius: '100px',
+                        fontSize: 13.5,
+                        fontWeight: 600,
+                        color: T.ink3,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        whiteSpace: 'nowrap',
+                        '&:hover': { borderColor: '#ccc9e0', color: T.ink },
+                        '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
+                      }}
+                    >
+                      Clear form
+                    </Box>
+
+                    <Box
+                      component="button"
+                      type="submit"
+                      disabled={isSubmitting}
+                      sx={{
+                        fontFamily: T.sans,
+                        flex: 1,
+                        width: { xs: '100%', sm: 'auto' },
+                        px: '32px',
+                        py: '16px',
+                        background: T.grad,
+                        border: 'none',
+                        borderRadius: '100px',
+                        fontSize: 14.5,
+                        fontWeight: 700,
+                        color: 'white',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '9px',
+                        letterSpacing: '-0.2px',
+                        boxShadow: '0 4px 24px rgba(138,90,254,.35)',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          opacity: 0.92,
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 32px rgba(138,90,254,.45)',
+                        },
+                        '&:active': { transform: 'none' },
+                        '&:disabled': { opacity: 0.6, cursor: 'not-allowed', transform: 'none' },
+                        '&:hover svg': { transform: 'translateX(3px)' },
+                      }}
+                    >
+                      {isSubmitting ? 'Submitting…' : 'Submit brief'}
+                      {!isSubmitting && (
+                        <Box
+                          component="svg"
+                          width={15}
+                          height={15}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          sx={{ transition: 'transform 0.18s' }}
+                        >
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                          <polyline points="12 5 19 12 12 19" />
+                        </Box>
+                      )}
+                    </Box>
+                  </Stack>
+
+                  <Typography sx={{ fontSize: 12, color: T.ink3, textAlign: 'center', lineHeight: 1.65, fontFamily: T.dm }}>
+                    No commitment required. Submitting this brief is just an expression of interest.
+                  </Typography>
+                </Box>
+              </AnimSec>
+
+            </Box>
+          </FormProvider>
         )}
       </Box>
     </Box>

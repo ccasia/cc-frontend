@@ -4136,7 +4136,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         <Box sx={{ position: 'relative', right: '-5px' }}>
           <Box
             component="img"
-            src="/logo/CC.svg"
+            src="/cc_logo.png"
             alt="Cult Creative"
             sx={{
               width: '187px',
