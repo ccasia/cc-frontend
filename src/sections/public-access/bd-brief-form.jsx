@@ -42,7 +42,6 @@ const T = {
    Data
 ───────────────────────────────────────── */
 
-
 const OBJECTIVES = [
   {
     val: 'Brand Awareness (Introduce brands to new audiences)',
@@ -164,11 +163,7 @@ const LANGUAGE_OPTIONS = (() => {
   return [...preferred, ...rest];
 })();
 const COUNTRY_OPTIONS = Object.keys(countriesCities).sort((a, b) => a.localeCompare(b));
-const GEOGRAPHIC_FOCUS_OPTIONS = [
-  'SEA Region',
-  'Global',
-  'Others',
-];
+const GEOGRAPHIC_FOCUS_OPTIONS = ['SEA Region', 'Global', 'Others'];
 const CREATOR_PERSONA_OPTIONS = interestsLists.map((item) => ({
   value: item.toLowerCase(),
   label: item,
@@ -192,13 +187,35 @@ const noBoxSx = {
     fontFamily: T.dm,
     fontSize: 16,
     color: T.ink,
-    '&::placeholder': { color: '#cbc9d8', fontWeight: 300, opacity: 1 },
+    '&::placeholder': { color: T.ink3, fontWeight: 300, opacity: 1 },
   },
   '& .MuiInputBase-inputMultiline': {
     padding: '10px 0 12px',
     fontFamily: T.dm,
+    '&::placeholder': { color: T.ink3, fontWeight: 300, opacity: 1 },
+  },
+  '& .MuiSelect-select:has(em)': {
+    color: T.ink3,
+    fontWeight: 300,
+  },
+  '& .MuiSelect-select em': {
+    color: T.ink3,
+    fontWeight: 300,
+    fontStyle: 'normal',
   },
   '& .MuiSelect-icon': { right: 0 },
+};
+
+/* Placeholder renderer for RHFSelect — displays greyed text when empty. */
+const selectPlaceholder = (placeholder) => (selected) => {
+  if (!selected) {
+    return (
+      <Box component="span" sx={{ color: T.ink3, fontWeight: 300 }}>
+        {placeholder}
+      </Box>
+    );
+  }
+  return selected;
 };
 
 /* ─────────────────────────────────────────
@@ -1367,7 +1384,12 @@ export default function BDBriefForm({ token }) {
                     <RHFSelect
                       name="industry"
                       size="small"
-                      SelectProps={{ displayEmpty: true, sx: { textTransform: 'none' } }}
+                      SelectProps={{
+                        MenuProps: { PaperProps: { sx: { maxHeight: 320 } } },
+                        displayEmpty: true,
+                        sx: { textTransform: 'none' },
+                        renderValue: selectPlaceholder('Select your industry'),
+                      }}
                       sx={noBoxSx}
                     >
                       <MenuItem value="" disabled>
@@ -1742,6 +1764,7 @@ export default function BDBriefForm({ token }) {
                                 displayEmpty: true,
                                 sx: { textTransform: 'none' },
                                 MenuProps: { PaperProps: { sx: { maxHeight: 320 } } },
+                                renderValue: selectPlaceholder('Select a country'),
                               }}
                               sx={noBoxSx}
                             >
@@ -1766,12 +1789,27 @@ export default function BDBriefForm({ token }) {
                               size="small"
                               placeholder="Select one or more languages"
                               options={LANGUAGE_OPTIONS.map((l) => ({ value: l, label: l }))}
+                              MenuProps={{ PaperProps: { sx: { maxHeight: 320 } } }}
                               sx={{
                                 width: '100%',
                                 ...noBoxSx,
                                 '& .MuiOutlinedInput-root': {
                                   ...noBoxSx['& .MuiOutlinedInput-root'],
                                   width: '100%',
+                                },
+                                // Match RHFSelect size="small" dimensions + font
+                                '& .MuiSelect-select': {
+                                  padding: '10px 0 12px',
+                                  minHeight: 'auto',
+                                  fontSize: 16,
+                                  fontFamily: T.dm,
+                                  color: T.ink,
+                                  fontWeight: 400,
+                                },
+                                // Grey out placeholder Box rendered by RHFMultiSelect
+                                '& .MuiSelect-select > .MuiBox-root': {
+                                  color: T.ink3,
+                                  fontWeight: 300,
                                 },
                               }}
                             />
@@ -1787,12 +1825,25 @@ export default function BDBriefForm({ token }) {
                               size="small"
                               placeholder="Select one or more interests"
                               options={CREATOR_PERSONA_OPTIONS}
+                              MenuProps={{ PaperProps: { sx: { maxHeight: 320 } } }}
                               sx={{
                                 width: '100%',
                                 ...noBoxSx,
                                 '& .MuiOutlinedInput-root': {
                                   ...noBoxSx['& .MuiOutlinedInput-root'],
                                   width: '100%',
+                                },
+                                '& .MuiSelect-select': {
+                                  padding: '10px 0 12px',
+                                  minHeight: 'auto',
+                                  fontSize: 16,
+                                  fontFamily: T.dm,
+                                  color: T.ink,
+                                  fontWeight: 400,
+                                },
+                                '& .MuiSelect-select > .MuiBox-root': {
+                                  color: T.ink3,
+                                  fontWeight: 300,
                                 },
                               }}
                             />
@@ -1834,6 +1885,7 @@ export default function BDBriefForm({ token }) {
                                 displayEmpty: true,
                                 sx: { textTransform: 'none' },
                                 MenuProps: { PaperProps: { sx: { maxHeight: 320 } } },
+                                renderValue: selectPlaceholder('Select a geographic focus'),
                               }}
                               sx={noBoxSx}
                             >
