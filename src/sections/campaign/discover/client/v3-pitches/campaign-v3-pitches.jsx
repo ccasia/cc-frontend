@@ -203,7 +203,27 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   // Before the new system, creators could be shortlisted without having a pitch record
   // We need to display them as "APPROVED" rows to avoid missing data
   const mergedPitchesAndShortlisted = useMemo(() => {
+    const shortlistedByUserId = new Map(
+      (shortlistedCreators || [])
+        .filter((sc) => sc?.userId)
+        .map((sc) => [sc.userId, sc])
+    );
     const pitchUserIds = new Set((pitches || []).map((p) => p.userId));
+
+    // Enrich regular pitches with shortlisted snapshot values so tier/platform follow
+    // last-minute agreement edits (selectedPlatform/creditTier/creditPerVideo).
+    const pitchesWithShortlistedSnapshot = (pitches || []).map((pitch) => {
+      const shortlisted = shortlistedByUserId.get(pitch.userId);
+      if (!shortlisted) return pitch;
+
+      return {
+        ...pitch,
+        _shortlistedCreator: shortlisted,
+        _creditTier: shortlisted.creditTier || pitch._creditTier,
+        _creditPerVideo: shortlisted.creditPerVideo ?? pitch._creditPerVideo,
+        selectedPlatform: shortlisted.selectedPlatform ?? pitch.selectedPlatform,
+      };
+    });
 
     // Transform shortlisted creators (without pitch records) into pitch-like objects
     const shortlistedWithoutPitch = (shortlistedCreators || [])
@@ -231,7 +251,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         selectedPlatform: sc.selectedPlatform,
       }));
 
-    return [...(pitches || []), ...shortlistedWithoutPitch];
+    return [...pitchesWithShortlistedSnapshot, ...shortlistedWithoutPitch];
   }, [pitches, shortlistedCreators, campaign?.id]);
 
   // Count pitches by display status (using merged array)
@@ -431,8 +451,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         case 'tier': {
           // Get tier data using same logic as PitchRow
           const getTierCredits = (pitch) => {
-            // For synthetic shortlisted rows (manually added creators), use the tier snapshot
-            if (pitch._isShortlistedOnly && pitch._creditTier) {
+            // Prefer shortlisted tier snapshot (covers synthetic + regular pitches).
+            if (pitch._creditTier) {
               return pitch._creditPerVideo || pitch._creditTier?.creditsPerVideo || 0;
             }
             // For regular pitches, use creator's current tier

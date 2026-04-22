@@ -171,8 +171,8 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
 
   // Get tier data from synthetic shortlisted row or creator's current tier
   const getTierData = () => {
-    // For synthetic shortlisted rows (manually added creators), use the tier snapshot
-    if (pitch._isShortlistedOnly && pitch._creditTier) {
+    // Prefer shortlisted snapshot tier data (covers synthetic + regular pitches).
+    if (pitch._creditTier) {
       return {
         name: pitch._creditTier.name,
         creditsPerVideo: pitch._creditPerVideo || pitch._creditTier.creditsPerVideo,
