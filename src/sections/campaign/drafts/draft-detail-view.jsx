@@ -28,6 +28,7 @@ import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
 import UpdateAudience from 'src/sections/campaign/manage/details/UpdateAudience';
 import UpdateObjectives from 'src/sections/campaign/manage/details/UpdateObjectives';
 import DraftPackageSection from 'src/sections/campaign/drafts/draft-package-section';
+import UpdateBrandGuidelines from 'src/sections/campaign/manage/details/UpdateBrandGuidelines';
 import UpdateGeneralInformation from 'src/sections/campaign/manage/details/UpdateGeneralInformation';
 
 function SectionCard({ title, missingCount, children }) {
@@ -63,7 +64,6 @@ export default function DraftCampaignDetailView() {
   } = useSWR(id ? endpoints.campaign.getCampaignById(id) : null, fetcher);
 
   const [submitting, setSubmitting] = useState(false);
-  const [campaignCredits, setCampaignCredits] = useState('');
   const [dirtySections, setDirtySections] = useState({});
 
   const handleDirtyChange = useCallback(
@@ -76,12 +76,25 @@ export default function DraftCampaignDetailView() {
     []
   );
 
-  const onGeneralDirty = useMemo(() => handleDirtyChange('General Information'), [handleDirtyChange]);
-  const onObjectivesDirty = useMemo(() => handleDirtyChange('Campaign Objectives'), [handleDirtyChange]);
+  const onGeneralDirty = useMemo(
+    () => handleDirtyChange('General Information'),
+    [handleDirtyChange]
+  );
+  const onObjectivesDirty = useMemo(
+    () => handleDirtyChange('Campaign Objectives'),
+    [handleDirtyChange]
+  );
   const onAudienceDirty = useMemo(() => handleDirtyChange('Target Audience'), [handleDirtyChange]);
+  const onAttachmentDirty = useMemo(
+    () => handleDirtyChange('Other Attachment'),
+    [handleDirtyChange]
+  );
 
   const dirtyLabels = useMemo(
-    () => Object.entries(dirtySections).filter(([, v]) => v).map(([k]) => k),
+    () =>
+      Object.entries(dirtySections)
+        .filter(([, v]) => v)
+        .map(([k]) => k),
     [dirtySections]
   );
 
@@ -108,9 +121,7 @@ export default function DraftCampaignDetailView() {
     }
     setSubmitting(true);
     try {
-      await axiosInstance.post(endpoints.campaign.submitDraftForReview(id), {
-        campaignCredits: Number(campaignCredits),
-      });
+      await axiosInstance.post(endpoints.campaign.submitDraftForReview(id));
       enqueueSnackbar('Sent to CSM for review', { variant: 'success' });
       navigate(paths.dashboard.campaign.drafts);
     } catch (error) {
@@ -148,24 +159,15 @@ export default function DraftCampaignDetailView() {
 
   const resolvedCompany = campaign?.brand?.company || campaign?.company || null;
   const activeSub = resolvedCompany?.subscriptions?.find((s) => s.status === 'ACTIVE') || null;
-  const availableCredits = activeSub
-    ? (activeSub.totalCredits ?? 0) - (activeSub.creditsUsed ?? 0)
-    : 0;
 
-  const canSubmit =
-    missing.length === 0 &&
-    campaignCredits !== '' &&
-    Number(campaignCredits) > 0 &&
-    Number(campaignCredits) <= availableCredits;
+  const canSubmit = missing.length === 0 && !!activeSub;
 
   let footerMessage = 'Ready to submit.';
   if (!canSubmit) {
     if (missing.length > 0) {
       footerMessage = `${missing.length} required field${missing.length === 1 ? '' : 's'} remaining.`;
-    } else if (campaignCredits === '' || Number(campaignCredits) <= 0) {
-      footerMessage = 'Set campaign credits to submit.';
     } else {
-      footerMessage = `Credits exceed available (${availableCredits}).`;
+      footerMessage = 'Attach a package to submit.';
     }
   }
 
@@ -220,14 +222,18 @@ export default function DraftCampaignDetailView() {
         />
       </SectionCard>
 
-      {/* Section 4: Company / Brand */}
-      <SectionCard title="Company & Package" missingCount={missingBySection.package}>
-        <DraftPackageSection
+      {/* Section 4: Other Attachment */}
+      <SectionCard title="Other Attachment" missingCount={0}>
+        <UpdateBrandGuidelines
           campaign={campaign}
-          onSaved={mutate}
-          campaignCredits={campaignCredits}
-          onCreditsChange={setCampaignCredits}
+          campaignMutate={mutate}
+          onDirtyChange={onAttachmentDirty}
         />
+      </SectionCard>
+
+      {/* Section 5: Company / Brand */}
+      <SectionCard title="Company & Package" missingCount={missingBySection.package}>
+        <DraftPackageSection campaign={campaign} onSaved={mutate} />
       </SectionCard>
 
       {/* Sticky footer */}
@@ -252,7 +258,7 @@ export default function DraftCampaignDetailView() {
             </Typography>
             <DarkGlassTooltip
               title={
-                canSubmit ? '' : 'Fill all required fields and set campaign credits to submit.'
+                canSubmit ? '' : 'Fill all required fields and attach a package to submit.'
               }
             >
               <span>

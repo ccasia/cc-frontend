@@ -27,6 +27,18 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
     setOpenPreview(true);
   };
 
+  const isPdfFile = (file) => {
+    if (!file) return false;
+    if (file.type === 'application/pdf') return true;
+    const src = typeof file === 'string' ? file : file.preview || '';
+    try {
+      const pathname = new URL(src, window.location.origin).pathname;
+      return pathname.toLowerCase().endsWith('.pdf');
+    } catch {
+      return src.toLowerCase().includes('.pdf');
+    }
+  };
+
   const handleClosePreview = () => {
     setOpenPreview(false);
     setSelectedFile(null);
@@ -262,12 +274,14 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
       <Dialog
         open={openPreview}
         onClose={handleClosePreview}
-        maxWidth="md"
+        maxWidth={false}
+        fullWidth
         sx={{
           '& .MuiDialog-paper': {
             p: 0,
-            maxWidth: { xs: '95vw', sm: '85vw', md: '75vw' },
-            margin: { xs: '16px', sm: '32px' },
+            width: { xs: '95vw', sm: '92vw' },
+            maxWidth: { xs: '95vw', sm: '1200px' },
+            margin: { xs: '16px', sm: '24px' },
           },
         }}
       >
@@ -282,7 +296,7 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                 m: 0,
               }}
             >
-              Preview {selectedFile?.type === 'application/pdf' ? 'PDF' : 'Draft'}
+              Preview {isPdfFile(selectedFile) ? 'PDF' : 'Draft'}
             </Typography>
 
             <IconButton
@@ -311,13 +325,14 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
           <Stack spacing={2}>
             {selectedFile && (
               <>
-                {selectedFile.type === 'application/pdf' ? (
+                {isPdfFile(selectedFile) ? (
                   <Box
                     component="iframe"
                     src={selectedFile.preview || selectedFile}
                     sx={{
                       width: '100%',
-                      minHeight: '60vh',
+                      height: '85vh',
+                      border: 'none',
                       borderRadius: 1,
                       bgcolor: 'background.neutral',
                     }}
@@ -329,8 +344,13 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                     autoPlay={selectedFile.type?.startsWith('video/')}
                     controls={selectedFile.type?.startsWith('video/')}
                     sx={{
-                      width: '100%',
-                      maxHeight: '60vh',
+                      display: 'block',
+                      mx: 'auto',
+                      maxWidth: '100%',
+                      maxHeight: '80vh',
+                      width: 'auto',
+                      height: 'auto',
+                      objectFit: 'contain',
                       borderRadius: 1,
                       bgcolor: 'background.neutral',
                     }}

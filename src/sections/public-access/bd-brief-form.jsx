@@ -9,11 +9,15 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
+import GlobalStyles from '@mui/material/GlobalStyles';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useSnackbar } from 'notistack';
 import FormProvider, { RHFTextField, RHFDatePicker } from 'src/components/hook-form';
-import { RHFSelect } from 'src/components/hook-form/rhf-select';
+import { RHFSelect, RHFMultiSelect } from 'src/components/hook-form/rhf-select';
+import { langList } from 'src/contants/language';
+import { countriesCities } from 'src/contants/countries';
+import { interestsLists } from 'src/contants/interestLists';
 
 /* ─────────────────────────────────────────
    Design tokens
@@ -37,31 +41,53 @@ const T = {
 /* ─────────────────────────────────────────
    Data
 ───────────────────────────────────────── */
-const INDUSTRIES = [
-  'F&B', 'Fashion', 'Beauty & Skincare', 'FMCG', 'Health & Wellness',
-  'Hotel & Travel', 'Home & Living', 'Technology', 'Banking & Finance',
-  'Lifestyle', 'Others',
-];
+
 
 const OBJECTIVES = [
-  { val: 'Brand Awareness (Introduce brands to new audiences)', title: 'Brand awareness', desc: 'Introduce your brand to a new audience' },
-  { val: 'Product Launch (Generate buzz for new product/service)', title: 'Product launch', desc: 'Generate buzz for a new product or service' },
-  { val: 'Education (Educate audiences about product category)', title: 'Education', desc: 'Educate audiences about your brand or product' },
-  { val: "Community Building (Foster a loyal community around the brand's values or lifestyle)", title: 'Community building', desc: 'Foster loyalty around your brand values' },
+  {
+    val: 'Brand Awareness (Introduce brands to new audiences)',
+    title: 'Brand awareness',
+    desc: 'Introduce your brand to a new audience',
+  },
+  {
+    val: 'Product Launch (Generate buzz for new product/service)',
+    title: 'Product launch',
+    desc: 'Generate buzz for a new product or service',
+  },
+  {
+    val: 'Education (Educate audiences about product category)',
+    title: 'Education',
+    desc: 'Educate audiences about your brand or product',
+  },
+  {
+    val: "Community Building (Foster a loyal community around the brand's values or lifestyle)",
+    title: 'Community building',
+    desc: 'Foster loyalty around your brand values',
+  },
 ];
 
 const KPI_OPTIONS = [
-  'Views (100k – 1M+)', 'Reach & impressions', 'Engagement rate',
-  'Link clicks', 'Foot traffic', 'App downloads', 'Sales / conversions',
-  'Follower growth', 'UGC volume',
+  'Views (100k – 1M+)',
+  'Reach & impressions',
+  'Engagement rate',
+  'Link clicks',
+  'Foot traffic',
+  'App downloads',
+  'Sales / conversions',
+  'Follower growth',
+  'UGC volume',
 ];
 
 const STEPS = [
-  { key: 'brand',      label: 'Brand',      check: (v) => v.brandName?.trim() && v.industry },
-  { key: 'timeline',   label: 'Timeline',   check: (v) => v.dateFrom && v.dateTo },
-  { key: 'objectives', label: 'Objectives', check: (v) => (v.secondaryObjectives ?? []).length > 0 },
-  { key: 'kpis',       label: 'KPIs',       check: (v) => (v.kpis ?? []).length > 0 },
-  { key: 'details',    label: 'Details',    check: () => true },
+  { key: 'brand', label: 'Brand', check: (v) => v.brandName?.trim() && v.industry },
+  { key: 'timeline', label: 'Timeline', check: (v) => v.dateFrom && v.dateTo },
+  {
+    key: 'objectives',
+    label: 'Objectives',
+    check: (v) => (v.secondaryObjectives ?? []).length > 0,
+  },
+  { key: 'kpis', label: 'KPIs', check: (v) => (v.kpis ?? []).length > 0 },
+  { key: 'details', label: 'Details', check: () => true },
 ];
 
 /* ─────────────────────────────────────────
@@ -90,6 +116,14 @@ const schema = Yup.object().shape({
     .required('Please select at least one KPI.'),
   kpiNotes: Yup.string().max(300),
   extraNotes: Yup.string().max(500),
+  gender: Yup.array().of(Yup.string()),
+  age: Yup.array().of(Yup.string()),
+  country: Yup.string(),
+  language: Yup.array().of(Yup.string()),
+  creatorPersona: Yup.array().of(Yup.string()),
+  userPersona: Yup.string().max(500),
+  geographicFocus: Yup.string().max(200),
+  brandGuidelines: Yup.mixed().nullable(),
 });
 
 const defaultValues = {
@@ -101,7 +135,44 @@ const defaultValues = {
   kpis: [],
   kpiNotes: '',
   extraNotes: '',
+  gender: [],
+  age: [],
+  country: '',
+  language: [],
+  creatorPersona: [],
+  userPersona: '',
+  geographicFocus: '',
+  brandGuidelines: null,
 };
+
+const GENDER_OPTIONS = [
+  { value: 'female', label: 'Female' },
+  { value: 'male', label: 'Male' },
+  { value: 'nonbinary', label: 'Non-Binary' },
+];
+const AGE_OPTIONS = [
+  { value: '18-25', label: '18-25' },
+  { value: '26-34', label: '26-34' },
+  { value: '35-40', label: '35-40' },
+  { value: '>40', label: '>40' },
+];
+const LANGUAGE_OPTIONS = (() => {
+  const preferred = ['Malay', 'English'];
+  const rest = [...langList]
+    .filter((l) => !preferred.includes(l))
+    .sort((a, b) => a.localeCompare(b));
+  return [...preferred, ...rest];
+})();
+const COUNTRY_OPTIONS = Object.keys(countriesCities).sort((a, b) => a.localeCompare(b));
+const GEOGRAPHIC_FOCUS_OPTIONS = [
+  'SEA Region',
+  'Global',
+  'Others',
+];
+const CREATOR_PERSONA_OPTIONS = interestsLists.map((item) => ({
+  value: item.toLowerCase(),
+  label: item,
+}));
 
 /* ─────────────────────────────────────────
    Shared input sx — underline style, no box
@@ -172,7 +243,12 @@ function AnimSec({ children, delay = 0 }) {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      ([e]) => {
+        if (e.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
       { threshold: 0.05 }
     );
     obs.observe(el);
@@ -298,13 +374,36 @@ function SectionHeader({ num, tag, title, sub }) {
       >
         {num}
       </Typography>
-      <Typography sx={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: T.ink3, mb: '10px', fontFamily: T.sans }}>
+      <Typography
+        sx={{
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '2px',
+          textTransform: 'uppercase',
+          color: T.ink3,
+          mb: '10px',
+          fontFamily: T.sans,
+        }}
+      >
         {tag}
       </Typography>
-      <Typography component="h2" sx={{ fontSize: { xs: 22, md: 24 }, fontWeight: 700, color: T.ink, letterSpacing: '-0.6px', lineHeight: 1.15, mb: '6px', fontFamily: T.sans }}>
+      <Typography
+        component="h2"
+        sx={{
+          fontSize: { xs: 22, md: 24 },
+          fontWeight: 700,
+          color: T.ink,
+          letterSpacing: '-0.6px',
+          lineHeight: 1.15,
+          mb: '6px',
+          fontFamily: T.sans,
+        }}
+      >
         {title}
       </Typography>
-      <Typography sx={{ fontSize: { xs: 13, md: 13.5 }, color: T.ink3, lineHeight: 1.7, fontFamily: T.dm }}>
+      <Typography
+        sx={{ fontSize: { xs: 13, md: 13.5 }, color: T.ink3, lineHeight: 1.7, fontFamily: T.dm }}
+      >
         {sub}
       </Typography>
     </Box>
@@ -317,6 +416,144 @@ SectionHeader.propTypes = {
   sub: PropTypes.string,
 };
 
+/* ─────────────────────────────────────────
+   ChipToggle — small pill multi-select
+───────────────────────────────────────── */
+function ChipToggle({ active, onClick, children }) {
+  return (
+    <Box
+      component="button"
+      type="button"
+      onClick={onClick}
+      sx={{
+        fontFamily: T.dm,
+        px: '16px',
+        py: '8px',
+        borderRadius: '100px',
+        border: `1.5px solid ${active ? 'transparent' : T.border}`,
+        background: active ? T.grad : T.white,
+        color: active ? 'white' : T.ink2,
+        fontSize: 13,
+        fontWeight: 400,
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        boxShadow: active ? '0 4px 16px rgba(138,90,254,.3)' : 'none',
+        '&:hover': {
+          borderColor: active ? 'transparent' : '#ccc9e0',
+          color: active ? 'white' : T.ink,
+          transform: 'translateY(-1px)',
+        },
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+ChipToggle.propTypes = {
+  active: PropTypes.bool,
+  onClick: PropTypes.func,
+  children: PropTypes.node,
+};
+
+/* ─────────────────────────────────────────
+   FileDrop — minimal file input styled
+───────────────────────────────────────── */
+function FileDrop({ label, accept, file, onChange, hint }) {
+  const inputRef = useRef(null);
+  return (
+    <Box>
+      <FieldLabel>{label}</FieldLabel>
+      {hint && (
+        <Typography
+          sx={{ fontSize: 12, color: T.ink3, mb: '8px', lineHeight: 1.6, fontFamily: T.dm }}
+        >
+          {hint}
+        </Typography>
+      )}
+      <Box
+        component="button"
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        sx={{
+          width: '100%',
+          fontFamily: T.dm,
+          textAlign: 'left',
+          px: '16px',
+          py: '14px',
+          bgcolor: T.white,
+          border: `1.5px solid ${file ? T.purple : T.border}`,
+          borderRadius: '12px',
+          fontSize: 13,
+          color: file ? T.ink : T.ink3,
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          '&:hover': { borderColor: T.purple, color: T.ink },
+        }}
+      >
+        <Box
+          component="span"
+          sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        >
+          {file ? file.name : 'Click to choose a file'}
+        </Box>
+        {file ? (
+          <Box
+            component="span"
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange(null);
+            }}
+            sx={{
+              fontSize: 11,
+              color: T.ink3,
+              fontWeight: 600,
+              letterSpacing: '0.3px',
+              textTransform: 'uppercase',
+              '&:hover': { color: T.ink },
+            }}
+          >
+            Remove
+          </Box>
+        ) : (
+          <Box
+            component="span"
+            sx={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '1px',
+              textTransform: 'uppercase',
+              color: T.purple,
+            }}
+          >
+            Browse
+          </Box>
+        )}
+      </Box>
+      <Box
+        component="input"
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+        sx={{ display: 'none' }}
+      />
+    </Box>
+  );
+}
+FileDrop.propTypes = {
+  label: PropTypes.string,
+  accept: PropTypes.string,
+  file: PropTypes.object,
+  onChange: PropTypes.func,
+  hint: PropTypes.string,
+};
+
 /* ═══════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════ */
@@ -325,6 +562,7 @@ export default function BDBriefForm({ token }) {
   const [bdName, setBdName] = useState(null);
   const [lookupError, setLookupError] = useState(false);
   const [submittedRows, setSubmittedRows] = useState(null);
+  const [extraOpen, setExtraOpen] = useState(false);
 
   const methods = useForm({ resolver: yupResolver(schema), defaultValues, mode: 'onTouched' });
   const {
@@ -353,16 +591,24 @@ export default function BDBriefForm({ token }) {
     let cancelled = false;
     axiosInstance
       .get(endpoints.bd.publicInfo(token))
-      .then((res) => { if (!cancelled) setBdName(res.data?.bdName ?? null); })
-      .catch(() => { if (!cancelled) setLookupError(true); });
-    return () => { cancelled = true; };
+      .then((res) => {
+        if (!cancelled) setBdName(res.data?.bdName ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setLookupError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   /* body background */
   useEffect(() => {
     const prev = document.body.style.background;
     document.body.style.background = T.off;
-    return () => { document.body.style.background = prev; };
+    return () => {
+      document.body.style.background = prev;
+    };
   }, []);
 
   /* stepper active step */
@@ -374,13 +620,24 @@ export default function BDBriefForm({ token }) {
   /* toggles */
   const toggleKpi = (k) => {
     const s = new Set(values.kpis ?? []);
-    if (s.has(k)) s.delete(k); else s.add(k);
+    if (s.has(k)) s.delete(k);
+    else s.add(k);
     setValue('kpis', Array.from(s), { shouldValidate: true });
+  };
+  const toggleArrField = (name, val) => {
+    const s = new Set(values[name] ?? []);
+    if (s.has(val)) s.delete(val);
+    else s.add(val);
+    setValue(name, Array.from(s), { shouldValidate: false });
   };
   const toggleObjective = (v) => {
     const cur = values.secondaryObjectives ?? [];
     if (cur.includes(v)) {
-      setValue('secondaryObjectives', cur.filter((x) => x !== v), { shouldValidate: true });
+      setValue(
+        'secondaryObjectives',
+        cur.filter((x) => x !== v),
+        { shouldValidate: true }
+      );
       return;
     }
     if (cur.length >= 2) return;
@@ -401,8 +658,37 @@ export default function BDBriefForm({ token }) {
         kpiNotes: data.kpiNotes?.trim() || null,
         additionalInfo: data.extraNotes?.trim() || null,
       };
+      const audiencePayload = {
+        gender: data.gender ?? [],
+        age: data.age ?? [],
+        country: data.country?.trim() || '',
+        language: data.language ?? [],
+        creator_persona: data.creatorPersona ?? [],
+        user_persona: data.userPersona?.trim() || '',
+        geographic_focus: data.geographicFocus?.trim() || '',
+      };
+      const hasFiles = !!data.brandGuidelines;
       try {
-        await axiosInstance.post(endpoints.bd.publicSubmit(token), payload);
+        if (hasFiles) {
+          const fd = new FormData();
+          Object.entries(payload).forEach(([k, v]) => {
+            if (Array.isArray(v)) fd.append(k, JSON.stringify(v));
+            else if (v !== null && v !== undefined) fd.append(k, v);
+          });
+          Object.entries(audiencePayload).forEach(([k, v]) => {
+            if (Array.isArray(v)) fd.append(k, JSON.stringify(v));
+            else if (v) fd.append(k, v);
+          });
+          fd.append('brandGuidelines', data.brandGuidelines);
+          await axiosInstance.post(endpoints.bd.publicSubmit(token), fd, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+        } else {
+          await axiosInstance.post(endpoints.bd.publicSubmit(token), {
+            ...payload,
+            ...audiencePayload,
+          });
+        }
         const rows = [
           ['Brand', payload.brandName],
           ['Industry', payload.industry],
@@ -415,7 +701,9 @@ export default function BDBriefForm({ token }) {
         setSubmittedRows(rows);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch {
-        enqueueSnackbar('Something went wrong submitting your brief. Please try again.', { variant: 'error' });
+        enqueueSnackbar('Something went wrong submitting your brief. Please try again.', {
+          variant: 'error',
+        });
       }
     },
     (errs) => {
@@ -425,16 +713,43 @@ export default function BDBriefForm({ token }) {
   );
 
   const clearForm = () => reset(defaultValues);
-  const startOver = () => { clearForm(); setSubmittedRows(null); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const startOver = () => {
+    clearForm();
+    setSubmittedRows(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   /* ── Error page ── */
   if (lookupError) {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', px: 3, bgcolor: T.off }}>
-        <Box sx={{ textAlign: 'center', p: '3rem 2rem', bgcolor: T.white, border: `1.5px solid ${T.border}`, borderRadius: '16px', maxWidth: 440 }}>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 1, color: T.ink, fontFamily: T.sans }}>Link not valid</Typography>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          px: 3,
+          bgcolor: T.off,
+        }}
+      >
+        <Box
+          sx={{
+            textAlign: 'center',
+            p: '3rem 2rem',
+            bgcolor: T.white,
+            border: `1.5px solid ${T.border}`,
+            borderRadius: '16px',
+            maxWidth: 440,
+          }}
+        >
+          <Typography
+            sx={{ fontSize: 20, fontWeight: 700, mb: 1, color: T.ink, fontFamily: T.sans }}
+          >
+            Link not valid
+          </Typography>
           <Typography sx={{ fontSize: 14, color: T.ink3, lineHeight: 1.6, fontFamily: T.dm }}>
-            This invite link isn&apos;t valid anymore. Please ask your contact at Cult Creative for a new one.
+            This invite link isn&apos;t valid anymore. Please ask your contact at Cult Creative for
+            a new one.
           </Typography>
         </Box>
       </Box>
@@ -455,7 +770,6 @@ export default function BDBriefForm({ token }) {
         overflowX: 'clip',
       }}
     >
-
       {/* ══════════════════════════════
           LEFT PANEL
       ══════════════════════════════ */}
@@ -476,33 +790,41 @@ export default function BDBriefForm({ token }) {
         {[
           {
             sx: {
-              width: { xs: 280, md: 480 }, height: { xs: 280, md: 480 },
+              width: { xs: 280, md: 480 },
+              height: { xs: 280, md: 480 },
               background: 'radial-gradient(circle, rgba(138,90,254,.65) 0%, transparent 70%)',
-              top: -120, left: -80,
+              top: -120,
+              left: -80,
               animation: 'blob1 14s ease-in-out infinite alternate',
             },
           },
           {
             sx: {
-              width: { xs: 240, md: 400 }, height: { xs: 240, md: 400 },
+              width: { xs: 240, md: 400 },
+              height: { xs: 240, md: 400 },
               background: 'radial-gradient(circle, rgba(19,64,255,.6) 0%, transparent 70%)',
-              bottom: -100, right: -60,
+              bottom: -100,
+              right: -60,
               animation: 'blob2 18s ease-in-out infinite alternate',
             },
           },
           {
             sx: {
-              width: { xs: 200, md: 300 }, height: { xs: 200, md: 300 },
+              width: { xs: 200, md: 300 },
+              height: { xs: 200, md: 300 },
               background: 'radial-gradient(circle, rgba(138,90,254,.4) 0%, transparent 70%)',
-              top: '42%', left: '52%',
+              top: '42%',
+              left: '52%',
               animation: 'blob3 11s ease-in-out infinite alternate',
             },
           },
           {
             sx: {
-              width: { xs: 160, md: 220 }, height: { xs: 160, md: 220 },
+              width: { xs: 160, md: 220 },
+              height: { xs: 160, md: 220 },
               background: 'radial-gradient(circle, rgba(19,64,255,.35) 0%, transparent 70%)',
-              top: '18%', right: -10,
+              top: '18%',
+              right: -10,
               animation: 'blob4 9s ease-in-out infinite alternate',
             },
           },
@@ -556,8 +878,15 @@ export default function BDBriefForm({ token }) {
         />
 
         {/* Panel content (above blobs) */}
-        <Box sx={{ position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
-
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+          }}
+        >
           {/* Logo */}
           <Box
             component="img"
@@ -570,8 +899,26 @@ export default function BDBriefForm({ token }) {
           />
 
           {/* Hero text */}
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', py: { xs: '28px', lg: '36px 0 28px' } }}>
-            <Typography sx={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(255,255,255,.55)', mb: '16px', fontFamily: T.sans }}>
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              py: { xs: '28px', lg: '36px 0 28px' },
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '2px',
+                textTransform: 'uppercase',
+                color: 'rgba(255,255,255,.55)',
+                mb: '16px',
+                fontFamily: T.sans,
+              }}
+            >
               Content Strategy Intake
             </Typography>
 
@@ -607,17 +954,37 @@ export default function BDBriefForm({ token }) {
               </Box>
             </Typography>
 
-            <Typography sx={{ fontSize: 13.5, color: 'rgba(255,255,255,.62)', lineHeight: 1.8, maxWidth: { xs: '100%', md: 280 }, mb: { xs: '20px', lg: '36px' }, fontFamily: T.dm }}>
+            <Typography
+              sx={{
+                fontSize: 13.5,
+                color: 'rgba(255,255,255,.62)',
+                lineHeight: 1.8,
+                maxWidth: { xs: '100%', md: 280 },
+                mb: { xs: '20px', lg: '36px' },
+                fontFamily: T.dm,
+              }}
+            >
               Fill in your brief and our team will prepare a tailored content strategy and creator
               recommendations — no commitment required.
             </Typography>
 
             {/* Process steps */}
-            <Box sx={{ borderTop: '1px solid rgba(255,255,255,.07)', display: { xs: 'none', md: 'block' } }}>
+            <Box
+              sx={{
+                borderTop: '1px solid rgba(255,255,255,.07)',
+                display: { xs: 'none', md: 'block' },
+              }}
+            >
               {[
                 ['Share your brief', 'Tell us your goals, audience, and budget'],
-                ['Get strategy + shortlist', 'Our team maps your plan and recommends suitable creators'],
-                ['Launch with confidence', 'Approve the direction and we help you go live smoothly'],
+                [
+                  'Get strategy + shortlist',
+                  'Our team maps your plan and recommends suitable creators',
+                ],
+                [
+                  'Launch with confidence',
+                  'Approve the direction and we help you go live smoothly',
+                ],
               ].map(([title, desc], i) => (
                 <Stack
                   key={i}
@@ -628,23 +995,44 @@ export default function BDBriefForm({ token }) {
                 >
                   <Box
                     sx={{
-                      width: 20, height: 20,
+                      width: 20,
+                      height: 20,
                       borderRadius: '50%',
                       border: '1px solid rgba(255,255,255,.18)',
-                      fontSize: 10, fontWeight: 700,
+                      fontSize: 10,
+                      fontWeight: 700,
                       color: 'rgba(255,255,255,.3)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0, mt: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      mt: '2px',
                       fontFamily: T.sans,
                     }}
                   >
                     {i + 1}
                   </Box>
                   <Box>
-                    <Typography sx={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'rgba(255,255,255,.7)', mb: '2px', fontFamily: T.sans }}>
+                    <Typography
+                      sx={{
+                        display: 'block',
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        color: 'rgba(255,255,255,.7)',
+                        mb: '2px',
+                        fontFamily: T.sans,
+                      }}
+                    >
                       {title}
                     </Typography>
-                    <Typography sx={{ fontSize: 11.5, color: 'rgba(255,255,255,.56)', lineHeight: 1.5, fontFamily: T.dm }}>
+                    <Typography
+                      sx={{
+                        fontSize: 11.5,
+                        color: 'rgba(255,255,255,.56)',
+                        lineHeight: 1.5,
+                        fontFamily: T.dm,
+                      }}
+                    >
                       {desc}
                     </Typography>
                   </Box>
@@ -683,10 +1071,27 @@ export default function BDBriefForm({ token }) {
                   borderLeft: i % 2 === 1 ? '1px solid rgba(255,255,255,.07)' : undefined,
                 }}
               >
-                <Typography sx={{ fontSize: 20, fontWeight: 700, color: 'white', letterSpacing: '-0.8px', lineHeight: 1, mb: '3px', fontFamily: T.sans }}>
+                <Typography
+                  sx={{
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: 'white',
+                    letterSpacing: '-0.8px',
+                    lineHeight: 1,
+                    mb: '3px',
+                    fontFamily: T.sans,
+                  }}
+                >
                   {num}
                 </Typography>
-                <Typography sx={{ fontSize: 10.5, color: 'rgba(255,255,255,.58)', fontWeight: 500, fontFamily: T.sans }}>
+                <Typography
+                  sx={{
+                    fontSize: 10.5,
+                    color: 'rgba(255,255,255,.58)',
+                    fontWeight: 500,
+                    fontFamily: T.sans,
+                  }}
+                >
                   {label}
                 </Typography>
               </Box>
@@ -720,7 +1125,6 @@ export default function BDBriefForm({ token }) {
           },
         }}
       >
-
         {/* ── Named stepper bar ── */}
         <Box
           sx={{
@@ -766,7 +1170,7 @@ export default function BDBriefForm({ token }) {
         {submittedRows ? (
           <Box
             sx={{
-                p: { xs: '46px 18px 60px', sm: '60px 20px', md: '80px 52px' },
+              p: { xs: '46px 18px 60px', sm: '60px 20px', md: '80px 52px' },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
@@ -783,10 +1187,13 @@ export default function BDBriefForm({ token }) {
             {/* Check icon */}
             <Box
               sx={{
-                width: 56, height: 56,
+                width: 56,
+                height: 56,
                 background: T.grad,
                 borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 mb: '28px',
                 boxShadow: '0 8px 32px rgba(138,90,254,.35)',
               }}
@@ -836,14 +1243,27 @@ export default function BDBriefForm({ token }) {
               </Box>
             </Typography>
 
-            <Typography sx={{ fontSize: 15, color: T.ink3, maxWidth: 380, lineHeight: 1.75, mb: '36px', fontFamily: T.dm }}>
+            <Typography
+              sx={{
+                fontSize: 15,
+                color: T.ink3,
+                maxWidth: 380,
+                lineHeight: 1.75,
+                mb: '36px',
+                fontFamily: T.dm,
+              }}
+            >
               Our team{bdName ? ` (${bdName})` : ''} will review your campaign brief and reach out
               within 1–2 business days with creator recommendations tailored to your goals.
             </Typography>
 
             {/* Next steps */}
             <Box sx={{ maxWidth: 380, borderTop: `1px solid ${T.border}` }}>
-              {['Brief reviewed by your strategist', 'Creator shortlist prepared', 'Strategy call scheduled'].map((step, i) => (
+              {[
+                'Brief reviewed by your strategist',
+                'Creator shortlist prepared',
+                'Strategy call scheduled',
+              ].map((step, i) => (
                 <Stack
                   key={i}
                   direction="row"
@@ -853,18 +1273,25 @@ export default function BDBriefForm({ token }) {
                 >
                   <Box
                     sx={{
-                      width: 22, height: 22,
+                      width: 22,
+                      height: 22,
                       borderRadius: '50%',
                       border: `1px solid ${T.border}`,
-                      fontSize: 11, fontWeight: 700, color: T.ink3,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: T.ink3,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       flexShrink: 0,
                       fontFamily: T.sans,
                     }}
                   >
                     {i + 1}
                   </Box>
-                  <Typography sx={{ fontSize: 14, fontWeight: 500, color: T.ink2, fontFamily: T.dm }}>
+                  <Typography
+                    sx={{ fontSize: 14, fontWeight: 500, color: T.ink2, fontFamily: T.dm }}
+                  >
                     {step}
                   </Typography>
                 </Stack>
@@ -897,6 +1324,12 @@ export default function BDBriefForm({ token }) {
         ) : (
           /* ── FORM CONTENT ── */
           <FormProvider methods={methods} onSubmit={onSubmit}>
+            <GlobalStyles
+              styles={{
+                '.MuiMenu-paper .MuiCheckbox-root.Mui-checked': { color: `${T.blue} !important` },
+                '.MuiMenu-paper .MuiCheckbox-root': { color: T.ink3 },
+              }}
+            />
             <Box
               sx={{
                 p: { xs: '28px 16px 72px', sm: '36px 20px 80px', md: '56px 52px 100px' },
@@ -908,7 +1341,6 @@ export default function BDBriefForm({ token }) {
                 '& .MuiFormHelperText-root': { display: 'none' },
               }}
             >
-
               {/* ── 01 BRAND ── */}
               <AnimSec delay={0}>
                 <SectionHeader
@@ -938,9 +1370,13 @@ export default function BDBriefForm({ token }) {
                       SelectProps={{ displayEmpty: true, sx: { textTransform: 'none' } }}
                       sx={noBoxSx}
                     >
-                      <MenuItem value="" disabled>Select your industry</MenuItem>
-                      {INDUSTRIES.map((ind) => (
-                        <MenuItem key={ind} value={ind}>{ind}</MenuItem>
+                      <MenuItem value="" disabled>
+                        Select your industry
+                      </MenuItem>
+                      {interestsLists.map((ind) => (
+                        <MenuItem key={ind} value={ind}>
+                          {ind}
+                        </MenuItem>
                       ))}
                     </RHFSelect>
                   </FieldWrap>
@@ -956,7 +1392,13 @@ export default function BDBriefForm({ token }) {
                   title="When does the content go live?"
                   sub="Helps us plan creator briefing, production, and review schedules."
                 />
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: '28px' }}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                    gap: '28px',
+                  }}
+                >
                   <Box>
                     <FieldLabel required>Earliest date</FieldLabel>
                     <FieldWrap>
@@ -982,7 +1424,13 @@ export default function BDBriefForm({ token }) {
                   title="Secondary objectives"
                   sub={`Select up to 2 goals for this campaign. (${(values.secondaryObjectives ?? []).length}/2 selected)`}
                 />
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: '10px' }}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                    gap: '10px',
+                  }}
+                >
                   {OBJECTIVES.map((o) => {
                     const cur = values.secondaryObjectives ?? [];
                     const on = cur.includes(o.val);
@@ -1002,31 +1450,55 @@ export default function BDBriefForm({ token }) {
                           userSelect: 'none',
                           background: on ? T.grad : T.white,
                           boxShadow: on ? '0 4px 16px rgba(138,90,254,.3)' : 'none',
-                          transition: 'border-color 0.15s, background 0.15s, transform 0.1s, box-shadow 0.2s',
+                          transition:
+                            'border-color 0.15s, background 0.15s, transform 0.1s, box-shadow 0.2s',
                           opacity: disabled ? 0.3 : 1,
-                          '&:hover': !on && !disabled ? { borderColor: '#ccc9e0', transform: 'translateY(-1px)' } : {},
+                          '&:hover':
+                            !on && !disabled
+                              ? { borderColor: '#ccc9e0', transform: 'translateY(-1px)' }
+                              : {},
                           '&:active': !disabled ? { transform: 'translateY(0)' } : {},
                         }}
                       >
                         {/* Checkbox */}
                         <Box
                           sx={{
-                            width: 19, height: 19,
+                            width: 19,
+                            height: 19,
                             borderRadius: '6px',
                             border: `1.5px solid ${on ? 'rgba(255,255,255,.95)' : T.border}`,
                             bgcolor: on ? 'white' : 'transparent',
-                            flexShrink: 0, mt: '1px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0,
+                            mt: '1px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                             transition: 'all 0.15s',
                           }}
                         >
                           {on && <CheckSvg stroke={T.ink} size={9} />}
                         </Box>
                         <Box>
-                          <Typography sx={{ display: 'block', fontSize: 13.5, fontWeight: 600, color: on ? 'white' : T.ink, mb: '2px', fontFamily: T.sans }}>
+                          <Typography
+                            sx={{
+                              display: 'block',
+                              fontSize: 13.5,
+                              fontWeight: 600,
+                              color: on ? 'white' : T.ink,
+                              mb: '2px',
+                              fontFamily: T.sans,
+                            }}
+                          >
                             {o.title}
                           </Typography>
-                          <Typography sx={{ fontSize: 11.5, color: on ? 'rgba(255,255,255,.82)' : T.ink3, lineHeight: 1.4, fontFamily: T.dm }}>
+                          <Typography
+                            sx={{
+                              fontSize: 11.5,
+                              color: on ? 'rgba(255,255,255,.82)' : T.ink3,
+                              lineHeight: 1.4,
+                              fontFamily: T.dm,
+                            }}
+                          >
                             {o.desc}
                           </Typography>
                         </Box>
@@ -1087,51 +1559,341 @@ export default function BDBriefForm({ token }) {
 
                 <Box>
                   <FieldLabel>Specific targets or context</FieldLabel>
-                  <Typography sx={{ fontSize: 12, color: T.ink3, mb: '8px', lineHeight: 1.6, fontFamily: T.dm }}>
-                    e.g. &quot;500k views per video&quot; or &quot;200 store visits over the campaign period&quot;
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      color: T.ink3,
+                      mb: '8px',
+                      lineHeight: 1.6,
+                      fontFamily: T.dm,
+                    }}
+                  >
+                    e.g. &quot;500k views per video&quot; or &quot;200 store visits over the
+                    campaign period&quot;
                   </Typography>
                   <FieldWrap>
                     <RHFTextField
                       name="kpiNotes"
                       multiline
-                      minRows={3}
                       placeholder="Describe your targets here…"
                       inputProps={{ maxLength: 300 }}
                       sx={noBoxSx}
                     />
                   </FieldWrap>
-                  <Typography sx={{ fontSize: 11, color: T.ink3, textAlign: 'right', mt: '5px', fontFamily: T.dm, fontWeight: 300 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 11,
+                      color: T.ink3,
+                      textAlign: 'right',
+                      mt: '5px',
+                      fontFamily: T.dm,
+                      fontWeight: 300,
+                    }}
+                  >
                     {(values.kpiNotes ?? '').length} / 300
                   </Typography>
                 </Box>
               </AnimSec>
 
-              {/* ── 05 EXTRA ── */}
               <AnimSec delay={120}>
-                <SectionHeader
-                  num="05"
-                  tag="Anything Else?"
-                  title="Additional context"
-                  sub="Budget range, key messages, content do's & don'ts, past campaigns — anything useful for our team."
-                />
-                <FieldWrap>
-                  <RHFTextField
-                    name="extraNotes"
-                    multiline
-                    minRows={4}
-                    placeholder="Optional notes…"
-                    inputProps={{ maxLength: 500 }}
-                    sx={noBoxSx}
-                  />
-                </FieldWrap>
-                <Typography sx={{ fontSize: 11, color: T.ink3, textAlign: 'right', mt: '5px', fontFamily: T.dm, fontWeight: 300 }}>
-                  {(values.extraNotes ?? '').length} / 500
-                </Typography>
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={() => setExtraOpen((v) => !v)}
+                  sx={{
+                    width: '100%',
+                    textAlign: 'left',
+                    bgcolor: 'transparent',
+                    border: 'none',
+                    p: 0,
+                    cursor: 'pointer',
+                    display: 'block',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      gap: '16px',
+                    }}
+                  >
+                    <Box sx={{ flex: 1 }}>
+                      <SectionHeader
+                        num="05"
+                        tag="Anything Else?"
+                        title="Additional context (optional)"
+                        sub="Target audience, attachments, budget range, key messages, content do's & don'ts, past campaigns — anything useful for our team."
+                      />
+                    </Box>
+                    <Box
+                      component="svg"
+                      width={20}
+                      height={20}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke={T.ink2}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      sx={{
+                        mt: { xs: '6px', md: '10px' },
+                        flexShrink: 0,
+                        transform: extraOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.25s ease',
+                      }}
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </Box>
+                  </Box>
+                </Box>
+
+                <Box
+                  sx={{
+                    overflow: 'hidden',
+                    maxHeight: extraOpen ? '4000px' : 0,
+                    opacity: extraOpen ? 1 : 0,
+                    transition: extraOpen
+                      ? 'max-height 0.5s ease, opacity 0.35s ease 0.1s'
+                      : 'max-height 0.35s ease, opacity 0.2s ease',
+                  }}
+                >
+                  <Stack spacing="32px" sx={{ mt: '8px' }}>
+                    {/* Additional notes */}
+                    <Box>
+                      <FieldLabel>Additional notes</FieldLabel>
+                      <FieldWrap>
+                        <RHFTextField
+                          name="extraNotes"
+                          multiline
+                          placeholder="Optional notes…"
+                          inputProps={{ maxLength: 500 }}
+                          sx={noBoxSx}
+                        />
+                      </FieldWrap>
+                      <Typography
+                        sx={{
+                          fontSize: 11,
+                          color: T.ink3,
+                          textAlign: 'right',
+                          mt: '5px',
+                          fontFamily: T.dm,
+                          fontWeight: 300,
+                        }}
+                      >
+                        {(values.extraNotes ?? '').length} / 500
+                      </Typography>
+                    </Box>
+
+                    {/* Target Audience */}
+                    <Box>
+                      <Typography
+                        sx={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          letterSpacing: '2px',
+                          textTransform: 'uppercase',
+                          color: T.ink3,
+                          mb: '14px',
+                          fontFamily: T.sans,
+                        }}
+                      >
+                        Target audience
+                      </Typography>
+
+                      <Stack spacing="24px">
+                        <Box>
+                          <FieldLabel>Gender</FieldLabel>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                            {GENDER_OPTIONS.map((g) => (
+                              <ChipToggle
+                                key={g.value}
+                                active={values.gender?.includes(g.value)}
+                                onClick={() => toggleArrField('gender', g.value)}
+                              >
+                                {g.label}
+                              </ChipToggle>
+                            ))}
+                          </Box>
+                        </Box>
+
+                        <Box>
+                          <FieldLabel>Age range</FieldLabel>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                            {AGE_OPTIONS.map((a) => (
+                              <ChipToggle
+                                key={a.value}
+                                active={values.age?.includes(a.value)}
+                                onClick={() => toggleArrField('age', a.value)}
+                              >
+                                {a.label}
+                              </ChipToggle>
+                            ))}
+                          </Box>
+                        </Box>
+
+                        <Box>
+                          <FieldLabel>Country</FieldLabel>
+                          <FieldWrap>
+                            <RHFSelect
+                              name="country"
+                              size="small"
+                              SelectProps={{
+                                displayEmpty: true,
+                                sx: { textTransform: 'none' },
+                                MenuProps: { PaperProps: { sx: { maxHeight: 320 } } },
+                              }}
+                              sx={noBoxSx}
+                            >
+                              <MenuItem value="" disabled>
+                                Select a country
+                              </MenuItem>
+                              {COUNTRY_OPTIONS.map((c) => (
+                                <MenuItem key={c} value={c}>
+                                  {c}
+                                </MenuItem>
+                              ))}
+                            </RHFSelect>
+                          </FieldWrap>
+                        </Box>
+
+                        <Box>
+                          <FieldLabel>Language</FieldLabel>
+                          <FieldWrap>
+                            <RHFMultiSelect
+                              name="language"
+                              checkbox
+                              size="small"
+                              placeholder="Select one or more languages"
+                              options={LANGUAGE_OPTIONS.map((l) => ({ value: l, label: l }))}
+                              sx={{
+                                width: '100%',
+                                ...noBoxSx,
+                                '& .MuiOutlinedInput-root': {
+                                  ...noBoxSx['& .MuiOutlinedInput-root'],
+                                  width: '100%',
+                                },
+                              }}
+                            />
+                          </FieldWrap>
+                        </Box>
+
+                        <Box>
+                          <FieldLabel>Creator&apos;s interest</FieldLabel>
+                          <FieldWrap>
+                            <RHFMultiSelect
+                              name="creatorPersona"
+                              checkbox
+                              size="small"
+                              placeholder="Select one or more interests"
+                              options={CREATOR_PERSONA_OPTIONS}
+                              sx={{
+                                width: '100%',
+                                ...noBoxSx,
+                                '& .MuiOutlinedInput-root': {
+                                  ...noBoxSx['& .MuiOutlinedInput-root'],
+                                  width: '100%',
+                                },
+                              }}
+                            />
+                          </FieldWrap>
+                        </Box>
+
+                        <Box>
+                          <FieldLabel>User persona</FieldLabel>
+                          <Typography
+                            sx={{
+                              fontSize: 12,
+                              color: T.ink3,
+                              mb: '8px',
+                              lineHeight: 1.6,
+                              fontFamily: T.dm,
+                            }}
+                          >
+                            Who is your ideal customer?
+                          </Typography>
+                          <FieldWrap>
+                            <RHFTextField
+                              name="userPersona"
+                              multiline
+                              // minRows={2}
+                              placeholder="e.g. Young urban professionals interested in wellness"
+                              inputProps={{ maxLength: 500 }}
+                              sx={noBoxSx}
+                            />
+                          </FieldWrap>
+                        </Box>
+
+                        <Box>
+                          <FieldLabel>Geographic focus</FieldLabel>
+                          <FieldWrap>
+                            <RHFSelect
+                              name="geographicFocus"
+                              size="small"
+                              SelectProps={{
+                                displayEmpty: true,
+                                sx: { textTransform: 'none' },
+                                MenuProps: { PaperProps: { sx: { maxHeight: 320 } } },
+                              }}
+                              sx={noBoxSx}
+                            >
+                              <MenuItem value="" disabled>
+                                Select a geographic focus
+                              </MenuItem>
+                              {GEOGRAPHIC_FOCUS_OPTIONS.map((g) => (
+                                <MenuItem key={g} value={g}>
+                                  {g}
+                                </MenuItem>
+                              ))}
+                            </RHFSelect>
+                          </FieldWrap>
+                        </Box>
+                      </Stack>
+                    </Box>
+
+                    {/* Attachments */}
+                    <Box>
+                      <Typography
+                        sx={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          letterSpacing: '2px',
+                          textTransform: 'uppercase',
+                          color: T.ink3,
+                          mb: '14px',
+                          fontFamily: T.sans,
+                        }}
+                      >
+                        Attachments
+                      </Typography>
+
+                      <Stack>
+                        <FileDrop
+                          label="Brand guidelines"
+                          accept="application/pdf,image/jpeg,image/png"
+                          file={values.brandGuidelines}
+                          onChange={(f) =>
+                            setValue('brandGuidelines', f, { shouldValidate: false })
+                          }
+                          hint="PDF, JPG or PNG — max 10MB"
+                        />
+                      </Stack>
+                    </Box>
+                  </Stack>
+                </Box>
               </AnimSec>
 
               {/* ── SUBMIT ── */}
               <AnimSec delay={140}>
-                <Box sx={{ borderTop: `1px solid ${T.border}`, pt: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <Box
+                  sx={{
+                    borderTop: `1px solid ${T.border}`,
+                    pt: '32px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px',
+                  }}
+                >
                   <Stack direction={{ xs: 'column', sm: 'row' }} gap="12px">
                     <Box
                       component="button"
@@ -1214,12 +1976,19 @@ export default function BDBriefForm({ token }) {
                     </Box>
                   </Stack>
 
-                  <Typography sx={{ fontSize: 12, color: T.ink3, textAlign: 'center', lineHeight: 1.65, fontFamily: T.dm }}>
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      color: T.ink3,
+                      textAlign: 'center',
+                      lineHeight: 1.65,
+                      fontFamily: T.dm,
+                    }}
+                  >
                     No commitment required. Submitting this brief is just an expression of interest.
                   </Typography>
                 </Box>
               </AnimSec>
-
             </Box>
           </FormProvider>
         )}
