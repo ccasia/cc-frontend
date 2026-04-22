@@ -87,6 +87,7 @@ export function RHFMultiSelect({
   placeholder,
   helperText,
   showClearAll = true,
+  MenuProps,
   ...other
 }) {
   const { control } = useFormContext();
@@ -168,6 +169,7 @@ export function RHFMultiSelect({
               label={label}
               renderValue={renderValues}
               fullWidth
+              MenuProps={MenuProps}
             >
               {options.map((option) => {
                 const selected = (field.value || []).includes(option.value);
@@ -202,6 +204,7 @@ RHFMultiSelect.propTypes = {
   options: PropTypes.array,
   placeholder: PropTypes.string,
   showClearAll: PropTypes.bool,
+  MenuProps: PropTypes.object,
 };
 
 // ----------------------------------------------------------------------
