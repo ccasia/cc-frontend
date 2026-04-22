@@ -186,7 +186,7 @@ const InvoiceDetail = ({ invoiceId }) => {
                 fontWeight: 300,
               }}
             >
-              Invoice Details - {data?.invoiceNumber.split('-')[1]}
+              Invoice Details - {data?.invoiceNumber}
             </Typography>
             <Typography
               variant="h5"
