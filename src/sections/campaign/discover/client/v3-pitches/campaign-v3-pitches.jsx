@@ -101,11 +101,21 @@ const getConnectedPlatformValues = (creator) => {
   return values;
 };
 
+const getManualPlatformValues = (creator) => {
+  const values = [];
+  if ((creator?.creator?.manualInstagramFollowerCount || 0) > 0) values.push('instagram');
+  if ((creator?.creator?.manualTiktokFollowerCount || 0) > 0) values.push('tiktok');
+  return values;
+};
+
 const getPlatformSelectOptions = (creator) => {
   if (!creator) return PLATFORM_OPTIONS;
-  const connected = getConnectedPlatformValues(creator);
-  if (connected.length === 0) return PLATFORM_OPTIONS;
-  return PLATFORM_OPTIONS.filter((p) => connected.includes(p.value));
+  const selectable = new Set([
+    ...getConnectedPlatformValues(creator),
+    ...getManualPlatformValues(creator),
+  ]);
+  if (selectable.size === 0) return PLATFORM_OPTIONS;
+  return PLATFORM_OPTIONS.filter((p) => selectable.has(p.value));
 };
 
 const formatFollowerCountDisplay = (value) => {
