@@ -257,7 +257,7 @@ const CompanyEditView = ({ id }) => {
   const handleCreatePIC = async () => {
     try {
       setLoading(true);
-      await axiosInstance.post(`/api/pic/company/${id}`, picFormData);
+      await axiosInstance.post(`/api/pic/company/${id}`, { ...picFormData, companyId: id });
       enqueueSnackbar('Person In Charge added successfully!', { variant: 'success' });
       setPicDialogOpen(false);
       setPicFormData({ name: '', email: '', designation: '' });
