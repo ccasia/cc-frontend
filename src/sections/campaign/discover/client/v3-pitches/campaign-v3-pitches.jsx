@@ -87,13 +87,47 @@ const hasMediaKitForPlatform = (creator, selectedPlatform) => {
   return !!creator?.creator?.instagramUser;
 };
 
-const hasAnyMediaKitLinked = (creator) =>
-  !!(creator?.creator?.instagramUser || creator?.creator?.tiktokUser);
-
 const getDefaultPlatformFromMediaKit = (creator) => {
   if (creator?.creator?.instagramUser) return 'instagram';
   if (creator?.creator?.tiktokUser) return 'tiktok';
   return '';
+};
+
+/** Platforms that have a connected media kit account for this creator */
+const getConnectedPlatformValues = (creator) => {
+  const values = [];
+  if (creator?.creator?.instagramUser) values.push('instagram');
+  if (creator?.creator?.tiktokUser) values.push('tiktok');
+  return values;
+};
+
+const getPlatformSelectOptions = (creator) => {
+  if (!creator) return PLATFORM_OPTIONS;
+  const connected = getConnectedPlatformValues(creator);
+  if (connected.length === 0) return PLATFORM_OPTIONS;
+  return PLATFORM_OPTIONS.filter((p) => connected.includes(p.value));
+};
+
+const formatFollowerCountDisplay = (value) => {
+  if (value === '' || value === undefined) return '';
+  const n = Number(value);
+  if (Number.isNaN(n)) return '';
+  return n.toLocaleString();
+};
+
+const resolveInitialPlatformForCreator = (creator, previousPlatform) => {
+  const options = getPlatformSelectOptions(creator);
+  if (options.length === 0) return '';
+  const connected = getConnectedPlatformValues(creator);
+  if (connected.length === 0) {
+    return previousPlatform && options.some((o) => o.value === previousPlatform)
+      ? previousPlatform
+      : '';
+  }
+  const defaultP = getDefaultPlatformFromMediaKit(creator);
+  if (previousPlatform && connected.includes(previousPlatform)) return previousPlatform;
+  if (connected.includes(defaultP)) return defaultP;
+  return options[0].value;
 };
 
 const countPitchesByStatus = (pitches, statusList) =>
@@ -198,6 +232,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         // Credit tier data from shortlisted record (snapshot at assignment time)
         _creditTier: sc.creditTier,
         _creditPerVideo: sc.creditPerVideo,
+        selectedPlatform: sc.selectedPlatform,
       }));
 
     return [...(pitches || []), ...shortlistedWithoutPitch];
@@ -1666,9 +1701,6 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   // This includes SENT_TO_CLIENT (V4 admin approved), PENDING_REVIEW (applied), APPROVED, etc.
   const pitchUserIds = new Set((pitches || []).filter((p) => p.userId).map((p) => p.userId));
 
-  // Determine if this is a credit tier campaign (controls follower count field visibility)
-  const isCreditTier = campaign?.isCreditTier || false;
-
   // Filter options - exclude already shortlisted and already selected in other rows
   const getFilteredOptions = (currentRowId) => {
     const selectedInOtherRows = creatorRows
@@ -1710,10 +1742,20 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
     setCreatorRows((rows) =>
       rows.map((row) => {
         if (row.id === rowId) {
-          const hasAnyMediaKit = hasAnyMediaKitLinked(selectedCreator);
-          const selectedPlatform = hasAnyMediaKit
-            ? getDefaultPlatformFromMediaKit(selectedCreator)
-            : row.selectedPlatform || '';
+          if (selectedCreator === null) {
+            return {
+              ...row,
+              creator: null,
+              followerCount: '',
+              hasMediaKit: false,
+              selectedPlatform: '',
+              adminComments: '',
+            };
+          }
+          const selectedPlatform = resolveInitialPlatformForCreator(
+            selectedCreator,
+            row.selectedPlatform
+          );
           const hasMediaKit =
             selectedCreator && selectedPlatform
               ? hasMediaKitForPlatform(selectedCreator, selectedPlatform)
@@ -1722,15 +1764,13 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
             selectedCreator && selectedPlatform
               ? getPlatformFollowerCount(selectedCreator, selectedPlatform) || ''
               : '';
-          // Only reset adminComments when clearing creator (null), preserve when switching creators
-          const shouldResetComments = selectedCreator === null;
           return {
             ...row,
             creator: selectedCreator,
             followerCount,
             hasMediaKit,
             selectedPlatform,
-            adminComments: shouldResetComments ? '' : row.adminComments,
+            adminComments: row.adminComments,
           };
         }
         return row;
@@ -1798,11 +1838,9 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   // Get valid creators from rows
   const getValidCreatorsFromRows = () =>
     creatorRows.filter((row) => row.creator !== null).map((row) => row.creator);
-  const hasMissingPlatformSelection = creatorRows.some(
-    (row) => row.creator && !hasAnyMediaKitLinked(row.creator) && !row.selectedPlatform
-  );
+  const hasMissingPlatformSelection = creatorRows.some((row) => row.creator && !row.selectedPlatform);
   const hasMissingFollowerCount = creatorRows.some(
-    (row) => row.creator && !hasAnyMediaKitLinked(row.creator) && (!row.followerCount || Number(row.followerCount) <= 0)
+    (row) => row.creator && (!row.followerCount || Number(row.followerCount) <= 0)
   );
 
   const resetState = () => {
@@ -1842,9 +1880,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
       return;
     }
 
-    const missingPlatformRow = validRows.find(
-      (row) => !hasAnyMediaKitLinked(row.creator) && !row.selectedPlatform
-    );
+    const missingPlatformRow = validRows.find((row) => !row.selectedPlatform);
     if (missingPlatformRow) {
       enqueueSnackbar('Please select Instagram or TikTok for each creator.', {
         variant: 'error',
@@ -1853,8 +1889,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
     }
 
     const missingFollowerRow = validRows.find(
-      (row) =>
-        !hasAnyMediaKitLinked(row.creator) && (!row.followerCount || Number(row.followerCount) <= 0)
+      (row) => !row.followerCount || Number(row.followerCount) <= 0
     );
     if (missingFollowerRow) {
       enqueueSnackbar('Please fill in follower count for each creator.', {
@@ -2128,11 +2163,11 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                         />
                       </Box>
 
-                      {row.creator && !hasAnyMediaKitLinked(row.creator) && (
+                      {row.creator && (
                         <Box
                           sx={{
                             minWidth: { xs: '100%', md: 138 },
-                            maxWidth: { xs: '100%', md: 138 },
+                            maxWidth: { xs: '100%', md: 180 },
                           }}
                         >
                           <Typography
@@ -2164,7 +2199,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                             <MenuItem value="" disabled>
                               Select
                             </MenuItem>
-                            {PLATFORM_OPTIONS.map((platform) => (
+                            {getPlatformSelectOptions(row.creator).map((platform) => (
                               <MenuItem key={platform.value} value={platform.value}>
                                 <Stack direction="row" spacing={1} alignItems="center">
                                   <Iconify icon={platform.icon} width={16} />
@@ -2176,11 +2211,11 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                         </Box>
                       )}
 
-                      {/* Conditional Follower Count Field with Animation */}
+                      {/* Follower count: manual entry without media kit; read-only from media kit when connected */}
                       <AnimatePresence mode="wait">
-                        {row.creator && !hasAnyMediaKitLinked(row.creator) && (
+                        {row.creator && (
                           <Box
-                            key={`follower-${row.id}`}
+                            key={`follower-${row.id}-${row.hasMediaKit ? 'kit' : 'manual'}`}
                             component={m.div}
                             initial={{ opacity: 0, width: 0 }}
                             animate={{
@@ -2212,27 +2247,47 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                             >
                               Follower Count
                             </Typography>
-                            <TextField
-                              value={row.followerCount}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                handleFollowerCountChange(row.id, val);
-                              }}
-                              placeholder="Instagram or TikTok"
-                              fullWidth
-                              inputProps={{
-                                inputMode: 'numeric',
-                                pattern: '[0-9]*',
-                              }}
-                              sx={{
-                                minWidth: 160,
-                                '& .MuiOutlinedInput-root': {
-                                  bgcolor: '#fff',
-                                  minHeight: 48,
-                                  borderRadius: 1,
-                                },
-                              }}
-                            />
+                            {row.hasMediaKit ? (
+                              <TextField
+                                value={formatFollowerCountDisplay(row.followerCount)}
+                                placeholder="—"
+                                fullWidth
+                                disabled
+                                InputProps={{ readOnly: true }}
+                                helperText="From media kit"
+                                FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
+                                sx={{
+                                  minWidth: 160,
+                                  '& .MuiOutlinedInput-root': {
+                                    bgcolor: '#fff',
+                                    minHeight: 48,
+                                    borderRadius: 1,
+                                  },
+                                }}
+                              />
+                            ) : (
+                              <TextField
+                                value={row.followerCount}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^0-9]/g, '');
+                                  handleFollowerCountChange(row.id, val);
+                                }}
+                                placeholder="Enter follower count"
+                                fullWidth
+                                inputProps={{
+                                  inputMode: 'numeric',
+                                  pattern: '[0-9]*',
+                                }}
+                                sx={{
+                                  minWidth: 160,
+                                  '& .MuiOutlinedInput-root': {
+                                    bgcolor: '#fff',
+                                    minHeight: 48,
+                                    borderRadius: 1,
+                                  },
+                                }}
+                              />
+                            )}
                           </Box>
                         )}
                       </AnimatePresence>
