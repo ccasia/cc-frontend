@@ -101,22 +101,9 @@ const getConnectedPlatformValues = (creator) => {
   return values;
 };
 
-const getManualPlatformValues = (creator) => {
-  const values = [];
-  if ((creator?.creator?.manualInstagramFollowerCount || 0) > 0) values.push('instagram');
-  if ((creator?.creator?.manualTiktokFollowerCount || 0) > 0) values.push('tiktok');
-  return values;
-};
-
-const getPlatformSelectOptions = (creator) => {
-  if (!creator) return PLATFORM_OPTIONS;
-  const selectable = new Set([
-    ...getConnectedPlatformValues(creator),
-    ...getManualPlatformValues(creator),
-  ]);
-  if (selectable.size === 0) return PLATFORM_OPTIONS;
-  return PLATFORM_OPTIONS.filter((p) => selectable.has(p.value));
-};
+// Admins may choose IG or TikTok for credits even when only one platform has a media kit
+// (other platform uses manual follower entry).
+const getPlatformSelectOptions = () => PLATFORM_OPTIONS;
 
 const formatFollowerCountDisplay = (value) => {
   if (value === '' || value === undefined) return '';
@@ -126,18 +113,17 @@ const formatFollowerCountDisplay = (value) => {
 };
 
 const resolveInitialPlatformForCreator = (creator, previousPlatform) => {
-  const options = getPlatformSelectOptions(creator);
-  if (options.length === 0) return '';
-  const connected = getConnectedPlatformValues(creator);
-  if (connected.length === 0) {
-    return previousPlatform && options.some((o) => o.value === previousPlatform)
-      ? previousPlatform
-      : '';
+  const options = getPlatformSelectOptions();
+  if (!creator) return '';
+
+  if (previousPlatform && options.some((o) => o.value === previousPlatform)) {
+    return previousPlatform;
   }
-  const defaultP = getDefaultPlatformFromMediaKit(creator);
-  if (previousPlatform && connected.includes(previousPlatform)) return previousPlatform;
-  if (connected.includes(defaultP)) return defaultP;
-  return options[0].value;
+
+  const connected = getConnectedPlatformValues(creator);
+  if (connected.length === 0) return '';
+
+  return getDefaultPlatformFromMediaKit(creator);
 };
 
 const countPitchesByStatus = (pitches, statusList) =>
@@ -2209,7 +2195,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                             <MenuItem value="" disabled>
                               Select
                             </MenuItem>
-                            {getPlatformSelectOptions(row.creator).map((platform) => (
+                            {getPlatformSelectOptions().map((platform) => (
                               <MenuItem key={platform.value} value={platform.value}>
                                 <Stack direction="row" spacing={1} alignItems="center">
                                   <Iconify icon={platform.icon} width={16} />
@@ -2222,85 +2208,62 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                       )}
 
                       {/* Follower count: manual entry without media kit; read-only from media kit when connected */}
-                      <AnimatePresence mode="wait">
-                        {row.creator && (
-                          <Box
-                            key={`follower-${row.id}-${row.hasMediaKit ? 'kit' : 'manual'}`}
-                            component={m.div}
-                            initial={{ opacity: 0, width: 0 }}
-                            animate={{
-                              opacity: 1,
-                              width: 'auto',
-                              transition: {
-                                width: { duration: 0.3, ease: 'easeOut' },
-                                opacity: { duration: 0.2, delay: 0.1 },
-                              },
+                      {row.creator && (
+                        <Box
+                          sx={{
+                            minWidth: { xs: '100%', md: 160 },
+                            maxWidth: { xs: '100%', md: 220 },
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              mb: 0.5,
+                              display: 'block',
+                              color: '#636366',
+                              fontSize: '14px !important',
+                              fontWeight: 600,
                             }}
-                            exit={{
-                              opacity: 0,
-                              width: 0,
-                              transition: {
-                                width: { duration: 0.25, ease: 'easeIn' },
-                                opacity: { duration: 0.15 },
-                              },
-                            }}
-                            sx={{ overflow: 'hidden', minWidth: 0 }}
                           >
-                            <Typography
-                              sx={{
-                                mb: 0.5,
-                                display: 'block',
-                                color: '#636366',
-                                fontSize: '14px !important',
-                                fontWeight: 600,
-                              }}
-                            >
-                              Follower Count
-                            </Typography>
-                            {row.hasMediaKit ? (
-                              <TextField
-                                value={formatFollowerCountDisplay(row.followerCount)}
-                                placeholder="—"
-                                fullWidth
-                                disabled
-                                InputProps={{ readOnly: true }}
-                                helperText="From media kit"
-                                FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
-                                sx={{
-                                  minWidth: 160,
-                                  '& .MuiOutlinedInput-root': {
-                                    bgcolor: '#fff',
-                                    minHeight: 48,
-                                    borderRadius: 1,
-                                  },
-                                }}
-                              />
-                            ) : (
-                              <TextField
-                                value={row.followerCount}
-                                onChange={(e) => {
-                                  const val = e.target.value.replace(/[^0-9]/g, '');
-                                  handleFollowerCountChange(row.id, val);
-                                }}
-                                placeholder="Enter follower count"
-                                fullWidth
-                                inputProps={{
-                                  inputMode: 'numeric',
-                                  pattern: '[0-9]*',
-                                }}
-                                sx={{
-                                  minWidth: 160,
-                                  '& .MuiOutlinedInput-root': {
-                                    bgcolor: '#fff',
-                                    minHeight: 48,
-                                    borderRadius: 1,
-                                  },
-                                }}
-                              />
-                            )}
-                          </Box>
-                        )}
-                      </AnimatePresence>
+                            Follower Count
+                          </Typography>
+                          <TextField
+                            value={
+                              row.hasMediaKit
+                                ? formatFollowerCountDisplay(row.followerCount)
+                                : row.followerCount === '' || row.followerCount === undefined
+                                  ? ''
+                                  : String(row.followerCount)
+                            }
+                            onChange={(e) => {
+                              if (row.hasMediaKit) return;
+                              const val = e.target.value.replace(/[^0-9]/g, '');
+                              handleFollowerCountChange(row.id, val);
+                            }}
+                            placeholder={row.hasMediaKit ? '—' : 'Enter follower count'}
+                            fullWidth
+                            disabled={row.hasMediaKit}
+                            InputProps={{ readOnly: row.hasMediaKit }}
+                            helperText={row.hasMediaKit ? 'From media kit' : undefined}
+                            FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
+                            inputProps={
+                              row.hasMediaKit
+                                ? undefined
+                                : {
+                                    inputMode: 'numeric',
+                                    pattern: '[0-9]*',
+                                  }
+                            }
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                bgcolor: '#fff',
+                                minHeight: 48,
+                                borderRadius: 1,
+                              },
+                            }}
+                          />
+                        </Box>
+                      )}
 
                       {/* CS Comments (Optional) */}
                       <Box sx={{ flex: { xs: 1, md: 1.2 }, minWidth: { xs: '100%', md: 'auto' } }}>
