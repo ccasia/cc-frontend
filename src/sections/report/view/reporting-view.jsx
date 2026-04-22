@@ -1,8 +1,10 @@
 /* eslint-disable no-nested-ternary */
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams, Link as RouterLink } from 'react-router-dom';
 
 import { Box, Card, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -16,10 +18,11 @@ import InstagramLayout from '../components/InstagramLayout';
 
 const ReportingView = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const settings = useSettingsContext();
   const [searchParams] = useSearchParams();
-  const [url, setUrl] = useState('');
+  const [, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState({
     account: '',
@@ -64,6 +67,7 @@ const ReportingView = () => {
             platform: 'Instagram',
             type: 'Reel',
             id: shortcode,
+            url: urlObj.href,
           };
         }
         if (urlObj.pathname.includes('/p/')) {
@@ -72,18 +76,30 @@ const ReportingView = () => {
             platform: 'Instagram',
             type: 'Post',
             id: shortcode,
+            url: urlObj.href,
           };
         }
       }
 
       // TikTok
       if (urlObj.hostname.includes('tiktok.com')) {
+        // Short URLs (vt.tiktok.com, vm.tiktok.com, m.tiktok.com)
+        if (/^(vt|vm|m)\.tiktok\.com$/.test(urlObj.hostname)) {
+          const shortcode = urlObj.pathname.split('/').filter(Boolean)[0] || '';
+          return {
+            platform: 'TikTok',
+            type: 'Video',
+            id: shortcode,
+            url: urlObj.href,
+          };
+        }
         if (urlObj.pathname.includes('/video/')) {
           const videoId = urlObj.pathname.split('/video/')[1].split('?')[0];
           return {
             platform: 'TikTok',
             type: 'Video',
             id: videoId,
+            url: urlObj.href,
           };
         }
         if (urlObj.pathname.match(/\/@[^/]+\/[^/]+/)) {
@@ -92,6 +108,7 @@ const ReportingView = () => {
             platform: 'TikTok',
             type: 'Video',
             id: videoId,
+            url: urlObj.href,
           };
         }
       }
@@ -148,6 +165,7 @@ const ReportingView = () => {
             ...prev,
             account: 'Instagram',
             contentType: parsedUrl.type,
+            pathname: parsedUrl.url,
             datePosted: fDate(video.timestamp),
             mediaUrl: video.thumbnail_url || video.media_url,
             caption: video.caption,
@@ -183,6 +201,7 @@ const ReportingView = () => {
             ...prev,
             account: 'TikTok',
             contentType: parsedUrl.type,
+            pathname: parsedUrl.url,
             datePosted: fDate(video.timestamp),
             mediaUrl: video.cover_image_url,
             caption: video.description,
@@ -247,24 +266,34 @@ const ReportingView = () => {
     // Get return navigation state from URL params
     const returnPage = searchParams.get('returnPage');
     const returnCampaign = searchParams.get('returnCampaign');
-    
+    const returnSearch = searchParams.get('returnSearch');
+
     // Build the return URL with preserved state
     let returnUrl = '/dashboard/report';
     const params = new URLSearchParams();
-    
+
     if (returnPage && returnPage !== '1') {
       params.set('page', returnPage);
     }
-    
+
     if (returnCampaign && returnCampaign !== 'all') {
       params.set('campaign', returnCampaign);
     }
-    
+
+    if (returnSearch) {
+      params.set('search', returnSearch);
+    }
+
     if (params.toString()) {
       returnUrl += `?${params.toString()}`;
     }
-    
+
     navigate(returnUrl);
+  };
+
+  const buildCampaignDetailsPath = (campaignId) => {
+    const returnTo = `${location.pathname}${location.search}`;
+    return `${paths.dashboard.campaign.details(campaignId)}?returnTo=${encodeURIComponent(returnTo)}`;
   };
 
   const renderCircularStat = ({ width, label, value, metricKey }) => {
@@ -280,10 +309,10 @@ const ReportingView = () => {
       content.campaignComparison &&
       content.campaignComparison[metricKey]
     ) {
-      const comparison = content.campaignComparison[metricKey];
-      avgValue = comparison.average;
-      percentageDiff = Math.abs(comparison.change);
-      isAboveAverage = comparison.isAboveAverage;
+      const { average, change, isAboveAverage: above } = content.campaignComparison[metricKey];
+      avgValue = average;
+      percentageDiff = Math.abs(change);
+      isAboveAverage = above;
     } else {
       // Fallback values if no campaign data
       const fallbackAverages = {
@@ -381,16 +410,18 @@ const ReportingView = () => {
             </Typography>
 
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-              <Iconify
-                icon={isAboveAverage ? 'mdi:arrow-up' : 'mdi:arrow-down'}
-                color={isAboveAverage ? '#4CAF50' : '#F44336'}
-                width={15}
-                height={15}
-              />
+              {percentageDiff !== 0 && (
+                <Iconify
+                  icon={isAboveAverage ? 'mdi:arrow-up' : 'mdi:arrow-down'}
+                  color={isAboveAverage ? '#4CAF50' : '#F44336'}
+                  width={15}
+                  height={15}
+                />
+              )}
               <Typography
                 sx={{
                   fontSize: 12,
-                  color: isAboveAverage ? '#4CAF50' : '#F44336',
+                  color: percentageDiff === 0 ? '#666' : isAboveAverage ? '#4CAF50' : '#F44336',
                   ml: 0.5,
                 }}
               >
@@ -582,20 +613,8 @@ const ReportingView = () => {
     if (!content.account) return null;
 
     return (
-      <Box sx={{ mt: 4, mr: { sm: 4, xs: 0 } }}>
-        <Typography
-          variant="h4"
-          sx={{
-            fontSize: 24,
-            fontWeight: 600,
-            mb: 3,
-          }}
-        >
-          Selected Content
-        </Typography>
-
-        {/* Campaign Info Banner - for dev testing only */}
-        {/* {content.hasCampaignData && (
+      <Box sx={{ mr: { sm: 4, xs: 0 } }}>
+        {/* Campaign Info Banner - for dev testing only
           <Card sx={{ p: 2, mb: 3, backgroundColor: '#f8f9fa', border: '1px solid #e3f2fd' }}>
             <Typography variant="h6" sx={{ color: '#1976d2', mb: 1 }}>
               📊 Campaign Analysis Active
@@ -603,8 +622,7 @@ const ReportingView = () => {
             <Typography variant="body2" sx={{ color: '#666' }}>
               Comparing with <strong>{content.campaignName || 'campaign'}</strong> averages from {content.campaignAverages?.postCount || 0} posts
             </Typography>
-          </Card>
-        )} */}
+          </Card> */}
 
         {/* Conditionally render platform-specific layouts */}
         {content.account === 'Instagram' ? (
@@ -627,7 +645,7 @@ const ReportingView = () => {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       {/* Header Section */}
-      <Stack direction="column" alignItems="flex-start" sx={{ mb: 5 }}>
+      <Stack direction="column" alignItems="flex-start" sx={{ mb: 3 }}>
         <Button
           startIcon={<Iconify icon="ion:chevron-back" />}
           onClick={handleBack}
@@ -668,10 +686,29 @@ const ReportingView = () => {
                 fontSize: { xs: 32, md: 42 },
                 fontWeight: 400,
                 lineHeight: { xs: '35px', sm: '50px' },
+                mb: 4,
               }}
             >
               Content Performance Report
             </Typography>
+
+            {content.campaignId && (
+              <Typography
+                component={RouterLink}
+                to={buildCampaignDetailsPath(content.campaignId)}
+                sx={{
+                  fontSize: { xs: 16, md: 24 },
+                  fontWeight: 800,
+                  color: '#1340FF',
+                  textDecoration: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                {content.campaignName || 'View campaign'}
+              </Typography>
+            )}
           </Box>
           {/* Right side: Logo */}
           <Box
