@@ -145,10 +145,20 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   const creators = useMemo(() => {
     if (!campaign) return [];
 
+    // Build lookup of shortlist tier snapshots keyed by userId. Used as a fallback
+    // for tier display when the creator's own Creator.creditTier is null (e.g. after
+    // admin uses Link Creator on a guest -> platform creator without a media kit).
+    const shortlistByUserId = new Map();
+    (campaign.shortlisted || []).forEach((sc) => {
+      if (sc?.userId) shortlistByUserId.set(sc.userId, sc);
+    });
+
     if (campaign.submissionVersion === 'v4' && v3Pitches) {
       return (
         v3Pitches
-          .map((pitch) => ({
+          .map((pitch) => {
+            const sc = shortlistByUserId.get(pitch.userId || pitch.user?.id);
+            return {
               pitchId: pitch.id,
               user: {
                 id: pitch.userId || pitch.user?.id,
@@ -175,7 +185,10 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               engagementRate: pitch.engagementRate,
               isShortlisted: false,
               outreachStatus: pitch.outreachStatus,
-            }))
+              _creditTier: sc?.creditTier ?? null,
+              _creditPerVideo: sc?.creditPerVideo ?? null,
+            };
+          })
           .filter((creator) => !!creator.user && !!creator.user.id)
           .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT')
       );
@@ -203,6 +216,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
             type: 'text',
             content: item.user?.creator?.about || 'No content available',
             isShortlisted: true,
+            _creditTier: item.creditTier ?? null,
+            _creditPerVideo: item.creditPerVideo ?? null,
           }))
           .filter((creator) => creator.user && creator.user.creator)
       : [];
@@ -217,29 +232,34 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               pitch.status !== 'draft' &&
               pitch.status !== 'DRAFT'
           )
-          .map((pitch) => ({
-            pitchId: pitch.id,
-            user: {
-              id: pitch.userId || pitch.user?.id,
-              name: pitch.user?.name,
-              ig_username: pitch.user?.creator?.instagramUser?.username,
-              tiktok_username: pitch.user?.creator?.tiktokUser?.username,
-              photoURL: pitch.user?.photoURL,
-              status: pitch.user?.status || 'active',
-              creator: pitch.user?.creator,
-              engagementRate: pitch.user?.instagramUser?.engagement_rate,
-              followerCount: pitch.user?.instagramUser?.followers_count,
-              profileLink: pitch.user?.creator?.profileLink,
-            },
-            status: pitch.status || 'undecided',
-            createdAt: pitch.createdAt || new Date().toISOString(),
-            type: pitch.type || 'text',
-            content: pitch.content || pitch.user?.creator?.about || 'No content available',
-            isShortlisted: false,
-            // pitchId: pitch.id,
-            isV3: false,
-            outreachStatus: pitch.outreachStatus,
-          }))
+          .map((pitch) => {
+            const sc = shortlistByUserId.get(pitch.userId || pitch.user?.id);
+            return {
+              pitchId: pitch.id,
+              user: {
+                id: pitch.userId || pitch.user?.id,
+                name: pitch.user?.name,
+                ig_username: pitch.user?.creator?.instagramUser?.username,
+                tiktok_username: pitch.user?.creator?.tiktokUser?.username,
+                photoURL: pitch.user?.photoURL,
+                status: pitch.user?.status || 'active',
+                creator: pitch.user?.creator,
+                engagementRate: pitch.user?.instagramUser?.engagement_rate,
+                followerCount: pitch.user?.instagramUser?.followers_count,
+                profileLink: pitch.user?.creator?.profileLink,
+              },
+              status: pitch.status || 'undecided',
+              createdAt: pitch.createdAt || new Date().toISOString(),
+              type: pitch.type || 'text',
+              content: pitch.content || pitch.user?.creator?.about || 'No content available',
+              isShortlisted: false,
+              // pitchId: pitch.id,
+              isV3: false,
+              outreachStatus: pitch.outreachStatus,
+              _creditTier: sc?.creditTier ?? null,
+              _creditPerVideo: sc?.creditPerVideo ?? null,
+            };
+          })
           .filter((creator) => creator.user && creator.user.creator)
       : [];
 

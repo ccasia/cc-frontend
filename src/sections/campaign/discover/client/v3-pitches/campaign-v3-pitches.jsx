@@ -130,7 +130,24 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   // Before the new system, creators could be shortlisted without having a pitch record
   // We need to display them as "APPROVED" rows to avoid missing data
   const mergedPitchesAndShortlisted = useMemo(() => {
+    const shortlistByUserId = new Map();
+    (shortlistedCreators || []).forEach((sc) => {
+      if (sc.userId) shortlistByUserId.set(sc.userId, sc);
+    });
+
     const pitchUserIds = new Set((pitches || []).map((p) => p.userId));
+
+    // Attach the shortlist tier snapshot to regular pitches (needed when the creator's
+    // current Creator.creditTier is null — e.g. after a guest is linked to a platform creator)
+    const enrichedPitches = (pitches || []).map((p) => {
+      const sc = shortlistByUserId.get(p.userId);
+      if (!sc) return p;
+      return {
+        ...p,
+        _creditTier: sc.creditTier,
+        _creditPerVideo: sc.creditPerVideo,
+      };
+    });
 
     // Transform shortlisted creators (without pitch records) into pitch-like objects
     const shortlistedWithoutPitch = (shortlistedCreators || [])
@@ -157,7 +174,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         _creditPerVideo: sc.creditPerVideo,
       }));
 
-    return [...(pitches || []), ...shortlistedWithoutPitch];
+    return [...enrichedPitches, ...shortlistedWithoutPitch];
   }, [pitches, shortlistedCreators, campaign?.id]);
 
   // Count pitches by display status (using merged array)
@@ -359,8 +376,13 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
             if (pitch._isShortlistedOnly && pitch._creditTier) {
               return pitch._creditPerVideo || pitch._creditTier?.creditsPerVideo || 0;
             }
-            // For regular pitches, use creator's current tier
-            return pitch.user?.creator?.creditTier?.creditsPerVideo || 0;
+            // For regular pitches, prefer creator's current tier; fall back to shortlist snapshot
+            return (
+              pitch.user?.creator?.creditTier?.creditsPerVideo ||
+              pitch._creditPerVideo ||
+              pitch._creditTier?.creditsPerVideo ||
+              0
+            );
           };
           const tierA = getTierCredits(a);
           const tierB = getTierCredits(b);
