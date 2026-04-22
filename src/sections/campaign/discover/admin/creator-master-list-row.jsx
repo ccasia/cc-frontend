@@ -7,6 +7,7 @@ import { Box, Link, Stack, Avatar, Button, Tooltip, TableRow, TableCell, Typogra
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 
 import { getOutreachStatusConfig } from 'src/contants/outreach';
 
@@ -107,6 +108,7 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
   };
 
   const tierData = isCreditTier ? getTierData() : null;
+  const tierPlatform = isCreditTier ? resolveTierPlatformForDisplay(pitch, campaign) : 'instagram';
 
   const statusInfo = getStatusInfo(pitch);
 
@@ -341,7 +343,19 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
       </TableCell>
       {isCreditTier && (
         <TableCell>
-          <Typography variant="body2">{tierData?.name || '-'}</Typography>
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            {tierData?.name && (
+              <Iconify
+                icon={tierPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
+                width={15}
+                sx={{
+                  color: tierPlatform === 'tiktok' ? '#000000' : '#E4405F',
+                  flexShrink: 0,
+                }}
+              />
+            )}
+            <Typography variant="body2">{tierData?.name || '-'}</Typography>
+          </Stack>
         </TableCell>
       )}
       {isCreditTier && (

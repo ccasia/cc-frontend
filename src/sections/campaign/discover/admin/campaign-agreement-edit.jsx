@@ -587,8 +587,17 @@ const CampaignAgreementEdit = ({
                           fontSize: '0.75rem',
                           display: 'flex',
                           alignItems: 'center',
+                          gap: 0.5,
                         }}
                       >
+                        <Iconify
+                          icon={selectedPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
+                          width={14}
+                          sx={{
+                            color: selectedPlatform === 'tiktok' ? '#000000' : '#E4405F',
+                            flexShrink: 0,
+                          }}
+                        />
                         {displayTierData.name}
                       </Box>
                       <Box

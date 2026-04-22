@@ -10,6 +10,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 
 import { OUTREACH_STATUS_OPTIONS, getOutreachStatusConfig } from 'src/contants/outreach';
 
@@ -463,11 +464,22 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
             if (!tierData) {
               return <Typography fontSize={13.5}>-</Typography>;
             }
+            const tierPlatform = resolveTierPlatformForDisplay(pitch, campaign);
             return (
               <Stack alignItems="start">
-                <Typography fontSize={13.5} whiteSpace="nowrap">
-                  {tierData.name}
-                </Typography>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify
+                    icon={tierPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
+                    width={15}
+                    sx={{
+                      color: tierPlatform === 'tiktok' ? '#000000' : '#E4405F',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Typography fontSize={13.5} whiteSpace="nowrap">
+                    {tierData.name}
+                  </Typography>
+                </Stack>
                 <Typography
                   variant="body2"
                   fontSize={13.5}

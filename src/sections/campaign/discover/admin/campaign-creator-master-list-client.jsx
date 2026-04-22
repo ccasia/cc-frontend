@@ -271,6 +271,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               engagementRate: pitch.engagementRate,
               isShortlisted: false,
               outreachStatus: pitch.outreachStatus,
+              selectedPlatform: pitch.selectedPlatform,
             }))
           .filter((creator) => !!creator.user && !!creator.user.id)
           .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT')
@@ -299,6 +300,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
             type: 'text',
             content: item.user?.creator?.about || 'No content available',
             isShortlisted: true,
+            selectedPlatform: item.selectedPlatform,
           }))
           .filter((creator) => creator.user && creator.user.creator)
       : [];
@@ -336,6 +338,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
             isShortlisted: false,
             isV3: false,
             outreachStatus: pitch.outreachStatus,
+            selectedPlatform: pitch.selectedPlatform,
           }))
           .filter((creator) => creator.user && creator.user.creator)
       : [];
