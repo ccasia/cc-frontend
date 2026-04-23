@@ -106,7 +106,12 @@ const clientAllowedTabs = [
   'faq',
 ];
 
-const CampaignDetailView = ({ id, publicReadonly = false, forcedTab = null }) => {
+const CampaignDetailView = ({
+  id,
+  publicReadonly = false,
+  forcedTab = null,
+  publicApprovalEntries = [],
+}) => {
   const settings = useSettingsContext();
   const router = useRouter();
   const [searchParams] = useSearchParams();
@@ -632,7 +637,11 @@ const CampaignDetailView = ({ id, publicReadonly = false, forcedTab = null }) =>
         return <CampaignDetailContentClient campaign={campaign} />;
       case 'creator-master-list':
         return (
-          <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
+          <CampaignCreatorMasterListClient
+            campaign={campaign}
+            campaignMutate={campaignMutate}
+            fallbackApprovalEntries={publicApprovalEntries}
+          />
         );
       case 'agreement':
         return (
@@ -1287,4 +1296,5 @@ CampaignDetailView.propTypes = {
   id: PropTypes.string,
   publicReadonly: PropTypes.bool,
   forcedTab: PropTypes.string,
+  publicApprovalEntries: PropTypes.array,
 };

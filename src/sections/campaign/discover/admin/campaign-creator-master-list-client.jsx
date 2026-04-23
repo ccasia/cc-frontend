@@ -111,7 +111,7 @@ const getStatusInfo = (pitch) => {
   );
 };
 
-const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
+const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApprovalEntries = [] }) => {
   const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
   const { socket } = useSocketContext();
@@ -240,7 +240,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     if (!campaign) return [];
 
     if (campaign.submissionVersion === 'v4' && v3Pitches) {
-      return (
+      const creatorsFromV3 = (
         v3Pitches
           .map((pitch) => ({
               id: pitch.id,
@@ -276,6 +276,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
           .filter((creator) => !!creator.user && !!creator.user.id)
           .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT')
       );
+
+      if (creatorsFromV3.length > 0) return creatorsFromV3;
     }
 
     // Get creators from shortlisted
@@ -343,9 +345,59 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
           .filter((creator) => creator.user && creator.user.creator)
       : [];
 
-    // Combine both lists
-    return [...shortlistedCreators, ...pitchCreators];
-  }, [campaign, v3Pitches]);
+    const combinedCreators = [...shortlistedCreators, ...pitchCreators];
+    if (combinedCreators.length > 0) return combinedCreators;
+
+    // Public approval page fallback:
+    // when campaign API doesn't include pitches for this viewer, use token-bound entries.
+    if (fallbackApprovalEntries.length > 0) {
+      return fallbackApprovalEntries
+        .map((entry) => {
+          const pitch = entry?.pitch || {};
+          const statusMap = {
+            PENDING: 'PENDING_REVIEW',
+            APPROVED: 'APPROVED',
+            REJECTED: 'REJECTED',
+          };
+
+          return {
+            id: pitch?.id || entry?.pitchId,
+            pitchId: pitch?.id || entry?.pitchId,
+            user: {
+              id: pitch?.userId || pitch?.user?.id,
+              name: pitch?.user?.name,
+              email: pitch?.user?.email,
+              ig_username: pitch?.user?.creator?.instagramUser?.username,
+              tiktok_username: pitch?.user?.creator?.tiktokUser?.username,
+              photoURL: pitch?.user?.photoURL,
+              status: pitch?.user?.status || 'active',
+              creator: pitch?.user?.creator,
+              engagementRate: pitch?.user?.instagramUser?.engagement_rate,
+              followerCount: pitch?.user?.instagramUser?.followers_count,
+              profileLink: pitch?.user?.creator?.profileLink,
+            },
+            status: statusMap[entry?.status] || pitch?.displayStatus || pitch?.status || 'PENDING_REVIEW',
+            displayStatus:
+              statusMap[entry?.status] || pitch?.displayStatus || pitch?.status || 'PENDING_REVIEW',
+            createdAt: pitch?.createdAt || new Date().toISOString(),
+            type: pitch?.type || 'text',
+            content: pitch?.content || pitch?.user?.creator?.about || 'No content available',
+            adminComments: pitch?.adminComments,
+            rejectionReason: pitch?.rejectionReason,
+            customRejectionText: pitch?.customRejectionText,
+            clientVisibleApprovalNote: pitch?.clientVisibleApprovalNote,
+            followerCount: pitch?.followerCount,
+            engagementRate: pitch?.engagementRate,
+            isShortlisted: false,
+            outreachStatus: pitch?.outreachStatus,
+            selectedPlatform: pitch?.selectedPlatform,
+          };
+        })
+        .filter((creator) => !!creator?.id && !!creator?.user?.id);
+    }
+
+    return [];
+  }, [campaign, v3Pitches, fallbackApprovalEntries]);
 
   const activeCount = creators.length || 0;
   const pendingCount =
@@ -1482,6 +1534,7 @@ export default CampaignCreatorMasterListClient;
 CampaignCreatorMasterListClient.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
+  fallbackApprovalEntries: PropTypes.array,
 };
 
 // Shared prop-type shape for pitch objects
