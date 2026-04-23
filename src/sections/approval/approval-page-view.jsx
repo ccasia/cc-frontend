@@ -543,7 +543,12 @@ const ApprovalPageView = () => {
           '& *': { pointerEvents: 'none !important' },
         }}
       >
-        <CampaignDetailView id={campaign?.id} publicReadonly forcedTab="creator-master-list" />
+        <CampaignDetailView
+          id={campaign?.id}
+          publicReadonly
+          forcedTab="creator-master-list"
+          publicApprovalEntries={creators}
+        />
       </Box>
 
       <Dialog
