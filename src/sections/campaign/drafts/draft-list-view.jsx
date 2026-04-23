@@ -166,7 +166,11 @@ export default function DraftCampaignListView() {
                 {data.map((campaign) => {
                   const missing = collectMissingBDDraftFields(campaign);
                   return (
-                    <TableRow key={campaign.id} hover>
+                    <TableRow
+                      key={campaign.id}
+                      hover
+                      onClick={() => navigate(paths.dashboard.campaign.draftDetails(campaign.id))}
+                    >
                       <TableCell>
                         <Typography variant="subtitle2">{campaign.name}</Typography>
                       </TableCell>
