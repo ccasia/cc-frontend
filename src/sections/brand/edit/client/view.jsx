@@ -614,7 +614,7 @@ const CompanyEditView = ({ id }) => {
             )}
 
             {activeTab === 'pic' && (
-              <PICList personIncharge={company?.pic} companyId={company?.id} onUpdate={mutate} />
+              <PICList personIncharge={company?.pic} companyId={company?.id} onUpdate={mutate} handleActivate={handleActivateButtonClick}/>
             )}
 
             {activeTab === 'child-accounts' && (
