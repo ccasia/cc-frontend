@@ -790,14 +790,8 @@ export default function CampaignItem({
       component={RouterLink}
       href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
       onClick={() => {
-        // const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');
-
-        // if (lastCampaignOpenId || lastCampaignOpenId !== campaign.id) {
-        //   localStorage.setItem('lastCampaignOpenId', campaign?.id);
-        // }
         localStorage.setItem('lastOpenedIndex', String(index));
         localStorage.removeItem('lastScrollPosition');
-        router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
       }}
       sx={{
         overflow: 'hidden',
