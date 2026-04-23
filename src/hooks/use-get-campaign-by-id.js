@@ -10,8 +10,31 @@ const options = {
 };
 
 export const useGetCampaignById = (id) => {
+  const endpoint = id ? endpoints.campaign.getCampaignById(id) : null;
+  const { data, error, mutate, isLoading } = useSWR(endpoint, fetcher, options);
+
+  const memoizedValue = useMemo(
+    () => ({
+      campaign: data,
+      campaignError: error,
+      campaignLoading: isLoading,
+      mutate,
+    }),
+    [data, error, isLoading, mutate]
+  );
+
+  return memoizedValue;
+};
+
+export const useGetCampaignByIdScoped = (id, usePublicEndpoint = false) => {
+  const endpoint = id
+    ? usePublicEndpoint
+      ? endpoints.campaign.getCampaignPitchById(id)
+      : endpoints.campaign.getCampaignById(id)
+    : null;
+
   const { data, error, mutate, isLoading } = useSWR(
-    id ? endpoints.campaign.getCampaignById(id) : null,
+    endpoint,
     fetcher,
     options
   );

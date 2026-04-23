@@ -32,7 +32,7 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
-import { useGetCampaignById, useGetCampaignByIdPublic } from 'src/hooks/use-get-campaign-by-id';
+import { useGetCampaignByIdScoped } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 import { useCampaignPermissions } from 'src/hooks/use-campaign-permissions';
 
@@ -111,7 +111,11 @@ const CampaignDetailView = ({ id, publicReadonly = false, forcedTab = null }) =>
   const router = useRouter();
   const [searchParams] = useSearchParams();
 
-  const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
+  const {
+    campaign,
+    campaignLoading,
+    mutate: campaignMutate,
+  } = useGetCampaignByIdScoped(id, publicReadonly);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
