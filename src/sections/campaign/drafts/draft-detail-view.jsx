@@ -61,7 +61,7 @@ export default function DraftCampaignDetailView() {
     data: campaign,
     isLoading,
     mutate,
-  } = useSWR(id ? endpoints.campaign.getCampaignById(id) : null, fetcher);
+  } = useSWR(id ? endpoints.campaign.getCampaignPitchById(id) : null, fetcher);
 
   const [submitting, setSubmitting] = useState(false);
   const [dirtySections, setDirtySections] = useState({});
