@@ -45,16 +45,137 @@ export default function MyInviteLinkView() {
   const [refreshing, setRefreshing] = useState(false);
   const qrWrapRef = useRef(null);
 
-  const downloadQrPng = () => {
-    const canvas = qrWrapRef.current?.querySelector('canvas');
-    if (!canvas) {
+  const loadImage = (src, width, height) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      if (width) img.width = width;
+      if (height) img.height = height;
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+
+  const downloadQrPng = async () => {
+    const qrCanvas = qrWrapRef.current?.querySelector('canvas');
+    if (!qrCanvas) {
       enqueueSnackbar('Could not export QR', { variant: 'error' });
       return;
     }
     try {
+      if (document.fonts?.ready) {
+        await document.fonts.ready;
+      }
+
+      const W = 1080;
+      const H = 1440;
+      const SCALE = 2; // render at 2x for HD output
+      const out = document.createElement('canvas');
+      out.width = W * SCALE;
+      out.height = H * SCALE;
+      const ctx = out.getContext('2d');
+      ctx.scale(SCALE, SCALE);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Background — deep navy with a purple-blue radial glow (mockup vibe)
+      ctx.fillStyle = '#05070f';
+      ctx.fillRect(0, 0, W, H);
+      const glow = ctx.createRadialGradient(W / 2, H * 0.4, 60, W / 2, H * 0.4, W * 0.9);
+      glow.addColorStop(0, 'rgba(80, 70, 220, 0.55)');
+      glow.addColorStop(0.45, 'rgba(40, 30, 150, 0.25)');
+      glow.addColorStop(1, 'rgba(5, 7, 15, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
+
+      // Logo (SVG from /public) — fetch to get intrinsic aspect, then rasterize at HD size
+      try {
+        const probe = await loadImage('/Cult Creative Logo.svg');
+        const logoH = 140;
+        const ratio = probe.naturalWidth && probe.naturalHeight
+          ? probe.naturalWidth / probe.naturalHeight
+          : 1;
+        const logoW = logoH * ratio;
+        // Re-rasterize SVG at 2x target size so drawImage doesn't upscale
+        const logo = await loadImage(
+          '/Cult Creative Logo.svg',
+          Math.round(logoW * SCALE),
+          Math.round(logoH * SCALE)
+        );
+        ctx.drawImage(logo, 80, 90, logoW, logoH);
+      } catch {
+        // Fallback to text wordmark if SVG fails to load
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.font = '900 56px "Public Sans", Inter, Arial, sans-serif';
+        ctx.fillText('CULT', 80, 90);
+        ctx.fillText('CREATIVE.', 80, 150);
+      }
+
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+
+      // Overline
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.font = '700 24px "Public Sans", Inter, Arial, sans-serif';
+      ctx.fillText('SCAN & SUBMIT', 80, 310);
+
+      // Heading — line 1 white bold (sans)
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 88px "Public Sans", Inter, Arial, sans-serif';
+      ctx.fillText('Scan this QR', 80, 355);
+
+      // Heading — line 2 gradient italic serif (matches "your campaign." in the mockup)
+      const grad = ctx.createLinearGradient(80, 0, 900, 0);
+      grad.addColorStop(0, '#a78bfa');
+      grad.addColorStop(1, ACCENT_BLUE);
+      ctx.fillStyle = grad;
+      ctx.font =
+        'italic 700 88px "Instrument Serif", "Playfair Display", "Times New Roman", Georgia, serif';
+      ctx.fillText('to share your brief.', 80, 455);
+
+      // Description
+      ctx.fillStyle = 'rgba(255,255,255,0.72)';
+      ctx.font = '400 28px "Public Sans", Inter, Arial, sans-serif';
+      const desc = [
+        'Tell us your goals, audience, and budget —',
+        'our team will prepare a tailored content strategy',
+        'and creator recommendations.',
+      ];
+      desc.forEach((line, i) => ctx.fillText(line, 80, 600 + i * 42));
+
+      // QR tile (white rounded card)
+      const tileSize = 500;
+      const tileX = (W - tileSize) / 2;
+      const tileY = 820;
+      const radius = 32;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(tileX + radius, tileY);
+      ctx.lineTo(tileX + tileSize - radius, tileY);
+      ctx.quadraticCurveTo(tileX + tileSize, tileY, tileX + tileSize, tileY + radius);
+      ctx.lineTo(tileX + tileSize, tileY + tileSize - radius);
+      ctx.quadraticCurveTo(
+        tileX + tileSize,
+        tileY + tileSize,
+        tileX + tileSize - radius,
+        tileY + tileSize
+      );
+      ctx.lineTo(tileX + radius, tileY + tileSize);
+      ctx.quadraticCurveTo(tileX, tileY + tileSize, tileX, tileY + tileSize - radius);
+      ctx.lineTo(tileX, tileY + radius);
+      ctx.quadraticCurveTo(tileX, tileY, tileX + radius, tileY);
+      ctx.closePath();
+      ctx.fill();
+
+      // QR inside tile
+      const qrSize = tileSize - 80;
+      ctx.drawImage(qrCanvas, tileX + 40, tileY + 40, qrSize, qrSize);
+
       const link = document.createElement('a');
       link.download = 'invite-link-qr.png';
-      link.href = canvas.toDataURL('image/png');
+      link.href = out.toDataURL('image/png');
       link.click();
       enqueueSnackbar('QR image saved', { variant: 'success' });
     } catch {
