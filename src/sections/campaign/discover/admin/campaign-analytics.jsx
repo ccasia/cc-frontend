@@ -1404,11 +1404,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                       mutateManualEntries();
                       enqueueSnackbar('Creator entry added successfully', { variant: 'success' });
                     }}
-                    onError={({ status, message }) => {
-                      enqueueSnackbar(message, {
-                        variant: status === 409 ? 'warning' : 'error',
-                      });
-                    }}
                     onFormStateChange={setFormState}
                   />
                 )}
