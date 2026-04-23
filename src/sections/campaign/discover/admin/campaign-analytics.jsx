@@ -20,7 +20,7 @@ import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import { useGetManualCreatorEntries } from 'src/hooks/useSWR/useGetManualCreatorEntries';
 
-import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
+import { canonicalizePostUrl, extractPostingSubmissions } from 'src/utils/extractPostingLinks';
 import {
   formatNumber,
   getMetricValue,
@@ -790,15 +790,8 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     if (selectedPlatform === 'ALL') {
       return insightsData;
     }
-    return insightsData.filter((data) => {
-      // Safety check: ensure data and submissionId exist
-      if (!data || !data.submissionId) {
-        return false;
-      }
-      const submission = postingSubmissions.find((sub) => sub && sub.id === data.submissionId);
-      return submission && submission.platform === selectedPlatform;
-    });
-  }, [insightsData, selectedPlatform, postingSubmissions]);
+    return insightsData.filter((data) => data && data.platform === selectedPlatform);
+  }, [insightsData, selectedPlatform]);
 
   // Filter manual entries based on selected platform
   const filteredManualEntries = useMemo(() => {
@@ -816,23 +809,33 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     const rows = [];
 
     filteredManualEntries.forEach((entry) => {
+      const canonical = canonicalizePostUrl(entry.postUrl);
+      const dedupKey = canonical
+        ? `url::${entry.platform}::${canonical}`
+        : `manual::${entry.platform}::${(entry.creatorUsername || entry.id).toLowerCase()}`;
       rows.push({
         kind: 'manual',
-        key: `manual-${entry.id}`,
+        dedupKey,
         engagementRate: Number(entry.engagementRate) || 0,
         entry,
       });
     });
 
     filteredSubmissions.forEach((submission) => {
-      const insightData = insightsData.find((data) => data.submissionId === submission.id);
+      const insightData = insightsData.find(
+        (data) => data.submissionId === submission.id && data.postUrl === submission.postUrl,
+      );
       if (!insightData && !loadingInsights) {
         return;
       }
       const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
+      const canonical = canonicalizePostUrl(submission.postUrl);
+      const dedupKey = canonical
+        ? `url::${submission.platform}::${canonical}`
+        : `submission::${submission.platform}::${submission.user}::${submission.id}`;
       rows.push({
         kind: 'submission',
-        key: submission.id,
+        dedupKey,
         engagementRate,
         submission,
         insightData,
@@ -840,7 +843,13 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     });
 
     rows.sort((a, b) => b.engagementRate - a.engagementRate);
-    return rows;
+
+    const seen = new Set();
+    return rows.filter((row) => {
+      if (seen.has(row.dedupKey)) return false;
+      seen.add(row.dedupKey);
+      return true;
+    });
   }, [filteredManualEntries, filteredSubmissions, insightsData, loadingInsights]);
 
   // Calculate summary statistics based on filtered data or provide empty state
@@ -1395,6 +1404,11 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                       mutateManualEntries();
                       enqueueSnackbar('Creator entry added successfully', { variant: 'success' });
                     }}
+                    onError={({ status, message }) => {
+                      enqueueSnackbar(message, {
+                        variant: status === 409 ? 'warning' : 'error',
+                      });
+                    }}
                     onFormStateChange={setFormState}
                   />
                 )}
@@ -1406,7 +1420,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                   if (row.kind === 'manual') {
                     return (
                       <ManualCreatorCard
-                        key={row.key}
+                        key={row.dedupKey}
                         entry={row.entry}
                         campaignId={campaignId}
                         onUpdate={mutateManualEntries}
@@ -1418,7 +1432,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
 
                   return (
                     <UserPerformanceCard
-                      key={row.key}
+                      key={row.dedupKey}
                       submission={row.submission}
                       insightData={row.insightData}
                       engagementRate={row.engagementRate}

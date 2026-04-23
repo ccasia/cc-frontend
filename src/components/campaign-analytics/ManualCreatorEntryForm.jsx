@@ -268,7 +268,7 @@ const inputFieldStyle = {
   },
 };
 
-const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess, onFormStateChange, selectedPlatform, submissionsWithoutInsights }, ref) => {
+const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess, onError, onFormStateChange, selectedPlatform, submissionsWithoutInsights }, ref) => {
   const isEditMode = Boolean(editingEntry);
   // Use selectedPlatform if provided, otherwise default to editingEntry platform or Instagram
   const initialPlatform = selectedPlatform && selectedPlatform !== 'ALL' 
@@ -402,6 +402,13 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
       onSuccess?.();
     } catch (error) {
       console.error(`Failed to ${isEditMode ? 'update' : 'create'} manual entry:`, error);
+      onError?.({
+        status: error?.response?.status,
+        message:
+          error?.response?.data?.message ||
+          error?.message ||
+          `Failed to ${isEditMode ? 'update' : 'add'} creator entry`,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -1219,6 +1226,7 @@ ManualCreatorEntryForm.propTypes = {
     saved: PropTypes.number,
   }),
   onSuccess: PropTypes.func,
+  onError: PropTypes.func,
   onFormStateChange: PropTypes.func,
   selectedPlatform: PropTypes.oneOf(['ALL', 'Instagram', 'TikTok']),
   submissionsWithoutInsights: PropTypes.arrayOf(
