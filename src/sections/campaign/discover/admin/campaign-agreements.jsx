@@ -599,11 +599,19 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     }
 
     // Also include shortlisted creators who may not have a pitch record
-    // This handles backwards compatibility for creators shortlisted before the pitch system
+    // This handles backwards compatibility for creators shortlisted before the pitch system.
+    // V4 caveat: a ShortListedCreator row can exist BEFORE client approval (e.g. after admin
+    // uses Link Creator on a SENT_TO_CLIENT pitch). Only include shortlist entries that have
+    // no matching pitch — otherwise the pitch's approval gate is the source of truth.
+    const allPitchUserIds = new Set(
+      (Array.isArray(campaign?.pitch) ? campaign.pitch : [])
+        .map((pitchItem) => pitchItem?.userId)
+        .filter(Boolean)
+    );
     const shortlistedUserIds = new Set();
     if (Array.isArray(campaign?.shortlisted)) {
       campaign.shortlisted.forEach((shortlistedItem) => {
-        if (shortlistedItem?.userId) {
+        if (shortlistedItem?.userId && !allPitchUserIds.has(shortlistedItem.userId)) {
           shortlistedUserIds.add(shortlistedItem.userId);
         }
       });

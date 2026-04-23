@@ -178,6 +178,14 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
         creditsPerVideo: creatorTier.creditsPerVideo,
       };
     }
+    // Fallback: shortlist snapshot tier (e.g., when a guest creator was linked to a platform creator
+    // whose own Creator.creditTier hasn't been computed)
+    if (pitch._creditTier) {
+      return {
+        name: pitch._creditTier.name,
+        creditsPerVideo: pitch._creditPerVideo || pitch._creditTier.creditsPerVideo,
+      };
+    }
     return null;
   };
 

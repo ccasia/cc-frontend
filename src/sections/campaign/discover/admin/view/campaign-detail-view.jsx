@@ -327,9 +327,17 @@ const CampaignDetailView = ({ id }) => {
         .map((pitch) => pitch.userId)
     );
 
-    // Get shortlisted user IDs (for backwards compatibility)
+    // Get shortlisted user IDs (for backwards compatibility) — only those without a pitch.
+    // V4 caveat: a ShortListedCreator row can exist BEFORE client approval (e.g. after admin
+    // uses Link Creator on a SENT_TO_CLIENT pitch); the pitch's approval gate is the source
+    // of truth when both exist.
+    const allPitchUserIds = new Set(
+      (pitches || []).map((pitch) => pitch?.userId).filter(Boolean)
+    );
     const shortlistedUserIds = new Set(
-      (shortlisted || []).filter((s) => s?.userId).map((s) => s.userId)
+      (shortlisted || [])
+        .filter((s) => s?.userId && !allPitchUserIds.has(s.userId))
+        .map((s) => s.userId)
     );
 
     // Combine both sets for total agreements
