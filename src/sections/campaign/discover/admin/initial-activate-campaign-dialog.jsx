@@ -77,7 +77,7 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
       setLoading(true);
       
       // Fetch campaign details
-      axios.get(`/api/campaign/getCampaignById/${campaignId}`)
+      axios.get(`/api/campaign/getClientByCampID/${campaignId}`)
         .then((response) => {
           if (response.data) {
             setCampaignDetails(response.data);

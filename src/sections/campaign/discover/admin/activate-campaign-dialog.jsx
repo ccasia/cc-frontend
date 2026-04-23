@@ -211,7 +211,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
 
       // Fetch campaign details
       axios
-        .get(`/api/campaign/getCampaignById/${campaignId}`)
+        .get(`/api/campaign/getClientByCampID/${campaignId}`)
         .then((response) => {
           if (response.data) {
             setCampaignDetails(response.data);
