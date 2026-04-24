@@ -213,7 +213,10 @@ export default function DraftCampaignListView() {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => setConfirmDelete(campaign)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmDelete(campaign);
+                            }}
                             aria-label="Delete draft"
                           >
                             <DeleteIcon fontSize="small" />
