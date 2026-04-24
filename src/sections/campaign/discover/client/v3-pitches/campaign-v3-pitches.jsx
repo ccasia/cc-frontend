@@ -2661,6 +2661,48 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
                   />
                 </Box>
 
+                {/* Platform — same select pattern as Add Platform Creators */}
+                <Box
+                  sx={{
+                    minWidth: { xs: '100%', md: 138 },
+                    maxWidth: { xs: '100%', md: 180 },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      mb: 0.5,
+                      display: 'block',
+                      color: '#636366',
+                      fontSize: '14px !important',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Platform
+                  </Typography>
+                  <TextField
+                    select
+                    fullWidth
+                    value={creator.selectedPlatform}
+                    onChange={handleCreatorChange(index, 'selectedPlatform')}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: '#fff',
+                        minHeight: 48,
+                        borderRadius: 1,
+                      },
+                    }}
+                  >
+                    {getPlatformSelectOptions().map((platform) => (
+                      <MenuItem key={platform.value} value={platform.value}>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Iconify icon={platform.icon} width={16} />
+                          <span>{platform.label}</span>
+                        </Stack>
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Box>
+
                 {/* Follower Count */}
                 <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
                   <Typography
@@ -2724,51 +2766,6 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
                       },
                     }}
                   />
-                </Box>
-
-                <Box
-                  sx={{
-                    minWidth: { xs: '100%', md: 138 },
-                    maxWidth: { xs: '100%', md: 138 },
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      mb: 0.5,
-                      display: 'block',
-                      color: '#636366',
-                      fontSize: '14px !important',
-                      fontWeight: 600,
-                    }}
-                  >
-                    Platform
-                  </Typography>
-                  <Stack direction="row" spacing={1}>
-                    {PLATFORM_OPTIONS.map((platform) => (
-                      <Button
-                        key={platform.value}
-                        variant={creator.selectedPlatform === platform.value ? 'contained' : 'outlined'}
-                        onClick={() => {
-                          const updatedCreators = [...formValues.creators];
-                          updatedCreators[index].selectedPlatform = platform.value;
-                          setFormValues({ ...formValues, creators: updatedCreators });
-                        }}
-                        sx={{
-                          minWidth: 58,
-                          px: 1,
-                          borderRadius: 1,
-                          borderColor: '#E7E7E7',
-                          color: creator.selectedPlatform === platform.value ? '#fff' : '#636366',
-                          bgcolor: creator.selectedPlatform === platform.value ? '#203ff5' : '#fff',
-                          '&:hover': {
-                            bgcolor: creator.selectedPlatform === platform.value ? '#1933cc' : '#f9f9f9',
-                          },
-                        }}
-                      >
-                        <Iconify icon={platform.icon} width={18} />
-                      </Button>
-                    ))}
-                  </Stack>
                 </Box>
               </Stack>
 

@@ -342,8 +342,8 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
         </Typography>
       </TableCell>
       {isCreditTier && (
-        <TableCell>
-          <Stack direction="row" alignItems="center" spacing={0.5}>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          <Stack direction="row" alignItems="center" spacing={0.5} flexWrap="nowrap">
             {tierData?.name && (
               <Iconify
                 icon={tierPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
@@ -354,7 +354,9 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
                 }}
               />
             )}
-            <Typography variant="body2">{tierData?.name || '-'}</Typography>
+            <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
+              {tierData?.name || '-'}
+            </Typography>
           </Stack>
         </TableCell>
       )}
