@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import useSWR from 'swr';
 
 import {
   Box,
@@ -26,13 +27,14 @@ import {
 } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import axiosInstance, { endpoints, fetcher } from 'src/utils/axios';
 import {
   formatNumber,
   extractUsernameFromProfileLink,
   createSocialProfileUrl,
 } from 'src/utils/media-kit-utils';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Iconify from 'src/components/iconify';
 import CampaignDetailView from 'src/sections/campaign/discover/admin/view/campaign-detail-view';
 
@@ -153,11 +155,25 @@ const approvalNoteLabelSx = {
 const ApprovalPageView = () => {
   const { token } = useParams();
   const smDown = useResponsive('down', 'sm');
+  const { socket } = useSocketContext();
 
-  const [loading, setLoading] = useState(true);
+  const approvalRequestEndpoint = useMemo(
+    () => (token ? endpoints.approvalRequests.get(token) : null),
+    [token]
+  );
+  const {
+    data: swrApprovalData,
+    error: swrApprovalError,
+    isLoading: swrApprovalLoading,
+    mutate: mutateApprovalRequest,
+  } = useSWR(approvalRequestEndpoint, fetcher, {
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+  });
+
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
-  // Track local action state per creator: { [pitchId]: 'PENDING' | 'APPROVED' | 'REJECTED' }
+  // Track local action state per creator: { [pitchId]: 'PENDING' | 'APPROVED' | 'REJECTED' | 'MAYBE' }
   const [creatorStatuses, setCreatorStatuses] = useState({});
   const [actionLoading, setActionLoading] = useState({});
   const [allActioned, setAllActioned] = useState(false);
@@ -169,6 +185,7 @@ const ApprovalPageView = () => {
     pending: true,
     approved: true,
     rejected: true,
+    maybe: true,
   });
 
   /** Optional note for the client — keyed by pitchId */
@@ -188,37 +205,59 @@ const ApprovalPageView = () => {
     commentDraftsRef.current = commentDrafts;
   }, [commentDrafts]);
 
-  const fetchApprovalRequest = useCallback(async () => {
-    try {
-      const res = await axiosInstance.get(endpoints.approvalRequests.get(token));
-      setData(res.data);
+  useEffect(() => {
+    if (!swrApprovalData) return;
 
-      const initialStatuses = {};
-      const initialComments = {};
-      res.data.creators.forEach((c) => {
-        initialStatuses[c.pitchId] = c.status;
-        initialComments[c.pitchId] = c.comment ?? '';
-      });
-      setCreatorStatuses(initialStatuses);
-      setCommentDrafts(initialComments);
-      commentDraftsRef.current = initialComments;
+    setData(swrApprovalData);
+    setError(null);
 
-      const allDone = res.data.creators.every((c) => c.status !== 'PENDING');
-      setAllActioned(allDone);
-    } catch (err) {
-      if (err?.statusCode === 410 || err?.message?.includes('expired')) {
-        setError('expired');
-      } else {
-        setError('invalid');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+    const nextStatuses = {};
+    const nextComments = {};
+    swrApprovalData.creators.forEach((c) => {
+      const pitchStatus = (c.pitch?.status || '').toUpperCase();
+      nextStatuses[c.pitchId] =
+        pitchStatus === 'APPROVED' || pitchStatus === 'REJECTED' || pitchStatus === 'MAYBE'
+          ? pitchStatus
+          : c.status;
+      nextComments[c.pitchId] = c.comment ?? '';
+    });
+    setCreatorStatuses(nextStatuses);
+    setCommentDrafts(nextComments);
+    commentDraftsRef.current = nextComments;
+    setAllActioned(swrApprovalData.creators.every((c) => c.status !== 'PENDING'));
+  }, [swrApprovalData]);
 
   useEffect(() => {
-    fetchApprovalRequest();
-  }, [fetchApprovalRequest]);
+    if (!swrApprovalError) return;
+    if (
+      swrApprovalError?.statusCode === 410 ||
+      swrApprovalError?.status === 410 ||
+      swrApprovalError?.message?.includes('expired')
+    ) {
+      setError('expired');
+    } else {
+      setError('invalid');
+    }
+  }, [swrApprovalError]);
+
+  useEffect(() => {
+    if (!socket || !data?.campaign?.id) return undefined;
+
+    const campaignId = data.campaign.id;
+    socket.emit('join-campaign', campaignId);
+
+    const handlePitchStatusUpdated = (payload) => {
+      if (payload?.campaignId !== campaignId) return;
+      mutateApprovalRequest();
+    };
+
+    socket.on('v3:pitch:status-updated', handlePitchStatusUpdated);
+
+    return () => {
+      socket.off('v3:pitch:status-updated', handlePitchStatusUpdated);
+      socket.emit('leave-campaign', campaignId);
+    };
+  }, [socket, data?.campaign?.id, mutateApprovalRequest]);
 
   const clearUndoTimers = useCallback((pitchId) => {
     if (undoTimeoutsRef.current[pitchId]) {
@@ -278,7 +317,7 @@ const ApprovalPageView = () => {
         return false;
       }
       const localStatus = creatorStatuses[pitchId];
-      const action = localStatus === 'APPROVED' ? 'approve' : 'reject';
+      const action = localStatus === 'APPROVED' ? 'approve' : localStatus === 'MAYBE' ? 'maybe' : 'reject';
       setCommentSaving((prev) => ({ ...prev, [pitchId]: true }));
       try {
         await axiosInstance.patch(endpoints.approvalRequests.action(token, pitchId), {
@@ -325,8 +364,8 @@ const ApprovalPageView = () => {
   const deleteBrandNote = useCallback(
     async (pitchId) => {
       const localStatus = creatorStatuses[pitchId];
-      if (localStatus !== 'APPROVED' && localStatus !== 'REJECTED') return;
-      const action = localStatus === 'APPROVED' ? 'approve' : 'reject';
+      if (localStatus !== 'APPROVED' && localStatus !== 'REJECTED' && localStatus !== 'MAYBE') return;
+      const action = localStatus === 'APPROVED' ? 'approve' : localStatus === 'MAYBE' ? 'maybe' : 'reject';
       setCommentDeleting((prev) => ({ ...prev, [pitchId]: true }));
       try {
         await axiosInstance.patch(endpoints.approvalRequests.action(token, pitchId), {
@@ -360,7 +399,7 @@ const ApprovalPageView = () => {
   );
 
   const handleAction = (pitchId, action) => {
-    const newStatus = action === 'approve' ? 'APPROVED' : 'REJECTED';
+    const newStatus = action === 'approve' ? 'APPROVED' : action === 'maybe' ? 'MAYBE' : 'REJECTED';
     const undoMs = 5000;
     const startedAt = Date.now();
 
@@ -401,7 +440,11 @@ const ApprovalPageView = () => {
     const allDone = data.creators.every(
       (c) => {
         if (undoStates[c.pitchId]) return false;
-        return (creatorStatuses[c.pitchId] || c.status) !== 'PENDING';
+        const localOrPitchOrRequest =
+          creatorStatuses[c.pitchId] ||
+          (c.pitch?.status || '').toUpperCase() ||
+          c.status;
+        return localOrPitchOrRequest !== 'PENDING' && localOrPitchOrRequest !== 'AWAITING_APPROVAL';
       }
     );
     setAllActioned(allDone);
@@ -414,7 +457,7 @@ const ApprovalPageView = () => {
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(2)}`;
   };
 
-  if (loading) {
+  if (swrApprovalLoading && !data) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <CircularProgress />
@@ -449,6 +492,14 @@ const ApprovalPageView = () => {
     );
   }
 
+  if (!data) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   const { campaign, creators, approverName, expiresAt } = data;
 
   const desktopPopoverPitchId = desktopNotePopover.pitchId;
@@ -456,16 +507,26 @@ const ApprovalPageView = () => {
     desktopPopoverPitchId &&
     data?.creators?.find((c) => c.pitchId === desktopPopoverPitchId)?.comment?.trim();
 
-  const getEffectiveStatus = (pitchId, status) => creatorStatuses[pitchId] || status;
+  const getEffectiveStatus = (pitchId, status, pitchStatus) => {
+    if (creatorStatuses[pitchId]) return creatorStatuses[pitchId];
+    const normalizedPitchStatus = (pitchStatus || '').toUpperCase();
+    if (normalizedPitchStatus === 'APPROVED' || normalizedPitchStatus === 'REJECTED' || normalizedPitchStatus === 'MAYBE') {
+      return normalizedPitchStatus;
+    }
+    return status;
+  };
 
   const pendingEntries = creators.filter(
-    (c) => getEffectiveStatus(c.pitchId, c.status) === 'PENDING'
+    (c) => getEffectiveStatus(c.pitchId, c.status, c.pitch?.status) === 'PENDING'
   );
   const approvedEntries = creators.filter(
-    (c) => getEffectiveStatus(c.pitchId, c.status) === 'APPROVED'
+    (c) => getEffectiveStatus(c.pitchId, c.status, c.pitch?.status) === 'APPROVED'
+  );
+  const maybeEntries = creators.filter(
+    (c) => getEffectiveStatus(c.pitchId, c.status, c.pitch?.status) === 'MAYBE'
   );
   const rejectedEntries = creators.filter(
-    (c) => getEffectiveStatus(c.pitchId, c.status) === 'REJECTED'
+    (c) => getEffectiveStatus(c.pitchId, c.status, c.pitch?.status) === 'REJECTED'
   );
   const pendingCount = pendingEntries.length;
 
@@ -474,6 +535,7 @@ const ApprovalPageView = () => {
       PENDING: { label: 'PENDING REVIEW', color: '#FFC702', bg: '#fffbeb' },
       APPROVED: { label: 'APPROVED', color: '#1ABF66', bg: '#f0fdf4' },
       REJECTED: { label: 'REJECTED', color: '#FF4842', bg: '#fff5f5' },
+      MAYBE: { label: 'MAYBE', color: '#FFC702', bg: '#FFFBEA' },
     };
     const cfg = map[status] || map.PENDING;
     return (
@@ -685,6 +747,12 @@ const ApprovalPageView = () => {
                     color: '#FF4842',
                     entries: rejectedEntries,
                   },
+                  {
+                    key: 'maybe',
+                    label: 'MAYBE',
+                    color: '#FFC702',
+                    entries: maybeEntries,
+                  },
                 ]
                   .filter((section) => section.entries.length > 0)
                   .map((section) => {
@@ -761,7 +829,7 @@ const ApprovalPageView = () => {
                       >
                       <Stack spacing={1.5}>
                         {section.entries.map(({ pitchId, status, pitch }) => {
-                    const localStatus = creatorStatuses[pitchId] || status;
+                    const localStatus = getEffectiveStatus(pitchId, status, pitch?.status);
                     const isActioned = localStatus !== 'PENDING';
                     const isLoadingAction = actionLoading[pitchId];
                     const showUndo = Boolean(undoStates[pitchId]);
@@ -941,6 +1009,33 @@ const ApprovalPageView = () => {
                                 }}
                               >
                                 {isLoadingAction ? <CircularProgress size={16} /> : 'Reject'}
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                disabled={isLoadingAction}
+                                onClick={() => handleAction(pitchId, 'maybe')}
+                                sx={{
+                                  color: '#FFC702',
+                                  border: '1px solid #E7E7E7',
+                                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                  bgcolor: '#fff',
+                                  fontWeight: 700,
+                                  textTransform: 'none',
+                                  borderRadius: 0.8,
+                                  minWidth: 0,
+                                  minHeight: 36,
+                                  px: 1.25,
+                                  pt: 0.4,
+                                  pb: 0.62,
+                                  fontSize: '0.88rem',
+                                  lineHeight: 1.35,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                {isLoadingAction ? <CircularProgress size={16} /> : 'Maybe'}
                               </Button>
                             </Stack>
                           )}
@@ -1155,7 +1250,7 @@ const ApprovalPageView = () => {
                     </TableHead>
                     <TableBody>
                       {creators.map(({ pitchId, status, pitch }) => {
-                        const localStatus = creatorStatuses[pitchId] || status;
+                        const localStatus = getEffectiveStatus(pitchId, status, pitch?.status);
                         const isActioned = localStatus !== 'PENDING';
                         const isLoadingAction = actionLoading[pitchId];
                         const showUndo = Boolean(undoStates[pitchId]);
@@ -1354,6 +1449,38 @@ const ApprovalPageView = () => {
                                     }}
                                   >
                                     {isLoadingAction ? <CircularProgress size={16} /> : 'Reject'}
+                                  </Button>
+                                  <Button
+                                    size="small"
+                                    variant="outlined"
+                                    disabled={isLoadingAction}
+                                    onClick={() => handleAction(pitchId, 'maybe')}
+                                    sx={{
+                                      color: '#FFC702',
+                                      border: '1px solid #E7E7E7',
+                                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                      bgcolor: '#fff',
+                                      fontWeight: 700,
+                                      textTransform: 'none',
+                                      borderRadius: 0.8,
+                                      minWidth: 0,
+                                      minHeight: 36,
+                                      px: 1.25,
+                                      pt: 0.4,
+                                      pb: 0.62,
+                                      fontSize: '0.88rem',
+                                      lineHeight: 1.35,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      '&:hover': {
+                                        bgcolor: 'rgba(255,199,2,0.08)',
+                                        border: '1px solid #E7E7E7',
+                                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                      },
+                                    }}
+                                  >
+                                    {isLoadingAction ? <CircularProgress size={16} /> : 'Maybe'}
                                   </Button>
                                 </Stack>
                               ) : (

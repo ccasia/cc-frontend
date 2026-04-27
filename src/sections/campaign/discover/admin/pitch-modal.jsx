@@ -1474,7 +1474,9 @@ const PitchModal = ({
         {!readOnly && (currentPitch?.status === 'PENDING_REVIEW' ||
           currentPitch?.displayStatus === 'PENDING_REVIEW' ||
           currentPitch?.status === 'undecided' ||
-          currentPitch?.displayStatus === 'undecided') && (
+          currentPitch?.displayStatus === 'undecided' ||
+          currentPitch?.status === 'AWAITING_APPROVAL' ||
+          currentPitch?.displayStatus === 'AWAITING_APPROVAL') && (
           <DialogActions sx={{ px: 3, pb: 3, gap: -1, mt: -3 }}>
             <Button
               variant="contained"
