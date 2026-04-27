@@ -258,7 +258,7 @@ function AnimSec({ children, delay = 0 }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) return undefined;
     const obs = new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting) {
@@ -1061,7 +1061,6 @@ export default function BDBriefForm({ token }) {
           {/* Trust 2×2 grid */}
           <Box
             sx={{
-              display: 'grid',
               gridTemplateColumns: '1fr 1fr',
               gap: '1px',
               background: 'rgba(255,255,255,.07)',
@@ -1431,7 +1430,11 @@ export default function BDBriefForm({ token }) {
                   <Box>
                     <FieldLabel required>Latest date</FieldLabel>
                     <FieldWrap>
-                      <RHFDatePicker name="dateTo" sx={noBoxSx} />
+                      <RHFDatePicker
+                        name="dateTo"
+                        sx={noBoxSx}
+                        minDate={values.dateFrom ? dayjs(values.dateFrom) : undefined}
+                      />
                     </FieldWrap>
                     <ErrMsg message={errors.dateTo?.message} />
                   </Box>

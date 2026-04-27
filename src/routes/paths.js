@@ -172,6 +172,6 @@ export const paths = {
       const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
       return `${ROOTS.PUBLIC}/campaign/discover/detail/${campaignId}/creator/${creatorId}${queryString}`;
     },
-    bdBrief: (token) => `/bd/${token}`,
+    bdBrief: (token) => `/campaign-brief/${token}`,
   },
 };
