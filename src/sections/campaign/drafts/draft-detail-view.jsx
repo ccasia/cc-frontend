@@ -2,7 +2,7 @@ import useSWR from 'swr';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import { useMemo, useState, useCallback } from 'react';
+import { useRef, useMemo, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
@@ -31,25 +31,27 @@ import DraftPackageSection from 'src/sections/campaign/drafts/draft-package-sect
 import UpdateBrandGuidelines from 'src/sections/campaign/manage/details/UpdateBrandGuidelines';
 import UpdateGeneralInformation from 'src/sections/campaign/manage/details/UpdateGeneralInformation';
 
-function SectionCard({ title, missingCount, children }) {
-  return (
-    <Card sx={{ p: 3, mb: 3 }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-        <Typography variant="h6">{title}</Typography>
-        {missingCount > 0 && (
-          <Chip size="small" color="warning" variant="outlined" label={`${missingCount} missing`} />
-        )}
-      </Stack>
-      <Divider sx={{ mb: 3 }} />
-      <Box sx={{ '& > form > div': { maxWidth: '100% !important' } }}>{children}</Box>
-    </Card>
-  );
-}
+const SectionCard = ({ title, missingCount, children, sectionRef }) => (
+  <Card ref={sectionRef} sx={{ p: 3, mb: 3, scrollMarginTop: 96 }}>
+    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+      <Typography variant="h6">{title}</Typography>
+      {missingCount > 0 && (
+        <Chip size="small" color="warning" variant="outlined" label={`${missingCount} missing`} />
+      )}
+    </Stack>
+    <Divider sx={{ mb: 3 }} />
+    <Box sx={{ '& > form > div': { maxWidth: '100% !important' } }}>{children}</Box>
+  </Card>
+);
 
 SectionCard.propTypes = {
   title: PropTypes.string.isRequired,
   missingCount: PropTypes.number,
   children: PropTypes.node,
+  sectionRef: PropTypes.oneOfType([
+    PropTypes.func,
+    PropTypes.shape({ current: PropTypes.any }),
+  ]),
 };
 
 export default function DraftCampaignDetailView() {
@@ -65,6 +67,27 @@ export default function DraftCampaignDetailView() {
 
   const [submitting, setSubmitting] = useState(false);
   const [dirtySections, setDirtySections] = useState({});
+
+  const generalRef = useRef(null);
+  const objectivesRef = useRef(null);
+  const audienceRef = useRef(null);
+  const attachmentRef = useRef(null);
+  const packageRef = useRef(null);
+
+  const sectionRefs = useMemo(
+    () => ({
+      'General Information': generalRef,
+      'Campaign Objectives': objectivesRef,
+      'Target Audience': audienceRef,
+      'Other Attachment': attachmentRef,
+    }),
+    []
+  );
+
+  const sectionOrder = useMemo(
+    () => ['General Information', 'Campaign Objectives', 'Target Audience', 'Other Attachment'],
+    []
+  );
 
   const handleDirtyChange = useCallback(
     (section) => (isDirty) => {
@@ -113,6 +136,11 @@ export default function DraftCampaignDetailView() {
 
   const handleSubmitForReview = async () => {
     if (dirtyLabels.length > 0) {
+      const firstDirty = sectionOrder.find((s) => dirtySections[s]);
+      const node = firstDirty ? sectionRefs[firstDirty]?.current : null;
+      if (node) {
+        node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       enqueueSnackbar(
         `Unsaved changes in: ${dirtyLabels.join(', ')}. Please save each section before creating the campaign.`,
         { variant: 'warning' }
@@ -196,6 +224,7 @@ export default function DraftCampaignDetailView() {
       <SectionCard
         title="General Information"
         missingCount={missingBySection.campaign + missingBySection.brief}
+        sectionRef={generalRef}
       >
         <UpdateGeneralInformation
           campaign={campaign}
@@ -205,7 +234,7 @@ export default function DraftCampaignDetailView() {
       </SectionCard>
 
       {/* Section 2: Objectives */}
-      <SectionCard title="Campaign Objectives" missingCount={0}>
+      <SectionCard title="Campaign Objectives" missingCount={0} sectionRef={objectivesRef}>
         <UpdateObjectives
           campaign={campaign}
           campaignMutate={mutate}
@@ -214,7 +243,11 @@ export default function DraftCampaignDetailView() {
       </SectionCard>
 
       {/* Section 3: Target Audience */}
-      <SectionCard title="Target Audience" missingCount={missingBySection.requirement}>
+      <SectionCard
+        title="Target Audience"
+        missingCount={missingBySection.requirement}
+        sectionRef={audienceRef}
+      >
         <UpdateAudience
           campaign={campaign}
           campaignMutate={mutate}
@@ -223,7 +256,7 @@ export default function DraftCampaignDetailView() {
       </SectionCard>
 
       {/* Section 4: Other Attachment */}
-      <SectionCard title="Other Attachment" missingCount={0}>
+      <SectionCard title="Other Attachment" missingCount={0} sectionRef={attachmentRef}>
         <UpdateBrandGuidelines
           campaign={campaign}
           campaignMutate={mutate}
@@ -232,7 +265,11 @@ export default function DraftCampaignDetailView() {
       </SectionCard>
 
       {/* Section 5: Company / Brand */}
-      <SectionCard title="Company & Package" missingCount={missingBySection.package}>
+      <SectionCard
+        title="Company & Package"
+        missingCount={missingBySection.package}
+        sectionRef={packageRef}
+      >
         <DraftPackageSection campaign={campaign} onSaved={mutate} />
       </SectionCard>
 

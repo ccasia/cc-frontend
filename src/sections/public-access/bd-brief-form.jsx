@@ -1431,7 +1431,11 @@ export default function BDBriefForm({ token }) {
                   <Box>
                     <FieldLabel required>Latest date</FieldLabel>
                     <FieldWrap>
-                      <RHFDatePicker name="dateTo" sx={noBoxSx} />
+                      <RHFDatePicker
+                        name="dateTo"
+                        sx={noBoxSx}
+                        minDate={values.dateFrom ? dayjs(values.dateFrom) : undefined}
+                      />
                     </FieldWrap>
                     <ErrMsg message={errors.dateTo?.message} />
                   </Box>

@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -114,7 +114,7 @@ const createCompanySchema = Yup.object().shape({
 function CreateCompanyDialog({ open, onClose, campaign, onSaved }) {
   const methods = useForm({
     resolver: yupResolver(createCompanySchema),
-    defaultValues: { name: '', email: '', phone: '', website: '' },
+    defaultValues: { name: campaign?.name ?? '', email: '', phone: '', website: '' },
   });
 
   const {
@@ -122,6 +122,12 @@ function CreateCompanyDialog({ open, onClose, campaign, onSaved }) {
     reset,
     formState: { isSubmitting },
   } = methods;
+
+  useEffect(() => {
+    if (open) {
+      reset({ name: campaign?.name ?? '', email: '', phone: '', website: '' });
+    }
+  }, [open, campaign?.name, reset]);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -210,8 +216,7 @@ export default function DraftPackageSection({ campaign, onSaved }) {
   const company = getCompanyFromCampaign(campaign);
   const activeSub = getActiveSubscription(company);
 
-  const packageName =
-    activeSub?.package?.name || activeSub?.customPackage?.customName || 'Custom';
+  const packageName = activeSub?.package?.name || activeSub?.customPackage?.customName || 'Custom';
   const totalCredits = activeSub?.totalCredits ?? activeSub?.customPackage?.customCredits ?? 0;
   const creditsUsed = activeSub?.creditsUsed ?? 0;
   const remaining = totalCredits - creditsUsed;
@@ -303,8 +308,8 @@ export default function DraftPackageSection({ campaign, onSaved }) {
 
       {linked && !company && (
         <Alert severity="warning">
-          Could not resolve company from the linked {campaign?.brand ? 'brand' : 'entity'}. This
-          may indicate the brand has no parent company.
+          Could not resolve company from the linked {campaign?.brand ? 'brand' : 'entity'}. This may
+          indicate the brand has no parent company.
         </Alert>
       )}
 

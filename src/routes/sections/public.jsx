@@ -48,7 +48,7 @@ export const publicRoutes = [
     ],
   },
   {
-    path: 'bd/:token',
+    path: 'campaign-brief/:token',
     element: <BDBriefPage />,
   },
 ];
