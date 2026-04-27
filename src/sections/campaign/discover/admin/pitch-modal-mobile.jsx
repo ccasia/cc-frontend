@@ -987,7 +987,9 @@ const PitchModalMobile = ({
         {(currentPitch?.status === 'PENDING_REVIEW' ||
           currentPitch?.displayStatus === 'PENDING_REVIEW' ||
           currentPitch?.status === 'undecided' ||
-          currentPitch?.displayStatus === 'undecided') && (
+          currentPitch?.displayStatus === 'undecided' ||
+          currentPitch?.status === 'AWAITING_APPROVAL' ||
+          currentPitch?.displayStatus === 'AWAITING_APPROVAL') && (
           <DialogActions sx={{ p: 2, gap: 1 }}>
             <Button
               variant="outlined"

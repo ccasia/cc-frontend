@@ -287,6 +287,8 @@ export function formatLogMessage(msg, performer) {
   if (m) return `${p} sent creator shortlist for approval to ${qn(m[1])} (${m[2]} creators)`;
 
   // Maybe
+  m = msg.match(/[Cc]hose maybe for (.+?) by approver (.+)$/i);
+  if (m) return `${qn(m[1])} has been marked as ${a('maybe')} by ${qn(m[2])}`;
   m = msg.match(/[Cc]hose maybe for (.+)$/i);
   if (m) return `${qn(m[1])} has been marked as ${a('maybe')} by ${p}`;
 
@@ -531,6 +533,8 @@ export function formatLogSummary(msg, performer) {
   if (m) return `Creator shortlist sent for approval to ${qn(m[1])} (${m[2]} creators)`;
 
   // Maybe
+  m = msg.match(/[Cc]hose maybe for (.+?) by approver (.+)$/i);
+  if (m) return `${qn(m[1])} has been marked as ${a('maybe')} by ${qn(m[2])}`;
   m = msg.match(/[Cc]hose maybe for (.+)$/i);
   if (m) return `${qn(m[1])} has been marked as ${a('maybe')}`;
 
