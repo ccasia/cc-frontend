@@ -20,7 +20,7 @@ import {
 import { paths } from 'src/routes/paths';
 
 import useGetClientCredits from 'src/hooks/use-get-client-credits';
-import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
+import { useGetPostingSubmissions } from 'src/hooks/use-get-submission';
 
 import { fDate } from 'src/utils/format-time';
 import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
@@ -52,7 +52,7 @@ const CampaignPerformanceTable = () => {
 
   const { user } = useAuthContext();
   const { company } = useGetClientCredits();
-  const { data: submissionData, isLoading: isLoadingSubmissions } = useGetAllSubmissions();
+  const { data: submissionData, isLoading: isLoadingSubmissions } = useGetPostingSubmissions();
 
   const reportList = React.useMemo(() => {
     if (!submissionData) return [];
@@ -102,11 +102,16 @@ const CampaignPerformanceTable = () => {
         const isInstagram = instagramPostRegex2.test(submission.content);
         return {
           id: submission.id,
+          creatorId: submission.user?.creator?.id,
           creatorName: submission.user?.name || 'N/A',
           campaignName: submission.campaign?.name || 'N/A',
+          isCreditTier: submission.campaign.isCreditTier || false,
+          creditTier: submission.user?.creator?.creditTier?.name || null,
+          creditTierCredits: submission.user?.creator?.creditTier?.creditsPerVideo || null,
           creatorAvatar: submission.user?.photoURL || null,
           tiktokUsername: submission.user?.creator?.tiktok || null,
           instagramUsername: submission.user?.creator?.instagram || null,
+          video: submission.video || null,
           platform: isInstagram ? 'Instagram' : 'TikTok',
           socialUsername: isInstagram
             ? submission.user?.creator?.instagram
@@ -158,6 +163,13 @@ const CampaignPerformanceTable = () => {
         return sortDirection === 'asc' ? -cmp : cmp;
       }
 
+      if (sortBy === 'creditTierCredits') {
+        const aCredit = a.creditTierCredits || 0;
+        const bCredit = b.creditTierCredits || 0;
+        const creditSort = aCredit - bCredit;
+        return sortDirection === 'asc' ? -creditSort : creditSort;
+      }
+
       const aVal = (a[sortBy] || '').toLowerCase();
       const bVal = (b[sortBy] || '').toLowerCase();
       const cmp = aVal.localeCompare(bVal);
@@ -190,8 +202,10 @@ const CampaignPerformanceTable = () => {
       submissionId: row.submissionId,
       campaignId: row.campaignId,
       userId: row.userId,
+      creatorId: row.creatorId,
       creatorName: row.creatorName,
       campaignName: row.campaignName,
+      video: row.video,
       // Add return state for back navigation
       returnPage: currentPage.toString(),
       returnCampaign: selectedCampaign,
@@ -408,7 +422,7 @@ const CampaignPerformanceTable = () => {
           >
             <Box
               sx={{
-                flex: '0 0 30%',
+                flex: '0 0 25%',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -441,7 +455,7 @@ const CampaignPerformanceTable = () => {
             </Box>
             <Box
               sx={{
-                flex: '0 0 30%',
+                flex: '0 0 25%',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -464,6 +478,39 @@ const CampaignPerformanceTable = () => {
               </Typography>
               {(() => {
                 if (sortBy === 'campaignName') {
+                  if (sortDirection === 'asc') {
+                    return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                  }
+                  return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
+                }
+                return <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />;
+              })()}
+            </Box>
+            <Box
+              sx={{
+                flex: '0 0 10%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 2,
+                py: 1,
+                borderRadius: '4px', // Only one borderRadius key
+                userSelect: 'none',
+              }}
+              onClick={() => handleSort('creditTierCredits')}
+            >
+              <Typography
+                sx={{
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: sortBy === 'creditTier' ? '#1340FF' : '#666',
+                }}
+              >
+                Tier
+              </Typography>
+              {(() => {
+                if (sortBy === 'creditTierCredits') {
                   if (sortDirection === 'asc') {
                     return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
                   }
@@ -753,8 +800,8 @@ const CampaignPerformanceTable = () => {
                 >
                   <Box
                     sx={{
-                      flex: '0 0 30%',
-                      maxWidth: '30%',
+                      flex: '0 0 25%',
+                      maxWidth: '25%',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 1,
@@ -810,7 +857,7 @@ const CampaignPerformanceTable = () => {
                       )}
                     </Stack>
                   </Box>
-                  <Box sx={{ flex: '0 0 30%', px: 2, py: 1.5, maxWidth: '30%' }}>
+                  <Box sx={{ flex: '0 0 25%', px: 2, py: 1.5, maxWidth: '25%' }}>
                     {row.campaignId ? (
                       <Typography
                         component={RouterLink}
@@ -843,6 +890,40 @@ const CampaignPerformanceTable = () => {
                         }}
                       >
                         {row.campaignName}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Box sx={{ flex: '0 0 10%', px: 2, py: 1.5, }}>
+                    {row.isCreditTier ? (
+                      <>
+                        <Typography
+                          sx={{
+                            fontWeight: 400,
+                            fontSize: 14,
+                            color: '#333',
+                          }}
+                        >
+                          {row.creditTier || '-'}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontWeight: 400,
+                            fontSize: 14,
+                            color: 'grey',
+                          }}
+                        >
+                          {row.creditTierCredits ? `${row.creditTierCredits} ${row.creditTierCredits === 1 ? 'credit' : 'credits'}` : '1 credit'}
+                        </Typography>
+                      </>
+                    ) : (
+                      <Typography
+                        sx={{
+                          fontWeight: 400,
+                          fontSize: 14,
+                          color: 'grey',
+                        }}
+                      >
+                        1 credit
                       </Typography>
                     )}
                   </Box>
