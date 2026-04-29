@@ -70,31 +70,62 @@ export const ContentInfoHeader = ({ content }) => (
 
 export const ContentImageCard = ({ content }) => (
   <Box
+    component="a"
+    href={content.pathname || '#'}
+    target="_blank"
+    rel="noopener noreferrer"
     sx={{
-      overflow: 'hidden',
       height: 'auto',
       boxShadow: 'none',
       display: 'flex',
       flexDirection: 'column',
+      textDecoration: 'none',
+      cursor: content.pathname ? 'pointer' : 'default',
     }}
   >
     <Box
-      component="img"
-      src={content.mediaUrl}
-      alt={content.caption || 'Content'}
       sx={{
-        width: '100%',
+        overflow: 'hidden',
         height: 623,
-        objectFit: 'cover',
-        display: 'block',
-      }}
-    />
-    <Box
-      sx={{
-        height: 75,
-        overflow: 'hidden'
+        '&:hover .media-el': { transform: 'scale(1.05)' },
       }}
     >
+      {content.videoDraftLink ? (
+        <Box
+          component="video"
+          src={content.videoDraftLink}
+          controls
+          autoPlay
+          muted
+          loop
+          onClick={(e) => e.stopPropagation()}
+          className="media-el"
+          sx={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+            transition: 'transform 0.4s ease',
+          }}
+        />
+      ) : (
+        <Box
+          component="img"
+          src={content.mediaUrl}
+          alt={content.caption || 'Content'}
+          className="media-el"
+          sx={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+            transition: 'transform 0.4s ease',
+          }}
+        />
+      )}
+    </Box>
+
+    <Box sx={{ height: 75, overflow: 'hidden' }}>
       <Typography
         sx={{
           fontSize: 14,
@@ -105,7 +136,7 @@ export const ContentImageCard = ({ content }) => (
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           WebkitLineClamp: 3,
-          WebkitBoxOrient: 'vertical'
+          WebkitBoxOrient: 'vertical',
         }}
       >
         {content.caption ||

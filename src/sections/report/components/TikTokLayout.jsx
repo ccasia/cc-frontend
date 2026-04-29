@@ -3,6 +3,8 @@
 // components/reporting/TikTokLayout.jsx
 import { Box, Grid, Typography } from '@mui/material';
 
+import { PostViewsLineChart } from './PostViewsLineChart';
+import { PostEngagementRateHeatmap } from './PostEngagementRateHeatmap';
 import { StatsLegend, ContentImageCard, ContentInfoHeader } from './shared-components';
 
 const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularStat }) => (
@@ -119,6 +121,25 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
 
       {/* Legend */}
     </Grid>
+
+    {/* Per-post daily trend section — heatmap + line chart, side-by-side */}
+    {content.campaignId && content.pathname && (
+      <Grid item xs={12}>
+        <Box sx={{ mt: 1 }}>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              <PostEngagementRateHeatmap
+                campaignId={content.campaignId}
+                postUrl={content.pathname}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <PostViewsLineChart campaignId={content.campaignId} postUrl={content.pathname} />
+            </Grid>
+          </Grid>
+        </Box>
+      </Grid>
+    )}
   </Grid>
 );
 

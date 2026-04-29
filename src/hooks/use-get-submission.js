@@ -27,7 +27,7 @@ export const useGetSubmissions = (id, campaignId) => {
   return memoizedValue;
 };
 
-export const useGetAllSubmissions = () => {
+export const useGetPostingSubmissions = () => {
   const { data, isLoading, mutate } = useSWR(
     `${endpoints.submission.all}?onlyValidSocialInsights=true`,
     fetcher,
