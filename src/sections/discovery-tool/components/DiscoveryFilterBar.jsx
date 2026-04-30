@@ -416,9 +416,6 @@ const DiscoveryFilterBar = React.memo(({ onFiltersChange, availableLocations, re
               if (isCountLoading) {
                 return 'Searching creators...';
               }
-              if (resultCount != null) {
-                return `Show ${formatNumber(resultCount)} Creator${resultCount !== 1 ? 's' : ''}`;
-              }
               return 'Show Results';
             })()}
           </Button>

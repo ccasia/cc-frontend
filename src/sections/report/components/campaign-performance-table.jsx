@@ -894,28 +894,16 @@ const CampaignPerformanceTable = () => {
                     )}
                   </Box>
                   <Box sx={{ flex: '0 0 10%', px: 2, py: 1.5, }}>
-                    {row.isCreditTier ? (
-                      <>
-                        <Typography
-                          sx={{
-                            fontWeight: 400,
-                            fontSize: 14,
-                            color: '#333',
-                          }}
-                        >
-                          {row.creditTier || '-'}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontWeight: 400,
-                            fontSize: 14,
-                            color: 'grey',
-                          }}
-                        >
-                          {row.creditTierCredits ? `${row.creditTierCredits} ${row.creditTierCredits === 1 ? 'credit' : 'credits'}` : '1 credit'}
-                        </Typography>
-                      </>
-                    ) : (
+                    <>
+                      <Typography
+                        sx={{
+                          fontWeight: 400,
+                          fontSize: 14,
+                          color: '#333',
+                        }}
+                      >
+                        {row.creditTier || '-'}
+                      </Typography>
                       <Typography
                         sx={{
                           fontWeight: 400,
@@ -923,9 +911,9 @@ const CampaignPerformanceTable = () => {
                           color: 'grey',
                         }}
                       >
-                        1 credit
+                        {row.isCreditTier ? `${row.creditTierCredits} ${row.creditTierCredits === 1 ? 'credit' : 'credits'}` : '1 credit'}
                       </Typography>
-                    )}
+                    </>
                   </Box>
                   <Box sx={{ flex: '0 0 10%', px: 2, py: 1.5, }}>
                     <Typography
