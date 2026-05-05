@@ -329,6 +329,11 @@ export function useNavData() {
             icon: <Iconify icon="iconamoon:discover" width={25} />,
           },
           {
+            title: 'Clients',
+            path: paths.dashboard.company.discover,
+            icon: ICONS.clients,
+          },
+          {
             title: 'Invoices',
             path: paths.dashboard.finance.invoice,
             icon: <Iconify icon="iconamoon:invoice" width={25} />,
