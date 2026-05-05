@@ -12,6 +12,10 @@ import { useAuthContext } from '../hooks';
 
 const withPermission = (requiredPermission, WrappedComponent) => (props) => {
   const { user, permission } = useAuthContext();
+  const adminRoleSlug = user?.admin?.role?.slug?.toLowerCase();
+  const adminRoleName = user?.admin?.role?.name?.toLowerCase();
+  const isFinanceAdmin =
+    user?.role === 'admin' && (adminRoleSlug === 'finance' || adminRoleName === 'finance');
 
   const missingPermissions = requiredPermission.filter(
     (elem) => !permission?.map((item) => item.name).includes(elem)
@@ -19,7 +23,8 @@ const withPermission = (requiredPermission, WrappedComponent) => (props) => {
 
   if (
     user?.role === 'superadmin' ||
-    (user?.role === 'admin' && user?.admin?.role?.slug === 'sales_and_marketing')
+    (user?.role === 'admin' && adminRoleSlug === 'sales_and_marketing') ||
+    isFinanceAdmin
   ) {
     return <WrappedComponent {...props} />;
   }
