@@ -583,7 +583,7 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
               </Box>
 
               <Stack spacing={1}>
-                {campaign?.campaignCredits && latestPackageItem ? (
+                {campaign?.campaignCredits != null && latestPackageItem ? (
                   <Stack spacing={1.5} color="text.secondary">
                     <Stack direction="row" justifyContent="space-between" alignItems="center">
                       <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#636366' }}>

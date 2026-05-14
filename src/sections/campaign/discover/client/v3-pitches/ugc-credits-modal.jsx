@@ -27,7 +27,7 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments, 
   // For credit tier campaigns: credits = ugcVideos * creditPerVideo (stored on shortlisted creator)
   // For regular campaigns: credits = ugcVideos * 1
   const ugcLeft = (() => {
-    if (!campaign?.campaignCredits) return 0;
+    if (campaign?.campaignCredits == null) return 0;
 
     const isCreditTier = campaign?.isCreditTier === true;
 

@@ -1492,7 +1492,7 @@ export function AddCreatorModal({ open, onClose, onSelect, campaign }) {
   // For credit tier campaigns: credits = ugcVideos * creditPerVideo (stored on shortlisted creator)
   // For regular campaigns: credits = ugcVideos * 1
   const creditsRemaining = (() => {
-    if (!campaign?.campaignCredits) return null;
+    if (campaign?.campaignCredits == null) return null;
 
     const isCreditTier = campaign?.isCreditTier === true;
 
