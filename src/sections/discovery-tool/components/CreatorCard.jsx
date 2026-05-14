@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router';
 import { useRef, useState, useEffect } from 'react';
 
 import { Box, Chip, Stack, Avatar, Checkbox, Typography } from '@mui/material';
@@ -106,6 +107,7 @@ const VideoThumbnail = ({ video, platform, tiktokHandle }) => {
       href={permalink || undefined}
       target={permalink ? '_blank' : undefined}
       rel={permalink ? 'noopener noreferrer' : undefined}
+      onClick={(e) => e.stopPropagation()}
       sx={{
         position: 'relative',
         width: '100%',
@@ -192,6 +194,7 @@ VideoThumbnail.propTypes = {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const CreatorCard = ({ creator, selected, onSelect }) => {
+  const navigate = useNavigate();
   const bioRef = useRef(null);
 
   const [isBioExpanded, setIsBioExpanded] = useState(false);
@@ -252,6 +255,16 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
 
   return (
     <Box
+      onClick={() => {
+        navigate(`/dashboard/mediakit/client/${creator.creatorId}`, {
+          state: {
+            returnTo: {
+              pathname: window.location.pathname,
+              search: window.location.search,
+            },
+          },
+        });
+      }}
       sx={{
         position: 'relative',
         overflow: isBioExpanded ? 'visible' : 'hidden',
@@ -259,6 +272,11 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
         flexDirection: 'row',
         alignItems: 'center',
         bgcolor: 'background.paper',
+        cursor: 'pointer',
+        transition: 'background-color 150ms ease',
+        '&:hover': {
+          bgcolor: 'rgba(19, 64, 255, 0.08)',
+        },
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -300,7 +318,10 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
             transform: 'translateY(-1px)',
           },
         }}
-        onClick={() => onSelect?.(creator.rowId || creator.userId)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect?.(creator.rowId || creator.userId);
+        }}
       >
         {/* Selection checkbox */}
         <Checkbox
@@ -349,6 +370,7 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
               href={createSocialProfileUrl(handle, platform)}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <Typography
@@ -434,7 +456,10 @@ const CreatorCard = ({ creator, selected, onSelect }) => {
           <Typography
             component="button"
             type="button"
-            onClick={() => setIsBioExpanded((prev) => !prev)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsBioExpanded((prev) => !prev);
+            }}
             sx={{
               mt: 0.75,
               p: 0,

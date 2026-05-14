@@ -177,9 +177,9 @@ export function useNavData() {
               },
               {
                 title: 'Non-Platform Creators',
-                path: paths.dashboard.discoveryTool.npc
-              }
-            ]
+                path: paths.dashboard.discoveryTool.npc,
+              },
+            ],
           },
           // {
           //   title: 'My Tasks',
@@ -223,6 +223,12 @@ export function useNavData() {
             path: paths.dashboard.reportAi.root,
             icon: <Iconify icon="mingcute:ai-line" width={25} />,
           },
+          // {
+          //   roles: ['superadmin', 'god'],
+          //   title: 'Whatsapp Business Account',
+          //   path: paths.dashboard.whatsapp.root,
+          //   icon: <Iconify icon="ic:baseline-whatsapp" width={25} />,
+          // },
         ],
       },
 
@@ -234,6 +240,18 @@ export function useNavData() {
             path: paths.dashboard.finance.invoice,
             icon: <Iconify icon="iconamoon:invoice" width={25} />,
           },
+          // {
+          //   roles: ['superadmin', 'god', 'sales_and_marketing'],
+          //   title: 'Draft Briefs',
+          //   path: paths.dashboard.campaign.drafts,
+          //   icon: <Iconify icon="line-md:briefcase" width={25} />,
+          // },
+          // {
+          //   roles: ['superadmin', 'BD', 'god', 'sales_and_marketing'],
+          //   title: 'My Invite Link',
+          //   path: paths.dashboard.bd.inviteLink,
+          //   icon: <Iconify icon="line-md:link" width={25} />,
+          // },
         ],
       },
     ],

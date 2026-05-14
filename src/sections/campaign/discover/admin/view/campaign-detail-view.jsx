@@ -32,8 +32,8 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
-import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
+import { useGetCampaignByIdScoped } from 'src/hooks/use-get-campaign-by-id';
 import { useCampaignPermissions } from 'src/hooks/use-campaign-permissions';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -106,12 +106,21 @@ const clientAllowedTabs = [
   'faq',
 ];
 
-const CampaignDetailView = ({ id }) => {
+const CampaignDetailView = ({
+  id,
+  publicReadonly = false,
+  forcedTab = null,
+  publicApprovalEntries = [],
+}) => {
   const settings = useSettingsContext();
   const router = useRouter();
   const [searchParams] = useSearchParams();
 
-  const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
+  const {
+    campaign,
+    campaignLoading,
+    mutate: campaignMutate,
+  } = useGetCampaignByIdScoped(id, publicReadonly);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
@@ -219,11 +228,11 @@ const CampaignDetailView = ({ id }) => {
   };
 
   const [currentTab, setCurrentTab] = useState(
-    localStorage.getItem('campaigndetail') || 'campaign-content'
+    forcedTab || localStorage.getItem('campaigndetail') || 'campaign-content'
   );
 
   // Check if user is client
-  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'Client';
+  const isClient = publicReadonly || user?.role === 'client' || user?.admin?.role?.name === 'Client';
 
   // Check user roles for activation
   const isCSL = user?.admin?.role?.name === 'CSL';
@@ -261,6 +270,13 @@ const CampaignDetailView = ({ id }) => {
       localStorage.setItem('campaigndetail', 'overview');
     }
   }, [currentTab, isClient, campaign?.submissionVersion]);
+
+  // Approval public page can force a specific readonly background tab.
+  useEffect(() => {
+    if (!forcedTab) return;
+    if (isClient && !getAllowedTabs(campaign?.submissionVersion).includes(forcedTab)) return;
+    setCurrentTab(forcedTab);
+  }, [forcedTab, isClient, campaign?.submissionVersion]);
 
   const handleChangeTab = useCallback(
     (event, newValue) => {
@@ -629,7 +645,11 @@ const CampaignDetailView = ({ id }) => {
         return <CampaignDetailContentClient campaign={campaign} />;
       case 'creator-master-list':
         return (
-          <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
+          <CampaignCreatorMasterListClient
+            campaign={campaign}
+            campaignMutate={campaignMutate}
+            fallbackApprovalEntries={publicApprovalEntries}
+          />
         );
       case 'agreement':
         return (
@@ -1282,4 +1302,7 @@ export default CampaignDetailView;
 
 CampaignDetailView.propTypes = {
   id: PropTypes.string,
+  publicReadonly: PropTypes.bool,
+  forcedTab: PropTypes.string,
+  publicApprovalEntries: PropTypes.array,
 };

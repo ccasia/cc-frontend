@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 import { alpha } from '@mui/material/styles';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -46,6 +46,18 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
   const [comments, setComments] = useState('');
   const [creatorProfileFull, setCreatorProfileFull] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState('instagram'); // 'instagram', 'tiktok', or 'both'
+  const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
+  const [agreementAmount, setAgreementAmount] = useState('');
+
+  const resolvedAgreementTemplateId = useMemo(() => {
+    if (campaign?.agreementTemplate?.id) return campaign.agreementTemplate.id;
+    return (
+      campaign?.campaignAdmin?.reduce(
+        (found, item) => found || item?.admin?.user?.agreementTemplate?.[0]?.id || null,
+        null
+      ) || null
+    );
+  }, [campaign]);
 
   const displayStatus = pitch?.displayStatus || pitch?.status;
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
@@ -224,7 +236,67 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
   };
 
   const handleSetAgreement = () => {
-    enqueueSnackbar('Agreement setup feature coming soon', { variant: 'info' });
+    if (!pitch?.id || String(pitch.id).startsWith('shortlisted-')) {
+      enqueueSnackbar('Cannot set agreement for this row — open a pitch record from the list.', {
+        variant: 'warning',
+      });
+      return;
+    }
+    if (!resolvedAgreementTemplateId && !campaign?.agreementTemplateId) {
+      enqueueSnackbar(
+        'No agreement template on this campaign. Add one in campaign settings, then try again.',
+        { variant: 'error' }
+      );
+      return;
+    }
+    setAgreementAmount('');
+    setAgreementDialogOpen(true);
+  };
+
+  const handleConfirmSetAgreement = async () => {
+    if (!pitch?.id || String(pitch.id).startsWith('shortlisted-')) return;
+
+    const templateId = resolvedAgreementTemplateId || campaign?.agreementTemplateId;
+    if (!templateId) {
+      enqueueSnackbar('Agreement template is required.', { variant: 'error' });
+      return;
+    }
+
+    let amountNum = null;
+    if (agreementAmount.trim()) {
+      amountNum = parseInt(agreementAmount, 10);
+      if (Number.isNaN(amountNum) || amountNum < 0) {
+        enqueueSnackbar('Enter a valid payment amount or leave the field empty.', {
+          variant: 'error',
+        });
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      const res = await axiosInstance.patch(endpoints.campaign.pitch.v3.setAgreement(pitch.id), {
+        agreementTemplateId: templateId,
+        ...(amountNum != null ? { amount: amountNum } : {}),
+      });
+      enqueueSnackbar(res?.data?.message || 'Agreement sent to creator', { variant: 'success' });
+      setAgreementDialogOpen(false);
+      onUpdate({
+        ...pitch,
+        status: 'AGREEMENT_PENDING',
+        displayStatus: 'AGREEMENT_PENDING',
+        agreementTemplateId: templateId,
+        ...(amountNum != null ? { amount: amountNum } : {}),
+      });
+      onClose();
+    } catch (error) {
+      enqueueSnackbar(
+        error?.response?.data?.message || error?.message || 'Failed to set agreement',
+        { variant: 'error' }
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getAvailableActions = () => {
@@ -241,7 +313,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
           },
           { label: 'Reject', action: 'reject', icon: 'eva:close-circle-fill', color: 'error' }
         );
-      } else if (displayStatus === 'APPROVED') {
+      } else if (displayStatus === 'APPROVED' || displayStatus === 'approved') {
         actions.push({
           label: 'Set Agreement',
           action: 'agreement',
@@ -260,6 +332,13 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
           },
           { label: 'Reject', action: 'reject', icon: 'eva:close-circle-fill', color: 'error' }
         );
+      } else if (displayStatus === 'APPROVED' || displayStatus === 'approved') {
+        actions.push({
+          label: 'Set Agreement',
+          action: 'agreement',
+          icon: 'eva:file-text-fill',
+          color: 'primary',
+        });
       }
     }
 
@@ -1554,6 +1633,39 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
             }}
           >
             {loading ? <CircularProgress size={20} color="inherit" /> : 'Yes, reject!'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={agreementDialogOpen}
+        onClose={() => !loading && setAgreementDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Send agreement to creator</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              This prepares the agreement for the creator to review and submit. Payment amount is
+              optional.
+            </Typography>
+            <TextField
+              label="Payment amount (optional)"
+              type="number"
+              fullWidth
+              value={agreementAmount}
+              onChange={(e) => setAgreementAmount(e.target.value)}
+              inputProps={{ min: 0 }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setAgreementDialogOpen(false)} disabled={loading}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={handleConfirmSetAgreement} disabled={loading}>
+            {loading ? <CircularProgress size={22} /> : 'Send to creator'}
           </Button>
         </DialogActions>
       </Dialog>

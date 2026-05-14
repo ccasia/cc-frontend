@@ -86,11 +86,12 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const [, setAgreementTemplates] = useState([]); // agreementTemplates unused
   const [campaignDetails, setCampaignDetails] = useState(null);
 
-  console.log('Campaign details: ', campaignDetails);
-
   // Posting dates state
   const [postingStartDate, setPostingStartDate] = useState(null);
   const [postingEndDate, setPostingEndDate] = useState(null);
+
+  // credit review
+  const [campaignCredits, setCampaignCreditsState] = useState('');
 
   // Step state (0: Confirm with existing details, 1: Admin Assignment, 2: Agreement, 3: Campaign Type, 4: Deliverables, 5: Posting Dates)
   const [currentStep, setCurrentStep] = useState(1);
@@ -118,17 +119,17 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       campaignDetails.campaignBrief?.postingStartDate &&
       campaignDetails.campaignBrief?.postingEndDate;
 
-    console.log('Checking all details exist:', {
-      hasAdmin,
-      hasAgreementTemplate,
-      hasCampaignType,
-      hasDeliverables,
-      hasPostingDates,
-      campaignDetails,
-    });
+    // 6. Campaign credits set and > 0
+    const hasCredits =
+      campaignDetails.campaignCredits != null && campaignDetails.campaignCredits > 0;
 
     return (
-      hasAdmin && hasAgreementTemplate && hasCampaignType && hasDeliverables && hasPostingDates
+      hasAdmin &&
+      hasAgreementTemplate &&
+      hasCampaignType &&
+      hasDeliverables &&
+      hasPostingDates &&
+      hasCredits
     );
   }, [campaignDetails]);
 
@@ -159,6 +160,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     agreementTemplateId: '',
     postingStartDate: '',
     postingEndDate: '',
+    campaignCredits: '',
   });
 
   // PDF related states
@@ -209,7 +211,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
 
       // Fetch campaign details
       axios
-        .get(`/api/campaign/getCampaignById/${campaignId}`)
+        .get(`/api/campaign/getClientByCampID/${campaignId}`)
         .then((response) => {
           if (response.data) {
             setCampaignDetails(response.data);
@@ -363,6 +365,20 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       return '';
     };
 
+    const getCampaignCreditsError = () => {
+      const n = Number(campaignCredits);
+      if (!campaignCredits || Number.isNaN(n) || n <= 0) {
+        return 'Campaign credits must be greater than 0';
+      }
+      const available = campaignDetails?.company?.creditSummary?.remainingCredits;
+      const original = campaignDetails?.campaignCredits || 0;
+      // Only block if exceeding *newly requested* credits beyond the original allocation
+      if (available != null && n - original > available) {
+        return `Exceeds available credits (${available} remaining)`;
+      }
+      return '';
+    };
+
     const newErrors = {
       campaignType: !campaignType ? 'Campaign type is required' : '',
       deliverables:
@@ -373,6 +389,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       agreementTemplateId: !agreementTemplateId ? 'Agreement template is required' : '',
       postingStartDate: getPostingStartDateError(),
       postingEndDate: getPostingEndDateError(),
+      campaignCredits: getCampaignCreditsError(),
     };
 
     setErrors(newErrors);
@@ -391,16 +408,17 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     setSubmitting(true);
 
     try {
-      // Log what we're sending to help debug
       const currentDeliverables = deliverablesForm.getValues('deliverables');
-      console.log('Sending data:', {
-        campaignType,
-        deliverables: currentDeliverables,
-        campaignManager: campaignManagers,
-        agreementTemplateId,
-        postingStartDate: postingStartDate ? dayjs(postingStartDate).toISOString() : null,
-        postingEndDate: postingEndDate ? dayjs(postingEndDate).toISOString() : null,
-      });
+
+      // If credits changed during review, persist via the credits endpoint first
+      // (handles subscription pool re-allocation + audit log).
+      const requestedCredits = Number(campaignCredits);
+      if (requestedCredits !== (campaignDetails?.campaignCredits ?? null)) {
+        await axios.patch('/api/campaign/updateAllCredits', {
+          campaignId,
+          campaignCredits: requestedCredits,
+        });
+      }
 
       const formData = new FormData();
       formData.append(
@@ -460,6 +478,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       setAgreementTemplateId('');
       setPostingStartDate(null);
       setPostingEndDate(null);
+      setCampaignCreditsState('');
 
       // Reset step based on user role and campaign status
       if (
@@ -478,6 +497,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         agreementTemplateId: '',
         postingStartDate: '',
         postingEndDate: '',
+        campaignCredits: '',
       });
 
       onClose();
@@ -719,6 +739,21 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                       )}{' '}
                       -{' '}
                       {dayjs(campaignDetails?.campaignBrief?.postingEndDate).format('MMM D, YYYY')}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+
+              {/* Campaign Credits */}
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  <Iconify icon="mdi:star-circle-outline" width={24} color="primary.main" />
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      Campaign Credits
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {campaignDetails?.campaignCredits ?? 0} UGC Credits
                     </Typography>
                   </Box>
                 </Stack>
@@ -1306,6 +1341,46 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 </Button>
                 <Button
                   variant="contained"
+                  onClick={() => {
+                    const startErr = !postingStartDate ? 'Posting start date is required' : '';
+                    const endErr = (() => {
+                      if (!postingEndDate) return 'Posting end date is required';
+                      if (
+                        postingStartDate &&
+                        dayjs(postingEndDate).isBefore(dayjs(postingStartDate))
+                      ) {
+                        return 'End date must be after start date';
+                      }
+                      return '';
+                    })();
+                    if (startErr || endErr) {
+                      setErrors((prev) => ({
+                        ...prev,
+                        postingStartDate: startErr,
+                        postingEndDate: endErr,
+                      }));
+                      return;
+                    }
+                    setCurrentStep(6);
+                  }}
+                  sx={{
+                    borderRadius: '8px',
+                    backgroundColor: '#1340ff',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    height: 36,
+                    minWidth: 80,
+                    boxShadow: '0px -3px 0px 0px #102387 inset',
+                    '&:hover': {
+                      backgroundColor: '#1935dd',
+                    },
+                  }}
+                >
+                  Next
+                </Button>
+                {/* <Button
+                  variant="contained"
                   onClick={handleActivate}
                   disabled={submitting}
                   sx={{
@@ -1323,11 +1398,112 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                   }}
                 >
                   {submitting ? <CircularProgress size={20} /> : 'Activate Campaign'}
-                </Button>
+                </Button> */}
               </Box>
             </Box>
           </LocalizationProvider>
         );
+
+      case 6: {
+        // Campaign Credits review
+        const availableCredits = campaignDetails?.company?.creditSummary?.remainingCredits ?? null;
+        const originalCredits = campaignDetails?.campaignCredits ?? 0;
+        return (
+          <Box display="flex" flexDirection="column" gap={2} py={2}>
+            <Typography
+              variant="h3"
+              sx={{
+                fontFamily: 'Instrument Serif',
+                fontWeight: 100,
+                textAlign: 'left',
+              }}
+            >
+              Review Campaign Credits
+            </Typography>
+
+            <Divider sx={{ mb: 0.5 }} />
+
+            <Typography variant="body2" color="text.secondary">
+              Confirm the number of UGC credits allocated to this campaign. You can adjust before
+              activation.
+            </Typography>
+
+            <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, flex: 1 }}>
+                <Typography variant="caption" color="text.disabled">
+                  Currently Allocated
+                </Typography>
+                <Typography variant="h6">{originalCredits} credits</Typography>
+              </Paper>
+              {availableCredits != null && (
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, flex: 1 }}>
+                  <Typography variant="caption" color="text.disabled">
+                    Client Remaining
+                  </Typography>
+                  <Typography variant="h6">{availableCredits} credits</Typography>
+                </Paper>
+              )}
+            </Stack>
+
+            <FormControl fullWidth error={!!errors.campaignCredits} sx={{ mt: 2 }}>
+              <InputLabel shrink htmlFor="campaign-credits-input">
+                Campaign Credits
+              </InputLabel>
+              <OutlinedInput
+                id="campaign-credits-input"
+                type="number"
+                // value={campaignCredits}
+                onChange={(e) => {
+                  setCampaignCreditsState(e.target.value);
+                  setErrors((prev) => ({ ...prev, campaignCredits: '' }));
+                }}
+                label="Campaign Credits"
+                inputProps={{ min: 1 }}
+              />
+              {errors.campaignCredits && <FormHelperText>{errors.campaignCredits}</FormHelperText>}
+            </FormControl>
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={() => setCurrentStep(5)}
+                sx={{
+                  borderRadius: '8px',
+                  border: '1px solid #E7E7E7',
+                  backgroundColor: '#FFFFFF',
+                  color: '#666',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  height: 36,
+                  minWidth: 80,
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                  '&:hover': { backgroundColor: '#F8F9FA' },
+                }}
+              >
+                Back
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleActivate}
+                disabled={submitting}
+                sx={{
+                  borderRadius: '8px',
+                  backgroundColor: '#1340ff',
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  height: 36,
+                  minWidth: 140,
+                  boxShadow: '0px -3px 0px 0px #102387 inset',
+                  '&:hover': { backgroundColor: '#1935dd' },
+                }}
+              >
+                {submitting ? <CircularProgress size={20} /> : 'Activate Campaign'}
+              </Button>
+            </Box>
+          </Box>
+        );
+      }
 
       default:
         return null;

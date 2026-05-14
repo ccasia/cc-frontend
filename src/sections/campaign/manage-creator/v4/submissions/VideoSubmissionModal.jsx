@@ -27,12 +27,12 @@ import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
 const formatTime = (timeInSeconds) => {
   const t = Math.floor(Math.max(0, Number(timeInSeconds) || 0));
   const h = Math.floor(t / 3600);
-  const m = Math.floor((t % 3600) / 60);
+  const min = Math.floor((t % 3600) / 60);
   const s = t % 60;
   if (h > 0) {
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  return `${min.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
 const parseTimeToSeconds = (timeStr) => {

@@ -43,7 +43,7 @@ const TABLE_HEAD = [
   { id: 'actions', label: 'Actions', width: 100, textAlign: 'center' },
 ];
 
-const PICList = ({ personIncharge, companyId, onUpdate }) => {
+const PICList = ({ personIncharge, companyId, onUpdate, handleActivate }) => {
   const table = useTable();
   const { initialize } = useAuthContext();
   const router = useRouter();
@@ -316,8 +316,17 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
                         textAlign="center"
                         maxWidth={320}
                       >
-                        A PIC will be added when you activate the client account. They&apos;ll
-                        receive an invitation to set up their access.
+                        A PIC will be added when you{' '}
+                        <Box
+                          component="span"
+                          onClick={handleActivate}
+                          variant="body2"
+                          sx={{ textDecoration: 'underline', cursor: 'pointer', color: '#1340FF' }}
+                        >
+                          activate
+                        </Box>{' '}
+                        the client account. They&apos;ll receive an invitation to set up their
+                        access.
                       </Typography>
                     </Stack>
                   </TableCell>

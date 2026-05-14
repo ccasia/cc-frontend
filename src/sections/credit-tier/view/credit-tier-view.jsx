@@ -31,6 +31,7 @@ import CreditTierEdit from '../credit-tier-edit';
 import CreditTierCreate from '../credit-tier-create';
 import CreditTierTableRow from '../credit-tier-table-row';
 
+
 // ----------------------------------------------------------------------
 
 const SortableHeader = ({
@@ -371,6 +372,34 @@ const CreditTierView = () => {
                   align="center"
                 >
                   Creators
+                </TableCell>
+                <TableCell
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    color: '#221f20',
+                    fontWeight: 600,
+                    bgcolor: '#f5f5f5',
+                    whiteSpace: 'nowrap',
+                    fontSize: '0.875rem',
+                  }}
+                  align="center"
+                >
+                  Instagram
+                </TableCell>
+                <TableCell
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    color: '#221f20',
+                    fontWeight: 600,
+                    bgcolor: '#f5f5f5',
+                    whiteSpace: 'nowrap',
+                    fontSize: '0.875rem',
+                  }}
+                  align="center"
+                >
+                  TikTok
                 </TableCell>
                 <SortableHeader
                   column="isActive"

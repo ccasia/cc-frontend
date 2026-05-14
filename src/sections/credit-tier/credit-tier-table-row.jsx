@@ -22,7 +22,17 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 
 export default function CreditTierTableRow({ row, onEditRow, mutate }) {
-  const { name, minFollowers, maxFollowers, creditsPerVideo, isActive, createdAt, creatorsCount } =
+  const {
+    name,
+    minFollowers,
+    maxFollowers,
+    creditsPerVideo,
+    isActive,
+    createdAt,
+    creatorsCount,
+    instagramCount,
+    tiktokCount,
+  } =
     row;
 
   const { user } = useAuthContext();
@@ -108,6 +118,20 @@ export default function CreditTierTableRow({ row, onEditRow, mutate }) {
             sx={{ color: '#221f20', fontWeight: 600, fontSize: '0.8125rem' }}
           >
             {Number.isFinite(creatorsCount) ? creatorsCount.toLocaleString() : '—'}
+          </Typography>
+        </TableCell>
+
+        {/* Instagram */}
+        <TableCell sx={{ py: 1.5, px: 2, whiteSpace: 'nowrap' }} align="center">
+          <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 600, fontSize: '0.8125rem' }}>
+            {Number.isFinite(instagramCount) ? instagramCount.toLocaleString() : '—'}
+          </Typography>
+        </TableCell>
+
+        {/* TikTok */}
+        <TableCell sx={{ py: 1.5, px: 2, whiteSpace: 'nowrap' }} align="center">
+          <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 600, fontSize: '0.8125rem' }}>
+            {Number.isFinite(tiktokCount) ? tiktokCount.toLocaleString() : '—'}
           </Typography>
         </TableCell>
 

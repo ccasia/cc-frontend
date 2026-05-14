@@ -224,7 +224,7 @@ export default function CampaignItem({
     <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
       <Image
         alt={campaign?.name}
-        src={campaign?.campaignBrief?.images[0]}
+        src={campaign?.campaignBrief?.images?.[0]}
         sx={{
           height: '100%',
           width: '100%',

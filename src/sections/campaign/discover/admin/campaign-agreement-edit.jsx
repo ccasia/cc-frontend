@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { pdf } from '@react-pdf/renderer';
 import { enqueueSnackbar } from 'notistack';
 import { SyncLoader } from 'react-spinners';
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
@@ -24,6 +24,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import useGetCreditTiers from 'src/hooks/use-get-credit-tiers';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -61,6 +62,11 @@ const CURRENCY_PREFIXES = {
   },
 };
 
+const PLATFORM_OPTIONS = [
+  { value: 'instagram', label: 'Instagram', icon: 'ri:instagram-fill' },
+  { value: 'tiktok', label: 'TikTok', icon: 'ic:baseline-tiktok' },
+];
+
 const formatAmount = (value) => {
   if (!value || value === '') return '';
 
@@ -86,9 +92,13 @@ const CampaignAgreementEdit = ({
   const settings = useSettingsContext();
   const loading = useBoolean();
   const { data: agreements } = useGetAgreements(campaign?.id);
+  const { data: creditTierList } = useGetCreditTiers();
 
   const isGuestCreator = agreement?.user?.creator?.isGuest === true;
   const requiresUGCCredits = !isGuestCreator;
+  const [selectedPlatform, setSelectedPlatform] = useState(
+    agreement?.shortlistedCreator?.selectedPlatform || 'instagram'
+  );
 
   // Get credit tier data for display (only for credit tier campaigns)
   const getTierData = () => {
@@ -141,9 +151,32 @@ const CampaignAgreementEdit = ({
               .min(1, 'At least 1 credit is required.')
               .required('UGC credits are required.')
           : yup.number().nullable(),
+        platformFollowerCount: yup.string().nullable(),
       }),
     [requiresUGCCredits]
   );
+
+  const getFollowerCountByPlatform = (platform) => {
+    const creatorData = agreement?.user?.creator;
+    if (!creatorData) return 0;
+
+    const hasInstagramConnected = !!creatorData.instagramUser;
+    const hasTiktokConnected = !!creatorData.tiktokUser;
+    const manualInstagramFollowers = creatorData.manualInstagramFollowerCount || 0;
+    const manualTiktokFollowers = creatorData.manualTiktokFollowerCount || 0;
+    const instagramFollowers = creatorData.instagramUser?.followers_count || 0;
+    const tiktokFollowers = creatorData.tiktokUser?.follower_count || 0;
+
+    if (platform === 'tiktok') {
+      // If TikTok is connected, always trust media-kit value.
+      if (hasTiktokConnected) return tiktokFollowers;
+      return manualTiktokFollowers || 0;
+    }
+
+    // If Instagram is connected, always trust media-kit value.
+    if (hasInstagramConnected) return instagramFollowers;
+    return manualInstagramFollowers || 0;
+  };
 
   const methods = useForm({
     resolver: yupResolver(schema),
@@ -156,6 +189,7 @@ const CampaignAgreementEdit = ({
         agreement?.shortlistedCreator?.ugcVideos !== null
           ? String(agreement.shortlistedCreator.ugcVideos)
           : '',
+      platformFollowerCount: '',
     },
     reValidateMode: 'onChange',
   });
@@ -166,6 +200,35 @@ const CampaignAgreementEdit = ({
   const selectedCurrency = watch('currency');
   const ugcCreditsValue = watch('ugcCredits');
   const paymentAmountValue = watch('paymentAmount');
+  const platformFollowerValue = watch('platformFollowerCount');
+  const originalPlatform = agreement?.shortlistedCreator?.selectedPlatform || 'instagram';
+  const hasPlatformChanged = selectedPlatform !== originalPlatform;
+  const selectedPlatformFollower = getFollowerCountByPlatform(selectedPlatform);
+  const requiresPlatformFollowerInput = selectedPlatformFollower <= 0;
+  const effectiveFollowerCountForTier = requiresPlatformFollowerInput
+    ? Number(platformFollowerValue || 0)
+    : Number(selectedPlatformFollower || 0);
+  const liveTierData = useMemo(() => {
+    if (!campaign?.isCreditTier || !Array.isArray(creditTierList)) return null;
+    if (!effectiveFollowerCountForTier || effectiveFollowerCountForTier <= 0) return null;
+
+    const matched = creditTierList.filter(
+      (tier) =>
+        tier?.isActive &&
+        tier?.minFollowers <= effectiveFollowerCountForTier &&
+        (tier?.maxFollowers === null || tier?.maxFollowers >= effectiveFollowerCountForTier)
+    );
+    if (!matched.length) return null;
+    return matched.sort((a, b) => (b?.minFollowers || 0) - (a?.minFollowers || 0))[0];
+  }, [campaign?.isCreditTier, creditTierList, effectiveFollowerCountForTier]);
+  const previewTierSource = hasPlatformChanged ? liveTierData : (liveTierData || tierData);
+  const displayTierData =
+    campaign?.isCreditTier && previewTierSource
+      ? {
+          name: previewTierSource?.name || 'Unknown Tier',
+          creditsPerVideo: previewTierSource?.creditsPerVideo || 1,
+        }
+      : null;
 
   useEffect(() => {
     const currentCredits =
@@ -182,6 +245,8 @@ const CampaignAgreementEdit = ({
 
     setValue('paymentAmount', agreement?.shortlistedCreator?.amount);
     setValue('ugcCredits', currentCredits);
+    setSelectedPlatform(agreement?.shortlistedCreator?.selectedPlatform || 'instagram');
+    setValue('platformFollowerCount', '');
   }, [setValue, isDefault, agreement]);
 
   // Removed unused handler: inline send flow is handled in onSubmit
@@ -236,9 +301,9 @@ const CampaignAgreementEdit = ({
     if (!requiresUGCCredits) return 0;
     const videos = Number(ugcCreditsValue) || 0;
     return campaign?.isCreditTier
-      ? (tierData?.creditsPerVideo || 1) * videos
+      ? (displayTierData?.creditsPerVideo || 1) * videos
       : videos;
-  }, [campaign?.isCreditTier, ugcCreditsValue, tierData, requiresUGCCredits]);
+  }, [campaign?.isCreditTier, ugcCreditsValue, displayTierData, requiresUGCCredits]);
 
   // Calculate remaining credits in real-time as user types
   const realTimeCreditsLeft = useMemo(() => {
@@ -260,12 +325,33 @@ const CampaignAgreementEdit = ({
       if (realTimeCreditsLeft !== null && realTimeCreditsLeft < 0) return true;
     }
 
+    if (requiresPlatformFollowerInput && (!platformFollowerValue || Number(platformFollowerValue) <= 0)) {
+      return true;
+    }
+
+    if (campaign?.isCreditTier && !displayTierData) {
+      return true;
+    }
+
     return false;
-  }, [paymentAmountValue, requiresUGCCredits, ugcCreditsValue, campaign?.campaignCredits, realTimeCreditsLeft]);
+  }, [
+    paymentAmountValue,
+    requiresUGCCredits,
+    ugcCreditsValue,
+    campaign?.campaignCredits,
+    realTimeCreditsLeft,
+    requiresPlatformFollowerInput,
+    platformFollowerValue,
+    campaign?.isCreditTier,
+    displayTierData,
+  ]);
 
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
     const creditsToAssign = requiresUGCCredits ? Number(ugcCreditsValue) : null;
+    const parsedPlatformFollower = data.platformFollowerCount
+      ? parseInt(data.platformFollowerCount, 10)
+      : undefined;
 
     try {
       // Validate credits against max allowed
@@ -328,6 +414,11 @@ const CampaignAgreementEdit = ({
         id: agreement?.id,
         isNew: agreement?.isNew || false,
         credits: creditsToAssign, // Include credits for V4 submission updates
+        selectedPlatform,
+        followerCount:
+          !Number.isNaN(parsedPlatformFollower) && parsedPlatformFollower
+            ? parsedPlatformFollower
+            : undefined,
       };
 
       console.log('Sending data to backend:', requestData);
@@ -346,6 +437,11 @@ const CampaignAgreementEdit = ({
         id: agreementIdToSend,
         isNew: agreement?.isNew || false,
         credits: creditsToAssign,
+        selectedPlatform,
+        followerCount:
+          !Number.isNaN(parsedPlatformFollower) && parsedPlatformFollower
+            ? parsedPlatformFollower
+            : undefined,
       };
 
       await axiosInstance.patch(endpoints.campaign.sendAgreement, sendAgreementPayload);
@@ -480,7 +576,7 @@ const CampaignAgreementEdit = ({
                       {agreement?.user?.email}
                     </Typography>
                   </Stack>
-                  {campaign?.isCreditTier && tierData && (
+                  {campaign?.isCreditTier && displayTierData && (
                     <Stack direction="row" spacing={1}>
                       <Box
                         sx={{
@@ -491,9 +587,18 @@ const CampaignAgreementEdit = ({
                           fontSize: '0.75rem',
                           display: 'flex',
                           alignItems: 'center',
+                          gap: 0.5,
                         }}
                       >
-                        {tierData.name}
+                        <Iconify
+                          icon={selectedPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
+                          width={14}
+                          sx={{
+                            color: selectedPlatform === 'tiktok' ? '#000000' : '#E4405F',
+                            flexShrink: 0,
+                          }}
+                        />
+                        {displayTierData.name}
                       </Box>
                       <Box
                         sx={{
@@ -506,7 +611,7 @@ const CampaignAgreementEdit = ({
                           alignItems: 'center',
                         }}
                       >
-                        {tierData.creditsPerVideo} credits/video
+                        {displayTierData.creditsPerVideo} credits/video
                       </Box>
                     </Stack>
                   )}
@@ -698,6 +803,90 @@ const CampaignAgreementEdit = ({
                   })()}
                 </Stack>
               )}
+
+              <Box
+                sx={{
+                  mt: 1,
+                  p: 1.5,
+                  border: '1px solid #E8EAED',
+                  borderRadius: 1.5,
+                  bgcolor: '#FAFAFA',
+                }}
+              >
+                <Stack spacing={1.25}>
+                  <Typography variant="body2" sx={{ color: '#4B5563', fontWeight: 700 }}>
+                    Platform & Follower
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+                      gap: 1,
+                    }}
+                  >
+                    {PLATFORM_OPTIONS.map((platform) => (
+                      <Button
+                        key={platform.value}
+                        variant={selectedPlatform === platform.value ? 'contained' : 'outlined'}
+                        onClick={() => {
+                          setSelectedPlatform(platform.value);
+                          setValue('platformFollowerCount', '');
+                        }}
+                        sx={{
+                          height: 44,
+                          borderRadius: 1,
+                          borderColor: '#DADCE0',
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          color: selectedPlatform === platform.value ? '#fff' : '#52565C',
+                          bgcolor: selectedPlatform === platform.value ? '#203ff5' : '#fff',
+                          '&:hover': {
+                            bgcolor: selectedPlatform === platform.value ? '#1933cc' : '#f5f7fa',
+                            borderColor: selectedPlatform === platform.value ? '#1933cc' : '#C7CBD1',
+                          },
+                        }}
+                      >
+                        <Stack direction="row" spacing={0.8} alignItems="center">
+                          <Iconify icon={platform.icon} width={16} />
+                          <span>{platform.label}</span>
+                        </Stack>
+                      </Button>
+                    ))}
+                  </Box>
+
+                  {requiresPlatformFollowerInput ? (
+                    <RHFTextField
+                      name="platformFollowerCount"
+                      type="text"
+                      label={`Follower Count (${selectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram'})`}
+                      value={platformFollowerValue || ''}
+                      onChange={(e) => {
+                        const sanitized = e.target.value.replace(/[^0-9]/g, '');
+                        setValue('platformFollowerCount', sanitized);
+                      }}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1,
+                          bgcolor: '#fff',
+                          minHeight: 48,
+                        },
+                      }}
+                    />
+                  ) : (
+                    <Typography variant="caption" sx={{ color: '#637381', px: 0.25 }}>
+                      Current follower count: {selectedPlatformFollower.toLocaleString()}
+                    </Typography>
+                  )}
+                  {campaign?.isCreditTier && !displayTierData && (
+                    <Typography variant="caption" sx={{ color: 'error.main', px: 0.25 }}>
+                      No credit tier matches the selected platform follower count.
+                    </Typography>
+                  )}
+                </Stack>
+              </Box>
+
               <RHFCheckbox
                 name="default"
                 label="Default"

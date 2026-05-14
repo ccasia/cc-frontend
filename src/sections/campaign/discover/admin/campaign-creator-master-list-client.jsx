@@ -2,7 +2,8 @@
 import dayjs from 'dayjs';
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { useSnackbar } from 'notistack';
 
 import {
   Box,
@@ -43,6 +44,8 @@ import MediaKitModal from './media-kit-modal';
 import PitchModalMobile from './pitch-modal-mobile';
 import CreatorMasterListRow from './creator-master-list-row';
 import usePitchSocket from '../client/v3-pitches/use-pitch-socket';
+import ApprovalSetupModal from './approval-setup-modal';
+import ApprovalConfirmationModal from './approval-confirmation-modal';
 
 // Status display helper function
 const getStatusInfo = (pitch) => {
@@ -89,6 +92,11 @@ const getStatusInfo = (pitch) => {
       label: 'PENDING REVIEW',
       normalizedStatus: 'PENDING_REVIEW',
     },
+    AWAITING_APPROVAL: {
+      color: '#8B5CF6',
+      label: 'AWAITING APPROVAL',
+      normalizedStatus: 'AWAITING_APPROVAL',
+    },
     pending: { color: '#FF9A02', label: 'PENDING', normalizedStatus: 'PENDING_REVIEW' },
     filtered: { color: '#FF4842', label: 'FILTERED', normalizedStatus: 'REJECTED' },
     draft: { color: '#637381', label: 'DRAFT', normalizedStatus: 'DRAFT' },
@@ -103,16 +111,104 @@ const getStatusInfo = (pitch) => {
   );
 };
 
-const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
+const CampaignCreatorMasterListClient = ({
+  campaign,
+  campaignMutate,
+  fallbackApprovalEntries = [],
+}) => {
   const { user } = useAuthContext();
+  const { enqueueSnackbar } = useSnackbar();
   const { socket } = useSocketContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
+  const [isPitchModalReadOnly, setIsPitchModalReadOnly] = useState(false);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
   const mediaKit = useBoolean();
   const smDown = useResponsive('down', 'sm');
+
+  // Bulk approval selection state
+  const [selectedPitchIds, setSelectedPitchIds] = useState([]);
+  const [approvalSetupOpen, setApprovalSetupOpen] = useState(false);
+  const [approvalConfirmOpen, setApprovalConfirmOpen] = useState(false);
+  const [approvalLink, setApprovalLink] = useState('');
+
+  const getSelectionBlockedMessage = (pitch) => {
+    const normalized = getStatusInfo(pitch).normalizedStatus;
+
+    if (
+      normalized === 'APPROVED' ||
+      normalized === 'AGREEMENT_PENDING' ||
+      normalized === 'AGREEMENT_SUBMITTED'
+    ) {
+      return 'This creator is already approved.';
+    }
+    if (normalized === 'AWAITING_APPROVAL') {
+      return 'This creator is already awaiting approval.';
+    }
+    if (normalized === 'REJECTED') {
+      return 'This creator is already rejected.';
+    }
+    if (normalized === 'MAYBE') {
+      return 'This creator is marked as maybe.';
+    }
+    if (normalized === 'SENT_TO_CLIENT' || normalized === 'INVITED') {
+      return 'This creator has already been sent for client review.';
+    }
+    return `This creator cannot be selected (status: ${normalized || 'UNKNOWN'}).`;
+  };
+
+  const handleTogglePitchSelect = (pitch) => {
+    const pitchId = pitch?.id;
+    if (!pitchId) return;
+
+    const normalized = getStatusInfo(pitch).normalizedStatus;
+    if (normalized !== 'PENDING_REVIEW') {
+      enqueueSnackbar(getSelectionBlockedMessage(pitch), { variant: 'info' });
+      return;
+    }
+
+    setSelectedPitchIds((prev) =>
+      prev.includes(pitchId) ? prev.filter((id) => id !== pitchId) : [...prev, pitchId]
+    );
+  };
+
+  const handleToggleSelectAll = (visiblePitchIds) => {
+    const allSelected = visiblePitchIds.every((id) => selectedPitchIds.includes(id));
+    if (allSelected) {
+      setSelectedPitchIds((prev) => prev.filter((id) => !visiblePitchIds.includes(id)));
+    } else {
+      setSelectedPitchIds((prev) => [...new Set([...prev, ...visiblePitchIds])]);
+    }
+  };
+
+  const handleApprovalSuccess = (link) => {
+    setApprovalLink(link);
+    setApprovalSetupOpen(false);
+    setApprovalConfirmOpen(true);
+  };
+
+  const handleApprovalDone = () => {
+    setApprovalConfirmOpen(false);
+    setSelectedPitchIds([]);
+    if (campaignMutate) campaignMutate();
+    if (v3PitchesMutate) v3PitchesMutate();
+  };
+
+  const handleRemoveFromApproval = (pitchId) => {
+    setSelectedPitchIds((prev) => prev.filter((id) => id !== pitchId));
+  };
+
+  // Detect approver role: user is a client + their campaign role is 'approver'
+  const isApproverClient = useMemo(() => {
+    if (user?.role !== 'client' || !campaign?.campaignClients) return false;
+    return campaign.campaignClients.some(
+      (cc) => cc.client?.user?.id === user?.id && cc.role === 'approver'
+    );
+  }, [user, campaign]);
+
+  const approverPitchIds = isApproverClient ? campaign?.approverPitchIds || [] : null;
 
   // Mobile-specific state
   const [expandedSections, setExpandedSections] = useState({
@@ -129,15 +225,21 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     mutate: v3PitchesMutate,
   } = useGetV3Pitches(fetchV3Pitches ? campaign?.id : null);
 
-  // Listen for real-time pitch updates (outreach + status changes)
+  const revalidatePitchesAndCampaign = useCallback(() => {
+    v3PitchesMutate?.();
+    campaignMutate?.();
+  }, [v3PitchesMutate, campaignMutate]);
+
+  const revalidatePitchesOnly = useCallback(() => {
+    v3PitchesMutate?.();
+  }, [v3PitchesMutate]);
+
+  // Listen for real-time pitch updates (outreach, status, approver notes on / off via public approval link)
   usePitchSocket({
     socket,
     campaignId: campaign?.id,
-    onOutreachUpdate: () => v3PitchesMutate?.(),
-    onPitchStatusUpdate: () => {
-      v3PitchesMutate?.();
-      campaignMutate?.();
-    },
+    onOutreachUpdate: revalidatePitchesOnly,
+    onPitchStatusUpdate: revalidatePitchesAndCampaign,
     userId: user?.id,
   });
 
@@ -154,44 +256,48 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     });
 
     if (campaign.submissionVersion === 'v4' && v3Pitches) {
-      return (
-        v3Pitches
-          .map((pitch) => {
-            const sc = shortlistByUserId.get(pitch.userId || pitch.user?.id);
-            return {
-              pitchId: pitch.id,
-              user: {
-                id: pitch.userId || pitch.user?.id,
-                name: pitch.user?.name,
-                email: pitch.user?.email,
-                ig_username: pitch.user?.creator?.instagramUser?.username,
-                tiktok_username: pitch.user?.creator?.tiktokUser?.username,
-                photoURL: pitch.user?.photoURL,
-                status: pitch.user?.status || 'active',
-                creator: pitch.user?.creator,
-                engagementRate: pitch.user?.instagramUser?.engagement_rate,
-                followerCount: pitch.user?.instagramUser?.followers_count,
-                profileLink: pitch.user?.creator?.profileLink,
-              },
-              status: pitch.displayStatus || pitch.status || 'undecided',
-              displayStatus: pitch.displayStatus || pitch.status || 'undecided',
-              createdAt: pitch.createdAt || new Date().toISOString(),
-              type: pitch.type || 'text',
-              content: pitch.content || pitch.user?.creator?.about || 'No content available',
-              adminComments: pitch.adminComments,
-              rejectionReason: pitch.rejectionReason,
-              customRejectionText: pitch.customRejectionText,
-              followerCount: pitch.followerCount,
-              engagementRate: pitch.engagementRate,
-              isShortlisted: false,
-              outreachStatus: pitch.outreachStatus,
-              _creditTier: sc?.creditTier ?? null,
-              _creditPerVideo: sc?.creditPerVideo ?? null,
-            };
-          })
-          .filter((creator) => !!creator.user && !!creator.user.id)
-          .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT')
-      );
+      const creatorsFromV3 = v3Pitches
+        .map((pitch) => {
+          const sc = shortlistByUserId.get(pitch.userId || pitch.user?.id);
+          return {
+            id: pitch.id,
+            pitchId: pitch.id,
+            user: {
+              id: pitch.userId || pitch.user?.id,
+              name: pitch.user?.name,
+              email: pitch.user?.email,
+              ig_username: pitch.user?.creator?.instagramUser?.username,
+              tiktok_username: pitch.user?.creator?.tiktokUser?.username,
+              photoURL: pitch.user?.photoURL,
+              status: pitch.user?.status || 'active',
+              creator: pitch.user?.creator,
+              engagementRate: pitch.user?.instagramUser?.engagement_rate,
+              followerCount: pitch.user?.instagramUser?.followers_count,
+              profileLink: pitch.user?.creator?.profileLink,
+            },
+            status: pitch.displayStatus || pitch.status || 'undecided',
+            displayStatus: pitch.displayStatus || pitch.status || 'undecided',
+            createdAt: pitch.createdAt || new Date().toISOString(),
+            type: pitch.type || 'text',
+            content: pitch.content || pitch.user?.creator?.about || 'No content available',
+            adminComments: pitch.adminComments,
+            rejectionReason: pitch.rejectionReason,
+            customRejectionText: pitch.customRejectionText,
+            clientVisibleApprovalNote: pitch.clientVisibleApprovalNote,
+            followerCount: pitch.followerCount,
+            engagementRate: pitch.engagementRate,
+            isShortlisted: false,
+            outreachStatus: pitch.outreachStatus,
+            _creditTier: sc?.creditTier ?? null,
+            _creditPerVideo: sc?.creditPerVideo ?? null,
+            selectedPlatform: pitch.selectedPlatform,
+          };
+        })
+
+        .filter((creator) => !!creator.user && !!creator.user.id)
+        .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT');
+
+      if (creatorsFromV3.length > 0) return creatorsFromV3;
     }
 
     // Get creators from shortlisted
@@ -218,6 +324,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
             isShortlisted: true,
             _creditTier: item.creditTier ?? null,
             _creditPerVideo: item.creditPerVideo ?? null,
+            selectedPlatform: item.selectedPlatform,
           }))
           .filter((creator) => creator.user && creator.user.creator)
       : [];
@@ -258,14 +365,66 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               outreachStatus: pitch.outreachStatus,
               _creditTier: sc?.creditTier ?? null,
               _creditPerVideo: sc?.creditPerVideo ?? null,
+              selectedPlatform: pitch.selectedPlatform,
             };
           })
           .filter((creator) => creator.user && creator.user.creator)
       : [];
 
-    // Combine both lists
-    return [...shortlistedCreators, ...pitchCreators];
-  }, [campaign, v3Pitches]);
+    const combinedCreators = [...shortlistedCreators, ...pitchCreators];
+    if (combinedCreators.length > 0) return combinedCreators;
+
+    // Public approval page fallback:
+    // when campaign API doesn't include pitches for this viewer, use token-bound entries.
+    if (fallbackApprovalEntries.length > 0) {
+      return fallbackApprovalEntries
+        .map((entry) => {
+          const pitch = entry?.pitch || {};
+          const statusMap = {
+            PENDING: 'PENDING_REVIEW',
+            APPROVED: 'APPROVED',
+            REJECTED: 'REJECTED',
+          };
+
+          return {
+            id: pitch?.id || entry?.pitchId,
+            pitchId: pitch?.id || entry?.pitchId,
+            user: {
+              id: pitch?.userId || pitch?.user?.id,
+              name: pitch?.user?.name,
+              email: pitch?.user?.email,
+              ig_username: pitch?.user?.creator?.instagramUser?.username,
+              tiktok_username: pitch?.user?.creator?.tiktokUser?.username,
+              photoURL: pitch?.user?.photoURL,
+              status: pitch?.user?.status || 'active',
+              creator: pitch?.user?.creator,
+              engagementRate: pitch?.user?.instagramUser?.engagement_rate,
+              followerCount: pitch?.user?.instagramUser?.followers_count,
+              profileLink: pitch?.user?.creator?.profileLink,
+            },
+            status:
+              statusMap[entry?.status] || pitch?.displayStatus || pitch?.status || 'PENDING_REVIEW',
+            displayStatus:
+              statusMap[entry?.status] || pitch?.displayStatus || pitch?.status || 'PENDING_REVIEW',
+            createdAt: pitch?.createdAt || new Date().toISOString(),
+            type: pitch?.type || 'text',
+            content: pitch?.content || pitch?.user?.creator?.about || 'No content available',
+            adminComments: pitch?.adminComments,
+            rejectionReason: pitch?.rejectionReason,
+            customRejectionText: pitch?.customRejectionText,
+            clientVisibleApprovalNote: pitch?.clientVisibleApprovalNote,
+            followerCount: pitch?.followerCount,
+            engagementRate: pitch?.engagementRate,
+            isShortlisted: false,
+            outreachStatus: pitch?.outreachStatus,
+            selectedPlatform: pitch?.selectedPlatform,
+          };
+        })
+        .filter((creator) => !!creator?.id && !!creator?.user?.id);
+    }
+
+    return [];
+  }, [campaign, v3Pitches, fallbackApprovalEntries]);
 
   const activeCount = creators.length || 0;
   const pendingCount =
@@ -394,6 +553,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   };
 
   const handleViewPitch = (pitch) => {
+    setIsPitchModalReadOnly(false);
     // Calculate matching percentage
     const data = matchCampaignPercentage(pitch);
 
@@ -404,6 +564,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
 
   const handleClosePitchModal = () => {
     setOpenPitchModal(false);
+    setIsPitchModalReadOnly(false);
   };
 
   const handlePitchUpdate = (updatedPitch) => {
@@ -599,6 +760,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
           onClose={handleClosePitchModal}
           onUpdate={handlePitchUpdate}
           campaign={campaign}
+          showClientApprovalNote
         />
 
         <MediaKitModal
@@ -810,38 +972,86 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
           </Button>
         </Stack>
 
-        <TextField
-          placeholder="Search by Creator Name or Username"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          fullWidth={!mdUp}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Iconify icon="material-symbols:search" />
-              </InputAdornment>
-            ),
-            sx: {
-              height: '42px',
-              '& input': {
-                py: 3,
-                height: '42px',
-              },
-            },
-          }}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          spacing={{ xs: 1, sm: 0.75 }}
           sx={{
-            width: { xs: '100%', md: 260 },
-            '& .MuiOutlinedInput-root': {
-              height: '42px',
-              border: '1px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
-              borderRadius: 1,
-            },
+            width: { xs: '100%', md: 'auto' },
+            flexShrink: 0,
+            ml: { md: 'auto' },
           }}
-        />
+        >
+          <Button
+            onClick={() => setApprovalSetupOpen(true)}
+            disabled={selectedPitchIds.length === 0}
+            variant="contained"
+            sx={{
+              height: '42px',
+              px: 2,
+              bgcolor: '#3A3A3C',
+              color: '#FFFFFF',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              textTransform: 'none',
+              borderRadius: 1,
+              whiteSpace: 'nowrap',
+              boxShadow: '0px -3px 0px 0px #00000073 inset',
+              '&:hover': {
+                bgcolor: '#4a4a4c',
+                boxShadow: '0px -3px 0px 0px #00000073 inset',
+              },
+              '&.Mui-disabled': {
+                bgcolor: 'rgba(58, 58, 60, 0.45)',
+                color: 'rgba(255, 255, 255, 0.7)',
+                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.2) inset',
+              },
+            }}
+          >
+            Send List for Approval
+            {selectedPitchIds.length > 0 ? ` (${selectedPitchIds.length})` : ''}
+          </Button>
+
+          <TextField
+            placeholder="Search by Creator Name or Username"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            fullWidth={!mdUp}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify icon="material-symbols:search" />
+                </InputAdornment>
+              ),
+              sx: {
+                height: '42px',
+                '& input': {
+                  py: 3,
+                  height: '42px',
+                },
+              },
+            }}
+            sx={{
+              width: { xs: '100%', md: 260 },
+              flex: { sm: '0 0 auto' },
+              '& .MuiOutlinedInput-root': {
+                height: '42px',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
+              },
+            }}
+          />
+        </Stack>
       </Stack>
 
-      <Box>
+      <Box
+        sx={{
+          // SimpleBar’s mask can sit above table content and eat clicks on the header row.
+          '& .simplebar-mask': { zIndex: 0 },
+          '& .simplebar-content-wrapper': { zIndex: 1 },
+        }}
+      >
         <Scrollbar>
           <TableContainer
             sx={{
@@ -853,15 +1063,105 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
             }}
           >
             <Table>
-              <TableHead>
+              <TableHead
+                sx={{
+                  position: 'relative',
+                  zIndex: 2,
+                  '& .MuiTableCell-head': { position: 'relative', zIndex: 2 },
+                }}
+              >
                 <TableRow>
+                  {/*
+                    Selection is restricted to PENDING_REVIEW rows only.
+                    Header checkbox selects/deselects only pending rows in the current filtered view.
+                  */}
+                  <TableCell
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (filteredCreators.length === 0) return;
+                      const pendingIds = filteredCreators
+                        .filter((p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW')
+                        .map((p) => p.id);
+                      if (pendingIds.length === 0) {
+                        enqueueSnackbar('No pending creators to select.', { variant: 'info' });
+                        return;
+                      }
+                      handleToggleSelectAll(pendingIds);
+                    }}
+                    sx={{
+                      py: 1,
+                      width: 32,
+                      pr: 0,
+                      borderRadius: '10px 0 0 10px',
+                      bgcolor: '#f5f5f5',
+                      cursor: filteredCreators.length > 0 ? 'pointer' : 'default',
+                      verticalAlign: 'middle',
+                    }}
+                  >
+                    {filteredCreators.length > 0 && (
+                      <Box
+                        component="span"
+                        sx={{
+                          ...(function () {
+                            const pending = filteredCreators.filter(
+                              (p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW'
+                            );
+                            const allPendingSelected =
+                              pending.length > 0 &&
+                              pending.every((p) => selectedPitchIds.includes(p.id));
+                            return { allPendingSelected };
+                          })(),
+                          width: 18,
+                          height: 18,
+                          borderRadius: 0,
+                          border: `2px solid ${
+                            (function () {
+                              const pending = filteredCreators.filter(
+                                (p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW'
+                              );
+                              return (
+                                pending.length > 0 &&
+                                pending.every((p) => selectedPitchIds.includes(p.id))
+                              );
+                            })()
+                              ? '#1340FF'
+                              : '#7B7B7B'
+                          }`,
+                          bgcolor: 'transparent',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          transition: 'all 0.15s ease',
+                          pointerEvents: 'none',
+                          verticalAlign: 'middle',
+                        }}
+                      >
+                        {(function () {
+                          const pending = filteredCreators.filter(
+                            (p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW'
+                          );
+                          return (
+                            pending.length > 0 &&
+                            pending.every((p) => selectedPitchIds.includes(p.id))
+                          );
+                        })() && (
+                          <Iconify
+                            icon="eva:checkmark-fill"
+                            width={13}
+                            height={13}
+                            sx={{ color: '#1340FF' }}
+                          />
+                        )}
+                      </Box>
+                    )}
+                  </TableCell>
                   <TableCell
                     sx={{
                       py: 1,
                       color: '#221f20',
                       fontWeight: 600,
                       width: 300,
-                      borderRadius: '10px 0 0 10px',
                       bgcolor: '#f5f5f5',
                       whiteSpace: 'nowrap',
                     }}
@@ -988,6 +1288,9 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                       onViewPitch={handleViewPitch}
                       campaign={campaign}
                       isCreditTier={campaign?.isCreditTier}
+                      isSelected={selectedPitchIds.includes(pitch.id)}
+                      onToggleSelect={handleTogglePitchSelect}
+                      approverPitchIds={approverPitchIds}
                     />
                   ))
                 )}
@@ -1004,6 +1307,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
           onClose={handleClosePitchModal}
           onUpdate={handlePitchUpdate}
           campaign={campaign}
+          showClientApprovalNote
         />
       ) : (
         <PitchModal
@@ -1012,6 +1316,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
           onClose={handleClosePitchModal}
           onUpdate={handlePitchUpdate}
           campaign={campaign}
+          readOnly={isPitchModalReadOnly}
+          showClientApprovalNote
         />
       )}
 
@@ -1019,6 +1325,27 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
         open={mediaKit.value}
         handleClose={mediaKit.onFalse}
         creatorId={selectedPitch?.user?.creator?.id}
+      />
+
+      <ApprovalSetupModal
+        open={approvalSetupOpen}
+        onClose={() => setApprovalSetupOpen(false)}
+        campaignId={campaign?.id}
+        selectedPitches={creators.filter((p) => selectedPitchIds.includes(p.id))}
+        onSuccess={handleApprovalSuccess}
+        onRemoveCreator={handleRemoveFromApproval}
+        onViewPitch={(pitch) => {
+          setIsPitchModalReadOnly(true);
+          const data = matchCampaignPercentage(pitch);
+          setSelectedPitch({ ...pitch, matchingPercentage: data });
+          setOpenPitchModal(true);
+        }}
+      />
+
+      <ApprovalConfirmationModal
+        open={approvalConfirmOpen}
+        onClose={handleApprovalDone}
+        approvalLink={approvalLink}
       />
     </>
   );
@@ -1242,6 +1569,7 @@ export default CampaignCreatorMasterListClient;
 CampaignCreatorMasterListClient.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
+  fallbackApprovalEntries: PropTypes.array,
 };
 
 // Shared prop-type shape for pitch objects

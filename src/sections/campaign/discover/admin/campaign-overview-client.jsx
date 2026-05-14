@@ -1001,6 +1001,7 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
         open={openPitchModal}
         onClose={handleClosePitchModal}
         campaign={campaign}
+        showClientApprovalNote
       />
     </>
   );

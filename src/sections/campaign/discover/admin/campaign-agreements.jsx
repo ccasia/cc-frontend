@@ -39,6 +39,7 @@ import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -456,6 +457,11 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
   const smUp = useResponsive('up', 'sm');
   const lgUp = useResponsive('up', 'lg');
 
+  // Guest creators must link a platform account before send; submissions merge by userId.
+  // Platform creators often have no AGREEMENT_FORM row until after the agreement is sent (v4 flow).
+  const guestNeedsLinkBeforeSend = (item) =>
+    item?.user?.creator?.isGuest === true && !item?.submission;
+
   // Get tier data for an agreement item
   const getTierDataForItem = (item) => {
     if (!campaign?.isCreditTier) return null;
@@ -647,7 +653,11 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
       );
     } else if (selectedFilter === 'sentToCreator') {
       // Sent to creator but not yet submitted
-      result = pitchApprovedAgreements.filter((item) => item.isSent && !['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(item?.submission?.status));
+      result = pitchApprovedAgreements.filter(
+        (item) =>
+          item.isSent &&
+          !['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(item?.submission?.status)
+      );
     } else if (selectedFilter === 'rejected') {
       // Rejected agreements
       result = pitchApprovedAgreements.filter((item) => item?.submission?.status === 'REJECTED');
@@ -905,7 +915,13 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
           justifyContent="flex-start"
           sx={{ mb: 1 }}
         >
-          <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ width: '100%'}} alignSelf="start" spacing={2} mb={0.5}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            sx={{ width: '100%' }}
+            alignSelf="start"
+            spacing={2}
+            mb={0.5}
+          >
             <TextField
               placeholder="Search creators..."
               value={searchQuery}
@@ -942,11 +958,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Iconify
-                      icon="eva:search-fill"
-                      width={18}
-                      sx={{ color: '#637381' }}
-                    />
+                    <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
                   </InputAdornment>
                 ),
               }}
@@ -995,7 +1007,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                     width={12}
                   />
                 </Stack>
-                    }
+              }
               sx={{
                 px: 1.5,
                 py: 0.75,
@@ -1404,11 +1416,26 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                             if (!tierData) {
                               return <Typography fontSize={13.5}>-</Typography>;
                             }
+                            const tierPlatform = resolveTierPlatformForDisplay(item, campaign);
                             return (
                               <Stack alignItems="start">
-                                <Typography fontSize={13.5} whiteSpace="nowrap">
-                                  {tierData.name}
-                                </Typography>
+                                <Stack direction="row" alignItems="center" spacing={0.5}>
+                                  <Iconify
+                                    icon={
+                                      tierPlatform === 'tiktok'
+                                        ? 'ic:baseline-tiktok'
+                                        : 'mdi:instagram'
+                                    }
+                                    width={15}
+                                    sx={{
+                                      color: tierPlatform === 'tiktok' ? '#000000' : '#E4405F',
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                  <Typography fontSize={13.5} whiteSpace="nowrap">
+                                    {tierData.name}
+                                  </Typography>
+                                </Stack>
                                 <Typography
                                   variant="body2"
                                   fontSize={13.5}
@@ -1571,14 +1598,16 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                               // For pending (not sent) agreements, show Send Agreement button
                               <Tooltip
                                 title={
-                                  !item?.submission ? 'Link creator before sending agreement' : ''
+                                  guestNeedsLinkBeforeSend(item)
+                                    ? 'Link creator before sending agreement'
+                                    : ''
                                 }
                                 arrow
                               >
                                 <span>
                                   <Button
                                     onClick={() => handleEditAgreement(item)}
-                                    disabled={isDisabled || !item?.submission}
+                                    disabled={isDisabled || guestNeedsLinkBeforeSend(item)}
                                     size="small"
                                     variant="contained"
                                     startIcon={

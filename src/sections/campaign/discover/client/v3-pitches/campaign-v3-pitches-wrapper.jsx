@@ -35,7 +35,11 @@ const CampaignV3PitchesWrapper = ({ campaign, campaignMutate, isDisabled = false
     // - APPROVED status (client approved for v4, or admin approved for non-v4)
     // - SENT_TO_CLIENT status (admin approved for v4)
     // This ensures credits and shortlisted data are refreshed
-    if (updatedPitch.status === 'APPROVED' || updatedPitch.status === 'SENT_TO_CLIENT') {
+    if (
+      updatedPitch.status === 'APPROVED' ||
+      updatedPitch.status === 'SENT_TO_CLIENT' ||
+      updatedPitch.status === 'AGREEMENT_PENDING'
+    ) {
       campaignMutate?.();
     }
   };

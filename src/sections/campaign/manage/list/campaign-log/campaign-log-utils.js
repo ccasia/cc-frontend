@@ -33,6 +33,13 @@ const RULES = [
   { test: (m) => m.includes('profile has been rejected'), category: 'Pitch Rejected', groups: ['client'] },
   { test: (m) => m.includes('chose maybe for'), category: 'Pitch Maybe', groups: ['client'] },
 
+  // Client / admin: shortlist sent to external approver for sign-off
+  {
+    test: (m) => m.includes('sent creator shortlist for approval to approver'),
+    category: 'Creator List Approval',
+    groups: ['client', 'admin'],
+  },
+
   // Shortlist / withdrawal / removal
   { test: (m) => m.includes('has been shortlisted'), category: 'Shortlisted', groups: ['admin'] },
   { test: (m) => m.includes('withdrawn from the campaign'), category: 'Withdrawal', groups: ['admin'] },
@@ -167,6 +174,7 @@ const CATEGORY_META = {
   'Pitch Maybe':      { color: '#F59E0B', bg: '#FFF8E6', icon: 'solar:question-circle-bold' },
   'Pitch Approved':   { color: '#22C55E', bg: '#E8FAF0', icon: 'solar:check-circle-bold' },
   'Pitch Rejected':   { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:close-circle-bold' },
+  'Creator List Approval': { color: '#8B5CF6', bg: '#F3E8FF', icon: 'solar:letter-unread-bold' },
   Shortlisted:        { color: '#8E33FF', bg: '#F3E8FF', icon: 'solar:star-bold' },
   Withdrawal:         { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:logout-2-bold' },
   Removal:            { color: '#FF5630', bg: '#FFEEEB', icon: 'solar:trash-bin-minimalistic-bold' },
@@ -265,12 +273,22 @@ export function formatLogMessage(msg, performer) {
   if (m) return `${qn(m[1])}'s pitch has been ${a('rejected')} by ${p}`;
 
   // Profile approved/rejected (client)
+  m = msg.match(/(.+?)'?s? profile has been approved by approver (.+)$/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('approved')} by ${qn(m[2])}`;
+  m = msg.match(/(.+?)'?s? profile has been rejected by approver (.+)$/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('rejected')} by ${qn(m[2])}`;
   m = msg.match(/(.+?)'?s? profile has been approved/i);
   if (m) return `${qn(m[1])}'s profile has been ${a('approved')} by ${p}`;
   m = msg.match(/(.+?)'?s? profile has been rejected/i);
   if (m) return `${qn(m[1])}'s profile has been ${a('rejected')} by ${p}`;
 
+  // Shortlist sent to external approver
+  m = msg.match(/sent creator shortlist for approval to approver (.+?) \((\d+) creators?\)/i);
+  if (m) return `${p} sent creator shortlist for approval to ${qn(m[1])} (${m[2]} creators)`;
+
   // Maybe
+  m = msg.match(/[Cc]hose maybe for (.+?) by approver (.+)$/i);
+  if (m) return `${qn(m[1])} has been marked as ${a('maybe')} by ${qn(m[2])}`;
   m = msg.match(/[Cc]hose maybe for (.+)$/i);
   if (m) return `${qn(m[1])} has been marked as ${a('maybe')} by ${p}`;
 
@@ -501,12 +519,22 @@ export function formatLogSummary(msg, performer) {
   if (m) return `${qn(m[1])}'s pitch has been ${a('rejected')}`;
 
   // Profile approved/rejected
+  m = msg.match(/(.+?)'?s? profile has been approved by approver (.+)$/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('approved')} by ${qn(m[2])}`;
+  m = msg.match(/(.+?)'?s? profile has been rejected by approver (.+)$/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('rejected')} by ${qn(m[2])}`;
   m = msg.match(/(.+?)'?s? profile has been approved/i);
   if (m) return `${qn(m[1])}'s profile has been ${a('approved')}`;
   m = msg.match(/(.+?)'?s? profile has been rejected/i);
   if (m) return `${qn(m[1])}'s profile has been ${a('rejected')}`;
 
+  // Shortlist sent to external approver
+  m = msg.match(/sent creator shortlist for approval to approver (.+?) \((\d+) creators?\)/i);
+  if (m) return `Creator shortlist sent for approval to ${qn(m[1])} (${m[2]} creators)`;
+
   // Maybe
+  m = msg.match(/[Cc]hose maybe for (.+?) by approver (.+)$/i);
+  if (m) return `${qn(m[1])} has been marked as ${a('maybe')} by ${qn(m[2])}`;
   m = msg.match(/[Cc]hose maybe for (.+)$/i);
   if (m) return `${qn(m[1])} has been marked as ${a('maybe')}`;
 

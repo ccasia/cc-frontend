@@ -25,7 +25,9 @@ const VerifyClassicPage = lazy(() => import('src/pages/auth-demo/classic/verify'
 const NewPasswordClassicPage = lazy(() => import('src/pages/auth-demo/classic/new-password'));
 
 const NewLoginPage = lazy(() => import('src/pages/auth-demo/new-login'));
+
 const NewRegisterPage = lazy(() => import('src/pages/auth-demo/new-register'));
+
 const ClientRegisterPage = lazy(() => import('src/pages/auth-demo/client-register'));
 const ForgotPasswordClassicPage = lazy(() => import('src/pages/auth-demo/forget-password'));
 
@@ -96,8 +98,8 @@ const authCreator = {
       element: (
         <GuestGuard>
           <AuthModernLayout title="Cult Creative">
+            <Outlet />
             <NewRegisterPage />
-            {/* <CreatorRegister /> */}
           </AuthModernLayout>
         </GuestGuard>
       ),
@@ -147,7 +149,7 @@ const authClient = {
         </Suspense>
       ),
       children: [
-        { 
+        {
           path: 'setup-password',
           element: (
             <GuestGuard>
@@ -168,8 +170,8 @@ const authClient = {
           ),
         },
       ],
-    }
-  ]
+    },
+  ],
 };
 
 export const authRoutes = [

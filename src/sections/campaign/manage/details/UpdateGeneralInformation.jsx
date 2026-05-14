@@ -57,13 +57,13 @@ const UpdateGeneralInfoSchema = Yup.object().shape({
   campaignEndDate: Yup.mixed().required('End date is required'),
   postingStartDate: Yup.mixed().nullable(),
   postingEndDate: Yup.mixed().nullable(),
-  productName: Yup.string().nullable(),
+  productName: Yup.string().required('Product Name/Service is required'),
   websiteLink: Yup.string().nullable(),
   campaignIndustries: Yup.array(),
   campaignImages: Yup.mixed(),
 });
 
-const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
+const UpdateGeneralInformation = ({ campaign, campaignMutate, onDirtyChange }) => {
   // Get existing values from campaign
   const defaultValues = useMemo(
     () => ({
@@ -89,8 +89,11 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
         if (Array.isArray(campaign?.campaignBrief?.industries)) {
           return campaign.campaignBrief.industries;
         }
-        if (campaign?.campaignBrief?.industries && typeof campaign.campaignBrief.industries === 'string') {
-          return campaign.campaignBrief.industries.split(', ').filter(i => i.trim() !== '');
+        if (
+          campaign?.campaignBrief?.industries &&
+          typeof campaign.campaignBrief.industries === 'string'
+        ) {
+          return campaign.campaignBrief.industries.split(', ').filter((i) => i.trim() !== '');
         }
         return [];
       })(),
@@ -120,6 +123,10 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
     }
   }, [campaign, defaultValues, reset]);
 
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
   const startDate = watch('campaignStartDate');
   const endDate = watch('campaignEndDate');
   const postingStartDate = watch('postingStartDate');
@@ -137,9 +144,12 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
         formData.append('id', campaign?.id);
         formData.append('name', data.campaignName);
         formData.append('description', data.campaignDescription);
-        formData.append('campaignIndustries', data.campaignIndustries && data.campaignIndustries.length > 0
-          ? data.campaignIndustries.join(', ')
-          : '');
+        formData.append(
+          'campaignIndustries',
+          data.campaignIndustries && data.campaignIndustries.length > 0
+            ? data.campaignIndustries.join(', ')
+            : ''
+        );
         formData.append('brandAbout', data.brandAbout || '');
         formData.append('productName', data.productName);
         formData.append('websiteLink', data.websiteLink || '');
@@ -230,7 +240,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
             <Box mb={2}>
               <FormField label="About the Brand" required={false}>
                 <Typography mt={-1} mb={0.5} variant="caption" color="#8E8E93">
-                  Let us know a bit more about you!
+                  Additional information about the brand.
                 </Typography>
                 <RHFTextField
                   name="brandAbout"
@@ -249,14 +259,15 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
                   <FormField label="Campaign Start Date">
                     <DatePicker
                       value={startDateDayjs}
-                      format='DD/MM/YY'
+                      format="DD/MM/YY"
                       onChange={(newValue) => {
-                        setValue('campaignStartDate', newValue ? newValue.toISOString() : '', { shouldValidate: true, shouldDirty: true });
+                        setValue('campaignStartDate', newValue ? newValue.toISOString() : '', {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
                       }}
                       slots={{
-                        openPickerIcon: () => (
-                          <Iconify icon="meteor-icons:calendar" width={22} />
-                        ),
+                        openPickerIcon: () => <Iconify icon="meteor-icons:calendar" width={22} />,
                       }}
                       slotProps={{
                         textField: {
@@ -274,14 +285,15 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
                   <FormField label="Campaign End Date">
                     <DatePicker
                       value={endDateDayjs}
-                      format='DD/MM/YY'
+                      format="DD/MM/YY"
                       onChange={(newValue) => {
-                        setValue('campaignEndDate', newValue ? newValue.toISOString() : '', { shouldValidate: true, shouldDirty: true });
+                        setValue('campaignEndDate', newValue ? newValue.toISOString() : '', {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
                       }}
                       slots={{
-                        openPickerIcon: () => (
-                          <Iconify icon="meteor-icons:calendar" width={22} />
-                        ),
+                        openPickerIcon: () => <Iconify icon="meteor-icons:calendar" width={22} />,
                       }}
                       slotProps={{
                         textField: {
@@ -304,66 +316,69 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
                 <Grid container spacing={2}>
                   <Grid item xs={12}>
                     <FormField label="Posting Period">
-                      <Box display='flex' flexDirection='row' gap={2}>
-                      <DatePicker
-                        value={postingStartDateDayjs}
-                        format="DD/MM/YY"
-                        onChange={(newValue) => {
-                          setValue('postingStartDate', newValue ? newValue.toISOString() : null, {
-                            shouldValidate: true,
-                            shouldDirty: true,
-                          });
-                          // Auto-set postingEndDate to +5 days if not manually set
-                          if (newValue) {
-                            const newEndDate = dayjs(newValue).add(7, 'day');
-                            // Only auto-set if postingEndDate is empty or was previously auto-set
-                            if (!postingEndDateDayjs || postingEndDateDayjs.isSame(dayjs(postingStartDate).add(7, 'day'))) {
-                              setValue('postingEndDate', newEndDate.toISOString(), {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                              });
+                      <Box display="flex" flexDirection="row" gap={2}>
+                        <DatePicker
+                          value={postingStartDateDayjs}
+                          format="DD/MM/YY"
+                          onChange={(newValue) => {
+                            setValue('postingStartDate', newValue ? newValue.toISOString() : null, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+                            // Auto-set postingEndDate to +5 days if not manually set
+                            if (newValue) {
+                              const newEndDate = dayjs(newValue).add(7, 'day');
+                              // Only auto-set if postingEndDate is empty or was previously auto-set
+                              if (
+                                !postingEndDateDayjs ||
+                                postingEndDateDayjs.isSame(dayjs(postingStartDate).add(7, 'day'))
+                              ) {
+                                setValue('postingEndDate', newEndDate.toISOString(), {
+                                  shouldValidate: true,
+                                  shouldDirty: true,
+                                });
+                              }
                             }
-                          }
-                        }}
-                        slots={{
-                          openPickerIcon: () => (
-                            <Iconify icon="meteor-icons:calendar" width={22} />
-                          ),
-                        }}
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            placeholder: 'Start Date',
-                            error: false,
-                            size: 'small',
-                            sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
-                          },
-                        }}
-                      />
-                      <DatePicker
-                        value={postingEndDateDayjs}
-                        format="DD/MM/YY"
-                        onChange={(newValue) => {
-                          setValue('postingEndDate', newValue ? newValue.toISOString() : null, {
-                            shouldValidate: true,
-                            shouldDirty: true,
-                          });
-                        }}
-                        slots={{
-                          openPickerIcon: () => (
-                            <Iconify icon="meteor-icons:calendar" width={22} />
-                          ),
-                        }}
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            placeholder: 'End Date',
-                            error: false,
-                            size: 'small',
-                            sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
-                          },
-                        }}
-                      />
+                          }}
+                          slots={{
+                            openPickerIcon: () => (
+                              <Iconify icon="meteor-icons:calendar" width={22} />
+                            ),
+                          }}
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              placeholder: 'Start Date',
+                              error: false,
+                              size: 'small',
+                              sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
+                            },
+                          }}
+                        />
+                        <DatePicker
+                          value={postingEndDateDayjs}
+                          format="DD/MM/YY"
+                          onChange={(newValue) => {
+                            setValue('postingEndDate', newValue ? newValue.toISOString() : null, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+                          }}
+                          slots={{
+                            openPickerIcon: () => (
+                              <Iconify icon="meteor-icons:calendar" width={22} />
+                            ),
+                          }}
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              placeholder: 'End Date',
+                              error: false,
+                              size: 'small',
+                              sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
+                            },
+                          }}
+                        />
                       </Box>
                     </FormField>
                   </Grid>
@@ -376,7 +391,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
           <Grid item xs={12} sm={6}>
             {/* Product/Service Name - Full width */}
             <Box mb={2}>
-              <FormField label="Product/Service Name" required={false}>
+              <FormField label="Product/Service Name">
                 <RHFTextField
                   name="productName"
                   placeholder="Product/Service Name"
@@ -445,6 +460,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
 UpdateGeneralInformation.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
+  onDirtyChange: PropTypes.func,
 };
 
 export default memo(UpdateGeneralInformation);

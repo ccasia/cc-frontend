@@ -10,6 +10,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 
 import { OUTREACH_STATUS_OPTIONS, getOutreachStatusConfig } from 'src/contants/outreach';
 
@@ -53,8 +54,11 @@ PitchTypeCell.propTypes = {
 };
 
 const getStatusText = (status, pitch, campaign) => {
+  const canonical =
+    typeof status === 'string' ? status.toUpperCase().replace(/\s+/g, '_') : status;
+
   // Check for AGREEMENT_PENDING status with PENDING_REVIEW agreement form
-  if (status === 'AGREEMENT_PENDING') {
+  if (canonical === 'AGREEMENT_PENDING') {
     const agreementFormSubmission = campaign?.submission?.find(
       (sub) => sub?.submissionType?.type === 'AGREEMENT_FORM'
     );
@@ -64,8 +68,8 @@ const getStatusText = (status, pitch, campaign) => {
     }
   }
 
-  if (status === 'APPROVED' && pitch.isInvited) {
-    return 'INVITED'
+  if (canonical === 'APPROVED' && pitch.isInvited) {
+    return 'INVITED';
   }
 
   const statusTextMap = {
@@ -76,12 +80,16 @@ const getStatusText = (status, pitch, campaign) => {
     MAYBE: 'MAYBE',
     maybe: 'MAYBE',
     APPROVED: 'APPROVED',
+    approved: 'APPROVED',
     REJECTED: 'REJECTED',
+    rejected: 'REJECTED',
+    WITHDRAWN: 'WITHDRAWN',
     AGREEMENT_PENDING: 'AGREEMENT PENDING',
     AGREEMENT_SUBMITTED: 'AGREEMENT SUBMITTED',
+    AWAITING_APPROVAL: 'AWAITING APPROVAL',
   };
 
-  return statusTextMap[status] || status;
+  return statusTextMap[status] || statusTextMap[canonical] || status;
 };
 
 const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedCreator, campaign, isCreditTier, onViewPitch, onRemoved, onOutreachUpdate, isDisabled = false }) => {
@@ -163,8 +171,8 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
 
   // Get tier data from synthetic shortlisted row or creator's current tier
   const getTierData = () => {
-    // For synthetic shortlisted rows (manually added creators), use the tier snapshot
-    if (pitch._isShortlistedOnly && pitch._creditTier) {
+    // Prefer shortlisted snapshot tier data (covers synthetic + regular pitches).
+    if (pitch._creditTier) {
       return {
         name: pitch._creditTier.name,
         creditsPerVideo: pitch._creditPerVideo || pitch._creditTier.creditsPerVideo,
@@ -464,11 +472,22 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
             if (!tierData) {
               return <Typography fontSize={13.5}>-</Typography>;
             }
+            const tierPlatform = resolveTierPlatformForDisplay(pitch, campaign);
             return (
               <Stack alignItems="start">
-                <Typography fontSize={13.5} whiteSpace="nowrap">
-                  {tierData.name}
-                </Typography>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify
+                    icon={tierPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
+                    width={15}
+                    sx={{
+                      color: tierPlatform === 'tiktok' ? '#000000' : '#E4405F',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Typography fontSize={13.5} whiteSpace="nowrap">
+                    {tierData.name}
+                  </Typography>
+                </Stack>
                 <Typography
                   variant="body2"
                   fontSize={13.5}

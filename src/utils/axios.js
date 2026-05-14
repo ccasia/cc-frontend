@@ -339,10 +339,13 @@ export const endpoints = {
       updateComment: (commentId) => `/api/submissions/v4/comments/${commentId}`,
       deleteComment: (commentId) => `/api/submissions/v4/comments/${commentId}`,
       deleteCommentByClient: (commentId) => `/api/submissions/v4/comments/${commentId}/client`,
-      sendToCreator: (submissionId) => `/api/submissions/v4/submission/${submissionId}/send-to-creator`,
-      sendToClient: (submissionId) => `/api/submissions/v4/submission/${submissionId}/send-to-client`,
+      sendToCreator: (submissionId) =>
+        `/api/submissions/v4/submission/${submissionId}/send-to-creator`,
+      sendToClient: (submissionId) =>
+        `/api/submissions/v4/submission/${submissionId}/send-to-client`,
       resolveComment: (commentId) => `/api/submissions/v4/comments/${commentId}/resolve`,
-      toggleCommentVisibility: (commentId) => `/api/submissions/v4/comments/${commentId}/visibility`,
+      toggleCommentVisibility: (commentId) =>
+        `/api/submissions/v4/comments/${commentId}/visibility`,
     },
     creator: {
       agreement: '/api/submission/submitAgreement',
@@ -444,5 +447,10 @@ export const endpoints = {
     checkCompany: '/api/client/checkCompany',
     createCompany: '/api/client/createCompany',
     createCampaign: '/api/client/createClientCampaign',
+  },
+  approvalRequests: {
+    create: '/api/approval-requests',
+    get: (token) => `/api/approval-requests/${token}`,
+    action: (token, pitchId) => `/api/approval-requests/${token}/creators/${pitchId}`,
   },
 };

@@ -28,7 +28,7 @@ const ReportingView = () => {
     account: '',
     contentType: '',
     datePosted: '',
-    creatorId: '',
+    userId: '',
     creatorName: '',
     campaignId: '',
     campaignName: '',
@@ -244,12 +244,16 @@ const ReportingView = () => {
     const campaignId = searchParams.get('campaignId');
     const campaignName = searchParams.get('campaignName');
     const userId = searchParams.get('userId');
+    const creatorId = searchParams.get('creatorId');
+    const video = searchParams.get('video')
 
     if (urlParam && userId) {
       setUrl(urlParam);
       setContent((prev) => ({
         ...prev,
-        creatorId: userId || '',
+        videoDraftLink: video || '',
+        userId: userId || '',
+        creatorId: creatorId || '',
         creatorName: creatorName || '',
         campaignId: campaignId || '',
         campaignName: campaignName || '',
@@ -642,6 +646,8 @@ const ReportingView = () => {
     );
   };
 
+  console.log('Content report: ', content)
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       {/* Header Section */}
@@ -669,16 +675,34 @@ const ReportingView = () => {
         >
           {/* Left side: Creator Name and Title */}
           <Box alignSelf={{ xs: 'flex-start', md: 'center' }}>
-            <Typography
-              sx={{
-                fontFamily: 'Aileron',
-                fontSize: { xs: 32, md: 42 },
-                fontWeight: 400,
-                lineHeight: { xs: '35px', sm: '50px' },
-              }}
-            >
-              {content.creatorName}
-            </Typography>
+            {content.creatorId && (
+              <Typography
+                onClick={() => {
+                  navigate(`/dashboard/mediakit/client/${content.creatorId}`, {
+                    state: {
+                      returnTo: {
+                        pathname: window.location.pathname,
+                        search: window.location.search,
+                      },
+                    },
+                  });
+                }}
+                sx={{
+                  fontFamily: 'Aileron',
+                  fontSize: { xs: 32, md: 42 },
+                  fontWeight: 400,
+                  lineHeight: { xs: '35px', sm: '50px' },
+                  color: '#1340FF',
+                  textDecoration: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                    cursor: 'pointer'
+                  },
+                }}
+              >
+                {content.creatorName || 'Creator'}
+              </Typography>
+            )}
 
             <Typography
               sx={{

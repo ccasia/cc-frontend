@@ -52,6 +52,8 @@ const PostingLinkSuperadminView = lazy(
 const AdminEditCampaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
 );
+const DraftCampaignList = lazy(() => import('src/pages/dashboard/campaign/draftList'));
+const DraftCampaignDetail = lazy(() => import('src/pages/dashboard/campaign/draftDetail'));
 const CampaignPitchDetail = lazy(
   () => import('src/pages/dashboard/campaign/admin/pitch/campaign-pitch-detail')
 );
@@ -95,7 +97,9 @@ const Report = lazy(() => import('src/pages/dashboard/report/report'));
 
 // Creator Discovery Tool
 const DiscoveryTool = lazy(() => import('src/pages/dashboard/discovery-tool/discovery-tool'));
-const DiscoveryToolNpc = lazy(() => import ('src/pages/dashboard/discovery-tool/discovery-tool-npc'))
+const DiscoveryToolNpc = lazy(
+  () => import('src/pages/dashboard/discovery-tool/discovery-tool-npc')
+);
 
 // Roles
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
@@ -473,6 +477,33 @@ export const dashboardRoutes = [
                 <CreateCampaign />
               </RoleBasedGuard>
             ),
+          },
+          {
+            path: 'drafts',
+            children: [
+              {
+                index: true,
+                element: (
+                  <RoleBasedGuard
+                    hasContent
+                    roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}
+                  >
+                    <DraftCampaignList />
+                  </RoleBasedGuard>
+                ),
+              },
+              {
+                path: ':id',
+                element: (
+                  <RoleBasedGuard
+                    hasContent
+                    roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}
+                  >
+                    <DraftCampaignDetail />
+                  </RoleBasedGuard>
+                ),
+              },
+            ],
           },
           {
             path: 'discover',

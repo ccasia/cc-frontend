@@ -5,6 +5,7 @@ import { useTheme } from '@emotion/react';
 import { Box, Link, Stack, Avatar, Button, Tooltip, TableRow, TableCell, Typography } from '@mui/material';
 
 import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 
 import { getOutreachStatusConfig } from 'src/contants/outreach';
 
@@ -14,7 +15,7 @@ import Iconify from 'src/components/iconify';
  * CreatorMasterListRow component renders a single creator row in the master list table
  * Displays creator insights sourced directly from pitch payloads
  */
-const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isCreditTier }) => {
+const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isCreditTier, isSelected, onToggleSelect }) => {
   const theme = useTheme();
   // Profile link is stored on Creator model
   const instagramStats = pitch?.user?.creator?.instagramUser || null;
@@ -112,13 +113,18 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
   };
 
   const tierData = isCreditTier ? getTierData() : null;
+  const tierPlatform = isCreditTier ? resolveTierPlatformForDisplay(pitch, campaign) : 'instagram';
 
   const statusInfo = getStatusInfo(pitch);
 
   return (
     <TableRow
       hover
-      onClick={() => onViewPitch(pitch)}
+      onClick={(e) => {
+        // Don't open pitch modal when clicking the checkbox cell
+        if (e.target.closest('[data-checkbox-cell]')) return;
+        onViewPitch(pitch);
+      }}
       sx={{
         bgcolor: 'transparent',
         '& td': {
@@ -127,6 +133,38 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
         },
       }}
     >
+      {onToggleSelect && (
+        <TableCell data-checkbox-cell="true" sx={{ width: 32, pr: 0 }}>
+          <Box
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelect(pitch);
+            }}
+            sx={{
+              width: 18,
+              height: 18,
+              borderRadius: 0,
+              border: `2px solid ${isSelected ? '#1340FF' : '#7B7B7B'}`,
+              bgcolor: 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {isSelected && (
+              <Iconify
+                icon="eva:checkmark-fill"
+                width={13}
+                height={13}
+                sx={{ color: '#1340FF' }}
+              />
+            )}
+          </Box>
+        </TableCell>
+      )}
       <TableCell>
         <Stack direction="row" alignItems="center" spacing={2}>
           <Avatar
@@ -287,8 +325,22 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
         </Typography>
       </TableCell>
       {isCreditTier && (
-        <TableCell>
-          <Typography variant="body2">{tierData?.name || '-'}</Typography>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          <Stack direction="row" alignItems="center" spacing={0.5} flexWrap="nowrap">
+            {tierData?.name && (
+              <Iconify
+                icon={tierPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
+                width={15}
+                sx={{
+                  color: tierPlatform === 'tiktok' ? '#000000' : '#E4405F',
+                  flexShrink: 0,
+                }}
+              />
+            )}
+            <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
+              {tierData?.name || '-'}
+            </Typography>
+          </Stack>
         </TableCell>
       )}
       {isCreditTier && (
@@ -327,6 +379,20 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
                 </Box>
               </Tooltip>
             )}
+          {(statusInfo.normalizedStatus === 'APPROVED' ||
+            statusInfo.normalizedStatus === 'REJECTED') &&
+            pitch.clientVisibleApprovalNote?.trim() && (
+              <Tooltip title="Note from approver" arrow>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                  <Iconify
+                    icon="cuida:long-text-outline"
+                    width={18}
+                    height={18}
+                    sx={{ color: statusInfo.color }}
+                  />
+                </Box>
+              </Tooltip>
+            )}
         </Box>
       </TableCell>
       <TableCell>
@@ -356,7 +422,7 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
             },
           }}
         >
-          View Profile
+          View
         </Button>
       </TableCell>
     </TableRow>
@@ -369,6 +435,8 @@ CreatorMasterListRow.propTypes = {
   onViewPitch: PropTypes.func.isRequired,
   campaign: PropTypes.object,
   isCreditTier: PropTypes.bool,
+  isSelected: PropTypes.bool,
+  onToggleSelect: PropTypes.func,
 };
 
 export default CreatorMasterListRow;

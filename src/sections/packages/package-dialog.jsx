@@ -72,6 +72,7 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId, onRefresh
     defaultValues,
     mode: 'onChange',
     reValidateMode: 'onChange',
+    onClose
   });
 
   const {
@@ -104,7 +105,7 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId, onRefresh
         onRefresh();
       }
 
-      // onClose();
+      onClose();
       reset();
     } catch (error) {
       enqueueSnackbar(error?.message || 'Failed to link package', { variant: 'error' });
