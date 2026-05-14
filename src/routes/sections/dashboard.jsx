@@ -52,8 +52,8 @@ const PostingLinkSuperadminView = lazy(
 const AdminEditCampaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
 );
-const DraftCampaignList = lazy(() => import('src/pages/dashboard/campaign/draftList'));
-const DraftCampaignDetail = lazy(() => import('src/pages/dashboard/campaign/draftDetail'));
+// const DraftCampaignList = lazy(() => import('src/pages/dashboard/campaign/draftList'));
+// const DraftCampaignDetail = lazy(() => import('src/pages/dashboard/campaign/draftDetail'));
 const CampaignPitchDetail = lazy(
   () => import('src/pages/dashboard/campaign/admin/pitch/campaign-pitch-detail')
 );
