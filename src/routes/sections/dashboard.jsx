@@ -478,33 +478,33 @@ export const dashboardRoutes = [
               </RoleBasedGuard>
             ),
           },
-          {
-            path: 'drafts',
-            children: [
-              {
-                index: true,
-                element: (
-                  <RoleBasedGuard
-                    hasContent
-                    roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}
-                  >
-                    <DraftCampaignList />
-                  </RoleBasedGuard>
-                ),
-              },
-              {
-                path: ':id',
-                element: (
-                  <RoleBasedGuard
-                    hasContent
-                    roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}
-                  >
-                    <DraftCampaignDetail />
-                  </RoleBasedGuard>
-                ),
-              },
-            ],
-          },
+          // {
+          //   path: 'drafts',
+          //   children: [
+          //     {
+          //       index: true,
+          //       element: (
+          //         <RoleBasedGuard
+          //           hasContent
+          //           roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}
+          //         >
+          //           <DraftCampaignList />
+          //         </RoleBasedGuard>
+          //       ),
+          //     },
+          //     {
+          //       path: ':id',
+          //       element: (
+          //         <RoleBasedGuard
+          //           hasContent
+          //           roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}
+          //         >
+          //           <DraftCampaignDetail />
+          //         </RoleBasedGuard>
+          //       ),
+          //     },
+          //   ],
+          // },
           {
             path: 'discover',
             children: [
