@@ -756,7 +756,7 @@ export function PlatformCreatorModal({ campaign }) {
   const { addCreators, shortlistedCreators: creators } = useShortlistedCreators();
   const { data, isLoading } = useGetAllCreators();
   const ugcLeft = useMemo(() => {
-    if (!campaign?.campaignCredits) return null;
+    if (campaign?.campaignCredits == null) return null;
     const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
     return campaign.campaignCredits - totalUGCs;
   }, [campaign]);

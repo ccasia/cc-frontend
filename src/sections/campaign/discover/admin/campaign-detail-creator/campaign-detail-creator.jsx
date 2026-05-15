@@ -110,7 +110,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   // Credits are only utilized when agreement is sent (isSent = true)
   // This applies to ALL campaign types (both v4 and non-v4)
   const usedCredits = useMemo(() => {
-    if (!campaign?.campaignCredits) return 0;
+    if (campaign?.campaignCredits == null) return 0;
     if (!agreements || !campaign?.shortlisted) return 0;
     
     const sentAgreementUserIds = new Set(
@@ -138,7 +138,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const v4UsedCredits = usedCredits;
 
   const ugcLeft = useMemo(() => {
-    if (!campaign?.campaignCredits) return null;
+    if (campaign?.campaignCredits == null) return null;
     // Use unified calculation - credits utilized when agreement is sent
     const remaining = campaign.campaignCredits - usedCredits;
     console.log('[Credit Calculation]', {
@@ -479,7 +479,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               onClick={() => {
                 if (campaign?.submissionVersion === 'v4') {
                   onSubmit({ creator: creators });
-                } else if (campaign?.campaignCredits) {
+                } else if (campaign?.campaignCredits != null) {
                   ugcVideosModal.onTrue();
                 } else {
                   console.log('ASDS');
@@ -536,7 +536,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
       >
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           Shortlist Creators
-          {campaign?.campaignCredits && (
+          {campaign?.campaignCredits != null && (
             <Label
               sx={{
                 fontFamily: (theme) => theme.typography.fontFamily,
@@ -758,11 +758,11 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               if (campaign?.submissionVersion === 'v4') {
                 return (
                   v4UsedCredits !== null &&
-                  campaign?.campaignCredits &&
+                  campaign?.campaignCredits != null &&
                   v4UsedCredits >= campaign.campaignCredits
                 );
               }
-              return totalUsedCredits >= (campaign?.campaignCredits || 0);
+              return totalUsedCredits >= (campaign?.campaignCredits ?? 0);
             })();
 
             // For small screens, show the icon button; otherwise show the regular Button when not a v4 campaign
@@ -847,7 +847,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         )}
       </Stack>
 
-      {campaign?.campaignCredits
+      {campaign?.campaignCredits != null
         ? renderShortlistFormModalWithCampaignCredits
         : renderShortlistFormModalWithoutCampaignCredits}
 

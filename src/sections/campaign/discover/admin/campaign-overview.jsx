@@ -165,7 +165,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
 
   // Sync credits on mount - runs once per campaign
   const syncCredits = useCallback(async () => {
-    if (!campaign?.id || !campaign?.campaignCredits) return;
+    if (!campaign?.id || campaign?.campaignCredits == null) return;
     
     // Only sync if this is a new campaign or hasn't been synced yet
     if (creditsSyncedRef.current && lastCampaignIdRef.current === campaign.id) {
@@ -516,7 +516,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                       >
                         CREDITS TRACKING
                       </Typography>
-                      {campaign?.campaignCredits && latestPackageItem && !isEditingCredit && (user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) && (
+                      {campaign?.campaignCredits != null && latestPackageItem && !isEditingCredit && (user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) && (
                         <Button
                           variant="outlined"
                           size="small"
@@ -531,7 +531,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                   </Box>
 
                   <Stack spacing={[1]}>
-                    {campaign?.campaignCredits && latestPackageItem ? (
+                    {campaign?.campaignCredits != null && latestPackageItem ? (
                       <Stack spacing={1.5} color="text.secondary">
                         {/* Campaign Credits Row */}
                         <Stack direction="row" justifyContent="space-between" alignItems="center">

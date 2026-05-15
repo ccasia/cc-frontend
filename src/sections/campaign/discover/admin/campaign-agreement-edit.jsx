@@ -263,7 +263,7 @@ const CampaignAgreementEdit = ({
   // Calculate used credits by OTHER creators (excluding current creator)
   // For credit tier campaigns, multiply ugcVideos by creditPerVideo
   const usedCreditsByOthers = React.useMemo(() => {
-    if (!campaign?.campaignCredits) return null;
+    if (campaign?.campaignCredits == null) return null;
     if (!agreements || !campaign?.shortlisted) return 0;
 
     const sentAgreementUserIds = new Set(
@@ -290,7 +290,7 @@ const CampaignAgreementEdit = ({
 
   // Max credits user can enter = total - usedByOthers
   const maxCreditsAllowed = useMemo(() => {
-    if (!campaign?.campaignCredits) return null;
+    if (campaign?.campaignCredits == null) return null;
     if (usedCreditsByOthers === null) return null;
 
     return Math.max(0, Number(campaign.campaignCredits) - usedCreditsByOthers);
@@ -307,7 +307,7 @@ const CampaignAgreementEdit = ({
 
   // Calculate remaining credits in real-time as user types
   const realTimeCreditsLeft = useMemo(() => {
-    if (!campaign?.campaignCredits) return null; // Unlimited campaign
+    if (campaign?.campaignCredits == null) return null; // Unlimited campaign (no budget tracking)
     if (maxCreditsAllowed === null) return null;
     return maxCreditsAllowed - creatorCost;
   }, [campaign?.campaignCredits, maxCreditsAllowed, creatorCost]);
@@ -321,7 +321,7 @@ const CampaignAgreementEdit = ({
     if (requiresUGCCredits && (!ugcCreditsValue || ugcCreditsValue === '')) return true;
 
     // For campaigns with credit limits, check if exceeded
-    if (campaign?.campaignCredits && requiresUGCCredits) {
+    if (campaign?.campaignCredits != null && requiresUGCCredits) {
       if (realTimeCreditsLeft !== null && realTimeCreditsLeft < 0) return true;
     }
 
@@ -355,7 +355,7 @@ const CampaignAgreementEdit = ({
 
     try {
       // Validate credits against max allowed
-      if (campaign?.campaignCredits && requiresUGCCredits) {
+      if (campaign?.campaignCredits != null && requiresUGCCredits) {
         if (!Number.isFinite(creditsToAssign) || creditsToAssign <= 0) {
           loading.onFalse();
           enqueueSnackbar('UGC credits must be a positive number.', { variant: 'error' });
@@ -519,7 +519,7 @@ const CampaignAgreementEdit = ({
             <Box sx={{ borderBottom: '1px solid #e7e7e7' }} />
 
             {/* Show Insufficient Credits warning when no credits available for this creator */}
-            {campaign?.campaignCredits && maxCreditsAllowed === 0 && (
+            {campaign?.campaignCredits != null && maxCreditsAllowed === 0 && (
               <Box
                 sx={{
                   p: 2,
@@ -715,7 +715,7 @@ const CampaignAgreementEdit = ({
                   />
 
                   {/* Credit Summary */}
-                  {campaign?.campaignCredits && (() => {
+                  {campaign?.campaignCredits !== null && (() => {
                     const isExceeded = realTimeCreditsLeft !== null && realTimeCreditsLeft < 0;
                     const isUsingAll = realTimeCreditsLeft === 0 && creatorCost > 0;
 

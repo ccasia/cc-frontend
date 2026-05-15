@@ -298,7 +298,7 @@ const FinalDraftFileTypeModal = ({
         deliverablesToUpdate.videosToUpdate.length > 0
           ? `Re-upload ${deliverablesToUpdate.videosToUpdate.length} draft video(s)`
           : 'Upload your main draft video for the campaign',
-      ...(!campaign?.campaignCredits
+      ...(campaign?.campaignCredits == null
         ? {
             needsUpdate: previousSubmission?.feedback?.length,
             isUploaded: submission?.status === 'PENDING_REVIEW',
@@ -345,7 +345,7 @@ const FinalDraftFileTypeModal = ({
     if (
       type.type === 'video' &&
       (deliverablesToUpdate.videosToUpdate.length ||
-        (!campaign?.campaignCredits && previousSubmission?.feedback?.length))
+        (campaign?.campaignCredits == null && previousSubmission?.feedback?.length))
     )
       return true;
     if (type.type === 'rawFootage' && deliverablesToUpdate.rawFootageToUpdate.length > 0)
