@@ -399,6 +399,26 @@ FormattedTextField.propTypes = {
   sx: PropTypes.object,
 };
 
+// Resolve tier for PCR Creator Tiers table (matches agreements / pitches fallback chain)
+const getTierForShortlisted = (shortlisted, campaign) => {
+  if (!shortlisted) return null;
+
+  if (shortlisted.creditTier) {
+    return shortlisted.creditTier;
+  }
+
+  if (shortlisted.user?.creator?.creditTier) {
+    return shortlisted.user.creator.creditTier;
+  }
+
+  const pitch = campaign?.pitch?.find((p) => p.userId === shortlisted.userId);
+  if (pitch?.user?.creator?.creditTier) {
+    return pitch.user.creator.creditTier;
+  }
+
+  return null;
+};
+
 const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdate }) => {
   // Helper function to format campaign period (matching campaign detail view format)
   const formatCampaignPeriod = () => {
@@ -7808,8 +7828,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
                                 if (campaign?.isCreditTier && campaign?.shortlisted?.length > 0) {
                                   campaign.shortlisted.forEach((shortlisted) => {
-                                    // Get tier from shortlisted record (tier at assignment time)
-                                    const tier = shortlisted?.creditTier;
+                                    // Prefer shortlist snapshot, then creator/pitch tier (legacy rows may lack snapshot)
+                                    const tier = getTierForShortlisted(shortlisted, campaign);
                                     if (tier) {
                                       const tierName = tier.name || 'Unknown';
 
