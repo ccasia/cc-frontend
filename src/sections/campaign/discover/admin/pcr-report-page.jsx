@@ -377,6 +377,26 @@ FormattedTextField.propTypes = {
   sx: PropTypes.object,
 };
 
+// Resolve tier for PCR Creator Tiers table (matches agreements / pitches fallback chain)
+const getTierForShortlisted = (shortlisted, campaign) => {
+  if (!shortlisted) return null;
+
+  if (shortlisted.creditTier) {
+    return shortlisted.creditTier;
+  }
+
+  if (shortlisted.user?.creator?.creditTier) {
+    return shortlisted.user.creator.creditTier;
+  }
+
+  const pitch = campaign?.pitch?.find((p) => p.userId === shortlisted.userId);
+  if (pitch?.user?.creator?.creditTier) {
+    return pitch.user.creator.creditTier;
+  }
+
+  return null;
+};
+
 const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdate }) => {
   // Helper function to format campaign period (matching campaign detail view format)
   const formatCampaignPeriod = () => {
@@ -6609,49 +6629,53 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
           );
         })()}
 
-        {/* Tier Table */}
-        {(() => {
-          // Calculate tier data from shortlisted creators (for credit tier campaigns)
-          const tierDataMap = new Map();
-          
-          if (campaign?.isCreditTier && campaign?.shortlisted?.length > 0) {
-            campaign.shortlisted.forEach((shortlisted) => {
-              // Get tier from shortlisted record (tier at assignment time)
-              const tier = shortlisted?.creditTier;
-              if (tier) {
-                const tierName = tier.name || 'Unknown';
-                
-                // Get engagement rates from all submissions/insights for this creator
-                const userSubmissions = submissions.filter(sub => sub.userId === shortlisted.userId);
-                const engagementRates = [];
-                
-                // Get ER from insights data
-                userSubmissions.forEach(submission => {
-                  const insightData = filteredInsightsData.find(
-                    insight => insight.submissionId === submission.id
-                  );
-                  
-                  if (insightData?.insight) {
-                    const er = calculateEngagementRate(insightData.insight);
-                    const erValue = parseFloat(er);
-                    if (!Number.isNaN(erValue) && erValue > 0) {
-                      engagementRates.push(erValue);
-                    }
-                  }
-                });
-                
-                if (!tierDataMap.has(tierName)) {
-                  tierDataMap.set(tierName, {
-                    name: tierName,
-                    engagementRates: [],
-                  });
-                }
-                
-                // Add all engagement rates for this creator to their tier
-                tierDataMap.get(tierName).engagementRates.push(...engagementRates);
-              }
-            });
-          }
+                              {/* Tier Table */}
+                              {(() => {
+                                // Calculate tier data from shortlisted creators (for credit tier campaigns)
+                                const tierDataMap = new Map();
+
+                                if (campaign?.isCreditTier && campaign?.shortlisted?.length > 0) {
+                                  campaign.shortlisted.forEach((shortlisted) => {
+                                    // Prefer shortlist snapshot, then creator/pitch tier (legacy rows may lack snapshot)
+                                    const tier = getTierForShortlisted(shortlisted, campaign);
+                                    if (tier) {
+                                      const tierName = tier.name || 'Unknown';
+
+                                      // Get engagement rates from all submissions/insights for this creator
+                                      const userSubmissions = submissions.filter(
+                                        (sub) => sub.userId === shortlisted.userId
+                                      );
+                                      const engagementRates = [];
+
+                                      // Get ER from insights data
+                                      userSubmissions.forEach((submission) => {
+                                        const insightData = filteredInsightsData.find(
+                                          (insight) => insight.submissionId === submission.id
+                                        );
+
+                                        if (insightData?.insight) {
+                                          const er = calculateEngagementRate(insightData.insight);
+                                          const erValue = parseFloat(er);
+                                          if (!Number.isNaN(erValue) && erValue > 0) {
+                                            engagementRates.push(erValue);
+                                          }
+                                        }
+                                      });
+
+                                      if (!tierDataMap.has(tierName)) {
+                                        tierDataMap.set(tierName, {
+                                          name: tierName,
+                                          engagementRates: [],
+                                        });
+                                      }
+
+                                      // Add all engagement rates for this creator to their tier
+                                      tierDataMap
+                                        .get(tierName)
+                                        .engagementRates.push(...engagementRates);
+                                    }
+                                  });
+                                }
 
           // Calculate averages and sort by tier name
           const tierData = Array.from(tierDataMap.values())
