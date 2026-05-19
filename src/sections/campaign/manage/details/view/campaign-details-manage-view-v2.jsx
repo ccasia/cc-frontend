@@ -63,6 +63,8 @@ const CampaignDetailManageViewV2 = ({ id }) => {
 
   const modalConfirm = useBoolean();
   const loadingButton = useBoolean();
+  const isClosing = useBoolean();
+  const isGenerating = useBoolean();
 
   const campaignStartDate = useMemo(
     () => !campaignLoading && campaign?.campaignBrief?.startDate,
@@ -122,6 +124,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
   };
 
   const closeCampaign = async () => {
+    isClosing.onTrue();
     try {
       const res = await axiosInstance.patch(endpoints.campaign.closeCampaign(id));
       enqueueSnackbar(res?.data?.message);
@@ -141,6 +144,8 @@ const CampaignDetailManageViewV2 = ({ id }) => {
       enqueueSnackbar('Error to close campaign', {
         variant: 'error',
       });
+    } finally {
+      isClosing.onFalse();
     }
   };
 
@@ -152,10 +157,17 @@ const CampaignDetailManageViewV2 = ({ id }) => {
         <DialogContentText>Are you sure you want to end the campaign?</DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={modalConfirm.onFalse}>Cancel</Button>
-        <Button onClick={closeCampaign} variant="contained">
-          Confirm
+        <Button onClick={modalConfirm.onFalse} sx={{ borderRadius: 0.5 }}>
+          Cancel
         </Button>
+        <LoadingButton
+          onClick={closeCampaign}
+          variant="contained"
+          sx={{ borderRadius: 0.5 }}
+          loading={isClosing.value}
+        >
+          Confirm
+        </LoadingButton>
       </DialogActions>
     </Dialog>
   );
@@ -168,7 +180,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
     logistics: <UpdateLogistics campaign={campaign} campaignMutate={campaignMutate} />,
     finalise: <UpdateFinaliseCampaign campaign={campaign} campaignMutate={campaignMutate} />,
     additional1: <UpdateAdditionalOne campaign={campaign} campaignMutate={campaignMutate} />,
-    additional2: <UpdateAdditionalTwo campaign={campaign} campaignMutate={campaignMutate} />
+    additional2: <UpdateAdditionalTwo campaign={campaign} campaignMutate={campaignMutate} />,
   };
 
   const renderTabs = (
@@ -263,12 +275,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
 
   return (
     <Container maxWidth="lg">
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ mb: 1 }}
-      >
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
         <Button
           color="inherit"
           startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
@@ -286,7 +293,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
           <Chip
             label={campaign.status.replace(/_/g, ' ')}
             size="medium"
-            variant='outlined'
+            variant="outlined"
             sx={{
               fontWeight: 600,
               fontSize: '0.75rem',
@@ -336,8 +343,8 @@ const CampaignDetailManageViewV2 = ({ id }) => {
                 onClick={() => handleChangeStatus('PAUSED')}
                 loading={loadingButton.value}
                 disabled={isDisabled}
-                sx={{ 
-                  bgcolor: '#3A3A3C', 
+                sx={{
+                  bgcolor: '#3A3A3C',
                   boxShadow: '0px -3px 0px 0px #00000073 inset',
                   '&:hover': {
                     bgcolor: '#3A3A3C',
@@ -354,8 +361,8 @@ const CampaignDetailManageViewV2 = ({ id }) => {
                 onClick={modalConfirm.onTrue}
                 size="large"
                 disabled={isDisabled}
-                sx={{ 
-                  bgcolor: '#D4321C', 
+                sx={{
+                  bgcolor: '#D4321C',
                   boxShadow: '0px -3px 0px 0px #00000073 inset',
                   '&:hover': {
                     bgcolor: '#D4321C',
@@ -389,8 +396,8 @@ const CampaignDetailManageViewV2 = ({ id }) => {
                   onClick={() => handleChangeStatus('ACTIVE')}
                   loading={loadingButton.value}
                   disabled={isDisabled}
-                  sx={{ 
-                    bgcolor: 'primary', 
+                  sx={{
+                    bgcolor: 'primary',
                     boxShadow: '0px -3px 0px 0px #00000073 inset',
                     '&:hover': {
                       bgcolor: 'primary',
@@ -401,17 +408,40 @@ const CampaignDetailManageViewV2 = ({ id }) => {
                   Publish
                 </LoadingButton>
               )}
-                {campaign?.status === 'COMPLETED' && (
-                <LoadingButton
-                  variant="contained"
-                  color="success"
-                  onClick={() => handleChangeStatus('ACTIVE')}
-                  size="large"
-                  disabled={isDisabled}
-                >
-                  Reactivate
-                </LoadingButton>
-              )}
+            {campaign?.status === 'COMPLETED' && (
+              <LoadingButton
+                variant="contained"
+                color="success"
+                onClick={() => handleChangeStatus('ACTIVE')}
+                size="large"
+                disabled={isDisabled}
+              >
+                Reactivate
+              </LoadingButton>
+            )}
+
+            {campaign?.status === 'COMPLETED' && (
+              <LoadingButton
+                variant="outlined"
+                loading={isGenerating.value}
+                sx={{ border: 1.5, borderColor: 'success.main', color: 'success.main' }}
+                onClick={async () => {
+                  if (campaign?.summaryUrl) {
+                    window.open(campaign.summaryUrl, '_blank', 'noopener,noreferrer');
+                  } else {
+                    isGenerating.onTrue();
+                    try {
+                      await axiosInstance.post(`/api/campaign/export/master-list/${campaign.id}`);
+                      mutate(endpoints.campaign.getCampaignById(campaign.id));
+                    } finally {
+                      isGenerating.onFalse();
+                    }
+                  }
+                }}
+              >
+                Campaign Master List
+              </LoadingButton>
+            )}
           </Stack>
         }
         sx={{
