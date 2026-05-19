@@ -264,15 +264,23 @@ const FinalDraftFileTypeModal = ({
   );
 
   const deliverablesToUpdate = useMemo(() => {
-    const videosToUpdate = deliverables?.videos.filter((x) => x.status === 'REVISION_REQUESTED');
+    const revisionSourceSubmission =
+      submission?.status === 'CHANGES_REQUIRED' ? submission : previousSubmission;
+    const revisionSourceSubmissionId = revisionSourceSubmission?.id;
 
-    const rawFootageToUpdate = deliverables?.rawFootages.filter(
-      (x) => x.status === 'REVISION_REQUESTED'
+    const videosToUpdate = (deliverables?.videos || []).filter(
+      (x) => x.submissionId === revisionSourceSubmissionId && x.status === 'REVISION_REQUESTED'
     );
-    const photosToUpdate = deliverables?.photos.filter((x) => x.status === 'REVISION_REQUESTED');
+
+    const rawFootageToUpdate = (deliverables?.rawFootages || []).filter(
+      (x) => x.submissionId === revisionSourceSubmissionId && x.status === 'REVISION_REQUESTED'
+    );
+    const photosToUpdate = (deliverables?.photos || []).filter(
+      (x) => x.submissionId === revisionSourceSubmissionId && x.status === 'REVISION_REQUESTED'
+    );
 
     return { videosToUpdate, rawFootageToUpdate, photosToUpdate };
-  }, [deliverables]);
+  }, [deliverables, previousSubmission, submission]);
 
   // Check if the required files have been uploaded in the current submission
   const hasUploadedRequiredVideos = deliverablesToUpdate.videosToUpdate.length
