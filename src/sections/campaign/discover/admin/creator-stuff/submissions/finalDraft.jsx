@@ -27,6 +27,13 @@ import DraftVideos from './finalDraft/draft-videos';
 import { VideoModal, PhotoModal } from './finalDraft/media-modals';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './finalDraft/confirmation-modals';
 
+const scopeDeliverablesToSubmission = (deliverables, submissionId) => ({
+  videos: (deliverables?.videos || []).filter((item) => item.submissionId === submissionId),
+  rawFootages: (deliverables?.rawFootages || []).filter((item) => item.submissionId === submissionId),
+  photos: (deliverables?.photos || []).filter((item) => item.submissionId === submissionId),
+  submissions: (deliverables?.submissions || []).filter((item) => item.id === submissionId),
+});
+
 const FinalDraft = ({
   campaign,
   submission,
@@ -73,7 +80,11 @@ const FinalDraft = ({
     await handleClientRejectRawFootage(...args);
     await onClientActionCompleted();
   };
-  const { deliverables, deliverableMutate, submissionMutate } = deliverablesData;
+  const { deliverables: allDeliverables, deliverableMutate, submissionMutate } = deliverablesData;
+  const deliverables = useMemo(
+    () => scopeDeliverablesToSubmission(allDeliverables, submission?.id),
+    [allDeliverables, submission?.id]
+  );
   const { user } = useAuthContext();
 
   // Modal states
@@ -246,7 +257,10 @@ const FinalDraft = ({
       const freshDeliverablesResponse = await axiosInstance.get(
         `/api/submission/deliverables/${creator?.user?.id}/${campaign?.id}`
       );
-      const currentDeliverables = freshDeliverablesResponse.data;
+      const currentDeliverables = scopeDeliverablesToSubmission(
+        freshDeliverablesResponse.data,
+        submission?.id
+      );
       
       // V2 Flow: Original logic for backward compatibility
       const videosApproved = !currentDeliverables?.videos?.length || 
