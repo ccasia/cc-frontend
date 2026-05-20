@@ -28,7 +28,7 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 // Validation schema factory - creates schema based on selected platform
 const createManualCreatorSchema = (selectedPlatform) => Yup.object().shape({
   creatorName: Yup.string().required('Creator name is required'),
-  creatorUsername: Yup.string().nullable().notRequired(),
+  creatorUsername: Yup.string().required('Username is required'),
   postUrl: Yup.string()
     .nullable()
     .test({
@@ -488,7 +488,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                       />
                       <RHFTextField
                         name="creatorUsername"
-                        placeholder="Username (optional)"
+                        placeholder="Creator Username"
                         size="small"
                         sx={{
                           width: '100%',
@@ -878,7 +878,7 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
                       />
                       <RHFTextField
                         name="creatorUsername"
-                        placeholder="Username (optional)"
+                        placeholder="Creator Username"
                         size="small"
                         sx={{
                           '& .MuiOutlinedInput-root': {
