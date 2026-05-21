@@ -25,7 +25,16 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   const isMe = user?.id === message.senderId;
-  const { content: body, sender, file, fileType, isOptimistic, isOptimisticFile } = message;
+  const {
+    content: body,
+    sender,
+    file,
+    fileType,
+    fileName,
+    fileSize,
+    isOptimistic,
+    isOptimisticFile,
+  } = message;
 
   const isAdmin = sender?.role === 'admin';
   const isSprAdmin = sender?.role === 'superadmin';
@@ -188,6 +197,10 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
     }
 
     if (isVideo) {
+      // Chrome/Firefox refuse to play <source type="video/quicktime"> even when
+      // the codec inside is H.264 (iOS keeps a .mov container for H.264 exports).
+      // Relabel as video/mp4 — the browser still demuxes the file fine.
+      const playableType = fileType === 'video/quicktime' ? 'video/mp4' : fileType;
       return (
         <>
           <Box sx={{ mt: 1, maxWidth: 300, position: 'relative' }}>
@@ -217,7 +230,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
                 }}
                 muted
               >
-                <source src={file} type={fileType} />
+                <source src={file} type={playableType} />
                 Your browser does not support the video tag.
               </video>
 
@@ -310,7 +323,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
                   boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
                 }}
               >
-                <source src={file} type={fileType} />
+                <source src={file} type={playableType} />
                 Your browser does not support the video tag.
               </video>
             </DialogContent>
@@ -357,7 +370,11 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
       );
     }
 
-    // For other file types, show a download link with thumbnail
+    // For other file types (PDF, DOCX, XLSX, etc.) show a download tile.
+    // Prefer the persisted fileName/fileSize from cult-app uploads; fall back
+    // to URL parsing for older messages that pre-date those columns.
+    const displayName = fileName || getFileName(file);
+    const displaySize = fileSize ? formatFileSize(fileSize) : '';
     return (
       <Box
         sx={{
@@ -365,22 +382,28 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
           p: 1,
           border: (theme) => `1px solid ${theme.palette.divider}`,
           borderRadius: 1,
-          maxWidth: 300,
+          maxWidth: 320,
           display: 'flex',
           alignItems: 'center',
-          gap: 1,
+          gap: 1.25,
           opacity: isOptimisticFile ? 0.7 : 1,
           position: 'relative',
+          bgcolor: 'background.paper',
         }}
       >
-        <FileThumbnail file={fileType} sx={{ width: 32, height: 32, flexShrink: 0 }} />
+        <FileThumbnail
+          file={fileName || file || fileType}
+          sx={{ width: 36, height: 36, flexShrink: 0 }}
+        />
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-          <Typography variant="body2" noWrap>
-            {getFileName(file)}
+          <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+            {displayName}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {fileType}
-          </Typography>
+          {displaySize ? (
+            <Typography variant="caption" color="text.secondary">
+              {displaySize}
+            </Typography>
+          ) : null}
         </Box>
 
         {isOptimisticFile ? (
@@ -390,8 +413,9 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
             size="small"
             onClick={() => window.open(file, '_blank')}
             sx={{ flexShrink: 0 }}
+            title="Open"
           >
-            <Iconify icon="eva:download-outline" width={16} />
+            <Iconify icon="eva:external-link-outline" width={18} />
           </IconButton>
         )}
       </Box>
@@ -555,6 +579,8 @@ ChatMessageItem.propTypes = {
     createdAt: PropTypes.string.isRequired,
     file: PropTypes.string,
     fileType: PropTypes.string,
+    fileName: PropTypes.string,
+    fileSize: PropTypes.number,
     isOptimistic: PropTypes.bool,
     isOptimisticFile: PropTypes.bool,
     sender: PropTypes.shape({

@@ -389,48 +389,35 @@ const Posting = ({
                     borderRadius: 2,
                     border: '1px solid',
                     borderColor: 'divider',
-                    pb: 1,
                     width: '100%',
                     overflow: 'visible',
                     position: 'relative',
                   }}
                 >
-                  <Box display="flex" flexDirection="column" gap={-5}>
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                      <Avatar
-                        src={creator?.user?.photoURL}
-                        alt={creator?.user?.name}
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          border: '1px solid #e7e7e7',
-                        }}
-                      >
-                        {creator?.user?.name?.charAt(0).toUpperCase()}
-                      </Avatar>
-                      <Box>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{
-                            fontSize: '1.05rem',
-                          }}
-                        >
-                          {creator?.user?.name}
-                        </Typography>
-                        {/* Temporarily disabled for testing */}
-                      </Box>
-                    </Stack>
-
-                    <Box
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                    <Avatar
+                      src={creator?.user?.photoURL}
+                      alt={creator?.user?.name}
                       sx={{
-                        pl: 7,
-                        maxWidth: '100%',
-                        overflow: 'visible',
+                        width: 40,
+                        height: 40,
+                        border: '1px solid #e7e7e7',
                       }}
                     >
+                      {creator?.user?.name?.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Stack sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontSize: '1.05rem',
+                        }}
+                      >
+                        {creator?.user?.name}
+                      </Typography>
                       <Box
                         sx={{
-                          mt: -4.5,
+                          mt: 0.25,
                           maxWidth: '100%',
                           wordBreak: 'break-all',
                         }}
@@ -558,8 +545,8 @@ const Posting = ({
                           </Stack>
                         )}
                       </Box>
-                    </Box>
-                  </Box>
+                    </Stack>
+                  </Stack>
                 </Box>
               </Box>
               <Stack my={2} textAlign="end" direction="row" spacing={1.5} justifyContent="end">
