@@ -163,6 +163,8 @@ const CampaignFinalDraft = ({
     if (previousSubmission) return previousSubmission;
     return fullSubmission?.find((item) => item?.submissionType?.type === 'FIRST_DRAFT') || null;
   }, [previousSubmission, fullSubmission]);
+  const isFinalDraftApproved =
+    submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED';
 
   // Commented out: Backend endpoint doesn't exist yet
   // V3 creator feedback removed
@@ -594,7 +596,7 @@ const CampaignFinalDraft = ({
   }, [checkProgress]);
 
   const handleUploadTypeSelect = (type) => {
-    if (submission?.status === 'PENDING_REVIEW') {
+    if (submission?.status === 'PENDING_REVIEW' || isFinalDraftApproved) {
       enqueueSnackbar('Cannot upload while submission is under review', { variant: 'warning' });
       return;
     }
@@ -616,7 +618,7 @@ const CampaignFinalDraft = ({
   };
 
   const handleUploadClick = () => {
-    if (submission?.status === 'PENDING_REVIEW') {
+    if (submission?.status === 'PENDING_REVIEW' || isFinalDraftApproved) {
       enqueueSnackbar('Cannot upload while submission is under review', { variant: 'warning' });
       return;
     }
@@ -675,6 +677,7 @@ const CampaignFinalDraft = ({
       // 1. There's feedback to address, OR
       // 2. The current submission is in progress, OR  
       // 3. The previous submission (first draft) has changes required
+      isFinalDraftApproved ||
       (feedbacksTesting && feedbacksTesting.length > 0) ||
       submission?.status === 'IN_PROGRESS' ||
       submission?.status === 'NOT_STARTED' ||
@@ -920,7 +923,7 @@ const CampaignFinalDraft = ({
           </Stack>
         )}
 
-        {(submission?.status === 'IN_PROGRESS' || submission?.status === 'CHANGES_REQUIRED' || 
+        {!isFinalDraftApproved && (submission?.status === 'IN_PROGRESS' || submission?.status === 'CHANGES_REQUIRED' ||
           (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0)) && (
           <Stack gap={2}>
             <Box>
@@ -983,7 +986,7 @@ const CampaignFinalDraft = ({
         )}
 
         {/* Only show feedback and re-upload when changes are required, NOT when in review or sent to client */}
-        {(submission?.status === 'CHANGES_REQUIRED' || 
+        {!isFinalDraftApproved && (submission?.status === 'CHANGES_REQUIRED' ||
                 submission?.status === 'NOT_STARTED' || 
                 (submission?.status === 'IN_PROGRESS' && submission?.status !== 'PENDING_REVIEW' && submission?.status !== 'SENT_TO_CLIENT') ||
                 (previousSubmission?.status === 'CHANGES_REQUIRED' && feedbacksTesting && feedbacksTesting.length > 0)) && 
@@ -1707,7 +1710,7 @@ const CampaignFinalDraft = ({
 
         {/* Removed console.log for cleaner code */}
         
-        {(submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED') && (
+        {isFinalDraftApproved && (
           <Stack justifyContent="center" alignItems="center" spacing={2}>
             <Box
               sx={{

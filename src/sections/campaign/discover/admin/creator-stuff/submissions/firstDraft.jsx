@@ -26,6 +26,13 @@ import {
   ConfirmationRequestModal,
 } from './firstDraft/confirmation-modals';
 
+const scopeDeliverablesToSubmission = (deliverables, submissionId) => ({
+  videos: (deliverables?.videos || []).filter((item) => item.submissionId === submissionId),
+  rawFootages: (deliverables?.rawFootages || []).filter((item) => item.submissionId === submissionId),
+  photos: (deliverables?.photos || []).filter((item) => item.submissionId === submissionId),
+  submissions: (deliverables?.submissions || []).filter((item) => item.id === submissionId),
+});
+
 const FirstDraft = ({
   campaign,
   submission,
@@ -40,7 +47,11 @@ const FirstDraft = ({
   handleClientRejectRawFootage,
   isDisabled: propIsDisabled = false,
 }) => {
-  const { deliverables, deliverableMutate, submissionMutate } = deliverablesData;
+  const { deliverables: allDeliverables, deliverableMutate, submissionMutate } = deliverablesData;
+  const deliverables = useMemo(
+    () => scopeDeliverablesToSubmission(allDeliverables, submission?.id),
+    [allDeliverables, submission?.id]
+  );
   const { user } = useAuthContext();
 
   // Modal states
@@ -239,7 +250,10 @@ const FirstDraft = ({
       const freshDeliverablesResponse = await axiosInstance.get(
         `/api/submission/deliverables/${creator.user.id}/${campaign.id}`
       );
-      const currentDeliverables = freshDeliverablesResponse.data;
+      const currentDeliverables = scopeDeliverablesToSubmission(
+        freshDeliverablesResponse.data,
+        submission?.id
+      );
 
       // Check if all sections are approved
       const videosApproved =

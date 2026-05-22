@@ -50,14 +50,18 @@ const UploadDraftVideoModal = ({
   const [uploadProgress, setUploadProgress] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const videosToUpdateCount =
-    totalUGCVideos ||
-    submission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length ||
-    previousSubmission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length ||
-    1;
+  const currentRevisionCount =
+    submission?.video?.filter((x) => x.status === 'REVISION_REQUESTED')?.length || 0;
+  const previousRevisionCount =
+    previousSubmission?.video?.filter((x) => x.status === 'REVISION_REQUESTED')?.length || 0;
+  const isRevisionUpload =
+    submission?.status === 'CHANGES_REQUIRED' || previousSubmission?.status === 'CHANGES_REQUIRED';
+  const videosToUpdateCount = isRevisionUpload
+    ? currentRevisionCount || previousRevisionCount || 1
+    : totalUGCVideos || currentRevisionCount || previousRevisionCount || 1;
 
   const validateFileCount = (files) => {
-    if (previousSubmission?.status === 'CHANGES_REQUIRED') {
+    if (isRevisionUpload) {
       if (files.length !== videosToUpdateCount) {
         enqueueSnackbar(
           `Please upload exactly ${videosToUpdateCount} video${videosToUpdateCount > 1 ? 's' : ''}.`,
@@ -137,7 +141,7 @@ const UploadDraftVideoModal = ({
       return;
     }
 
-    if (totalUGCVideos && data.draftVideo.length !== totalUGCVideos) {
+    if (!isRevisionUpload && totalUGCVideos && data.draftVideo.length !== totalUGCVideos) {
       enqueueSnackbar(`You need to upload ${totalUGCVideos} UGC Videos`, {
         variant: 'error',
       });
@@ -350,7 +354,7 @@ const UploadDraftVideoModal = ({
           </Box>
         )}
 
-        {totalUGCVideos && (
+        {!isRevisionUpload && totalUGCVideos && (
           <Box sx={{ mb: 2 }}>
             <Typography
               variant="caption"
@@ -373,7 +377,7 @@ const UploadDraftVideoModal = ({
           </Box>
         )}
 
-        {previousSubmission?.status === 'CHANGES_REQUIRED' && (
+        {isRevisionUpload && (
           <Typography variant="body2" sx={{ color: 'warning.main', mb: 2 }}>
             Please upload exactly {videosToUpdateCount} video{videosToUpdateCount > 1 ? 's' : ''} as
             requested by the admin.
