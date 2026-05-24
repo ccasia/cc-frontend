@@ -601,20 +601,26 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                         }}
                       >
                         {
-                        (submission.status === 'APPROVED' ||
-                          submission.status === 'CLIENT_APPROVED' ||
-                          submission.status === 'POSTED' ||
-                          submission.status === 'REJECTED') &&
-                        campaign?.campaignType === 'normal' ? (
-                          <PostingLinkSection
-                            submission={submission}
-                            onUpdate={onUpdate}
-                            onViewLogs={() => setShowFeedbackLogs(true)}
-                            onReviewSubmission={() => isClient ? setVideoSubmissionModalOpen(true) : setAdminReviewModalOpen(true)}
-                            isDisabled={isDisabled}
-                            isClient={isClient}
-                          />
-                        ) : null
+                          (submission.status === 'APPROVED' ||
+                            submission.status === 'CLIENT_APPROVED' ||
+                            submission.status === 'APPROVE_LINK' ||
+                            submission.status === 'POSTED' ||
+                            submission.status === 'REJECTED') &&
+                          campaign?.campaignType === 'normal' ? (
+                            <PostingLinkSection
+                              submission={submission}
+                              onUpdate={onUpdate}
+                              onViewLogs={() => setShowFeedbackLogs(true)}
+                              onReviewSubmission={() => {
+                                // eslint-disable-next-line no-unused-expressions
+                                isClient
+                                  ? setVideoSubmissionModalOpen(true)
+                                  : setAdminReviewModalOpen(true);
+                              }}
+                              isDisabled={isDisabled}
+                              isClient={isClient}
+                            />
+                          ) : null
                           /* Temporarily hidden — feedback text should not show while video is Processing
                           !isClient && (
                             <FeedbackSection

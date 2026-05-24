@@ -132,6 +132,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
     isApproved,
     hasChangesRequired,
     isPosted,
+    isApproveLink,
     requiresPostingLink,
     isPostingLinkEditable,
     isPostingLinkRejected,
@@ -307,7 +308,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
             onCaptionChange={handleCaptionChange}
             isCaptionEditable={isCaptionEditable}
             hasPostingLink={
-              requiresPostingLink && (isApproved || isPosted || isPostingLinkRejected)
+              requiresPostingLink && (isApproved || isApproveLink || isPosted || isPostingLinkRejected)
             }
             postingLink={postingLink}
             onPostingLinkChange={(e) => setPostingLink(e.target.value)}
