@@ -1287,6 +1287,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
     switch (submission.status) {
       case 'IN_PROGRESS':
       case 'PENDING_REVIEW':
+      case 'APPROVE_LINK':
       case 'SENT_TO_CLIENT':
       case 'CLIENT_FEEDBACK':
         return 'IN REVIEW';
@@ -1351,8 +1352,8 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
         borderColor: '#FF4842',
       },
       'PENDING POSTING LINK': {
-        color: '#FFC702',
-        borderColor: '#FFC702',
+        color: '#0062CD',
+        borderColor: '#0062CD',
       },
       APPROVED: {
         color: '#00AB55',

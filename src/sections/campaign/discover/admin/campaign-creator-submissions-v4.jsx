@@ -219,14 +219,16 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
         switch (status) {
           case 'APPROVED':
           case 'CLIENT_APPROVED':
-            // Only show PENDING_REVIEW color for video and photo submissions in normal campaigns
+            // Approved video/photo submissions in normal campaigns are waiting for a posting link.
             if (
               campaignType === 'normal' &&
               (submissionType === 'video' || submissionType === 'photo')
             ) {
-              return getStatusColor('PENDING_REVIEW');
+              return getStatusColor('PENDING_LINK');
             }
             return getStatusColor(status);
+          case 'APPROVE_LINK':
+            return getStatusColor('APPROVE_LINK');
           default:
             return getStatusColor(status);
         }

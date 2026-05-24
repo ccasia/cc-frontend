@@ -401,6 +401,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate, isDi
                         {
                         (submission.status === 'APPROVED' ||
                           submission.status === 'CLIENT_APPROVED' ||
+                          submission.status === 'APPROVE_LINK' ||
                           submission.status === 'POSTED' ||
                           submission.status === 'REJECTED') &&
                         campaign?.campaignType === 'normal' ? (

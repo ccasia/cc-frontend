@@ -10,9 +10,10 @@ export const getSubmissionStatusFlags = (submission, campaign = null) => {
 
   // Basic status flags
   const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(status);
+  const isApproveLink = status === 'APPROVE_LINK';
   const hasChangesRequired = ['CHANGES_REQUIRED', 'REJECTED'].includes(status);
   const isPosted = status === 'POSTED';
-  const isPendingReview = status === 'PENDING_REVIEW';
+  const isPendingReview = status === 'PENDING_REVIEW' || isApproveLink;
   const isNotStarted = status === 'NOT_STARTED';
   const isClientApproved = status === 'CLIENT_APPROVED';
 
@@ -31,6 +32,7 @@ export const getSubmissionStatusFlags = (submission, campaign = null) => {
     isPendingReview,
     isNotStarted,
     isClientApproved,
+    isApproveLink,
 
     // Posting link
     requiresPostingLink,
@@ -92,6 +94,7 @@ export const getButtonStates = ({
     (hasCaption && !caption.trim()) ||
     postingLoading ||
     status === 'PENDING_REVIEW' ||
+    status === 'APPROVE_LINK' ||
     status === 'POSTED' ||
     (status === 'APPROVED' && !isPostingLinkEditable) || // prevent submission when approved, but allow posting link
     (status !== 'CHANGES_REQUIRED' &&
