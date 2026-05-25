@@ -604,6 +604,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                         {
                           (submission.status === 'APPROVED' ||
                             submission.status === 'CLIENT_APPROVED' ||
+                            submission.status === 'APPROVE_LINK' ||
                             submission.status === 'POSTED' ||
                             submission.status === 'REJECTED') &&
                           campaign?.campaignType === 'normal' ? (

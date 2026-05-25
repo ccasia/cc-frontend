@@ -62,6 +62,7 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
     isApproved,
     hasChangesRequired,
     isPosted,
+    isApproveLink,
     requiresPostingLink,
     isPostingLinkEditable,
     isPostingLinkRejected,
@@ -216,6 +217,7 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
         !caption.trim() ||
         postingLoading ||
         submission.status === 'PENDING_REVIEW' ||
+        submission.status === 'APPROVE_LINK' ||
         submission.status === 'POSTED' ||
         (submission.status !== 'CHANGES_REQUIRED' &&
           submission.status !== 'NOT_STARTED' &&
@@ -396,7 +398,7 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                 onCaptionChange={handleCaptionChange}
                 isCaptionEditable={isCaptionEditable}
                 hasPostingLink={
-                  requiresPostingLink && (isApproved || isPosted || isPostingLinkRejected)
+                  requiresPostingLink && (isApproved || isApproveLink || isPosted || isPostingLinkRejected)
                 }
                 postingLink={postingLink}
                 onPostingLinkChange={(e) => setPostingLink(e.target.value)}
