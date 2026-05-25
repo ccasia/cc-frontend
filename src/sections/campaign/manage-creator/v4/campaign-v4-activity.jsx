@@ -1440,10 +1440,10 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
         <Typography
           component="span"
           sx={{
-            color: '#1340FF',
-            textDecoration: 'underline',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
+            // color: '#1340FF',
+            // textDecoration: 'underline',
+            // cursor: 'pointer',
+            // fontFamily: 'inherit',
             '&:hover': {
               opacity: 0.8,
             },
@@ -1729,7 +1729,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: 2,
             border: 'none',
-            mb: 1,
+            // mb: 1,
           }}
         >
           <Stack
@@ -1959,14 +1959,11 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
                         {status}
                       </Typography>
                     </Box>
-
                   </Stack>
-                  <IconButton size="small">
-                    <Iconify
-                      icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-                      width={20}
-                    />
-                  </IconButton>
+                  <Iconify
+                    icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                    width={20}
+                  />
                 </Box>
                 {/* Collapsible Content */}
                 <Collapse in={isExpanded}>
@@ -2098,14 +2095,11 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
                         {status}
                       </Typography>
                     </Box>
-
                   </Stack>
-                  <IconButton size="small">
-                    <Iconify
-                      icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-                      width={20}
-                    />
-                  </IconButton>
+                  <Iconify
+                    icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                    width={20}
+                  />
                 </Box>
 
                 {/* Collapsible Content */}
@@ -2244,14 +2238,11 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
                         {status}
                       </Typography>
                     </Box>
-
                   </Stack>
-                  <IconButton size="small">
-                    <Iconify
-                      icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-                      width={20}
-                    />
-                  </IconButton>
+                  <Iconify
+                    icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                    width={20}
+                  />
                 </Box>
 
                 {/* Collapsible Content */}
