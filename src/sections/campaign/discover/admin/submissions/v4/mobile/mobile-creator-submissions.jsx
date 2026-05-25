@@ -38,9 +38,11 @@ function MobileSubmissionRow({
         case 'APPROVED':
         case 'CLIENT_APPROVED':
           if (campaignType === 'normal' && (submissionType === 'video' || submissionType === 'photo')) {
-            return getStatusColor('PENDING_REVIEW');
+            return getStatusColor('PENDING_LINK');
           }
           return getStatusColor(submissionStatus);
+        case 'APPROVE_LINK':
+          return getStatusColor('APPROVE_LINK');
         default:
           return getStatusColor(submissionStatus);
       }
@@ -50,6 +52,8 @@ function MobileSubmissionRow({
     switch (submissionStatus) {
       case 'SENT_TO_CLIENT':
         return getStatusColor('PENDING_REVIEW');
+      case 'APPROVE_LINK':
+        return getStatusColor('APPROVED');
       case 'PENDING_REVIEW':
         return getStatusColor('IN_PROGRESS');
       case 'CHANGES_REQUIRED':
@@ -76,6 +80,8 @@ function MobileSubmissionRow({
             return 'PENDING LINK';
           }
           return formatStatus(submissionStatus);
+        case 'APPROVE_LINK':
+          return 'APPROVE LINK';
         default:
           return formatStatus(submissionStatus);
       }
@@ -94,6 +100,8 @@ function MobileSubmissionRow({
         return 'IN PROGRESS';
       case 'SENT_TO_CLIENT':
         return 'PENDING REVIEW';
+      case 'APPROVE_LINK':
+        return 'APPROVED';
       case 'CLIENT_APPROVED':
       case 'APPROVED':
         return 'APPROVED';

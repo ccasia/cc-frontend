@@ -261,6 +261,7 @@ const VideoSubmissionModal = ({
         NOT_STARTED: '#8E8E93',
         IN_PROGRESS: '#8B5CF6',
         PENDING_REVIEW: '#8B5CF6',
+        APPROVE_LINK: '#8B5CF6',
         SENT_TO_CLIENT: '#8B5CF6',
         CLIENT_FEEDBACK: '#8B5CF6',
         CHANGES_REQUIRED: '#FF4842',
@@ -276,6 +277,8 @@ const VideoSubmissionModal = ({
       switch (status) {
         case 'SENT_TO_CLIENT':
           return getStatusColor('PENDING_REVIEW');
+        case 'APPROVE_LINK':
+          return getStatusColor('APPROVED');
         case 'PENDING_REVIEW':
         case 'CHANGES_REQUIRED':
         case 'CLIENT_FEEDBACK':
@@ -287,8 +290,11 @@ const VideoSubmissionModal = ({
     }
 
     // Admin
+    if (status === 'APPROVE_LINK') {
+      return getStatusColor('APPROVE_LINK');
+    }
     if ((status === 'APPROVED' || status === 'CLIENT_APPROVED') && campaignType === 'normal') {
-      return getStatusColor('PENDING_REVIEW');
+      return getStatusColor('PENDING_LINK');
     }
     return getStatusColor(status);
   };
@@ -299,6 +305,7 @@ const VideoSubmissionModal = ({
         case 'IN_PROGRESS':
         case 'PENDING_REVIEW':
         case 'SENT_TO_CLIENT':
+        case 'APPROVE_LINK':
         case 'CLIENT_FEEDBACK':
           return 'IN REVIEW';
         case 'CHANGES_REQUIRED':
@@ -326,6 +333,8 @@ const VideoSubmissionModal = ({
           return 'IN PROGRESS';
         case 'SENT_TO_CLIENT':
           return 'PENDING REVIEW';
+        case 'APPROVE_LINK':
+          return 'APPROVED';
         case 'CLIENT_APPROVED':
         case 'APPROVED':
           return 'APPROVED';
@@ -342,6 +351,7 @@ const VideoSubmissionModal = ({
 
     // Admin
     if (status === 'IN_PROGRESS') return 'PROCESSING';
+    if (status === 'APPROVE_LINK') return 'APPROVE LINK';
     if (campaignType === 'normal' && (status === 'APPROVED' || status === 'CLIENT_APPROVED')) {
       return 'PENDING LINK';
     }

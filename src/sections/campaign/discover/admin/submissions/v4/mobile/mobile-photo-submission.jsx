@@ -416,6 +416,7 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate, 
         <>
           <Box sx={{ mb: 2 }}>
           {(submission.status === 'CLIENT_APPROVED' ||
+              submission.status === 'APPROVE_LINK' ||
               submission.status === 'POSTED' ||
               submission.status === 'REJECTED') &&
             campaign?.campaignType === 'normal' ? (

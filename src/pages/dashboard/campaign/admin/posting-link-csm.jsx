@@ -24,11 +24,11 @@ export default function PostingLinkCSMView() {
     campaignId ? `${endpoints.submission.root}/v3?campaignId=${campaignId}` : null
   );
 
-  const posting = useMemo(() => (submissions || []).find((s) => s?.submissionType?.type === 'POSTING' && (s?.status === 'PENDING_REVIEW' || s?.status === 'IN_PROGRESS')), [submissions]);
+  const posting = useMemo(() => (submissions || []).find((s) => s?.submissionType?.type === 'POSTING' && (s?.status === 'PENDING_REVIEW' || s?.status === 'APPROVE_LINK' || s?.status === 'IN_PROGRESS')), [submissions]);
 
   const onSubmit = async () => {
     if (!posting?.id || !link) return;
-    await axiosInstance.post(`${endpoints.submission.root}/v3/posting/submit-link`, { submissionId: posting.id, link });
+    await axiosInstance.post(`${endpoints.submission.root}/v2/posting/submit-link`, { submissionId: posting.id, link });
     setLink('');
   };
 
@@ -42,4 +42,3 @@ export default function PostingLinkCSMView() {
     </Box>
   );
 }
-

@@ -1,9 +1,11 @@
 // Centralized status colors for both admin and client submission components
 export const STATUS_COLORS = {
   PENDING_REVIEW: '#FFC702',
+  PENDING_LINK: '#0062CD',
   IN_PROGRESS: '#8A5AFE', 
   APPROVED: '#1ABF66',
   POSTED: '#1ABF66',
+  APPROVE_LINK: '#FF7B00',
   REJECTED: '#D4321C',
   CHANGES_REQUIRED: '#D4321C',
   SENT_TO_CLIENT: '#8A5AFE',

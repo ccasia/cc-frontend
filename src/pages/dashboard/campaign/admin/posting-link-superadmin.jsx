@@ -21,16 +21,16 @@ export default function PostingLinkSuperadminView() {
     campaignId ? `${endpoints.submission.root}/v3?campaignId=${campaignId}` : null
   );
 
-  const posting = useMemo(() => (submissions || []).find((s) => s?.submissionType?.type === 'POSTING' && (s?.status === 'SENT_TO_SUPERADMIN' || s?.status === 'SENT_TO_ADMIN' || s?.status === 'PENDING_REVIEW' || s?.status === 'CLIENT_FEEDBACK')), [submissions]);
+  const posting = useMemo(() => (submissions || []).find((s) => s?.submissionType?.type === 'POSTING' && (s?.status === 'APPROVE_LINK' || s?.status === 'SENT_TO_SUPERADMIN' || s?.status === 'SENT_TO_ADMIN' || s?.status === 'PENDING_REVIEW' || s?.status === 'CLIENT_FEEDBACK')), [submissions]);
 
   const onApprove = async () => {
     if (!posting?.id) return;
-    await axiosInstance.post(`${endpoints.submission.root}/v3/posting/superadmin/approve`, { submissionId: posting.id });
+    await axiosInstance.post(`${endpoints.submission.root}/v2/posting/superadmin/approve`, { submissionId: posting.id });
     mutate((key) => typeof key === 'string' && key.includes(endpoints.submission.root) && key.includes(`campaignId=${campaignId}`));
   };
   const onReject = async () => {
     if (!posting?.id) return;
-    await axiosInstance.post(`${endpoints.submission.root}/v3/posting/superadmin/reject`, { submissionId: posting.id });
+    await axiosInstance.post(`${endpoints.submission.root}/v2/posting/superadmin/reject`, { submissionId: posting.id });
     mutate((key) => typeof key === 'string' && key.includes(endpoints.submission.root) && key.includes(`campaignId=${campaignId}`));
   };
 
@@ -57,4 +57,3 @@ export default function PostingLinkSuperadminView() {
     </Box>
   );
 }
-

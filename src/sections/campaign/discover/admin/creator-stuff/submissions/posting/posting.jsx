@@ -207,7 +207,7 @@ const Posting = ({
     if (isDisabled) return false;
     
     // Hide approve/reject buttons if admin submitted this session
-    if (adminSubmittedThisSession && submission?.status === 'PENDING_REVIEW') {
+    if (adminSubmittedThisSession && ['PENDING_REVIEW', 'APPROVE_LINK'].includes(submission?.status)) {
       return false;
     }
     
@@ -371,7 +371,7 @@ const Posting = ({
                 </Stack>
               </FormProvider>
             </Box>
-          )}          {submission?.status === 'PENDING_REVIEW' && (
+          )}          {['PENDING_REVIEW', 'APPROVE_LINK', 'SENT_TO_ADMIN', 'SENT_TO_SUPERADMIN'].includes(submission?.status) && (
             <>
               {/* Temporarily disabled for testing */}
               <Box
@@ -500,7 +500,7 @@ const Posting = ({
                           
                           return null;
                         })()}
-                        {false && userRole === 'admin' && (submission?.status === 'PENDING_REVIEW' || submission?.status === 'CHANGES_REQUIRED') && (
+                        {false && userRole === 'admin' && (submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVE_LINK' || submission?.status === 'CHANGES_REQUIRED') && (
                           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
                             <TextField fullWidth placeholder="Paste posting link" value={csmLink} onChange={(e) => setCsmLink(e.target.value)} />
                             <Button

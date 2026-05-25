@@ -529,6 +529,11 @@ const CampaignCreatorDeliverables = ({ campaign, isDisabled = false }) => {
         borderColor: '#FFC702',
         tooltip: 'Waiting for admin review',
       },
+      APPROVE_LINK: {
+        color: '#FF7B00',
+        borderColor: '#FF7B00',
+        tooltip: 'Posting link is waiting for approval',
+      },
       IN_PROGRESS: {
         color: '#8A5AFE',
         borderColor: '#8A5AFE',
@@ -584,6 +589,8 @@ const CampaignCreatorDeliverables = ({ campaign, isDisabled = false }) => {
     // Handle SENT_TO_ADMIN status display for admin users
     if (status === 'SENT_TO_ADMIN') {
       statusText = 'CLIENT FEEDBACK';
+    } else if (status === 'APPROVE_LINK') {
+      statusText = 'APPROVE LINK';
     }
 
     const statusInfo = getStatusInfo(status);
