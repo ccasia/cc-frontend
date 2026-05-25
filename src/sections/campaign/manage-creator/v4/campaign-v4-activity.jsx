@@ -1464,7 +1464,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: 2,
             border: 'none',
-            mb: 2,
+            mb: 1,
           }}
         >
           <Stack
@@ -1540,7 +1540,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: 2,
             border: 'none',
-            mb: isDelivery ? 2 : 1,
+            mb: 1,
           }}
         >
           <Stack
