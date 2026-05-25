@@ -711,7 +711,7 @@ const VideoSubmissionModal = ({
                       ref={modalVideoRef}
                       src={videoUrl}
                       controls
-                      controlsList="nodownload"
+                      controlsList={isCreator ? 'nodownload' : undefined}
                       preload="metadata"
                       playsInline
                       onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)}
