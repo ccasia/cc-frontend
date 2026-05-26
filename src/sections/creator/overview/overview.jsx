@@ -394,76 +394,11 @@ const Overview = () => {
             p: 1,
           }}
         >
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center">
-            <Box
-              component="a"
-              href="https://bit.ly/CreatorAcademybyCCandOA"
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                flexShrink: 0,
-                width: 300,
-                height: 80,
-                borderRadius: 3,
-                overflow: 'hidden',
-                cursor: 'pointer',
-                textDecoration: 'none',
-                '&:hover': {
-                  opacity: 0.8,
-                },
-              }}
-            >
-              <Image
-                src="/assets/images/home/b0b60c98a5d1e3b63c69d2bb614bed427b04d118.png"
-                alt="Creator Academy"
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
-            </Box>
-            <Stack spacing={0.5} sx={{ flex: 1 }}>
-              <Typography
-                variant="h3"
-                sx={{
-                  fontFamily: 'Instrument Serif, serif',
-                  fontWeight: 400,
-                  color: '#000',
-                  lineHeight: 1.2,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                From Content to Contentpreneurzzzzz
-              </Typography>
-              <Typography
-                variant="h5"
-                sx={{
-                  fontFamily: 'Inter Display, sans-serif',
-                  color: '#666',
-                  fontWeight: 400,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Use code CCCCREATORS for 15% off!
-              </Typography>
-            </Stack>
-          </Stack>
-        </Box>
-      </Grid> */}
-      <Grid item xs={12}>
-        <Box
-          sx={{
-            p: 1,
-          }}
-        >
-          {/* Main Stack - column on mobile, row on desktop */}
           <Stack
             direction={{ xs: 'column', md: 'row' }}
             spacing={2}
             alignItems={{ xs: 'center', md: 'center' }}
           >
-            {/* Title - appears first on mobile */}
             <Typography
               variant="h2"
               sx={{
@@ -481,16 +416,14 @@ const Overview = () => {
               From Content to Contentpreneur
             </Typography>
 
-            {/* Container for image and subtitle - side by side on mobile */}
             <Stack
               direction="row"
               spacing={2}
               alignItems="center"
               sx={{
-                order: { xs: 2, md: 1 }, // Second on mobile (after title), restructured for desktop
+                order: { xs: 2, md: 1 },
               }}
             >
-              {/* Image */}
               <Box
                 component="a"
                 href="https://bit.ly/CreatorAcademybyCCandOA"
@@ -520,33 +453,28 @@ const Overview = () => {
                 />
               </Box>
 
-              {/* Subtitle - beside image on mobile */}
               <Typography
                 variant="body2"
                 sx={{
                   fontFamily: 'Inter Display, sans-serif',
                   color: '#666',
                   fontWeight: 400,
-                  // fontSize: { xs: '0.8rem', md: '0.875rem' },
-                  // textAlign: 'center',
-                  display: { xs: 'block', md: 'none' }, // Only show on mobile
+                  display: { xs: 'block', md: 'none' },
                 }}
               >
                 Use code CCCCREATORS for 15% off!
               </Typography>
             </Stack>
 
-            {/* Desktop text container - title above subtitle */}
             <Stack
               direction="column"
               spacing={1}
               alignItems="flex-start"
               sx={{
                 order: 2,
-                display: { xs: 'none', md: 'flex' }, // Only show on desktop
+                display: { xs: 'none', md: 'flex' },
               }}
             >
-              {/* Title for desktop */}
               <Typography
                 variant="h3"
                 sx={{
@@ -561,7 +489,6 @@ const Overview = () => {
                 From Content to Contentpreneur
               </Typography>
 
-              {/* Subtitle for desktop */}
               <Typography
                 variant="body2"
                 sx={{
@@ -577,7 +504,7 @@ const Overview = () => {
             </Stack>
           </Stack>
         </Box>
-      </Grid>
+      </Grid> */}
     </Grid>
   );
 
@@ -647,7 +574,7 @@ const Overview = () => {
                 {resource.title}
               </Typography>
               <Typography variant="subtitle2" color="text.secondary">
-                {dayjs().format('ll')}
+                {resource.date}
               </Typography>
             </CardContent>
           </Card>
