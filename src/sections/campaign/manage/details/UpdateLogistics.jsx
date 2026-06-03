@@ -24,7 +24,6 @@ import {
   eachDayOfInterval,
 } from 'date-fns';
 
-import { LoadingButton } from '@mui/lab';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DesktopTimePicker } from '@mui/x-date-pickers/DesktopTimePicker';
@@ -106,7 +105,7 @@ const UpdateLogisticsSchema = Yup.object().shape({
   clientRemarks: Yup.string().nullable(),
 });
 
-const UpdateLogistics = ({ campaign, campaignMutate }) => {
+const UpdateLogistics = ({ campaign, campaignMutate, formId, onFormStateChange }) => {
   const { enqueueSnackbar } = useSnackbar();
   const bottomRef = useRef(null);
 
@@ -151,6 +150,10 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
     trigger,
     formState: { isSubmitting, isDirty, errors },
   } = methods;
+
+  useEffect(() => {
+    onFormStateChange?.({ isDirty, isSubmitting });
+  }, [isDirty, isSubmitting, onFormStateChange]);
 
   // Product editing state
   const [, setEditingIndex] = useState(-1);
@@ -720,7 +723,7 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
   }
 
   return (
-    <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
+    <FormProvider id={formId} methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Box
         sx={{
           display: 'flex',
@@ -1499,32 +1502,6 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
           </>
         )}
 
-        {/* Submit Button */}
-        <Stack
-          direction="row"
-          justifyContent="flex-end"
-          sx={{ mt: 3, maxWidth: logisticsType === 'RESERVATION' ? 800 : 600 }}
-        >
-          <LoadingButton
-            type="submit"
-            variant="contained"
-            loading={isSubmitting}
-            disabled={!isDirty}
-            size="large"
-            sx={{
-              bgcolor: '#1340ff',
-              boxShadow: '0px -3px 0px 0px rgba(0,0,0,0.45) inset',
-              '&:hover': { bgcolor: '#1340ff' },
-              '&:disabled': {
-                bgcolor: 'rgba(19, 64, 255, 0.3)',
-                color: '#fff',
-                boxShadow: '0px -3px 0px 0px inset rgba(0, 0, 0, 0.1)',
-              },
-            }}
-          >
-            Save Logistics
-          </LoadingButton>
-        </Stack>
       </Box>
     </FormProvider>
   );
@@ -1533,6 +1510,8 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
 UpdateLogistics.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
+  formId: PropTypes.string,
+  onFormStateChange: PropTypes.func,
 };
 
 export default memo(UpdateLogistics);
