@@ -185,22 +185,11 @@ const CampaignDetailManageViewV2 = ({ id }) => {
   );
 
   // Tab content mapping
-<<<<<<< Updated upstream
-  const renderTabContent = {
-    general: <UpdateGeneralInformation campaign={campaign} campaignMutate={campaignMutate} />,
-    objective: <UpdateObjectives campaign={campaign} campaignMutate={campaignMutate} />,
-    audience: <UpdateAudience campaign={campaign} campaignMutate={campaignMutate} />,
-    logistics: <UpdateLogistics campaign={campaign} campaignMutate={campaignMutate} />,
-    finalise: <UpdateFinaliseCampaign campaign={campaign} campaignMutate={campaignMutate} />,
-    additional1: <UpdateAdditionalOne campaign={campaign} campaignMutate={campaignMutate} />,
-    additional2: <UpdateAdditionalTwo campaign={campaign} campaignMutate={campaignMutate} />,
-=======
   const tabContentProps = {
     campaign,
     campaignMutate,
     formId: EDIT_FORM_ID,
     onFormStateChange: setFormState,
->>>>>>> Stashed changes
   };
 
   const renderTabContent = {
@@ -331,10 +320,6 @@ const CampaignDetailManageViewV2 = ({ id }) => {
   );
 
   return (
-<<<<<<< Updated upstream
-    <Container maxWidth="lg">
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-=======
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
       sx={{
@@ -343,13 +328,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
         pb: { xs: 12, sm: 0 },
       }}
     >
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ mb: 1 }}
-      >
->>>>>>> Stashed changes
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
         <Button
           color="inherit"
           startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
@@ -404,134 +383,87 @@ const CampaignDetailManageViewV2 = ({ id }) => {
           spacing={{ xs: 1.5, sm: 2 }}
         >
           <Box sx={{ flexGrow: 1, width: { xs: '100%', sm: 'auto' } }}>
-            <Typography
-              variant="h2"
-              fontFamily="fontSecondaryFamily"
-              fontWeight="normal"
-              sx={{ mb: 0 }}
-            >
+            <Typography variant="h2" fontFamily="fontSecondaryFamily" fontWeight="normal" sx={{ mb: 0 }}>
               Edit Campaign Details
             </Typography>
           </Box>
 
           <Box sx={{ flexShrink: 0, width: { xs: '100%', sm: 'auto' } }}>
             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            {smUp && saveButton}
-            {campaign && campaign?.status === 'ACTIVE' && (
-              <LoadingButton
-                variant="contained"
-                size="large"
-                onClick={() => handleChangeStatus('PAUSED')}
-                loading={loadingButton.value}
-                disabled={isDisabled}
-                sx={{
-                  bgcolor: '#3A3A3C',
-                  boxShadow: '0px -3px 0px 0px #00000073 inset',
-                  '&:hover': {
-                    bgcolor: '#3A3A3C',
-                    boxShadow: '0px -3px 0px 0px #00000073 inset',
-                  },
-                }}
-              >
-                Pause
-              </LoadingButton>
-            )}
-            {campaign?.status === 'ACTIVE' && (
-              <LoadingButton
-                variant="contained"
-                onClick={modalConfirm.onTrue}
-                size="large"
-                disabled={isDisabled}
-                sx={{
-                  bgcolor: '#D4321C',
-                  boxShadow: '0px -3px 0px 0px #00000073 inset',
-                  '&:hover': {
-                    bgcolor: '#D4321C',
-                    boxShadow: '0px -3px 0px 0px #00000073 inset',
-                  },
-                }}
-              >
-                End Campaign
-              </LoadingButton>
-            )}
-            {campaign?.status === 'SCHEDULED' &&
-              dayjs().isSame(dayjs(campaign?.campaignBrief?.startDate), 'date') && (
+              {smUp && saveButton}
+              {campaign && campaign?.status === 'ACTIVE' && (
                 <LoadingButton
                   variant="contained"
-                  color="success"
-                  onClick={() => handleChangeStatus('ACTIVE')}
                   size="large"
-                  disabled={isDisabled}
-                >
-                  Start Campaign
-                </LoadingButton>
-              )}
-            {campaign &&
-              (campaign?.status === 'PAUSED' ||
-                (campaign?.status === 'DRAFT' &&
-                  dayjs(campaignStartDate).isSame(dayjs(), 'D'))) && (
-                <LoadingButton
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  onClick={() => handleChangeStatus('ACTIVE')}
+                  onClick={() => handleChangeStatus('PAUSED')}
                   loading={loadingButton.value}
                   disabled={isDisabled}
                   sx={{
-                    bgcolor: 'primary',
+                    bgcolor: '#3A3A3C',
                     boxShadow: '0px -3px 0px 0px #00000073 inset',
                     '&:hover': {
-                      bgcolor: 'primary',
+                      bgcolor: '#3A3A3C',
                       boxShadow: '0px -3px 0px 0px #00000073 inset',
                     },
                   }}
                 >
-                  Publish
+                  Pause
                 </LoadingButton>
               )}
-<<<<<<< Updated upstream
-            {campaign?.status === 'COMPLETED' && (
-              <LoadingButton
-                variant="contained"
-                color="success"
-                onClick={() => handleChangeStatus('ACTIVE')}
-                size="large"
-                disabled={isDisabled}
-              >
-                Reactivate
-              </LoadingButton>
-            )}
-
-            {campaign?.status === 'COMPLETED' && (
-              <LoadingButton
-                variant="outlined"
-                loading={isGenerating.value}
-                sx={{ border: 1.5, borderColor: 'success.main', color: 'success.main' }}
-                onClick={async () => {
-                  if (campaign?.summaryUrl) {
-                    window.open(campaign.summaryUrl, '_blank', 'noopener,noreferrer');
-                  } else {
-                    isGenerating.onTrue();
-                    try {
-                      await axiosInstance.post(`/api/campaign/export/master-list/${campaign.id}`);
-                      mutate(endpoints.campaign.getCampaignById(campaign.id));
-                    } finally {
-                      isGenerating.onFalse();
-                    }
-                  }
-                }}
-              >
-                Campaign Master List
-              </LoadingButton>
-            )}
-          </Stack>
-        }
-        sx={{
-          mb: { xs: 3 },
-        }}
-      />
-=======
-                {campaign?.status === 'COMPLETED' && (
+              {campaign?.status === 'ACTIVE' && (
+                <LoadingButton
+                  variant="contained"
+                  onClick={modalConfirm.onTrue}
+                  size="large"
+                  disabled={isDisabled}
+                  sx={{
+                    bgcolor: '#D4321C',
+                    boxShadow: '0px -3px 0px 0px #00000073 inset',
+                    '&:hover': {
+                      bgcolor: '#D4321C',
+                      boxShadow: '0px -3px 0px 0px #00000073 inset',
+                    },
+                  }}
+                >
+                  End Campaign
+                </LoadingButton>
+              )}
+              {campaign?.status === 'SCHEDULED' &&
+                dayjs().isSame(dayjs(campaign?.campaignBrief?.startDate), 'date') && (
+                  <LoadingButton
+                    variant="contained"
+                    color="success"
+                    onClick={() => handleChangeStatus('ACTIVE')}
+                    size="large"
+                    disabled={isDisabled}
+                  >
+                    Start Campaign
+                  </LoadingButton>
+                )}
+              {campaign &&
+                (campaign?.status === 'PAUSED' ||
+                  (campaign?.status === 'DRAFT' &&
+                    dayjs(campaignStartDate).isSame(dayjs(), 'D'))) && (
+                  <LoadingButton
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    onClick={() => handleChangeStatus('ACTIVE')}
+                    loading={loadingButton.value}
+                    disabled={isDisabled}
+                    sx={{
+                      bgcolor: 'primary',
+                      boxShadow: '0px -3px 0px 0px #00000073 inset',
+                      '&:hover': {
+                        bgcolor: 'primary',
+                        boxShadow: '0px -3px 0px 0px #00000073 inset',
+                      },
+                    }}
+                  >
+                    Publish
+                  </LoadingButton>
+                )}
+              {campaign?.status === 'COMPLETED' && (
                 <LoadingButton
                   variant="contained"
                   color="success"
@@ -542,11 +474,32 @@ const CampaignDetailManageViewV2 = ({ id }) => {
                   Reactivate
                 </LoadingButton>
               )}
+              {campaign?.status === 'COMPLETED' && (
+                <LoadingButton
+                  variant="outlined"
+                  loading={isGenerating.value}
+                  sx={{ border: 1.5, borderColor: 'success.main', color: 'success.main' }}
+                  onClick={async () => {
+                    if (campaign?.summaryUrl) {
+                      window.open(campaign.summaryUrl, '_blank', 'noopener,noreferrer');
+                    } else {
+                      isGenerating.onTrue();
+                      try {
+                        await axiosInstance.post(`/api/campaign/export/master-list/${campaign.id}`);
+                        mutate(endpoints.campaign.getCampaignById(campaign.id));
+                      } finally {
+                        isGenerating.onFalse();
+                      }
+                    }
+                  }}
+                >
+                  Campaign Master List
+                </LoadingButton>
+              )}
             </Stack>
           </Box>
         </Stack>
       </Box>
->>>>>>> Stashed changes
 
       {!campaignLoading ? (
         <>
