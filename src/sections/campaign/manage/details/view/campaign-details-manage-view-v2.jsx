@@ -94,6 +94,15 @@ const CampaignDetailManageViewV2 = ({ id }) => {
     setFormState({ isDirty: false, isSubmitting: false });
   }, []);
 
+  const handleBackNavigation = () => {
+    const historyIndex = window.history.state?.idx;
+    if (typeof historyIndex === 'number' && historyIndex > 0) {
+      router.back();
+      return;
+    }
+    router.push(paths.dashboard.campaign.adminCampaignDetail(id));
+  };
+
   const handleChangeStatus = async (status) => {
     if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate).isBefore(dayjs, 'date')) {
       enqueueSnackbar('You cannot publish a campaign that is already end.', {
@@ -332,7 +341,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
         <Button
           color="inherit"
           startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
-          onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(id))}
+          onClick={handleBackNavigation}
           sx={{
             alignSelf: 'flex-start',
             color: '#636366',
