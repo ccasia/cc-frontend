@@ -5,7 +5,6 @@ import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useMemo, useEffect, useCallback } from 'react';
 
-import { LoadingButton } from '@mui/lab';
 import { Box, Grid, Stack, MenuItem, FormLabel, Typography } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -60,7 +59,7 @@ const UpdateAdditionalTwoSchema = Yup.object().shape({
   needAds: Yup.string().nullable(),
 });
 
-const UpdateAdditionalTwo = ({ campaign, campaignMutate }) => {
+const UpdateAdditionalTwo = ({ campaign, campaignMutate, formId, onFormStateChange }) => {
   const additionalDetails = campaign?.campaignAdditionalDetails;
 
   // Get existing values from campaign
@@ -90,6 +89,10 @@ const UpdateAdditionalTwo = ({ campaign, campaignMutate }) => {
     reset,
     formState: { isSubmitting, isDirty },
   } = methods;
+
+  useEffect(() => {
+    onFormStateChange?.({ isDirty, isSubmitting });
+  }, [isDirty, isSubmitting, onFormStateChange]);
 
   // Reset form when campaign data changes
   useEffect(() => {
@@ -128,7 +131,7 @@ const UpdateAdditionalTwo = ({ campaign, campaignMutate }) => {
   );
 
   return (
-    <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
+    <FormProvider id={formId} methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Box sx={{ maxWidth: '850px' }}>
         <Grid container spacing={2} mb={4}>
           {/* Column One */}
@@ -205,28 +208,6 @@ const UpdateAdditionalTwo = ({ campaign, campaignMutate }) => {
           </Grid>
         </Grid>
 
-        {/* Submit Button */}
-        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
-          <LoadingButton
-            type="submit"
-            variant="contained"
-            loading={isSubmitting}
-            disabled={!isDirty}
-            size="large"
-            sx={{
-              bgcolor: '#1340ff',
-              boxShadow: '0px -3px 0px 0px rgba(0,0,0,0.45) inset',
-              '&:hover': { bgcolor: '#1340ff' },
-              '&:disabled': {
-                bgcolor: 'rgba(19, 64, 255, 0.3)',
-                color: '#fff',
-                boxShadow: '0px -3px 0px 0px inset rgba(0, 0, 0, 0.1)',
-              },
-            }}
-          >
-            Save Additional Details 2
-          </LoadingButton>
-        </Stack>
       </Box>
     </FormProvider>
   );
@@ -235,6 +216,8 @@ const UpdateAdditionalTwo = ({ campaign, campaignMutate }) => {
 UpdateAdditionalTwo.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
+  formId: PropTypes.string,
+  onFormStateChange: PropTypes.func,
 };
 
 export default UpdateAdditionalTwo;
