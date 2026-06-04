@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { useMemo, useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Chip,
@@ -78,7 +77,7 @@ const UpdateFinaliseCampaignSchema = Yup.object().shape({
   deliverables: Yup.array().min(1, 'At least one deliverable is required'),
 });
 
-const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
+const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateChange }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const { data: admins } = useGetAdmins('active');
@@ -144,6 +143,10 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
     setValue,
     formState: { isSubmitting, isDirty },
   } = methods;
+
+  useEffect(() => {
+    onFormStateChange?.({ isDirty, isSubmitting });
+  }, [isDirty, isSubmitting, onFormStateChange]);
 
   const isV4Submission = watch('isV4Submission');
   const currentManagers = watch('campaignManager');
@@ -214,7 +217,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
   });
 
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
+    <FormProvider id={formId} methods={methods} onSubmit={onSubmit}>
       <Box
         sx={{
           display: 'flex',
@@ -369,28 +372,6 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
           </FormField>
         </Stack>
 
-        {/* Submit Button */}
-        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
-          <LoadingButton
-            type="submit"
-            variant="contained"
-            loading={isSubmitting}
-            disabled={!isDirty}
-            size="large"
-            sx={{
-              bgcolor: '#1340ff',
-              boxShadow: '0px -3px 0px 0px rgba(0,0,0,0.45) inset',
-              '&:hover': { bgcolor: '#1340ff' },
-              '&:disabled': {
-                bgcolor: 'rgba(19, 64, 255, 0.3)',
-                color: '#fff',
-                boxShadow: '0px -3px 0px 0px inset rgba(0, 0, 0, 0.1)',
-              },
-            }}
-          >
-            Save Finalise
-          </LoadingButton>
-        </Stack>
       </Box>
 
       {/* V4 Submission Warning Dialog */}
@@ -504,6 +485,8 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate }) => {
 UpdateFinaliseCampaign.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
+  formId: PropTypes.string,
+  onFormStateChange: PropTypes.func,
 };
 
 export default UpdateFinaliseCampaign;

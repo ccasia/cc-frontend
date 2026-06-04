@@ -5,7 +5,6 @@ import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { memo, useRef, useMemo, useEffect } from 'react';
 
-import { LoadingButton } from '@mui/lab';
 import { Box, Stack, MenuItem, Collapse, FormLabel, Typography } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -57,7 +56,7 @@ const UpdateObjectivesSchema = Yup.object().shape({
   performanceBaseline: Yup.string().nullable(),
 });
 
-const UpdateObjectives = ({ campaign, campaignMutate, onDirtyChange }) => {
+const UpdateObjectives = ({ campaign, campaignMutate, formId, onFormStateChange }) => {
   const prevPrimaryObjective = useRef(null);
 
   // Get existing values from campaign
@@ -94,8 +93,8 @@ const UpdateObjectives = ({ campaign, campaignMutate, onDirtyChange }) => {
   }, [campaign, defaultValues, reset]);
 
   useEffect(() => {
-    onDirtyChange?.(isDirty);
-  }, [isDirty, onDirtyChange]);
+    onFormStateChange?.({ isDirty, isSubmitting });
+  }, [isDirty, isSubmitting, onFormStateChange]);
 
   const primaryObjective = watch('campaignObjectives');
   const secondaryOptions = secondaryObjectivesByPrimary[primaryObjective] || [];
@@ -139,7 +138,7 @@ const UpdateObjectives = ({ campaign, campaignMutate, onDirtyChange }) => {
   };
 
   return (
-    <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
+    <FormProvider id={formId} methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Box sx={{ maxWidth: '600px' }}>
         {/* Primary Campaign Objective */}
         <Box sx={{ mt: 2 }}>
@@ -225,30 +224,6 @@ const UpdateObjectives = ({ campaign, campaignMutate, onDirtyChange }) => {
           )}
         </Collapse>
 
-        {/* Submit Button */}
-        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
-          <LoadingButton
-            type="submit"
-            variant="contained"
-            loading={isSubmitting}
-            disabled={!isDirty}
-            size="large"
-            sx={{
-              bgcolor: '#1340ff',
-              boxShadow: '0px -3px 0px 0px rgba(0,0,0,0.45) inset',
-              '&:hover': {
-                bgcolor: '#1340ff',
-              },
-              '&:disabled': {
-                bgcolor: 'rgba(19, 64, 255, 0.3)',
-                color: '#fff',
-                boxShadow: '0px -3px 0px 0px inset rgba(0, 0, 0, 0.1)',
-              },
-            }}
-          >
-            Save Campaign Objectives
-          </LoadingButton>
-        </Stack>
       </Box>
     </FormProvider>
   );
@@ -257,7 +232,8 @@ const UpdateObjectives = ({ campaign, campaignMutate, onDirtyChange }) => {
 UpdateObjectives.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
-  onDirtyChange: PropTypes.func,
+  formId: PropTypes.string,
+  onFormStateChange: PropTypes.func,
 };
 
 export default memo(UpdateObjectives);

@@ -6,7 +6,6 @@ import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { memo, useMemo, useEffect, useCallback } from 'react';
 
-import { LoadingButton } from '@mui/lab';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { Box, Grid, Stack, FormLabel, Typography } from '@mui/material';
@@ -63,7 +62,7 @@ const UpdateGeneralInfoSchema = Yup.object().shape({
   campaignImages: Yup.mixed(),
 });
 
-const UpdateGeneralInformation = ({ campaign, campaignMutate, onDirtyChange }) => {
+const UpdateGeneralInformation = ({ campaign, campaignMutate, formId, onFormStateChange }) => {
   // Get existing values from campaign
   const defaultValues = useMemo(
     () => ({
@@ -124,8 +123,8 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate, onDirtyChange }) =
   }, [campaign, defaultValues, reset]);
 
   useEffect(() => {
-    onDirtyChange?.(isDirty);
-  }, [isDirty, onDirtyChange]);
+    onFormStateChange?.({ isDirty, isSubmitting });
+  }, [isDirty, isSubmitting, onFormStateChange]);
 
   const startDate = watch('campaignStartDate');
   const endDate = watch('campaignEndDate');
@@ -188,7 +187,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate, onDirtyChange }) =
   );
 
   return (
-    <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
+    <FormProvider id={formId} methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Box sx={{ maxWidth: { xs: '100%', sm: '80%' } }}>
         {/* Campaign Title & Industry - Two Columns */}
         <Grid container spacing={2} mb={2}>
@@ -428,30 +427,6 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate, onDirtyChange }) =
           </Grid>
         </Grid>
 
-        {/* Submit Button */}
-        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
-          <LoadingButton
-            type="submit"
-            variant="contained"
-            loading={isSubmitting}
-            disabled={!isDirty}
-            size="large"
-            sx={{
-              bgcolor: '#1340ff',
-              boxShadow: '0px -3px 0px 0px rgba(0,0,0,0.45) inset',
-              '&:hover': {
-                bgcolor: '#1340ff',
-              },
-              '&:disabled': {
-                bgcolor: 'rgba(19, 64, 255, 0.3)',
-                color: '#fff',
-                boxShadow: '0px -3px 0px 0px inset rgba(0, 0, 0, 0.1)',
-              },
-            }}
-          >
-            Save General Information
-          </LoadingButton>
-        </Stack>
       </Box>
     </FormProvider>
   );
@@ -460,7 +435,8 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate, onDirtyChange }) =
 UpdateGeneralInformation.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
-  onDirtyChange: PropTypes.func,
+  formId: PropTypes.string,
+  onFormStateChange: PropTypes.func,
 };
 
 export default memo(UpdateGeneralInformation);
