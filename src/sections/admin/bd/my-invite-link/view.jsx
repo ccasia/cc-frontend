@@ -186,7 +186,7 @@ export default function MyInviteLinkView() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await axiosInstance.get(endpoints.bd.myInviteLink);
+      const res = await axiosInstance.get(endpoints.campaignBrief.myInviteLink);
       setData(res.data);
     } catch {
       enqueueSnackbar('Failed to load invite link', { variant: 'error' });
@@ -213,7 +213,7 @@ export default function MyInviteLinkView() {
   const refresh = async () => {
     setRefreshing(true);
     try {
-      const res = await axiosInstance.post(endpoints.bd.rotateInviteLink);
+      const res = await axiosInstance.post(endpoints.campaignBrief.rotateInviteLink);
       setData(res.data);
       enqueueSnackbar('New link generated — the old one no longer works', { variant: 'success' });
       setRefreshOpen(false);

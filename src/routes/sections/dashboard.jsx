@@ -54,6 +54,8 @@ const AdminEditCampaignView = lazy(
 );
 const DraftCampaignList = lazy(() => import('src/pages/dashboard/campaign/draftList'));
 const DraftCampaignDetail = lazy(() => import('src/pages/dashboard/campaign/draftDetail'));
+const CampaignBriefList = lazy(() => import('src/pages/dashboard/campaign/briefList'));
+const CampaignBriefDetail = lazy(() => import('src/pages/dashboard/campaign/briefDetail'));
 const CampaignPitchDetail = lazy(
   () => import('src/pages/dashboard/campaign/admin/pitch/campaign-pitch-detail')
 );
@@ -484,22 +486,43 @@ export const dashboardRoutes = [
               </RoleBasedGuard>
             ),
           },
+          // {
+          //   path: 'drafts',
+          //   children: [
+          //     {
+          //       index: true,
+          //       element: (
+          //         <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}>
+          //           <DraftCampaignList />
+          //         </RoleBasedGuard>
+          //       ),
+          //     },
+          //     {
+          //       path: ':id',
+          //       element: (
+          //         <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}>
+          //           <DraftCampaignDetail />
+          //         </RoleBasedGuard>
+          //       ),
+          //     },
+          //   ],
+          // },
           {
-            path: 'drafts',
+            path: 'briefs',
             children: [
               {
                 index: true,
                 element: (
-                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}>
-                    <DraftCampaignList />
+                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing', 'CSM', 'CSL']}>
+                    <CampaignBriefList />
                   </RoleBasedGuard>
                 ),
               },
               {
                 path: ':id',
                 element: (
-                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}>
-                    <DraftCampaignDetail />
+                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing', 'CSM', 'CSL']}>
+                    <CampaignBriefDetail />
                   </RoleBasedGuard>
                 ),
               },

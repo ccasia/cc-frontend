@@ -60,6 +60,12 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const isCSM =
     user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
 
+  // The "completer" path skips admin assignment and starts at the Agreement
+  // Form. It's for CSM (or a generic admin) finishing an already-assigned
+  // campaign — NOT for superusers (CSL / superadmin), who own the admin
+  // assignment step and must always start there.
+  const isCompleterRole = !isSuperUser && (isCSM || user?.role === 'admin');
+
   console.log('ActivateCampaignDialog - User check:', {
     userRole: user?.role,
     adminMode: user?.admin?.mode,
@@ -282,17 +288,21 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         setPostingEndDate(dayjs(campaignDetails.campaignBrief.postingEndDate));
       }
 
+      // Seed the credits field with the current allocation (>0). Fresh briefs
+      // start at 0, so the field stays empty for the CSM to enter the amount.
+      if (campaignDetails.campaignCredits > 0) {
+        setCampaignCreditsState(String(campaignDetails.campaignCredits));
+      }
+
       // Check if all details already exist - if so, go to confirmation step
       if (checkAllDetailsExist()) {
         setCurrentStep(0); // Show confirmation dialog
         return;
       }
 
-      // If user is admin/CSM and campaign is PENDING_ADMIN_ACTIVATION, skip admin assignment (step 1)
-      if (
-        (isCSM || user?.role === 'admin') &&
-        campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION'
-      ) {
+      // If user is a completer (CSM/admin, not a superuser) and campaign is
+      // PENDING_ADMIN_ACTIVATION, skip admin assignment (step 1)
+      if (isCompleterRole && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION') {
         setCurrentStep(2); // Start at Agreement Form
 
         // Pre-fill admin managers from campaign admin list
@@ -306,7 +316,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         setCurrentStep(1); // Start at Admin Assignment
       }
     }
-  }, [campaignDetails, isCSM, user?.role, checkAllDetailsExist]);
+  }, [campaignDetails, isCompleterRole, checkAllDetailsExist]);
 
   // Only update RHF state, not local
   const handleDeliverableChange = (valueOrEvent) => {
@@ -332,7 +342,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const validateForm = () => {
     // Skip admin manager validation for admin/CSM users completing activation
     const skipAdminValidation =
-      (isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION';
+      isCompleterRole && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION';
 
     const getCampaignManagersError = () => {
       if (skipAdminValidation) return '';
@@ -481,11 +491,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       setCampaignCreditsState('');
 
       // Reset step based on user role and campaign status
-      if (
-        (isCSM || user?.role === 'admin') &&
-        campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION'
-      ) {
-        setCurrentStep(2); // Start at Agreement Form for admin/CSM
+      if (isCompleterRole && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION') {
+        setCurrentStep(2); // Start at Agreement Form for CSM/admin completer
       } else {
         setCurrentStep(1); // Start at Admin Assignment for superadmin/CSL
       }
@@ -807,11 +814,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         );
 
       case 1: // CS Admin Assignment
-        // For admin/CSM users completing activation, show a message that admin is already assigned
-        if (
-          (isCSM || user?.role === 'admin') &&
-          campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION'
-        ) {
+        // For CSM/admin completers (not superusers), show a message that admin
+        // is already assigned. Superusers (CSL/superadmin) fall through to the
+        // admin-selection UI below.
+        if (isCompleterRole && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION') {
           return (
             <Box sx={{ py: 2 }}>
               <Typography
@@ -1407,7 +1413,11 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       case 6: {
         // Campaign Credits review
         const availableCredits = campaignDetails?.company?.creditSummary?.remainingCredits ?? null;
-        const originalCredits = campaignDetails?.campaignCredits ?? 0;
+        // Max this campaign may hold = remaining pool + whatever it already holds
+        // (its existing allocation can be reclaimed). Mirrors the delta-based
+        // charge in updateAllCampaignCredits.
+        const originalCredits = campaignDetails?.campaignCredits || 0;
+        const maxAllocatable = availableCredits != null ? availableCredits + originalCredits : null;
         return (
           <Box display="flex" flexDirection="column" gap={2} py={2}>
             <Typography
@@ -1431,18 +1441,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
             <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, flex: 1 }}>
                 <Typography variant="caption" color="text.disabled">
-                  Currently Allocated
+                  Available Credits
                 </Typography>
-                <Typography variant="h6">{originalCredits} credits</Typography>
+                <Typography variant="h6">{availableCredits} credits</Typography>
               </Paper>
-              {availableCredits != null && (
-                <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, flex: 1 }}>
-                  <Typography variant="caption" color="text.disabled">
-                    Client Remaining
-                  </Typography>
-                  <Typography variant="h6">{availableCredits} credits</Typography>
-                </Paper>
-              )}
             </Stack>
 
             <FormControl fullWidth error={!!errors.campaignCredits} sx={{ mt: 2 }}>
@@ -1452,15 +1454,31 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
               <OutlinedInput
                 id="campaign-credits-input"
                 type="number"
-                // value={campaignCredits}
+                value={campaignCredits}
                 onChange={(e) => {
                   setCampaignCreditsState(e.target.value);
-                  setErrors((prev) => ({ ...prev, campaignCredits: '' }));
+                  // Live guard: flag immediately when exceeding the pool so the
+                  // user doesn't only find out on Activate.
+                  const n = Number(e.target.value);
+                  if (maxAllocatable != null && n > maxAllocatable) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      campaignCredits: `Exceeds available credits (${availableCredits} remaining)`,
+                    }));
+                  } else {
+                    setErrors((prev) => ({ ...prev, campaignCredits: '' }));
+                  }
                 }}
                 label="Campaign Credits"
-                inputProps={{ min: 1 }}
+                inputProps={{ min: 1, max: maxAllocatable ?? undefined }}
               />
-              {errors.campaignCredits && <FormHelperText>{errors.campaignCredits}</FormHelperText>}
+              {errors.campaignCredits ? (
+                <FormHelperText>{errors.campaignCredits}</FormHelperText>
+              ) : (
+                maxAllocatable != null && (
+                  <FormHelperText>Up to {maxAllocatable} credits can be allocated.</FormHelperText>
+                )
+              )}
             </FormControl>
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>

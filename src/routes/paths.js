@@ -60,6 +60,8 @@ export const paths = {
       adminCampaignEdit: (id) => `${ROOTS.DASHBOARD}/campaign/manage/edit/${id}`,
       drafts: `${ROOTS.DASHBOARD}/campaign/drafts`,
       draftDetails: (id) => `${ROOTS.DASHBOARD}/campaign/drafts/${id}`,
+      briefs: `${ROOTS.DASHBOARD}/campaign/briefs`,
+      briefDetails: (id) => `${ROOTS.DASHBOARD}/campaign/briefs/${id}`,
       // pitch: (id) => `${ROOTS.DASHBOARD}/campaign/pitch/${id}`,
       pitch: (campaignId, pitchId) =>
         `${ROOTS.DASHBOARD}/campaign/discover/detail/${campaignId}/pitch/${pitchId}`,
@@ -173,5 +175,6 @@ export const paths = {
       return `${ROOTS.PUBLIC}/campaign/discover/detail/${campaignId}/creator/${creatorId}${queryString}`;
     },
     bdBrief: (token) => `/campaign-brief/${token}`,
+    clientBrief: (magicToken) => `/campaign-brief/client/${magicToken}`,
   },
 };
