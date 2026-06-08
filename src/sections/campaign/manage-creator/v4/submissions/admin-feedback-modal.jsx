@@ -1184,6 +1184,14 @@ export default function AdminFeedbackPanel({
     videoId
   );
 
+  const STORAGE_KEY_DRAFT = `draft_feedback_admin_${user.id}_${submission?.id}_${videoId}`;
+
+  // Restore any unsent "Leave feedback" draft for this admin/submission/video.
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_DRAFT);
+    setCommentText(saved || '');
+  }, [STORAGE_KEY_DRAFT]);
+
   const commentsEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const initialLoadDone = useRef(false);
@@ -1517,6 +1525,7 @@ export default function AdminFeedbackPanel({
         videoId,
       });
       setCommentText('');
+      localStorage.removeItem(STORAGE_KEY_DRAFT);
       setHasTyped(false);
     } catch (error) {
       enqueueSnackbar('Failed to send comment', { variant: 'error' });
@@ -2116,6 +2125,8 @@ export default function AdminFeedbackPanel({
                 const next = e.target.value;
                 setCommentText(next);
                 if (next.trim().length > 0) setHasTyped(true);
+                if (next) localStorage.setItem(STORAGE_KEY_DRAFT, next);
+                else localStorage.removeItem(STORAGE_KEY_DRAFT);
               }}
               onFocus={() => setIsInputFocused(true)}
               onBlur={() => {
