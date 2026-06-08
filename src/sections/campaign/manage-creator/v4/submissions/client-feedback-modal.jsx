@@ -850,6 +850,13 @@ const ClientFeedbackModal = forwardRef(
 
     const COUNTDOWN_SECONDS = 24 * 60 * 60;
     const STORAGE_KEY_END_TIME = `send_timer_end_${submissionId}_${videoId}`;
+    const STORAGE_KEY_DRAFT = `draft_feedback_${user.id}_${submissionId}_${videoId}`;
+
+    // Restore any unsent "Leave feedback" draft for this user/submission/video.
+    useEffect(() => {
+      const saved = localStorage.getItem(STORAGE_KEY_DRAFT);
+      setFeedbackText(saved || '');
+    }, [STORAGE_KEY_DRAFT]);
 
     const [timeLeft, setTimeLeft] = useState(() => {
       if (!feedbackDeadline) return 0;
@@ -1309,6 +1316,8 @@ const ClientFeedbackModal = forwardRef(
 
         setComments((prev) => insertSortedByTimestamp(prev, newComment));
         setFeedbackText('');
+        localStorage.removeItem(STORAGE_KEY_DRAFT);
+        setHasTyped(false);
         setNewAbove({ replies: 0, messages: 0, targetId: null });
         setNewBelow({ replies: 0, messages: 0, targetId: null });
         setTimeout(() => scrollToElement(newComment.id), 100);
@@ -1722,7 +1731,21 @@ const ClientFeedbackModal = forwardRef(
                   maxRows={isMobile ? 4 : 6}
                   placeholder={effectiveIsLocked ? 'Comments are disabled' : 'Leave feedback...'}
                   value={effectiveIsLocked ? 'Comments are disabled' : feedbackText}
-                  onChange={(e) => setFeedbackText(e.target.value)}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setFeedbackText(next);
+                    if (next.trim().length > 0) setHasTyped(true);
+                    if (next) localStorage.setItem(STORAGE_KEY_DRAFT, next);
+                    else localStorage.removeItem(STORAGE_KEY_DRAFT);
+                  }}
+                  onFocus={() => {
+                    if (effectiveIsLocked) return;
+                    setIsInputFocused(true);
+                  }}
+                  onBlur={() => {
+                    setIsInputFocused(false);
+                    setHasTyped(false);
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -1899,30 +1922,48 @@ const ClientFeedbackModal = forwardRef(
                 </IconButton>
               </Box>
             )}
-            <Button
-              variant="contained"
-              disableElevation
-              disabled={effectiveIsLocked || isCountingDown}
-              onClick={handleSendToAdmin}
-              sx={{
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                borderRadius: '8px',
-                boxShadow: '0px -4px 0px 0px #00000073 inset',
-                bgcolor: '#3A3A3C',
-                '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: '0px -4px 0px 0px #000000 inset' },
-                '&:active': {
-                  boxShadow: '0px 0px 0px 0px #000000 inset',
-                  transform: 'translateY(1px)',
-                },
-                '&.Mui-disabled': {
-                  bgcolor: '#E5E7EB',
-                  color: '#9CA3AF',
-                },
-              }}
+            <DarkGlassTooltip
+              title={feedbackText.trim() ? 'You have unsent feedback in the text field.' : ''}
+              placement="top"
+              slotProps={{ tooltip: { sx: { '&&': { fontSize: '0.815rem' }, maxWidth: 200 } } }}
             >
-              Send Feedback to Admin
-            </Button>
+              <Box component="span" sx={{ display: 'inline-flex', cursor: 'not-allowed' }}>
+                <Button
+                  variant="contained"
+                  disableElevation
+                  disabled={
+                    effectiveIsLocked ||
+                    isCountingDown ||
+                    !hasClientInteraction ||
+                    Boolean(feedbackText.trim())
+                  }
+                  onClick={handleSendToAdmin}
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: { xs: '0.8rem', md: '0.85rem', lg: '0.95rem' },
+                    borderRadius: '10px',
+                    px: { xs: 1.5, md: 2, lg: 2.5 },
+                    py: 0.9,
+                    whiteSpace: 'nowrap',
+                    boxShadow: 'none',
+                    bgcolor: '#3A3A3C',
+                    borderBottom: '3px solid #202021',
+                    '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: 'none' },
+                    '&:active': {
+                      borderBottom: '3px solid #202021',
+                      transform: 'translateY(1px)',
+                    },
+                    '&.Mui-disabled': {
+                      bgcolor: '#B0B0B1',
+                      color: '#FFFFFF',
+                      borderBottom: '3px solid #9E9E9F',
+                    },
+                  }}
+                >
+                  Send Feedback to Admin
+                </Button>
+              </Box>
+            </DarkGlassTooltip>
           </Box>
         </Box>
 
