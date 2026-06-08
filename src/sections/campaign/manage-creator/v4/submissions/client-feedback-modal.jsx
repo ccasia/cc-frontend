@@ -5,8 +5,8 @@ import React, {
   useMemo,
   useState,
   useEffect,
-  useCallback,
   forwardRef,
+  useCallback,
   useImperativeHandle,
 } from 'react';
 
@@ -18,10 +18,10 @@ import {
   Dialog,
   Divider,
   useTheme,
+  Collapse,
   TextField,
   Typography,
   IconButton,
-  Collapse,
   useMediaQuery,
   CircularProgress,
 } from '@mui/material';
@@ -811,6 +811,8 @@ const ClientFeedbackModal = forwardRef(
       submissionId,
       videoId,
       currentVideoTime = '0:00',
+      onPause,
+      onPlay,
       onSeek,
       onSendToAdmin,
       isLocked,
@@ -841,11 +843,27 @@ const ClientFeedbackModal = forwardRef(
       },
       []
     );
+    const [draftTimestamp, setDraftTimestamp] = useState(null);
+    const [isInputFocused, setIsInputFocused] = useState(false);
+    const [hasTyped, setHasTyped] = useState(false);
     const [feedbackText, setFeedbackText] = useState('');
+
+    useEffect(() => {
+      const shouldFreeze = isInputFocused && hasTyped;
+      if (shouldFreeze) {
+        if (draftTimestamp == null) {
+          setDraftTimestamp(currentVideoTime);
+          onPause?.();
+        }
+      } else if (draftTimestamp != null) {
+        setDraftTimestamp(null);
+        onPlay?.();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isInputFocused, hasTyped]);
     const [replyingToId, setReplyingToId] = useState(null);
     const [openRepliesById, setOpenRepliesById] = useState({});
-
-    const [hasInteracted, setHasInteracted] = useState(false);
+    const [sessionNewReplyIds, setSessionNewReplyIds] = useState(new Set());
     const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
 
     const COUNTDOWN_SECONDS = 24 * 60 * 60;
@@ -886,8 +904,16 @@ const ClientFeedbackModal = forwardRef(
     const isTimerExpired = Boolean(feedbackDeadline) && timeLeft === 0;
     const effectiveIsLocked = isLocked || isPastVideo || isTimerExpired;
 
+    const hasClientInteraction = useMemo(() => {
+      const isClientNode = (node) => node?.user?.role === 'client' && node?.user?.id === user.id;
+      const isLikedByClient = (node) => node?.agreedBy?.some((a) => a.userId === user.id);
+      const walk = (list) =>
+        (list || []).some((c) => isClientNode(c) || isLikedByClient(c) || walk(c.replies));
+      return walk(comments);
+    }, [comments, user.id]);
+
     useImperativeHandle(ref, () => ({
-      getHasInteracted: () => hasInteracted,
+      getHasInteracted: () => hasClientInteraction,
       isLocked,
       isCountingDown,
       startCountdown: () => {
@@ -904,6 +930,7 @@ const ClientFeedbackModal = forwardRef(
 
     useEffect(() => {
       setComments([]);
+      setSessionNewReplyIds(new Set());
     }, [videoId]);
 
     // 1. Fetch Comments from Backend
@@ -927,6 +954,16 @@ const ClientFeedbackModal = forwardRef(
             }));
 
           setComments(markUnreadComments(data || []));
+
+          // First-time view: expand all reply threads so client sees full feedback
+          if (!lastViewedStr) {
+            const expandMap = {};
+            (data || []).forEach((c) => {
+              if ((c.replies || []).length > 0) expandMap[c.id] = true;
+            });
+            setOpenRepliesById(expandMap);
+          }
+
           localStorage.setItem(storageKey, new Date().toISOString());
         } catch (err) {
           console.error('Failed to fetch comments', err);
@@ -970,6 +1007,11 @@ const ClientFeedbackModal = forwardRef(
       const handleReplyAdded = (data) => {
         if (data.submissionId !== submissionId || data.videoId !== videoId) return;
 
+        // Track reply IDs arriving this session so they render outside the Collapse
+        if (data.comment?.id) {
+          setSessionNewReplyIds((prev) => new Set([...prev, data.comment.id]));
+        }
+
         // Skip if reply is from current user (already added optimistically)
         if (data.comment?.userId === user.id) return;
 
@@ -1002,12 +1044,24 @@ const ClientFeedbackModal = forwardRef(
             const parentRect = parentEl.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
             if (parentRect.bottom < containerRect.top) {
-              setNewAbove((prev) => ({ ...prev, replies: prev.replies + 1, targetId: prev.targetId || pid }));
+              setNewAbove((prev) => ({
+                ...prev,
+                replies: prev.replies + 1,
+                targetId: prev.targetId || pid,
+              }));
             } else if (parentRect.bottom > containerRect.bottom) {
-              setNewBelow((prev) => ({ ...prev, replies: prev.replies + 1, targetId: prev.targetId || pid }));
+              setNewBelow((prev) => ({
+                ...prev,
+                replies: prev.replies + 1,
+                targetId: prev.targetId || pid,
+              }));
             }
           } else {
-            setNewBelow((prev) => ({ ...prev, replies: prev.replies + 1, targetId: prev.targetId || pid }));
+            setNewBelow((prev) => ({
+              ...prev,
+              replies: prev.replies + 1,
+              targetId: prev.targetId || pid,
+            }));
           }
         }, 200);
       };
@@ -1035,12 +1089,24 @@ const ClientFeedbackModal = forwardRef(
             const commentRect = commentEl.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
             if (commentRect.bottom < containerRect.top) {
-              setNewAbove((prev) => ({ ...prev, messages: prev.messages + 1, targetId: prev.targetId || cid }));
+              setNewAbove((prev) => ({
+                ...prev,
+                messages: prev.messages + 1,
+                targetId: prev.targetId || cid,
+              }));
             } else if (commentRect.bottom > containerRect.bottom) {
-              setNewBelow((prev) => ({ ...prev, messages: prev.messages + 1, targetId: prev.targetId || cid }));
+              setNewBelow((prev) => ({
+                ...prev,
+                messages: prev.messages + 1,
+                targetId: prev.targetId || cid,
+              }));
             }
           } else {
-            setNewBelow((prev) => ({ ...prev, messages: prev.messages + 1, targetId: prev.targetId || cid }));
+            setNewBelow((prev) => ({
+              ...prev,
+              messages: prev.messages + 1,
+              targetId: prev.targetId || cid,
+            }));
           }
         }, 200);
       };
@@ -1166,7 +1232,6 @@ const ClientFeedbackModal = forwardRef(
           `/api/submissions/v4/comments/${commentId}/agree`
         );
 
-        setHasInteracted(true);
         setComments((prevComments) => {
           const toggleAgree = (list) =>
             list.map((comment) => {
@@ -1249,8 +1314,6 @@ const ClientFeedbackModal = forwardRef(
           }
         );
 
-        setHasInteracted(true);
-
         const newReply = {
           ...data,
           user: {
@@ -1291,14 +1354,12 @@ const ClientFeedbackModal = forwardRef(
           `/api/submissions/v4/submission/${submissionId}/comments`,
           {
             text: feedbackText,
-            timestamp: currentVideoTime,
+            timestamp: draftTimestamp ?? currentVideoTime,
             parentId: null,
             videoId,
             isClientDraft: !isCountingDown,
           }
         );
-
-        setHasInteracted(true);
 
         const newComment = {
           ...data,
@@ -1358,11 +1419,13 @@ const ClientFeedbackModal = forwardRef(
             if (!container) return;
             const { scrollTop, scrollHeight, clientHeight } = container;
             if (scrollTop < 100) setNewAbove({ replies: 0, messages: 0, targetId: null });
-            if (scrollHeight - scrollTop - clientHeight < 100) setNewBelow({ replies: 0, messages: 0, targetId: null });
+            if (scrollHeight - scrollTop - clientHeight < 100)
+              setNewBelow({ replies: 0, messages: 0, targetId: null });
           }}
           sx={{
             flex: 1,
             overflowY: 'auto',
+            scrollbarGutter: 'stable',
             pr: 1,
             pb: 2,
             display: 'flex',
@@ -1401,7 +1464,14 @@ const ClientFeedbackModal = forwardRef(
                   }}
                 >
                   <Iconify icon="mdi:arrow-up" width={14} sx={{ color: '#1340FF' }} />
-                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                  <Typography
+                    sx={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: '#1340FF',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {getNewItemLabel(newAbove)}
                   </Typography>
                 </Box>
@@ -1432,155 +1502,180 @@ const ClientFeedbackModal = forwardRef(
               )}
 
               {(() => {
-                const unresolvedComments = comments.filter((c) => !c.resolvedByUserId && !c.resolvedAt);
-                const resolvedComments = comments.filter((c) => !!c.resolvedByUserId || !!c.resolvedAt);
+                const unresolvedComments = comments.filter(
+                  (c) => !c.resolvedByUserId && !c.resolvedAt
+                );
+                const resolvedComments = comments.filter(
+                  (c) => !!c.resolvedByUserId || !!c.resolvedAt
+                );
 
-                const renderCommentThread = (comment, isResolved) => (
-                  <m.div
-                    key={comment.id}
-                    data-comment-id={comment.id}
-                    initial={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, x: '100%', height: 0, marginBottom: 0, overflow: 'hidden' }}
-                    transition={{
-                      duration: 0.6,
-                      ease: [0.4, 0, 0.2, 1],
-                      height: { delay: 0.3, duration: 0.3 },
-                    }}
-                  >
-                    <Box
-                      ref={(el) => {
-                        if (el) commentRefs.current[comment.id] = el;
+                const renderCommentThread = (comment, isResolved) => {
+                  const allReplies = comment.replies || [];
+                  const sessionNewReplies = allReplies.filter((r) => sessionNewReplyIds.has(r.id));
+                  const isExpanded = openRepliesById[comment.id] === true;
+
+                  const renderReplyItem = (reply, index, list) => {
+                    const isLast = index === list.length - 1;
+                    return (
+                      <m.div
+                        key={reply.id}
+                        initial={{ opacity: 1, height: 'auto' }}
+                        exit={{
+                          opacity: 0,
+                          x: '100%',
+                          height: 0,
+                          marginBottom: 0,
+                          overflow: 'hidden',
+                        }}
+                        transition={{
+                          duration: 0.6,
+                          ease: [0.4, 0, 0.2, 1],
+                          height: { delay: 0.3, duration: 0.3 },
+                        }}
+                      >
+                        <Box
+                          ref={(el) => {
+                            if (el) commentRefs.current[reply.id] = el;
+                          }}
+                          sx={{ position: 'relative', ml: { xs: 5, md: 10 } }}
+                        >
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              left: { xs: -25, md: -50 },
+                              top: index === 0 ? -4 : -16,
+                              bottom: isLast ? 'calc(50% + 20px)' : -16,
+                              borderLeft: '2px solid #8E8E93',
+                              zIndex: 0,
+                            }}
+                          />
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              left: { xs: -25, md: -50 },
+                              top: index === 0 ? -4 : -16,
+                              bottom: 'calc(50% - 1px)',
+                              width: { xs: 20, md: 45 },
+                              borderLeft: '2px solid #8E8E93',
+                              borderBottom: '2px solid #8E8E93',
+                              borderBottomLeftRadius: 16,
+                              zIndex: 0,
+                            }}
+                          />
+                          <CommentCard
+                            comment={reply}
+                            isReply
+                            currentUser={user}
+                            isNew={reply.isNew}
+                            onReplyClick={(id) => setReplyingToId(id)}
+                            onAgree={handleAgree}
+                            onTimestampClick={handleTimestampClick}
+                            isReplying={replyingToId === reply.id}
+                            onCancelReply={() => setReplyingToId(null)}
+                            onSubmitReply={handleInlineReplySubmit}
+                            isLocked={effectiveIsLocked}
+                            isPastVideo={isPastVideo}
+                            isResolved={isResolved}
+                            onDelete={
+                              !effectiveIsLocked && !isResolved ? handleDeleteComment : undefined
+                            }
+                            onUndoDelete={handleUndoDelete}
+                            pendingDelete={pendingDeletes.has(reply.id)}
+                            pendingDeleteStartTime={pendingDeletes.get(reply.id)?.startTime}
+                          />
+                        </Box>
+                      </m.div>
+                    );
+                  };
+
+                  return (
+                    <m.div
+                      key={comment.id}
+                      data-comment-id={comment.id}
+                      initial={{ opacity: 1, height: 'auto' }}
+                      exit={{
+                        opacity: 0,
+                        x: '100%',
+                        height: 0,
+                        marginBottom: 0,
+                        overflow: 'hidden',
+                      }}
+                      transition={{
+                        duration: 0.6,
+                        ease: [0.4, 0, 0.2, 1],
+                        height: { delay: 0.3, duration: 0.3 },
                       }}
                     >
-                      {/* Parent Comment */}
-                      <CommentCard
-                        comment={comment}
-                        currentUser={user}
-                        isNew={comment.isNew}
-                        onReplyClick={(id) => setReplyingToId(id)}
-                        replyCount={(comment.replies || []).length}
-                        isRepliesOpen={openRepliesById[comment.id] ?? true}
-                        onToggleReplies={() =>
-                          setOpenRepliesById((prev) => ({
-                            ...prev,
-                            [comment.id]: !(prev[comment.id] ?? true),
-                          }))
-                        }
-                        onAgree={handleAgree}
-                        onTimestampClick={handleTimestampClick}
-                        isReplying={replyingToId === comment.id}
-                        onCancelReply={() => setReplyingToId(null)}
-                        onSubmitReply={handleInlineReplySubmit}
-                        isLocked={effectiveIsLocked}
-                        isPastVideo={isPastVideo}
-                        isResolved={isResolved}
-                        onDelete={
-                          !effectiveIsLocked && !isResolved ? handleDeleteComment : undefined
-                        }
-                        onUndoDelete={handleUndoDelete}
-                        pendingDelete={pendingDeletes.has(comment.id)}
-                        pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
-                      />
-
-                      {/* Threaded Replies */}
-                      <Collapse
-                        in={
-                          (openRepliesById[comment.id] ?? true) &&
-                          !!comment.replies &&
-                          comment.replies.length > 0
-                        }
-                        timeout="auto"
-                        unmountOnExit
+                      <Box
+                        ref={(el) => {
+                          if (el) commentRefs.current[comment.id] = el;
+                        }}
                       >
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
-                          <AnimatePresence initial={false}>
-                            {(comment.replies || []).map((reply, index) => {
-                              const isLast = index === (comment.replies?.length ?? 0) - 1;
+                        <CommentCard
+                          comment={comment}
+                          currentUser={user}
+                          isNew={comment.isNew}
+                          onReplyClick={(id) => setReplyingToId(id)}
+                          replyCount={allReplies.length}
+                          isRepliesOpen={isExpanded}
+                          onToggleReplies={() => {
+                            if (!isExpanded && sessionNewReplies.length > 0) {
+                              setSessionNewReplyIds((prev) => {
+                                const next = new Set(prev);
+                                sessionNewReplies.forEach((r) => next.delete(r.id));
+                                return next;
+                              });
+                            }
+                            setOpenRepliesById((prev) => ({
+                              ...prev,
+                              [comment.id]: prev[comment.id] === true ? undefined : true,
+                            }));
+                          }}
+                          onAgree={handleAgree}
+                          onTimestampClick={handleTimestampClick}
+                          isReplying={replyingToId === comment.id}
+                          onCancelReply={() => setReplyingToId(null)}
+                          onSubmitReply={handleInlineReplySubmit}
+                          isLocked={effectiveIsLocked}
+                          isPastVideo={isPastVideo}
+                          isResolved={isResolved}
+                          onDelete={
+                            !effectiveIsLocked && !isResolved ? handleDeleteComment : undefined
+                          }
+                          onUndoDelete={handleUndoDelete}
+                          pendingDelete={pendingDeletes.has(comment.id)}
+                          pendingDeleteStartTime={pendingDeletes.get(comment.id)?.startTime}
+                        />
 
-                              return (
-                                <m.div
-                                  key={reply.id}
-                                  initial={{ opacity: 1, height: 'auto' }}
-                                  exit={{
-                                    opacity: 0,
-                                    x: '100%',
-                                    height: 0,
-                                    marginBottom: 0,
-                                    overflow: 'hidden',
-                                  }}
-                                  transition={{
-                                    duration: 0.6,
-                                    ease: [0.4, 0, 0.2, 1],
-                                    height: { delay: 0.3, duration: 0.3 },
-                                  }}
-                                >
-                                  <Box
-                                    ref={(el) => {
-                                      if (el) commentRefs.current[reply.id] = el;
-                                    }}
-                                    sx={{ position: 'relative', ml: { xs: 5, md: 10 } }}
-                                  >
-                                    {/* Vertical straight line (connects siblings) */}
-                                    <Box
-                                      sx={{
-                                        position: 'absolute',
-                                        left: { xs: -25, md: -50 },
-                                        top: index === 0 ? -4 : -16,
-                                        bottom: isLast ? 'calc(50% + 20px)' : -16,
-                                        borderLeft: '2px solid #8E8E93',
-                                        zIndex: 0,
-                                      }}
-                                    />
-                                    {/* Curved L-shape linking into the card */}
-                                    <Box
-                                      sx={{
-                                        position: 'absolute',
-                                        left: { xs: -25, md: -50 },
-                                        top: index === 0 ? -4 : -16,
-                                        bottom: 'calc(50% - 1px)',
-                                        width: { xs: 20, md: 45 },
-                                        borderLeft: '2px solid #8E8E93',
-                                        borderBottom: '2px solid #8E8E93',
-                                        borderBottomLeftRadius: 16,
-                                        zIndex: 0,
-                                      }}
-                                    />
+                        {/* When expanded: merge all replies for continuous connector lines */}
+                        <Collapse
+                          in={isExpanded && allReplies.length > 0}
+                          timeout="auto"
+                          unmountOnExit
+                        >
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
+                            <AnimatePresence initial={false}>
+                              {allReplies.map((reply, index) =>
+                                renderReplyItem(reply, index, allReplies)
+                              )}
+                            </AnimatePresence>
+                          </Box>
+                        </Collapse>
 
-                                    <CommentCard
-                                      comment={reply}
-                                      isReply
-                                      currentUser={user}
-                                      isNew={reply.isNew}
-                                      onReplyClick={(id) => setReplyingToId(id)}
-                                      onAgree={handleAgree}
-                                      onTimestampClick={handleTimestampClick}
-                                      isReplying={replyingToId === reply.id}
-                                      onCancelReply={() => setReplyingToId(null)}
-                                      onSubmitReply={handleInlineReplySubmit}
-                                      isLocked={effectiveIsLocked}
-                                      isPastVideo={isPastVideo}
-                                      isResolved={isResolved}
-                                      onDelete={
-                                        !effectiveIsLocked && !isResolved
-                                          ? handleDeleteComment
-                                          : undefined
-                                      }
-                                      onUndoDelete={handleUndoDelete}
-                                      pendingDelete={pendingDeletes.has(reply.id)}
-                                      pendingDeleteStartTime={
-                                        pendingDeletes.get(reply.id)?.startTime
-                                      }
-                                    />
-                                  </Box>
-                                </m.div>
-                              );
-                            })}
-                          </AnimatePresence>
-                        </Box>
-                      </Collapse>
-                    </Box>
-                  </m.div>
-                );
+                        {/* Initial state: only session-new replies visible */}
+                        {!isExpanded && sessionNewReplies.length > 0 && (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
+                            <AnimatePresence initial={false}>
+                              {sessionNewReplies.map((reply, index) =>
+                                renderReplyItem(reply, index, sessionNewReplies)
+                              )}
+                            </AnimatePresence>
+                          </Box>
+                        )}
+                      </Box>
+                    </m.div>
+                  );
+                };
 
                 return (
                   <>
@@ -1642,7 +1737,14 @@ const ClientFeedbackModal = forwardRef(
                 }}
               >
                 <Iconify icon="mdi:arrow-down" width={14} sx={{ color: '#1340FF' }} />
-                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1340FF', whiteSpace: 'nowrap' }}>
+                <Typography
+                  sx={{
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    color: '#1340FF',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {getNewItemLabel(newBelow)}
                 </Typography>
               </Box>
@@ -1721,7 +1823,7 @@ const ClientFeedbackModal = forwardRef(
                     flexShrink: 0,
                   }}
                 >
-                  <AnimatedTime time={currentVideoTime} />
+                  <AnimatedTime time={draftTimestamp ?? currentVideoTime} />
                 </Box>
 
                 <TextField
