@@ -14,6 +14,9 @@ export default function RHFDatePicker({
   minDate,
   maxDate,
   sx,
+  slots,
+  slotProps,
+  onClose,
 }) {
   const { control } = useFormContext();
 
@@ -23,18 +26,21 @@ export default function RHFDatePicker({
       control={control}
       render={({ field, fieldState: { error } }) => (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
-          {/* <DemoContainer components={['DatePicker']}> */}
           <DatePicker
             label={label}
             disabled={disabled}
             format="DD/MM/YYYY"
             {...field}
+            onClose={onClose}
+            slots={slots}
             slotProps={{
               textField: {
                 fullWidth: true,
                 error: !!error,
                 helperText: error?.message,
+                ...(slotProps?.textField || {}),
               },
+              ...(slotProps || {}),
             }}
             minDate={minDate}
             maxDate={maxDate}
@@ -53,7 +59,10 @@ RHFDatePicker.propTypes = {
   type: PropTypes.string,
   label: PropTypes.string,
   disabled: PropTypes.bool,
-  minDate: PropTypes.string,
-  maxDate: PropTypes.string,
+  minDate: PropTypes.any,
+  maxDate: PropTypes.any,
   sx: PropTypes.any,
+  slots: PropTypes.object,
+  slotProps: PropTypes.object,
+  onClose: PropTypes.func,
 };

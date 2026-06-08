@@ -1,7 +1,8 @@
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import { SnackbarProvider } from 'src/components/snackbar';
-import BDBriefForm from 'src/sections/public-access/bd-brief-form';
+
+import PublicBriefSubmit from 'src/sections/public-access/public-brief-submit';
 
 export default function BDBriefPage() {
   const { token } = useParams();
@@ -9,9 +10,9 @@ export default function BDBriefPage() {
   return (
     <SnackbarProvider>
       <Helmet>
-        <title>Content Strategy Intake | Cult Creative</title>
+        <title>Campaign Brief | Cult Creative</title>
       </Helmet>
-      <BDBriefForm token={token} />
+      <PublicBriefSubmit token={token} />
     </SnackbarProvider>
   );
 }
