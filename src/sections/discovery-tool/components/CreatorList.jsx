@@ -1,12 +1,24 @@
+import dayjs from 'dayjs';
+import ExcelJS from 'exceljs';
 import PropTypes from 'prop-types';
+import { saveAs } from 'file-saver';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { Box, Stack, Button, Divider, Skeleton, Typography } from '@mui/material';
+
+import { formatNumber } from 'src/utils/socialMetricsCalculator';
+import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
 
 import CreatorCard from './CreatorCard';
 import CreatorCompareDialog from './CreatorCompareDialog';
+import {
+  getPlatformHandle,
+  resolvePlatformData,
+  formatEngagementRate,
+  resolveCreatorRating,
+} from './creator-helpers';
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 
@@ -95,6 +107,66 @@ const BookmarkedEmptyState = () => (
   </Box>
 );
 
+const EXPORT_COLUMNS = [
+  { header: 'Creator Name', key: 'name', width: 24 },
+  { header: 'Platform', key: 'platform', width: 14 },
+  { header: 'Handle', key: 'handle', width: 22 },
+  { header: 'Profile URL', key: 'profileUrl', width: 36 },
+  { header: 'Creator Rating', key: 'creatorRating', width: 16 },
+  { header: 'Followers', key: 'followers', width: 14 },
+  { header: 'Engagement Rate', key: 'engagementRate', width: 18 },
+  { header: 'Bio', key: 'bio', width: 48 },
+  { header: 'Interests', key: 'interests', width: 36 },
+];
+
+const getCreatorExportRow = (creator) => {
+  const platformData = resolvePlatformData(creator);
+  const platform = platformData.platform || '';
+  const handle = getPlatformHandle(creator, platform) || '';
+  const profileUrl = handle && platform ? createSocialProfileUrl(handle, platform) : '';
+  const bio =
+    platform === 'tiktok'
+      ? creator.tiktok?.biography || creator.about || ''
+      : creator.instagram?.biography || creator.about || '';
+
+  return {
+    name: creator.name || '',
+    platform: platform ? platform.charAt(0).toUpperCase() + platform.slice(1) : '',
+    handle,
+    profileUrl,
+    creatorRating: resolveCreatorRating(creator).toFixed(1),
+    followers: formatNumber(platformData.followers || 0),
+    engagementRate: formatEngagementRate(platformData.engagementRate || 0),
+    bio: bio || '',
+    interests: (creator.interests || []).join(', '),
+  };
+};
+
+const downloadCreatorsWorkbook = async (creatorRows) => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Bookmarked Creators');
+
+  worksheet.columns = EXPORT_COLUMNS;
+  creatorRows.forEach(({ creator }) => worksheet.addRow(getCreatorExportRow(creator)));
+
+  worksheet.getRow(1).eachCell((cell) => {
+    cell.font = { bold: true };
+    cell.alignment = { vertical: 'middle', horizontal: 'left' };
+  });
+
+  worksheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.alignment = { vertical: 'top', wrapText: true };
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  saveAs(blob, `Bookmarked_Creators_${dayjs().format('DD-MMM-YYYY')}.xlsx`);
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const CreatorList = ({
@@ -135,6 +207,18 @@ const CreatorList = ({
     setCompareSelectedIds([]);
   }, []);
 
+  const handleToggleBookmarkedOnly = useCallback(() => {
+    setShowBookmarkedOnly((prev) => {
+      const next = !prev;
+      if (next) {
+        setCompareMode(false);
+        setCompareSelectedIds([]);
+        setCompareModalOpen(false);
+      }
+      return next;
+    });
+  }, []);
+
   // Auto-open the compare modal once the admin has picked the 2nd creator.
   useEffect(() => {
     if (compareMode && compareSelectedIds.length === 2) {
@@ -164,6 +248,12 @@ const CreatorList = ({
         : creatorRows,
     [creatorRows, selectedIds, showBookmarkedOnly]
   );
+  const hasVisibleBookmarkedCreators = showBookmarkedOnly && visibleCreatorRows.length > 0;
+
+  const handleExportBookmarkedCreators = useCallback(async () => {
+    if (!hasVisibleBookmarkedCreators) return;
+    await downloadCreatorsWorkbook(visibleCreatorRows);
+  }, [hasVisibleBookmarkedCreators, visibleCreatorRows]);
 
   if (isError) {
     return (
@@ -208,6 +298,18 @@ const CreatorList = ({
       ? Math.min(pagination.page * pagination.limit, total)
       : creators.length;
   const displayedCount = showBookmarkedOnly ? visibleCreatorRows.length : viewedCount;
+  let primaryActionLabel = 'Compare Creators';
+  let handlePrimaryAction = handleEnterCompare;
+
+  if (showBookmarkedOnly) {
+    primaryActionLabel = 'Export';
+    handlePrimaryAction = handleExportBookmarkedCreators;
+  } else if (compareMode) {
+    primaryActionLabel = 'Select Creators';
+    handlePrimaryAction = undefined;
+  }
+
+  const isPrimaryActionDisabled = showBookmarkedOnly ? !hasVisibleBookmarkedCreators : compareMode;
 
   return (
     <Box sx={{ mt: 4 }}>
@@ -245,7 +347,7 @@ const CreatorList = ({
         <Box>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ flexWrap: 'nowrap' }}>
             <Button
-              onClick={() => setShowBookmarkedOnly((prev) => !prev)}
+              onClick={handleToggleBookmarkedOnly}
               aria-pressed={showBookmarkedOnly}
               startIcon={<Iconify icon="material-symbols:bookmark-outline" width={16} />}
               sx={{
@@ -287,7 +389,7 @@ const CreatorList = ({
                   borderRadius: 1,
                   color: '#231F20',
                   fontSize: 10,
-                  fontWeight: 500,
+                  fontWeight: 700,
                   lineHeight: '14px',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -299,8 +401,11 @@ const CreatorList = ({
             </Button>
             <Stack direction="row" alignItems="center" sx={{ flexWrap: 'nowrap' }}>
               <Button
-                onClick={compareMode ? undefined : handleEnterCompare}
-                disabled={compareMode}
+                onClick={handlePrimaryAction}
+                disabled={isPrimaryActionDisabled}
+                startIcon={
+                  showBookmarkedOnly ? <Iconify icon="material-symbols:open-in-new" width={18} /> : null
+                }
                 sx={{
                   width: 'auto',
                   height: 38,
@@ -319,6 +424,9 @@ const CreatorList = ({
                   borderRadius: 1,
                   border: '1px solid #E8E8E8',
                   boxShadow: 'inset 0px -3px 0px #E7E7E7',
+                  '& .MuiButton-startIcon': {
+                    m: showBookmarkedOnly ? '0 4px 0 0' : 0,
+                  },
                   '&:hover': {
                     bgcolor: '#FFFFFF',
                     border: '1px solid #E8E8E8',
@@ -332,7 +440,7 @@ const CreatorList = ({
                   },
                 }}
               >
-                {compareMode ? 'Select Creators' : 'Compare Creators'}
+                {primaryActionLabel}
               </Button>
               <Box
                 sx={{
@@ -342,7 +450,7 @@ const CreatorList = ({
                   overflow: 'hidden',
                   whiteSpace: 'nowrap',
                   ml: compareMode ? 1.5 : 0,
-                  maxWidth: compareMode ? 152 : 0,
+                  maxWidth: compareMode ? 120 : 0,
                   opacity: compareMode ? 1 : 0,
                   transition: 'margin-left 260ms ease, max-width 260ms ease, opacity 200ms ease',
                 }}
@@ -353,6 +461,8 @@ const CreatorList = ({
                   disableRipple
                   onClick={handleCancelCompare}
                   sx={{
+                    minWidth: 'auto',
+                    px: 0,
                     color: '#1340FF',
                     fontWeight: 600,
                     fontSize: 14,
