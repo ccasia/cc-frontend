@@ -236,6 +236,8 @@ export default function CampaignBriefListView() {
       </Button>
     );
 
+    const isSuperAdmin = role === 'superadmin';
+
     if (!isBD) {
       // Once handed over, the brief is a real campaign. CSL can assign a CSM;
       // everyone in CS can open the campaign page.
@@ -259,6 +261,17 @@ export default function CampaignBriefListView() {
       case 'APPROVED':
         return <>{handoverBtn}{deleteIcon}</>;
       case 'HANDED_OVER':
+        // Superadmin sees the full handed-over toolset (CS-side actions too).
+        if (isSuperAdmin) {
+          return (
+            <>
+              {assignCsmBtn}
+              {viewCampaignBtn}
+              {editIcon}
+              {deleteIcon}
+            </>
+          );
+        }
         return <>{editIcon}{deleteIcon}</>;
       default:
         return <>{editIcon}{deleteIcon}</>;
