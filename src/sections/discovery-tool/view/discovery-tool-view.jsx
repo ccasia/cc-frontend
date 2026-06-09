@@ -8,10 +8,12 @@ import useGetDiscoveryCreators from 'src/hooks/use-get-discovery-creators';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import InviteCreatorsDialog from './invite-creators-dialog';
-import CompareCreatorsDialog from './compare-creators-dialog';
-import { CreatorList, DiscoveryFilterBar } from '../components';
+import { CreatorList, DiscoveryFilterBar, CreatorDetailsDrawer } from '../components';
 
 // ─── Component ────────────────────────────────────────────────────────────────
+
+const getCreatorRowKey = (creator, index) =>
+  creator.rowId || `${creator.userId}-${creator.platform || index}`;
 
 const DiscoveryToolView = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -28,34 +30,8 @@ const DiscoveryToolView = () => {
     interests: [],
   });
 
-  // Track whether the current filter results should be displayed
-  const [showResults, setShowResults] = useState(true);
-  const isInitialMount = useRef(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortByFollowers, setSortByFollowers] = useState(false);
-
-  // Check if any filter is active (non-default)
-  const hasActiveFilters = useMemo(
-    () =>
-      filters.platform !== 'all' ||
-      filters.debouncedKeyword !== '' ||
-      filters.debouncedHashtag !== '' ||
-      filters.ageRange !== '' ||
-      filters.country !== null ||
-      filters.city !== null ||
-      filters.gender !== '' ||
-      filters.creditTier !== '' ||
-      filters.languages.length > 0 ||
-      filters.interests.length > 0,
-    [filters]
-  );
-
-  // While users are editing filters, run lightweight queries only.
-  // Full hydration happens after they click Show Results.
-  const shouldHydrateMissing = useMemo(
-    () => isInitialMount.current || !hasActiveFilters || showResults,
-    [hasActiveFilters, showResults]
-  );
 
   // All filters are now server-side — pass them all to the SWR hook
   const { creators, pagination, availableLocations, isLoading, isError } = useGetDiscoveryCreators({
@@ -71,35 +47,19 @@ const DiscoveryToolView = () => {
     hashtag: filters.debouncedHashtag || undefined,
     sortBy: sortByFollowers ? 'followers' : 'name',
     sortDirection: sortByFollowers ? 'desc' : 'asc',
-    hydrateMissing: shouldHydrateMissing,
+    hydrateMissing: true,
     page: currentPage,
     limit: 20,
   });
-
-  // Show results if explicitly applied OR no filters are active (default view)
-  const shouldShowResults = showResults || !hasActiveFilters;
-
-  // Result count for the "Show X Creators" button
-  const resultCount = isLoading ? null : (pagination?.total ?? null);
 
   // Stable callback for the filter bar
   const handleFiltersChange = useCallback((newFilters) => {
     setFilters(newFilters);
   }, []);
 
-  // When filters change (after initial mount), hide results so the user must click "Show Results"
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    setShowResults(false);
     setCurrentPage(1);
   }, [filters]);
-
-  const handleShowResults = useCallback(() => {
-    setShowResults(true);
-  }, []);
 
   const totalPages = useMemo(() => {
     if (!pagination?.total || !pagination?.limit) return 1;
@@ -117,7 +77,7 @@ const DiscoveryToolView = () => {
 
   // Creator selection & comparison
   const [selectedCreatorIds, setSelectedCreatorIds] = useState([]);
-  const [compareOpen, setCompareOpen] = useState(false);
+  const [inviteCreatorIds, setInviteCreatorIds] = useState([]);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteCampaigns, setInviteCampaigns] = useState([]);
   const [inviteCampaignId, setInviteCampaignId] = useState('');
@@ -132,13 +92,29 @@ const DiscoveryToolView = () => {
     );
   }, []);
 
-  // Resolve selected creator objects for comparison dialog
-  const selectedCreators = useMemo(
+  // Creator details sidebar
+  const [detailsCreatorId, setDetailsCreatorId] = useState(null);
+
+  const handleOpenDetails = useCallback((rowId) => {
+    setDetailsCreatorId(rowId);
+  }, []);
+
+  const detailsCreator = useMemo(
     () =>
-      selectedCreatorIds
-        .map((id) => creators.find((c) => (c.rowId || c.userId) === id))
+      detailsCreatorId
+        ? creators.find(
+            (creator, index) => getCreatorRowKey(creator, index) === detailsCreatorId
+          ) || null
+        : null,
+    [detailsCreatorId, creators]
+  );
+
+  const inviteCreators = useMemo(
+    () =>
+      inviteCreatorIds
+        .map((id) => creators.find((creator, index) => getCreatorRowKey(creator, index) === id))
         .filter(Boolean),
-    [selectedCreatorIds, creators]
+    [inviteCreatorIds, creators]
   );
 
   const selectedCampaignExistingCreatorIds = useMemo(() => {
@@ -146,10 +122,6 @@ const DiscoveryToolView = () => {
     const selectedCampaign = inviteCampaigns.find((campaign) => campaign.id === inviteCampaignId);
     return selectedCampaign?.existingCreatorIds || [];
   }, [inviteCampaignId, inviteCampaigns]);
-
-  const handleCompare = useCallback(() => {
-    setCompareOpen(true);
-  }, []);
 
   const loadInviteCampaigns = useCallback(
     async (force = false) => {
@@ -213,19 +185,20 @@ const DiscoveryToolView = () => {
     [enqueueSnackbar]
   );
 
-  const handleInviteOpen = useCallback(async () => {
-    if (!selectedCreatorIds.length) {
-      enqueueSnackbar('Select at least one creator to invite', { variant: 'warning' });
-      return;
-    }
+  const handleInviteOne = useCallback(
+    async (rowId) => {
+      if (!rowId) return;
 
-    setInviteCampaignId('');
-    setInviteOpen(true);
+      setInviteCreatorIds([rowId]);
+      setInviteCampaignId('');
+      setInviteOpen(true);
 
-    if (!inviteCampaignsLoadedRef.current && !inviteCampaignsRequestRef.current) {
-      await loadInviteCampaigns();
-    }
-  }, [enqueueSnackbar, loadInviteCampaigns, selectedCreatorIds.length]);
+      if (!inviteCampaignsLoadedRef.current && !inviteCampaignsRequestRef.current) {
+        await loadInviteCampaigns();
+      }
+    },
+    [loadInviteCampaigns]
+  );
 
   const handleInviteClose = useCallback(() => {
     if (inviteSubmitting) return;
@@ -234,19 +207,19 @@ const DiscoveryToolView = () => {
 
   const handleInviteCancel = useCallback(() => {
     if (inviteSubmitting) return;
-    setSelectedCreatorIds([]);
+    setInviteCreatorIds([]);
     setInviteCampaignId('');
     setInviteOpen(false);
   }, [inviteSubmitting]);
 
   const handleRemoveInvitedCreator = useCallback((creatorIdentifier) => {
     if (!creatorIdentifier) return;
-    setSelectedCreatorIds((prev) => prev.filter((id) => id !== creatorIdentifier));
+    setInviteCreatorIds((prev) => prev.filter((id) => id !== creatorIdentifier));
   }, []);
 
   const handleInviteSubmit = useCallback(async () => {
     const selectedCreatorUserIds = Array.from(
-      new Set(selectedCreators.map((creator) => creator?.userId).filter(Boolean))
+      new Set(inviteCreators.map((creator) => creator?.userId).filter(Boolean))
     );
     const invitableCreatorUserIds = selectedCreatorUserIds.filter(
       (userId) => !selectedCampaignExistingCreatorIds.includes(userId)
@@ -278,7 +251,7 @@ const DiscoveryToolView = () => {
       enqueueSnackbar(`${invitedCount} creator${invitedCount === 1 ? '' : 's'} invited`, {
         variant: 'success',
       });
-      setSelectedCreatorIds([]);
+      setInviteCreatorIds([]);
       setInviteOpen(false);
     } catch (error) {
       console.error('Failed to invite creators:', error);
@@ -288,7 +261,7 @@ const DiscoveryToolView = () => {
     } finally {
       setInviteSubmitting(false);
     }
-  }, [enqueueSnackbar, inviteCampaignId, selectedCampaignExistingCreatorIds, selectedCreators]);
+  }, [enqueueSnackbar, inviteCampaignId, inviteCreators, selectedCampaignExistingCreatorIds]);
 
   // Log results only when they actually change
   useEffect(() => {
@@ -313,28 +286,22 @@ const DiscoveryToolView = () => {
       <DiscoveryFilterBar
         onFiltersChange={handleFiltersChange}
         availableLocations={availableLocations}
-        resultCount={resultCount}
-        isCountLoading={isLoading}
-        onShowResults={handleShowResults}
-        showButton={hasActiveFilters && !showResults}
       />
 
-      {shouldShowResults && (
-        <CreatorList
-          creators={creators}
-          isLoading={isLoading}
-          isError={isError}
-          pagination={pagination}
-          sortByFollowers={sortByFollowers}
-          onToggleFollowersSort={handleToggleFollowersSort}
-          selectedIds={selectedCreatorIds}
-          onSelect={handleSelectCreator}
-          onCompare={handleCompare}
-          onInvite={handleInviteOpen}
-        />
-      )}
+      <CreatorList
+        creators={creators}
+        isLoading={isLoading}
+        isError={isError}
+        pagination={pagination}
+        sortByFollowers={sortByFollowers}
+        onToggleFollowersSort={handleToggleFollowersSort}
+        selectedIds={selectedCreatorIds}
+        onSelect={handleSelectCreator}
+        onInviteOne={handleInviteOne}
+        onOpenDetails={handleOpenDetails}
+      />
 
-      {shouldShowResults && !isLoading && totalPages > 1 && (
+      {!isLoading && totalPages > 1 && (
         <Box display="flex" justifyContent="center" mt={2}>
           <Pagination
             count={totalPages}
@@ -346,19 +313,23 @@ const DiscoveryToolView = () => {
         </Box>
       )}
 
-      {/* Compare Dialog */}
-      <CompareCreatorsDialog
-        open={compareOpen}
-        onClose={() => setCompareOpen(false)}
-        creators={selectedCreators}
+      {/* Creator details sidebar */}
+      <CreatorDetailsDrawer
+        open={!!detailsCreatorId}
+        creator={detailsCreator}
+        rowKey={detailsCreatorId}
+        selected={selectedCreatorIds.includes(detailsCreatorId)}
+        onClose={() => setDetailsCreatorId(null)}
+        onToggleBookmark={handleSelectCreator}
+        onInvite={handleInviteOne}
       />
 
       <InviteCreatorsDialog
         open={inviteOpen}
         onClose={handleInviteClose}
         onCancel={handleInviteCancel}
-        selectedCreatorsCount={selectedCreators.length}
-        creators={selectedCreators}
+        selectedCreatorsCount={inviteCreators.length}
+        creators={inviteCreators}
         existingCreatorIds={selectedCampaignExistingCreatorIds}
         onRemoveCreator={handleRemoveInvitedCreator}
         campaigns={inviteCampaigns}
