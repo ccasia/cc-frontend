@@ -444,14 +444,17 @@ const VideoSubmissionModal = ({
                     display: { xs: 'none', sm: 'block' },
                   }}
                 >
-                  {(currentVideo?.createdAt || submission.createdAt)
-                    ? new Date(currentVideo?.createdAt || submission.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })
+                  {currentVideo?.createdAt || submission.createdAt
+                    ? new Date(currentVideo?.createdAt || submission.createdAt).toLocaleDateString(
+                        'en-US',
+                        {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        }
+                      )
                     : ''}
                 </Typography>
               </Box>
@@ -480,38 +483,36 @@ const VideoSubmissionModal = ({
                       sx={{ color: statusColor, display: 'flex' }}
                     />
                   )}
-                  <Typography
-                    fontWeight="SemiBold"
-                    fontSize={12}
-                    color={statusColor}
-                    noWrap
-                  >
+                  <Typography fontWeight="SemiBold" fontSize={12} color={statusColor} noWrap>
                     {statusLabel}
                   </Typography>
                 </Box>
               )}
               {/* Feedback Deadline Timer */}
-              {feedbackTimeLeft > 0 && !isClient && !isCreator && submissionStatus === 'CLIENT_FEEDBACK' && (
-                <DarkGlassTooltip
-                  title="Client timer to provide additional feedback for current round of submission."
-                  placement="top-start"
-                >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      cursor: 'default',
-                      gap: 0.5,
-                      color: '#1340ff',
-                    }}
+              {feedbackTimeLeft > 0 &&
+                !isClient &&
+                !isCreator &&
+                submissionStatus === 'CLIENT_FEEDBACK' && (
+                  <DarkGlassTooltip
+                    title="Client timer to provide additional feedback for current round of submission."
+                    placement="top-start"
                   >
-                    <Iconify icon="ic:sharp-timer" width={18} />
-                    <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                      {formatTimer(feedbackTimeLeft)}
-                    </Typography>
-                  </Box>
-                </DarkGlassTooltip>
-              )}
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        cursor: 'default',
+                        gap: 0.5,
+                        color: '#1340ff',
+                      }}
+                    >
+                      <Iconify icon="ic:sharp-timer" width={18} />
+                      <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                        {formatTimer(feedbackTimeLeft)}
+                      </Typography>
+                    </Box>
+                  </DarkGlassTooltip>
+                )}
             </Box>
 
             {/* Close Button */}
@@ -548,6 +549,7 @@ const VideoSubmissionModal = ({
                 gap: { xs: 1.5, md: 2.5 },
                 minWidth: 0,
                 minHeight: 0,
+                overflow: 'auto',
               }}
             >
               {/* Caption Section */}
@@ -668,76 +670,80 @@ const VideoSubmissionModal = ({
                   position: 'relative',
                 }}
               >
-                  {videoUrl && isAdmin && (
-                    <DarkGlassTooltip title={copied ? 'Copied!' : 'Copy Link'} placement="right">
-                      <IconButton
-                        onClick={handleCopyLink}
-                        size="small"
-                        sx={{
-                          position: 'absolute',
-                          top: 8,
-                          left: 8,
-                          zIndex: 10,
-                          color: '#F4F4F4',
-                          bgcolor: '#1C1C1C',
-                          borderRadius: '8px',
-                          borderBottom: '2px solid #000',
-                          overflow: 'hidden',
-                          '&:hover': { bgcolor: '#2C2C2C' },
-                        }}
-                      >
-                        <AnimatePresence mode="wait" initial={false}>
-                          <m.div
-                            key={copied ? 'check' : 'copy'}
-                            initial={{ opacity: 0, scale: 0.5, y: 6 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.5, y: -6 }}
-                            transition={{ duration: 0.18, ease: 'easeOut' }}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                          >
-                            <Iconify
-                              icon={copied ? 'eva:checkmark-fill' : 'eva:copy-outline'}
-                              width={18}
-                              sx={{ color: copied ? '#00A76F' : '#F4F4F4' }}
-                            />
-                          </m.div>
-                        </AnimatePresence>
-                      </IconButton>
-                    </DarkGlassTooltip>
-                  )}
-                  {videoUrl ? (
-                    <video
-                      key={currentVideo?.id}
-                      ref={modalVideoRef}
-                      src={videoUrl}
-                      controls
-                      controlsList={isCreator ? 'nodownload' : undefined}
-                      preload="metadata"
-                      playsInline
-                      onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)}
-                      onLoadedMetadata={(e) => {
-                        if (Number.isFinite(e.target.duration)) setModalDuration(e.target.duration);
-                      }}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain',
-                      }}
-                    >
-                      <track kind="captions" />
-                    </video>
-                  ) : (
-                    <Typography
+                {videoUrl && isAdmin && (
+                  <DarkGlassTooltip title={copied ? 'Copied!' : 'Copy Link'} placement="right">
+                    <IconButton
+                      onClick={handleCopyLink}
+                      size="small"
                       sx={{
-                        color: 'white',
-                        fontFamily:
-                          'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        zIndex: 10,
+                        color: '#F4F4F4',
+                        bgcolor: '#1C1C1C',
+                        borderRadius: '8px',
+                        borderBottom: '2px solid #000',
+                        overflow: 'hidden',
+                        '&:hover': { bgcolor: '#2C2C2C' },
                       }}
                     >
-                      No video available
-                    </Typography>
-                  )}
-                </Box>
+                      <AnimatePresence mode="wait" initial={false}>
+                        <m.div
+                          key={copied ? 'check' : 'copy'}
+                          initial={{ opacity: 0, scale: 0.5, y: 6 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.5, y: -6 }}
+                          transition={{ duration: 0.18, ease: 'easeOut' }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Iconify
+                            icon={copied ? 'eva:checkmark-fill' : 'eva:copy-outline'}
+                            width={18}
+                            sx={{ color: copied ? '#00A76F' : '#F4F4F4' }}
+                          />
+                        </m.div>
+                      </AnimatePresence>
+                    </IconButton>
+                  </DarkGlassTooltip>
+                )}
+                {videoUrl ? (
+                  <video
+                    key={currentVideo?.id}
+                    ref={modalVideoRef}
+                    src={videoUrl}
+                    controls
+                    controlsList={isCreator ? 'nodownload' : undefined}
+                    preload="metadata"
+                    playsInline
+                    onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)}
+                    onLoadedMetadata={(e) => {
+                      if (Number.isFinite(e.target.duration)) setModalDuration(e.target.duration);
+                    }}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                    }}
+                  >
+                    <track kind="captions" />
+                  </video>
+                ) : (
+                  <Typography
+                    sx={{
+                      color: 'white',
+                      fontFamily:
+                        'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    }}
+                  >
+                    No video available
+                  </Typography>
+                )}
+              </Box>
             </Box>
 
             {/* Right Side - Flexible Content (Client/Creator/Admin specific) */}
