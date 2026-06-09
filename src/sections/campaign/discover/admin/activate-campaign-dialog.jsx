@@ -99,6 +99,20 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   // credit review
   const [campaignCredits, setCampaignCreditsState] = useState('');
 
+  // campaign cover image (CSM provides this at activation for BD-flow campaigns)
+  const [campaignImageFile, setCampaignImageFile] = useState(null);
+  const [campaignImagePreview, setCampaignImagePreview] = useState('');
+
+  // Only collect a cover image when the campaign doesn't already have one
+  // (BD-flow campaigns reach activation without an image; admin-created ones
+  // already have theirs). Derived from the server's stored brief images so it
+  // doesn't get confused by a freshly-picked file in the preview state.
+  const existingBriefImages = campaignDetails?.campaignBrief?.images;
+  const hasExistingImage = Array.isArray(existingBriefImages)
+    ? existingBriefImages.length > 0
+    : !!existingBriefImages;
+  const needsCampaignImage = !hasExistingImage;
+
   // Step state (0: Confirm with existing details, 1: Admin Assignment, 2: Agreement, 3: Campaign Type, 4: Deliverables, 5: Posting Dates)
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -167,6 +181,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     postingStartDate: '',
     postingEndDate: '',
     campaignCredits: '',
+    campaignImage: '',
   });
 
   // PDF related states
@@ -302,6 +317,22 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     setErrors((prev) => ({ ...prev, campaignManagers: '' }));
   };
 
+  const handleCampaignImageChange = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = ''; // allow re-selecting the same file
+    if (!file) return;
+    if (!file.type?.startsWith('image/')) {
+      setErrors((prev) => ({ ...prev, campaignImage: 'Please select an image file' }));
+      return;
+    }
+    setCampaignImageFile(file);
+    setCampaignImagePreview(URL.createObjectURL(file));
+    setErrors((prev) => ({ ...prev, campaignImage: '' }));
+  };
+
+  // Debug: log RHF deliverables value
+  console.log('Deliverables (RHF): ', deliverablesForm.getValues('deliverables'));
+
   const validateForm = () => {
     // Skip admin manager validation for admin/CSM users completing activation
     const skipAdminValidation =
@@ -363,6 +394,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       postingStartDate: getPostingStartDateError(),
       postingEndDate: getPostingEndDateError(),
       campaignCredits: getCampaignCreditsError(),
+      campaignImage:
+        needsCampaignImage && !campaignImageFile ? 'A campaign image is required' : '',
     };
 
     setErrors(newErrors);
@@ -407,6 +440,17 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         })
       );
 
+      // Attach the campaign cover image (only when a new file was picked).
+      if (campaignImageFile) {
+        formData.append('campaignImages', campaignImageFile);
+      }
+
+      const response = await axios.post(
+        `/api/campaign/activateClientCampaign/${campaignId}`,
+        formData
+      );
+      console.log('Activation response:', response.data);
+
       // Get assigned admin names for success message
       const assignedAdminNames = adminOptions
         .filter((admin) => campaignManagers.includes(admin.userId))
@@ -446,6 +490,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       setPostingStartDate(null);
       setPostingEndDate(null);
       setCampaignCreditsState('');
+      setCampaignImageFile(null);
+      setCampaignImagePreview('');
 
       // Reset step based on user role and campaign status
       if (isCompleterRole && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION') {
@@ -462,6 +508,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         postingStartDate: '',
         postingEndDate: '',
         campaignCredits: '',
+        campaignImage: '',
       });
 
       onClose();
@@ -1421,6 +1468,71 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 )
               )}
             </FormControl>
+
+                {needsCampaignImage && (
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Campaign Image
+              </Typography>
+              <Box
+                component="label"
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 1,
+                  width: '100%',
+                  minHeight: 160,
+                  p: 2,
+                  cursor: 'pointer',
+                  borderRadius: '8px',
+                  border: errors.campaignImage ? '1px dashed #FF4842' : '1px dashed #C4C4C4',
+                  backgroundColor: '#FAFAFA',
+                  overflow: 'hidden',
+                  '&:hover': { backgroundColor: '#F4F4F4' },
+                }}
+              >
+                {campaignImagePreview ? (
+                  <Box
+                    component="img"
+                    src={campaignImagePreview}
+                    alt="Campaign cover"
+                    sx={{ maxHeight: 200, width: '100%', objectFit: 'contain', borderRadius: '6px' }}
+                  />
+                ) : (
+                  <>
+                    <Iconify icon="solar:gallery-add-bold" width={32} sx={{ color: '#919EAB' }} />
+                    <Typography variant="body2" color="text.secondary">
+                      Click to upload a campaign image
+                    </Typography>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleCampaignImageChange}
+                />
+              </Box>
+              {campaignImagePreview && (
+                <Button
+                  size="small"
+                  component="label"
+                  startIcon={<Iconify icon="solar:refresh-bold" width={16} />}
+                  sx={{ mt: 1, textTransform: 'none', color: '#1340ff' }}
+                >
+                  Replace image
+                  <input type="file" accept="image/*" hidden onChange={handleCampaignImageChange} />
+                </Button>
+              )}
+              {errors.campaignImage && (
+                <FormHelperText error sx={{ mx: 0 }}>
+                  {errors.campaignImage}
+                </FormHelperText>
+              )}
+            </Box>
+            )}
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
               <Button
