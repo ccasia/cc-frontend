@@ -1,6 +1,8 @@
 import useSWR from 'swr';
-import axios from 'axios';
+// import axios from 'axios';
 import { useMemo } from 'react';
+
+import axiosInstance from 'src/utils/axios';
 
 /**
  * Hook to fetch manual creator entries for a campaign
@@ -13,7 +15,7 @@ export const useGetManualCreatorEntries = (campaignId) => {
   const { data, error, isLoading, mutate } = useSWR(
     url,
     async (apiUrl) => {
-      const response = await axios.get(apiUrl);
+      const response = await axiosInstance.get(apiUrl);
       return response.data;
     },
     {

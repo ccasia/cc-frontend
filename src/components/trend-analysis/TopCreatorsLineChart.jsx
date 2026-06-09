@@ -38,7 +38,7 @@ const CustomTooltip = ({ active, payload, label }) => {
             } else {
               formattedValue = entry.value.toLocaleString();
             }
-            
+
             return (
               <Box
                 key={entry.dataKey}
@@ -53,9 +53,7 @@ const CustomTooltip = ({ active, payload, label }) => {
                     flexShrink: 0,
                   }}
                 />
-                <Typography sx={{ fontSize: 12, color: '#000' }}>
-                  {formattedValue} views
-                </Typography>
+                <Typography sx={{ fontSize: 12, color: '#000' }}>{formattedValue} views</Typography>
               </Box>
             );
           })}
@@ -73,7 +71,7 @@ CustomTooltip.propTypes = {
 
 // Custom X-axis tick with day and date
 const CustomXAxisTick = ({ x, y, payload, chartData }) => {
-  const dayData = chartData?.weekData?.find(d => d.day === payload.value);
+  const dayData = chartData?.weekData?.find((d) => d.day === payload.value);
   const dateFormatted = dayData?.fullDate ? dayjs(dayData.fullDate).format('DD/MM') : '';
 
   return (
@@ -129,7 +127,7 @@ const CustomLegend = ({ payload }) => (
           display: 'flex',
           gap: 1,
           alignItems: 'center',
-          ml: 3
+          ml: 3,
         }}
       >
         <Box
@@ -174,13 +172,13 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
 
     // Get all unique creators across all days and rank by total views
     const creatorViewsMap = new Map();
-    
+
     trendData.trend.forEach((dayData) => {
       dayData.topCreators?.forEach((creator) => {
-        const existing = creatorViewsMap.get(creator.userId) || { 
-          userId: creator.userId, 
-          userName: creator.userName, 
-          totalViews: 0 
+        const existing = creatorViewsMap.get(creator.userId) || {
+          userId: creator.userId,
+          userName: creator.userName,
+          totalViews: 0,
         };
         existing.totalViews += creator.views || 0;
         creatorViewsMap.set(creator.userId, existing);
@@ -197,7 +195,7 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
     // Generate data for the past 7 days starting from Monday
     const today = dayjs();
     const currentDayOfWeek = today.day(); // 0 = Sunday, 1 = Monday, etc.
-    
+
     // Calculate days to subtract to get to last Monday
     let daysToMonday;
     if (currentDayOfWeek === 0) {
@@ -208,19 +206,22 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
       daysToMonday = currentDayOfWeek - 1;
     }
 
-    const lastMonday = today.subtract(daysToMonday, 'day').subtract(weekOffset * 7, 'day').startOf('day');
+    const lastMonday = today
+      .subtract(daysToMonday, 'day')
+      .subtract(weekOffset * 7, 'day')
+      .startOf('day');
 
     // Build chart data for each day of the week
     const weekData = [];
-    
+
     for (let i = 0; i < 7; i += 1) {
       const date = lastMonday.add(i, 'day');
       const dateStr = date.format('YYYY-MM-DD');
       const dayName = DAY_NAMES[i];
-      
+
       // Check if we have data for this date
-      const daySnapshot = trendData.trend.find((d) => 
-        dayjs(d.date).format('YYYY-MM-DD') === dateStr
+      const daySnapshot = trendData.trend.find(
+        (d) => dayjs(d.date).format('YYYY-MM-DD') === dateStr
       );
 
       const dataPoint = {
@@ -231,9 +232,7 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
 
       // Add views for each of the top 5 creators
       top5Creators.forEach((creator, index) => {
-        const creatorData = daySnapshot?.topCreators?.find(
-          (c) => c.userId === creator.userId
-        );
+        const creatorData = daySnapshot?.topCreators?.find((c) => c.userId === creator.userId);
         dataPoint[`creator${index}`] = creatorData?.views || null;
       });
 
@@ -243,7 +242,7 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
     // Calculate min and max views for Y-axis domain
     let minViews = Infinity;
     let maxViews = -Infinity;
-    
+
     weekData.forEach((dayData) => {
       top5Creators.forEach((creator, index) => {
         const views = dayData[`creator${index}`];
@@ -278,15 +277,17 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
 
   if (isLoading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        p: 4,
-        bgcolor: 'background.neutral',
-        borderRadius: 2,
-        height: '100%',
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 4,
+          bgcolor: 'background.neutral',
+          borderRadius: 2,
+          height: '100%',
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -305,7 +306,9 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
   return (
     <Box sx={{ height: '100%' }}>
       {/* Header */}
-      <Box sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <Box
+        sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+      >
         <Box>
           <Typography
             sx={{
@@ -318,10 +321,10 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
             Top 5 Creators in Views
           </Typography>
         </Box>
-        
+
         {/* Week Pagination */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box 
+          <Box
             onClick={() => setWeekOffset(weekOffset + 1)}
             sx={{
               cursor: 'pointer',
@@ -332,7 +335,7 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
           >
             <Typography sx={{ fontSize: 20, color: '#000', fontWeight: 600 }}>‹</Typography>
           </Box>
-          
+
           <Typography
             sx={{
               fontSize: 16,
@@ -345,7 +348,7 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
           >
             {chartData?.mondayDate ? dayjs(chartData.mondayDate).format('DD/MM/YY') : ''}
           </Typography>
-          
+
           <Box
             onClick={() => weekOffset > 0 && setWeekOffset(weekOffset - 1)}
             sx={{
@@ -363,11 +366,7 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
 
       {/* Line Chart */}
       <ResponsiveContainer width="100%" height={500}>
-        <LineChart
-          data={chartData.weekData}
-          margin={{ top: 30, right: 5, left: -10, bottom: 40 }}
-        >
-          
+        <LineChart data={chartData.weekData} margin={{ top: 30, right: 5, left: -10, bottom: 40 }}>
           <XAxis
             dataKey="day"
             tick={<CustomXAxisTick chartData={chartData} />}
@@ -376,7 +375,7 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
             height={50}
             padding={{ left: 10, right: 20 }}
           />
-          
+
           <YAxis
             domain={[chartData.yMin, chartData.yMax]}
             ticks={[chartData.yMin, chartData.yMax]}
@@ -389,13 +388,10 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
               return value;
             }}
           />
-          
+
           <Tooltip content={<CustomTooltip />} />
-          
-          <Legend
-            content={<CustomLegend />}
-            wrapperStyle={{ paddingTop: 20 }}
-          />
+
+          <Legend content={<CustomLegend />} wrapperStyle={{ paddingTop: 20 }} />
 
           {/* Create a line for each of the top 5 creators */}
           {chartData.top5Creators.map((creator, index) => (

@@ -1,7 +1,7 @@
 import useSWR from 'swr';
 import { debounce } from 'lodash';
 import useSWRInfinite from 'swr/infinite';
-import { m, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence, useMotionValueEvent, useMotionValue, useScroll } from 'framer-motion';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { useTheme } from '@mui/material/styles';
@@ -320,8 +320,92 @@ const CampaignView = () => {
     });
   }, [dataFiltered, lastCampaignOpenId, lgUp, mainRef, mdUp, rowVirtualizer, scrollTop]);
 
+  const { scrollY } = useScroll({ container: mainRef });
+  const [showModal, setShowModal] = useState(false);
+
+  useMotionValueEvent(scrollY, 'change', (current) => {
+    if (current < 100) setShowModal(false);
+    else setShowModal(true);
+  });
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
+      <AnimatePresence mode="wait">
+        {showModal && (
+          <m.div
+            initial={{ opacity: 0, y: -100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -100 }}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              x: '-50%',
+              zIndex: 100,
+            }}
+          >
+            <Box
+              sx={{
+                border: 1,
+                display: 'inline-flex',
+                borderRadius: 10,
+                borderColor: 'rgba(255,255,255,0.5)',
+                gap: 2,
+                p: 0.8,
+                px: 1,
+                bgcolor: 'rgba(0,0,0,0.6)', // ✅ semi-transparent dark
+                backdropFilter: 'blur(5px)', // ✅ frosted glass effect
+                color: 'white',
+              }}
+            >
+              <Button
+                variant="outlined"
+                sx={{ borderRadius: 10, borderColor: filter === 'active' && 'white' }}
+                onClick={() => {
+                  handleChangeTab('active');
+                  setShowAllCampaigns(false);
+                  setSelectedAdmin(null);
+                }}
+              >
+                Active
+              </Button>
+              <Button
+                variant="outlined"
+                sx={{ borderRadius: 10, borderColor: filter === 'pending' && 'white' }}
+                onClick={() => {
+                  handleChangeTab('pending');
+                  setShowAllCampaigns(false);
+                  setSelectedAdmin(null);
+                }}
+              >
+                Pending
+              </Button>
+              <Button
+                variant="outlined"
+                sx={{ borderRadius: 10, borderColor: filter === 'completed' && 'white' }}
+                onClick={() => {
+                  handleChangeTab('completed');
+                  setShowAllCampaigns(false);
+                  setSelectedAdmin(null);
+                }}
+              >
+                Completed
+              </Button>
+              <Button
+                variant="outlined"
+                sx={{ borderRadius: 10, borderColor: filter === 'paused' && 'white' }}
+                onClick={() => {
+                  handleChangeTab('paused');
+                  setShowAllCampaigns(false);
+                  setSelectedAdmin(null);
+                }}
+              >
+                Paused
+              </Button>
+            </Box>
+          </m.div>
+        )}
+      </AnimatePresence>
+
       <Typography
         variant="h2"
         sx={{

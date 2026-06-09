@@ -36,6 +36,7 @@ export const extractPostingSubmissions = (submissions) => {
   const postings = submissions.filter((submission) => {
     const isV3Posting =
       submission.submissionType.type === 'POSTING' && submission.status === 'APPROVED';
+
     const isV4PostedWithLink =
       ['PHOTO', 'VIDEO'].includes(submission.submissionType.type) &&
       submission.status === 'POSTED' &&
@@ -48,8 +49,11 @@ export const extractPostingSubmissions = (submissions) => {
   const validPostings = postings.filter(isValidSubmission);
 
   validPostings.forEach((submission) => {
-    const instagramRegex = /https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels|tv)\/[A-Za-z0-9_-]+(?:\?[^\s]*)?/gi;
-    const tiktokRegex = /https?:\/\/(?:www\.|m\.|vm\.|vt\.)?tiktok\.com\/(?:@[^\s/]+\/video\/[0-9]+|t\/[A-Za-z0-9]+|[^\s]+)(?:\?[^\s]*)?/gi;
+    const instagramRegex =
+      /https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels|tv)\/[A-Za-z0-9_-]+(?:\?[^\s]*)?/gi;
+
+    const tiktokRegex =
+      /https?:\/\/(?:www\.|m\.|vm\.|vt\.)?tiktok\.com\/(?:@[^\s/]+\/video\/[0-9]+|t\/[A-Za-z0-9]+|[^\s]+)(?:\?[^\s]*)?/gi;
 
     const instagramMatches = [...(submission.content.matchAll(instagramRegex) || [])];
     const tiktokMatches = [...(submission.content.matchAll(tiktokRegex) || [])];

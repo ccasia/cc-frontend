@@ -8,7 +8,6 @@ import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 
 import { formatNumber, calculateEngagementRate } from 'src/utils/socialMetricsCalculator';
 
-
 // PostingsCard extracted
 function PostingsCard({ platformCounts, selectedPlatform }) {
   return (
@@ -151,7 +150,12 @@ function PostingsCard({ platformCounts, selectedPlatform }) {
 }
 
 // TopEngagementCard extracted
-function TopEngagementCard({ filteredInsightsData, filteredSubmissions, getCreatorById, engagementRateCalc }) {
+function TopEngagementCard({
+  filteredInsightsData,
+  filteredSubmissions,
+  getCreatorById,
+  engagementRateCalc,
+}) {
   const topEngagementCreator = React.useMemo(() => {
     if (!filteredInsightsData || filteredInsightsData.length === 0) return null;
     let highestEngagement = -1;
@@ -172,8 +176,11 @@ function TopEngagementCard({ filteredInsightsData, filteredSubmissions, getCreat
     });
     return topCreator;
   }, [filteredInsightsData, filteredSubmissions, engagementRateCalc]);
+
   const { data: creator } = getCreatorById(topEngagementCreator?.user);
+
   if (!topEngagementCreator) return null;
+
   return (
     <Box
       borderRadius={3}
@@ -291,351 +298,355 @@ const PlatformOverviewDesktop = ({
   insightsData,
   getPlatformLabel,
 }) => (
-    <Grid
-      container
-      justifyContent="center"
-      height={400}
-      sx={{ display: { xs: 'none', md: 'flex' } }}
-    >
-      {/* Left Condition: Platform Overview Card */}
-      {availablePlatforms.length > 1 && selectedPlatform === 'ALL' && (
-        <Grid item xs={12} md={2.5} alignContent="center" bgcolor="#F5F5F5" borderRadius={3} mr={2}>
-          <PostingsCard platformCounts={platformCounts} selectedPlatform={selectedPlatform} />
-        </Grid>
-      )}
+  <Grid container justifyContent="center" height={400} sx={{ display: { xs: 'none', md: 'flex' } }}>
+    {/* Left Condition: Platform Overview Card */}
+    {availablePlatforms.length > 1 && selectedPlatform === 'ALL' && (
+      <Grid item xs={12} md={2.5} alignContent="center" bgcolor="#F5F5F5" borderRadius={3} mr={2}>
+        <PostingsCard platformCounts={platformCounts} selectedPlatform={selectedPlatform} />
+      </Grid>
+    )}
 
-      {/* Left: Engagement Breakdown Chart */}
-      <Grid item xs={12} md={5} mr={2} alignContent="center" bgcolor="#F5F5F5" borderRadius={3}>
+    {/* Left: Engagement Breakdown Chart */}
+    <Grid item xs={12} md={5} mr={2} alignContent="center" bgcolor="#F5F5F5" borderRadius={3}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          width: '100%',
+          height: '100%',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Box sx={{ position: 'relative' }}>
+          <PieChart
+            height={300}
+            width={300}
+            margin={{ left: 50, right: 50, top: 50, bottom: 50 }}
+            series={[
+              {
+                data: [
+                  { id: 0, value: summaryStats.totalLikes, label: 'Likes', color: '#1340FF' },
+                  {
+                    id: 1,
+                    value: summaryStats.totalComments,
+                    label: 'Comments',
+                    color: '#8A5AFE',
+                  },
+                  {
+                    id: 2,
+                    value: summaryStats.totalShares,
+                    label: 'Shares',
+                    color: '#68A7ED',
+                  },
+                ],
+                innerRadius: 60,
+                outerRadius: 120,
+                arcLabel: (params) => params.value,
+                arcLabelMinAngle: 20,
+                valueFormatter: (value) => formatNumber(value.value),
+              },
+            ]}
+            sx={{
+              '& .MuiChartsLegend-root': {
+                display: 'none',
+              },
+              '& .MuiPieArcLabel-root': {
+                fontWeight: '600',
+                fill: 'white',
+                fontFamily: 'Aileron',
+              },
+              '& .MuiPieArc-root': {
+                stroke: 'none',
+              },
+            }}
+          />
+
+          {/* Center Text Overlay */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '48%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center',
+              pointerEvents: 'none',
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: 18,
+                fontWeight: 600,
+                color: '#000000',
+                lineHeight: 1,
+              }}
+            >
+              {formatNumber(
+                Math.round(
+                  summaryStats.totalLikes + summaryStats.totalComments + summaryStats.totalShares
+                )
+              )}
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: 18,
+                fontWeight: 600,
+                color: '#000000',
+                fontFamily: 'Aileron',
+                lineHeight: 1,
+              }}
+            >
+              Average
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: 18,
+                fontWeight: 600,
+                color: '#000000',
+                fontFamily: 'Aileron',
+                lineHeight: 1,
+              }}
+            >
+              Interactions
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Right Side: Legend with Color Indicators */}
         <Box
           sx={{
             display: 'flex',
-            alignItems: 'center',
-            width: '100%',
-            height: '100%',
-            justifyContent: 'space-between',
+            flexDirection: 'column',
+            gap: 2,
+            mr: 3,
           }}
         >
-          <Box sx={{ position: 'relative' }}>
-            <PieChart
-              height={300}
-              width={300}
-              margin={{ left: 50, right: 50, top: 50, bottom: 50 }}
-              series={[
-                {
-                  data: [
-                    { id: 0, value: summaryStats.totalLikes, label: 'Likes', color: '#1340FF' },
-                    {
-                      id: 1,
-                      value: summaryStats.totalComments,
-                      label: 'Comments',
-                      color: '#8A5AFE',
-                    },
-                    {
-                      id: 2,
-                      value: summaryStats.totalShares,
-                      label: 'Shares',
-                      color: '#68A7ED',
-                    },
-                  ],
-                  innerRadius: 60,
-                  outerRadius: 120,
-                  arcLabel: (params) => params.value,
-                  arcLabelMinAngle: 20,
-                  valueFormatter: (value) => formatNumber(value.value),
-                },
-              ]}
-              sx={{
-                '& .MuiChartsLegend-root': {
-                  display: 'none',
-                },
-                '& .MuiPieArcLabel-root': {
-                  fontWeight: '600',
-                  fill: 'white',
-                  fontFamily: 'Aileron',
-                },
-                '& .MuiPieArc-root': {
-                  stroke: 'none',
-                },
-              }}
-            />
-
-            {/* Center Text Overlay */}
-            <Box
-              sx={{
-                position: 'absolute',
-                top: '48%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                textAlign: 'center',
-                pointerEvents: 'none',
-              }}
-            >
-              <Typography
+          {[
+            { name: 'Likes', value: summaryStats.totalLikes, color: '#1340FF' },
+            { name: 'Comments', value: summaryStats.totalComments, color: '#8A5AFE' },
+            { name: 'Shares', value: summaryStats.totalShares, color: '#68A7ED' },
+          ].map((item, index) => (
+            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {/* Color indicator circle */}
+              <Box
                 sx={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: '#000000',
-                  lineHeight: 1,
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  backgroundColor: item.color,
+                  flexShrink: 0,
                 }}
-              >
-                {formatNumber(
-                  Math.round(
-                    summaryStats.totalLikes + summaryStats.totalComments + summaryStats.totalShares
-                  )
-                )}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: '#000000',
-                  fontFamily: 'Aileron',
-                  lineHeight: 1,
-                }}
-              >
-                Average
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: '#000000',
-                  fontFamily: 'Aileron',
-                  lineHeight: 1,
-                }}
-              >
-                Interactions
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* Right Side: Legend with Color Indicators */}
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-              mr: 3,
-            }}
-          >
-            {[
-              { name: 'Likes', value: summaryStats.totalLikes, color: '#1340FF' },
-              { name: 'Comments', value: summaryStats.totalComments, color: '#8A5AFE' },
-              { name: 'Shares', value: summaryStats.totalShares, color: '#68A7ED' },
-            ].map((item, index) => (
-              <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {/* Color indicator circle */}
-                <Box
+              />
+              <Box>
+                <Typography
+                  variant="body2"
                   sx={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: '50%',
-                    backgroundColor: item.color,
-                    flexShrink: 0,
+                    fontSize: 16,
+                    fontWeight: 500,
+                    color: '#000',
+                    lineHeight: 1.2,
+                    mr: 5,
                   }}
-                />
-                <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontSize: 16,
-                      fontWeight: 500,
-                      color: '#000',
-                      lineHeight: 1.2,
-                      mr: 5,
-                    }}
-                  >
-                    {item.name}
-                  </Typography>
-                </Box>
+                >
+                  {item.name}
+                </Typography>
               </Box>
-            ))}
-          </Box>
+            </Box>
+          ))}
         </Box>
-      </Grid>
-
-      {/* Middle: Platform-specific metrics */}
-      <Grid item xs={12} md={selectedPlatform === 'TikTok' ? 3 : 4} alignContent="center" bgcolor="#F5F5F5" borderRadius={3}>
-        <Box
-          sx={{
-            backgroundColor: '#F5F5F5',
-            borderRadius: 3,
-          }}
-        >
-          {summaryStats && selectedPlatform === 'TikTok' && (
-            <Grid
-              container
-              sx={{ mt: { xs: 0 } }}
-              px={6}
-              py={2}
-              mb={2}
-            >
-              <Grid item xs={12}>
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography
-                    fontFamily="Instrument Serif"
-                    fontWeight={400}
-                    fontSize={55}
-                    color="#1340FF"
-                  >
-                    {summaryStats.totalPosts}
-                  </Typography>
-                  <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
-                    TikTok Posts
-                  </Typography>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} mt={2} mb={2}>
-                <Box sx={{ borderBottom: '2px solid #1340FF' }} />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography
-                    fontFamily="Instrument Serif"
-                    fontWeight={400}
-                    fontSize={55}
-                    color="#1340FF"
-                  >
-                    {formatNumber(summaryStats.totalShares)}
-                  </Typography>
-                  <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
-                    Total Shares
-                  </Typography>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} mt={2} mb={2}>
-                <Box sx={{ borderBottom: '2px solid #1340FF' }} />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography
-                    fontFamily="Instrument Serif"
-                    fontWeight={400}
-                    fontSize={55}
-                    color="#1340FF"
-                  >
-                    {summaryStats.avgEngagementRate}%
-                  </Typography>
-                  <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
-                    Engagement Rate
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          )}
-          {summaryStats && selectedPlatform !== 'TikTok' && (
-            <Grid
-              container
-              sx={{ mt: { xs: 0 } }}
-              justifyContent="center"
-              columnGap={2}
-              padding={2}
-              mb={2}
-            >
-              <Grid item xs={6}>
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography
-                    fontFamily="Instrument Serif"
-                    fontWeight={400}
-                    fontSize={55}
-                    color="#1340FF"
-                  >
-                    {summaryStats.totalPosts}
-                  </Typography>
-                  <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
-                    {availablePlatforms.length > 1 && getPlatformLabel(selectedPlatform)}
-                    {availablePlatforms.length < 2 &&
-                      insightsData.length > 0 &&
-                      `${insightsData[0].platform} Posts`}
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={5}>
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography
-                    fontFamily="Instrument Serif"
-                    fontWeight={400}
-                    fontSize={55}
-                    color="#1340FF"
-                  >
-                    {formatNumber(summaryStats.totalReach)}
-                  </Typography>
-                  <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
-                    {selectedPlatform === 'ALL' && (
-                      <Typography fontSize={18} fontFamily="Aileron" fontWeight={600}>
-                        Reach
-                        <Typography fontFamily="Aileron" fontSize={12} fontWeight={600}>
-                          (Instagram only)
-                        </Typography>
-                      </Typography>
-                    )}
-                    {selectedPlatform === 'Instagram' && 'Reach'}
-                  </Typography>
-                </Box>
-              </Grid>
-
-              <Grid item xs={6} mt={2} mb={2}>
-                <Box sx={{ borderBottom: '2px solid #1340FF' }} />
-              </Grid>
-
-              <Grid item xs={5} mt={2} mb={2}>
-                <Box sx={{ borderBottom: '2px solid #1340FF' }} />
-              </Grid>
-
-              <Grid item xs={6}>
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography
-                    fontFamily="Instrument Serif"
-                    fontWeight={400}
-                    fontSize={55}
-                    color="#1340FF"
-                  >
-                    {summaryStats.avgEngagementRate}%
-                  </Typography>
-                  <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
-                    Engagement Rate
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={5}>
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography
-                    fontFamily="Instrument Serif"
-                    fontWeight={400}
-                    fontSize={55}
-                    color="#1340FF"
-                  >
-                    {summaryStats.totalShares}
-                  </Typography>
-                  <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
-                    Total Shares
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          )}
-        </Box>
-      </Grid>
-
-      {/* Right: Top Engagement Card */}
-      {(selectedPlatform !== 'ALL' ||
-        (availablePlatforms.length === 1 &&
-          insightsData.length > 0 &&
-          (insightsData[0].platform === 'Instagram' || insightsData[0].platform === 'TikTok'))) && (
-        <Grid item xs={12} md={selectedPlatform === 'TikTok' ? 3.5 : 2.5} ml={2} alignContent="center" bgcolor="#F5F5F5" borderRadius={3}>
-          <TopEngagementCard
-            filteredInsightsData={filteredInsightsData}
-            filteredSubmissions={filteredSubmissions}
-            getCreatorById={useGetCreatorById}
-            engagementRateCalc={calculateEngagementRate}
-          />
-        </Grid>
-      )}
+      </Box>
     </Grid>
-  );
+
+    {/* Middle: Platform-specific metrics */}
+    <Grid
+      item
+      xs={12}
+      md={selectedPlatform === 'TikTok' ? 3 : 4}
+      alignContent="center"
+      bgcolor="#F5F5F5"
+      borderRadius={3}
+    >
+      <Box
+        sx={{
+          backgroundColor: '#F5F5F5',
+          borderRadius: 3,
+        }}
+      >
+        {summaryStats && selectedPlatform === 'TikTok' && (
+          <Grid container sx={{ mt: { xs: 0 } }} px={6} py={2} mb={2}>
+            <Grid item xs={12}>
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography
+                  fontFamily="Instrument Serif"
+                  fontWeight={400}
+                  fontSize={55}
+                  color="#1340FF"
+                >
+                  {summaryStats.totalPosts}
+                </Typography>
+                <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
+                  TikTok Posts
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} mt={2} mb={2}>
+              <Box sx={{ borderBottom: '2px solid #1340FF' }} />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography
+                  fontFamily="Instrument Serif"
+                  fontWeight={400}
+                  fontSize={55}
+                  color="#1340FF"
+                >
+                  {formatNumber(summaryStats.totalShares)}
+                </Typography>
+                <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
+                  Total Shares
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} mt={2} mb={2}>
+              <Box sx={{ borderBottom: '2px solid #1340FF' }} />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography
+                  fontFamily="Instrument Serif"
+                  fontWeight={400}
+                  fontSize={55}
+                  color="#1340FF"
+                >
+                  {summaryStats.avgEngagementRate}%
+                </Typography>
+                <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
+                  Engagement Rate
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+        )}
+        {summaryStats && selectedPlatform !== 'TikTok' && (
+          <Grid
+            container
+            sx={{ mt: { xs: 0 } }}
+            justifyContent="center"
+            columnGap={2}
+            padding={2}
+            mb={2}
+          >
+            <Grid item xs={6}>
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography
+                  fontFamily="Instrument Serif"
+                  fontWeight={400}
+                  fontSize={55}
+                  color="#1340FF"
+                >
+                  {summaryStats.totalPosts}
+                </Typography>
+                <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
+                  {availablePlatforms.length > 1 && getPlatformLabel(selectedPlatform)}
+                  {availablePlatforms.length < 2 &&
+                    insightsData.length > 0 &&
+                    `${insightsData[0].platform} Posts`}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={5}>
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography
+                  fontFamily="Instrument Serif"
+                  fontWeight={400}
+                  fontSize={55}
+                  color="#1340FF"
+                >
+                  {formatNumber(summaryStats.totalReach)}
+                </Typography>
+                <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
+                  {selectedPlatform === 'ALL' && (
+                    <Typography fontSize={18} fontFamily="Aileron" fontWeight={600}>
+                      Reach
+                      <Typography fontFamily="Aileron" fontSize={12} fontWeight={600}>
+                        (Instagram only)
+                      </Typography>
+                    </Typography>
+                  )}
+                  {selectedPlatform === 'Instagram' && 'Reach'}
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={6} mt={2} mb={2}>
+              <Box sx={{ borderBottom: '2px solid #1340FF' }} />
+            </Grid>
+
+            <Grid item xs={5} mt={2} mb={2}>
+              <Box sx={{ borderBottom: '2px solid #1340FF' }} />
+            </Grid>
+
+            <Grid item xs={6}>
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography
+                  fontFamily="Instrument Serif"
+                  fontWeight={400}
+                  fontSize={55}
+                  color="#1340FF"
+                >
+                  {summaryStats.avgEngagementRate}%
+                </Typography>
+                <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
+                  Engagement Rate
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={5}>
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography
+                  fontFamily="Instrument Serif"
+                  fontWeight={400}
+                  fontSize={55}
+                  color="#1340FF"
+                >
+                  {summaryStats.totalShares}
+                </Typography>
+                <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
+                  Total Shares
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+        )}
+      </Box>
+    </Grid>
+
+    {/* Right: Top Engagement Card */}
+    {(selectedPlatform !== 'ALL' ||
+      (availablePlatforms.length === 1 &&
+        !!insightsData.length &&
+        (insightsData[0].platform === 'Instagram' || insightsData[0].platform === 'TikTok'))) && (
+      <Grid
+        item
+        xs={12}
+        md={selectedPlatform === 'TikTok' ? 3.5 : 2.5}
+        ml={2}
+        alignContent="center"
+        bgcolor="#F5F5F5"
+        borderRadius={3}
+      >
+        <TopEngagementCard
+          filteredInsightsData={filteredInsightsData}
+          filteredSubmissions={filteredSubmissions}
+          getCreatorById={useGetCreatorById}
+          engagementRateCalc={calculateEngagementRate}
+        />
+      </Grid>
+    )}
+  </Grid>
+);
 
 export default PlatformOverviewDesktop;

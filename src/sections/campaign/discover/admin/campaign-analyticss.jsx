@@ -41,7 +41,7 @@ import {
   UserPerformanceCard,
   PlatformOverviewMobile,
   ManualCreatorEntryForm,
-  PlatformOverviewDesktop
+  PlatformOverviewDesktop,
 } from 'src/components/campaign-analytics';
 
 import PCRReportPage from './pcr-report-page';
@@ -701,24 +701,31 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
   const { user } = useAuthContext();
   const campaignId = campaign?.id;
   const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
+
   const [selectedPlatform, setSelectedPlatform] = useState('ALL');
   const [reportState, setReportState] = useState('generate'); // 'generate', 'loading', 'view'
   const [showReportPage, setShowReportPage] = useState(false);
   const [showAddCreatorForm, setShowAddCreatorForm] = useState(false);
-  const [formState, setFormState] = useState({ isValid: false, isFormComplete: false, isSubmitting: false });
+  const [formState, setFormState] = useState({
+    isValid: false,
+    isFormComplete: false,
+    isSubmitting: false,
+  });
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
+
   const formRef = useRef(null);
 
   const lgUp = useResponsive('up', 'lg');
   const { socket } = useSocketContext();
   const { enqueueSnackbar } = useSnackbar();
-  
+
   // Check if user is a client
   const isClient = user?.role?.includes('client');
 
   // Fetch manual creator entries
-  const { entries: manualEntries, mutate: mutateManualEntries } = useGetManualCreatorEntries(campaignId);
+  const { entries: manualEntries, mutate: mutateManualEntries } =
+    useGetManualCreatorEntries(campaignId);
 
   // Update reportState when campaignId changes (user switches campaigns)
   useEffect(() => {
@@ -823,7 +830,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
 
     filteredSubmissions.forEach((submission) => {
       const insightData = insightsData.find(
-        (data) => data.submissionId === submission.id && data.postUrl === submission.postUrl,
+        (data) => data.submissionId === submission.id && data.postUrl === submission.postUrl
       );
       if (!insightData && !loadingInsights) {
         return;
@@ -877,18 +884,16 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
 
     const handleAnalyticsRefresh = (data) => {
       console.log('📡 Received analytics refresh event:', data);
-      
+
       // Check if this user has submissions in current campaign
-      const hasUserSubmissions = postingSubmissions.some(
-        sub => sub.user === data.userId
-      );
-      
+      const hasUserSubmissions = postingSubmissions.some((sub) => sub.user === data.userId);
+
       if (hasUserSubmissions) {
         console.log(`🔄 ${data.platform} connected for user, refreshing analytics...`);
-        enqueueSnackbar(`${data.platform} connected! Refreshing analytics...`, { 
-          variant: 'success' 
+        enqueueSnackbar(`${data.platform} connected! Refreshing analytics...`, {
+          variant: 'success',
         });
-        
+
         // Clear cache and re-fetch with a small delay to ensure API is ready
         clearCache();
         setTimeout(() => {
@@ -900,7 +905,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     // Join campaign room and listen for analytics refresh events
     socket.joinCampaign(campaignId);
     socket.on('analytics:refresh', handleAnalyticsRefresh);
-    
+
     return () => {
       socket.off('analytics:refresh', handleAnalyticsRefresh);
       socket.leaveCampaign(campaignId);
@@ -1016,32 +1021,32 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
 
   // eslint-disable-next-line react/no-unstable-nested-components
   const PlatformOverviewLayout = () => (
-      <Box sx={{ pb: selectedPlatform === 'TikTok' ? 4 : 0 }}>
-        {/* Mobile Layout */}
-        <PlatformOverviewMobile
-          platformCounts={platformCounts}
-          selectedPlatform={selectedPlatform}
-          filteredInsightsData={filteredInsightsData}
-          filteredSubmissions={filteredSubmissions}
-          insightsData={insightsData}
-          summaryStats={summaryStats}
-          availablePlatforms={availablePlatforms}
-          getPlatformLabel={getPlatformLabel}
-        />
+    <Box sx={{ pb: selectedPlatform === 'TikTok' ? 4 : 0 }}>
+      {/* Mobile Layout */}
+      <PlatformOverviewMobile
+        platformCounts={platformCounts}
+        selectedPlatform={selectedPlatform}
+        filteredInsightsData={filteredInsightsData}
+        filteredSubmissions={filteredSubmissions}
+        insightsData={insightsData}
+        summaryStats={summaryStats}
+        availablePlatforms={availablePlatforms}
+        getPlatformLabel={getPlatformLabel}
+      />
 
-        {/* Desktop Layout */}
-        <PlatformOverviewDesktop
-          platformCounts={platformCounts}
-          selectedPlatform={selectedPlatform}
-          summaryStats={summaryStats}
-          availablePlatforms={availablePlatforms}
-          filteredInsightsData={filteredInsightsData}
-          filteredSubmissions={filteredSubmissions}
-          insightsData={insightsData}
-          getPlatformLabel={getPlatformLabel}
-        />
-      </Box>
-    );
+      {/* Desktop Layout */}
+      <PlatformOverviewDesktop
+        platformCounts={platformCounts}
+        selectedPlatform={selectedPlatform}
+        summaryStats={summaryStats}
+        availablePlatforms={availablePlatforms}
+        filteredInsightsData={filteredInsightsData}
+        filteredSubmissions={filteredSubmissions}
+        insightsData={insightsData}
+        getPlatformLabel={getPlatformLabel}
+      />
+    </Box>
+  );
 
   // Add this new function before CoreMetricsSection
   const findTopPerformerByMetric = (metricKey, insights, submissionsList) => {
@@ -1100,9 +1105,9 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     <Box>
       {/* Conditionally render PCR Report Page or Performance Summary */}
       {showReportPage ? (
-        <PCRReportPage 
-          campaign={campaign} 
-          onBack={() => setShowReportPage(false)} 
+        <PCRReportPage
+          campaign={campaign}
+          onBack={() => setShowReportPage(false)}
           isClientView={isClient}
           onCampaignUpdate={(updatedCampaign) => {
             if (updatedCampaign && campaignMutate) {
@@ -1114,218 +1119,203 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
         />
       ) : (
         <>
-      {/* Platform Toggle */}
-      {availablePlatforms.length > 1 && (
-        <PlatformToggle
-          lgUp={lgUp}
-          availablePlatforms={availablePlatforms}
-          selectedPlatform={selectedPlatform}
-          handlePlatformChange={handlePlatformChange}
-        />
-      )}
-
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography fontSize={24} fontWeight={600} fontFamily="Aileron">
-        Performance Summary
-      </Typography>
-        
-        {/* Generate Report Button - Admin only */}
-        {!isClient && (
-        <Button
-          disabled={reportState === 'loading'}
-          sx={{
-            width: '186.07px',
-            height: '44px',
-            borderRadius: '8px',
-            gap: '6px',
-            padding: '10px 16px 13px 16px',
-            background: reportState === 'loading' 
-              ? 'linear-gradient(90deg, #B8B8B8 0%, #9E9E9E 100%)' 
-              : 'linear-gradient(90deg, #8A5AFE 0%, #1340FF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
-            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
-            color: '#FFFFFF',
-            fontWeight: 600,
-            fontSize: '14px',
-            textTransform: 'none',
-            '&:hover': {
-              background: reportState === 'loading' 
-                ? 'linear-gradient(90deg, #B8B8B8 0%, #9E9E9E 100%)' 
-                : 'linear-gradient(90deg, #7A4AEE 0%, #0330EF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
-              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-            },
-            '&:active': {
-              boxShadow: reportState === 'loading' 
-                ? '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset' 
-                : '0px -1px 0px 0px rgba(0, 0, 0, 0.1) inset',
-              transform: reportState === 'loading' ? 'none' : 'translateY(1px)',
-            },
-            '&:disabled': {
-              color: '#FFFFFF',
-            }
-          }}
-          onClick={() => {
-            if (reportState === 'generate') {
-              // Start loading
-              setReportState('loading');
-        
-              setTimeout(() => {
-                setReportState('view');
-              }, 3000); // 3 second loading simulation
-              
-            } else if (reportState === 'view') {
-              // Show PCR report page
-              setShowReportPage(true);
-            }
-          }}
-        >
-          {reportState === 'loading' && (
-            <CircularProgress 
-              size={16} 
-              sx={{ 
-                color: '#FFFFFF', 
-                mr: 1 
-              }} 
+          {/* Platform Toggle */}
+          {availablePlatforms.length > 1 && (
+            <PlatformToggle
+              lgUp={lgUp}
+              availablePlatforms={availablePlatforms}
+              selectedPlatform={selectedPlatform}
+              handlePlatformChange={handlePlatformChange}
             />
           )}
-          {reportState === 'generate' && 'Generate Report'}
-          {reportState === 'loading' && 'Generating...'}
-          {reportState === 'view' && 'View Report'}
-        </Button>
-        )}
-        {/* View Report Button - Client only, when PCR is ready */}
-        {isClient && campaign?.isPCRReady && (
-        <Button
-          sx={{
-            width: '186.07px',
-            height: '44px',
-            borderRadius: '8px',
-            gap: '6px',
-            padding: '10px 16px 13px 16px',
-            background: 'linear-gradient(90deg, #8A5AFE 0%, #1340FF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
-            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
-            color: '#FFFFFF',
-            fontWeight: 600,
-            fontSize: '14px',
-            textTransform: 'none',
-            '&:hover': {
-              background: 'linear-gradient(90deg, #7A4AEE 0%, #0330EF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
-              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-            },
-            '&:active': {
-              boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.1) inset',
-              transform: 'translateY(1px)',
-            },
-          }}
-          onClick={() => setShowReportPage(true)}
-        >
-          View Report
-        </Button>
-        )}
-      </Box>
 
-      {/* Error Alert - always show if error */}
-      {insightsError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Error loading insights: {insightsError?.message || 'Unknown error'}
-        </Alert>
-      )}
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          >
+            <Typography fontSize={24} fontWeight={600} fontFamily="Aileron">
+              Performance Summary
+            </Typography>
 
-      {/* Main content with AnimatePresence for skeleton exit only */}
-      <AnimatePresence mode="wait">
-        {loadingInsights && <AnalyticsPageSkeleton key="skeleton" lgUp={lgUp} />}
-      </AnimatePresence>
+            {/* Generate Report Button - Admin only */}
+            {!isClient && (
+              <Button
+                disabled={reportState === 'loading'}
+                sx={{
+                  width: '186.07px',
+                  height: '44px',
+                  borderRadius: '8px',
+                  gap: '6px',
+                  padding: '10px 16px 13px 16px',
+                  background:
+                    reportState === 'loading'
+                      ? 'linear-gradient(90deg, #B8B8B8 0%, #9E9E9E 100%)'
+                      : 'linear-gradient(90deg, #8A5AFE 0%, #1340FF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
+                  color: '#FFFFFF',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  textTransform: 'none',
+                  '&:hover': {
+                    background:
+                      reportState === 'loading'
+                        ? 'linear-gradient(90deg, #B8B8B8 0%, #9E9E9E 100%)'
+                        : 'linear-gradient(90deg, #7A4AEE 0%, #0330EF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                  },
+                  '&:active': {
+                    boxShadow:
+                      reportState === 'loading'
+                        ? '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset'
+                        : '0px -1px 0px 0px rgba(0, 0, 0, 0.1) inset',
+                    transform: reportState === 'loading' ? 'none' : 'translateY(1px)',
+                  },
+                  '&:disabled': {
+                    color: '#FFFFFF',
+                  },
+                }}
+                onClick={() => {
+                  if (reportState === 'generate') {
+                    // Start loading
+                    setReportState('loading');
 
-      {/* Content sections - no fade animation, just appear when loaded */}
-      {!loadingInsights && (
-        <>
-          {/* Section 1: Core Metrics */}
-          <Box mb={4}>
-            <CoreMetricsSection insightsData={filteredInsightsData} summaryStats={summaryStats} />
-          </Box>
+                    setTimeout(() => {
+                      setReportState('view');
+                    }, 3000); // 3 second loading simulation
+                  } else if (reportState === 'view') {
+                    // Show PCR report page
+                    setShowReportPage(true);
+                  }
+                }}
+              >
+                {reportState === 'loading' && (
+                  <CircularProgress
+                    size={16}
+                    sx={{
+                      color: '#FFFFFF',
+                      mr: 1,
+                    }}
+                  />
+                )}
+                {reportState === 'generate' && 'Generate Report'}
+                {reportState === 'loading' && 'Generating...'}
+                {reportState === 'view' && 'View Report'}
+              </Button>
+            )}
 
-          {/* Section 2: Platform Overview */}
-          <Box mb={4}>
-            {availablePlatforms.length > 0 && (
-              <PlatformOverviewLayout
-                postCount={filteredSubmissions.length}
-                insightsData={filteredInsightsData}
-                summaryStats={summaryStats}
-                platformCounts={platformCounts}
-                selectedPlatform={selectedPlatform}
-              />
+            {/* View Report Button - Client only, when PCR is ready */}
+            {isClient && campaign?.isPCRReady && (
+              <Button
+                sx={{
+                  width: '186.07px',
+                  height: '44px',
+                  borderRadius: '8px',
+                  gap: '6px',
+                  padding: '10px 16px 13px 16px',
+                  background:
+                    'linear-gradient(90deg, #8A5AFE 0%, #1340FF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
+                  color: '#FFFFFF',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  textTransform: 'none',
+                  '&:hover': {
+                    background:
+                      'linear-gradient(90deg, #7A4AEE 0%, #0330EF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                  },
+                  '&:active': {
+                    boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.1) inset',
+                    transform: 'translateY(1px)',
+                  },
+                }}
+                onClick={() => setShowReportPage(true)}
+              >
+                View Report
+              </Button>
             )}
           </Box>
 
-          {/* Section 3: Trends Analysis */}
-          <Stack
-            direction={{ xs: 'column', md: 'row' }}
-            flex={1}
-            spacing={4}
-            justifyContent="space-between"
-            minHeight={{ xs: 'auto', md: 500 }}
-            mb={4}
-          >
-            <Box flex={1} width="100%">
-              <EngagementRateHeatmap
-                campaignId={campaignId}
-                platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
-                weeks={6}
-              />
-            </Box>
-            <Box flex={1} width="100%">
-              <TopCreatorsLineChart
-                campaignId={campaignId}
-                platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
-                days={7}
-              />
-            </Box>
-          </Stack>
+          {/* Error Alert - always show if error */}
+          {insightsError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              Error loading insights: {insightsError?.message || 'Unknown error'}
+            </Alert>
+          )}
 
-          {/* Section 4: Creator List */}
-          <Box>
-              {/* Creator List Header with Count */}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography fontSize={24} fontWeight={600} fontFamily="Aileron">
-                  Creator List
-                </Typography>
+          {/* Main content with AnimatePresence for skeleton exit only */}
+          <AnimatePresence mode="wait">
+            {loadingInsights && <AnalyticsPageSkeleton key="skeleton" lgUp={lgUp} />}
+          </AnimatePresence>
 
-                {/* Show Add New Creators button or Cancel/Save buttons */}
-                {!showAddCreatorForm ? (
-                  <Button
-                    onClick={() => setShowAddCreatorForm(true)}
-                    disabled={isDisabled}
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      border: '1.5px solid #e7e7e7',
-                      borderBottom: '3px solid #e7e7e7',
-                      borderRadius: 1.15,
-                      color: '#1340FF',
-                      height: 44,
-                      px: 2.5,
-                      fontWeight: 600,
-                      fontSize: '0.85rem',
-                      textTransform: 'none',
-                      '&:hover': {
-                        bgcolor: 'rgba(19, 64, 255, 0.08)',
-                        border: '1.5px solid #1340FF',
-                        borderBottom: '3px solid #1340FF',
-                        color: '#1340FF',
-                      },
-                      '&.Mui-disabled': {
-                        cursor: 'not-allowed',
-                        pointerEvents: 'auto',
-                      },
-                    }}
-                    startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
-                  >
-                    Add New Creators
-                  </Button>
-                ) : (
-                  <Stack direction="row" spacing={1.5}>
-                    {/* Cancel Button */}
+          {/* Content sections - no fade animation, just appear when loaded */}
+          {!loadingInsights && (
+            <>
+              {/* Section 1: Core Metrics */}
+              <Box mb={4}>
+                <CoreMetricsSection
+                  insightsData={filteredInsightsData}
+                  summaryStats={summaryStats}
+                />
+              </Box>
+
+              {/* Section 2: Platform Overview */}
+              <Box mb={4}>
+                {availablePlatforms.length > 0 && (
+                  <PlatformOverviewLayout
+                    postCount={filteredSubmissions.length}
+                    insightsData={filteredInsightsData}
+                    summaryStats={summaryStats}
+                    platformCounts={platformCounts}
+                    selectedPlatform={selectedPlatform}
+                  />
+                )}
+              </Box>
+
+              {/* Section 3: Trends Analysis */}
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                flex={1}
+                spacing={4}
+                justifyContent="space-between"
+                minHeight={{ xs: 'auto', md: 500 }}
+                mb={4}
+              >
+                <Box flex={1} width="100%">
+                  <EngagementRateHeatmap
+                    campaignId={campaignId}
+                    platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
+                    weeks={6}
+                  />
+                </Box>
+                <Box flex={1} width="100%">
+                  <TopCreatorsLineChart
+                    campaignId={campaignId}
+                    platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
+                    days={7}
+                  />
+                </Box>
+              </Stack>
+
+              {/* Section 4: Creator List */}
+              <Box>
+                {/* Creator List Header with Count */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 1,
+                  }}
+                >
+                  <Typography fontSize={24} fontWeight={600} fontFamily="Aileron">
+                    Creator List
+                  </Typography>
+
+                  {/* Show Add New Creators button or Cancel/Save buttons */}
+                  {!showAddCreatorForm ? (
                     <Button
-                      onClick={() => setShowAddCreatorForm(false)}
-                      disabled={formState.isSubmitting}
+                      onClick={() => setShowAddCreatorForm(true)}
+                      disabled={isDisabled}
                       sx={{
                         bgcolor: '#FFFFFF',
                         border: '1.5px solid #e7e7e7',
@@ -1333,10 +1323,9 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                         borderRadius: 1.15,
                         color: '#1340FF',
                         height: 44,
-                        minWidth: 100,
                         px: 2.5,
                         fontWeight: 600,
-                        fontSize: '1rem',
+                        fontSize: '0.85rem',
                         textTransform: 'none',
                         '&:hover': {
                           bgcolor: 'rgba(19, 64, 255, 0.08)',
@@ -1344,147 +1333,187 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                           borderBottom: '3px solid #1340FF',
                           color: '#1340FF',
                         },
-                      }}
-                    >
-                      Cancel
-                    </Button>
-
-                    {/* Save Button */}
-                    <Button
-                      onClick={() => formRef.current?.submit()}
-                      disabled={!formState.isValid || formState.isSubmitting}
-                      sx={{
-                        bgcolor: formState.isValid && !formState.isSubmitting ? '#1340FF' : '#B0B0B1',
-                        border: '1.5px solid',
-                        borderColor: formState.isValid && !formState.isSubmitting ? '#1340FF' : '#B0B0B1',
-                        borderBottom: '3px solid',
-                        borderBottomColor: formState.isValid && !formState.isSubmitting ? '#0D2BA8' : '#9E9E9F',
-                        borderRadius: 1.15,
-                        color: '#FFFFFF',
-                        height: 44,
-                        minWidth: 100,
-                        px: 2.5,
-                        fontWeight: 600,
-                        fontSize: '1rem',
-                        textTransform: 'none',
-                        '&:hover': {
-                          bgcolor: formState.isValid && !formState.isSubmitting ? '#0D2BA8' : '#B0B0B1',
-                          color: '#FFFFFF',
-                        },
                         '&.Mui-disabled': {
-                          bgcolor: '#B0B0B1',
-                          border: '1.5px solid #B0B0B1',
-                          borderBottom: '3px solid #9E9E9F',
-                          color: '#FFFFFF',
+                          cursor: 'not-allowed',
+                          pointerEvents: 'auto',
                         },
                       }}
+                      startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
                     >
-                      {formState.isSubmitting ? <CircularProgress size={20} color="inherit" /> : 'Save'}
+                      Add New Creators
                     </Button>
-                  </Stack>
-                )}
-              </Box>
+                  ) : (
+                    <Stack direction="row" spacing={1.5}>
+                      {/* Cancel Button */}
+                      <Button
+                        onClick={() => setShowAddCreatorForm(false)}
+                        disabled={formState.isSubmitting}
+                        sx={{
+                          bgcolor: '#FFFFFF',
+                          border: '1.5px solid #e7e7e7',
+                          borderBottom: '3px solid #e7e7e7',
+                          borderRadius: 1.15,
+                          color: '#1340FF',
+                          height: 44,
+                          minWidth: 100,
+                          px: 2.5,
+                          fontWeight: 600,
+                          fontSize: '1rem',
+                          textTransform: 'none',
+                          '&:hover': {
+                            bgcolor: 'rgba(19, 64, 255, 0.08)',
+                            border: '1.5px solid #1340FF',
+                            borderBottom: '3px solid #1340FF',
+                            color: '#1340FF',
+                          },
+                        }}
+                      >
+                        Cancel
+                      </Button>
 
-              {/* Manual Creator Entry Form */}
-              <AnimatePresence>
-                {showAddCreatorForm && (
-                  <ManualCreatorEntryForm
-                    ref={formRef}
-                    campaignId={campaignId}
-                    selectedPlatform={selectedPlatform !== 'ALL' ? selectedPlatform : null}
-                    submissionsWithoutInsights={
-                      !loadingInsights
-                        ? filteredSubmissions.filter(
-                            (sub) => !insightsData.find((d) => d.submissionId === sub.id)
-                          )
-                        : []
+                      {/* Save Button */}
+                      <Button
+                        onClick={() => formRef.current?.submit()}
+                        disabled={!formState.isValid || formState.isSubmitting}
+                        sx={{
+                          bgcolor:
+                            formState.isValid && !formState.isSubmitting ? '#1340FF' : '#B0B0B1',
+                          border: '1.5px solid',
+                          borderColor:
+                            formState.isValid && !formState.isSubmitting ? '#1340FF' : '#B0B0B1',
+                          borderBottom: '3px solid',
+                          borderBottomColor:
+                            formState.isValid && !formState.isSubmitting ? '#0D2BA8' : '#9E9E9F',
+                          borderRadius: 1.15,
+                          color: '#FFFFFF',
+                          height: 44,
+                          minWidth: 100,
+                          px: 2.5,
+                          fontWeight: 600,
+                          fontSize: '1rem',
+                          textTransform: 'none',
+                          '&:hover': {
+                            bgcolor:
+                              formState.isValid && !formState.isSubmitting ? '#0D2BA8' : '#B0B0B1',
+                            color: '#FFFFFF',
+                          },
+                          '&.Mui-disabled': {
+                            bgcolor: '#B0B0B1',
+                            border: '1.5px solid #B0B0B1',
+                            borderBottom: '3px solid #9E9E9F',
+                            color: '#FFFFFF',
+                          },
+                        }}
+                      >
+                        {formState.isSubmitting ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          'Save'
+                        )}
+                      </Button>
+                    </Stack>
+                  )}
+                </Box>
+
+                {/* Manual Creator Entry Form */}
+                <AnimatePresence>
+                  {showAddCreatorForm && (
+                    <ManualCreatorEntryForm
+                      ref={formRef}
+                      campaignId={campaignId}
+                      selectedPlatform={selectedPlatform !== 'ALL' ? selectedPlatform : null}
+                      submissionsWithoutInsights={
+                        !loadingInsights
+                          ? filteredSubmissions.filter(
+                              (sub) => !insightsData.find((d) => d.submissionId === sub.id)
+                            )
+                          : []
+                      }
+                      onSuccess={() => {
+                        setShowAddCreatorForm(false);
+                        mutateManualEntries();
+                        enqueueSnackbar('Creator entry added successfully', { variant: 'success' });
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
+
+                <Grid container spacing={1}>
+                  {/* eslint-disable react/prop-types */}
+                  {creatorListRowsSorted.map((row) => {
+                    if (row.kind === 'manual') {
+                      return (
+                        <ManualCreatorCard
+                          key={row.dedupKey}
+                          entry={row.entry}
+                          campaignId={campaignId}
+                          onUpdate={mutateManualEntries}
+                          onDelete={handleDeleteClick}
+                          isDisabled={isDisabled}
+                        />
+                      );
                     }
-                    onSuccess={() => {
-                      setShowAddCreatorForm(false);
-                      mutateManualEntries();
-                      enqueueSnackbar('Creator entry added successfully', { variant: 'success' });
-                    }}
-                    onFormStateChange={setFormState}
-                  />
-                )}
-              </AnimatePresence>
 
-              <Grid container spacing={1}>
-                {/* eslint-disable react/prop-types */}
-                {creatorListRowsSorted.map((row) => {
-                  if (row.kind === 'manual') {
                     return (
-                      <ManualCreatorCard
+                      <UserPerformanceCard
                         key={row.dedupKey}
-                        entry={row.entry}
-                        campaignId={campaignId}
-                        onUpdate={mutateManualEntries}
-                        onDelete={handleDeleteClick}
-                        isDisabled={isDisabled}
+                        submission={row.submission}
+                        insightData={row.insightData}
+                        engagementRate={row.engagementRate}
+                        loadingInsights={loadingInsights}
                       />
                     );
-                  }
+                  })}
+                  {/* eslint-enable react/prop-types */}
 
-                  return (
-                    <UserPerformanceCard
-                      key={row.dedupKey}
-                      submission={row.submission}
-                      insightData={row.insightData}
-                      engagementRate={row.engagementRate}
-                      loadingInsights={loadingInsights}
-                    />
-                  );
-                })}
-                {/* eslint-enable react/prop-types */}
-
-                {postingSubmissions.length === 0 && manualEntries.length === 0 && (
-                  <Grid item xs={12}>
-                    <Box
-                      sx={{
-                        textAlign: 'center',
-                        py: 6,
-                        px: 3,
-                        bgcolor: '#F8F9FA',
-                        borderRadius: 2,
-                        border: '1px dashed #E0E0E0',
-                      }}
-                    >
-                      <Typography
-                        variant="h6"
+                  {postingSubmissions.length === 0 && manualEntries.length === 0 && (
+                    <Grid item xs={12}>
+                      <Box
                         sx={{
-                          mb: 1,
-                          color: '#6B7280',
-                          fontWeight: 500,
+                          textAlign: 'center',
+                          py: 6,
+                          px: 3,
+                          bgcolor: '#F8F9FA',
+                          borderRadius: 2,
+                          border: '1px dashed #E0E0E0',
                         }}
                       >
-                        No Creator Data Yet
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: '#9CA3AF',
-                          maxWidth: 400,
-                          mx: 'auto',
-                        }}
-                      >
-                        Creator performance data will appear here once creators submit their posting links
-                        and content goes live.
-                      </Typography>
-                    </Box>
-                  </Grid>
-                )}
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            mb: 1,
+                            color: '#6B7280',
+                            fontWeight: 500,
+                          }}
+                        >
+                          No Creator Data Yet
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: '#9CA3AF',
+                            maxWidth: 400,
+                            mx: 'auto',
+                          }}
+                        >
+                          Creator performance data will appear here once creators submit their
+                          posting links and content goes live.
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
 
-                {filteredSubmissions.length === 0 && postingSubmissions.length > 0 && (
-                  <Grid item xs={12}>
-                    <Alert severity="info">
-                      No {selectedPlatform.toLowerCase()} submissions found for this campaign.
-                    </Alert>
-                  </Grid>
-                )}
-              </Grid>
-          </Box>
-        </>
-      )}
+                  {filteredSubmissions.length === 0 && postingSubmissions.length > 0 && (
+                    <Grid item xs={12}>
+                      <Alert severity="info">
+                        No {selectedPlatform.toLowerCase()} submissions found for this campaign.
+                      </Alert>
+                    </Grid>
+                  )}
+                </Grid>
+              </Box>
+            </>
+          )}
         </>
       )}
 

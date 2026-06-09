@@ -15,6 +15,7 @@ import {
   Typography,
   IconButton,
   CircularProgress,
+  Chip,
 } from '@mui/material';
 
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -85,9 +86,10 @@ export function ScrollingName({ name, variant = 'subtitle1', fontWeight = 600, .
               overflow: 'hidden',
               whiteSpace: 'nowrap',
               display: 'inline-block',
-              ...(shouldScroll && scrollDistance > 0 && {
-                animation: `${animationName} 8s ease-in-out infinite`,
-              }),
+              ...(shouldScroll &&
+                scrollDistance > 0 && {
+                  animation: `${animationName} 8s ease-in-out infinite`,
+                }),
               ...other.sx,
             }}
           >
@@ -172,16 +174,41 @@ export function MetricsSkeleton({ showSaves = false, isMobile = false }) {
 
   if (isMobile) {
     return (
-      <Box display="flex" justifyContent="space-between" width="100%" maxWidth={340} mb={1.5} px={1}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        width="100%"
+        maxWidth={340}
+        mb={1.5}
+        px={1}
+      >
         {Array.from({ length: metricCount }).map((_, i) => (
           // eslint-disable-next-line react/no-array-index-key
           <React.Fragment key={i}>
             <Box sx={{ flex: 1, textAlign: 'left' }}>
-              <Skeleton animation="wave" variant="text" width={i === 0 ? 50 : 40} height={16} sx={{ bgcolor: 'rgba(99, 99, 102, 0.1)' }} />
-              <Skeleton animation="wave" variant="text" width={45} height={32} sx={{ bgcolor: 'rgba(19, 64, 255, 0.1)' }} />
+              <Skeleton
+                animation="wave"
+                variant="text"
+                width={i === 0 ? 50 : 40}
+                height={16}
+                sx={{ bgcolor: 'rgba(99, 99, 102, 0.1)' }}
+              />
+              <Skeleton
+                animation="wave"
+                variant="text"
+                width={45}
+                height={32}
+                sx={{ bgcolor: 'rgba(19, 64, 255, 0.1)' }}
+              />
             </Box>
             {i < metricCount - 1 && (
-              <Skeleton animation="wave" variant="rectangular" width={1} height={40} sx={{ mx: 1, bgcolor: 'rgba(19, 64, 255, 0.15)' }} />
+              <Skeleton
+                animation="wave"
+                variant="rectangular"
+                width={1}
+                height={40}
+                sx={{ mx: 1, bgcolor: 'rgba(19, 64, 255, 0.15)' }}
+              />
             )}
           </React.Fragment>
         ))}
@@ -190,16 +217,40 @@ export function MetricsSkeleton({ showSaves = false, isMobile = false }) {
   }
 
   return (
-    <Box display="flex" alignItems="center" flex={1} justifyContent="space-between" sx={{ mx: { md: 2, lg: 4, xl: 6 } }}>
+    <Box
+      display="flex"
+      alignItems="center"
+      flex={1}
+      justifyContent="space-between"
+      sx={{ mx: { md: 2, lg: 4, xl: 6 } }}
+    >
       {Array.from({ length: metricCount }).map((_, i) => (
         // eslint-disable-next-line react/no-array-index-key
         <React.Fragment key={i}>
           <Box sx={{ textAlign: 'left', flex: 1 }}>
-            <Skeleton animation="wave" variant="text" width={i === 0 ? 110 : 60} height={22} sx={{ bgcolor: 'rgba(99, 99, 102, 0.1)' }} />
-            <Skeleton animation="wave" variant="text" width={70} height={48} sx={{ bgcolor: 'rgba(19, 64, 255, 0.1)' }} />
+            <Skeleton
+              animation="wave"
+              variant="text"
+              width={i === 0 ? 110 : 60}
+              height={22}
+              sx={{ bgcolor: 'rgba(99, 99, 102, 0.1)' }}
+            />
+            <Skeleton
+              animation="wave"
+              variant="text"
+              width={70}
+              height={48}
+              sx={{ bgcolor: 'rgba(19, 64, 255, 0.1)' }}
+            />
           </Box>
           {i < metricCount - 1 && (
-            <Skeleton animation="wave" variant="rectangular" width={1} height={55} sx={{ mx: { md: 1.5, lg: 2.5 }, bgcolor: 'rgba(19, 64, 255, 0.15)' }} />
+            <Skeleton
+              animation="wave"
+              variant="rectangular"
+              width={1}
+              height={55}
+              sx={{ mx: { md: 1.5, lg: 2.5 }, bgcolor: 'rgba(19, 64, 255, 0.15)' }}
+            />
           )}
         </React.Fragment>
       ))}
@@ -216,11 +267,16 @@ MetricsSkeleton.propTypes = {
 // UserPerformanceCard
 // ----------------------------------------------------------------------
 
-export default function UserPerformanceCard({ engagementRate, submission, insightData, loadingInsights: isLoadingInsights }) {
+export default function UserPerformanceCard({
+  index,
+  engagementRate,
+  submission,
+  insightData,
+  loadingInsights: isLoadingInsights,
+}) {
   const { data: creator, isLoading: loadingCreator } = useGetCreatorById(submission.user);
 
-  const creatorHandle =
-    creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok;
+  const creatorHandle = creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok;
 
   const creatorHandleHref = creator?.user?.creator?.instagram
     ? `https://instagram.com/${creator.user.creator.instagram.replace('@', '')}`
@@ -230,7 +286,29 @@ export default function UserPerformanceCard({ engagementRate, submission, insigh
 
   return (
     <Grid item xs={12}>
-      <Box borderRadius={1} border="2px solid #F5F5F5">
+      <Box borderRadius={1} border="2px solid #F5F5F5" position="relative">
+        <Typography
+          sx={{
+            position: 'absolute',
+            left: -30,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            bgcolor: 'black',
+            p: 1,
+            color: 'white',
+            borderRadius: 10,
+            width: 20,
+            height: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          fontWeight="bold"
+          variant="caption"
+        >
+          {index + 1}
+        </Typography>
+
         <Box sx={{ py: 0.5 }}>
           {/* ── Desktop Layout (md+) ── */}
           <Box
@@ -265,7 +343,9 @@ export default function UserPerformanceCard({ engagementRate, submission, insigh
               </Avatar>
               <Box sx={{ minWidth: 0, flex: 1 }}>
                 {loadingCreator ? (
-                  <Typography variant="subtitle1" fontWeight={600}>Loading...</Typography>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    Loading...
+                  </Typography>
                 ) : (
                   <ScrollingName name={creator?.user?.name || 'Unknown Creator'} />
                 )}
@@ -308,73 +388,217 @@ export default function UserPerformanceCard({ engagementRate, submission, insigh
                   sx={{ mx: 1, minWidth: 0, overflow: 'hidden' }}
                 >
                   {/* Engagement Rate */}
-                  <Box sx={{ textAlign: 'left', minWidth: { md: 0, lg: 110 }, pr: { md: 1, lg: 1.5 } }}>
-                    <Typography fontFamily="Aileron" fontSize={{ md: 14, lg: 16, xl: 18 }} fontWeight={600} color="#636366" sx={{ whiteSpace: 'nowrap' }}>
-                      <Box component="span" pr={1.5} sx={{ display: { xs: 'none', xl: 'inline' } }}>Engagement Rate</Box>
-                      <Box component="span" sx={{ display: { xs: 'inline', xl: 'none' } }}>Eng. Rate</Box>
+                  <Box
+                    sx={{ textAlign: 'left', minWidth: { md: 0, lg: 110 }, pr: { md: 1, lg: 1.5 } }}
+                  >
+                    <Typography
+                      fontFamily="Aileron"
+                      fontSize={{ md: 14, lg: 16, xl: 18 }}
+                      fontWeight={600}
+                      color="#636366"
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      <Box component="span" pr={1.5} sx={{ display: { xs: 'none', xl: 'inline' } }}>
+                        Engagement Rate
+                      </Box>
+                      <Box component="span" sx={{ display: { xs: 'inline', xl: 'none' } }}>
+                        Eng. Rate
+                      </Box>
                     </Typography>
-                    <Typography fontFamily="Instrument Serif" fontSize={{ md: 28, lg: 36, xl: 40 }} fontWeight={400} color="#1340FF" lineHeight={1.1}>
-                      <AnimatedNumber value={parseFloat(engagementRate) || 0} suffix="%" formatFn={(val) => val.toFixed(2)} />
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={{ md: 28, lg: 36, xl: 40 }}
+                      fontWeight={400}
+                      color="#1340FF"
+                      lineHeight={1.1}
+                    >
+                      <AnimatedNumber
+                        value={parseFloat(engagementRate) || 0}
+                        suffix="%"
+                        formatFn={(val) => val.toFixed(2)}
+                      />
                     </Typography>
                   </Box>
 
-                  <Divider sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }}
+                  />
 
                   {/* Views */}
                   <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
-                    <Typography fontFamily="Aileron" fontSize={{ md: 14, lg: 16, xl: 18 }} fontWeight={600} color="#636366" sx={{ whiteSpace: 'nowrap' }}>Views</Typography>
-                    <Typography fontFamily="Instrument Serif" fontSize={{ md: 28, lg: 36, xl: 40 }} fontWeight={400} color="#1340FF" lineHeight={1.1}>
-                      <AnimatedNumber value={getMetricValue(insightData.insight, 'views')} formatFn={formatNumber} />
+                    <Typography
+                      fontFamily="Aileron"
+                      fontSize={{ md: 14, lg: 16, xl: 18 }}
+                      fontWeight={600}
+                      color="#636366"
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      Views
+                    </Typography>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={{ md: 28, lg: 36, xl: 40 }}
+                      fontWeight={400}
+                      color="#1340FF"
+                      lineHeight={1.1}
+                    >
+                      <AnimatedNumber
+                        value={getMetricValue(insightData.insight, 'views')}
+                        formatFn={formatNumber}
+                      />
                     </Typography>
                   </Box>
 
-                  <Divider sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }}
+                  />
 
                   {/* Likes */}
                   <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
-                    <Typography fontFamily="Aileron" fontSize={{ md: 14, lg: 16, xl: 18 }} fontWeight={600} color="#636366" sx={{ whiteSpace: 'nowrap' }}>Likes</Typography>
-                    <Typography fontFamily="Instrument Serif" fontSize={{ md: 28, lg: 36, xl: 40 }} fontWeight={400} color="#1340FF" lineHeight={1.1}>
-                      <AnimatedNumber value={getMetricValue(insightData.insight, 'likes')} formatFn={formatNumber} />
+                    <Typography
+                      fontFamily="Aileron"
+                      fontSize={{ md: 14, lg: 16, xl: 18 }}
+                      fontWeight={600}
+                      color="#636366"
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      Likes
+                    </Typography>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={{ md: 28, lg: 36, xl: 40 }}
+                      fontWeight={400}
+                      color="#1340FF"
+                      lineHeight={1.1}
+                    >
+                      <AnimatedNumber
+                        value={getMetricValue(insightData.insight, 'likes')}
+                        formatFn={formatNumber}
+                      />
                     </Typography>
                   </Box>
 
-                  <Divider sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }}
+                  />
 
                   {/* Comments */}
                   <Box sx={{ textAlign: 'left', flex: 1, overflow: 'hidden', minWidth: 0, px: 1 }}>
-                    <Typography fontFamily="Aileron" fontSize={{ md: 14, lg: 16, xl: 18 }} fontWeight={600} color="#636366" sx={{ whiteSpace: 'nowrap' }}>Comments</Typography>
-                    <Typography fontFamily="Instrument Serif" fontSize={{ md: 28, lg: 36, xl: 40 }} fontWeight={400} color="#1340FF" lineHeight={1.1}>
-                      <AnimatedNumber value={getMetricValue(insightData.insight, 'comments')} formatFn={formatNumber} />
+                    <Typography
+                      fontFamily="Aileron"
+                      fontSize={{ md: 14, lg: 16, xl: 18 }}
+                      fontWeight={600}
+                      color="#636366"
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      Comments
+                    </Typography>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={{ md: 28, lg: 36, xl: 40 }}
+                      fontWeight={400}
+                      color="#1340FF"
+                      lineHeight={1.1}
+                    >
+                      <AnimatedNumber
+                        value={getMetricValue(insightData.insight, 'comments')}
+                        formatFn={formatNumber}
+                      />
                     </Typography>
                   </Box>
 
-                  <Divider sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0, ml: 2 }} />
+                  <Divider
+                    sx={{
+                      width: '1px',
+                      height: '55px',
+                      backgroundColor: '#1340FF',
+                      flexShrink: 0,
+                      ml: 2,
+                    }}
+                  />
 
                   {/* Shares */}
                   <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
-                    <Typography fontFamily="Aileron" fontSize={{ md: 14, lg: 16, xl: 18 }} fontWeight={600} color="#636366" sx={{ whiteSpace: 'nowrap' }}>Shares</Typography>
-                    <Typography fontFamily="Instrument Serif" fontSize={{ md: 28, lg: 36, xl: 40 }} fontWeight={400} color="#1340FF" lineHeight={1.1}>
-                      <AnimatedNumber value={getMetricValue(insightData.insight, 'shares')} formatFn={formatNumber} />
+                    <Typography
+                      fontFamily="Aileron"
+                      fontSize={{ md: 14, lg: 16, xl: 18 }}
+                      fontWeight={600}
+                      color="#636366"
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      Shares
+                    </Typography>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={{ md: 28, lg: 36, xl: 40 }}
+                      fontWeight={400}
+                      color="#1340FF"
+                      lineHeight={1.1}
+                    >
+                      <AnimatedNumber
+                        value={getMetricValue(insightData.insight, 'shares')}
+                        formatFn={formatNumber}
+                      />
                     </Typography>
                   </Box>
 
                   {/* Saves — Instagram only; transparent placeholder for TikTok alignment */}
                   {isInstagram ? (
                     <>
-                      <Divider sx={{ width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 }} />
-                      <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
-                        <Typography fontFamily="Aileron" fontSize={{ md: 14, lg: 16, xl: 18 }} fontWeight={600} color="#636366" sx={{ whiteSpace: 'nowrap' }}>Saves</Typography>
-                        <Typography fontFamily="Instrument Serif" fontSize={{ md: 28, lg: 36, xl: 40 }} fontWeight={400} color="#1340FF" lineHeight={1.1}>
-                          <AnimatedNumber value={getMetricValue(insightData.insight, 'saved')} formatFn={formatNumber} />
+                      <Divider
+                        sx={{
+                          width: '1px',
+                          height: '55px',
+                          backgroundColor: '#1340FF',
+                          flexShrink: 0,
+                        }}
+                      />
+                      <Box
+                        sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}
+                      >
+                        <Typography
+                          fontFamily="Aileron"
+                          fontSize={{ md: 14, lg: 16, xl: 18 }}
+                          fontWeight={600}
+                          color="#636366"
+                          sx={{ whiteSpace: 'nowrap' }}
+                        >
+                          Saves
+                        </Typography>
+                        <Typography
+                          fontFamily="Instrument Serif"
+                          fontSize={{ md: 28, lg: 36, xl: 40 }}
+                          fontWeight={400}
+                          color="#1340FF"
+                          lineHeight={1.1}
+                        >
+                          <AnimatedNumber
+                            value={getMetricValue(insightData.insight, 'saved')}
+                            formatFn={formatNumber}
+                          />
                         </Typography>
                       </Box>
                     </>
                   ) : (
                     <>
-                      <Divider sx={{ width: '1px', height: '55px', backgroundColor: 'transparent', flexShrink: 0 }} />
+                      <Divider
+                        sx={{
+                          width: '1px',
+                          height: '55px',
+                          backgroundColor: 'transparent',
+                          flexShrink: 0,
+                        }}
+                      />
                       <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
                         <Box sx={{ height: { md: 20, lg: 22, xl: 24 } }} />
-                        <Box sx={{ position: 'relative', minHeight: 44, display: 'flex', alignItems: 'center' }}>
+                        <Box
+                          sx={{
+                            position: 'relative',
+                            minHeight: 44,
+                            display: 'flex',
+                            alignItems: 'center',
+                          }}
+                        >
                           <Box sx={{ height: { md: 28, lg: 36, xl: 40 } }} />
                         </Box>
                       </Box>
@@ -385,24 +609,53 @@ export default function UserPerformanceCard({ engagementRate, submission, insigh
 
               {/* Skeleton */}
               {!insightData && isLoadingInsights && (
-                <Box component={m.div} key="metrics-skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                <Box
+                  component={m.div}
+                  key="metrics-skeleton"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
                   <MetricsSkeleton showSaves={isInstagram} />
                 </Box>
               )}
 
               {/* Empty state */}
               {!insightData && !isLoadingInsights && (
-                <Box component={m.div} key="metrics-empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} flex={1} sx={{ mx: { md: 2, lg: 4 } }}>
-                  <Alert severity="info" sx={{ m: 1 }}>Analytics data not available for this post.</Alert>
+                <Box
+                  component={m.div}
+                  key="metrics-empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  flex={1}
+                  sx={{ mx: { md: 2, lg: 4 } }}
+                >
+                  <Alert severity="info" sx={{ m: 1 }}>
+                    Analytics data not available for this post.
+                  </Alert>
                 </Box>
               )}
             </AnimatePresence>
 
             {/* Right: Thumbnail */}
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, minWidth: 0 }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ flexShrink: 0, minWidth: 0 }}
+            >
               <AnimatePresence mode="wait">
                 {insightData && (
-                  <Box component={m.div} key="thumbnail-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, ease: 'easeOut' }} sx={{ flexShrink: 0 }}>
+                  <Box
+                    component={m.div}
+                    key="thumbnail-content"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    sx={{ flexShrink: 0 }}
+                  >
                     <Link
                       href={insightData.postUrl}
                       target="_blank"
@@ -419,26 +672,84 @@ export default function UserPerformanceCard({ engagementRate, submission, insigh
                         component="img"
                         src={insightData.thumbnail || insightData.video?.media_url}
                         alt="Post thumbnail"
-                        sx={{ width: 140, height: 80, borderRadius: 2, objectFit: 'cover', border: '1px solid #e0e0e0', filter: 'brightness(0.95)', opacity: 0.9, transition: 'filter 0.3s ease, opacity 0.3s ease' }}
+                        sx={{
+                          width: 140,
+                          height: 80,
+                          borderRadius: 2,
+                          objectFit: 'cover',
+                          border: '1px solid #e0e0e0',
+                          filter: 'brightness(0.95)',
+                          opacity: 0.9,
+                          transition: 'filter 0.3s ease, opacity 0.3s ease',
+                        }}
                       />
                       <Box
                         className="play-overlay"
-                        sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(176, 176, 176, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s ease' }}
+                        sx={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          bgcolor: 'rgba(176, 176, 176, 0.85)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'background-color 0.2s ease',
+                        }}
                       >
-                        <Iconify icon="solar:play-bold" sx={{ color: '#FFFFFF', width: 14, height: 14, ml: 0.2 }} />
+                        <Iconify
+                          icon="solar:play-bold"
+                          sx={{ color: '#FFFFFF', width: 14, height: 14, ml: 0.2 }}
+                        />
                       </Box>
                     </Link>
                   </Box>
                 )}
 
                 {!insightData && isLoadingInsights && (
-                  <Box component={m.div} key="thumbnail-skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} sx={{ flexShrink: 0 }}>
-                    <Skeleton animation="wave" variant="rounded" sx={{ width: 140, height: 80, borderRadius: 2, bgcolor: 'rgba(0, 0, 0, 0.08)' }} />
+                  <Box
+                    component={m.div}
+                    key="thumbnail-skeleton"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    sx={{ flexShrink: 0 }}
+                  >
+                    <Skeleton
+                      animation="wave"
+                      variant="rounded"
+                      sx={{
+                        width: 140,
+                        height: 80,
+                        borderRadius: 2,
+                        bgcolor: 'rgba(0, 0, 0, 0.08)',
+                      }}
+                    />
                   </Box>
                 )}
 
                 {!insightData && !isLoadingInsights && (
-                  <Box component={m.div} key="thumbnail-fallback" initial={{ opacity: 0 }} animate={{ opacity: 1 }} sx={{ width: 140, height: 80, borderRadius: 2, bgcolor: '#F5F5F5', border: '1px dashed #BDBDBD', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Box
+                    component={m.div}
+                    key="thumbnail-fallback"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    sx={{
+                      width: 140,
+                      height: 80,
+                      borderRadius: 2,
+                      bgcolor: '#F5F5F5',
+                      border: '1px dashed #BDBDBD',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
                     <Iconify icon="mdi:image-off-outline" width={24} sx={{ color: '#BDBDBD' }} />
                   </Box>
                 )}
@@ -449,20 +760,39 @@ export default function UserPerformanceCard({ engagementRate, submission, insigh
           </Box>
 
           {/* ── Mobile Layout (xs) ── */}
-          <Box display={{ xs: 'flex', md: 'none' }} flexDirection="column" alignItems="center" sx={{ py: 1.5 }}>
+          <Box
+            display={{ xs: 'flex', md: 'none' }}
+            flexDirection="column"
+            alignItems="center"
+            sx={{ py: 1.5 }}
+          >
             {/* Creator Info */}
             <Box display="flex" mb={1.5} width={300}>
               <Avatar
                 src={creator?.user?.photoURL}
-                sx={{ width: 38, height: 38, bgcolor: isInstagram ? '#E4405F' : '#000000', mr: 1.5 }}
+                sx={{
+                  width: 38,
+                  height: 38,
+                  bgcolor: isInstagram ? '#E4405F' : '#000000',
+                  mr: 1.5,
+                }}
               >
-                {loadingCreator ? <CircularProgress size={16} /> : (creator?.user?.name?.charAt(0) || 'U')}
+                {loadingCreator ? (
+                  <CircularProgress size={16} />
+                ) : (
+                  creator?.user?.name?.charAt(0) || 'U'
+                )}
               </Avatar>
               <Box sx={{ minWidth: 0 }}>
                 {loadingCreator ? (
-                  <Typography variant="subtitle2" fontWeight={600}>Loading...</Typography>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    Loading...
+                  </Typography>
                 ) : (
-                  <ScrollingName name={creator?.user?.name || 'Unknown Creator'} variant="subtitle2" />
+                  <ScrollingName
+                    name={creator?.user?.name || 'Unknown Creator'}
+                    variant="subtitle2"
+                  />
                 )}
                 {creatorHandle && (
                   <Link
@@ -470,7 +800,16 @@ export default function UserPerformanceCard({ engagementRate, submission, insigh
                     target="_blank"
                     rel="noopener"
                     underline="hover"
-                    sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px', color: '#636366', fontSize: '0.75rem', '&:hover': { color: '#1340FF' } }}
+                    sx={{
+                      display: 'block',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '200px',
+                      color: '#636366',
+                      fontSize: '0.75rem',
+                      '&:hover': { color: '#1340FF' },
+                    }}
                   >
                     {creatorHandle}
                   </Link>
@@ -496,53 +835,131 @@ export default function UserPerformanceCard({ engagementRate, submission, insigh
                   px={1}
                 >
                   <Box sx={{ flex: 1, textAlign: 'left' }}>
-                    <Typography fontFamily="Aileron" fontSize={11} fontWeight={700} color="#636366">Engage.</Typography>
-                    <Typography fontFamily="Instrument Serif" fontSize={24} fontWeight={400} color="#1340FF">
-                      <AnimatedNumber value={parseFloat(engagementRate) || 0} suffix="%" formatFn={(val) => val.toFixed(2)} />
+                    <Typography fontFamily="Aileron" fontSize={11} fontWeight={700} color="#636366">
+                      Engage.
+                    </Typography>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={24}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
+                      <AnimatedNumber
+                        value={parseFloat(engagementRate) || 0}
+                        suffix="%"
+                        formatFn={(val) => val.toFixed(2)}
+                      />
                     </Typography>
                   </Box>
-                  <Divider sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }}
+                  />
                   <Box sx={{ flex: 1, textAlign: 'left' }}>
-                    <Typography fontFamily="Aileron" fontSize={11} fontWeight={700} color="#636366">Views</Typography>
-                    <Typography fontFamily="Instrument Serif" fontSize={24} fontWeight={400} color="#1340FF">
-                      <AnimatedNumber value={getMetricValue(insightData.insight, 'views')} formatFn={formatNumber} />
+                    <Typography fontFamily="Aileron" fontSize={11} fontWeight={700} color="#636366">
+                      Views
+                    </Typography>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={24}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
+                      <AnimatedNumber
+                        value={getMetricValue(insightData.insight, 'views')}
+                        formatFn={formatNumber}
+                      />
                     </Typography>
                   </Box>
-                  <Divider sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }}
+                  />
                   <Box sx={{ flex: 1, textAlign: 'left' }}>
-                    <Typography fontFamily="Aileron" fontSize={11} fontWeight={700} color="#636366">Likes</Typography>
-                    <Typography fontFamily="Instrument Serif" fontSize={24} fontWeight={400} color="#1340FF">
-                      <AnimatedNumber value={getMetricValue(insightData.insight, 'likes')} formatFn={formatNumber} />
+                    <Typography fontFamily="Aileron" fontSize={11} fontWeight={700} color="#636366">
+                      Likes
+                    </Typography>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={24}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
+                      <AnimatedNumber
+                        value={getMetricValue(insightData.insight, 'likes')}
+                        formatFn={formatNumber}
+                      />
                     </Typography>
                   </Box>
-                  <Divider sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }}
+                  />
                   <Box sx={{ flex: 1, textAlign: 'left' }}>
-                    <Typography fontFamily="Aileron" fontSize={11} fontWeight={700} color="#636366">Comments</Typography>
-                    <Typography fontFamily="Instrument Serif" fontSize={24} fontWeight={400} color="#1340FF">
-                      <AnimatedNumber value={getMetricValue(insightData.insight, 'comments')} formatFn={formatNumber} />
+                    <Typography fontFamily="Aileron" fontSize={11} fontWeight={700} color="#636366">
+                      Comments
+                    </Typography>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={24}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
+                      <AnimatedNumber
+                        value={getMetricValue(insightData.insight, 'comments')}
+                        formatFn={formatNumber}
+                      />
                     </Typography>
                   </Box>
-                  <Divider sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }}
+                  />
                   <Box sx={{ flex: 1, textAlign: 'left' }}>
-                    <Typography fontFamily="Aileron" fontSize={11} fontWeight={700} color="#636366">Shares</Typography>
-                    <Typography fontFamily="Instrument Serif" fontSize={24} fontWeight={400} color="#1340FF">
-                      <AnimatedNumber value={getMetricValue(insightData.insight, 'shares')} formatFn={formatNumber} />
+                    <Typography fontFamily="Aileron" fontSize={11} fontWeight={700} color="#636366">
+                      Shares
+                    </Typography>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={24}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
+                      <AnimatedNumber
+                        value={getMetricValue(insightData.insight, 'shares')}
+                        formatFn={formatNumber}
+                      />
                     </Typography>
                   </Box>
 
                   {isInstagram ? (
                     <>
-                      <Divider sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }} />
+                      <Divider
+                        sx={{ width: '1px', height: '40px', backgroundColor: '#1340FF', mx: 1 }}
+                      />
                       <Box sx={{ flex: 1, textAlign: 'left' }}>
-                        <Typography fontFamily="Aileron" fontSize={11} fontWeight={700} color="#636366">Saves</Typography>
-                        <Typography fontFamily="Instrument Serif" fontSize={24} fontWeight={400} color="#1340FF">
-                          <AnimatedNumber value={getMetricValue(insightData.insight, 'saved')} formatFn={formatNumber} />
+                        <Typography
+                          fontFamily="Aileron"
+                          fontSize={11}
+                          fontWeight={700}
+                          color="#636366"
+                        >
+                          Saves
+                        </Typography>
+                        <Typography
+                          fontFamily="Instrument Serif"
+                          fontSize={24}
+                          fontWeight={400}
+                          color="#1340FF"
+                        >
+                          <AnimatedNumber
+                            value={getMetricValue(insightData.insight, 'saved')}
+                            formatFn={formatNumber}
+                          />
                         </Typography>
                       </Box>
                     </>
                   ) : (
                     <>
-                      <Divider sx={{ width: '1px', height: '40px', backgroundColor: 'transparent' }} />
+                      <Divider
+                        sx={{ width: '1px', height: '40px', backgroundColor: 'transparent' }}
+                      />
                       <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, px: 1 }}>
                         <Box sx={{ height: 16 }} />
                         <Box sx={{ height: 24 }} />
@@ -553,14 +970,28 @@ export default function UserPerformanceCard({ engagementRate, submission, insigh
               )}
 
               {!insightData && isLoadingInsights && (
-                <Box component={m.div} key="mobile-metrics-skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                <Box
+                  component={m.div}
+                  key="mobile-metrics-skeleton"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
                   <MetricsSkeleton showSaves={isInstagram} isMobile />
                 </Box>
               )}
 
               {!insightData && !isLoadingInsights && (
-                <Box component={m.div} key="mobile-metrics-empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <Alert severity="info" sx={{ my: 1.5 }}>Analytics data not available for this post.</Alert>
+                <Box
+                  component={m.div}
+                  key="mobile-metrics-empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <Alert severity="info" sx={{ my: 1.5 }}>
+                    Analytics data not available for this post.
+                  </Alert>
                 </Box>
               )}
             </AnimatePresence>
@@ -568,31 +999,105 @@ export default function UserPerformanceCard({ engagementRate, submission, insigh
             {/* Thumbnail */}
             <AnimatePresence mode="wait">
               {insightData && (
-                <Box component={m.div} key="mobile-thumbnail-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, ease: 'easeOut' }} display="flex" justifyContent="center">
+                <Box
+                  component={m.div}
+                  key="mobile-thumbnail-content"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                  display="flex"
+                  justifyContent="center"
+                >
                   <Link
                     href={insightData.postUrl}
                     target="_blank"
                     rel="noopener"
-                    sx={{ display: 'block', textDecoration: 'none', position: 'relative', '&:hover .play-overlay': { bgcolor: 'rgba(176, 176, 176, 1)' }, '&:hover img': { filter: 'brightness(1)', opacity: 1 } }}
+                    sx={{
+                      display: 'block',
+                      textDecoration: 'none',
+                      position: 'relative',
+                      '&:hover .play-overlay': { bgcolor: 'rgba(176, 176, 176, 1)' },
+                      '&:hover img': { filter: 'brightness(1)', opacity: 1 },
+                    }}
                   >
-                    <Box component="img" src={insightData.thumbnail || insightData.video?.media_url} alt="Post thumbnail" sx={{ width: 280, height: 80, borderRadius: 2, objectFit: 'cover', border: '1px solid #e0e0e0', filter: 'brightness(0.95)', opacity: 0.9, transition: 'filter 0.3s ease, opacity 0.3s ease' }} />
-                    <Box className="play-overlay" sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(176, 176, 176, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s ease' }}>
-                      <Iconify icon="solar:play-bold" sx={{ color: '#FFFFFF', width: 14, height: 14, ml: 0.2 }} />
+                    <Box
+                      component="img"
+                      src={insightData.thumbnail || insightData.video?.media_url}
+                      alt="Post thumbnail"
+                      sx={{
+                        width: 280,
+                        height: 80,
+                        borderRadius: 2,
+                        objectFit: 'cover',
+                        border: '1px solid #e0e0e0',
+                        filter: 'brightness(0.95)',
+                        opacity: 0.9,
+                        transition: 'filter 0.3s ease, opacity 0.3s ease',
+                      }}
+                    />
+                    <Box
+                      className="play-overlay"
+                      sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        bgcolor: 'rgba(176, 176, 176, 0.85)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'background-color 0.2s ease',
+                      }}
+                    >
+                      <Iconify
+                        icon="solar:play-bold"
+                        sx={{ color: '#FFFFFF', width: 14, height: 14, ml: 0.2 }}
+                      />
                     </Box>
                   </Link>
                 </Box>
               )}
 
               {!insightData && isLoadingInsights && (
-                <Box component={m.div} key="mobile-thumbnail-skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} display="flex" justifyContent="center">
-                  <Skeleton animation="wave" variant="rounded" sx={{ width: 280, height: 80, borderRadius: 2, bgcolor: 'rgba(0, 0, 0, 0.08)' }} />
+                <Box
+                  component={m.div}
+                  key="mobile-thumbnail-skeleton"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  display="flex"
+                  justifyContent="center"
+                >
+                  <Skeleton
+                    animation="wave"
+                    variant="rounded"
+                    sx={{ width: 280, height: 80, borderRadius: 2, bgcolor: 'rgba(0, 0, 0, 0.08)' }}
+                  />
                 </Box>
               )}
 
               {!insightData && !isLoadingInsights && (
-                <Box component={m.div} key="mobile-thumbnail-fallback" initial={{ opacity: 0 }} animate={{ opacity: 1 }} display="flex" justifyContent="center">
+                <Box
+                  component={m.div}
+                  key="mobile-thumbnail-fallback"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  display="flex"
+                  justifyContent="center"
+                >
                   <Tooltip title="View Post">
-                    <IconButton component={Link} href={submission.postUrl} target="_blank" rel="noopener" size="small">
+                    <IconButton
+                      component={Link}
+                      href={submission.postUrl}
+                      target="_blank"
+                      rel="noopener"
+                      size="small"
+                    >
                       <Iconify icon="solar:external-link-outline" />
                     </IconButton>
                   </Tooltip>
