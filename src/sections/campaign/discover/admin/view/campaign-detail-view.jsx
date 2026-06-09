@@ -55,7 +55,7 @@ import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-vie
 
 import CampaignFAQ from '../campaign-faq';
 import CampaignOverview from '../campaign-overview';
-import CampaignAnalytics from '../campaign-analytics';
+
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
@@ -69,6 +69,9 @@ import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
+import CampaignAnayltics from '../campaign-analytics';
+import CampaignAnalysis from '../campaign-analytics';
+import CampaignAnalytics from '../campaign-analyticss';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -232,7 +235,8 @@ const CampaignDetailView = ({
   );
 
   // Check if user is client
-  const isClient = publicReadonly || user?.role === 'client' || user?.admin?.role?.name === 'Client';
+  const isClient =
+    publicReadonly || user?.role === 'client' || user?.admin?.role?.name === 'Client';
 
   // Check user roles for activation
   const isCSL = user?.admin?.role?.name === 'CSL';
@@ -347,9 +351,7 @@ const CampaignDetailView = ({
     // V4 caveat: a ShortListedCreator row can exist BEFORE client approval (e.g. after admin
     // uses Link Creator on a SENT_TO_CLIENT pitch); the pitch's approval gate is the source
     // of truth when both exist.
-    const allPitchUserIds = new Set(
-      (pitches || []).map((pitch) => pitch?.userId).filter(Boolean)
-    );
+    const allPitchUserIds = new Set((pitches || []).map((pitch) => pitch?.userId).filter(Boolean));
     const shortlistedUserIds = new Set(
       (shortlisted || [])
         .filter((s) => s?.userId && !allPitchUserIds.has(s.userId))
@@ -459,10 +461,7 @@ const CampaignDetailView = ({
                       value: 'logistics',
                     }
                   : null,
-                // {
-                //   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                //   value: 'logistics',
-                // },
+
                 { label: 'FAQ', value: 'faq' },
               ]
             : // Admin/other user tabs
@@ -509,14 +508,7 @@ const CampaignDetailView = ({
                       value: 'logistics',
                     }
                   : null,
-                // {
-                //   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                //   value: 'logistics',
-                // },
-                // {
-                //   label: `Logistics (${campaign?.logistic?.length || 0})`,
-                //   value: 'logistics',
-                // },
+
                 { label: 'FAQ', value: 'faq' },
               ]
           )
@@ -702,11 +694,16 @@ const CampaignDetailView = ({
         return <CampaignCreatorSubmissionsV4 campaign={campaign} isDisabled={isDisabled} />;
       case 'analytics':
         return (
-          <CampaignAnalytics
+          <CampaignAnalysis
             campaign={campaign}
             campaignMutate={campaignMutate}
             isDisabled={isDisabled}
           />
+          // <CampaignAnalytics
+          //   campaign={campaign}
+          //   campaignMutate={campaignMutate}
+          //   isDisabled={isDisabled}
+          // />
         );
       case 'faq':
         return <CampaignFAQ />;

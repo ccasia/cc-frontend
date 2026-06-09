@@ -1,5 +1,6 @@
 import useSWR from 'swr';
-import axios from 'axios';
+
+import axiosInstance from 'src/utils/axios';
 
 /**
  * Hook to fetch engagement rate heatmap data for a campaign
@@ -9,10 +10,7 @@ import axios from 'axios';
  * @param {number} options.weeks - Number of weeks to fetch (default: 6)
  * @returns {object} SWR data object with heatmap data
  */
-export const useGetEngagementHeatmap = (
-  campaignId,
-  { platform = 'All', weeks = 6 } = {}
-) => {
+export const useGetEngagementHeatmap = (campaignId, { platform = 'All', weeks = 6 } = {}) => {
   const url = campaignId
     ? `/api/campaign/${campaignId}/trends/engagement-heatmap?platform=${platform}&weeks=${weeks}`
     : null;
@@ -20,7 +18,7 @@ export const useGetEngagementHeatmap = (
   const { data, error, isLoading, mutate } = useSWR(
     url,
     async (apiUrl) => {
-      const response = await axios.get(apiUrl);
+      const response = await axiosInstance.get(apiUrl);
       return response.data.data;
     },
     {

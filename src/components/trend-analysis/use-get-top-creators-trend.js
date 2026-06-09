@@ -1,5 +1,6 @@
 import useSWR from 'swr';
-import axios from 'axios';
+
+import axiosInstance from 'src/utils/axios';
 
 /**
  * Hook to fetch top creators trend data for a campaign
@@ -9,10 +10,7 @@ import axios from 'axios';
  * @param {number} options.days - Number of days to fetch (default: 7)
  * @returns {object} SWR data object with trend data
  */
-export const useGetTopCreatorsTrend = (
-  campaignId,
-  { platform = 'All', days = 7 } = {}
-) => {
+export const useGetTopCreatorsTrend = (campaignId, { platform = 'All', days = 7 } = {}) => {
   const url = campaignId
     ? `/api/campaign/${campaignId}/trends/top-creators?platform=${platform}&days=${days}`
     : null;
@@ -20,7 +18,7 @@ export const useGetTopCreatorsTrend = (
   const { data, error, isLoading, mutate } = useSWR(
     url,
     async (apiUrl) => {
-      const response = await axios.get(apiUrl);
+      const response = await axiosInstance.get(apiUrl);
       return response.data.data;
     },
     {

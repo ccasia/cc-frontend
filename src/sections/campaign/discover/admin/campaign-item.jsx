@@ -49,19 +49,9 @@ export default function CampaignItem({
   pitchStatus,
   showAdmins = false,
 }) {
-  console.log('CampaignItem rendered:', {
-    campaignId: campaign?.id,
-    campaignStatus: campaign?.status,
-    campaignName: campaign?.name,
-    hasCampaignAdmin: !!campaign?.campaignAdmin,
-    campaignAdminLength: campaign?.campaignAdmin?.length,
-  });
-
   const theme = useTheme();
   const { user } = useAuthContext();
-  const ref = useRef(null);
 
-  const router = useRouter();
   const isCopy = useBoolean();
 
   // Menu state
@@ -181,16 +171,6 @@ export default function CampaignItem({
     const adminIdMatch = admin.adminId === user?.id;
     const adminUserIdMatch = admin.admin?.userId === user?.id;
     const adminUserMatch = admin.admin?.user?.id === user?.id;
-
-    console.log('Checking admin assignment:', {
-      adminId: admin.adminId,
-      adminUserId: admin.admin?.userId,
-      adminUser: admin.admin?.user?.id,
-      userId: user?.id,
-      adminIdMatch,
-      adminUserIdMatch,
-      adminUserMatch,
-    });
 
     return adminIdMatch || adminUserIdMatch || adminUserMatch;
   });
@@ -636,8 +616,7 @@ export default function CampaignItem({
           {(() => {
             // Show button for superadmin/CSL to assign admin (initial activation)
             const showForInitialActivation =
-              canInitialActivate &&
-              (campaign?.status === 'PENDING_CSM_REVIEW');
+              canInitialActivate && campaign?.status === 'PENDING_CSM_REVIEW';
 
             // Show button for assigned admin/CSM to complete activation
             const showForCompleteActivation =
@@ -658,21 +637,6 @@ export default function CampaignItem({
               showForCompleteActivation ||
               showDisabledForSuperadmin ||
               showTemporaryForAdmin;
-
-            console.log('Menu condition check:', {
-              campaignStatus: campaign?.status,
-              canInitialActivate,
-              canCompleteActivation,
-              showForInitialActivation,
-              showForCompleteActivation,
-              showDisabledForSuperadmin,
-              showTemporaryForAdmin,
-              shouldShow,
-              isUserAssignedToCampaign,
-              userRole: user?.role,
-              adminMode: user?.admin?.mode,
-              adminRole: user?.admin?.role?.name,
-            });
 
             return shouldShow;
           })() && (
@@ -704,10 +668,7 @@ export default function CampaignItem({
                 });
 
                 // For superadmin on pending campaigns: use initial activation (admin assignment only)
-                if (
-                  canInitialActivate &&
-                  (campaign?.status === 'PENDING_CSM_REVIEW')
-                ) {
+                if (canInitialActivate && campaign?.status === 'PENDING_CSM_REVIEW') {
                   console.log('Opening InitialActivateDialog (admin assignment only)');
                   setInitialActivateDialogOpen(true);
                 } else if (campaign?.status === 'PENDING_ADMIN_ACTIVATION') {

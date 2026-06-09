@@ -52,21 +52,13 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const { user } = useAuthContext();
 
   // Check if user is superadmin/CSL
-  const isCSL = user?.admin?.role?.name === 'CSL';
-  const isSuperAdmin = user?.admin?.mode === 'god';
-  const isSuperUser = isCSL || isSuperAdmin;
+  // const isCSL = user?.admin?.role?.name === 'CSL';
+  // const isSuperAdmin = user?.admin?.mode === 'god';
+  // const isSuperUser = isCSL || isSuperAdmin;
 
   // Check if user is CSM (for completing activation)
   const isCSM =
     user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
-
-  console.log('ActivateCampaignDialog - User check:', {
-    userRole: user?.role,
-    adminMode: user?.admin?.mode,
-    adminRole: user?.admin?.role?.name,
-    isSuperUser,
-    isCSM,
-  });
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -171,39 +163,6 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const [, setDisplayPdf] = useState(null); // displayPdf unused
   const lgUp = useResponsive('up', 'lg');
 
-  // Add debugging for admin data structure
-  useEffect(() => {
-    if (adminOptions.length > 0) {
-      console.log('Admin structure example:', adminOptions[0]);
-      console.log(
-        'Admin IDs being used:',
-        adminOptions.map((admin) => ({
-          id: admin.id,
-          userId: admin.userId,
-          userName: admin.user?.name,
-        }))
-      );
-    }
-  }, [adminOptions]);
-
-  // Add debugging for selected admins
-  useEffect(() => {
-    if (campaignManagers.length > 0) {
-      console.log('Selected admin IDs:', campaignManagers);
-      const selectedAdmins = adminOptions.filter((admin) =>
-        campaignManagers.includes(admin.userId)
-      );
-      console.log(
-        'Selected admin details:',
-        selectedAdmins.map((admin) => ({
-          id: admin.id,
-          userId: admin.userId,
-          userName: admin.user?.name,
-        }))
-      );
-    }
-  }, [campaignManagers, adminOptions]);
-
   // Fetch campaign details, admin users, and agreement templates
   useEffect(() => {
     if (open && campaignId) {
@@ -241,7 +200,6 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
             }
 
             // Log the admin data for debugging
-            console.log('CSM Admins found:', csmAdmins);
 
             setAdminOptions(csmAdmins);
           }
@@ -325,9 +283,6 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     setCampaignManagers(typeof value === 'string' ? value.split(',') : value);
     setErrors((prev) => ({ ...prev, campaignManagers: '' }));
   };
-
-  // Debug: log RHF deliverables value
-  console.log('Deliverables (RHF): ', deliverablesForm.getValues('deliverables'));
 
   const validateForm = () => {
     // Skip admin manager validation for admin/CSM users completing activation
@@ -434,12 +389,6 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         })
       );
 
-      const response = await axios.post(
-        `/api/campaign/activateClientCampaign/${campaignId}`,
-        formData
-      );
-      console.log('Activation response:', response.data);
-
       // Get assigned admin names for success message
       const assignedAdminNames = adminOptions
         .filter((admin) => campaignManagers.includes(admin.userId))
@@ -524,7 +473,6 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       }
       return null;
     } catch (err) {
-      console.log(err);
       return err;
     }
   }, []);
@@ -570,15 +518,6 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
           ?.map((admin) => admin.adminId || admin.admin?.userId || admin.admin?.user?.id)
           .filter(Boolean) || [];
 
-      console.log('Activating with existing details:', {
-        campaignType: campaignDetails.campaignType,
-        deliverables: existingDeliverables,
-        campaignManager: existingAdminIds,
-        agreementTemplateId: campaignDetails.agreementTemplate?.id,
-        postingStartDate: campaignDetails.campaignBrief?.postingStartDate,
-        postingEndDate: campaignDetails.campaignBrief?.postingEndDate,
-      });
-
       const formData = new FormData();
       formData.append(
         'data',
@@ -592,12 +531,6 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
           status: 'ACTIVE',
         })
       );
-
-      const response = await axios.post(
-        `/api/campaign/activateClientCampaign/${campaignId}`,
-        formData
-      );
-      console.log('Activation response:', response.data);
 
       const campaignName = campaignDetails?.name ? `"${campaignDetails.name}"` : 'Campaign';
       const successMessage = `🎉 ${campaignName} has been activated successfully! The campaign is now live and ready for creator submissions.`;
