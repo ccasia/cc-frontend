@@ -48,9 +48,10 @@ export default function PublicBriefSubmit({ token }) {
     };
   }, [token]);
 
-  // Map BriefForm values → the bdSubmitDraft payload shape.
+  // Map BriefForm values → the bdSubmitDraft payload shape. `files` are the
+  // locally-staged attachments (up to 3) from the public form.
   const handleSubmit = useCallback(
-    async (values) => {
+    async (values, files = []) => {
       setSubmitting(true);
       try {
         const payload = {
@@ -74,14 +75,31 @@ export default function PublicBriefSubmit({ token }) {
             ? GEO_FOCUS_LABEL_TO_VALUE[values.geographicFocus] ?? values.geographicFocus
             : '',
         };
-        await axiosInstance.post(endpoints.campaignBrief.publicSubmit(token), payload);
+
+        const url = endpoints.campaignBrief.publicSubmit(token);
+        if (files.length > 0) {
+          // Multipart: scalar fields as-is, arrays JSON-stringified (the backend
+          // parses both), files under the `brandGuidelines` field.
+          const fd = new FormData();
+          Object.entries(payload).forEach(([k, v]) => {
+            fd.append(k, Array.isArray(v) ? JSON.stringify(v) : v ?? '');
+          });
+          files.forEach((file) => fd.append('brandGuidelines', file));
+          await axiosInstance.post(url, fd, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+        } else {
+          await axiosInstance.post(url, payload);
+        }
         setDoneOpen(true);
       } catch (err) {
         const fields = err?.response?.data?.invalidFields;
+        const fileErrs = err?.response?.data?.fileErrors;
         enqueueSnackbar(
-          fields?.length
-            ? `Please check: ${fields.join(', ')}`
-            : err?.response?.data?.message || 'Failed to submit brief',
+          (fields?.length && `Please check: ${fields.join(', ')}`) ||
+            (fileErrs?.length && fileErrs.join(', ')) ||
+            err?.response?.data?.message ||
+            'Failed to submit brief',
           { variant: 'error' }
         );
       } finally {

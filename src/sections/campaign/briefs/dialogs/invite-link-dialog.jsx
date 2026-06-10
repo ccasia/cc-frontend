@@ -87,7 +87,7 @@ export default function InviteLinkDialog({ open, onClose }) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2.5 } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2.5 } }}>
       <DialogContent sx={{ p: 4 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
           <Typography variant="h5" sx={{ fontFamily: 'Instrument Serif, serif', fontWeight: 400 }}>

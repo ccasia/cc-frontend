@@ -98,18 +98,23 @@ export default function CampaignBriefDetailView() {
     [brief?.id, mutate, enqueueSnackbar]
   );
 
-  const onDeleteAttachment = useCallback(async () => {
-    if (!brief?.id) return;
-    try {
-      await axiosInstance.delete(endpoints.campaignBrief.attachments(brief.id));
-      enqueueSnackbar('Attachment deleted', { variant: 'success' });
-      mutate();
-    } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Failed to delete attachment', {
-        variant: 'error',
-      });
-    }
-  }, [brief?.id, mutate, enqueueSnackbar]);
+  const onDeleteAttachment = useCallback(
+    async (url) => {
+      if (!brief?.id) return;
+      try {
+        await axiosInstance.delete(endpoints.campaignBrief.attachments(brief.id), {
+          params: url ? { url } : undefined,
+        });
+        enqueueSnackbar('Attachment deleted', { variant: 'success' });
+        mutate();
+      } catch (error) {
+        enqueueSnackbar(error?.response?.data?.message || 'Failed to delete attachment', {
+          variant: 'error',
+        });
+      }
+    },
+    [brief?.id, mutate, enqueueSnackbar]
+  );
 
   if (isLoading) {
     return (
@@ -281,8 +286,11 @@ export default function CampaignBriefDetailView() {
               onClick={() => setClearSignal((n) => n + 1)}
               disabled={isLocked}
               sx={{
-                flexShrink: 0,
-                px: 10,
+                // Shrink on mobile so SEND TO CLIENT keeps a usable width and
+                // doesn't wrap; full padding on larger screens.
+                flexShrink: { xs: 1, sm: 0 },
+                minWidth: 0,
+                px: { xs: 2, sm: 10 },
                 py: 1.5,
                 borderRadius: 999,
                 textTransform: 'none',
@@ -311,7 +319,9 @@ export default function CampaignBriefDetailView() {
                 }
                 sx={{
                   flex: 1,
-                  px: 4,
+                  minWidth: 0,
+                  whiteSpace: 'nowrap',
+                  px: { xs: 2, sm: 4 },
                   py: 1.5,
                   borderRadius: 999,
                   textTransform: 'none',
