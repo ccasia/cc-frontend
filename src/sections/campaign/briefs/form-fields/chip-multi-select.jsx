@@ -46,6 +46,7 @@ export default function ChipMultiSelect({
                 bgcolor: selected ? '#1340FF' : '#FFFFFF',
                 color: selected ? '#FFFFFF' : '#0F172A',
                 cursor: disabled ? 'default' : 'pointer',
+                minWidth: 0, // let the cell shrink so long labels wrap, not overflow
                 transition: 'background-color 120ms ease',
               }}
             >
@@ -58,7 +59,7 @@ export default function ChipMultiSelect({
               }}>
                 {selected && <Iconify icon="eva:checkmark-fill" sx={{ color: '#1340FF', width: 14 }} />}
               </Box>
-              <Typography sx={{ fontSize: 12, fontWeight: 600, lineHeight: 1.2 }}>{opt}</Typography>
+              <Typography sx={{ fontSize: 12, fontWeight: 600, lineHeight: 1.2, minWidth: 0, overflowWrap: 'anywhere' }}>{opt}</Typography>
             </Box>
           );
         })}
@@ -101,7 +102,10 @@ export default function ChipMultiSelect({
               bgcolor: selected ? '#1340FF' : '#FFFFFF',
               color: selected ? '#FFFFFF' : '#0F172A',
               cursor: disabled ? 'default' : 'pointer',
-              minWidth: 140,
+              // Shrink on mobile so two 140px chips + gap don't overflow narrow
+              // viewports (which steals the form's right padding).
+              minWidth: { xs: 0, sm: 140 },
+              maxWidth: '100%',
               transition: 'background-color 120ms ease',
             }}
           >

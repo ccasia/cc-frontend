@@ -527,42 +527,75 @@ export default function BriefForm({
     saveField(field);
   };
 
-  const brandGuidelinesUrl = brief?.campaignAdditionalDetails?.brandGuidelinesUrl || null;
+  const MAX_ATTACHMENTS = 3;
   const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [deletingUrl, setDeletingUrl] = useState(null);
+  // Public-submit mode has no brief yet, so files are held locally and sent
+  // with the create request. Each entry: { id, file }.
+  const [pendingFiles, setPendingFiles] = useState([]);
+
+  // Persisted attachments (URL list on the brief). In submit mode there are
+  // none yet — the local pendingFiles drive the UI instead.
+  const attachments = Array.isArray(brief?.campaignBrief?.otherAttachments)
+    ? brief.campaignBrief.otherAttachments
+    : [];
+  const attachmentCount = isSubmitMode ? pendingFiles.length : attachments.length;
+  const atAttachmentLimit = attachmentCount >= MAX_ATTACHMENTS;
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
-    if (!file || readOnly || !onUploadAttachment) return;
+    e.target.value = ''; // reset so re-selecting the same file still fires change
+    if (!file || readOnly || atAttachmentLimit) return;
+
+    // Submit mode: stash locally, upload happens on submit.
+    if (isSubmitMode) {
+      setPendingFiles((prev) => [...prev, { id: `${Date.now()}-${file.name}`, file }]);
+      return;
+    }
+
+    if (!onUploadAttachment) return;
     setUploading(true);
     try {
       await onUploadAttachment(file);
     } finally {
       setUploading(false);
-      // reset the input so re-selecting the same file still fires change
-      e.target.value = '';
     }
   };
 
-  const handleDeleteAttachment = async () => {
-    if (readOnly || !onDeleteAttachment || deleting) return;
-    setDeleting(true);
+  const handleDeleteAttachment = async (url) => {
+    if (readOnly || !onDeleteAttachment || deletingUrl) return;
+    setDeletingUrl(url);
     try {
-      await onDeleteAttachment();
+      await onDeleteAttachment(url);
     } finally {
-      setDeleting(false);
+      setDeletingUrl(null);
+    }
+  };
+
+  const handleRemovePending = (id) => {
+    setPendingFiles((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  // Derive a friendly label from a stored URL (the GCS object name).
+  const attachmentLabel = (url, idx) => {
+    try {
+      const path = decodeURIComponent(new URL(url).pathname);
+      const base = path.slice(path.lastIndexOf('/') + 1);
+      return base || `Attachment ${idx + 1}`;
+    } catch {
+      return `Attachment ${idx + 1}`;
     }
   };
 
   // Public submit: validate the whole form, then hand the values to the parent
   // which maps them to the public-invite payload and POSTs.
   const submit = handleSubmit((values) => {
-    if (onSubmit) onSubmit(values);
+    if (onSubmit) onSubmit(values, pendingFiles.map((p) => p.file));
   });
 
   return (
     <FormProvider methods={methods}>
-      <Stack spacing={6}>
+      <Stack spacing={6} sx={{ minWidth: 0, maxWidth: '100%' }}>
         {/* 01. Brand Info */}
         <Box>
           <SectionHeader number="01" title="Brand Info" />
@@ -851,17 +884,12 @@ export default function BriefForm({
               <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
                 Attachments
               </Typography>
-              {uploading && (
-                <Box sx={{ mt: 1 }}>
-                  <Typography sx={{ fontSize: 13, color: '#1340FF', fontWeight: 600 }}>
-                    Uploading…
-                  </Typography>
-                  <UploadProgressBar />
-                </Box>
-              )}
-              {!uploading &&
-                (brandGuidelinesUrl ? (
+              {/* Existing attachments (up to 3) */}
+              {attachments.map((url, idx) => {
+                const isDeleting = deletingUrl === url;
+                return (
                   <Stack
+                    key={url}
                     direction="row"
                     spacing={1}
                     alignItems="center"
@@ -876,7 +904,7 @@ export default function BriefForm({
                       />
                       <Typography
                         component="a"
-                        href={brandGuidelinesUrl}
+                        href={url}
                         target="_blank"
                         rel="noopener noreferrer"
                         sx={{
@@ -888,54 +916,110 @@ export default function BriefForm({
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        Brand guidelines
+                        {attachmentLabel(url, idx)}
                       </Typography>
                     </Stack>
-                    <Stack direction="row" spacing={2} alignItems="center" sx={{ flexShrink: 0 }}>
-                      {!readOnly && (
-                        <Box
-                          component="label"
-                          sx={{
-                            cursor: 'pointer',
-                            color: '#1340FF',
-                            fontWeight: 600,
-                            fontSize: 12,
-                          }}
-                        >
-                          REPLACE
-                          <input
-                            type="file"
-                            hidden
-                            accept="application/pdf,image/jpeg,image/jpg,image/png"
-                            onChange={handleFileSelect}
-                          />
-                        </Box>
-                      )}
-                      {!readOnly && onDeleteAttachment && (
-                        <Box
-                          component="button"
-                          type="button"
-                          onClick={handleDeleteAttachment}
-                          disabled={deleting}
-                          sx={{
-                            border: 'none',
-                            background: 'none',
-                            p: 0,
-                            fontFamily: 'inherit',
-                            lineHeight: 'inherit',
-                            letterSpacing: 'inherit',
-                            cursor: deleting ? 'default' : 'pointer',
-                            color: 'error.main',
-                            fontWeight: 600,
-                            fontSize: 12,
-                            opacity: deleting ? 0.5 : 1,
-                          }}
-                        >
-                          {deleting ? 'DELETING…' : 'DELETE'}
-                        </Box>
-                      )}
-                    </Stack>
+                    {!readOnly && onDeleteAttachment && (
+                      <Box
+                        component="button"
+                        type="button"
+                        onClick={() => handleDeleteAttachment(url)}
+                        disabled={isDeleting}
+                        sx={{
+                          border: 'none',
+                          background: 'none',
+                          p: 0,
+                          fontFamily: 'inherit',
+                          lineHeight: 'inherit',
+                          letterSpacing: 'inherit',
+                          cursor: isDeleting ? 'default' : 'pointer',
+                          color: 'error.main',
+                          fontWeight: 600,
+                          fontSize: 12,
+                          opacity: isDeleting ? 0.5 : 1,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {isDeleting ? 'DELETING…' : 'DELETE'}
+                      </Box>
+                    )}
                   </Stack>
+                );
+              })}
+
+              {/* Pending local files (public-submit mode — not yet uploaded) */}
+              {pendingFiles.map(({ id, file }) => (
+                <Stack
+                  key={id}
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ mt: 1 }}
+                >
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+                    <Iconify
+                      icon="solar:document-bold"
+                      width={18}
+                      sx={{ color: '#1340FF', flexShrink: 0 }}
+                    />
+                    <Typography
+                      sx={{
+                        fontSize: 13,
+                        color: '#0F172A',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {file.name}
+                    </Typography>
+                  </Stack>
+                  {!readOnly && (
+                    <Box
+                      component="button"
+                      type="button"
+                      onClick={() => handleRemovePending(id)}
+                      sx={{
+                        border: 'none',
+                        background: 'none',
+                        p: 0,
+                        fontFamily: 'inherit',
+                        lineHeight: 'inherit',
+                        letterSpacing: 'inherit',
+                        cursor: 'pointer',
+                        color: 'error.main',
+                        fontWeight: 600,
+                        fontSize: 12,
+                        flexShrink: 0,
+                      }}
+                    >
+                      REMOVE
+                    </Box>
+                  )}
+                </Stack>
+              ))}
+
+              {uploading && (
+                <Box sx={{ mt: 1 }}>
+                  <Typography sx={{ fontSize: 13, color: '#1340FF', fontWeight: 600 }}>
+                    Uploading…
+                  </Typography>
+                  <UploadProgressBar />
+                </Box>
+              )}
+
+              {/* Add control — shown until the limit is reached. Wired uploads
+                  (BD/client edit) or local staging (public submit). */}
+              {!uploading &&
+                !readOnly &&
+                (onUploadAttachment || isSubmitMode) &&
+                (atAttachmentLimit ? (
+                  <Typography
+                    sx={{ mt: 1, fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}
+                  >
+                    Maximum of {MAX_ATTACHMENTS} attachments reached.
+                  </Typography>
                 ) : (
                   <Box
                     component="label"
@@ -945,7 +1029,7 @@ export default function BriefForm({
                       justifyContent: 'space-between',
                       gap: 2,
                       mt: 1,
-                      cursor: readOnly ? 'default' : 'pointer',
+                      cursor: 'pointer',
                     }}
                   >
                     <Typography
@@ -960,24 +1044,22 @@ export default function BriefForm({
                         color: '#9CA3AF',
                       }}
                     >
-                      Click to choose a file — PDF, JPG, PNG up to 25MB
+                      {attachmentCount > 0
+                        ? `Add another file (${attachmentCount}/${MAX_ATTACHMENTS}) — PDF, JPG, PNG up to 25MB`
+                        : 'Click to choose a file — PDF, JPG, PNG up to 25MB'}
                     </Typography>
-                    {!readOnly && (
-                      <Box
-                        component="span"
-                        sx={{ color: '#1340FF', fontWeight: 600, fontSize: 12, flexShrink: 0 }}
-                      >
-                        BROWSE
-                      </Box>
-                    )}
-                    {!readOnly && (
-                      <input
-                        type="file"
-                        hidden
-                        accept="application/pdf,image/jpeg,image/jpg,image/png"
-                        onChange={handleFileSelect}
-                      />
-                    )}
+                    <Box
+                      component="span"
+                      sx={{ color: '#1340FF', fontWeight: 600, fontSize: 12, flexShrink: 0 }}
+                    >
+                      BROWSE
+                    </Box>
+                    <input
+                      type="file"
+                      hidden
+                      accept="application/pdf,image/jpeg,image/jpg,image/png"
+                      onChange={handleFileSelect}
+                    />
                   </Box>
                 ))}
             </Box>
@@ -1037,9 +1119,12 @@ export default function BriefForm({
                 onClick={() => reset(EMPTY_VALUES)}
                 disabled={submitting}
                 sx={{
-                  flexShrink: 0,
+                  // Shrink on mobile so it shares space with Submit instead of
+                  // forcing the row to overflow; keeps its width on larger screens.
+                  flexShrink: { xs: 1, sm: 0 },
+                  minWidth: 0,
                   py: 1.5,
-                  px: 6,
+                  px: { xs: 2, sm: 6 },
                   borderRadius: 1.5,
                   textTransform: 'none',
                   fontWeight: 700,
@@ -1062,7 +1147,10 @@ export default function BriefForm({
                 disabled={submitting}
                 sx={{
                   flex: 1,
+                  minWidth: 0,
+                  whiteSpace: 'nowrap',
                   py: 1.5,
+                  px: { xs: 1, sm: 2 },
                   borderRadius: 1.5,
                   textTransform: 'none',
                   fontWeight: 700,
