@@ -9,6 +9,8 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import TableBody from '@mui/material/TableBody';
@@ -70,6 +72,8 @@ export default function CampaignBriefListView() {
   const { data, isLoading, mutate } = useSWR(endpoints.campaignBrief.list, fetcher);
 
   const [search, setSearch] = useState('');
+  const [statusTab, setStatusTab] = useState('ALL');
+  const [bdFilter, setBdFilter] = useState('ALL');
   const [sendTarget, setSendTarget] = useState(null);
   const [handoverTarget, setHandoverTarget] = useState(null);
   const [assignCsmTarget, setAssignCsmTarget] = useState(null);
@@ -79,15 +83,90 @@ export default function CampaignBriefListView() {
   const [inviteLinkOpen, setInviteLinkOpen] = useState(false);
   const [creating, setCreating] = useState(false);
 
+  // Displayed status mirrors the badge: an activated campaign shows ACTIVE,
+  // otherwise the draft lifecycle status.
+  const effectiveStatus = (b) => (b.status === 'ACTIVE' ? 'ACTIVE' : b.draftStatus);
+
+  const isSuperAdmin = role === 'superadmin';
+
+  // Resolve a brief's BD owner — prefer the enriched briefOwner, fall back to
+  // the owner-role campaignAdmin (present pre-handover).
+  const briefOwnerOf = (b) =>
+    b.briefOwner ||
+    (b.campaignAdmin?.[0]?.admin?.user
+      ? { id: b.campaignAdmin[0].admin.user.id, name: b.campaignAdmin[0].admin.user.name }
+      : null);
+
+  // BD owner options (superadmin only) — distinct briefOwners across the list.
+  const bdOptions = (() => {
+    if (!isSuperAdmin) return [];
+    const map = new Map();
+    (data || []).forEach((b) => {
+      const owner = briefOwnerOf(b);
+      if (owner?.id && !map.has(owner.id)) map.set(owner.id, owner.name || 'Unknown');
+    });
+    return [...map.entries()].map(([id, name]) => ({ id, name }));
+  })();
+
   const briefs = (data || []).filter((b) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      (b.name || '').toLowerCase().includes(q) ||
-      (b.clientEmail || '').toLowerCase().includes(q) ||
-      (b.clientName || '').toLowerCase().includes(q)
-    );
+    const status = effectiveStatus(b);
+
+    // Status tab. "ALL" shows everything except activated campaigns — those
+    // live only under the explicit ACTIVE tab.
+    if (statusTab === 'ALL') {
+      if (status === 'ACTIVE') return false;
+    } else if (status !== statusTab) {
+      return false;
+    }
+
+    // BD owner filter (superadmin only).
+    if (isSuperAdmin && bdFilter !== 'ALL' && briefOwnerOf(b)?.id !== bdFilter) return false;
+
+    if (search) {
+      const q = search.toLowerCase();
+      if (
+        !(b.name || '').toLowerCase().includes(q) &&
+        !(b.clientEmail || '').toLowerCase().includes(q) &&
+        !(b.clientName || '').toLowerCase().includes(q)
+      ) {
+        return false;
+      }
+    }
+    return true;
   });
+
+  // Status tabs shown depend on role: BD/superadmin see the full lifecycle;
+  // CSL/CSM only ever have handed-over/active briefs.
+  const TAB_DEFS = isBD
+    ? [
+        { value: 'ALL', label: 'All' },
+        { value: 'DRAFTED', label: 'Draft' },
+        { value: 'SENT_TO_CLIENT', label: 'Sent' },
+        { value: 'PENDING_REVIEW', label: 'Pending' },
+        { value: 'APPROVED', label: 'Approved' },
+        { value: 'HANDED_OVER', label: 'Handed Over' },
+        { value: 'ACTIVE', label: 'Active' },
+      ]
+    : [
+        { value: 'ALL', label: 'All' },
+        { value: 'HANDED_OVER', label: 'Handed Over' },
+        { value: 'ACTIVE', label: 'Active' },
+      ];
+
+  // Per-status counts (respect the BD filter, but not search or the active tab,
+  // so each tab shows how many briefs it holds). "All" = everything but ACTIVE.
+  const statusCounts = (() => {
+    const counts = { ALL: 0 };
+    (data || []).forEach((b) => {
+      if (isSuperAdmin && bdFilter !== 'ALL' && briefOwnerOf(b)?.id !== bdFilter) return;
+      const s = effectiveStatus(b);
+      counts[s] = (counts[s] || 0) + 1;
+      if (s !== 'ACTIVE') counts.ALL += 1;
+    });
+    return counts;
+  })();
+
+  const STATUS_TABS = TAB_DEFS.map((t) => ({ ...t, count: statusCounts[t.value] || 0 }));
 
   const handleCreate = async () => {
     setCreating(true);
@@ -118,7 +197,9 @@ export default function CampaignBriefListView() {
   };
 
   const getOwnerName = (brief) =>
-    brief.campaignAdmin?.[0]?.admin?.user?.name || 'Cult Creative';
+    brief.briefOwner?.name ||
+    brief.campaignAdmin?.[0]?.admin?.user?.name ||
+    'Cult Creative';
 
   const handleApprove = async (brief) => {
     try {
@@ -236,8 +317,6 @@ export default function CampaignBriefListView() {
       </Button>
     );
 
-    const isSuperAdmin = role === 'superadmin';
-
     if (!isBD) {
       // Once handed over, the brief is a real campaign. CSL can assign a CSM;
       // everyone in CS can open the campaign page.
@@ -290,42 +369,129 @@ export default function CampaignBriefListView() {
           ]}
           sx={{ mb: 0 }}
         />
-        {isBD && (
-          <Stack direction="row" spacing={1}>
+      </Stack>
+
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'stretch', md: 'flex-start' }}
+        gap={1}
+        sx={{ mb: 2 }}
+      >
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+          {STATUS_TABS.map((tab) => (
             <Button
-              variant="contained"
+              key={tab.value}
+              onClick={() => setStatusTab(tab.value)}
+              sx={{
+                px: 1.25,
+                py: 1.5,
+                height: '38px',
+                minWidth: 'auto',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                whiteSpace: 'nowrap',
+                ...(statusTab === tab.value
+                  ? { color: '#203ff5', bgcolor: 'rgba(32, 63, 245, 0.04)' }
+                  : { color: '#637381', bgcolor: 'transparent' }),
+                '&:hover': {
+                  bgcolor: statusTab === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                },
+              }}
+            >
+              {`${tab.label} (${tab.count})`}
+            </Button>
+          ))}
+        </Box>
+
+        {isBD && (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, flexShrink: 0 }}>
+            <Button
               onClick={handleCreate}
               disabled={creating}
-              sx={{ bgcolor: '#1340FF', '&:hover': { bgcolor: '#0F33CC' }, textTransform: 'none' }}
+              sx={{
+                px: 1.5,
+                height: '38px',
+                minWidth: 'auto',
+                border: '1px solid #102387',
+                borderBottom: '3px solid #102387',
+                borderRadius: 1,
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                whiteSpace: 'nowrap',
+                color: '#FFFFFF',
+                bgcolor: '#1340FF',
+                '&:hover': { bgcolor: '#0F33CC' },
+                '&.Mui-disabled': { bgcolor: '#1340FF', color: '#FFFFFF', opacity: 0.5 },
+              }}
             >
               Create Brief
             </Button>
             <Button
-              variant="outlined"
               onClick={() => setInviteLinkOpen(true)}
-              sx={{ textTransform: 'none' }}
+              sx={{
+                px: 1.5,
+                height: '38px',
+                minWidth: 'auto',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                whiteSpace: 'nowrap',
+                color: '#1340FF',
+                bgcolor: 'transparent',
+                '&:hover': { bgcolor: 'rgba(19, 64, 255, 0.04)' },
+              }}
             >
               Invite Link
             </Button>
-          </Stack>
+          </Box>
         )}
       </Stack>
 
-      <TextField
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search"
-        fullWidth
-        size="small"
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <Iconify icon="eva:search-fill" width={20} />
-            </InputAdornment>
-          ),
-        }}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={1.5}
+        alignItems={{ sm: 'center' }}
         sx={{ mb: 2 }}
-      />
+      >
+        {isSuperAdmin && bdOptions.length > 0 && (
+          <Select
+            value={bdFilter}
+            onChange={(e) => setBdFilter(e.target.value)}
+            size="small"
+            sx={{ minWidth: { xs: '100%', sm: 200 } }}
+          >
+            <MenuItem value="ALL">All BDs</MenuItem>
+            {bdOptions.map((bd) => (
+              <MenuItem key={bd.id} value={bd.id}>
+                {bd.name}
+              </MenuItem>
+            ))}
+          </Select>
+        )}
+        <TextField
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search"
+          fullWidth
+          size="small"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Iconify icon="eva:search-fill" width={20} />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Stack>
 
       <Card sx={{ overflow: 'hidden' }}>
         {(() => {

@@ -102,15 +102,20 @@ export default function ClientBriefView() {
     [magicToken, refresh, enqueueSnackbar]
   );
 
-  const onDeleteAttachment = useCallback(async () => {
-    try {
-      await axiosInstance.delete(endpoints.campaignBrief.publicAttachments(magicToken));
-      enqueueSnackbar('Attachment deleted', { variant: 'success' });
-      await refresh();
-    } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Failed to delete attachment', { variant: 'error' });
-    }
-  }, [magicToken, refresh, enqueueSnackbar]);
+  const onDeleteAttachment = useCallback(
+    async (url) => {
+      try {
+        await axiosInstance.delete(endpoints.campaignBrief.publicAttachments(magicToken), {
+          params: url ? { url } : undefined,
+        });
+        enqueueSnackbar('Attachment deleted', { variant: 'success' });
+        await refresh();
+      } catch (err) {
+        enqueueSnackbar(err?.response?.data?.message || 'Failed to delete attachment', { variant: 'error' });
+      }
+    },
+    [magicToken, refresh, enqueueSnackbar]
+  );
 
   const handleApprove = async () => {
     setApproving(true);
@@ -242,7 +247,7 @@ export default function ClientBriefView() {
           </Alert>
         </Box>
 
-        <Box sx={{ borderLeft: { md: '1px solid #E5E7EB' }, pl: { md: 4 } }}>
+        <Box sx={{ borderLeft: { md: '1px solid #E5E7EB' }, px: { md: 4 } }}>
           <BriefForm
             brief={brief}
             mode="client-public"

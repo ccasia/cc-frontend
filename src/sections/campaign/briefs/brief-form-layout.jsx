@@ -33,6 +33,7 @@ export default function BriefFormLayout({ topLeft, leftExtra, children }) {
           while the form (right column) scrolls. */}
       <Box
         sx={{
+          minWidth: 0,
           position: { md: 'sticky' },
           top: { md: 24 },
           maxHeight: { md: 'calc(100vh - 48px)' },
@@ -45,8 +46,8 @@ export default function BriefFormLayout({ topLeft, leftExtra, children }) {
             fontFamily: 'Aileron, sans-serif',
             fontWeight: 700,
             fontStyle: 'normal',
-            fontSize: '64px',
-            lineHeight: '68px',
+            fontSize: { xs: '40px', sm: '52px', md: '64px' },
+            lineHeight: { xs: '44px', sm: '56px', md: '68px' },
             letterSpacing: '-0.06em',
             textTransform: 'capitalize',
             textShadow: '0px 4px 6px rgba(0, 0, 0, 0.25)',
@@ -60,8 +61,8 @@ export default function BriefFormLayout({ topLeft, leftExtra, children }) {
             fontFamily: '"Times New Roman", serif',
             fontWeight: 400,
             fontStyle: 'italic',
-            fontSize: '40px',
-            lineHeight: '44px',
+            fontSize: { xs: '26px', sm: '32px', md: '40px' },
+            lineHeight: { xs: '30px', sm: '36px', md: '44px' },
             letterSpacing: '-0.04em',
             textShadow: '0px 4px 6px rgba(0, 0, 0, 0.25)',
             mb: 5,
@@ -130,8 +131,12 @@ export default function BriefFormLayout({ topLeft, leftExtra, children }) {
         {leftExtra}
       </Box>
 
-      {/* Right side — form + actions */}
-      <Box sx={{ borderLeft: { md: '1px solid #E5E7EB' }, pl: { md: 4 } }}>{children}</Box>
+      {/* Right side — form + actions. minWidth:0 keeps a wide child (e.g. a
+          long chip label) from forcing this grid column past its track and
+          eating the page's right padding on mobile. */}
+      <Box sx={{ minWidth: 0, borderLeft: { md: '1px solid #E5E7EB' }, pl: { md: 4 } }}>
+        {children}
+      </Box>
     </Box>
   );
 }
