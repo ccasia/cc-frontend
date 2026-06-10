@@ -231,7 +231,7 @@ const CreatorCard = ({
 
   const handleSelect = (event) => {
     event.stopPropagation();
-    onSelect?.(creatorRowKey);
+    onSelect?.(creatorRowKey, creator);
   };
 
   const handleInvite = (event) => {
@@ -240,7 +240,7 @@ const CreatorCard = ({
       onInviteOne(creatorRowKey);
       return;
     }
-    onSelect?.(creatorRowKey);
+    onSelect?.(creatorRowKey, creator);
   };
 
   return (

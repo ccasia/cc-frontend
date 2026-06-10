@@ -2,12 +2,18 @@ import dayjs from 'dayjs';
 import ExcelJS from 'exceljs';
 import PropTypes from 'prop-types';
 import { saveAs } from 'file-saver';
+import { useSnackbar } from 'notistack';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Stack, Button, Divider, Skeleton, Typography } from '@mui/material';
+import { Box, Stack, Button, Divider, Skeleton, Typography, CircularProgress } from '@mui/material';
+
+import { useResponsive } from 'src/hooks/use-responsive';
 
 import { formatNumber } from 'src/utils/socialMetricsCalculator';
 import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
+
+import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
 
@@ -117,6 +123,7 @@ const EXPORT_COLUMNS = [
   { header: 'Engagement Rate', key: 'engagementRate', width: 18 },
   { header: 'Bio', key: 'bio', width: 48 },
   { header: 'Interests', key: 'interests', width: 36 },
+  { header: 'Languages', key: 'languages', width: 28 },
 ];
 
 const getCreatorExportRow = (creator) => {
@@ -139,12 +146,13 @@ const getCreatorExportRow = (creator) => {
     engagementRate: formatEngagementRate(platformData.engagementRate || 0),
     bio: bio || '',
     interests: (creator.interests || []).join(', '),
+    languages: (Array.isArray(creator.languages) ? creator.languages : []).filter(Boolean).join(', '),
   };
 };
 
-const downloadCreatorsWorkbook = async (creatorRows) => {
+const downloadCreatorsWorkbook = async (creatorRows, filePrefix = 'Bookmarked_Creators') => {
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Bookmarked Creators');
+  const worksheet = workbook.addWorksheet('Creators');
 
   worksheet.columns = EXPORT_COLUMNS;
   creatorRows.forEach(({ creator }) => worksheet.addRow(getCreatorExportRow(creator)));
@@ -164,7 +172,7 @@ const downloadCreatorsWorkbook = async (creatorRows) => {
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
-  saveAs(blob, `Bookmarked_Creators_${dayjs().format('DD-MMM-YYYY')}.xlsx`);
+  saveAs(blob, `${filePrefix}_${dayjs().format('DD-MMM-YYYY')}.xlsx`);
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -172,19 +180,29 @@ const downloadCreatorsWorkbook = async (creatorRows) => {
 const CreatorList = ({
   creators,
   isLoading,
+  isLoadingMore,
   isError,
+  isReachingEnd,
   pagination,
   sortByFollowers,
+  bookmarkedCreators,
+  isLoadingBookmarks,
   onToggleFollowersSort,
+  onLoadMore,
   selectedIds,
   onSelect,
   onInviteOne,
   onOpenDetails,
 }) => {
+  const { enqueueSnackbar } = useSnackbar();
+  const { mainRef } = useMainContext();
+  const lgUp = useResponsive('up', 'lg');
+  const mdUp = useResponsive('up', 'md');
   const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [compareSelectedIds, setCompareSelectedIds] = useState([]);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleCompareSelect = useCallback((rowKey) => {
     setCompareSelectedIds((prev) => {
@@ -241,19 +259,79 @@ const CreatorList = ({
         .filter(Boolean),
     [compareSelectedIds, creatorRows]
   );
-  const visibleCreatorRows = useMemo(
+  const bookmarkedRows = useMemo(
     () =>
-      showBookmarkedOnly
-        ? creatorRows.filter(({ rowKey }) => selectedIds?.includes(rowKey))
-        : creatorRows,
-    [creatorRows, selectedIds, showBookmarkedOnly]
+      (bookmarkedCreators || []).map((creator, index) => ({
+        creator,
+        rowKey: creator.rowId || `${creator.userId}-${creator.platform || index}`,
+      })),
+    [bookmarkedCreators]
   );
-  const hasVisibleBookmarkedCreators = showBookmarkedOnly && visibleCreatorRows.length > 0;
-
+  const visibleCreatorRows = useMemo(
+    () => (showBookmarkedOnly ? bookmarkedRows : creatorRows),
+    [bookmarkedRows, creatorRows, showBookmarkedOnly]
+  );
   const handleExportBookmarkedCreators = useCallback(async () => {
-    if (!hasVisibleBookmarkedCreators) return;
-    await downloadCreatorsWorkbook(visibleCreatorRows);
-  }, [hasVisibleBookmarkedCreators, visibleCreatorRows]);
+    if (!bookmarkedRows.length) {
+      enqueueSnackbar('No bookmarked creators to export', { variant: 'warning' });
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      await downloadCreatorsWorkbook(bookmarkedRows, 'Bookmarked_Creators');
+      enqueueSnackbar(
+        `Exported ${bookmarkedRows.length} creator${bookmarkedRows.length === 1 ? '' : 's'}`,
+        { variant: 'success' }
+      );
+    } catch (error) {
+      console.error('Failed to export bookmarked creators:', error);
+      enqueueSnackbar('Failed to export creators', { variant: 'error' });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [bookmarkedRows, enqueueSnackbar]);
+
+  // Compute viewedCount and total for results info
+  const total = showBookmarkedOnly ? bookmarkedRows.length : (pagination?.total ?? creators.length);
+  const viewedCount = creators.length;
+  const displayedCount = showBookmarkedOnly ? visibleCreatorRows.length : viewedCount;
+  let primaryActionLabel = 'Compare Creators';
+  let handlePrimaryAction = handleEnterCompare;
+
+  if (showBookmarkedOnly) {
+    primaryActionLabel = 'Export Results';
+    handlePrimaryAction = handleExportBookmarkedCreators;
+  } else if (compareMode) {
+    primaryActionLabel = 'Select Creators';
+    handlePrimaryAction = undefined;
+  }
+
+  const isPrimaryActionDisabled = showBookmarkedOnly ? isExporting : compareMode;
+  // eslint-disable-next-line no-nested-ternary
+  const columns = lgUp ? 3 : mdUp ? 2 : 1;
+  const rowCount = Math.ceil(visibleCreatorRows.length / columns);
+  const virtualRowCount = showBookmarkedOnly ? rowCount : rowCount + (isReachingEnd ? 0 : 1);
+
+  const rowVirtualizer = useVirtualizer({
+    count: virtualRowCount,
+    getScrollElement: () => mainRef?.current,
+    estimateSize: () => (lgUp ? 454 : 390),
+    overscan: 2,
+  });
+
+  const virtualRows = rowVirtualizer.getVirtualItems();
+
+  useEffect(() => {
+    if (showBookmarkedOnly || isLoadingMore || isReachingEnd || !onLoadMore) return;
+
+    const [lastItem] = [...virtualRows].reverse();
+    if (!lastItem) return;
+
+    if (lastItem.index >= rowCount - 2) {
+      onLoadMore();
+    }
+  }, [isLoadingMore, isReachingEnd, onLoadMore, rowCount, showBookmarkedOnly, virtualRows]);
 
   if (isError) {
     return (
@@ -287,29 +365,9 @@ const CreatorList = ({
     );
   }
 
-  if (!creators || creators.length === 0) {
+  if ((!creators || creators.length === 0) && !showBookmarkedOnly) {
     return <EmptyState />;
   }
-
-  // Compute viewedCount and total for results info
-  const total = pagination?.total ?? creators.length;
-  const viewedCount =
-    pagination?.limit && pagination?.page
-      ? Math.min(pagination.page * pagination.limit, total)
-      : creators.length;
-  const displayedCount = showBookmarkedOnly ? visibleCreatorRows.length : viewedCount;
-  let primaryActionLabel = 'Compare Creators';
-  let handlePrimaryAction = handleEnterCompare;
-
-  if (showBookmarkedOnly) {
-    primaryActionLabel = 'Export';
-    handlePrimaryAction = handleExportBookmarkedCreators;
-  } else if (compareMode) {
-    primaryActionLabel = 'Select Creators';
-    handlePrimaryAction = undefined;
-  }
-
-  const isPrimaryActionDisabled = showBookmarkedOnly ? !hasVisibleBookmarkedCreators : compareMode;
 
   return (
     <Box sx={{ mt: 4 }}>
@@ -482,36 +540,87 @@ const CreatorList = ({
       {/* Creator cards */}
       <Box
         sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: 'minmax(0, 1fr)',
-            md: 'repeat(2, minmax(0, 1fr))',
-            lg: 'repeat(3, minmax(0, 1fr))',
-          },
-          justifyContent: 'stretch',
-          gap: 2,
+          position: 'relative',
+          width: '100%',
+          height:
+            visibleCreatorRows.length === 0 && showBookmarkedOnly
+              ? 'auto'
+              : rowVirtualizer.getTotalSize(),
         }}
       >
         {visibleCreatorRows.length === 0 && showBookmarkedOnly ? (
-          <Box sx={{ gridColumn: '1 / -1' }}>
-            <BookmarkedEmptyState />
+          <Box>
+            {isLoadingBookmarks ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              <BookmarkedEmptyState />
+            )}
           </Box>
         ) : null}
-        {visibleCreatorRows.map(({ creator, rowKey }) => (
-          <CreatorCard
-            key={rowKey}
-            creator={creator}
-            selected={selectedIds?.includes(rowKey)}
-            onSelect={onSelect}
-            onInviteOne={onInviteOne}
-            onOpenDetails={onOpenDetails}
-            rowKey={rowKey}
-            compareMode={compareMode}
-            compareSelected={compareSelectedIds.includes(rowKey)}
-            onCompareSelect={handleCompareSelect}
-          />
-        ))}
+        {virtualRows.map((virtualRow) => {
+          const startIndex = virtualRow.index * columns;
+          const rowItems = visibleCreatorRows.slice(startIndex, startIndex + columns);
+          const isLoaderRow = rowItems.length === 0;
+
+          return (
+            <Box
+              key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+                pb: 2,
+              }}
+            >
+              {isLoaderRow ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                  {isLoadingMore ? <CircularProgress size={24} /> : null}
+                </Box>
+              ) : (
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: 'minmax(0, 1fr)',
+                      md: 'repeat(2, minmax(0, 1fr))',
+                      lg: 'repeat(3, minmax(0, 1fr))',
+                    },
+                    justifyContent: 'stretch',
+                    gap: 2,
+                  }}
+                >
+                  {rowItems.map(({ creator, rowKey }) => (
+                    <CreatorCard
+                      key={rowKey}
+                      creator={creator}
+                      selected={selectedIds?.includes(rowKey)}
+                      onSelect={onSelect}
+                      onInviteOne={onInviteOne}
+                      onOpenDetails={onOpenDetails}
+                      rowKey={rowKey}
+                      compareMode={compareMode}
+                      compareSelected={compareSelectedIds.includes(rowKey)}
+                      onCompareSelect={handleCompareSelect}
+                    />
+                  ))}
+                </Box>
+              )}
+            </Box>
+          );
+        })}
       </Box>
+
+      {!showBookmarkedOnly && isReachingEnd && visibleCreatorRows.length > 0 ? (
+        <Typography sx={{ mt: 1, mb: 2, textAlign: 'center', fontSize: 13, color: 'text.secondary' }}>
+          All creators loaded
+        </Typography>
+      ) : null}
 
       <CreatorCompareDialog
         open={compareModalOpen}
@@ -529,14 +638,19 @@ const CreatorList = ({
 CreatorList.propTypes = {
   creators: PropTypes.array,
   isLoading: PropTypes.bool,
+  isLoadingMore: PropTypes.bool,
   isError: PropTypes.any,
+  isReachingEnd: PropTypes.bool,
   pagination: PropTypes.shape({
     page: PropTypes.number,
     limit: PropTypes.number,
     total: PropTypes.number,
   }),
   sortByFollowers: PropTypes.bool,
+  bookmarkedCreators: PropTypes.array,
+  isLoadingBookmarks: PropTypes.bool,
   onToggleFollowersSort: PropTypes.func,
+  onLoadMore: PropTypes.func,
   selectedIds: PropTypes.arrayOf(PropTypes.string),
   onSelect: PropTypes.func,
   onInviteOne: PropTypes.func,
@@ -546,10 +660,15 @@ CreatorList.propTypes = {
 CreatorList.defaultProps = {
   creators: [],
   isLoading: false,
+  isLoadingMore: false,
   isError: null,
+  isReachingEnd: true,
   pagination: null,
   sortByFollowers: false,
+  bookmarkedCreators: [],
+  isLoadingBookmarks: false,
   onToggleFollowersSort: undefined,
+  onLoadMore: undefined,
   selectedIds: [],
   onSelect: undefined,
   onInviteOne: undefined,

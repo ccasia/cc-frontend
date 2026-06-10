@@ -13,7 +13,6 @@ import {
   ONYX,
   BLUE,
   getPlatformIcon,
-  hasCreatorRating,
   getPlatformHandle,
   resolvePlatformData,
   formatEngagementRate,
@@ -66,49 +65,64 @@ StatItem.propTypes = {
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
 
-const DetailItem = ({ label, value }) => (
-  <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
-    <Typography
-      sx={{
-        color: '#8E8E93',
-        fontSize: 12,
-        fontWeight: 600,
-        lineHeight: '16px',
-        mb: 1,
-      }}
-    >
-      {label}
-    </Typography>
-    <Box
-      sx={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        px: 1,
-        py: '6px',
-        bgcolor: '#FFFFFF',
-        border: '1px solid #EBEBEB',
-        boxShadow: 'inset 0px -3px 0px #E7E7E7',
-        borderRadius: '6px',
-      }}
-    >
+const DetailItem = ({ label, value }) => {
+  const values = (Array.isArray(value) ? value : [value]).filter(
+    (item) => item || item === 0
+  );
+
+  return (
+    <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
       <Typography
         sx={{
-          color: '#636366',
+          color: '#8E8E93',
           fontSize: 12,
           fontWeight: 600,
           lineHeight: '16px',
-          whiteSpace: 'nowrap',
+          mb: 1,
         }}
       >
-        {value || '—'}
+        {label}
       </Typography>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+        {(values.length ? values : ['—']).map((item) => (
+          <Box
+            key={item}
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              px: 1,
+              py: '6px',
+              bgcolor: '#FFFFFF',
+              border: '1px solid #EBEBEB',
+              boxShadow: 'inset 0px -3px 0px #E7E7E7',
+              borderRadius: '6px',
+            }}
+          >
+            <Typography
+              sx={{
+                color: '#636366',
+                fontSize: 12,
+                fontWeight: 600,
+                lineHeight: '16px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {item}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
     </Box>
-  </Box>
-);
+  );
+};
 
 DetailItem.propTypes = {
   label: PropTypes.string.isRequired,
-  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  value: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number,
+    PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.number])),
+  ]),
 };
 
 DetailItem.defaultProps = {
@@ -293,7 +307,6 @@ const CreatorProfilePanel = ({
   const handle = getPlatformHandle(creator, platform);
   const platformIcon = getPlatformIcon(platform);
   const rating = resolveCreatorRating(creator);
-  const isRated = hasCreatorRating(creator);
 
   const profilePicture =
     platform === 'instagram'
@@ -314,10 +327,11 @@ const CreatorProfilePanel = ({
   const [city, country] = (creator.location || '').split(',').map((part) => part.trim());
 
   const languages = Array.isArray(creator.languages)
-    ? creator.languages.filter(Boolean).join(', ')
-    : creator.languages || null;
+    ? creator.languages.filter(Boolean)
+    : [creator.languages].filter(Boolean);
 
   const pastCampaigns = Array.isArray(creator.pastCampaigns) ? creator.pastCampaigns : [];
+  const hasPastCampaigns = pastCampaigns.length > 0;
 
   const statItems = [
     { label: 'Followers', value: formatNumber(followers) },
@@ -436,7 +450,7 @@ const CreatorProfilePanel = ({
           </Stack>
 
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 2 }}>
-            {isRated ? (
+            {hasPastCampaigns ? (
               <Box sx={{ minWidth: 0 }}>
                 <Typography
                   sx={{
@@ -506,7 +520,7 @@ const CreatorProfilePanel = ({
 
             <IconButton
               aria-label={selected ? 'Remove bookmark' : 'Bookmark creator'}
-              onClick={() => onToggleBookmark?.(rowKey)}
+              onClick={() => onToggleBookmark?.(rowKey, creator)}
               sx={{
                 width: 38,
                 height: 38,
