@@ -19,14 +19,14 @@ import {
 } from './creator-helpers';
 
 const StatItem = ({ label, value }) => (
-  <Box sx={{ minWidth: label === 'Engagement Rate' ? 118 : 64, flex: '0 0 auto' }}>
+  <Box sx={{ minWidth: label === 'Engagement Rate' ? 126 : 72, flex: '0 0 auto' }}>
     <Typography
       sx={{
         display: 'block',
         color: BLUE,
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: 600,
-        lineHeight: '15px',
+        lineHeight: '17px',
         whiteSpace: 'nowrap',
       }}
     >
@@ -36,9 +36,9 @@ const StatItem = ({ label, value }) => (
       sx={{
         color: BLUE,
         fontFamily: 'Instrument Serif',
-        fontSize: 23,
+        fontSize: 27,
         fontWeight: 400,
-        lineHeight: '27px',
+        lineHeight: '31px',
       }}
     >
       {value}
@@ -60,7 +60,7 @@ const RatingStars = ({ rating }) => {
         <Iconify
           key={star}
           icon="material-symbols:star-rounded"
-          width={14}
+          width={17}
           color={star <= activeStars ? '#FFC702' : '#D9D9D9'}
         />
       ))}
@@ -73,13 +73,13 @@ RatingStars.propTypes = {
 };
 
 const CreatorRating = ({ rating }) => (
-  <Box sx={{ width: 148, flex: '0 0 auto' }}>
+  <Box sx={{ width: 172, flex: '0 0 auto' }}>
     <Typography
       sx={{
         color: ONYX,
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: 400,
-        lineHeight: '15px',
+        lineHeight: '17px',
         textTransform: 'uppercase',
       }}
     >
@@ -90,9 +90,9 @@ const CreatorRating = ({ rating }) => (
         <Typography
           sx={{
             color: BLUE,
-            fontSize: 21,
+            fontSize: 26,
             fontWeight: 600,
-            lineHeight: '25px',
+            lineHeight: '30px',
           }}
         >
           {rating.toFixed(1)}
@@ -100,9 +100,9 @@ const CreatorRating = ({ rating }) => (
         <Typography
           sx={{
             color: BLUE,
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: 400,
-            lineHeight: '15px',
+            lineHeight: '17px',
             mb: '1px',
           }}
         >
@@ -117,6 +117,37 @@ const CreatorRating = ({ rating }) => (
 CreatorRating.propTypes = {
   rating: PropTypes.number.isRequired,
 };
+
+const FirstCampaign = () => (
+  <Box sx={{ width: 172, flex: '0 0 auto' }}>
+    <Box
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        px: 1,
+        height: 24,
+        bgcolor: '#CFB5F6',
+        borderRadius: '4px',
+      }}
+    >
+      <Typography sx={{ color: '#FFFFFF', fontSize: 12, fontWeight: 500, lineHeight: '16px' }}>
+        First Campaign
+      </Typography>
+    </Box>
+    <Typography
+      sx={{
+        mt: 0.5,
+        fontStyle: 'italic',
+        fontSize: 12,
+        fontWeight: 400,
+        color: '#636366',
+        lineHeight: '16px',
+      }}
+    >
+      currently unverified by Cult
+    </Typography>
+  </Box>
+);
 
 const VideoThumbnail = ({ video, platform }) => {
   const [hasImageError, setHasImageError] = useState(false);
@@ -205,6 +236,7 @@ const CreatorCard = ({
   const platformIcon = getPlatformIcon(platform);
   const creatorRowKey = rowKey || creator.rowId || creator.userId;
   const rating = resolveCreatorRating(creator);
+  const hasPastCampaigns = Array.isArray(creator.pastCampaigns) && creator.pastCampaigns.length > 0;
 
   const profilePicture =
     platform === 'instagram'
@@ -371,7 +403,7 @@ const CreatorCard = ({
           flexWrap: 'wrap',
         }}
       >
-        <CreatorRating rating={rating} />
+        {hasPastCampaigns ? <CreatorRating rating={rating} /> : <FirstCampaign />}
         <Stack
           direction="row"
           alignItems="center"
@@ -516,6 +548,7 @@ CreatorCard.propTypes = {
     averageRating: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     score: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     creditScore: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    pastCampaigns: PropTypes.arrayOf(PropTypes.object),
     handles: PropTypes.shape({
       instagram: PropTypes.string,
       tiktok: PropTypes.string,
