@@ -96,7 +96,14 @@ const FilterPills = ({ filters, onRemoveFilter }) => {
   if (pills.length === 0) return null;
 
   return (
-    <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1} mb={1}>
+    <Stack
+      direction="row"
+      justifyContent="space-between"
+      alignItems="flex-start"
+      spacing={1}
+      mt={1.25}
+      mb={1}
+    >
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ flex: 1 }}>
         {pills.map((pill) => (
           <Chip

@@ -1,74 +1,45 @@
+import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { useNavigate } from 'react-router';
-import { useRef, useState, useEffect } from 'react';
 
-import { Box, Chip, Stack, Avatar, Checkbox, Typography } from '@mui/material';
+import { Box, Chip, Stack, Button, Avatar, IconButton, Typography } from '@mui/material';
 
 import { formatNumber } from 'src/utils/socialMetricsCalculator';
 import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const formatEngagementRate = (rate) => {
-  if (!rate && rate !== 0) return '0%';
-  return `${Number(rate).toFixed(2)}%`;
-};
-
-/** Pick the primary platform stats for the card */
-const resolvePlatformData = (creator) => {
-  if (creator.platform === 'instagram' && creator.instagram?.connected) {
-    return { platform: 'instagram', ...creator.instagram };
-  }
-
-  if (creator.platform === 'tiktok' && creator.tiktok?.connected) {
-    return { platform: 'tiktok', ...creator.tiktok };
-  }
-
-  const ig = creator.instagram;
-  const tt = creator.tiktok;
-
-  // Prefer the platform with a connection; if both, pick the one with more followers
-  if (ig?.connected && tt?.connected) {
-    return ig.followers >= tt.followers
-      ? { platform: 'instagram', ...ig }
-      : { platform: 'tiktok', ...tt };
-  }
-  if (ig?.connected) return { platform: 'instagram', ...ig };
-  if (tt?.connected) return { platform: 'tiktok', ...tt };
-  return { platform: null };
-};
-
-const getPlatformHandle = (creator, platform) => {
-  if (platform === 'instagram')
-    return creator.handles?.instagram ? `${creator.handles.instagram}` : null;
-  if (platform === 'tiktok') return creator.handles?.tiktok ? `${creator.handles.tiktok}` : null;
-  return null;
-};
-
-const getPlatformIcon = (platform) => {
-  if (platform === 'instagram') return 'mdi:instagram';
-  if (platform === 'tiktok') return 'ic:baseline-tiktok';
-  return null;
-};
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
+import {
+  ONYX,
+  BLUE,
+  getPlatformIcon,
+  getPlatformHandle,
+  resolvePlatformData,
+  formatEngagementRate,
+  resolveCreatorRating,
+} from './creator-helpers';
 
 const StatItem = ({ label, value }) => (
-  <Box>
+  <Box sx={{ minWidth: label === 'Engagement Rate' ? 118 : 64, flex: '0 0 auto' }}>
     <Typography
-      variant="caption"
       sx={{
-        color: '#1340FF',
-        fontWeight: 700,
+        display: 'block',
+        color: BLUE,
+        fontSize: 11,
+        fontWeight: 600,
+        lineHeight: '15px',
+        whiteSpace: 'nowrap',
       }}
     >
       {label}
     </Typography>
     <Typography
-      variant="h3"
-      sx={{ fontWeight: 400, fontFamily: 'Instrument Serif', color: '#1340FF' }}
+      sx={{
+        color: BLUE,
+        fontFamily: 'Instrument Serif',
+        fontSize: 23,
+        fontWeight: 400,
+        lineHeight: '27px',
+      }}
     >
       {value}
     </Typography>
@@ -80,7 +51,74 @@ StatItem.propTypes = {
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
 
-const VideoThumbnail = ({ video, platform, tiktokHandle }) => {
+const RatingStars = ({ rating }) => {
+  const activeStars = Math.round(rating);
+
+  return (
+    <Stack direction="row" alignItems="center" spacing={0.5}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Iconify
+          key={star}
+          icon="material-symbols:star-rounded"
+          width={14}
+          color={star <= activeStars ? '#FFC702' : '#D9D9D9'}
+        />
+      ))}
+    </Stack>
+  );
+};
+
+RatingStars.propTypes = {
+  rating: PropTypes.number.isRequired,
+};
+
+const CreatorRating = ({ rating }) => (
+  <Box sx={{ width: 148, flex: '0 0 auto' }}>
+    <Typography
+      sx={{
+        color: ONYX,
+        fontSize: 11,
+        fontWeight: 400,
+        lineHeight: '15px',
+        textTransform: 'uppercase',
+      }}
+    >
+      Creator Rating
+    </Typography>
+    <Stack direction="row" alignItems="flex-end" spacing={1} sx={{ mt: 0.5 }}>
+      <Stack direction="row" alignItems="flex-end" spacing={0}>
+        <Typography
+          sx={{
+            color: BLUE,
+            fontSize: 21,
+            fontWeight: 600,
+            lineHeight: '25px',
+          }}
+        >
+          {rating.toFixed(1)}
+        </Typography>
+        <Typography
+          sx={{
+            color: BLUE,
+            fontSize: 11,
+            fontWeight: 400,
+            lineHeight: '15px',
+            mb: '1px',
+          }}
+        >
+          / 5.0
+        </Typography>
+      </Stack>
+      <RatingStars rating={rating} />
+    </Stack>
+  </Box>
+);
+
+CreatorRating.propTypes = {
+  rating: PropTypes.number.isRequired,
+};
+
+const VideoThumbnail = ({ video, platform }) => {
   const [hasImageError, setHasImageError] = useState(false);
 
   const thumbnailUrl =
@@ -88,40 +126,30 @@ const VideoThumbnail = ({ video, platform, tiktokHandle }) => {
       ? video.cached_thumbnail_url || video.thumbnail_url || video.media_url
       : video.cover_image_url;
 
-  const likes = platform === 'instagram' ? video.like_count : video.like_count;
-  const comments = platform === 'instagram' ? video.comments_count : video.comment_count;
-
-  const normalizedTiktokHandle = tiktokHandle ? String(tiktokHandle).replace(/^@/, '') : null;
-  const tiktokCanonicalUrl =
-    video.video_url ||
-    (normalizedTiktokHandle && video.video_id
-      ? `https://www.tiktok.com/@${normalizedTiktokHandle}/video/${video.video_id}`
-      : null);
-
-  const permalink =
-    platform === 'instagram' ? video.permalink : tiktokCanonicalUrl || video.embed_link;
-
+  // Non-interactive in the card: clicks fall through to the card so admins open
+  // the details drawer instead of being redirected to the video.
   return (
     <Box
-      component={permalink ? 'a' : 'div'}
-      href={permalink || undefined}
-      target={permalink ? '_blank' : undefined}
-      rel={permalink ? 'noopener noreferrer' : undefined}
-      onClick={(e) => e.stopPropagation()}
       sx={{
         position: 'relative',
-        width: '100%',
-        height: 200,
+        flex: '1 1 0',
+        minWidth: 0,
+        height: '100%',
         overflow: 'hidden',
-        cursor: permalink ? 'pointer' : 'default',
-        textDecoration: 'none',
-        '&:hover .thumbnail-overlay': {
-          opacity: 1,
-        },
+        borderRadius: 1,
+        bgcolor: '#EBEBEB',
+        '&::after': thumbnailUrl
+          ? {
+              content: '""',
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.7) 80%)',
+              pointerEvents: 'none',
+            }
+          : undefined,
       }}
     >
-      {/* Thumbnail image */}
-      {thumbnailUrl && !hasImageError && (
+      {thumbnailUrl && !hasImageError ? (
         <Box
           component="img"
           src={thumbnailUrl}
@@ -130,380 +158,347 @@ const VideoThumbnail = ({ video, platform, tiktokHandle }) => {
             width: '100%',
             height: '100%',
             objectFit: 'cover',
+            display: 'block',
           }}
-          onError={() => {
-            setHasImageError(true);
-          }}
+          onError={() => setHasImageError(true)}
         />
-      )}
-
-      {/* Fallback when no thumbnail */}
-      {(!thumbnailUrl || hasImageError) && (
+      ) : (
         <Box
           sx={{
             width: '100%',
             height: '100%',
-            bgcolor: 'grey.200',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Iconify icon="mdi:video-outline" width={32} color="grey.500" />
+          <Iconify icon="mdi:image-outline" width={24} color="#8E8E93" />
         </Box>
       )}
-
-      {/* Stats overlay at bottom */}
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
-          px: 1,
-          py: 0.75,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-        }}
-      >
-        <Stack direction="row" alignItems="center" spacing={0.5}>
-          <Iconify icon="mdi:heart-outline" width={20} color="#fff" />
-          <Typography sx={{ color: '#fff', fontSize: 11, fontWeight: 600 }}>
-            {formatNumber(likes || 0)}
-          </Typography>
-        </Stack>
-        <Stack direction="row" alignItems="center" spacing={0.5}>
-          <Iconify icon="tabler:message-circle" width={20} color="#fff" />
-          <Typography sx={{ color: '#fff', fontSize: 11, fontWeight: 600 }}>
-            {formatNumber(comments || 0)}
-          </Typography>
-        </Stack>
-      </Box>
     </Box>
   );
 };
 
 VideoThumbnail.propTypes = {
   video: PropTypes.object.isRequired,
-  platform: PropTypes.oneOf(['instagram', 'tiktok']).isRequired,
-  tiktokHandle: PropTypes.string,
+  platform: PropTypes.oneOf(['instagram', 'tiktok']),
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+VideoThumbnail.defaultProps = {
+  platform: null,
+};
 
-const CreatorCard = ({ creator, selected, onSelect }) => {
-  const navigate = useNavigate();
-  const bioRef = useRef(null);
-
-  const [isBioExpanded, setIsBioExpanded] = useState(false);
-  const [hasBioOverflow, setHasBioOverflow] = useState(false);
-
+const CreatorCard = ({
+  creator,
+  selected,
+  onSelect,
+  onInviteOne,
+  onOpenDetails,
+  rowKey,
+  compareMode,
+  compareSelected,
+  onCompareSelect,
+}) => {
   const platformData = resolvePlatformData(creator);
   const { platform } = platformData;
   const handle = getPlatformHandle(creator, platform);
   const platformIcon = getPlatformIcon(platform);
+  const creatorRowKey = rowKey || creator.rowId || creator.userId;
+  const rating = resolveCreatorRating(creator);
 
-  const profilePicture = 
-    platform === 'instagram' 
-    ? creator.instagram?.profilePictureUrl || null
-    : creator.tiktok?.profilePictureUrl || null;
+  const profilePicture =
+    platform === 'instagram'
+      ? creator.instagram?.profilePictureUrl || null
+      : creator.tiktok?.profilePictureUrl || null;
   const bio =
     platform === 'tiktok'
       ? creator.tiktok?.biography || creator.about || null
       : creator.instagram?.biography || creator.about || null;
-
   const followers = platformData.followers || 0;
   const engagementRate = platformData.engagementRate || 0;
-  const avgLikes = platformData.averageLikes || 0;
-  const avgSaves = platformData.averageSaves || 0;
-  const avgShares = platformData.averageShares || 0;
-
   const topVideos = [...(platformData.topVideos || [])]
-    .sort((a, b) => {
-      const aLikes = Number(a?.like_count || 0);
-      const bLikes = Number(b?.like_count || 0);
-      return bLikes - aLikes;
-    })
+    .sort((a, b) => Number(b?.like_count || 0) - Number(a?.like_count || 0))
     .slice(0, 3);
+  const mediaSlots = Array.from({ length: 3 }, (_, index) => topVideos[index] || null);
 
-  useEffect(() => {
-    const checkOverflow = () => {
-      const el = bioRef.current;
-      if (!el) return;
+  const handleCardClick = () => {
+    if (compareMode) {
+      onCompareSelect?.(creatorRowKey);
+      return;
+    }
+    onOpenDetails?.(creatorRowKey);
+  };
 
-      const computed = window.getComputedStyle(el);
-      const lineHeight = Number.parseFloat(computed.lineHeight) || 0;
-      const collapsedHeight = lineHeight > 0 ? lineHeight * 4 : 0;
-      const isOverflowing = collapsedHeight > 0 ? el.scrollHeight > collapsedHeight + 1 : false;
-      setHasBioOverflow(isOverflowing);
-    };
+  const handleSelect = (event) => {
+    event.stopPropagation();
+    onSelect?.(creatorRowKey, creator);
+  };
 
-    const frame = requestAnimationFrame(checkOverflow);
-    window.addEventListener('resize', checkOverflow);
-
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('resize', checkOverflow);
-    };
-  }, [bio, isBioExpanded]);
-
-  useEffect(() => {
-    setIsBioExpanded(false);
-  }, [creator.rowId, creator.userId]);
+  const handleInvite = (event) => {
+    event.stopPropagation();
+    if (onInviteOne) {
+      onInviteOne(creatorRowKey);
+      return;
+    }
+    onSelect?.(creatorRowKey, creator);
+  };
 
   return (
     <Box
-      onClick={() => {
-        navigate(`/dashboard/mediakit/client/${creator.creatorId}`, {
-          state: {
-            returnTo: {
-              pathname: window.location.pathname,
-              search: window.location.search,
-            },
-          },
-        });
-      }}
+      onClick={handleCardClick}
       sx={{
         position: 'relative',
-        overflow: isBioExpanded ? 'visible' : 'hidden',
         display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        bgcolor: 'background.paper',
+        flexDirection: 'column',
+        width: '100%',
+        minHeight: { xs: 350, lg: 404, xl: 430 },
+        p: 2.25,
+        gap: 1.75,
+        border: '2px solid transparent',
+        background: compareSelected
+          ? 'linear-gradient(#F5F5F5,#F5F5F5) padding-box, linear-gradient(180deg,#1340FF 0%,#8859FE 100%) border-box'
+          : 'linear-gradient(#F5F5F5,#F5F5F5) padding-box, linear-gradient(#F5F5F5,#F5F5F5) border-box',
+        borderRadius: '20px',
         cursor: 'pointer',
-        transition: 'background-color 150ms ease',
+        transition: 'transform 150ms ease',
         '&:hover': {
-          bgcolor: 'rgba(19, 64, 255, 0.08)',
+          transform: 'translateY(-1px)',
         },
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(90deg, #1340FF 0%, #FFFFFF 22%)',
-          opacity: selected ? 1 : 0,
-          transition: 'opacity 150ms ease',
-          pointerEvents: 'none',
-          zIndex: 0,
-        },
-        '& > *': {
-          position: 'relative',
-          zIndex: 1,
-        },
-        p: 1,
-        gap: 2,
       }}
     >
-      {/* ─── Left: User Card ─────────────────────────────────────────────────── */}
-      <Box
-        sx={{
-          width: 200,
-          height: 200,
-          minWidth: 200,
-          p: 2,
-          display: 'flex',
-          flex: 0.5,
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
-          bgcolor: '#F5F5F5',
-          borderRadius: 2,
-          boxShadow: '2px 2px 2px 1px rgba(0,0,0,0.08)',
-          transition: 'box-shadow 0.2s, transform 0.3s',
-          cursor: 'pointer',
-          '&:hover': {
-            boxShadow: '3px 3px 5px 2px rgba(0,0,0,0.5)',
-            transform: 'translateY(-1px)',
-          },
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect?.(creator.rowId || creator.userId);
-        }}
-      >
-        {/* Selection checkbox */}
-        <Checkbox
-          checked={selected}
-          readOnly
-          size="medium"
-          checkedIcon={<Iconify icon='fluent-mdl2:checkbox-composite' width={14} />}
-          icon={<Iconify icon='fluent-mdl2:checkbox' width={14} />}
-          sx={{
-            position: 'absolute',
-            top: 14,
-            left: 14,
-            p: 0,
-            color: '#7B7B7B',
-            pointerEvents: 'none',
-            '&.Mui-checked': {
-              color: '#1340FF',
-            },
-          }}
-        />
-
-        {/* Profile picture */}
-        <Avatar src={profilePicture} alt={creator.name} sx={{ width: 61, height: 61, mb: 1 }} />
-
-        {/* Name */}
-        <Typography
-          sx={{
-            fontWeight: 600,
-            fontSize: 12,
-            textAlign: 'center',
-            lineHeight: 1.3,
-            maxWidth: '100%',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {creator.name}
-        </Typography>
-
-        {/* Social handle */}
-        {handle && (
-          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
-            {platformIcon && <Iconify icon={platformIcon} width={14} color="text.secondary" />}
-            <a
-              href={createSocialProfileUrl(handle, platform)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              style={{ textDecoration: 'none', color: 'inherit' }}
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ height: 42 }}>
+        <Stack direction="row" alignItems="center" spacing={1.25} sx={{ minWidth: 0 }}>
+          <Avatar
+            src={profilePicture}
+            alt={creator.name}
+            sx={{
+              width: 42,
+              height: 42,
+              border: '1px solid #EBEBEB',
+              flex: '0 0 auto',
+            }}
+          />
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              sx={{
+                color: ONYX,
+                fontSize: 15,
+                fontWeight: 600,
+                lineHeight: '20px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
             >
-              <Typography
-                sx={{
-                  fontSize: 12,
-                  color: 'text.secondary',
-                  textDecoration: 'none',
-                  cursor: 'pointer',
-                  transition: 'text-decoration 0.15s',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                {handle}
-              </Typography>
-            </a>
-          </Stack>
-        )}
-
-        {/* Interests */}
-        {creator.interests?.length > 0 && (
-          <Stack direction="row" flexWrap="wrap" justifyContent="center" gap={0.5} sx={{ mt: 1.5 }}>
-            {creator.interests.slice(0, 3).map((interest) => (
-              <Chip
-                key={interest}
-                label={interest}
-                size="small"
-                variant="outlined"
-                sx={{
-                  fontSize: 7,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  bgcolor: '#fff',
-                  borderColor: '#EBEBEB',
-                  color: '#8E8E93',
-                  boxShadow: '0px -2px 0px 0px #EBEBEB inset',
-                  borderRadius: '4px',
-                }}
-              />
-            ))}
-          </Stack>
-        )}
-      </Box>
-
-      {/* ─── Middle: Stats + Bio ──────────────────────────────────────────────── */}
-      <Box
-        sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          maxHeight: isBioExpanded ? 'none' : 190,
-          overflow: isBioExpanded ? 'visible' : 'hidden'
-        }}
-      >
-        {/* Stats row */}
-        <Stack direction="row" justifyContent="space-between" sx={{ mb: 2 }}>
-          <StatItem label="Followers" value={formatNumber(followers)} />
-          <StatItem label="Engagement Rate" value={formatEngagementRate(engagementRate)} />
-          <StatItem label="Avg Likes" value={formatNumber(avgLikes)} />
-          {platform !== 'tiktok' && <StatItem label="Avg Saves" value={formatNumber(avgSaves)} />}
-          <StatItem label="Avg Shares" value={formatNumber(avgShares)} />
+              {creator.name}
+            </Typography>
+            {handle && (
+              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
+                {platformIcon && <Iconify icon={platformIcon} width={12} color={ONYX} />}
+                <Box
+                  component="a"
+                  href={createSocialProfileUrl(handle, platform)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                  sx={{
+                    color: 'inherit',
+                    minWidth: 0,
+                    textDecoration: 'none',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      color: ONYX,
+                      fontSize: 13,
+                      fontWeight: 400,
+                      lineHeight: '17px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {handle}
+                  </Typography>
+                </Box>
+              </Stack>
+            )}
+          </Box>
         </Stack>
 
-        {/* Bio / About */}
-        <Typography
-          ref={bioRef}
+        <IconButton
+          aria-label={selected ? 'Remove bookmark' : 'Bookmark creator'}
+          onClick={handleSelect}
           sx={{
-            fontSize: 13,
-            color: 'text.primary',
-            lineHeight: 1.5,
-            overflow: isBioExpanded ? 'visible' : 'hidden',
-            textOverflow: isBioExpanded ? 'clip' : 'ellipsis',
-            display: isBioExpanded ? 'block' : '-webkit-box',
-            WebkitBoxOrient: isBioExpanded ? 'initial' : 'vertical',
-            WebkitLineClamp: isBioExpanded ? 'initial' : 4,
+            width: 42,
+            height: 42,
+            p: 0,
+            bgcolor: '#FFFFFF',
+            border: '1px solid #E8E8E8',
+            borderRadius: 1,
+            boxShadow: 'inset 0px -3px 0px #E7E7E7',
+            color: ONYX,
+            flex: '0 0 auto',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            '&:hover': {
+              bgcolor: '#FFFFFF',
+            },
+            '& .component-iconify': {
+              display: 'block',
+              flexShrink: 0,
+              lineHeight: 0,
+              transform: 'translateY(-2px)',
+            },
           }}
         >
-          {bio || 'No bio available.'}
-        </Typography>
+          <Iconify
+            icon={selected ? 'material-symbols:bookmark' : 'material-symbols:bookmark-outline'}
+            width={24}
+          />
+        </IconButton>
+      </Stack>
 
-        {hasBioOverflow && (
-          <Typography
-            component="button"
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsBioExpanded((prev) => !prev);
-            }}
-            sx={{
-              mt: 0.75,
-              p: 0,
-              border: 0,
-              bgcolor: 'transparent',
-              color: '#1340FF',
-              fontSize: 11,
-              fontWeight: 600,
-              lineHeight: 1,
-              alignSelf: 'flex-start',
-              cursor: 'pointer',
-            }}
-          >
-            {isBioExpanded ? 'Read less' : 'Read more'}
-          </Typography>
+      <Stack
+        direction="row"
+        alignItems="flex-end"
+        justifyContent="space-between"
+        sx={{
+          columnGap: 2,
+          rowGap: 1,
+          flexWrap: 'wrap',
+        }}
+      >
+        <CreatorRating rating={rating} />
+        <Stack
+          direction="row"
+          alignItems="center"
+          sx={{
+            columnGap: 1.5,
+            rowGap: 1,
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+            minWidth: 0,
+            flex: '1 1 220px',
+          }}
+        >
+          <StatItem label="Followers" value={formatNumber(followers)} />
+          <StatItem label="Engagement Rate" value={formatEngagementRate(engagementRate)} />
+        </Stack>
+      </Stack>
+
+      <Typography
+        sx={{
+          color: ONYX,
+          fontSize: 13,
+          fontWeight: 400,
+          lineHeight: '18px',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {bio || 'No bio available.'}
+      </Typography>
+
+      <Stack direction="row" spacing={1.25} sx={{ height: { xs: 145, lg: 190, xl: 214 } }}>
+        {mediaSlots.map((video, index) =>
+          video ? (
+            <VideoThumbnail key={video.id || video.video_id || index} video={video} platform={platform} />
+          ) : (
+            <Box
+              key={`placeholder-${index}`}
+              sx={{
+                flex: '1 1 0',
+                minWidth: 0,
+                height: '100%',
+                borderRadius: 1,
+                bgcolor: '#EBEBEB',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Iconify icon="mdi:image-outline" width={24} color="#8E8E93" />
+            </Box>
+          )
         )}
-      </Box>
+      </Stack>
 
-      {/* ─── Right: Top Videos ────────────────────────────────────────────────── */}
-      <Stack direction="row" spacing={1} flex={1}>
-        {topVideos.length > 0 ? (
-          topVideos.map((video, idx) => (
-            <VideoThumbnail
-              key={video.id || video.video_id || idx}
-              video={video}
-              platform={platform}
-              tiktokHandle={creator.handles?.tiktok}
+      <Stack
+        direction="row"
+        alignItems="flex-start"
+        justifyContent="space-between"
+        sx={{ minHeight: 28, columnGap: 1, rowGap: 1, flexWrap: 'wrap' }}
+      >
+        <Stack
+          direction="row"
+          alignItems="center"
+          sx={{
+            columnGap: 0.625,
+            rowGap: 0.75,
+            flexWrap: 'wrap',
+            minWidth: 0,
+            maxWidth: { xs: '100%', sm: 'calc(100% - 108px)' },
+          }}
+        >
+          {(creator.interests || []).slice(0, 3).map((interest) => (
+            <Chip
+              key={interest}
+              label={interest}
+              size="small"
+              sx={{
+                height: 28,
+                maxWidth: { xs: 124, lg: 148 },
+                bgcolor: '#FFFFFF',
+                color: ONYX,
+                borderRadius: 12,
+                pointerEvents: 'none',
+                '&:hover, &:focus, &:active': {
+                  bgcolor: '#FFFFFF',
+                },
+                '& .MuiChip-label': {
+                  px: 1,
+                  fontSize: 11,
+                  fontWeight: 500,
+                  lineHeight: '15px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                },
+              }}
             />
-          ))
-        ) : (
-          <Box
-            sx={{
-              width: 150,
-              height: 200,
-              borderRadius: 1.5,
-              bgcolor: 'grey.100',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Typography sx={{ fontSize: 12, color: 'text.disabled' }}>No videos</Typography>
-          </Box>
-        )}
+          ))}
+        </Stack>
+        <Button
+          type="button"
+          onClick={handleInvite}
+          sx={{
+            width: 96,
+            height: 28,
+            minWidth: 96,
+            px: 1,
+            pt: 0.25,
+            pb: 0.625,
+            bgcolor: '#3A3A3C',
+            borderRadius: '6px',
+            boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
+            color: '#FFFFFF',
+            flex: '0 0 auto',
+            fontSize: 13,
+            fontWeight: 600,
+            lineHeight: '17px',
+            textTransform: 'none',
+            '&:hover': {
+              bgcolor: '#3A3A3C',
+              boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.35)',
+            },
+          }}
+        >
+          + Campaign
+        </Button>
       </Stack>
     </Box>
   );
@@ -516,10 +511,11 @@ CreatorCard.propTypes = {
     userId: PropTypes.string,
     creatorId: PropTypes.string,
     name: PropTypes.string,
-    gender: PropTypes.string,
-    age: PropTypes.number,
-    location: PropTypes.string,
-    creditTier: PropTypes.string,
+    creatorRating: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    rating: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    averageRating: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    score: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    creditScore: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     handles: PropTypes.shape({
       instagram: PropTypes.string,
       tiktok: PropTypes.string,
@@ -531,11 +527,23 @@ CreatorCard.propTypes = {
   }).isRequired,
   selected: PropTypes.bool,
   onSelect: PropTypes.func,
+  onInviteOne: PropTypes.func,
+  onOpenDetails: PropTypes.func,
+  rowKey: PropTypes.string,
+  compareMode: PropTypes.bool,
+  compareSelected: PropTypes.bool,
+  onCompareSelect: PropTypes.func,
 };
 
 CreatorCard.defaultProps = {
   selected: false,
   onSelect: undefined,
+  onInviteOne: undefined,
+  onOpenDetails: undefined,
+  rowKey: undefined,
+  compareMode: false,
+  compareSelected: false,
+  onCompareSelect: undefined,
 };
 
 export default CreatorCard;

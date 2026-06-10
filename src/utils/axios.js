@@ -4,9 +4,10 @@ import { HOST_API } from 'src/config-global';
 
 // ----------------------------------------------------------------------
 
-const axiosInstance = axios.create({ baseURL: HOST_API });
+const axiosInstance = axios.create({ baseURL: "https://app.cultcreativeasia.com" });
+// const axiosInstance = axios.create({ baseURL: HOST_API });
 
-// axiosInstance.defaults.withCredentials = false;
+axiosInstance.defaults.withCredentials = true;
 
 axiosInstance.interceptors.request.use((request) => {
   request.headers.app = 'Cult Creative App';
@@ -407,8 +408,10 @@ export const endpoints = {
   },
   discovery: {
     creators: '/api/discovery/creators',
+    creatorsExportData: '/api/discovery/creators/export-data',
     nonPlatformCreators: '/api/discovery/non-platform-creators',
     inviteCreators: '/api/discovery/invite-creators',
+    bookmarks: '/api/discovery/bookmarks',
   },
   invoice: {
     getAll: '/api/invoice/',
