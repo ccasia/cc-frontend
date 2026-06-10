@@ -4,10 +4,9 @@ import { HOST_API } from 'src/config-global';
 
 // ----------------------------------------------------------------------
 
-const axiosInstance = axios.create({ baseURL: "https://app.cultcreativeasia.com" });
-// const axiosInstance = axios.create({ baseURL: HOST_API });
+const axiosInstance = axios.create({ baseURL: HOST_API });
 
-axiosInstance.defaults.withCredentials = true;
+// axiosInstance.defaults.withCredentials = true;
 
 axiosInstance.interceptors.request.use((request) => {
   request.headers.app = 'Cult Creative App';
