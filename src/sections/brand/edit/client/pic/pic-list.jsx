@@ -44,7 +44,7 @@ const TABLE_HEAD = [
 ];
 
 const PICList = ({ personIncharge, companyId, onUpdate, handleActivate }) => {
-  const table = useTable();
+  const { user } = useAuthContext();
   const { initialize } = useAuthContext();
   const router = useRouter();
 
@@ -578,33 +578,35 @@ const PICList = ({ personIncharge, companyId, onUpdate, handleActivate }) => {
           <Iconify icon="eva:edit-fill" sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }} />
           Edit PIC
         </MenuItem>
-        <MenuItem
-          onClick={() => {
-            impersonateClient(menuSelectedPIC.email);
-            // if (!isLoading) {
-            //   handleMenuClose();
-            // }
-          }}
-          sx={{
-            py: 1.25,
-            px: 2,
-            fontSize: 14,
-            '&:hover': { bgcolor: '#F5F5F5' },
-          }}
-        >
-          {isLoading ? (
-            <Iconify
-              icon="line-md:loading-loop"
-              sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
-            />
-          ) : (
-            <Iconify
-              icon="boxicons:user-filled"
-              sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
-            />
-          )}
-          Impersonate
-        </MenuItem>
+        {user?.role === 'superadmin' && (
+          <MenuItem
+            onClick={() => {
+              impersonateClient(menuSelectedPIC.email);
+              // if (!isLoading) {
+              //   handleMenuClose();
+              // }
+            }}
+            sx={{
+              py: 1.25,
+              px: 2,
+              fontSize: 14,
+              '&:hover': { bgcolor: '#F5F5F5' },
+            }}
+          >
+            {isLoading ? (
+              <Iconify
+                icon="line-md:loading-loop"
+                sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
+              />
+            ) : (
+              <Iconify
+                icon="boxicons:user-filled"
+                sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
+              />
+            )}
+            Impersonate
+          </MenuItem>
+        )}
       </Menu>
     </>
   );
