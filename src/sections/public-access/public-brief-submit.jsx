@@ -131,7 +131,7 @@ export default function PublicBriefSubmit({ token }) {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: { xs: 3, md: 6 }, px: { xs: 2, sm: 3, md: 4 } }}>
+    <Container maxWidth="xl" sx={{ py: { xs: 3, md: 6 }, px: { xs: 2, sm: 3, md: 4 }, overflowX: 'hidden' }}>
       <BriefFormLayout
         leftExtra={
           bdName ? (
