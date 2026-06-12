@@ -10,6 +10,7 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
+import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
@@ -29,13 +30,13 @@ import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import EmptyContent from 'src/components/empty-content/empty-content';
 import { useSettingsContext } from 'src/components/settings';
+import EmptyContent from 'src/components/empty-content/empty-content';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import StatusBadge from './components/status-badge';
-import AssignCsmDialog from './dialogs/assign-csm-dialog';
 import HandoverDialog from './dialogs/handover-dialog';
+import AssignCsmDialog from './dialogs/assign-csm-dialog';
 import InviteLinkDialog from './dialogs/invite-link-dialog';
 import DeleteBriefDialog from './dialogs/delete-brief-dialog';
 import SendToClientDialog from './dialogs/send-to-client-dialog';
@@ -211,6 +212,19 @@ export default function CampaignBriefListView() {
     }
   };
 
+  // Re-copy the client review link after the brief has been sent. The backend
+  // builds it from the magic token (clientLink), so the BD isn't limited to the
+  // one-shot copy in the "Brief Sent" dialog.
+  const handleCopyClientLink = async (brief) => {
+    if (!brief.clientLink) return;
+    try {
+      await navigator.clipboard.writeText(brief.clientLink);
+      enqueueSnackbar('Client link copied', { variant: 'success' });
+    } catch {
+      enqueueSnackbar('Could not copy — select manually', { variant: 'warning' });
+    }
+  };
+
   // Shared wrapper for every action button (icon + labeled): white bg, light
   // grey border with an inset bottom "ledge" shadow. On hover the button
   // translates down by that 3px and the shadow collapses, giving a tactile 3D
@@ -278,6 +292,18 @@ export default function CampaignBriefListView() {
         <Iconify icon="material-symbols:delete-outline-rounded" width={18} />
       </IconButton>
     );
+    // Re-copy the client review link (only present once a brief has been sent).
+    const copyLinkIcon = brief.clientLink ? (
+      <Tooltip title="Copy client link">
+        <IconButton
+          size="small"
+          onClick={() => handleCopyClientLink(brief)}
+          sx={{ ...actionBtnSx, color: '#1340FF' }}
+        >
+          <Iconify icon="solar:copy-bold" width={18} />
+        </IconButton>
+      </Tooltip>
+    ) : null;
     const approveIcon = (
       <IconButton size="small" onClick={() => handleApprove(brief)} sx={{ ...actionBtnSx, color: '#15803D' }}>
         <Iconify icon="eva:checkmark-fill" width={18} />
@@ -334,11 +360,11 @@ export default function CampaignBriefListView() {
       case 'DRAFTED':
         return <>{sendIconBtn()}{deleteIcon}</>;
       case 'SENT_TO_CLIENT':
-        return <>{sendIconBtn(true)}{deleteIcon}</>;
+        return <>{copyLinkIcon}{sendIconBtn(true)}{deleteIcon}</>;
       case 'PENDING_REVIEW':
-        return <>{approveIcon}{deleteIcon}</>;
+        return <>{copyLinkIcon}{approveIcon}{deleteIcon}</>;
       case 'APPROVED':
-        return <>{handoverBtn}{deleteIcon}</>;
+        return <>{copyLinkIcon}{handoverBtn}{deleteIcon}</>;
       case 'HANDED_OVER':
         // Superadmin sees the full handed-over toolset (CS-side actions too).
         if (isSuperAdmin) {

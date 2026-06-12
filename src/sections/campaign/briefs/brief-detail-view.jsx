@@ -165,7 +165,7 @@ export default function CampaignBriefDetailView() {
   return (
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
-      sx={{ px: { xs: 2, sm: 3, md: 2 }, pb: 4 }}
+      sx={{ px: { xs: 2, sm: 3, md: 2 }, pb: 4, overflowX: 'hidden' }}
     >
       <BriefFormLayout
         topLeft={

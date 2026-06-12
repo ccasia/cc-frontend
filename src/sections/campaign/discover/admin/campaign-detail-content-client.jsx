@@ -579,7 +579,8 @@ const CampaignDetailContentClient = ({ campaign }) => {
               additionalDetails?.brandGuidelinesUrl ||
               additionalDetails?.referenceContent ||
               additionalDetails?.productImage1Url ||
-              additionalDetails?.productImage2Url;
+              additionalDetails?.productImage2Url ||
+              campaign?.campaignBrief?.otherAttachments?.length > 0;
 
             // Check if Additional Details 2 has any data
             const hasAdditionalDetails2 =
@@ -771,6 +772,43 @@ const CampaignDetailContentClient = ({ campaign }) => {
                                 </Link>
                               );
                             })()}
+                        </Stack>
+                      </Box>
+                    )}
+                    {campaign?.campaignBrief?.otherAttachments?.length > 0 && (
+                      <Box>
+                        <Typography
+                          sx={{
+                            ...SectionTitleStyle,
+                            overflowWrap: 'anywhere',
+                            whiteSpace: 'normal',
+                          }}
+                        >
+                          Other Attachment
+                          {campaign.campaignBrief.otherAttachments.length > 1 ? 's' : ''}
+                        </Typography>
+                        <Stack spacing={0.5}>
+                          {campaign.campaignBrief.otherAttachments.map((url, idx) => {
+                            let filename = url.split('/').pop().split('?')[0];
+                            filename = filename.replace(/_v=.*$/, '');
+                            return (
+                              <Link
+                                key={url || idx}
+                                href={url}
+                                target="_blank"
+                                sx={{
+                                  fontSize: '0.8rem',
+                                  color: '#203ff5',
+                                  textDecoration: 'none',
+                                  overflowWrap: 'anywhere',
+                                  whiteSpace: 'normal',
+                                  '&:hover': { textDecoration: 'underline' },
+                                }}
+                              >
+                                {filename}
+                              </Link>
+                            );
+                          })}
                         </Stack>
                       </Box>
                     )}

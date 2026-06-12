@@ -959,6 +959,39 @@ const CampaignModal = ({ open, handleClose, campaign, mutate }) => {
                       );
                     })()}
 
+                  {/* Other Attachments */}
+                  {campaign?.campaignBrief?.otherAttachments?.length > 0 && (
+                    <Box mt={2}>
+                      <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                        Other Attachment
+                        {campaign.campaignBrief.otherAttachments.length > 1 ? 's' : ''}
+                      </Typography>
+                      <Stack spacing={0.5}>
+                        {campaign.campaignBrief.otherAttachments.map((url, idx) => {
+                          let filename = url.split('/').pop().split('?')[0];
+                          filename = filename.replace(/_v=.*$/, '');
+                          return (
+                            <Link
+                              key={url || idx}
+                              href={url}
+                              target="_blank"
+                              sx={{
+                                fontSize: 14,
+                                color: '#0062CD',
+                                textDecoration: 'none',
+                                overflowWrap: 'anywhere',
+                                whiteSpace: 'normal',
+                                '&:hover': { textDecoration: 'underline' },
+                              }}
+                            >
+                              {filename}
+                            </Link>
+                          );
+                        })}
+                      </Stack>
+                    </Box>
+                  )}
+
                   {/* Campaign Deliverables */}
                   <Box>
                     <Box

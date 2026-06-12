@@ -85,7 +85,7 @@ const OBJECTIVES = [
 ];
 
 const KPI_OPTIONS = [
-  'Views (100k – 1M+)',
+  'Views',
   'Reach & impressions',
   'Engagement rate',
   'Link clicks',
@@ -213,15 +213,27 @@ const LANGUAGE_OPTIONS = (() => {
 
 function SectionHeader({ number, title, optional }) {
   return (
-    <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-      <Box sx={{ position: 'relative', width: 80, height: 64, flexShrink: 0 }}>
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={{ xs: 1, sm: 2 }}
+      sx={{ mb: 2, minWidth: 0 }}
+    >
+      <Box
+        sx={{
+          position: 'relative',
+          width: { xs: 48, sm: 80 },
+          height: { xs: 44, sm: 64 },
+          flexShrink: 0,
+        }}
+      >
         <Box
           sx={{
             position: 'absolute',
-            top: 15,
-            left: 17,
-            width: 71,
-            height: 71,
+            top: { xs: 8, sm: 15 },
+            left: { xs: 6, sm: 17 },
+            width: { xs: 48, sm: 71 },
+            height: { xs: 48, sm: 71 },
             borderRadius: '50%',
             background: 'linear-gradient(180deg, #8A5AFE 0%, rgba(167, 139, 250, 0) 60%)',
             zIndex: 0,
@@ -234,8 +246,8 @@ function SectionHeader({ number, title, optional }) {
             fontFamily: '"Times New Roman", serif',
             fontWeight: 400,
             fontStyle: 'italic',
-            fontSize: '64px',
-            lineHeight: '70.06px',
+            fontSize: { xs: '40px', sm: '64px' },
+            lineHeight: { xs: '44px', sm: '70.06px' },
             letterSpacing: '-0.04em',
             textAlign: 'center',
             color: '#0F172A',
@@ -278,10 +290,12 @@ function SectionHeader({ number, title, optional }) {
           fontFamily: '"Times New Roman", serif',
           fontWeight: 400,
           fontStyle: 'italic',
-          fontSize: '48px',
-          lineHeight: 1,
+          fontSize: { xs: '28px', sm: '48px' },
+          lineHeight: 1.05,
           letterSpacing: '-0.04em',
           color: '#0F172A',
+          minWidth: 0,
+          overflowWrap: 'anywhere',
         }}
       >
         {title}
