@@ -52,9 +52,9 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const { user } = useAuthContext();
 
   // Check if user is superadmin/CSL
-  // const isCSL = user?.admin?.role?.name === 'CSL';
-  // const isSuperAdmin = user?.admin?.mode === 'god';
-  // const isSuperUser = isCSL || isSuperAdmin;
+  const isCSL = user?.admin?.role?.name === 'CSL';
+  const isSuperAdmin = user?.admin?.mode === 'god';
+  const isSuperUser = isCSL || isSuperAdmin;
 
   // Check if user is CSM (for completing activation)
   const isCSM =
