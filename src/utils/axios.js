@@ -453,4 +453,29 @@ export const endpoints = {
     get: (token) => `/api/approval-requests/${token}`,
     action: (token, pitchId) => `/api/approval-requests/${token}/creators/${pitchId}`,
   },
+  campaignBrief: {
+    // BD share-link (existing CLIENT_INVITED flow)
+    myInviteLink: '/api/briefs/my-invite-link',
+    rotateInviteLink: '/api/briefs/my-invite-link/rotate',
+    publicInfo: (token) => `/api/briefs/invite/public/${token}`,
+    publicSubmit: (token) => `/api/briefs/invite/public/${token}/submit`,
+
+    // BD-authored brief flow
+    list: '/api/briefs',
+    create: '/api/briefs',
+    get: (id) => `/api/briefs/${id}`,
+    patch: (id) => `/api/briefs/${id}`,
+    send: (id) => `/api/briefs/${id}/send`,
+    approve: (id) => `/api/briefs/${id}/approve`,
+    handover: (id) => `/api/briefs/${id}/handover`,
+    assignCsm: (id) => `/api/briefs/${id}/assign-csm`,
+    attachments: (id) => `/api/briefs/${id}/attachments`,
+    delete: (id) => `/api/briefs/${id}`,
+
+    // Public (magic-link) client review/edit/approve
+    publicGet: (magicToken) => `/api/briefs/public/${magicToken}`,
+    publicPatch: (magicToken) => `/api/briefs/public/${magicToken}`,
+    publicApprove: (magicToken) => `/api/briefs/public/${magicToken}/approve`,
+    publicAttachments: (magicToken) => `/api/briefs/public/${magicToken}/attachments`,
+  },
 };

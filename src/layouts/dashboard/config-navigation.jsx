@@ -240,18 +240,12 @@ export function useNavData() {
             path: paths.dashboard.finance.invoice,
             icon: <Iconify icon="iconamoon:invoice" width={25} />,
           },
-          // {
-          //   roles: ['superadmin', 'god', 'sales_and_marketing'],
-          //   title: 'Draft Briefs',
-          //   path: paths.dashboard.campaign.drafts,
-          //   icon: <Iconify icon="line-md:briefcase" width={25} />,
-          // },
-          // {
-          //   roles: ['superadmin', 'BD', 'god', 'sales_and_marketing'],
-          //   title: 'My Invite Link',
-          //   path: paths.dashboard.bd.inviteLink,
-          //   icon: <Iconify icon="line-md:link" width={25} />,
-          // },
+          {
+            roles: ['superadmin', 'BD', 'god', 'sales_and_marketing', 'CSL'],
+            title: 'Draft Brief',
+            path: paths.dashboard.campaign.briefs,
+            icon: <Iconify icon="line-md:briefcase" width={25} />,
+          },
         ],
       },
     ],
@@ -389,7 +383,7 @@ export function useNavData() {
       }
 
       // New version uses slug for uniqueness
-      if (user.role === 'admin' && user?.admin?.role?.slug === 'sales_and_marketing') {
+      if (user?.role === 'admin' && user?.admin?.role?.slug === 'sales_and_marketing') {
         return adminNavigations;
       }
 

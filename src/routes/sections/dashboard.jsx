@@ -52,8 +52,8 @@ const PostingLinkSuperadminView = lazy(
 const AdminEditCampaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
 );
-// const DraftCampaignList = lazy(() => import('src/pages/dashboard/campaign/draftList'));
-// const DraftCampaignDetail = lazy(() => import('src/pages/dashboard/campaign/draftDetail'));
+const CampaignBriefList = lazy(() => import('src/pages/dashboard/campaign/briefList'));
+const CampaignBriefDetail = lazy(() => import('src/pages/dashboard/campaign/briefDetail'));
 const CampaignPitchDetail = lazy(
   () => import('src/pages/dashboard/campaign/admin/pitch/campaign-pitch-detail')
 );
@@ -484,10 +484,7 @@ export const dashboardRoutes = [
           //     {
           //       index: true,
           //       element: (
-          //         <RoleBasedGuard
-          //           hasContent
-          //           roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}
-          //         >
+          //         <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}>
           //           <DraftCampaignList />
           //         </RoleBasedGuard>
           //       ),
@@ -495,16 +492,34 @@ export const dashboardRoutes = [
           //     {
           //       path: ':id',
           //       element: (
-          //         <RoleBasedGuard
-          //           hasContent
-          //           roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}
-          //         >
+          //         <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing']}>
           //           <DraftCampaignDetail />
           //         </RoleBasedGuard>
           //       ),
           //     },
           //   ],
           // },
+          {
+            path: 'briefs',
+            children: [
+              {
+                index: true,
+                element: (
+                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing', 'CSM', 'CSL']}>
+                    <CampaignBriefList />
+                  </RoleBasedGuard>
+                ),
+              },
+              {
+                path: ':id',
+                element: (
+                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing', 'CSM', 'CSL']}>
+                    <CampaignBriefDetail />
+                  </RoleBasedGuard>
+                ),
+              },
+            ],
+          },
           {
             path: 'discover',
             children: [
