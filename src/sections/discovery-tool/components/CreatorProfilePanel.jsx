@@ -331,7 +331,6 @@ const CreatorProfilePanel = ({
     : [creator.languages].filter(Boolean);
 
   const pastCampaigns = Array.isArray(creator.pastCampaigns) ? creator.pastCampaigns : [];
-  const hasPastCampaigns = pastCampaigns.length > 0;
 
   const statItems = [
     { label: 'Followers', value: formatNumber(followers) },
@@ -450,73 +449,40 @@ const CreatorProfilePanel = ({
           </Stack>
 
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 2 }}>
-            {hasPastCampaigns ? (
-              <Box sx={{ minWidth: 0 }}>
-                <Typography
-                  sx={{
-                    color: ONYX,
-                    fontSize: 12,
-                    fontWeight: 400,
-                    lineHeight: '16px',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Creator Rating
-                </Typography>
-                <Stack direction="row" alignItems="flex-end" spacing={1} sx={{ mt: 0.5 }}>
-                  <Stack direction="row" alignItems="flex-end" spacing={0}>
-                    <Typography
-                      sx={{ color: BLUE, fontSize: 20, fontWeight: 600, lineHeight: '24px' }}
-                    >
-                      {rating.toFixed(1)}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        color: BLUE,
-                        fontSize: 12,
-                        fontWeight: 400,
-                        lineHeight: '16px',
-                        mb: '1px',
-                      }}
-                    >
-                      &nbsp;/ 5.0
-                    </Typography>
-                  </Stack>
-                  <RatingStars rating={rating} />
-                </Stack>
-              </Box>
-            ) : (
-              <Box sx={{ minWidth: 0 }}>
-                <Box
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    px: 1,
-                    height: 24,
-                    bgcolor: '#CFB5F6',
-                    borderRadius: '4px',
-                  }}
-                >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                sx={{
+                  color: ONYX,
+                  fontSize: 12,
+                  fontWeight: 400,
+                  lineHeight: '16px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Cult Rating
+              </Typography>
+              <Stack direction="row" alignItems="flex-end" spacing={1} sx={{ mt: 0.5 }}>
+                <Stack direction="row" alignItems="flex-end" spacing={0}>
                   <Typography
-                    sx={{ color: '#FFFFFF', fontSize: 12, fontWeight: 500, lineHeight: '16px' }}
+                    sx={{ color: BLUE, fontSize: 20, fontWeight: 600, lineHeight: '24px' }}
                   >
-                    First Campaign
+                    {rating.toFixed(1)}
                   </Typography>
-                </Box>
-                <Typography
-                  sx={{
-                    mt: 0.5,
-                    fontStyle: 'italic',
-                    fontSize: 12,
-                    fontWeight: 400,
-                    color: '#636366',
-                    lineHeight: '16px',
-                  }}
-                >
-                  currently unverified by Cult
-                </Typography>
-              </Box>
-            )}
+                  <Typography
+                    sx={{
+                      color: BLUE,
+                      fontSize: 12,
+                      fontWeight: 400,
+                      lineHeight: '16px',
+                      mb: '1px',
+                    }}
+                  >
+                    &nbsp;/ 5.0
+                  </Typography>
+                </Stack>
+                <RatingStars rating={rating} />
+              </Stack>
+            </Box>
 
             <IconButton
               aria-label={selected ? 'Remove bookmark' : 'Bookmark creator'}

@@ -118,7 +118,7 @@ const EXPORT_COLUMNS = [
   { header: 'Platform', key: 'platform', width: 14 },
   { header: 'Handle', key: 'handle', width: 22 },
   { header: 'Profile URL', key: 'profileUrl', width: 36 },
-  { header: 'Creator Rating', key: 'creatorRating', width: 16 },
+  { header: 'Cult Rating', key: 'creatorRating', width: 16 },
   { header: 'Followers', key: 'followers', width: 14 },
   { header: 'Engagement Rate', key: 'engagementRate', width: 18 },
   { header: 'Bio', key: 'bio', width: 48 },

@@ -105,6 +105,7 @@ const DiscoveryToolView = () => {
 
       const creatorUserId = creator.userId;
       const { platform } = creator;
+      const creatorName = creator.name || 'Creator';
       const isBookmarked = bookmarkedRowKeys.includes(rowKey);
 
       const applyToggle = (current) => {
@@ -147,6 +148,12 @@ const DiscoveryToolView = () => {
           },
           { optimisticData: applyToggle, rollbackOnError: true, revalidate: false }
         );
+
+        if (isBookmarked) {
+          enqueueSnackbar(`${creatorName} removed from your bookmarks.`, { variant: 'error' });
+        } else {
+          enqueueSnackbar(`${creatorName} saved to your bookmarks.`, { variant: 'success' });
+        }
       } catch (error) {
         console.error('Failed to update bookmark:', error);
         enqueueSnackbar(error?.message || 'Failed to update bookmark', {
