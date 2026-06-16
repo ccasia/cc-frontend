@@ -83,7 +83,7 @@ const CreatorRating = ({ rating }) => (
         textTransform: 'uppercase',
       }}
     >
-      Creator Rating
+      Cult Rating
     </Typography>
     <Stack direction="row" alignItems="flex-end" spacing={1} sx={{ mt: 0.5 }}>
       <Stack direction="row" alignItems="flex-end" spacing={0}>
@@ -117,37 +117,6 @@ const CreatorRating = ({ rating }) => (
 CreatorRating.propTypes = {
   rating: PropTypes.number.isRequired,
 };
-
-const FirstCampaign = () => (
-  <Box sx={{ width: 172, flex: '0 0 auto' }}>
-    <Box
-      sx={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        px: 1,
-        height: 24,
-        bgcolor: '#CFB5F6',
-        borderRadius: '4px',
-      }}
-    >
-      <Typography sx={{ color: '#FFFFFF', fontSize: 12, fontWeight: 500, lineHeight: '16px' }}>
-        First Campaign
-      </Typography>
-    </Box>
-    <Typography
-      sx={{
-        mt: 0.5,
-        fontStyle: 'italic',
-        fontSize: 12,
-        fontWeight: 400,
-        color: '#636366',
-        lineHeight: '16px',
-      }}
-    >
-      currently unverified by Cult
-    </Typography>
-  </Box>
-);
 
 const VideoThumbnail = ({ video, platform }) => {
   const [hasImageError, setHasImageError] = useState(false);
@@ -236,7 +205,6 @@ const CreatorCard = ({
   const platformIcon = getPlatformIcon(platform);
   const creatorRowKey = rowKey || creator.rowId || creator.userId;
   const rating = resolveCreatorRating(creator);
-  const hasPastCampaigns = Array.isArray(creator.pastCampaigns) && creator.pastCampaigns.length > 0;
 
   const profilePicture =
     platform === 'instagram'
@@ -403,7 +371,7 @@ const CreatorCard = ({
           flexWrap: 'wrap',
         }}
       >
-        {hasPastCampaigns ? <CreatorRating rating={rating} /> : <FirstCampaign />}
+        <CreatorRating rating={rating} />
         <Stack
           direction="row"
           alignItems="center"
