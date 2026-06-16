@@ -1,15 +1,31 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
-import { Box, Link, Stack, Avatar, Tooltip, Popover, TableRow, TableCell, Typography, IconButton, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Link,
+  Stack,
+  Avatar,
+  Tooltip,
+  Popover,
+  TableRow,
+  TableCell,
+  Typography,
+  IconButton,
+  CircularProgress,
+} from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
-import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+import {
+  formatNumber,
+  createSocialProfileUrl,
+  extractUsernameFromProfileLink,
+} from 'src/utils/media-kit-utils';
 import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 
 import { OUTREACH_STATUS_OPTIONS, getOutreachStatusConfig } from 'src/contants/outreach';
@@ -24,27 +40,33 @@ const TYPE_LABELS = {
   shortlisted: 'Shortlisted',
 };
 
-const PitchTypeCell = React.memo(({ type, isGuestCreator, isInvitedCreator, acceptedInviteByCreator }) => {
-  const label = TYPE_LABELS[type] ?? (type || '—');
+const PitchTypeCell = React.memo(
+  ({ type, isGuestCreator, isInvitedCreator, acceptedInviteByCreator }) => {
+    const label = TYPE_LABELS[type] ?? (type || '—');
 
-  let subtitle = null;
-  if (type === 'shortlisted') {
-    subtitle = isGuestCreator ? '(Non-platform)' : '(On Platform)';
+    let subtitle = null;
+    if (type === 'shortlisted') {
+      subtitle = isGuestCreator ? '(Non-platform)' : '(On Platform)';
+    }
+
+    if (type === 'shortlisted' && (isInvitedCreator || acceptedInviteByCreator)) {
+      subtitle = '(Discovery Tool)';
+    }
+
+    return (
+      <Stack>
+        <Typography fontSize={13.5} noWrap>
+          {label}
+        </Typography>
+        {subtitle && (
+          <Typography fontSize={13.5} noWrap>
+            {subtitle}
+          </Typography>
+        )}
+      </Stack>
+    );
   }
-
-  if (type === 'shortlisted' && (isInvitedCreator || acceptedInviteByCreator)) {
-    subtitle = '(Discovery Tool)';
-  }
-
-  return (
-    <Stack>
-      <Typography fontSize={13.5} noWrap>
-        {label}
-      </Typography>
-      {subtitle && <Typography fontSize={13.5} noWrap>{subtitle}</Typography>}
-    </Stack>
-  );
-});
+);
 
 PitchTypeCell.propTypes = {
   type: PropTypes.string,
@@ -54,8 +76,7 @@ PitchTypeCell.propTypes = {
 };
 
 const getStatusText = (status, pitch, campaign) => {
-  const canonical =
-    typeof status === 'string' ? status.toUpperCase().replace(/\s+/g, '_') : status;
+  const canonical = typeof status === 'string' ? status.toUpperCase().replace(/\s+/g, '_') : status;
 
   // Check for AGREEMENT_PENDING status with PENDING_REVIEW agreement form
   if (canonical === 'AGREEMENT_PENDING') {
@@ -92,7 +113,20 @@ const getStatusText = (status, pitch, campaign) => {
   return statusTextMap[status] || statusTextMap[canonical] || status;
 };
 
-const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedCreator, campaign, isCreditTier, onViewPitch, onRemoved, onOutreachUpdate, isDisabled = false }) => {
+const PitchRow = ({
+  pitch,
+  displayStatus,
+  statusInfo,
+  isGuestCreator,
+  isInvitedCreator,
+  campaign,
+  isCreditTier,
+  onViewPitch,
+  onRemoved,
+  onOutreachUpdate,
+  isDisabled = false,
+  logistics,
+}) => {
   const smUp = useResponsive('up', 'sm');
   const { enqueueSnackbar } = useSnackbar();
 
@@ -129,14 +163,17 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
       onOutreachUpdate?.();
     } catch (error) {
       console.error('Error updating outreach status:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Failed to update outreach status', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to update outreach status', {
+        variant: 'error',
+      });
     } finally {
       setOutreachLoading(false);
     }
   };
 
   // Helper to extract username from stats or profile link
-  const getUsername = (stats, profileLink) => stats?.username || (profileLink ? extractUsernameFromProfileLink(profileLink) : undefined);
+  const getUsername = (stats, profileLink) =>
+    stats?.username || (profileLink ? extractUsernameFromProfileLink(profileLink) : undefined);
 
   const instagramStats = pitch?.user?.creator?.instagramUser || null;
   const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
@@ -152,7 +189,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
   const hasSocialUsernames = instagramUsername || tiktokUsername;
 
   const getDisplayData = () => {
-    const resolveMetric = (...args) => args.find(val => val != null) ?? null;
+    const resolveMetric = (...args) => args.find((val) => val != null) ?? null;
 
     return {
       engagementRate: resolveMetric(
@@ -199,6 +236,19 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
 
   const displayData = getDisplayData();
 
+  const displayProducts = useMemo(() => {
+    if (!pitch?.userId || !logistics?.length) return '';
+
+    const info = logistics.find((a) => a.creatorId === pitch.userId);
+    const items = info?.deliveryDetails?.items ?? [];
+
+    return items
+      .map(({ product, quantity }) =>
+        quantity > 1 ? `${product.productName} (${quantity})` : product.productName
+      )
+      .join(', ');
+  }, [logistics, pitch?.userId]);
+
   return (
     <TableRow hover onClick={() => onViewPitch(pitch)} sx={{ cursor: 'pointer' }}>
       <TableCell
@@ -222,14 +272,20 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
             {pitch.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
           <Stack spacing={0}>
-            <Typography variant="body2" fontSize={13.5}>{pitch.user?.name}</Typography>
+            <Typography variant="body2" fontSize={13.5}>
+              {pitch.user?.name}
+            </Typography>
+
             {hasSocialUsernames ? (
               <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.25 }}>
                 {instagramUsername && (
                   <Stack direction="row" alignItems="center" spacing={0.3}>
                     <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
                     <Link
-                      href={createSocialProfileUrl(instagramUsername, 'instagram') || instagramProfileLink}
+                      href={
+                        createSocialProfileUrl(instagramUsername, 'instagram') ||
+                        instagramProfileLink
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       underline="hover"
@@ -256,25 +312,44 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
                   </Stack>
                 )}
               </Stack>
-            ) : profileUsername && (
-              <Stack direction="row" alignItems="center" spacing={0.3}>
-                {profileLink?.includes('instagram.com') && (
-                  <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
-                )}
-                {profileLink?.includes('tiktok.com') && (
-                  <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
-                )}
-                <Link
-                  href={profileLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  underline="hover"
-                  sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
-                  onClick={(e) => e.stopPropagation()}
+            ) : (
+              profileUsername && (
+                <Stack direction="row" alignItems="center" spacing={0.3}>
+                  {profileLink?.includes('instagram.com') && (
+                    <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
+                  )}
+                  {profileLink?.includes('tiktok.com') && (
+                    <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
+                  )}
+                  <Link
+                    href={profileLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    underline="hover"
+                    sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {profileUsername}
+                  </Link>
+                </Stack>
+              )
+            )}
+
+            {/* Display logistic products information */}
+            {displayProducts && (
+              <Box sx={{ display: 'inline-flex', gap: 0.5, alignItems: 'start' }}>
+                <Iconify
+                  icon="solar:box-bold"
+                  color="rgba(19, 64, 255, 1)"
+                  width={16}
+                  sx={{ fontWeight: 700 }}
+                />
+                <Typography
+                  sx={{ color: 'rgba(19, 64, 255, 1)', fontSize: '12px', fontWeight: 700 }}
                 >
-                  {profileUsername}
-                </Link>
-              </Stack>
+                  {displayProducts}
+                </Typography>
+              </Box>
             )}
           </Stack>
         </Stack>
@@ -431,7 +506,9 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
                 },
               }}
             >
-              <Box component="span" sx={{ flex: 1, textAlign: 'left' }}>{option.label}</Box>
+              <Box component="span" sx={{ flex: 1, textAlign: 'left' }}>
+                {option.label}
+              </Box>
               {pitch.outreachStatus === option.value && (
                 <Iconify icon="eva:checkmark-fill" width={16} sx={{ ml: 1, flexShrink: 0 }} />
               )}
@@ -441,8 +518,8 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
       </TableCell>
       <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
         {displayData.followerCount ? (
-          <Tooltip 
-            title={displayData.followerCount.toLocaleString()} 
+          <Tooltip
+            title={displayData.followerCount.toLocaleString()}
             arrow
             placement="top"
             componentsProps={{
@@ -457,12 +534,18 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
               },
             }}
           >
-            <Typography variant="body2" fontSize={13.5} sx={{ cursor: 'help', display: 'inline-block' }}>
+            <Typography
+              variant="body2"
+              fontSize={13.5}
+              sx={{ cursor: 'help', display: 'inline-block' }}
+            >
               {formatNumber(displayData.followerCount)}
             </Typography>
           </Tooltip>
         ) : (
-          <Typography variant="body2" fontSize={13.5}>-</Typography>
+          <Typography variant="body2" fontSize={13.5}>
+            -
+          </Typography>
         )}
       </TableCell>
       {isCreditTier && (
@@ -522,7 +605,12 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
         </Stack>
       </TableCell>
       <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
-        <PitchTypeCell type={pitch.type} isGuestCreator={isGuestCreator} isInvitedCreator={isInvitedCreator} acceptedInviteByCreator={acceptedInviteByCreator} />
+        <PitchTypeCell
+          type={pitch.type}
+          isGuestCreator={isGuestCreator}
+          isInvitedCreator={isInvitedCreator}
+          acceptedInviteByCreator={acceptedInviteByCreator}
+        />
       </TableCell>
       <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
         <Box
@@ -560,7 +648,13 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
       </TableCell>
       <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
         {smUp ? (
-          <V3PitchActions pitch={pitch} onViewPitch={onViewPitch} campaignId={campaign?.id} onRemoved={onRemoved} isDisabled={isDisabled} />
+          <V3PitchActions
+            pitch={pitch}
+            onViewPitch={onViewPitch}
+            campaignId={campaign?.id}
+            onRemoved={onRemoved}
+            isDisabled={isDisabled}
+          />
         ) : (
           <IconButton
             onClick={(e) => {
@@ -588,6 +682,7 @@ PitchRow.propTypes = {
   onRemoved: PropTypes.func,
   onOutreachUpdate: PropTypes.func,
   isDisabled: PropTypes.bool,
+  logistics: PropTypes.array,
 };
 
 export default PitchRow;

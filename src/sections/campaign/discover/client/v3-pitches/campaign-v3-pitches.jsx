@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { FixedSizeList } from 'react-window';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
@@ -150,7 +150,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const [outreachFilterAnchorEl, setOutreachFilterAnchorEl] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
-  // Merge prop-based isDisabled with existing Finance role check
 
   const financeDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
@@ -167,13 +166,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
       adminRole === 'sales_and_marketing' &&
       !campaignAdmins.some((a) => a.adminId === user?.id)
     );
-
-    // if (
-    //   userRole === 'admin' &&
-    //   adminRole === 'sales_and_marketing' &&
-    //   !campaignAdmins.some((a) => a.adminId === user?.id)
-    // )
-    //   return false;
   }, [
     campaign?.campaignAdmin,
     user?.admin?.role?.name,
@@ -684,6 +676,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
       onUpdate();
     }
   };
+
+  const logistics = useMemo(() => campaign.logistics ?? [], [campaign]);
 
   return (
     <Box sx={{ width: '100%', overflowX: 'auto' }}>
@@ -1419,6 +1413,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                     onRemoved={handleRemoveCreator}
                     onOutreachUpdate={handleOutreachUpdate}
                     isDisabled={isDisabled}
+                    logistics={logistics}
                   />
                 );
               })}

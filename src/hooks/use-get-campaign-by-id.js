@@ -33,11 +33,7 @@ export const useGetCampaignByIdScoped = (id, usePublicEndpoint = false) => {
       : endpoints.campaign.getCampaignById(id)
     : null;
 
-  const { data, error, mutate, isLoading } = useSWR(
-    endpoint,
-    fetcher,
-    options
-  );
+  const { data, error, mutate, isLoading } = useSWR(endpoint, fetcher, options);
 
   const memoizedValue = useMemo(
     () => ({

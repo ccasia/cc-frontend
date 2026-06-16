@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -124,6 +124,24 @@ function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false
   // Get V4 submissions for this creator to check if they have any
   const { submissions, submissionsLoading } = useGetV4Submissions(campaign?.id, creator?.userId);
 
+  const displayProducts = useMemo(() => {
+    if (!creator || !campaign?.logistics?.length) return '';
+
+    const { logistics } = campaign;
+
+    const info = logistics.find((a) => a.creatorId === creator.user.id);
+
+    const items = info?.deliveryDetails?.items ?? [];
+
+    return items
+      .map(({ product, quantity }) =>
+        quantity > 1 ? `${product.productName} (${quantity})` : product.productName
+      )
+      .join(', ');
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaign.logistics, creator.id]);
+
   // Don't render if loading or if no submissions exist
   if (submissionsLoading || submissions.length === 0) {
     return null;
@@ -139,10 +157,17 @@ function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false
     return null;
   }
 
-  return <CreatorAccordion creator={creator} campaign={campaign} isDisabled={isDisabled} />;
+  return (
+    <CreatorAccordion
+      creator={creator}
+      campaign={campaign}
+      isDisabled={isDisabled}
+      displayProducts={displayProducts}
+    />
+  );
 }
 
-function CreatorAccordion({ creator, campaign, isDisabled = false }) {
+function CreatorAccordion({ creator, campaign, isDisabled = false, displayProducts }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const [expandedSubmission, setExpandedSubmission] = useState(null);
@@ -154,12 +179,10 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
   const { campaignType } = campaign;
 
   // Get V4 submissions for this creator
-  const {
-    submissions,
-    grouped,
-    submissionsLoading,
-    submissionsMutate
-  } = useGetV4Submissions(campaign?.id, creator?.userId);
+  const { submissions, grouped, submissionsLoading, submissionsMutate } = useGetV4Submissions(
+    campaign?.id,
+    creator?.userId
+  );
 
   const handleListUpdate = useCallback(() => {
     submissionsMutate();
@@ -268,7 +291,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
         }
       } else if (!isClient) {
         if (status === 'IN_PROGRESS') return 'PROCESSING';
-        return formatStatus(status)
+        return formatStatus(status);
       }
 
       // Client-specific
@@ -399,7 +422,10 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                 <CircularProgress
                   size={12}
                   thickness={5}
-                  sx={{ color: getClientStatusColor(videoSubmission.status, 'video'), display: 'flex' }}
+                  sx={{
+                    color: getClientStatusColor(videoSubmission.status, 'video'),
+                    display: 'flex',
+                  }}
                 />
               )}
               <Typography
@@ -685,8 +711,6 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
       );
     });
 
-    console.log(pills);
-
     return pills;
   };
 
@@ -795,6 +819,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
           >
             {creator.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
+
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Tooltip title={creator.user?.name || 'Unknown Creator'} arrow>
               <Typography
@@ -809,6 +834,21 @@ function CreatorAccordion({ creator, campaign, isDisabled = false }) {
                 {creator.user?.name || 'Unknown Creator'}
               </Typography>
             </Tooltip>
+            {displayProducts && (
+              <Box sx={{ display: 'inline-flex', gap: 0.5, alignItems: 'start' }}>
+                <Iconify
+                  icon="solar:box-bold"
+                  color="rgba(19, 64, 255, 1)"
+                  width={16}
+                  sx={{ fontWeight: 700 }}
+                />
+                <Typography
+                  sx={{ color: 'rgba(19, 64, 255, 1)', fontSize: '12px', fontWeight: 700 }}
+                >
+                  {displayProducts}
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Box>
 
@@ -871,6 +911,7 @@ CreatorAccordion.propTypes = {
   creator: PropTypes.object.isRequired,
   campaign: PropTypes.object.isRequired,
   isDisabled: PropTypes.bool,
+  displayProducts: PropTypes.object,
 };
 
 export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = false }) {
