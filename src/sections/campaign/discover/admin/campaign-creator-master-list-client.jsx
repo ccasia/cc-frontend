@@ -2,8 +2,8 @@
 import dayjs from 'dayjs';
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
-import React, { useCallback, useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
+import React, { useMemo, useState, useCallback } from 'react';
 
 import {
   Box,
@@ -42,9 +42,9 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import PitchModal from './pitch-modal';
 import MediaKitModal from './media-kit-modal';
 import PitchModalMobile from './pitch-modal-mobile';
+import ApprovalSetupModal from './approval-setup-modal';
 import CreatorMasterListRow from './creator-master-list-row';
 import usePitchSocket from '../client/v3-pitches/use-pitch-socket';
-import ApprovalSetupModal from './approval-setup-modal';
 import ApprovalConfirmationModal from './approval-confirmation-modal';
 
 // Status display helper function
@@ -219,6 +219,7 @@ const CampaignCreatorMasterListClient = ({
 
   // Fetch V3 pitches for client-created campaigns OR admin-created v4 campaigns
   const fetchV3Pitches = campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4';
+
   const {
     pitches: v3Pitches,
     isLoading: v3PitchesLoading,
@@ -442,8 +443,6 @@ const CampaignCreatorMasterListClient = ({
   const handleToggleSort = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
-
-  console.log('List of creators: ', creators);
 
   const filteredCreators = useMemo(() => {
     let filtered = creators;
@@ -681,6 +680,7 @@ const CampaignCreatorMasterListClient = ({
                   onToggle={toggleSection}
                   onViewPitch={handleViewPitch}
                   formatFollowerCount={formatFollowerCount}
+                  logistics={campaign?.logistics ?? []}
                 />
               )}
               {approvedPitchCount > 0 && (
@@ -694,6 +694,7 @@ const CampaignCreatorMasterListClient = ({
                   onToggle={toggleSection}
                   onViewPitch={handleViewPitch}
                   formatFollowerCount={formatFollowerCount}
+                  logistics={campaign?.logistics ?? []}
                 />
               )}
               {rejectedCount > 0 && (
@@ -707,6 +708,7 @@ const CampaignCreatorMasterListClient = ({
                   onToggle={toggleSection}
                   onViewPitch={handleViewPitch}
                   formatFollowerCount={formatFollowerCount}
+                  logistics={campaign?.logistics ?? []}
                 />
               )}
               {activeCount === 0 && (
@@ -726,6 +728,7 @@ const CampaignCreatorMasterListClient = ({
               onToggle={toggleSection}
               onViewPitch={handleViewPitch}
               formatFollowerCount={formatFollowerCount}
+              logistics={campaign?.logistics ?? []}
             />
           ) : selectedFilter === 'approved_pitch' ? (
             <MobileSection
@@ -738,6 +741,7 @@ const CampaignCreatorMasterListClient = ({
               onToggle={toggleSection}
               onViewPitch={handleViewPitch}
               formatFollowerCount={formatFollowerCount}
+              logistics={campaign?.logistics ?? []}
             />
           ) : (
             <MobileSection
@@ -750,6 +754,7 @@ const CampaignCreatorMasterListClient = ({
               onToggle={toggleSection}
               onViewPitch={handleViewPitch}
               formatFollowerCount={formatFollowerCount}
+              logistics={campaign?.logistics ?? []}
             />
           )}
         </Box>
@@ -1291,6 +1296,7 @@ const CampaignCreatorMasterListClient = ({
                       isSelected={selectedPitchIds.includes(pitch.id)}
                       onToggleSelect={handleTogglePitchSelect}
                       approverPitchIds={approverPitchIds}
+                      logistics={campaign?.logistics ?? []}
                     />
                   ))
                 )}
@@ -1351,7 +1357,7 @@ const CampaignCreatorMasterListClient = ({
   );
 };
 
-const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
+const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount, logistics }) => {
   const creatorProfile = pitch?.user?.creator || {};
   const instagramStats = creatorProfile.instagramUser || {};
   const tiktokStats = creatorProfile.tiktokUser || {};
@@ -1393,6 +1399,20 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
   const followerCount = bestAccount.followers || pitch?.followerCount;
   const engagementRate = bestAccount.engagement || pitch?.engagementRate;
 
+  const displayProducts = useMemo(() => {
+    if (!pitch?.user.id || !logistics?.length) return '';
+
+    const info = logistics.find((a) => a.creatorId === pitch?.user.id);
+
+    const items = info?.deliveryDetails?.items ?? [];
+
+    return items
+      .map(({ product, quantity }) =>
+        quantity > 1 ? `${product.productName} (${quantity})` : product.productName
+      )
+      .join(', ');
+  }, [logistics, pitch?.user.id]);
+
   return (
     <Card
       onClick={() => onViewPitch(pitch)}
@@ -1412,16 +1432,33 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
               sx={{ width: 35, height: 35 }}
             />
 
-            <Typography
-              variant="subtitle2"
-              fontWeight="bold"
-              lineHeight={1.4}
-              sx={{ color: '#221f20' }}
-              flex={3}
-              alignSelf="center"
-            >
-              {pitch?.user?.name || 'Unknown Creator'}
-            </Typography>
+            <Stack>
+              <Typography
+                variant="subtitle2"
+                fontWeight="bold"
+                lineHeight={1.4}
+                sx={{ color: '#221f20' }}
+                flex={3}
+              >
+                {pitch?.user?.name || 'Unknown Creator'}
+              </Typography>
+
+              {displayProducts && (
+                <Box sx={{ display: 'inline-flex', gap: 0.5, alignItems: 'start' }}>
+                  <Iconify
+                    icon="solar:box-bold"
+                    color="rgba(19, 64, 255, 1)"
+                    width={16}
+                    sx={{ fontWeight: 700 }}
+                  />
+                  <Typography
+                    sx={{ color: 'rgba(19, 64, 255, 1)', fontSize: '12px', fontWeight: 700 }}
+                  >
+                    {displayProducts}
+                  </Typography>
+                </Box>
+              )}
+            </Stack>
 
             <Button
               onClick={() => onViewPitch(pitch)}
@@ -1506,6 +1543,7 @@ const MobileSection = ({
   onToggle,
   onViewPitch,
   formatFollowerCount,
+  logistics,
 }) => (
   <Box sx={{ mb: 2 }}>
     <Button
@@ -1556,6 +1594,7 @@ const MobileSection = ({
               pitch={sectionPitch}
               onViewPitch={onViewPitch}
               formatFollowerCount={formatFollowerCount}
+              logistics={logistics}
             />
           ))
         )}
@@ -1576,6 +1615,7 @@ CampaignCreatorMasterListClient.propTypes = {
 const pitchPropType = PropTypes.shape({
   id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   user: PropTypes.shape({
+    id: PropTypes.string,
     name: PropTypes.string,
     username: PropTypes.string,
     photoURL: PropTypes.string,
@@ -1591,6 +1631,7 @@ MobileCreatorCard.propTypes = {
   pitch: pitchPropType.isRequired,
   onViewPitch: PropTypes.func.isRequired,
   formatFollowerCount: PropTypes.func.isRequired,
+  logistics: PropTypes.array,
 };
 
 MobileSection.propTypes = {
@@ -1603,4 +1644,5 @@ MobileSection.propTypes = {
   onToggle: PropTypes.func.isRequired,
   onViewPitch: PropTypes.func.isRequired,
   formatFollowerCount: PropTypes.func.isRequired,
+  logistics: PropTypes.array,
 };

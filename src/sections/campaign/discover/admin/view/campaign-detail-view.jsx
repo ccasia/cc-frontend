@@ -124,6 +124,7 @@ const CampaignDetailView = ({
     campaignLoading,
     mutate: campaignMutate,
   } = useGetCampaignByIdScoped(id, publicReadonly);
+
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
