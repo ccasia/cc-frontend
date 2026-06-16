@@ -33,7 +33,6 @@ export const paths = {
     client: `${ROOTS.DASHBOARD}/client`,
     discoveryTool: {
       root: `${ROOTS.DASHBOARD}/discovery-tool`,
-      npc: `${ROOTS.DASHBOARD}/discovery-tool/npc`,
     },
     faq: `${ROOTS.DASHBOARD}/faq`,
     company: {

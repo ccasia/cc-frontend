@@ -6,6 +6,7 @@ import { fetcher, endpoints } from 'src/utils/axios';
 const useGetDiscoveryBookmarks = () => {
   const { data, error, isLoading, mutate } = useSWR(endpoints.discovery.bookmarks, fetcher, {
     revalidateOnFocus: false,
+    shouldRetryOnError: false,
   });
 
   return useMemo(() => {
