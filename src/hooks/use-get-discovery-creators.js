@@ -89,6 +89,7 @@ const useGetDiscoveryCreators = (filters = {}) => {
       revalidateOnFocus: false,
       revalidateOnMount: true,
       keepPreviousData: true,
+      shouldRetryOnError: false,
     }
   );
 

@@ -340,7 +340,7 @@ const DiscoveryToolView = () => {
     <Container maxWidth="xl">
       <Typography
         sx={{
-          fontFamily: 'Aileron',
+          fontFamily: 'Instrument Serif',
           fontSize: { xs: 24, md: 48 },
           fontWeight: 400,
         }}

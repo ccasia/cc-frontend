@@ -408,7 +408,6 @@ export const endpoints = {
   discovery: {
     creators: '/api/discovery/creators',
     creatorsExportData: '/api/discovery/creators/export-data',
-    nonPlatformCreators: '/api/discovery/non-platform-creators',
     inviteCreators: '/api/discovery/invite-creators',
     bookmarks: '/api/discovery/bookmarks',
   },

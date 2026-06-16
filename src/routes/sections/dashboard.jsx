@@ -99,9 +99,6 @@ const Report = lazy(() => import('src/pages/dashboard/report/report'));
 
 // Creator Discovery Tool
 const DiscoveryTool = lazy(() => import('src/pages/dashboard/discovery-tool/discovery-tool'));
-const DiscoveryToolNpc = lazy(
-  () => import('src/pages/dashboard/discovery-tool/discovery-tool-npc')
-);
 
 // Roles
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
@@ -266,14 +263,6 @@ export const dashboardRoutes = [
               </RoleBasedGuard>
             ),
             index: true,
-          },
-          {
-            path: 'npc',
-            element: (
-              <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
-                <DiscoveryToolNpc />
-              </RoleBasedGuard>
-            ),
           },
         ],
       },
