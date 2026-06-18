@@ -6,6 +6,7 @@ import { LoadingScreen } from 'src/components/loading-screen';
 const PublicMediaKitPage = lazy(() => import('src/pages/public/creator/mediaKit'));
 const PublicValidate = lazy(() => import('src/sections/public-access/validation'));
 const PublicAccessPage = lazy(() => import('src/sections/public-access/public-access-page'));
+const BDBriefPage = lazy(() => import('src/pages/public/bd-brief'));
 const ClientBriefPage = lazy(() => import('src/pages/public/client-brief'));
 
 const PublicManageCreatorView = lazy(
@@ -46,6 +47,10 @@ export const publicRoutes = [
         element: <ApprovalPage />,
       },
     ],
+  },
+  {
+    path: 'campaign-brief/:token',
+    element: <BDBriefPage />,
   },
   {
     path: 'campaign-brief/client/:magicToken',

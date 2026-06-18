@@ -479,7 +479,7 @@ export default function BriefForm({
     mode: 'onBlur',
   });
 
-  const { reset, getValues, setValue, watch, handleSubmit, formState } = methods;
+  const { reset, getValues, setValue, watch, handleSubmit } = methods;
 
   // "Edited by Client" badge. The backend recomputes editedByClientFields on
   // every client patch by comparing each field against the snapshot taken when
@@ -1182,14 +1182,6 @@ export default function BriefForm({
                 {submitting ? 'Submitting…' : 'Submit brief'}
               </Button>
             </Stack>
-            {!formState.isValid && formState.submitCount > 0 && (
-              <Typography
-                variant="caption"
-                sx={{ display: 'block', mt: 1, color: 'error.main', textAlign: 'center' }}
-              >
-                Please add a brand name before submitting.
-              </Typography>
-            )}
           </Box>
         )}
       </Stack>
