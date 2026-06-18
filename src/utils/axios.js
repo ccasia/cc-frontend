@@ -467,6 +467,7 @@ export const endpoints = {
     patch: (id) => `/api/briefs/${id}`,
     send: (id) => `/api/briefs/${id}/send`,
     approve: (id) => `/api/briefs/${id}/approve`,
+    reset: (id) => `/api/briefs/${id}/reset`,
     handover: (id) => `/api/briefs/${id}/handover`,
     assignCsm: (id) => `/api/briefs/${id}/assign-csm`,
     attachments: (id) => `/api/briefs/${id}/attachments`,
