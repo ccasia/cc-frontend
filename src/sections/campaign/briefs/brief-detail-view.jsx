@@ -48,6 +48,30 @@ export default function CampaignBriefDetailView() {
   const [sendOpen, setSendOpen] = useState(false);
   const [handoverOpen, setHandoverOpen] = useState(false);
   const [clearSignal, setClearSignal] = useState(0);
+  const [resetSignal, setResetSignal] = useState(0);
+  const [resetting, setResetting] = useState(false);
+
+  // Whether RESET FORM reverts to the original prospect submission (mirrors the
+  // client's reset-to-snapshot) vs. wiping to empty. Only CLIENT_INVITED briefs
+  // have a captured submission snapshot to revert to.
+  const isFromPublicForm = brief?.draftOrigin === 'CLIENT_INVITED';
+
+  // BD reset — mirror of the client's handleResetToSnapshot: revert on the
+  // server to the stored snapshot, refresh the brief, then bump resetSignal so
+  // the form reseeds to those values (brief id is unchanged).
+  const handleReset = useCallback(async () => {
+    if (resetting) return;
+    setResetting(true);
+    try {
+      const res = await axiosInstance.post(endpoints.campaignBrief.reset(brief.id));
+      if (res.data) await mutate(res.data, { revalidate: false });
+      setResetSignal((n) => n + 1);
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || 'Failed to reset form', { variant: 'error' });
+    } finally {
+      setResetting(false);
+    }
+  }, [resetting, brief?.id, mutate, enqueueSnackbar]);
 
   const isClientEditable =
     brief?.draftStatus === 'PENDING_REVIEW' || brief?.draftStatus === 'SENT_TO_CLIENT';
@@ -148,7 +172,9 @@ export default function CampaignBriefDetailView() {
         case 'APPROVED':
           return { label: 'HANDOVER TO CS', onClick: () => setHandoverOpen(true) };
         case 'PENDING_REVIEW':
-          return { label: 'AWAITING CLIENT', onClick: null };
+          // Public-form submission awaiting BD review. BD reviews/edits, then
+          // forwards to the client — same send dialog and transition as DRAFTED.
+          return { label: 'SEND TO CLIENT', onClick: () => setSendOpen(true), bg: '#1340FF' };
         case 'HANDED_OVER':
           return { label: 'HANDED OVER', onClick: null };
         default:
@@ -185,8 +211,8 @@ export default function CampaignBriefDetailView() {
             )}
             {brief.draftStatus === 'PENDING_REVIEW' && (
               <Alert severity="info" icon={<Iconify icon="eva:info-fill" />} sx={{ mt: 4 }}>
-                You may edit the fields, any changes you make will be autosaved. Once ready, press the
-                &apos;Approve Brief&apos; button below.
+                Review and edit the fields, any changes you make will be autosaved. Once ready, press
+                the &apos;Send to Client&apos; button below to forward this brief for client approval.
               </Alert>
             )}
           </>
@@ -272,6 +298,7 @@ export default function CampaignBriefDetailView() {
             onDeleteAttachment={onDeleteAttachment}
             readOnly={isLocked}
             clearSignal={clearSignal}
+            resetSignal={resetSignal}
           />
 
           {/* Inline action bar — sits below the form on the right column. */}
@@ -283,8 +310,8 @@ export default function CampaignBriefDetailView() {
           >
             <Button
               variant="outlined"
-              onClick={() => setClearSignal((n) => n + 1)}
-              disabled={isLocked}
+              onClick={() => (isFromPublicForm ? handleReset() : setClearSignal((n) => n + 1))}
+              disabled={isLocked || resetting}
               sx={{
                 // Shrink on mobile so SEND TO CLIENT keeps a usable width and
                 // doesn't wrap; full padding on larger screens.
@@ -305,7 +332,7 @@ export default function CampaignBriefDetailView() {
                 },
               }}
             >
-              RESET FORM
+              {resetting ? 'RESETTING…' : 'RESET FORM'}
             </Button>
             {primaryAction && (
               <Button

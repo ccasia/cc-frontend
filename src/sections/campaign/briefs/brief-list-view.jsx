@@ -202,16 +202,6 @@ export default function CampaignBriefListView() {
     brief.campaignAdmin?.[0]?.admin?.user?.name ||
     'Cult Creative';
 
-  const handleApprove = async (brief) => {
-    try {
-      await axiosInstance.post(endpoints.campaignBrief.approve(brief.id));
-      enqueueSnackbar('Brief approved', { variant: 'success' });
-      mutate();
-    } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Failed to approve brief', { variant: 'error' });
-    }
-  };
-
   // Re-copy the client review link after the brief has been sent. The backend
   // builds it from the magic token (clientLink), so the BD isn't limited to the
   // one-shot copy in the "Brief Sent" dialog.
@@ -304,11 +294,6 @@ export default function CampaignBriefListView() {
         </IconButton>
       </Tooltip>
     ) : null;
-    const approveIcon = (
-      <IconButton size="small" onClick={() => handleApprove(brief)} sx={{ ...actionBtnSx, color: '#15803D' }}>
-        <Iconify icon="eva:checkmark-fill" width={18} />
-      </IconButton>
-    );
     const handoverBtn = (
       <Button
         size="small"
@@ -362,7 +347,9 @@ export default function CampaignBriefListView() {
       case 'SENT_TO_CLIENT':
         return <>{copyLinkIcon}{sendIconBtn(true)}{deleteIcon}</>;
       case 'PENDING_REVIEW':
-        return <>{copyLinkIcon}{approveIcon}{deleteIcon}</>;
+        // Public-form submission awaiting BD review → BD forwards to client
+        // (Send), not a direct approve. Matches the brief detail-view CTA.
+        return <>{copyLinkIcon}{sendIconBtn()}{deleteIcon}</>;
       case 'APPROVED':
         return <>{copyLinkIcon}{handoverBtn}{deleteIcon}</>;
       case 'HANDED_OVER':
