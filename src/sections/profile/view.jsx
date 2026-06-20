@@ -1,18 +1,15 @@
-import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { mutate } from 'swr';
 import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
 import { yupResolver } from '@hookform/resolvers/yup';
-import localizedFormat from 'dayjs/plugin/localizedFormat';
-import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
-  Card,
   Grid,
   alpha,
   Stack,
@@ -28,22 +25,26 @@ import {
 
 import { paths } from 'src/routes/paths';
 
+import { useResponsive } from 'src/hooks/use-responsive';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { _userAbout } from 'src/_mock';
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
+import { typography } from 'src/theme/typography';
 
+import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { RHFSelect } from 'src/components/hook-form/rhf-select';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
+import { AdminLogsModal } from 'src/sections/admin/adminLog';
 import CreatorProfile from 'src/sections/creator/profile/general';
 
 import API from './api';
-import UploadPhoto from './dropzone';
 import AccountSecurity from './security';
 import ClientProfile from './client-profile';
 import ChildAccounts from './child-accounts';
@@ -56,19 +57,29 @@ import AccountNotifications from '../creator/profile/notification';
 
 // import x from '../creator/profile/notification';
 
-dayjs.extend(localizedFormat);
-
 const Profile = () => {
   const { enqueueSnackbar } = useSnackbar();
   const settings = useSettingsContext();
   const theme = useTheme();
-  const { user } = useAuthContext();
+  const { user, initialize } = useAuthContext();
   const location = useLocation();
-  const navigate = useNavigate();
   const scrollContainerRef = useRef(null);
+  const mdDown = useResponsive('down', 'lg');
 
   const [image, setImage] = useState(null);
+  const [adminLogs, setAdminLogs] = useState([]);
+  const [openLogs, setOpenLogs] = useState(false);
   const { section } = useParams();
+
+  const handleViewLogs = async () => {
+    try {
+      const response = await axiosInstance.get(endpoints.users.getAdminlogs(user.id));
+      setAdminLogs(response.data || []);
+    } catch (error) {
+      setAdminLogs([]);
+    }
+    setOpenLogs(true);
+  };
 
   // Determine current tab based on URL path
   const getTabFromPath = useCallback(() => {
@@ -112,6 +123,7 @@ const Profile = () => {
     phoneNumber: user?.phoneNumber || '',
     designation: user?.admin?.role?.name || '',
     country: user?.country || '',
+    image: null,
   };
 
   const methods = useForm({ defaultValues, resolver: yupResolver(UpdateUserSchema) });
@@ -124,10 +136,15 @@ const Profile = () => {
     (e) => {
       const preview = URL.createObjectURL(e[0]);
       setImage(preview);
-      setValue('image', e[0]);
+      setValue('image', e[0], { shouldDirty: true });
     },
     [setValue]
   );
+
+  const handleRemoveSelectedPhoto = () => {
+    setImage(null);
+    setValue('image', null, { shouldDirty: true });
+  };
 
   const profileCompletion = useMemo(() => {
     const account = {
@@ -195,6 +212,8 @@ const Profile = () => {
       mutate(endpoints.notification.root);
       enqueueSnackbar('Successfully updated profile.');
       mutate(endpoints.auth.me);
+      await initialize();
+      setImage(null);
       // toast.success('Successfully updated profile.');
     } catch (error) {
       enqueueSnackbar('Error in updating profile', { variant: 'error' });
@@ -218,109 +237,337 @@ const Profile = () => {
     }
   };
 
-  const renderPicture = (
-    <Grid item xs={12} md={4} lg={4}>
-      <Card sx={{ p: 1, textAlign: 'center' }}>
-        <Stack alignItems="center" p={3} spacing={2}>
-          <UploadPhoto onDrop={onDrop}>
-            <Avatar
-              sx={{
-                width: 1,
-                height: 1,
-                borderRadius: '50%',
-              }}
-              src={image || user?.photoURL}
-            />
-          </UploadPhoto>
-          <Typography display="block" color={theme.palette.grey['600']} sx={{ fontSize: 12 }}>
-            Allowed *.jpeg, *.jpg, *.png, *.gif max size of 3 Mb
-          </Typography>
-          {/* <Button
-            color="error"
-            sx={{ mt: 3, width: '100%' }}
-            onClick={() => {
-              setImage(null);
-            }}
-          >
-            Delete
-          </Button> */}
-        </Stack>
-      </Card>
-    </Grid>
+  const adminFieldLabelSx = {
+    fontSize: { xs: '12px', sm: '13px' },
+    mb: 1,
+    color: '#636366',
+    fontWeight: typography.fontWeightMedium,
+  };
+
+  const adminTextFieldSx = {
+    width: '100%',
+    '&.MuiTextField-root': {
+      bgcolor: 'white',
+      borderRadius: 1,
+      '& .MuiInputLabel-root': {
+        display: 'none',
+      },
+      '& .MuiInputBase-input::placeholder': {
+        color: '#B0B0B0',
+        fontSize: { xs: '14px', sm: '16px' },
+        opacity: 1,
+      },
+      '& .MuiOutlinedInput-root': {
+        borderRadius: 1,
+      },
+    },
+  };
+
+  const adminSelectSx = {
+    width: '100%',
+    '&.MuiTextField-root': {
+      bgcolor: 'white',
+      borderRadius: 1,
+      '& .MuiInputLabel-root': {
+        display: 'none',
+      },
+      '& .MuiOutlinedInput-root': {
+        borderRadius: 1,
+      },
+    },
+  };
+
+  const renderAdminLabel = (label, required = false) => (
+    <Typography variant="body2" sx={adminFieldLabelSx}>
+      {label}{' '}
+      {required && (
+        <Box component="span" sx={{ color: 'error.main' }}>
+          *
+        </Box>
+      )}
+    </Typography>
   );
 
-  const renderForm = (
-    <Grid item xs={12} md={8} lg={8}>
-      <FormProvider methods={methods} onSubmit={onSubmit}>
-        <Card sx={{ p: 1 }}>
-          <Stack alignItems="flex-end" sx={{ mt: 3 }}>
-            <Grid container spacing={2} p={3}>
-              <Grid item xs={12} sm={6} md={6} lg={6}>
-                <RHFTextField name="name" label="Name" />
-              </Grid>
-              <Grid item xs={12} sm={6} md={6} lg={6}>
-                <RHFTextField name="email" label="Email" />
-              </Grid>
-              <Grid item xs={12} sm={12} md={12} lg={12}>
-                <RHFTextField
-                  name="phoneNumber"
-                  label="Phone Number"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        +
-                        {countries
-                          .filter((elem) => elem.label === countryValue)
-                          .map((e) => e.phone)}
-                      </InputAdornment>
-                    ),
+  const adminGeneralContent = (
+    <FormProvider methods={methods} onSubmit={onSubmit}>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Stack spacing={1} alignItems="flex-start" direction={{ xs: 'column', md: 'row' }}>
+            <Stack
+              spacing={2}
+              alignItems="center"
+              bgcolor={!mdDown ? '#F4F4F4' : 'white'}
+              borderRadius={2}
+              p={2}
+              width={mdDown ? 1 : 443}
+            >
+              <Box
+                sx={{
+                  width: 240,
+                  height: 240,
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                }}
+              >
+                {image || user?.photoURL ? (
+                  <Image
+                    src={image || user?.photoURL}
+                    alt="profile"
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                    }}
+                  />
+                ) : (
+                  <Avatar
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      fontSize: '2rem',
+                      fontWeight: 'medium',
+                      color: theme.palette.text.secondary,
+                      backgroundColor: alpha(theme.palette.grey[500], 0.24),
+                    }}
+                  >
+                    {user?.name?.[0] || 'U'}
+                  </Avatar>
+                )}
+              </Box>
+
+              <Stack spacing={1}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    color: '#636366',
+                    fontSize: '0.75rem',
+                    fontWeight: typography.fontWeightMedium,
                   }}
-                />
-              </Grid>
-              {/* Change later Add more data */}
+                >
+                  Display Photo
+                  <Box component="span" sx={{ color: '#FF3500', fontSize: '0.75rem' }}>
+                    {' '}
+                    *
+                  </Box>
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    component="label"
+                    variant="contained"
+                    sx={{
+                      width: '78px',
+                      height: '38px',
+                      bgcolor: '#FFFFFF',
+                      color: '#000000',
+                      border: '1.25px solid #E7E7E7',
+                      borderBottom: '3px solid #E7E7E7',
+                      borderRadius: '8px',
+                      fontWeight: typography.fontWeightSemiBold,
+                      '&:hover': {
+                        bgcolor: '#F5F5F5',
+                        color: '#000000',
+                      },
+                    }}
+                  >
+                    Change
+                    <input
+                      type="file"
+                      onChange={(event) => {
+                        if (event.target.files?.[0]) {
+                          onDrop([event.target.files[0]]);
+                          event.target.value = '';
+                        }
+                      }}
+                      hidden
+                      accept="image/*"
+                    />
+                  </Button>
 
-              <Grid item xs={12} sm={6} md={6} lg={6}>
-                <RHFSelect name="designation" label="Designation" disabled>
-                  <MenuItem defaultChecked>None</MenuItem>
-                  <MenuItem value="CSM">Customer Success Manager</MenuItem>
-                  <MenuItem value="Finance">Finance</MenuItem>
-                  <MenuItem value="BD">Board Director</MenuItem>
-                  <MenuItem value="Growth">Growth</MenuItem>
-                </RHFSelect>
-              </Grid>
+                  <Button
+                    variant="contained"
+                    disabled={!image}
+                    onClick={handleRemoveSelectedPhoto}
+                    sx={{
+                      width: '78px',
+                      height: '38px',
+                      bgcolor: '#FFFFFF',
+                      color: '#FF3500',
+                      border: '1.25px solid #E7E7E7',
+                      borderBottom: '3px solid #E7E7E7',
+                      borderRadius: '8px',
+                      fontWeight: typography.fontWeightSemiBold,
+                      '&:hover': {
+                        bgcolor: '#F5F5F5',
+                        color: '#FF3500',
+                      },
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </Stack>
+              </Stack>
+            </Stack>
 
-              <Grid item xs={12} sm={6} md={6} lg={6}>
-                <RHFAutocomplete
-                  name="country"
-                  type="country"
-                  label="Country"
-                  placeholder="Choose a country"
-                  options={countries.map((option) => option.label)}
-                  getOptionLabel={(option) => option}
-                />
-              </Grid>
-              {/* {JSON.stringify(methods)} */}
-              <Grid item xs={12} sm={12} md={12} lg={12} sx={{ textAlign: 'end' }}>
-                <LoadingButton type="submit" disabled={!methods.formState.isDirty && !image}>
-                  Save Changes
+            <Box
+              bgcolor={!mdDown ? '#F4F4F4' : 'white'}
+              borderRadius={2}
+              p={2}
+              width={mdDown ? 1 : 600}
+            >
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' },
+                  gap: 1,
+                }}
+              >
+                <Box>
+                  {renderAdminLabel('Name', true)}
+                  <RHFTextField
+                    name="name"
+                    placeholder="Name"
+                    InputLabelProps={{ shrink: false }}
+                    sx={adminTextFieldSx}
+                  />
+                </Box>
+
+                <Box>
+                  {renderAdminLabel('Email', true)}
+                  <RHFTextField
+                    name="email"
+                    placeholder="Email"
+                    InputLabelProps={{ shrink: false }}
+                    sx={adminTextFieldSx}
+                  />
+                </Box>
+
+                <Box gridColumn={{ md: 'span 2' }}>
+                  {renderAdminLabel('Phone Number', true)}
+                  <RHFTextField
+                    name="phoneNumber"
+                    placeholder="Phone Number"
+                    InputLabelProps={{ shrink: false }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          +
+                          {countries
+                            .filter((elem) => elem.label === countryValue)
+                            .map((e) => e.phone)}
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={adminTextFieldSx}
+                  />
+                </Box>
+
+                <Box>
+                  {renderAdminLabel('Designation')}
+                  <RHFSelect
+                    name="designation"
+                    disabled
+                    InputLabelProps={{ shrink: false }}
+                    sx={adminSelectSx}
+                  >
+                    <MenuItem defaultChecked>None</MenuItem>
+                    <MenuItem value="CSM">Customer Success Manager</MenuItem>
+                    <MenuItem value="Finance">Finance</MenuItem>
+                    <MenuItem value="BD">Board Director</MenuItem>
+                    <MenuItem value="Growth">Growth</MenuItem>
+                  </RHFSelect>
+                </Box>
+
+                <Box>
+                  {renderAdminLabel('Country', true)}
+                  <RHFAutocomplete
+                    name="country"
+                    type="country"
+                    placeholder="Country"
+                    options={countries.map((option) => option.label)}
+                    getOptionLabel={(option) => option}
+                    InputLabelProps={{ shrink: false }}
+                    sx={{
+                      width: '100%',
+                      '& .MuiTextField-root': {
+                        bgcolor: 'white',
+                        borderRadius: 1,
+                        '& .MuiInputLabel-root': {
+                          display: 'none',
+                        },
+                        '& .MuiInputBase-input::placeholder': {
+                          color: '#B0B0B0',
+                          fontSize: { xs: '14px', sm: '16px' },
+                          opacity: 1,
+                        },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1,
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              <Stack
+                spacing={2}
+                direction={{ xs: 'column', sm: 'row' }}
+                alignItems="center"
+                justifyContent="flex-end"
+                sx={{ mt: 3 }}
+              >
+                {user?.role === 'superadmin' && (
+                  <Button
+                    variant="contained"
+                    startIcon={<Iconify icon="material-symbols:note-rounded" />}
+                    onClick={handleViewLogs}
+                    sx={{
+                      background: '#FFFFFF',
+                      color: '#221F20',
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      borderRadius: '10px',
+                      border: '1.25px solid #E7E7E7',
+                      borderBottom: '3px solid #E7E7E7',
+                      transition: 'none',
+                      width: { xs: '100%', sm: 'auto' },
+                      px: 2,
+                      height: '44px',
+                      '&:hover': { background: '#F5F5F5' },
+                    }}
+                  >
+                    Show Logs
+                  </Button>
+                )}
+                <LoadingButton
+                  type="submit"
+                  variant="contained"
+                  disabled={!methods.formState.isDirty && !image}
+                  sx={{
+                    background:
+                      methods.formState.isDirty || image
+                        ? '#1340FF'
+                        : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+                    pointerEvents: !methods.formState.isDirty && !image ? 'none' : 'auto',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    borderRadius: '10px',
+                    borderBottom:
+                      methods.formState.isDirty || image
+                        ? '3px solid #0c2aa6'
+                        : '3px solid #919EAB',
+                    transition: 'none',
+                    width: { xs: '100%', sm: '90px' },
+                    height: '44px',
+                  }}
+                >
+                  Update
                 </LoadingButton>
-              </Grid>
-            </Grid>
+              </Stack>
+            </Box>
           </Stack>
-        </Card>
-      </FormProvider>
-      <Typography
-        variant="caption"
-        display="block"
-        gutterBottom
-        textAlign="end"
-        color="lightgrey"
-        mt={2}
-        sx={{ color: alpha(theme.palette.grey[600], 0.5) }}
-      >
-        Last updated: {dayjs(user?.user?.updatedAt).format('LLL')}
-      </Typography>
-    </Grid>
+        </Grid>
+      </Grid>
+    </FormProvider>
   );
 
   // Tabs
@@ -1154,12 +1401,7 @@ const Profile = () => {
     <>
       {currentTab === 'security' && <AccountSecurity />}
 
-      {currentTab === 'general' && (
-        <Grid container spacing={3}>
-          {renderPicture}
-          {renderForm}
-        </Grid>
-      )}
+      {currentTab === 'general' && adminGeneralContent}
       {(user?.admin?.role?.name === 'Finance' || user?.role === 'superadmin') &&
         currentTab === 'api' && <API />}
       {(user?.role === 'superadmin' || user?.admin?.role?.name === 'CSL') &&
@@ -1311,6 +1553,14 @@ const Profile = () => {
       })()}
 
       {/* <Toaster /> */}
+
+      <AdminLogsModal
+        open={openLogs}
+        logs={adminLogs}
+        adminName={user?.name}
+        adminPhotoURL={user?.photoURL}
+        onClose={() => setOpenLogs(false)}
+      />
     </Container>
   );
 };
