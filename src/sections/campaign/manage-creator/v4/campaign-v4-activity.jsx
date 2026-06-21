@@ -1386,10 +1386,10 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
   const isAgreementApproved = overviewData?.isAgreementApproved;
 
   useEffect(() => {
-    if ((isDelivery || isAgreementApproved) && !isLogisticsCompleted) {
+    if (isDelivery && !isLogisticsCompleted) {
       setExpandedSections((prev) => ({ ...prev, logistics: true }));
     }
-  }, [isDelivery, isAgreementApproved, isLogisticsCompleted]);
+  }, [isDelivery, isLogisticsCompleted]);
 
   if (error) {
     return (
@@ -1415,7 +1415,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
   console.log(submissionsData);
 
   const showPendingAgreementCard = !isAgreementApproved && overviewData?.agreementStatus;
-  const showLogisticsCard = isDelivery || isAgreementApproved;
+  const showLogisticsCard = isDelivery;
   const canShowSubmissions =
     isAgreementApproved && (!isDelivery || (isLogisticsCompleted && !logisticLoading));
 
