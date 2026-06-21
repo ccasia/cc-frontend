@@ -441,6 +441,7 @@ MobileCreatorRow.propTypes = {
   isExpanded: PropTypes.bool.isRequired,
   onToggle: PropTypes.func.isRequired,
   isDisabled: PropTypes.bool,
+  displayProducts: PropTypes.object,
 };
 
 // ----------------------------------------------------------------------
