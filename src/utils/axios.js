@@ -347,6 +347,8 @@ export const endpoints = {
         `/api/submissions/v4/submission/${submissionId}/send-to-creator`,
       sendToClient: (submissionId) =>
         `/api/submissions/v4/submission/${submissionId}/send-to-client`,
+      updateCaption: (submissionId) =>
+        `/api/submissions/v4/submission/${submissionId}/caption`,
       resolveComment: (commentId) => `/api/submissions/v4/comments/${commentId}/resolve`,
       toggleCommentVisibility: (commentId) =>
         `/api/submissions/v4/comments/${commentId}/visibility`,

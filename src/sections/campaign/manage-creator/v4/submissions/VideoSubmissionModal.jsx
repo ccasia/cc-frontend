@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useState, useEffect } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 
@@ -11,6 +12,7 @@ import {
   Button,
   Backdrop,
   Collapse,
+  TextField,
   Typography,
   IconButton,
   CircularProgress,
@@ -76,6 +78,11 @@ const VideoSubmissionModal = ({
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [feedbackTimeLeft, setFeedbackTimeLeft] = useState(0);
+
+  // Admin caption editing (during review). Saved explicitly via a Save button.
+  const [captionDraft, setCaptionDraft] = useState(submission?.caption || '');
+  const [captionSavedValue, setCaptionSavedValue] = useState(submission?.caption || '');
+  const [captionSaving, setCaptionSaving] = useState(false);
 
   const handleModalSeek = (timeStr) => {
     const el = modalVideoRef.current;
@@ -167,6 +174,44 @@ const VideoSubmissionModal = ({
     const timerId = setInterval(tick, 1000);
     return () => clearInterval(timerId);
   }, [freshSubmission, submission, videoPage, videoOrder]);
+
+  // Whether admin caption editing is allowed for the current submission
+  const captionEditableStatus = ['PENDING_REVIEW', 'APPROVE_LINK'];
+  const canEditCaption =
+    isAdmin && captionEditableStatus.includes((freshSubmission || submission)?.status);
+
+  const captionDirty = captionDraft.trim() !== captionSavedValue.trim();
+
+  // Sync the caption draft from the (possibly refetched) submission, but don't
+  // clobber an in-progress edit (unsaved changes).
+  useEffect(() => {
+    const serverCaption = (freshSubmission || submission)?.caption || '';
+    if (!captionDirty) {
+      setCaptionDraft(serverCaption);
+      setCaptionSavedValue(serverCaption);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [freshSubmission, submission]);
+
+  const handleSaveCaption = async () => {
+    const sid = (freshSubmission || submission)?.id;
+    if (!sid || !captionDirty || captionSaving) return;
+    setCaptionSaving(true);
+    try {
+      const res = await axiosInstance.patch(endpoints.submission.v4.updateCaption(sid), {
+        caption: captionDraft,
+      });
+      const saved = res?.data?.caption ?? captionDraft.trim();
+      setCaptionSavedValue(saved || '');
+      setCaptionDraft(saved || '');
+      setFreshSubmission((prev) => (prev ? { ...prev, caption: saved } : prev));
+      enqueueSnackbar('Caption saved', { variant: 'success' });
+    } catch (e) {
+      enqueueSnackbar(e?.message || 'Failed to save caption', { variant: 'error' });
+    } finally {
+      setCaptionSaving(false);
+    }
+  };
 
   if (!open || !submission) return null;
 
@@ -444,14 +489,17 @@ const VideoSubmissionModal = ({
                     display: { xs: 'none', sm: 'block' },
                   }}
                 >
-                  {(currentVideo?.createdAt || submission.createdAt)
-                    ? new Date(currentVideo?.createdAt || submission.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })
+                  {currentVideo?.createdAt || submission.createdAt
+                    ? new Date(currentVideo?.createdAt || submission.createdAt).toLocaleDateString(
+                        'en-US',
+                        {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        }
+                      )
                     : ''}
                 </Typography>
               </Box>
@@ -480,38 +528,36 @@ const VideoSubmissionModal = ({
                       sx={{ color: statusColor, display: 'flex' }}
                     />
                   )}
-                  <Typography
-                    fontWeight="SemiBold"
-                    fontSize={12}
-                    color={statusColor}
-                    noWrap
-                  >
+                  <Typography fontWeight="SemiBold" fontSize={12} color={statusColor} noWrap>
                     {statusLabel}
                   </Typography>
                 </Box>
               )}
               {/* Feedback Deadline Timer */}
-              {feedbackTimeLeft > 0 && !isClient && !isCreator && submissionStatus === 'CLIENT_FEEDBACK' && (
-                <DarkGlassTooltip
-                  title="Client timer to provide additional feedback for current round of submission."
-                  placement="top-start"
-                >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      cursor: 'default',
-                      gap: 0.5,
-                      color: '#1340ff',
-                    }}
+              {feedbackTimeLeft > 0 &&
+                !isClient &&
+                !isCreator &&
+                submissionStatus === 'CLIENT_FEEDBACK' && (
+                  <DarkGlassTooltip
+                    title="Client timer to provide additional feedback for current round of submission."
+                    placement="top-start"
                   >
-                    <Iconify icon="ic:sharp-timer" width={18} />
-                    <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                      {formatTimer(feedbackTimeLeft)}
-                    </Typography>
-                  </Box>
-                </DarkGlassTooltip>
-              )}
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        cursor: 'default',
+                        gap: 0.5,
+                        color: '#1340ff',
+                      }}
+                    >
+                      <Iconify icon="ic:sharp-timer" width={18} />
+                      <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                        {formatTimer(feedbackTimeLeft)}
+                      </Typography>
+                    </Box>
+                  </DarkGlassTooltip>
+                )}
             </Box>
 
             {/* Close Button */}
@@ -570,28 +616,80 @@ const VideoSubmissionModal = ({
                     mb: { xs: 0, md: 0.5 },
                   }}
                 >
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontFamily: 'Inter Display, Inter, sans-serif',
-                      fontWeight: 600,
-                      fontSize: { xs: '0.75rem', md: '0.875rem' },
-                      color: '#636366',
-                    }}
-                  >
-                    Caption
-                  </Typography>
-                  {/* Dropdown Icon - Only visible on mobile */}
-                  <Iconify
-                    icon={isCaptionOpen ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-                    width={18}
-                    sx={{ display: { xs: 'block', md: 'none' }, color: '#636366' }}
-                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontFamily: 'Inter Display, Inter, sans-serif',
+                        fontWeight: 600,
+                        fontSize: { xs: '0.75rem', md: '0.875rem' },
+                        color: '#636366',
+                      }}
+                    >
+                      Caption
+                    </Typography>
+                    {canEditCaption && captionDirty && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontFamily: 'Inter Display, Inter, sans-serif',
+                          fontStyle: 'italic',
+                          fontSize: { xs: '0.688rem', md: '0.75rem' },
+                          color: '#919191',
+                        }}
+                      >
+                        edited
+                      </Typography>
+                    )}
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    {canEditCaption && captionDirty && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        disabled={captionSaving}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSaveCaption();
+                        }}
+                        sx={{
+                          minWidth: 'unset',
+                          minHeight: 'unset',
+                          py: 0.25,
+                          px: 1,
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          lineHeight: 1.4,
+                          textTransform: 'none',
+                          bgcolor: '#1340ff',
+                          borderBottom: '2px solid #0A238C',
+                          boxShadow: 'inset 0px -2px 0px 0px #0A238C',
+                          borderRadius: 1,
+                          '&:hover': { bgcolor: '#1a4dff' },
+                          '&.Mui-disabled': {
+                            bgcolor: 'action.disabledBackground',
+                            color: 'action.disabled',
+                            borderBottomColor: 'action.disabledBackground',
+                            boxShadow: 'none',
+                          },
+                        }}
+                      >
+                        {captionSaving ? 'Saving…' : 'Save'}
+                      </Button>
+                    )}
+                    {/* Dropdown Icon - Only visible on mobile */}
+                    <Iconify
+                      icon={isCaptionOpen ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                      width={18}
+                      sx={{ display: { xs: 'block', md: 'none' }, color: '#636366' }}
+                    />
+                  </Box>
                 </Box>
 
                 {/* Mobile: Collapsible Content with MAX HEIGHT */}
                 <Collapse in={isCaptionOpen} sx={{ display: { xs: 'block', md: 'none' } }}>
                   <Box
+                    onClick={(e) => e.stopPropagation()}
                     sx={{
                       maxHeight: 300,
                       overflowY: 'auto',
@@ -604,19 +702,40 @@ const VideoSubmissionModal = ({
                       },
                     }}
                   >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontFamily: 'Inter Display, Inter, sans-serif',
-                        fontSize: '0.813rem',
-                        color: '#1F2937',
-                        lineHeight: 1.5,
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                      }}
-                    >
-                      {captionText || 'No caption provided'}
-                    </Typography>
+                    {canEditCaption ? (
+                      <TextField
+                        fullWidth
+                        multiline
+                        minRows={3}
+                        maxRows={10}
+                        placeholder="Enter caption here..."
+                        value={captionDraft}
+                        onChange={(e) => setCaptionDraft(e.target.value)}
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' },
+                          '& .MuiInputBase-input': {
+                            fontFamily: 'Inter Display, Inter, sans-serif',
+                            fontSize: '0.813rem',
+                            lineHeight: 1.5,
+                          },
+                        }}
+                      />
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontFamily: 'Inter Display, Inter, sans-serif',
+                          fontSize: '0.813rem',
+                          color: '#1F2937',
+                          lineHeight: 1.5,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {captionText || 'No caption provided'}
+                      </Typography>
+                    )}
                   </Box>
                 </Collapse>
 
@@ -633,19 +752,40 @@ const VideoSubmissionModal = ({
                     },
                   }}
                 >
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontFamily: 'Inter Display, Inter, sans-serif',
-                      fontSize: '0.875rem',
-                      color: '#1F2937',
-                      lineHeight: 1.6,
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                    }}
-                  >
-                    {captionText || 'No caption provided'}
-                  </Typography>
+                  {canEditCaption ? (
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={3}
+                      maxRows={6}
+                      placeholder="Enter caption here..."
+                      value={captionDraft}
+                      onChange={(e) => setCaptionDraft(e.target.value)}
+                      size="small"
+                      sx={{
+                        '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' },
+                        '& .MuiInputBase-input': {
+                          fontFamily: 'Inter Display, Inter, sans-serif',
+                          fontSize: '0.875rem',
+                          lineHeight: 1.6,
+                        },
+                      }}
+                    />
+                  ) : (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontFamily: 'Inter Display, Inter, sans-serif',
+                        fontSize: '0.875rem',
+                        color: '#1F2937',
+                        lineHeight: 1.6,
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {captionText || 'No caption provided'}
+                    </Typography>
+                  )}
                 </Box>
               </Box>
 
@@ -668,76 +808,80 @@ const VideoSubmissionModal = ({
                   position: 'relative',
                 }}
               >
-                  {videoUrl && isAdmin && (
-                    <DarkGlassTooltip title={copied ? 'Copied!' : 'Copy Link'} placement="right">
-                      <IconButton
-                        onClick={handleCopyLink}
-                        size="small"
-                        sx={{
-                          position: 'absolute',
-                          top: 8,
-                          left: 8,
-                          zIndex: 10,
-                          color: '#F4F4F4',
-                          bgcolor: '#1C1C1C',
-                          borderRadius: '8px',
-                          borderBottom: '2px solid #000',
-                          overflow: 'hidden',
-                          '&:hover': { bgcolor: '#2C2C2C' },
-                        }}
-                      >
-                        <AnimatePresence mode="wait" initial={false}>
-                          <m.div
-                            key={copied ? 'check' : 'copy'}
-                            initial={{ opacity: 0, scale: 0.5, y: 6 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.5, y: -6 }}
-                            transition={{ duration: 0.18, ease: 'easeOut' }}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                          >
-                            <Iconify
-                              icon={copied ? 'eva:checkmark-fill' : 'eva:copy-outline'}
-                              width={18}
-                              sx={{ color: copied ? '#00A76F' : '#F4F4F4' }}
-                            />
-                          </m.div>
-                        </AnimatePresence>
-                      </IconButton>
-                    </DarkGlassTooltip>
-                  )}
-                  {videoUrl ? (
-                    <video
-                      key={currentVideo?.id}
-                      ref={modalVideoRef}
-                      src={videoUrl}
-                      controls
-                      controlsList={isCreator ? 'nodownload' : undefined}
-                      preload="metadata"
-                      playsInline
-                      onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)}
-                      onLoadedMetadata={(e) => {
-                        if (Number.isFinite(e.target.duration)) setModalDuration(e.target.duration);
-                      }}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain',
-                      }}
-                    >
-                      <track kind="captions" />
-                    </video>
-                  ) : (
-                    <Typography
+                {videoUrl && isAdmin && (
+                  <DarkGlassTooltip title={copied ? 'Copied!' : 'Copy Link'} placement="right">
+                    <IconButton
+                      onClick={handleCopyLink}
+                      size="small"
                       sx={{
-                        color: 'white',
-                        fontFamily:
-                          'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        zIndex: 10,
+                        color: '#F4F4F4',
+                        bgcolor: '#1C1C1C',
+                        borderRadius: '8px',
+                        borderBottom: '2px solid #000',
+                        overflow: 'hidden',
+                        '&:hover': { bgcolor: '#2C2C2C' },
                       }}
                     >
-                      No video available
-                    </Typography>
-                  )}
-                </Box>
+                      <AnimatePresence mode="wait" initial={false}>
+                        <m.div
+                          key={copied ? 'check' : 'copy'}
+                          initial={{ opacity: 0, scale: 0.5, y: 6 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.5, y: -6 }}
+                          transition={{ duration: 0.18, ease: 'easeOut' }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Iconify
+                            icon={copied ? 'eva:checkmark-fill' : 'eva:copy-outline'}
+                            width={18}
+                            sx={{ color: copied ? '#00A76F' : '#F4F4F4' }}
+                          />
+                        </m.div>
+                      </AnimatePresence>
+                    </IconButton>
+                  </DarkGlassTooltip>
+                )}
+                {videoUrl ? (
+                  <video
+                    key={currentVideo?.id}
+                    ref={modalVideoRef}
+                    src={videoUrl}
+                    controls
+                    controlsList={isCreator ? 'nodownload' : undefined}
+                    preload="metadata"
+                    playsInline
+                    onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)}
+                    onLoadedMetadata={(e) => {
+                      if (Number.isFinite(e.target.duration)) setModalDuration(e.target.duration);
+                    }}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                    }}
+                  >
+                    <track kind="captions" />
+                  </video>
+                ) : (
+                  <Typography
+                    sx={{
+                      color: 'white',
+                      fontFamily:
+                        'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    }}
+                  >
+                    No video available
+                  </Typography>
+                )}
+              </Box>
             </Box>
 
             {/* Right Side - Flexible Content (Client/Creator/Admin specific) */}
