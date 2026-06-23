@@ -593,48 +593,6 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack, mutate })
         </DialogTitle>
         <DialogContent sx={{ p: 3, pt: 2 }}>
           <Stack spacing={2}>
-            <Box>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#636366',
-                  fontSize: 14,
-                  fontWeight: 500,
-                  mb: 1,
-                  display: 'block',
-                }}
-              >
-                Instagram or TikTok Followers (use the highest between the two){' '}
-                <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-              </Typography>
-              <RHFTextField
-                name="followerCount"
-                fullWidth
-                placeholder="Instagram or TikTok Followers"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    bgcolor: '#FFFFFF',
-                    borderRadius: 1.2,
-                    '& fieldset': {
-                      borderColor: '#e7e7e7',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: '#d0d0d0',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#1340FF',
-                    },
-                  },
-                  '& .MuiOutlinedInput-input': {
-                    color: '#221f20',
-                    '&::placeholder': {
-                      color: '#B0B0B0',
-                      opacity: 1,
-                    },
-                  },
-                }}
-              />
-            </Box>
             <RHFEditor
               simple
               name="content"

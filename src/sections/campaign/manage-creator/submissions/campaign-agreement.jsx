@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { PDFDocument } from 'pdf-lib';
 import { enqueueSnackbar } from 'notistack';
 import { Page, pdfjs, Document } from 'react-pdf';
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -21,6 +21,9 @@ import {
   DialogActions,
   useMediaQuery,
 } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 // V3 pitches hook removed
@@ -68,6 +71,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const [loading, setLoading] = useState(false);
   const { user, dispatch } = useAuthContext();
   const display = useBoolean();
+  const router = useRouter();
+
+  const [paymentGateOpen, setPaymentGateOpen] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const hasCompletePaymentDetails = !!(
+    user?.paymentForm?.bankAccountName?.trim() &&
+    user?.paymentForm?.bankAccountNumber?.trim() &&
+    user?.paymentForm?.icNumber?.trim()
+  );
 
   // New editor for pdfs
   const editor = useBoolean();
@@ -396,19 +409,33 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     }
   };
 
+  const handleSignAgreementClick = () => {
+    if (!hasCompletePaymentDetails) {
+      setPaymentGateOpen(true);
+      return;
+    }
+    editor.onTrue();
+  };
+
+  const handleUploadClick = () => {
+    if (!hasCompletePaymentDetails) {
+      setPaymentGateOpen(true);
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (file.type !== 'application/pdf') {
       enqueueSnackbar('Please upload a PDF file', { variant: 'error' });
       return;
     }
 
     setUploadedFile(file);
-    
-    // Directly submit the uploaded file
+    event.target.value = '';
     await handleAgreementSubmit(file);
   };
 
@@ -591,9 +618,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   gap: { xs: 1.5, sm: 1 } 
                 }}
               >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  hidden
+                  accept="application/pdf"
+                  onChange={handleFileUpload}
+                />
                 <Button
                   variant="contained"
-                  component="label"
+                  onClick={handleUploadClick}
                   startIcon={<Iconify icon="solar:upload-linear" width={20} />}
                   sx={{
                     bgcolor: '#fff',
@@ -613,16 +647,10 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   }}
                 >
                   Upload Agreement
-                  <input
-                    type="file"
-                    hidden
-                    accept="application/pdf"
-                    onChange={handleFileUpload}
-                  />
                 </Button>
                 <Button
                   variant="contained"
-                  onClick={editor.onTrue}
+                  onClick={handleSignAgreementClick}
                   startIcon={<Iconify icon="solar:document-text-bold-duotone" width={24} />}
                   sx={{
                     bgcolor: '#203ff5',
@@ -805,7 +833,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               >
                 <Button
                   variant="contained"
-                  component="label"
+                  onClick={handleUploadClick}
                   startIcon={<Iconify icon="solar:upload-linear" width={20} />}
                   sx={{
                     bgcolor: '#fff',
@@ -825,17 +853,11 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   }}
                 >
                   <Typography variant='body2' fontWeight="bold">Upload Agreement</Typography>
-                  <input
-                    type="file"
-                    hidden
-                    accept="application/pdf"
-                    onChange={handleFileUpload}
-                  />
                 </Button>
 
                 <Button
                   variant="contained"
-                  onClick={editor.onTrue}
+                  onClick={handleSignAgreementClick}
                   startIcon={<Iconify icon="solar:document-text-bold-duotone" width={24} />}
                   sx={{
                     bgcolor: '#203ff5',
@@ -1086,7 +1108,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               >
                 <Button
                   variant="contained"
-                  component="label"
+                  onClick={handleUploadClick}
                   startIcon={<Iconify icon="solar:upload-linear" width={20} />}
                   sx={{
                     bgcolor: '#fff',
@@ -1106,17 +1128,11 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   }}
                 >
                   <Typography variant='body2' fontWeight="bold">Upload Agreement</Typography>
-                  <input
-                    type="file"
-                    hidden
-                    accept="application/pdf"
-                    onChange={handleFileUpload}
-                  />
                 </Button>
 
                 <Button
                   variant="contained"
-                  onClick={editor.onTrue}
+                  onClick={handleSignAgreementClick}
                   startIcon={<Iconify icon="solar:document-text-bold-duotone" width={24} />}
                   sx={{
                     bgcolor: '#203ff5',
@@ -1516,6 +1532,97 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
           </Dialog> */}
         </>
       )}
+
+      {/* Payment details required gate */}
+      <Dialog
+        open={paymentGateOpen}
+        onClose={() => setPaymentGateOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, bgcolor: '#f4f4f4' } }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 1.5, px: 1.5 }}>
+          <IconButton onClick={() => setPaymentGateOpen(false)} size="small" sx={{ color: '#8e8e93' }}>
+            <Iconify icon="hugeicons:cancel-01" width={20} />
+          </IconButton>
+        </Box>
+        <DialogContent sx={{ px: 3, pt: 0, pb: 2 }}>
+          <Stack spacing={2} alignItems="center" sx={{ textAlign: 'center' }}>
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                bgcolor: '#fff8ec',
+                fontSize: '38px',
+              }}
+            >
+              💳
+            </Box>
+            <Typography
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontSize: '1.8rem',
+                fontWeight: 550,
+                color: '#221f20',
+                lineHeight: 1.2,
+              }}
+            >
+              Payment Details Required
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#636366' }}>
+              Please fill in your bank account information to proceed.
+            </Typography>
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3, pt: 1, flexDirection: 'column', gap: 1 }}>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => {
+              setPaymentGateOpen(false);
+              router.push(paths.dashboard.user.profileTabs.payment);
+            }}
+            sx={{
+              bgcolor: '#3a3a3c',
+              color: 'white',
+              borderBottom: 3.5,
+              borderBottomColor: '#202021',
+              borderRadius: 1.5,
+              boxShadow: 'none',
+              fontWeight: 600,
+              py: 1.4,
+              '&:hover': { bgcolor: '#3a3a3c', opacity: 0.9, boxShadow: 'none' },
+            }}
+          >
+            Complete Payment Details
+          </Button>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => setPaymentGateOpen(false)}
+            sx={{
+              bgcolor: '#ffffff',
+              color: '#221f20',
+              border: 1,
+              borderColor: '#e7e7e7',
+              borderBottom: 3,
+              borderBottomColor: '#e7e7e7',
+              borderRadius: 1.5,
+              boxShadow: 'none',
+              fontWeight: 600,
+              py: 1.4,
+              '&:hover': { bgcolor: '#f5f5f5', boxShadow: 'none' },
+            }}
+          >
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
         <DialogTitle>
