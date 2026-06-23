@@ -147,8 +147,6 @@ const CampaignModal = ({
 
   const hasDraft = useMemo(() => !!draftPitch, [draftPitch]);
 
-  const { isFormCompleted } = user.creator;
-
   const totalCredits = campaign?.shortlisted?.reduce(
     (acc, shortlist) => acc + shortlist.ugcVideos,
     0
@@ -204,11 +202,6 @@ const CampaignModal = ({
     // For MKM users, enforce media kit connection
     if (isMKM && !hasMediaKit) {
       setShowMediaKitPopup(true);
-      return;
-    }
-
-    // Check payment details for all users
-    if (!isFormCompleted || !user?.paymentForm?.bankAccountName) {
       return;
     }
 
@@ -550,102 +543,7 @@ const CampaignModal = ({
                 justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
                 sx={{ mt: { xs: 1.5, sm: 0 } }}
               >
-                {!isFormCompleted || !user?.paymentForm?.bankAccountName ? (
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Box
-                      component="div"
-                      sx={{
-                        position: 'relative',
-                        display: 'inline-flex',
-                        '&:hover .tooltip-content': {
-                          opacity: 1,
-                          visibility: 'visible',
-                        },
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src="/assets/icons/components/ic_fillpaymenterror.svg"
-                        sx={{
-                          width: 24,
-                          height: 24,
-                          cursor: 'pointer',
-                        }}
-                        onClick={dialog.onTrue}
-                      />
-                      <Box
-                        className="tooltip-content"
-                        sx={{
-                          opacity: 0,
-                          visibility: 'hidden',
-                          position: 'absolute',
-                          top: '-75px',
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          backgroundColor: '#FCFCFC',
-                          color: '#231F20',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          textAlign: 'center',
-                          zIndex: 10,
-                          boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.15)',
-                          width: '180px',
-                          transition: 'opacity 0.2s ease, visibility 0.2s ease',
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Typography
-                          variant="body2"
-                          sx={{ display: 'block', mb: 1, textAlign: 'left' }}
-                        >
-                          Please complete your payment details to access this feature.
-                        </Typography>
-                        <Button
-                          size="small"
-                          onClick={() => {
-                            router.push(paths.dashboard.user.profileTabs.payment);
-                          }}
-                          sx={{
-                            color: '#1340FF',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            padding: '2px 8px',
-                            minWidth: 'auto',
-                            textTransform: 'none',
-                            display: 'flex',
-                            justifyContent: 'flex-start',
-                            '&:hover': {
-                              backgroundColor: 'rgba(19, 64, 255, 0.08)',
-                            },
-                          }}
-                        >
-                          Complete Payment Details
-                        </Button>
-                      </Box>
-                    </Box>
-                    <Button
-                      variant="contained"
-                      disabled
-                      sx={{
-                        backgroundColor: '#f5f5f5',
-                        color: '#a1a1a1',
-                        borderBottom: '4px solid #d1d1d1 !important',
-                        border: 'none',
-                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                        padding: { xs: '4px 12px', sm: '6px 18px' },
-                        minWidth: '100px',
-                        height: '42px',
-                        boxShadow: 'none',
-                        textTransform: 'none',
-                        fontWeight: 650,
-                        opacity: 0.7,
-                      }}
-                    >
-                      Pitch Now
-                    </Button>
-                  </Stack>
-                ) : hasPitched ? (
+                {hasPitched ? (
                   existingPitch.status === 'APPROVED' ? (
                     (() => {
                       // Check if user is marked as Media Kit Mandatory
@@ -778,28 +676,16 @@ const CampaignModal = ({
                     variant="contained"
                     onClick={handlePitch}
                     disabled={(() => {
-                      // Check if campaign credits are finished
                       if (isCreditsFinished) return true;
 
-                      // Check if user is marked as Media Kit Mandatory
                       const isMKM = user?.mediaKitMandatory === true;
-
-                      // Check if media kit is connected
                       const hasMediaKit =
                         user?.creator &&
                         (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
 
-                      // Check if payment details are completed
-                      const hasPaymentDetails =
-                        isFormCompleted && user?.paymentForm?.bankAccountName;
+                      if (isMKM && !hasMediaKit) return true;
 
-                      // For MKM users, require media kit connection
-                      if (isMKM && !hasMediaKit) {
-                        return true;
-                      }
-
-                      // All users need payment details
-                      return !hasPaymentDetails;
+                      return false;
                     })()}
                     sx={{
                       backgroundColor: '#203ff5',
@@ -852,129 +738,14 @@ const CampaignModal = ({
               </Stack>
             </Grid>
 
-            {/* Warning message for incomplete profile */}
+            {/* Warning message for media kit mandatory users */}
             {(() => {
-              // Check if user is marked as Media Kit Mandatory
               const isMKM = user?.mediaKitMandatory === true;
-
-              // Check if media kit is connected
               const hasMediaKit =
                 user?.creator &&
                 (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
 
-              // Check if payment details are completed
-              const hasPaymentDetails = isFormCompleted && user?.paymentForm?.bankAccountName;
-
-              if (isMKM) {
-                // For target users, check both media kit and payment details
-                if (!hasMediaKit && !hasPaymentDetails) {
-                  return (
-                    <Typography
-                      sx={{
-                        flex: 1,
-                        textAlign: 'center',
-                        p: 1,
-                        mt: 1,
-                        borderRadius: 1,
-                        color: '#FF3500',
-                        backgroundColor: '#FFF2F0',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        alignSelf: 'center',
-                      }}
-                    >
-                      <span role="img" aria-label="warning">
-                        😮
-                      </span>{' '}
-                      Oops! You need to{' '}
-                      <Link
-                        to={paths.dashboard.user.profileTabs.payment}
-                        style={{
-                          color: '#FF3500',
-                          fontWeight: 'inherit',
-                        }}
-                      >
-                        add your payment details
-                      </Link>{' '}
-                      and{' '}
-                      <Link
-                        to={paths.dashboard.user.profileTabs.socials}
-                        style={{
-                          color: '#FF3500',
-                          fontWeight: 'inherit',
-                        }}
-                      >
-                        link your media kit
-                      </Link>{' '}
-                      before you can pitch for campaigns.
-                    </Typography>
-                  );
-                }
-                if (!hasMediaKit) {
-                  return (
-                    <Typography
-                      sx={{
-                        flex: 1,
-                        textAlign: 'center',
-                        p: 1,
-                        mt: 1,
-                        borderRadius: 1,
-                        color: '#FF3500',
-                        backgroundColor: '#FFF2F0',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        alignSelf: 'center',
-                      }}
-                    >
-                      <span role="img" aria-label="warning">
-                        😮
-                      </span>{' '}
-                      Oops! You need to{' '}
-                      <Link
-                        to={paths.dashboard.user.profileTabs.socials}
-                        style={{
-                          color: '#FF3500',
-                          fontWeight: 'inherit',
-                        }}
-                      >
-                        link your media kit
-                      </Link>{' '}
-                      before you can pitch for campaigns.
-                    </Typography>
-                  );
-                }
-                if (!hasPaymentDetails) {
-                  return (
-                    <Typography
-                      sx={{
-                        flex: 1,
-                        textAlign: 'center',
-                        p: 1,
-                        mt: 2,
-                        borderRadius: 1,
-                        color: '#FF3500',
-                        backgroundColor: '#FFF2F0',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        alignSelf: 'center',
-                      }}
-                    >
-                      Please complete your{' '}
-                      <Link
-                        to={paths.dashboard.user.profileTabs.payment}
-                        style={{
-                          color: '#FF3500',
-                          fontWeight: 'inherit',
-                        }}
-                      >
-                        payment details
-                      </Link>{' '}
-                      to access this feature. ☝️
-                    </Typography>
-                  );
-                }
-              } else if (!hasPaymentDetails) {
-                // For non-target users, only check payment details (original behavior)
+              if (isMKM && !hasMediaKit) {
                 return (
                   <Typography
                     sx={{
@@ -990,17 +761,20 @@ const CampaignModal = ({
                       alignSelf: 'center',
                     }}
                   >
-                    Please complete your{' '}
+                    <span role="img" aria-label="warning">
+                      😮
+                    </span>{' '}
+                    Oops! You need to{' '}
                     <Link
-                      to={paths.dashboard.user.profileTabs.payment}
+                      to={paths.dashboard.user.profileTabs.socials}
                       style={{
                         color: '#FF3500',
                         fontWeight: 'inherit',
                       }}
                     >
-                      payment details
+                      link your media kit
                     </Link>{' '}
-                    to access this feature. ☝️
+                    before you can pitch for campaigns.
                   </Typography>
                 );
               }
