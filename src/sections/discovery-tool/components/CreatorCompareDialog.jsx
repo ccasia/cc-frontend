@@ -13,8 +13,10 @@ const CreatorCompareDialog = ({
   onClose,
   creators,
   rowKeys,
-  selectedIds,
-  onToggleBookmark,
+  lists,
+  membershipsByRowKey,
+  onToggleList,
+  onOpenListManager,
   onInvite,
 }) => (
   <Dialog
@@ -54,8 +56,10 @@ const CreatorCompareDialog = ({
           key={rowKeys[index] || creator.creatorId || index}
           creator={creator}
           rowKey={rowKeys[index]}
-          selected={selectedIds?.includes(rowKeys[index])}
-          onToggleBookmark={onToggleBookmark}
+          lists={lists}
+          creatorListIds={membershipsByRowKey?.get(rowKeys[index])}
+          onToggleList={onToggleList}
+          onOpenListManager={onOpenListManager}
           onInvite={onInvite}
           variant="compare"
         />
@@ -69,8 +73,10 @@ CreatorCompareDialog.propTypes = {
   onClose: PropTypes.func,
   creators: PropTypes.arrayOf(PropTypes.object),
   rowKeys: PropTypes.arrayOf(PropTypes.string),
-  selectedIds: PropTypes.arrayOf(PropTypes.string),
-  onToggleBookmark: PropTypes.func,
+  lists: PropTypes.array,
+  membershipsByRowKey: PropTypes.instanceOf(Map),
+  onToggleList: PropTypes.func,
+  onOpenListManager: PropTypes.func,
   onInvite: PropTypes.func,
 };
 
@@ -79,8 +85,10 @@ CreatorCompareDialog.defaultProps = {
   onClose: undefined,
   creators: [],
   rowKeys: [],
-  selectedIds: [],
-  onToggleBookmark: undefined,
+  lists: [],
+  membershipsByRowKey: undefined,
+  onToggleList: undefined,
+  onOpenListManager: undefined,
   onInvite: undefined,
 };
 

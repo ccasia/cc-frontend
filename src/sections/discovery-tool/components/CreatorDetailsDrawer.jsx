@@ -12,9 +12,11 @@ const CreatorDetailsDrawer = ({
   creator,
   open,
   onClose,
-  selected,
   rowKey,
-  onToggleBookmark,
+  lists,
+  creatorListIds,
+  onToggleList,
+  onOpenListManager,
   onInvite,
 }) => {
   if (!creator) {
@@ -61,9 +63,11 @@ const CreatorDetailsDrawer = ({
 
       <CreatorProfilePanel
         creator={creator}
-        selected={selected}
         rowKey={rowKey}
-        onToggleBookmark={onToggleBookmark}
+        lists={lists}
+        creatorListIds={creatorListIds}
+        onToggleList={onToggleList}
+        onOpenListManager={onOpenListManager}
         onInvite={onInvite}
       />
     </Drawer>
@@ -90,9 +94,11 @@ CreatorDetailsDrawer.propTypes = {
   }),
   open: PropTypes.bool,
   onClose: PropTypes.func,
-  selected: PropTypes.bool,
   rowKey: PropTypes.string,
-  onToggleBookmark: PropTypes.func,
+  lists: PropTypes.array,
+  creatorListIds: PropTypes.oneOfType([PropTypes.array, PropTypes.instanceOf(Set)]),
+  onToggleList: PropTypes.func,
+  onOpenListManager: PropTypes.func,
   onInvite: PropTypes.func,
 };
 
@@ -100,9 +106,11 @@ CreatorDetailsDrawer.defaultProps = {
   creator: null,
   open: false,
   onClose: undefined,
-  selected: false,
   rowKey: undefined,
-  onToggleBookmark: undefined,
+  lists: [],
+  creatorListIds: [],
+  onToggleList: undefined,
+  onOpenListManager: undefined,
   onInvite: undefined,
 };
 

@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Chip, Stack, Button, Avatar, IconButton, Typography } from '@mui/material';
+import { Box, Chip, Stack, Button, Avatar, Typography } from '@mui/material';
 
 import { formatNumber } from 'src/utils/socialMetricsCalculator';
 import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
 
+import BookmarkButton from './BookmarkButton';
 import {
   ONYX,
   BLUE,
@@ -190,8 +191,10 @@ VideoThumbnail.defaultProps = {
 
 const CreatorCard = ({
   creator,
-  selected,
-  onSelect,
+  lists,
+  creatorListIds,
+  onToggleList,
+  onCreateList,
   onInviteOne,
   onOpenDetails,
   rowKey,
@@ -229,18 +232,9 @@ const CreatorCard = ({
     onOpenDetails?.(creatorRowKey);
   };
 
-  const handleSelect = (event) => {
-    event.stopPropagation();
-    onSelect?.(creatorRowKey, creator);
-  };
-
   const handleInvite = (event) => {
     event.stopPropagation();
-    if (onInviteOne) {
-      onInviteOne(creatorRowKey);
-      return;
-    }
-    onSelect?.(creatorRowKey, creator);
+    onInviteOne?.(creatorRowKey);
   };
 
   return (
@@ -260,10 +254,6 @@ const CreatorCard = ({
           : 'linear-gradient(#F5F5F5,#F5F5F5) padding-box, linear-gradient(#F5F5F5,#F5F5F5) border-box',
         borderRadius: '20px',
         cursor: 'pointer',
-        transition: 'transform 150ms ease',
-        '&:hover': {
-          transform: 'translateY(-1px)',
-        },
       }}
     >
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ height: 42 }}>
@@ -327,38 +317,15 @@ const CreatorCard = ({
           </Box>
         </Stack>
 
-        <IconButton
-          aria-label={selected ? 'Remove bookmark' : 'Bookmark creator'}
-          onClick={handleSelect}
-          sx={{
-            width: 42,
-            height: 42,
-            p: 0,
-            bgcolor: '#FFFFFF',
-            border: '1px solid #E8E8E8',
-            borderRadius: 1,
-            boxShadow: 'inset 0px -3px 0px #E7E7E7',
-            color: ONYX,
-            flex: '0 0 auto',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            '&:hover': {
-              bgcolor: '#FFFFFF',
-            },
-            '& .component-iconify': {
-              display: 'block',
-              flexShrink: 0,
-              lineHeight: 0,
-              transform: 'translateY(-2px)',
-            },
-          }}
-        >
-          <Iconify
-            icon={selected ? 'material-symbols:bookmark' : 'material-symbols:bookmark-outline'}
-            width={24}
-          />
-        </IconButton>
+        <BookmarkButton
+          creator={creator}
+          rowKey={creatorRowKey}
+          lists={lists}
+          creatorListIds={creatorListIds}
+          onToggleList={onToggleList}
+          onCreateList={onCreateList}
+          variant="card"
+        />
       </Stack>
 
       <Stack
@@ -472,33 +439,35 @@ const CreatorCard = ({
             />
           ))}
         </Stack>
-        <Button
-          type="button"
-          onClick={handleInvite}
-          sx={{
-            width: 96,
-            height: 28,
-            minWidth: 96,
-            px: 1,
-            pt: 0.25,
-            pb: 0.625,
-            bgcolor: '#3A3A3C',
-            borderRadius: '6px',
-            boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
-            color: '#FFFFFF',
-            flex: '0 0 auto',
-            fontSize: 13,
-            fontWeight: 600,
-            lineHeight: '17px',
-            textTransform: 'none',
-            '&:hover': {
+        {onInviteOne && (
+          <Button
+            type="button"
+            onClick={handleInvite}
+            sx={{
+              width: 96,
+              height: 28,
+              minWidth: 96,
+              px: 1,
+              pt: 0.25,
+              pb: 0.625,
               bgcolor: '#3A3A3C',
-              boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.35)',
-            },
-          }}
-        >
-          + Campaign
-        </Button>
+              borderRadius: '6px',
+              boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
+              color: '#FFFFFF',
+              flex: '0 0 auto',
+              fontSize: 13,
+              fontWeight: 600,
+              lineHeight: '17px',
+              textTransform: 'none',
+              '&:hover': {
+                bgcolor: '#3A3A3C',
+                boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.35)',
+              },
+            }}
+          >
+            + Campaign
+          </Button>
+        )}
       </Stack>
     </Box>
   );
@@ -526,8 +495,10 @@ CreatorCard.propTypes = {
     instagram: PropTypes.object,
     tiktok: PropTypes.object,
   }).isRequired,
-  selected: PropTypes.bool,
-  onSelect: PropTypes.func,
+  lists: PropTypes.array,
+  creatorListIds: PropTypes.oneOfType([PropTypes.array, PropTypes.instanceOf(Set)]),
+  onToggleList: PropTypes.func,
+  onCreateList: PropTypes.func,
   onInviteOne: PropTypes.func,
   onOpenDetails: PropTypes.func,
   rowKey: PropTypes.string,
@@ -537,8 +508,10 @@ CreatorCard.propTypes = {
 };
 
 CreatorCard.defaultProps = {
-  selected: false,
-  onSelect: undefined,
+  lists: [],
+  creatorListIds: [],
+  onToggleList: undefined,
+  onCreateList: undefined,
   onInviteOne: undefined,
   onOpenDetails: undefined,
   rowKey: undefined,

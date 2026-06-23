@@ -2,13 +2,14 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router';
 
-import { Box, Chip, Stack, Button, Avatar, IconButton, Typography } from '@mui/material';
+import { Box, Chip, Stack, Button, Avatar, Typography } from '@mui/material';
 
 import { formatNumber } from 'src/utils/socialMetricsCalculator';
 import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
 
+import BookmarkButton from './BookmarkButton';
 import {
   ONYX,
   BLUE,
@@ -293,9 +294,11 @@ const SECTION_HEADING_SX = {
 
 const CreatorProfilePanel = ({
   creator,
-  selected,
   rowKey,
-  onToggleBookmark,
+  lists,
+  creatorListIds,
+  onToggleList,
+  onOpenListManager,
   onInvite,
   variant,
 }) => {
@@ -484,33 +487,15 @@ const CreatorProfilePanel = ({
               </Stack>
             </Box>
 
-            <IconButton
-              aria-label={selected ? 'Remove bookmark' : 'Bookmark creator'}
-              onClick={() => onToggleBookmark?.(rowKey, creator)}
-              sx={{
-                width: 38,
-                height: 38,
-                p: 0,
-                flex: '0 0 auto',
-                bgcolor: '#FFFFFF',
-                border: '1px solid #E8E8E8',
-                borderRadius: 1,
-                boxShadow: 'inset 0px -3px 0px #E7E7E7',
-                color: ONYX,
-                '&:hover': { bgcolor: '#FFFFFF' },
-                '& .component-iconify': {
-                  display: 'block',
-                  flexShrink: 0,
-                  lineHeight: 0,
-                  transform: 'translateY(-1px)',
-                },
-              }}
-            >
-              <Iconify
-                icon={selected ? 'material-symbols:bookmark' : 'material-symbols:bookmark-outline'}
-                width={20}
-              />
-            </IconButton>
+            <BookmarkButton
+              creator={creator}
+              rowKey={rowKey}
+              lists={lists}
+              creatorListIds={creatorListIds}
+              onToggleList={onToggleList}
+              onOpenListManager={onOpenListManager}
+              variant="card"
+            />
           </Stack>
 
           {(creator.interests || []).length > 0 && (
@@ -658,27 +643,29 @@ const CreatorProfilePanel = ({
         >
           Media Kit
         </Button>
-        <Button
-          onClick={() => onInvite?.(rowKey)}
-          sx={{
-            height: 38,
-            px: 1.5,
-            color: '#FFFFFF',
-            bgcolor: '#3A3A3C',
-            boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
-            borderRadius: 1,
-            textTransform: 'none',
-            fontSize: 14,
-            fontWeight: 600,
-            lineHeight: '18px',
-            '&:hover': {
+        {onInvite && (
+          <Button
+            onClick={() => onInvite(rowKey)}
+            sx={{
+              height: 38,
+              px: 1.5,
+              color: '#FFFFFF',
               bgcolor: '#3A3A3C',
-              boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.35)',
-            },
-          }}
-        >
-          + Campaign
-        </Button>
+              boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
+              borderRadius: 1,
+              textTransform: 'none',
+              fontSize: 14,
+              fontWeight: 600,
+              lineHeight: '18px',
+              '&:hover': {
+                bgcolor: '#3A3A3C',
+                boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.35)',
+              },
+            }}
+          >
+            + Campaign
+          </Button>
+        )}
       </Stack>
     </Stack>
   );
@@ -702,17 +689,21 @@ CreatorProfilePanel.propTypes = {
     instagram: PropTypes.object,
     tiktok: PropTypes.object,
   }).isRequired,
-  selected: PropTypes.bool,
   rowKey: PropTypes.string,
-  onToggleBookmark: PropTypes.func,
+  lists: PropTypes.array,
+  creatorListIds: PropTypes.oneOfType([PropTypes.array, PropTypes.instanceOf(Set)]),
+  onToggleList: PropTypes.func,
+  onOpenListManager: PropTypes.func,
   onInvite: PropTypes.func,
   variant: PropTypes.oneOf(['drawer', 'compare']),
 };
 
 CreatorProfilePanel.defaultProps = {
-  selected: false,
   rowKey: undefined,
-  onToggleBookmark: undefined,
+  lists: [],
+  creatorListIds: [],
+  onToggleList: undefined,
+  onOpenListManager: undefined,
   onInvite: undefined,
   variant: 'drawer',
 };

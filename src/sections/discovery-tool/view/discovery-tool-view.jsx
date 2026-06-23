@@ -4,9 +4,12 @@ import { useRef, useMemo, useState, useCallback } from 'react';
 import { Container, Typography } from '@mui/material';
 
 import useGetDiscoveryCreators from 'src/hooks/use-get-discovery-creators';
-import useGetDiscoveryBookmarks from 'src/hooks/use-get-discovery-bookmarks';
+import useGetDiscoveryListCreators from 'src/hooks/use-get-discovery-list-creators';
+import useGetDiscoveryBookmarkLists from 'src/hooks/use-get-discovery-bookmark-lists';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import InviteCreatorsDialog from './invite-creators-dialog';
 import { CreatorList, DiscoveryFilterBar, CreatorDetailsDrawer } from '../components';
@@ -18,6 +21,8 @@ const getCreatorRowKey = (creator, index) =>
 
 const DiscoveryToolView = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuthContext();
+  const isClientDemo = user?.role === 'client_demo';
   const [filters, setFilters] = useState({
     platform: 'all',
     debouncedKeyword: '',
@@ -91,78 +96,98 @@ const DiscoveryToolView = () => {
   const inviteCampaignsLoadedRef = useRef(false);
   const inviteCampaignsRequestRef = useRef(null);
 
-  // Per-account persisted bookmarks
+  // Per-account bookmark lists (with counts) + membership lookup
   const {
-    bookmarkedCreators,
-    bookmarkedRowKeys,
-    isLoading: isLoadingBookmarks,
-    mutate: mutateBookmarks,
-  } = useGetDiscoveryBookmarks();
+    lists,
+    membershipsByRowKey,
+    isLoading: isLoadingLists,
+    mutate: mutateLists,
+  } = useGetDiscoveryBookmarkLists();
 
-  const handleSelectCreator = useCallback(
-    async (rowKey, creator) => {
-      if (!creator?.userId || !creator?.platform) return;
+  // Lists currently selected to filter the grid
+  const [selectedListIds, setSelectedListIds] = useState([]);
 
-      const creatorUserId = creator.userId;
-      const { platform } = creator;
-      const creatorName = creator.name || 'Creator';
-      const isBookmarked = bookmarkedRowKeys.includes(rowKey);
+  // Drop any selected list ids that no longer exist (e.g. after deletion)
+  const validSelectedListIds = useMemo(() => {
+    const listIdSet = new Set(lists.map((list) => list.id));
+    return selectedListIds.filter((id) => listIdSet.has(id));
+  }, [lists, selectedListIds]);
 
-      const applyToggle = (current) => {
-        const safe = current || { data: [], bookmarks: [], total: 0 };
+  const {
+    listCreators,
+    isLoading: isLoadingListCreators,
+    mutate: mutateListCreators,
+  } = useGetDiscoveryListCreators(validSelectedListIds);
 
-        if (isBookmarked) {
-          return {
-            ...safe,
-            data: (safe.data || []).filter((row) => row.rowId !== rowKey),
-            bookmarks: (safe.bookmarks || []).filter(
-              (bookmark) =>
-                !(bookmark.creatorUserId === creatorUserId && bookmark.platform === platform)
-            ),
-            total: Math.max(0, (safe.total || 0) - 1),
-          };
-        }
+  const refreshBookmarkData = useCallback(() => {
+    mutateLists();
+    mutateListCreators();
+  }, [mutateLists, mutateListCreators]);
 
-        return {
-          ...safe,
-          data: [{ ...creator, rowId: rowKey }, ...(safe.data || [])],
-          bookmarks: [
-            { creatorUserId, platform, createdAt: new Date().toISOString() },
-            ...(safe.bookmarks || []),
-          ],
-          total: (safe.total || 0) + 1,
-        };
-      };
-
+  const handleCreateList = useCallback(
+    async (name) => {
       try {
-        await mutateBookmarks(
-          async (current) => {
-            if (isBookmarked) {
-              await axiosInstance.delete(endpoints.discovery.bookmarks, {
-                params: { creatorUserId, platform },
-              });
-            } else {
-              await axiosInstance.post(endpoints.discovery.bookmarks, { creatorUserId, platform });
-            }
-            return applyToggle(current);
-          },
-          { optimisticData: applyToggle, rollbackOnError: true, revalidate: false }
-        );
-
-        if (isBookmarked) {
-          enqueueSnackbar(`${creatorName} removed from your bookmarks.`, { variant: 'error' });
-        } else {
-          enqueueSnackbar(`${creatorName} saved to your bookmarks.`, { variant: 'success' });
-        }
+        await axiosInstance.post(endpoints.discovery.bookmarkLists, { name });
+        await mutateLists();
+        enqueueSnackbar(`List "${name}" created.`, { variant: 'success' });
       } catch (error) {
-        console.error('Failed to update bookmark:', error);
-        enqueueSnackbar(error?.message || 'Failed to update bookmark', {
+        console.error('Failed to create list:', error);
+        enqueueSnackbar(error?.response?.data?.message || 'Failed to create list', {
           variant: 'error',
         });
       }
     },
-    [bookmarkedRowKeys, enqueueSnackbar, mutateBookmarks]
+    [enqueueSnackbar, mutateLists]
   );
+
+  const handleDeleteList = useCallback(
+    async (listId) => {
+      try {
+        await axiosInstance.delete(`${endpoints.discovery.bookmarkLists}/${listId}`);
+        setSelectedListIds((prev) => prev.filter((id) => id !== listId));
+        refreshBookmarkData();
+        enqueueSnackbar('List deleted.', { variant: 'success' });
+      } catch (error) {
+        console.error('Failed to delete list:', error);
+        enqueueSnackbar(error?.response?.data?.message || 'Failed to delete list', {
+          variant: 'error',
+        });
+      }
+    },
+    [enqueueSnackbar, refreshBookmarkData]
+  );
+
+  const handleToggleCreatorInList = useCallback(
+    async (listId, creator, isInList) => {
+      if (!creator?.userId || !creator?.platform || !listId) return;
+
+      const creatorUserId = creator.userId;
+      const { platform } = creator;
+      const url = `${endpoints.discovery.bookmarkLists}/${listId}/creators`;
+
+      try {
+        if (isInList) {
+          await axiosInstance.delete(url, { params: { creatorUserId, platform } });
+        } else {
+          await axiosInstance.post(url, { creatorUserId, platform });
+        }
+        refreshBookmarkData();
+      } catch (error) {
+        console.error('Failed to update list membership:', error);
+        enqueueSnackbar(error?.response?.data?.message || 'Failed to update list', {
+          variant: 'error',
+        });
+      }
+    },
+    [enqueueSnackbar, refreshBookmarkData]
+  );
+
+  // Imperative handle to open the "Select List" dropdown (e.g. from a card's
+  // empty-state link). The dropdown itself is rendered inside CreatorList.
+  const listDropdownRef = useRef(null);
+  const handleOpenListManager = useCallback(() => {
+    listDropdownRef.current?.open();
+  }, []);
 
   // Creator details sidebar
   const [detailsCreatorId, setDetailsCreatorId] = useState(null);
@@ -171,13 +196,13 @@ const DiscoveryToolView = () => {
     setDetailsCreatorId(rowId);
   }, []);
 
-  // Bookmarked creators may not be part of the loaded pages, so search both lists
+  // List-filtered creators may not be part of the loaded pages, so search both lists
   const findCreatorByRowKey = useCallback(
     (rowKey) =>
       creators.find((creator, index) => getCreatorRowKey(creator, index) === rowKey) ||
-      bookmarkedCreators.find((creator, index) => getCreatorRowKey(creator, index) === rowKey) ||
+      listCreators.find((creator, index) => getCreatorRowKey(creator, index) === rowKey) ||
       null,
-    [creators, bookmarkedCreators]
+    [creators, listCreators]
   );
 
   const detailsCreator = useMemo(
@@ -363,11 +388,18 @@ const DiscoveryToolView = () => {
         sortByFollowers={sortByFollowers}
         onToggleFollowersSort={handleToggleFollowersSort}
         onLoadMore={handleLoadMore}
-        selectedIds={bookmarkedRowKeys}
-        bookmarkedCreators={bookmarkedCreators}
-        isLoadingBookmarks={isLoadingBookmarks}
-        onSelect={handleSelectCreator}
-        onInviteOne={handleInviteOne}
+        lists={lists}
+        membershipsByRowKey={membershipsByRowKey}
+        listCreators={listCreators}
+        isLoadingListCreators={isLoadingListCreators || isLoadingLists}
+        selectedListIds={validSelectedListIds}
+        onSelectedListIdsChange={setSelectedListIds}
+        onCreateList={handleCreateList}
+        onDeleteList={handleDeleteList}
+        onToggleCreatorInList={handleToggleCreatorInList}
+        onOpenListManager={handleOpenListManager}
+        listDropdownRef={listDropdownRef}
+        onInviteOne={isClientDemo ? undefined : handleInviteOne}
         onOpenDetails={handleOpenDetails}
       />
 
@@ -376,10 +408,12 @@ const DiscoveryToolView = () => {
         open={!!detailsCreatorId}
         creator={detailsCreator}
         rowKey={detailsCreatorId}
-        selected={bookmarkedRowKeys.includes(detailsCreatorId)}
+        lists={lists}
+        creatorListIds={membershipsByRowKey?.get(detailsCreatorId)}
         onClose={() => setDetailsCreatorId(null)}
-        onToggleBookmark={handleSelectCreator}
-        onInvite={handleInviteOne}
+        onToggleList={handleToggleCreatorInList}
+        onOpenListManager={handleOpenListManager}
+        onInvite={isClientDemo ? undefined : handleInviteOne}
       />
 
       <InviteCreatorsDialog

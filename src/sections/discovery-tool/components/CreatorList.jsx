@@ -18,6 +18,7 @@ import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 import Iconify from 'src/components/iconify';
 
 import CreatorCard from './CreatorCard';
+import BookmarkListDropdown from './BookmarkListDropdown';
 import CreatorCompareDialog from './CreatorCompareDialog';
 import {
   getPlatformHandle,
@@ -185,12 +186,19 @@ const CreatorList = ({
   isReachingEnd,
   pagination,
   sortByFollowers,
-  bookmarkedCreators,
-  isLoadingBookmarks,
+  lists,
+  membershipsByRowKey,
+  listCreators,
+  isLoadingListCreators,
+  selectedListIds,
+  onSelectedListIdsChange,
+  onCreateList,
+  onDeleteList,
+  onToggleCreatorInList,
+  onOpenListManager,
+  listDropdownRef,
   onToggleFollowersSort,
   onLoadMore,
-  selectedIds,
-  onSelect,
   onInviteOne,
   onOpenDetails,
 }) => {
@@ -198,7 +206,7 @@ const CreatorList = ({
   const { mainRef } = useMainContext();
   const lgUp = useResponsive('up', 'lg');
   const mdUp = useResponsive('up', 'md');
-  const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
+  const isFiltering = (selectedListIds?.length || 0) > 0;
   const [compareMode, setCompareMode] = useState(false);
   const [compareSelectedIds, setCompareSelectedIds] = useState([]);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
@@ -225,17 +233,18 @@ const CreatorList = ({
     setCompareSelectedIds([]);
   }, []);
 
-  const handleToggleBookmarkedOnly = useCallback(() => {
-    setShowBookmarkedOnly((prev) => {
-      const next = !prev;
-      if (next) {
+  // Selecting lists to filter exits compare mode so the two actions don't conflict.
+  const handleSelectedListIdsChange = useCallback(
+    (nextListIds) => {
+      if (nextListIds.length > 0) {
         setCompareMode(false);
         setCompareSelectedIds([]);
         setCompareModalOpen(false);
       }
-      return next;
-    });
-  }, []);
+      onSelectedListIdsChange?.(nextListIds);
+    },
+    [onSelectedListIdsChange]
+  );
 
   // Auto-open the compare modal once the admin has picked the 2nd creator.
   useEffect(() => {
@@ -259,59 +268,59 @@ const CreatorList = ({
         .filter(Boolean),
     [compareSelectedIds, creatorRows]
   );
-  const bookmarkedRows = useMemo(
+  const listCreatorRows = useMemo(
     () =>
-      (bookmarkedCreators || []).map((creator, index) => ({
+      (listCreators || []).map((creator, index) => ({
         creator,
         rowKey: creator.rowId || `${creator.userId}-${creator.platform || index}`,
       })),
-    [bookmarkedCreators]
+    [listCreators]
   );
   const visibleCreatorRows = useMemo(
-    () => (showBookmarkedOnly ? bookmarkedRows : creatorRows),
-    [bookmarkedRows, creatorRows, showBookmarkedOnly]
+    () => (isFiltering ? listCreatorRows : creatorRows),
+    [listCreatorRows, creatorRows, isFiltering]
   );
-  const handleExportBookmarkedCreators = useCallback(async () => {
-    if (!bookmarkedRows.length) {
-      enqueueSnackbar('No bookmarked creators to export', { variant: 'warning' });
+  const handleExportListCreators = useCallback(async () => {
+    if (!listCreatorRows.length) {
+      enqueueSnackbar('No creators to export', { variant: 'warning' });
       return;
     }
 
     try {
       setIsExporting(true);
-      await downloadCreatorsWorkbook(bookmarkedRows, 'Bookmarked_Creators');
+      await downloadCreatorsWorkbook(listCreatorRows, 'Bookmarked_Creators');
       enqueueSnackbar(
-        `Exported ${bookmarkedRows.length} creator${bookmarkedRows.length === 1 ? '' : 's'}`,
+        `Exported ${listCreatorRows.length} creator${listCreatorRows.length === 1 ? '' : 's'}`,
         { variant: 'success' }
       );
     } catch (error) {
-      console.error('Failed to export bookmarked creators:', error);
+      console.error('Failed to export creators:', error);
       enqueueSnackbar('Failed to export creators', { variant: 'error' });
     } finally {
       setIsExporting(false);
     }
-  }, [bookmarkedRows, enqueueSnackbar]);
+  }, [listCreatorRows, enqueueSnackbar]);
 
   // Compute viewedCount and total for results info
-  const total = showBookmarkedOnly ? bookmarkedRows.length : (pagination?.total ?? creators.length);
+  const total = isFiltering ? listCreatorRows.length : (pagination?.total ?? creators.length);
   const viewedCount = creators.length;
-  const displayedCount = showBookmarkedOnly ? visibleCreatorRows.length : viewedCount;
+  const displayedCount = isFiltering ? visibleCreatorRows.length : viewedCount;
   let primaryActionLabel = 'Compare Creators';
   let handlePrimaryAction = handleEnterCompare;
 
-  if (showBookmarkedOnly) {
+  if (isFiltering) {
     primaryActionLabel = 'Export Results';
-    handlePrimaryAction = handleExportBookmarkedCreators;
+    handlePrimaryAction = handleExportListCreators;
   } else if (compareMode) {
     primaryActionLabel = 'Select Creators';
     handlePrimaryAction = undefined;
   }
 
-  const isPrimaryActionDisabled = showBookmarkedOnly ? isExporting : compareMode;
+  const isPrimaryActionDisabled = isFiltering ? isExporting : compareMode;
   // eslint-disable-next-line no-nested-ternary
   const columns = lgUp ? 3 : mdUp ? 2 : 1;
   const rowCount = Math.ceil(visibleCreatorRows.length / columns);
-  const virtualRowCount = showBookmarkedOnly ? rowCount : rowCount + (isReachingEnd ? 0 : 1);
+  const virtualRowCount = isFiltering ? rowCount : rowCount + (isReachingEnd ? 0 : 1);
 
   const rowVirtualizer = useVirtualizer({
     count: virtualRowCount,
@@ -323,7 +332,7 @@ const CreatorList = ({
   const virtualRows = rowVirtualizer.getVirtualItems();
 
   useEffect(() => {
-    if (showBookmarkedOnly || isLoadingMore || isReachingEnd || !onLoadMore) return;
+    if (isFiltering || isLoadingMore || isReachingEnd || !onLoadMore) return;
 
     const [lastItem] = [...virtualRows].reverse();
     if (!lastItem) return;
@@ -331,7 +340,7 @@ const CreatorList = ({
     if (lastItem.index >= rowCount - 2) {
       onLoadMore();
     }
-  }, [isLoadingMore, isReachingEnd, onLoadMore, rowCount, showBookmarkedOnly, virtualRows]);
+  }, [isLoadingMore, isReachingEnd, onLoadMore, rowCount, isFiltering, virtualRows]);
 
   if (isError) {
     return (
@@ -365,7 +374,7 @@ const CreatorList = ({
     );
   }
 
-  if ((!creators || creators.length === 0) && !showBookmarkedOnly) {
+  if ((!creators || creators.length === 0) && !isFiltering) {
     return <EmptyState />;
   }
 
@@ -404,65 +413,20 @@ const CreatorList = ({
         </Typography>
         <Box>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ flexWrap: 'nowrap' }}>
-            <Button
-              onClick={handleToggleBookmarkedOnly}
-              aria-pressed={showBookmarkedOnly}
-              startIcon={<Iconify icon="material-symbols:bookmark-outline" width={16} />}
-              sx={{
-                width: 160,
-                height: 34,
-                minWidth: 160,
-                px: 2,
-                py: 1,
-                gap: 1,
-                color: showBookmarkedOnly ? '#F5F5F5' : '#231F20',
-                bgcolor: showBookmarkedOnly ? '#231F20' : '#F5F5F5',
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: 14,
-                lineHeight: '18px',
-                borderRadius: '100px',
-                boxShadow: 'none',
-                '& .MuiButton-startIcon': {
-                  m: 0,
-                },
-                '&:hover': {
-                  bgcolor: showBookmarkedOnly ? '#231F20' : '#F5F5F5',
-                  boxShadow: 'none',
-                },
-                '&.Mui-disabled': {
-                  color: 'rgba(35, 31, 32, 0.45)',
-                  bgcolor: '#F5F5F5',
-                  boxShadow: 'none',
-                },
-              }}
-            >
-              <Box component="span">Bookmarked</Box>
-              <Box
-                component="span"
-                sx={{
-                  width: 21,
-                  height: 16,
-                  bgcolor: '#FFFFFF',
-                  borderRadius: 1,
-                  color: '#231F20',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  lineHeight: '14px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {selectedIds?.length || 0}
-              </Box>
-            </Button>
+            <BookmarkListDropdown
+              ref={listDropdownRef}
+              lists={lists}
+              selectedListIds={selectedListIds}
+              onSelectedListIdsChange={handleSelectedListIdsChange}
+              onCreateList={onCreateList}
+              onDeleteList={onDeleteList}
+            />
             <Stack direction="row" alignItems="center" sx={{ flexWrap: 'nowrap' }}>
               <Button
                 onClick={handlePrimaryAction}
                 disabled={isPrimaryActionDisabled}
                 startIcon={
-                  showBookmarkedOnly ? <Iconify icon="material-symbols:open-in-new" width={18} /> : null
+                  isFiltering ? <Iconify icon="material-symbols:open-in-new" width={18} /> : null
                 }
                 sx={{
                   width: 'auto',
@@ -483,7 +447,7 @@ const CreatorList = ({
                   border: '1px solid #E8E8E8',
                   boxShadow: 'inset 0px -3px 0px #E7E7E7',
                   '& .MuiButton-startIcon': {
-                    m: showBookmarkedOnly ? '0 4px 0 0' : 0,
+                    m: isFiltering ? '0 4px 0 0' : 0,
                   },
                   '&:hover': {
                     bgcolor: '#FFFFFF',
@@ -543,14 +507,14 @@ const CreatorList = ({
           position: 'relative',
           width: '100%',
           height:
-            visibleCreatorRows.length === 0 && showBookmarkedOnly
+            visibleCreatorRows.length === 0 && isFiltering
               ? 'auto'
               : rowVirtualizer.getTotalSize(),
         }}
       >
-        {visibleCreatorRows.length === 0 && showBookmarkedOnly ? (
+        {visibleCreatorRows.length === 0 && isFiltering ? (
           <Box>
-            {isLoadingBookmarks ? (
+            {isLoadingListCreators ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                 <CircularProgress size={24} />
               </Box>
@@ -599,8 +563,10 @@ const CreatorList = ({
                     <CreatorCard
                       key={rowKey}
                       creator={creator}
-                      selected={selectedIds?.includes(rowKey)}
-                      onSelect={onSelect}
+                      lists={lists}
+                      creatorListIds={membershipsByRowKey?.get(rowKey)}
+                      onToggleList={onToggleCreatorInList}
+                      onOpenListManager={onOpenListManager}
                       onInviteOne={onInviteOne}
                       onOpenDetails={onOpenDetails}
                       rowKey={rowKey}
@@ -616,7 +582,7 @@ const CreatorList = ({
         })}
       </Box>
 
-      {!showBookmarkedOnly && isReachingEnd && visibleCreatorRows.length > 0 ? (
+      {!isFiltering && isReachingEnd && visibleCreatorRows.length > 0 ? (
         <Typography sx={{ mt: 1, mb: 2, textAlign: 'center', fontSize: 13, color: 'text.secondary' }}>
           All creators loaded
         </Typography>
@@ -627,8 +593,10 @@ const CreatorList = ({
         onClose={handleCloseCompareModal}
         creators={compareCreators}
         rowKeys={compareSelectedIds}
-        selectedIds={selectedIds}
-        onToggleBookmark={onSelect}
+        lists={lists}
+        membershipsByRowKey={membershipsByRowKey}
+        onToggleList={onToggleCreatorInList}
+        onOpenListManager={onOpenListManager}
         onInvite={onInviteOne}
       />
     </Box>
@@ -647,12 +615,19 @@ CreatorList.propTypes = {
     total: PropTypes.number,
   }),
   sortByFollowers: PropTypes.bool,
-  bookmarkedCreators: PropTypes.array,
-  isLoadingBookmarks: PropTypes.bool,
+  lists: PropTypes.array,
+  membershipsByRowKey: PropTypes.instanceOf(Map),
+  listCreators: PropTypes.array,
+  isLoadingListCreators: PropTypes.bool,
+  selectedListIds: PropTypes.arrayOf(PropTypes.string),
+  onSelectedListIdsChange: PropTypes.func,
+  onCreateList: PropTypes.func,
+  onDeleteList: PropTypes.func,
+  onToggleCreatorInList: PropTypes.func,
+  onOpenListManager: PropTypes.func,
+  listDropdownRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
   onToggleFollowersSort: PropTypes.func,
   onLoadMore: PropTypes.func,
-  selectedIds: PropTypes.arrayOf(PropTypes.string),
-  onSelect: PropTypes.func,
   onInviteOne: PropTypes.func,
   onOpenDetails: PropTypes.func,
 };
@@ -665,12 +640,19 @@ CreatorList.defaultProps = {
   isReachingEnd: true,
   pagination: null,
   sortByFollowers: false,
-  bookmarkedCreators: [],
-  isLoadingBookmarks: false,
+  lists: [],
+  membershipsByRowKey: undefined,
+  listCreators: [],
+  isLoadingListCreators: false,
+  selectedListIds: [],
+  onSelectedListIdsChange: undefined,
+  onCreateList: undefined,
+  onDeleteList: undefined,
+  onToggleCreatorInList: undefined,
+  onOpenListManager: undefined,
+  listDropdownRef: undefined,
   onToggleFollowersSort: undefined,
   onLoadMore: undefined,
-  selectedIds: [],
-  onSelect: undefined,
   onInviteOne: undefined,
   onOpenDetails: undefined,
 };

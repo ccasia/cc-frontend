@@ -409,7 +409,8 @@ export const endpoints = {
     creators: '/api/discovery/creators',
     creatorsExportData: '/api/discovery/creators/export-data',
     inviteCreators: '/api/discovery/invite-creators',
-    bookmarks: '/api/discovery/bookmarks',
+    bookmarkLists: '/api/discovery/bookmark-lists',
+    bookmarkListCreators: '/api/discovery/bookmark-lists/creators',
   },
   invoice: {
     getAll: '/api/invoice/',
@@ -452,6 +453,12 @@ export const endpoints = {
     checkCompany: '/api/client/checkCompany',
     createCompany: '/api/client/createCompany',
     createCampaign: '/api/client/createClientCampaign',
+  },
+  clientDemo: {
+    create: '/api/client-demo',
+    session: (token) => `/api/client-demo/session/${token}`,
+    linkByCompany: (companyId) => `/api/client-demo/company/${companyId}/link`,
+    regenerate: (companyId) => `/api/client-demo/company/${companyId}/regenerate`,
   },
   approvalRequests: {
     create: '/api/approval-requests',

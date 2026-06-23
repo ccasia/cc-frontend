@@ -349,6 +349,26 @@ export function useNavData() {
   // CS Lead navigations - adminNavigations without calendar and chats
   const csLeadNavigations = useMemo(() => adminNavigations, [adminNavigations]);
 
+  const clientDemoNavigations = useMemo(
+    () => [
+      {
+        items: [
+          {
+            title: 'Client Discovery Tool',
+            path: paths.dashboard.discoveryTool.root,
+            icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
+          },
+          {
+            title: 'Campaigns',
+            path: paths.dashboard.demoCampaigns.root,
+            icon: ICONS.mycampaigns,
+          },
+        ],
+      },
+    ],
+    []
+  );
+
   // // add finance naviagation
   const navigations = useMemo(
     // eslint-disable-next-line no-nested-ternary
@@ -361,6 +381,9 @@ export function useNavData() {
       }
       if (user?.role === 'client') {
         return adminNavigations;
+      }
+      if (user?.role === 'client_demo') {
+        return clientDemoNavigations;
       }
       if (user?.role === 'admin' && user?.admin?.role?.name === 'Finance') {
         return financeNavigations;
@@ -380,11 +403,15 @@ export function useNavData() {
       return [];
     },
 
-    [adminNavigations, creatorNavigations, user, financeNavigations, csLeadNavigations]
+    [adminNavigations, creatorNavigations, user, financeNavigations, csLeadNavigations, clientDemoNavigations]
   );
 
   const data = useMemo(() => {
     const baseData = [...navigations];
+
+    if (user?.role === 'client_demo') {
+      return baseData;
+    }
 
     // CS Lead should not have access to calendar and chats
     if (user?.admin?.role?.name !== 'CSL') {
