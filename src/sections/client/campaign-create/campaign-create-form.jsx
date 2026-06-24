@@ -197,7 +197,7 @@ const getFrontSectionIndicatorIndex = (internalStep) => {
 
 const PDFEditor = lazy(() => import('src/sections/campaign/create/pdf-editor'));
 
-function ClientCampaignCreateForm({ onClose, mutate }) {
+function ClientCampaignCreateForm({ onClose, mutate, isDemo = false }) {
   const { user } = useAuthContext();
   const confirmation = useBoolean();
   const openPackage = useBoolean();
@@ -383,7 +383,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     postingEndDate: null,
     productName: '',
     campaignIndustries: [],
-    campaignCredits: '',
+    // Demo sessions have no real credits; prefill a fixed value (disabled in UI).
+    campaignCredits: isDemo ? 10 : '',
     campaignImages: [],
     // Objectives
     campaignObjectives: '',
@@ -514,11 +515,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     const isGeneralInfoStep = activeStep === 0;
     const requestedCredits = Number(getValues('campaignCredits') || 0);
     const availableCredits = Number(localStorage.getItem('clientAvailableCredits') || 0);
+    // Demo campaigns have no real credits — never gate on credits.
     const isExceed =
+      !isDemo &&
       isGeneralInfoStep &&
       (availableCredits <= 0 || requestedCredits <= 0 || requestedCredits > availableCredits);
 
-    if (result && !creditsErrorRef.current && !isExceed) {
+    if (result && (isDemo || !creditsErrorRef.current) && !isExceed) {
       const skippedFields = allFields.filter((fieldName) => {
         const value = values[fieldName];
 
@@ -774,8 +777,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         }
       }
 
-      // Use the client-specific endpoint
-      const endpoint = endpoints.client.createCampaign;
+      // Demo sessions hit an isolated endpoint that saves to DemoCampaign and
+      // never touches real credits/subscriptions.
+      const endpoint = isDemo ? endpoints.clientDemo.createCampaign : endpoints.client.createCampaign;
       console.log('Using endpoint:', endpoint);
 
       const res = await axiosInstance.post(endpoint, formData, {
@@ -784,36 +788,41 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
       setIsLoading(false);
       enqueueSnackbar(
-        'Campaign submitted successfully! CSM will review and activate your campaign.',
+        isDemo
+          ? 'Demo campaign created!'
+          : 'Campaign submitted successfully! CSM will review and activate your campaign.',
         { variant: 'success' }
       );
       markCompleted({ action: 'final_submit', campaignId: res.data.campaign.id });
 
-      // Revalidate client credits so dashboard reflects deduction immediately
-      try {
-        // Optimistically adjust local available credits
-        const requestedCredits = Number(clientCampaignData.campaignCredits) || 0;
+      // Revalidate client credits so dashboard reflects deduction immediately.
+      // Skipped for demo sessions (no real credits).
+      if (!isDemo) {
         try {
-          const currentAvail = Number(localStorage.getItem('clientAvailableCredits') || 0);
-          const nextAvail = Math.max(0, currentAvail - requestedCredits);
-          localStorage.setItem('clientAvailableCredits', String(nextAvail));
-        } catch {
-          // Ignore localStorage errors
-        }
+          // Optimistically adjust local available credits
+          const requestedCredits = Number(clientCampaignData.campaignCredits) || 0;
+          try {
+            const currentAvail = Number(localStorage.getItem('clientAvailableCredits') || 0);
+            const nextAvail = Math.max(0, currentAvail - requestedCredits);
+            localStorage.setItem('clientAvailableCredits', String(nextAvail));
+          } catch {
+            // Ignore localStorage errors
+          }
 
-        // Revalidate SWR caches for credits
-        await globalMutate(endpoints.client.checkCompany);
-        try {
-          const check = await axiosInstance.get(endpoints.client.checkCompany);
-          const companyId = check?.data?.company?.id;
-          if (companyId) {
-            await globalMutate(`${endpoints.company.getCompany}/${companyId}`);
+          // Revalidate SWR caches for credits
+          await globalMutate(endpoints.client.checkCompany);
+          try {
+            const check = await axiosInstance.get(endpoints.client.checkCompany);
+            const companyId = check?.data?.company?.id;
+            if (companyId) {
+              await globalMutate(`${endpoints.company.getCompany}/${companyId}`);
+            }
+          } catch {
+            // Ignore API errors during revalidation
           }
         } catch {
-          // Ignore API errors during revalidation
+          // Ignore errors during credit revalidation
         }
-      } catch {
-        // Ignore errors during credit revalidation
       }
       reset();
       mutate();
@@ -854,7 +863,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const getStepContent = (step) => {
     switch (step) {
       case 0:
-        return <ClientCampaignGeneralInfo />;
+        return <ClientCampaignGeneralInfo isDemo={isDemo} />;
       case 1:
         return <CampaignObjective />;
       case 2:
@@ -1619,4 +1628,5 @@ export default ClientCampaignCreateForm;
 ClientCampaignCreateForm.propTypes = {
   onClose: PropTypes.func,
   mutate: PropTypes.func,
+  isDemo: PropTypes.bool,
 };

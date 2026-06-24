@@ -1,11 +1,18 @@
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
+import { useTheme } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import { useTheme } from '@mui/material/styles';
+
+import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
+import useGetDemoCampaigns from 'src/hooks/use-get-demo-campaigns';
 
 import { useSettingsContext } from 'src/components/settings';
+
+import ClientCampaignCreateForm from 'src/sections/client/campaign-create/campaign-create-form';
 
 import PricingBanner from '../pricing-banner';
 import DemoCampaignCard from '../demo-campaign-card';
@@ -21,6 +28,9 @@ const SECTION_TITLE_SX = {
 export default function DemoCampaignsView() {
   const settings = useSettingsContext();
   const theme = useTheme();
+  const smDown = useResponsive('down', 'sm');
+  const create = useBoolean();
+  const { campaigns, isLoading, mutate } = useGetDemoCampaigns();
 
   return (
     <Container
@@ -60,6 +70,7 @@ export default function DemoCampaignsView() {
 
         <Button
           disableRipple
+          onClick={create.onTrue}
           sx={{
             flexShrink: 0,
             minWidth: 160,
@@ -99,7 +110,7 @@ export default function DemoCampaignsView() {
         <Stack spacing={2} sx={{ flexGrow: 1, width: '100%' }}>
           <Typography sx={SECTION_TITLE_SX}>Your Campaigns</Typography>
           <Box sx={{ width: '100%' }}>
-            <YourCampaignsTable />
+            <YourCampaignsTable campaigns={campaigns} isLoading={isLoading} />
           </Box>
         </Stack>
       </Stack>
@@ -107,6 +118,27 @@ export default function DemoCampaignsView() {
       <Box sx={{ mt: 5, mb: 3 }}>
         <PricingBanner />
       </Box>
+
+      {/* Create Campaign modal (reuses the client form in demo mode) */}
+      <Dialog
+        fullWidth
+        fullScreen
+        scroll="paper"
+        open={create.value}
+        PaperProps={{
+          sx: {
+            bgcolor: theme.palette.background.paper,
+            borderRadius: 2,
+            p: 4,
+            m: 2,
+            height: '97vh',
+            overflow: 'hidden',
+            ...(smDown && { height: 1, m: 0 }),
+          },
+        }}
+      >
+        <ClientCampaignCreateForm isDemo onClose={create.onFalse} mutate={mutate} />
+      </Dialog>
     </Container>
   );
 }

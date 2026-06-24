@@ -36,6 +36,7 @@ export const paths = {
     },
     demoCampaigns: {
       root: `${ROOTS.DASHBOARD}/demo-campaigns`,
+      details: (id) => `${ROOTS.DASHBOARD}/demo-campaigns/${id}`,
     },
     faq: `${ROOTS.DASHBOARD}/faq`,
     company: {

@@ -459,6 +459,9 @@ export const endpoints = {
     session: (token) => `/api/client-demo/session/${token}`,
     linkByCompany: (companyId) => `/api/client-demo/company/${companyId}/link`,
     regenerate: (companyId) => `/api/client-demo/company/${companyId}/regenerate`,
+    createCampaign: '/api/client-demo/campaigns',
+    listCampaigns: '/api/client-demo/campaigns',
+    getCampaign: (id) => `/api/client-demo/campaigns/${id}`,
   },
   approvalRequests: {
     create: '/api/approval-requests',

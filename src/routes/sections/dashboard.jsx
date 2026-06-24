@@ -102,6 +102,9 @@ const DiscoveryTool = lazy(() => import('src/pages/dashboard/discovery-tool/disc
 
 // Client Demo Campaigns
 const DemoCampaigns = lazy(() => import('src/pages/dashboard/demo-campaigns/demo-campaigns'));
+const DemoCampaignDetails = lazy(() =>
+  import('src/pages/dashboard/demo-campaigns/demo-campaign-details')
+);
 
 // Roles
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
@@ -279,6 +282,14 @@ export const dashboardRoutes = [
               </RoleBasedGuard>
             ),
             index: true,
+          },
+          {
+            path: ':id',
+            element: (
+              <RoleBasedGuard roles={['superadmin', 'god', 'client_demo']} hasContent>
+                <DemoCampaignDetails />
+              </RoleBasedGuard>
+            ),
           },
         ],
       },
