@@ -51,6 +51,8 @@ const STATUS_PILL = {
   ACTIVE: '#1ABF66',
 };
 const getStatusColor = (status) => STATUS_PILL[status] || '#8E8E93';
+// Non-active demo campaigns surface as "INACTIVE".
+const getStatusLabel = (status) => (status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE');
 
 const formatDate = (value) => (value ? dayjs(value).format('DD MMM YYYY') : '—');
 
@@ -74,7 +76,7 @@ function StatusPill({ status }) {
       <Typography
         sx={{ fontSize: 12, fontWeight: 600, lineHeight: '16px', color, textTransform: 'uppercase' }}
       >
-        {status}
+        {getStatusLabel(status)}
       </Typography>
     </Stack>
   );
