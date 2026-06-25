@@ -48,7 +48,9 @@ export function CustomRHFMultiSelect({
   };
 
   const renderValues = (selectedIds) => {
-    const selectedItems = options?.filter((item) => selectedIds.includes(item.value));
+    const selectedItems = (selectedIds || []).map(
+      (id) => options?.find((item) => item.value === id) || { value: id, label: id }
+    );
 
     if (!selectedItems.length && placeholder) {
       return <Box sx={{ color: 'text.disabled' }}>{placeholder}</Box>;

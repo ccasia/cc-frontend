@@ -46,6 +46,12 @@ const CampaignObjective = () => {
   const secondaryOptions = secondaryObjectivesByPrimary[primaryObjective] || [];
   const prevPrimaryObjective = useRef(primaryObjective);
 
+  useEffect(() => {
+    if (primaryObjective !== 'Awareness') {
+      setValue('campaignObjectives', 'Awareness', { shouldDirty: true });
+    }
+  }, [primaryObjective, setValue]);
+
   // Clear secondary objectives when primary objective changes
   useEffect(() => {
     if (
@@ -67,11 +73,12 @@ const CampaignObjective = () => {
     <Box sx={{ maxWidth: '600px', mx: 'auto', mb: 8 }}>
       {/* Campaign Objectives - Full width */}
       <Box sx={{ mt: 2 }}>
-        <FormField label="Primary Campaign Objective">
+        <FormField label="Primary Campaign Objective" required={false}>
           <RHFSelectV2
             name="campaignObjectives"
             placeholder="Select Primary Campaign Objective"
             multiple={false}
+            disabled
           >
             {primaryObjectivesList.map((item) => (
               <MenuItem key={item} value={item}>

@@ -21,6 +21,7 @@ import FormProvider, {
 } from 'src/components/hook-form';
 import { langList } from 'src/contants/language';
 import { interestsLists } from 'src/contants/interestLists';
+import { secondaryObjectivesByPrimary } from 'src/contants/campaign-objectives';
 
 import Iconify from 'src/components/iconify';
 
@@ -42,13 +43,14 @@ const schema = yup.object({
   kpis: yup.array().of(yup.string()).default([]),
   kpiNotes: yup.string().max(300),
   extraNotes: yup.string().max(500),
-  gender: yup.array().of(yup.string()).default([]),
-  age: yup.array().of(yup.string()).default([]),
+  audienceGender: yup.array().of(yup.string()).default([]),
+  audienceAge: yup.array().of(yup.string()).default([]),
   country: yup.string(),
-  language: yup.array().of(yup.string()).default([]),
-  creatorPersona: yup.array().of(yup.string()).default([]),
-  userPersona: yup.string().max(500),
+  audienceLanguage: yup.array().of(yup.string()).default([]),
+  audienceCreatorPersona: yup.array().of(yup.string()).default([]),
+  audienceUserPersona: yup.string().max(500),
   geographicFocus: yup.string().max(200),
+  geographicFocusOthers: yup.string().max(200),
 });
 
 // Public single-submit flow. Prospects may send an incomplete brief, so the
@@ -59,30 +61,36 @@ const submitSchema = schema.shape({
 });
 
 const COUNTRY_OPTIONS = Object.keys(countriesCities).sort((a, b) => a.localeCompare(b));
-const GEO_FOCUS = ['SEA Region', 'Global', 'Others'];
+const GEO_FOCUS_OPTIONS = [
+  { value: 'SEAregion', label: 'SEA Region' },
+  { value: 'global', label: 'Global' },
+  { value: 'others', label: 'Others' },
+];
 
-const OBJECTIVES = [
-  {
-    value: 'Brand Awareness (Introduce brands to new audiences)',
+const OBJECTIVE_CARD_COPY = {
+  'Brand Awareness (Introduce brands to new audiences)': {
     title: 'Brand Awareness',
     subtitle: 'Get in front of a new audience',
   },
-  {
-    value: 'Product Launch (Generate buzz for new product/service)',
+  'Product Launch (Generate buzz for new product/service)': {
     title: 'Product/Service Launch',
     subtitle: 'Build buzz around something new',
   },
-  {
-    value: 'Education (Educate audiences about product category)',
+  'Education (Educate audiences about product category)': {
     title: 'Education',
     subtitle: 'Help audiences understand what you do',
   },
-  {
-    value: "Community Building (Foster a loyal community around the brand's values or lifestyle)",
-    title: 'Community Awareness',
+  'Community Building (Foster a loyal community around the brand’s values or lifestyle)': {
+    title: 'Community Building',
     subtitle: 'Deepen loyalty around your brand values',
   },
-];
+};
+
+const OBJECTIVES = (secondaryObjectivesByPrimary.Awareness || []).map((value) => ({
+  value,
+  title: OBJECTIVE_CARD_COPY[value]?.title || value,
+  subtitle: OBJECTIVE_CARD_COPY[value]?.subtitle || '',
+}));
 
 const KPI_OPTIONS = [
   'Views',
@@ -191,6 +199,17 @@ const selectPlaceholder = (placeholder) => (selected) => {
     );
   }
   return selected;
+};
+
+const selectPlaceholderLabel = (placeholder, options) => (selected) => {
+  if (!selected) {
+    return (
+      <Box component="span" sx={{ color: '#9896A8', fontWeight: 300 }}>
+        {placeholder}
+      </Box>
+    );
+  }
+  return options.find((o) => o.value === selected)?.label || selected;
 };
 
 const CREATOR_NICHE_OPTIONS = interestsLists.map((item) => ({
@@ -398,13 +417,14 @@ const EMPTY_VALUES = {
   kpis: [],
   kpiNotes: '',
   extraNotes: '',
-  gender: [],
-  age: [],
+  audienceGender: [],
+  audienceAge: [],
   country: '',
-  language: [],
-  creatorPersona: [],
-  userPersona: '',
+  audienceLanguage: [],
+  audienceCreatorPersona: [],
+  audienceUserPersona: '',
   geographicFocus: '',
+  geographicFocusOthers: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -463,13 +483,14 @@ export default function BriefForm({
       kpis,
       kpiNotes: kpiNotesLine ? kpiNotesLine[1].trim() : '',
       extraNotes: brief?.description || '',
-      gender: brief?.campaignRequirement?.gender || [],
-      age: brief?.campaignRequirement?.age || [],
+      audienceGender: brief?.campaignRequirement?.gender || [],
+      audienceAge: brief?.campaignRequirement?.age || [],
       country: brief?.campaignRequirement?.country || '',
-      language: brief?.campaignRequirement?.language || [],
-      creatorPersona: brief?.campaignRequirement?.creator_persona || [],
-      userPersona: brief?.campaignRequirement?.user_persona || '',
+      audienceLanguage: brief?.campaignRequirement?.language || [],
+      audienceCreatorPersona: brief?.campaignRequirement?.creator_persona || [],
+      audienceUserPersona: brief?.campaignRequirement?.user_persona || '',
       geographicFocus: brief?.campaignRequirement?.geographic_focus || '',
+      geographicFocusOthers: brief?.campaignRequirement?.geographicFocusOthers || '',
     };
   }, [brief]);
 
@@ -671,7 +692,7 @@ export default function BriefForm({
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
             <Box sx={{ flex: 1 }}>
               <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                Earliest Date <EditedIndicator shown={editedFields.has('dateFrom')} />
+                Earliest Posting Date <EditedIndicator shown={editedFields.has('dateFrom')} />
               </Typography>
               <FieldWrap>
                 <RHFDatePicker
@@ -695,7 +716,7 @@ export default function BriefForm({
             </Box>
             <Box sx={{ flex: 1 }}>
               <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                Latest Date <EditedIndicator shown={editedFields.has('dateTo')} />
+                Latest Posting Date <EditedIndicator shown={editedFields.has('dateTo')} />
               </Typography>
               <FieldWrap>
                 <RHFDatePicker
@@ -771,16 +792,16 @@ export default function BriefForm({
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                  Gender <EditedIndicator shown={editedFields.has('gender')} />
+                  Gender <EditedIndicator shown={editedFields.has('audienceGender')} />
                 </Typography>
                 <ChipMultiSelect
                   options={GENDERS.map((g) => g.label)}
-                  value={(watch('gender') || []).map(
+                  value={(watch('audienceGender') || []).map(
                     (v) => GENDERS.find((g) => g.value === v)?.label || v
                   )}
                   onToggle={(label) => {
                     const opt = GENDERS.find((g) => g.label === label);
-                    if (opt) toggleArrayField('gender', opt.value);
+                    if (opt) toggleArrayField('audienceGender', opt.value);
                   }}
                   pill
                   disabled={readOnly}
@@ -788,16 +809,16 @@ export default function BriefForm({
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                  Age Range <EditedIndicator shown={editedFields.has('age')} />
+                  Age Range <EditedIndicator shown={editedFields.has('audienceAge')} />
                 </Typography>
                 <ChipMultiSelect
                   options={AGE_OPTIONS.map((o) => o.label)}
-                  value={(watch('age') || []).map(
+                  value={(watch('audienceAge') || []).map(
                     (v) => AGE_OPTIONS.find((o) => o.value === v)?.label || v
                   )}
                   onToggle={(label) => {
                     const opt = AGE_OPTIONS.find((o) => o.label === label);
-                    if (opt) toggleArrayField('age', opt.value);
+                    if (opt) toggleArrayField('audienceAge', opt.value);
                   }}
                   pill
                   disabled={readOnly}
@@ -833,17 +854,17 @@ export default function BriefForm({
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                  Language <EditedIndicator shown={editedFields.has('language')} />
+                  Language <EditedIndicator shown={editedFields.has('audienceLanguage')} />
                 </Typography>
                 <FieldWrap>
                   <RHFMultiSelect
-                    name="language"
+                    name="audienceLanguage"
                     checkbox
                     size="small"
                     placeholder="Select one or more languages"
                     options={LANGUAGE_OPTIONS.map((l) => ({ value: l, label: l }))}
                     MenuProps={MULTISELECT_MENU_PROPS}
-                    onBlur={onBlurHandler('language')}
+                    onBlur={onBlurHandler('audienceLanguage')}
                     disabled={readOnly}
                     sx={noBoxMultiSelectSx}
                   />
@@ -853,17 +874,17 @@ export default function BriefForm({
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                  Creator Niche <EditedIndicator shown={editedFields.has('creatorPersona')} />
+                  Creator Niche <EditedIndicator shown={editedFields.has('audienceCreatorPersona')} />
                 </Typography>
                 <FieldWrap>
                   <RHFMultiSelect
-                    name="creatorPersona"
+                    name="audienceCreatorPersona"
                     checkbox
                     size="small"
                     placeholder="What space should your Creators be in?"
                     options={CREATOR_NICHE_OPTIONS}
                     MenuProps={MULTISELECT_MENU_PROPS}
-                    onBlur={onBlurHandler('creatorPersona')}
+                    onBlur={onBlurHandler('audienceCreatorPersona')}
                     disabled={readOnly}
                     sx={noBoxMultiSelectSx}
                   />
@@ -871,15 +892,15 @@ export default function BriefForm({
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                  User Persona <EditedIndicator shown={editedFields.has('userPersona')} />
+                  User Persona <EditedIndicator shown={editedFields.has('audienceUserPersona')} />
                 </Typography>
                 <FieldWrap>
                   <RHFTextField
-                    name="userPersona"
+                    name="audienceUserPersona"
                     placeholder="Describe your ideal customer"
                     size="small"
                     sx={noBoxSx}
-                    onBlur={onBlurHandler('userPersona')}
+                    onBlur={onBlurHandler('audienceUserPersona')}
                     disabled={readOnly}
                     fullWidth
                     inputProps={{ maxLength: 500 }}
@@ -1089,21 +1110,42 @@ export default function BriefForm({
                     displayEmpty: true,
                     sx: { textTransform: 'none' },
                     MenuProps: { PaperProps: { sx: { maxHeight: 320 } } },
-                    renderValue: selectPlaceholder(
-                      'Which geographic location would you like to focus on?'
+                    renderValue: selectPlaceholderLabel(
+                      'Which geographic location would you like to focus on?',
+                      GEO_FOCUS_OPTIONS
                     ),
                   }}
                   sx={noBoxSx}
                   onBlur={onBlurHandler('geographicFocus')}
                   disabled={readOnly}
                 >
-                  {GEO_FOCUS.map((g) => (
-                    <MenuItem key={g} value={g}>
-                      {g}
+                  {GEO_FOCUS_OPTIONS.map((g) => (
+                    <MenuItem key={g.value} value={g.value}>
+                      {g.label}
                     </MenuItem>
                   ))}
                 </RHFSelect>
               </FieldWrap>
+              {watch('geographicFocus') === 'others' && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
+                    Geographic Focus (Others){' '}
+                    <EditedIndicator shown={editedFields.has('geographicFocusOthers')} />
+                  </Typography>
+                  <FieldWrap>
+                    <RHFTextField
+                      name="geographicFocusOthers"
+                      placeholder="Specify your geographic focus"
+                      size="small"
+                      sx={noBoxSx}
+                      onBlur={onBlurHandler('geographicFocusOthers')}
+                      disabled={readOnly}
+                      fullWidth
+                      inputProps={{ maxLength: 200 }}
+                    />
+                  </FieldWrap>
+                </Box>
+              )}
             </Box>
           </Stack>
           <Box>

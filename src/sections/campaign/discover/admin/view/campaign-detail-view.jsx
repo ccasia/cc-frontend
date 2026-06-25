@@ -49,6 +49,7 @@ import ViewOnlyBanner from 'src/components/banner/view-only-banner';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
+import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 // HIDE: logistics
 import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
@@ -60,7 +61,6 @@ import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignOverviewClient from '../campaign-overview-client';
-import ActivateCampaignDialog from '../activate-campaign-dialog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailContentClient from '../campaign-detail-content-client';
@@ -144,6 +144,7 @@ const CampaignDetailView = ({
 
   const [pages, setPages] = useState(0);
   const lgUp = useResponsive('up', 'lg');
+  const smDown = useResponsive('down', 'sm');
   const templateModal = useBoolean();
   const linking = useBoolean();
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -1151,11 +1152,35 @@ const CampaignDetailView = ({
         onClose={() => campaignLog.onFalse()}
       />
 
-      <ActivateCampaignDialog
+      <Dialog
+        fullWidth
+        fullScreen
+        PaperProps={{
+          sx: {
+            bgcolor: (theme) => theme.palette.background.paper,
+            borderRadius: 2,
+            p: 4,
+            m: 2,
+            height: '97vh',
+            overflow: 'hidden',
+            ...(smDown && {
+              height: 1,
+              m: 0,
+            }),
+          },
+        }}
+        scroll="paper"
         open={activateDialog.value}
-        onClose={() => activateDialog.onFalse()}
-        campaignId={id}
-      />
+      >
+        {activateDialog.value && (
+          <CreateCampaignFormV2
+            mode="activate"
+            campaignId={id}
+            onClose={() => activateDialog.onFalse()}
+            onSuccess={() => campaignMutate()}
+          />
+        )}
+      </Dialog>
 
       <InitialActivateCampaignDialog
         open={initialActivateDialog.value}
