@@ -287,7 +287,6 @@ export default function PostingLinkSection({
                   border: 'none',
                   cursor: 'pointer',
                   outline: 'none',
-                  // mr: 'auto',
                   textUnderlineOffset: 4,
                 }}
               >
@@ -351,7 +350,9 @@ export default function PostingLinkSection({
             </Typography>
           </Box>
         )}
-        {submission.content && (
+
+        {/* The posting link itself is part of the internal flow — clients only see it once POSTED */}
+        {submission.content && (!isClient || isPosted) && (
           <Box
             sx={{
               p: 2,

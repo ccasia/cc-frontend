@@ -45,7 +45,6 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
-  const isPosted = ['POSTED', 'APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
@@ -58,7 +57,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
     const clientVisible =
       !isClient ||
-      ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(
+      ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'CLIENT_APPROVED', 'APPROVED', 'REJECTED', 'APPROVE_LINK','POSTED'].includes(
         submission.status
       );
 
@@ -74,6 +73,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
   const { video, clientVideo, pendingReview, hasPostingLink, isClientFeedback, clientVisible } =
     submissionProps;
+
+  const postingLinkStatuses = ['APPROVED', 'CLIENT_APPROVED', 'APPROVE_LINK', 'POSTED', 'REJECTED'];
+  const showPostingLinkSection =
+    postingLinkStatuses.includes(submission.status) && campaign?.campaignType === 'normal';
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
@@ -602,12 +605,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                         }}
                       >
                         {
-                          (submission.status === 'APPROVED' ||
-                            submission.status === 'CLIENT_APPROVED' ||
-                            submission.status === 'APPROVE_LINK' ||
-                            submission.status === 'POSTED' ||
-                            submission.status === 'REJECTED') &&
-                          campaign?.campaignType === 'normal' ? (
+                          showPostingLinkSection ? (
                             <PostingLinkSection
                               submission={submission}
                               onUpdate={onUpdate}
@@ -634,7 +632,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           */
                         }
                       </Box>
-                      {!isPosted && isClient && clientVideo && (
+                      {!showPostingLinkSection && isClient && clientVideo && (
                         <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
                           <TypographyMotion
                             component="button"

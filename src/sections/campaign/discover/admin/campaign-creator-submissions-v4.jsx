@@ -265,8 +265,11 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, displayProduc
           return getStatusColor('IN_PROGRESS');
         case 'CHANGES_REQUIRED':
         case 'CLIENT_FEEDBACK':
-        case 'REJECTED':
           return getStatusColor('IN_PROGRESS');
+        case 'APPROVE_LINK':
+        case 'REJECTED':
+          // Mirror the label mapping: posting link approval/rejection reads as APPROVED to clients.
+          return getStatusColor('APPROVED');
         default:
           return getStatusColor(status); // Use default mapping for other statuses
       }
@@ -306,13 +309,16 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, displayProduc
           return 'PENDING REVIEW'; // Client should see this as pending their review
         case 'CLIENT_APPROVED':
         case 'APPROVED':
+        case 'APPROVE_LINK':
+        case 'REJECTED':
+          // Posting link approval/rejection is internal — once the client has approved the
+          // submission, the pill stays on APPROVED until it's actually POSTED.
           return 'APPROVED';
         case 'POSTED':
           return 'POSTED';
         case 'CLIENT_FEEDBACK':
           return 'IN PROGRESS';
         case 'CHANGES_REQUIRED':
-        case 'REJECTED':
           return 'IN PROGRESS';
         default:
           return formatStatus(status);

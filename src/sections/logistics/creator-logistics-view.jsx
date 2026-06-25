@@ -201,7 +201,7 @@ export default function CreatorLogisticsView({ campaign }) {
           <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
             Remarks
           </Typography>
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          <Typography variant="body2" sx={{ fontWeight: 500, wordBreak: 'break-word' }}>
             {deliveryDetails?.dietaryRestrictions || 'No remarks provided.'}
           </Typography>
         </Box>
@@ -311,7 +311,10 @@ export default function CreatorLogisticsView({ campaign }) {
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
               My Remarks
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '14px' }}>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 500, fontSize: '14px', wordBreak: 'break-word' }}
+            >
               {reservationDetails?.creatorRemarks || '-'}
             </Typography>
           </Box>
@@ -679,7 +682,9 @@ export default function CreatorLogisticsView({ campaign }) {
               <Typography variant="caption" color="text.secondary">
                 Client Remarks
               </Typography>
-              <Typography variant="body2">{reservationDetails.clientRemarks}</Typography>
+              <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                {reservationDetails.clientRemarks}
+              </Typography>
             </Box>
           )} */}
           <InfoItem
