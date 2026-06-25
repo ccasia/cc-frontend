@@ -39,7 +39,6 @@ export default function MobileVideoSubmission({
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
-  const isPosted = submission.status === 'POSTED';
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
@@ -68,6 +67,14 @@ export default function MobileVideoSubmission({
 
   const { video, clientVideo, pendingReview, hasPostingLink, isClientFeedback, clientVisible } =
     submissionProps;
+
+  // Posting link approval/rejection is an internal admin↔creator flow. Across these statuses the
+  // section renders for clients too, but its contents are role-gated inside PostingLinkSection:
+  // clients only get "View Feedback" — never the approve/reject controls or the posting link box
+  // (the link box is shown to clients only once POSTED).
+  const postingLinkStatuses = ['APPROVED', 'CLIENT_APPROVED', 'APPROVE_LINK', 'POSTED', 'REJECTED'];
+  const showPostingLinkSection =
+    postingLinkStatuses.includes(submission.status) && campaign?.campaignType === 'normal';
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
@@ -383,17 +390,15 @@ export default function MobileVideoSubmission({
       ) : (
         <>
           <Box sx={{ mb: 2 }}>
-            {(submission.status === 'APPROVED' ||
-              submission.status === 'CLIENT_APPROVED' ||
-              submission.status === 'APPROVE_LINK' ||
-              submission.status === 'POSTED' ||
-              submission.status === 'REJECTED') &&
-            campaign?.campaignType === 'normal' ? (
+            {showPostingLinkSection ? (
               <PostingLinkSection
                 submission={submission}
                 onUpdate={onUpdate}
                 onViewLogs={() => setShowFeedbackLogs(true)}
-                onReviewSubmission={() => setAdminReviewModalOpen(true)}
+                onReviewSubmission={() => {
+                  // eslint-disable-next-line no-unused-expressions
+                  isClient ? setVideoSubmissionModalOpen(true) : setAdminReviewModalOpen(true);
+                }}
                 isDisabled={isDisabled}
                 isClient={isClient}
               />
@@ -406,7 +411,7 @@ export default function MobileVideoSubmission({
               />
             )}
           </Box>
-          {!isPosted && isClient && (
+          {!showPostingLinkSection && isClient && (
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
               <button
                 type="button"

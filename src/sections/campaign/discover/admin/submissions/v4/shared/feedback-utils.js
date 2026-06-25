@@ -19,7 +19,10 @@ export function getFeedbackActionsVisibility({
     (!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK' || submission.status === 'CHANGES_REQUIRED' || submission.status === 'SENT_TO_CLIENT' || submission.status === 'APPROVED')) ||
     (isClient && submission.status === 'SENT_TO_CLIENT');
 
-  const isReadOnlyStatus = submission.status === 'CHANGES_REQUIRED' || submission.status === 'SENT_TO_CLIENT' || submission.status === 'APPROVED';
+  const isReadOnlyStatus =
+    submission.status === 'CHANGES_REQUIRED' ||
+    (submission.status === 'SENT_TO_CLIENT' && !isClient) ||
+    submission.status === 'APPROVED';
 
   const showRequestChangeButton = clientVisible && !isClientFeedback && action !== 'request_revision' && !isReadOnlyStatus;
 
