@@ -20,6 +20,7 @@ import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import TypographyMotion from 'src/components/animate/motion-typography';
 import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 
 import { BUTTON_STYLES } from './submission-styles';
@@ -258,32 +259,38 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
               mb: 1,
             }}
           >
-            <Typography sx={{ fontWeight: 800, fontSize: 14, color: '#636366' }}>
-              Posting Link
-            </Typography>
+            {!isClient && (
+              <Typography sx={{ fontWeight: 800, fontSize: 14, color: '#636366' }}>
+                Posting Link
+              </Typography>
+            )}
             {onReviewSubmission && (
-              <Typography
+              <TypographyMotion
                 component="button"
                 onClick={onReviewSubmission}
+                initial={{ scale: 1 }}
+                whileHover={{
+                  scale: 1.1,
+                  transition: { duration: 0.1 },
+                }}
+                transition={{ duration: 0.1 }}
                 sx={{
-                  pl: 2,
-                  pr: 0,
+                  px: 2,
                   py: 1,
                   bgcolor: 'transparent',
                   fontWeight: 800,
                   fontSize: 14,
-                  color: '#919191',
+                  color: ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)
+                    ? '#1340FF'
+                    : '#919191',
                   border: 'none',
                   cursor: 'pointer',
                   outline: 'none',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    opacity: 0.8,
-                  },
+                  textUnderlineOffset: 4,
                 }}
               >
-                Review Submission
-              </Typography>
+                View Feedback
+              </TypographyMotion>
             )}
           </Box>
         )}
@@ -306,28 +313,34 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
                 {new Date(submission.updatedAt).toLocaleDateString('en-GB')}
               </Typography>
             </Box>
-           {(onReviewSubmission && <Typography
-              component="button"
-              onClick={onReviewSubmission}
-              sx={{
-                pl: 2,
-                pr: 0,
-                py: 1,
-                bgcolor: 'transparent',
-                fontWeight: 800,
-                fontSize: 14,
-                color: '#919191',
-                border: 'none',
-                cursor: 'pointer',
-                outline: 'none',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  opacity: 0.8,
-                },
-              }}
-            >
-              View Feedback
-            </Typography>)}
+            {onReviewSubmission && (
+              <TypographyMotion
+                component="button"
+                onClick={onReviewSubmission}
+                initial={{ scale: 1 }}
+                whileHover={{
+                  scale: 1.1,
+                  transition: { duration: 0.1 },
+                }}
+                transition={{ duration: 0.1 }}
+                sx={{
+                  px: 2,
+                  py: 1,
+                  bgcolor: 'transparent',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  color: ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)
+                    ? '#1340FF'
+                    : '#919191',
+                  border: 'none',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  textUnderlineOffset: 4,
+                }}
+              >
+                View Feedback
+              </TypographyMotion>
+            )}
           </Box>
         )}
 
@@ -339,7 +352,8 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs, o
           </Box>
         )}
 
-        {submission.content && (
+        {/* The posting link itself is part of the internal flow — clients only see it once POSTED */}
+        {submission.content && (!isClient || isPosted) && (
           <Box
             sx={{
               p: 2,

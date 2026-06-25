@@ -1653,7 +1653,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: 2,
             border: 'none',
-            mb: isDelivery ? 2 : 1,
+            mb: 2,
           }}
         >
           <Stack
@@ -1841,7 +1841,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: 2,
             border: 'none',
-            // mb: 1,
+            mb: 2,
           }}
         >
           <Stack
@@ -1935,7 +1935,10 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
                       >
                         Dietary Restrictions/Allergies
                       </Typography>
-                      <Typography variant="body1" sx={{ color: '#636366', fontSize: '14px' }}>
+                      <Typography
+                        variant="body1"
+                        sx={{ color: '#636366', fontSize: '14px', wordBreak: 'break-word' }}
+                      >
                         {logistic?.deliveryDetails?.dietaryRestrictions || '-'}
                       </Typography>
                     </Box>
@@ -1987,7 +1990,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
       )}
       {/* Collapsible Submission Cards */}
       {canShowSubmissions && (
-        <Stack spacing={2} sx={{ p: 1, mx: -1 }}>
+        <Stack spacing={2} sx={{ px: 1, pb: 1, mx: -1 }}>
           {/* Video Submissions */}
           {grouped?.videos?.map((video, index) => {
             const isExpanded = expandedSections[video.id];
