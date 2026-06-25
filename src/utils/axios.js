@@ -240,6 +240,7 @@ export const endpoints = {
     shortlistCreator: '/api/campaign/shortlistCreator',
     guestShortListCreator: '/api/campaign/v3/shortlistCreator/guest',
     activateClientCampaign: (id) => `/api/campaign/activateClientCampaign/${id}`,
+    activateCampaignFull: (id) => `/api/campaign/activateCampaignFull/${id}`,
     getDrafts: '/api/campaign/drafts',
     deleteDraft: (id) => `/api/campaign/${id}/draft`,
     submitDraftForReview: (id) => `/api/campaign/${id}/submit-for-review`,

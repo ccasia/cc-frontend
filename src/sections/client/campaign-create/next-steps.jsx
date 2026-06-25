@@ -22,14 +22,28 @@ NextSteps.propTypes = {
   onPublish: PropTypes.func,
   onContinueAdditionalDetails: PropTypes.func,
   isLoading: PropTypes.bool,
+  mode: PropTypes.oneOf(['create', 'activate']),
 };
 
-export default function NextSteps({ onPublish, onContinueAdditionalDetails, isLoading = false }) {
+export default function NextSteps({
+  onPublish,
+  onContinueAdditionalDetails,
+  isLoading = false,
+  mode = 'create',
+}) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { watch } = useFormContext();
 
   const campaignStartDate = watch('campaignStartDate');
+
+  const isActivate = mode === 'activate';
+  const publishCardLabel = isActivate ? 'Activate Campaign For Now' : 'Publish Campaign For Now';
+  const confirmBody = isActivate
+    ? 'Are you sure you want to activate this campaign?'
+    : 'Are you sure you want to publish this campaign?';
+  const activeActionLabel = isActivate ? 'Activate Now' : 'Publish Now';
+  const activeActionLoadingLabel = isActivate ? 'Activating...' : 'Publishing...';
 
   const handleOpenConfirm = () => setConfirmOpen(true);
   const handleCloseConfirm = () => setConfirmOpen(false);
@@ -82,7 +96,7 @@ export default function NextSteps({ onPublish, onContinueAdditionalDetails, isLo
               fontWeight={400}
               fontFamily="Instrument Serif"
             >
-              Publish Campaign For Now
+              {publishCardLabel}
             </Typography>
           </Button>
 
@@ -155,7 +169,7 @@ export default function NextSteps({ onPublish, onContinueAdditionalDetails, isLo
         </DialogTitle>
         <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            Are you sure you want to publish this campaign?
+            {confirmBody}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
@@ -179,7 +193,7 @@ export default function NextSteps({ onPublish, onContinueAdditionalDetails, isLo
                 },
               }}
             >
-              {isLoading ? 'Publishing...' : 'Publish Now'}
+              {isLoading ? activeActionLoadingLabel : activeActionLabel}
             </Button>
           ) : (
             <Button

@@ -11,6 +11,7 @@ import {
   Card,
   Chip,
   Menu,
+  Dialog,
   Avatar,
   Divider,
   Tooltip,
@@ -24,6 +25,7 @@ import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
 
 import { formatText } from 'src/utils/format-test';
 
@@ -33,8 +35,9 @@ import { useAuthContext } from 'src/auth/hooks';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
+import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
+
 import { CampaignLog } from '../../manage/list/CampaignLog';
-import ActivateCampaignDialog from './activate-campaign-dialog';
 import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
 
 // ----------------------------------------------------------------------
@@ -58,6 +61,7 @@ export default function CampaignItem({
   });
 
   const theme = useTheme();
+  const smDown = useResponsive('down', 'sm');
   const { user } = useAuthContext();
   const ref = useRef(null);
 
@@ -849,17 +853,40 @@ export default function CampaignItem({
         }}
       >
         <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
-        <ActivateCampaignDialog
-          open={activateDialogOpen}
-          onClose={handleCloseActivateDialog}
-          campaignId={campaign?.id}
-          onSuccess={() => {
-            // Trigger a revalidation of the campaigns data
-            if (window.swrMutate) {
-              window.swrMutate();
-            }
+        <Dialog
+          fullWidth
+          fullScreen
+          PaperProps={{
+            sx: {
+              bgcolor: theme.palette.background.paper,
+              borderRadius: 2,
+              p: 4,
+              m: 2,
+              height: '97vh',
+              overflow: 'hidden',
+              ...(smDown && {
+                height: 1,
+                m: 0,
+              }),
+            },
           }}
-        />
+          scroll="paper"
+          open={activateDialogOpen}
+        >
+          {activateDialogOpen && (
+            <CreateCampaignFormV2
+              mode="activate"
+              campaignId={campaign?.id}
+              onClose={handleCloseActivateDialog}
+              onSuccess={() => {
+                // Trigger a revalidation of the campaigns data
+                if (window.swrMutate) {
+                  window.swrMutate();
+                }
+              }}
+            />
+          )}
+        </Dialog>
         <InitialActivateCampaignDialog
           open={initialActivateDialogOpen}
           onClose={handleCloseInitialActivateDialog}

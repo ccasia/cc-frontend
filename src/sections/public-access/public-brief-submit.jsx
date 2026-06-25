@@ -12,12 +12,6 @@ import BriefForm from 'src/sections/campaign/briefs/brief-form';
 import BriefFormLayout from 'src/sections/campaign/briefs/brief-form-layout';
 import BriefSubmittedDialog from 'src/sections/campaign/briefs/dialogs/brief-submitted-dialog';
 
-const GEO_FOCUS_LABEL_TO_VALUE = {
-  'SEA Region': 'SEAregion',
-  Global: 'global',
-  Others: 'others',
-};
-
 const toIsoOrNull = (d) => (d ? new Date(d).toISOString() : null);
 
 // Public invite-link page (/campaign-brief/:token). Renders the shared BriefForm
@@ -65,15 +59,14 @@ export default function PublicBriefSubmit({ token }) {
           kpis: values.kpis || [],
           kpiNotes: values.kpiNotes || '',
           additionalInfo: values.extraNotes || '',
-          gender: values.gender || [],
-          age: values.age || [],
+          gender: values.audienceGender || [],
+          age: values.audienceAge || [],
           country: values.country || '',
-          language: values.language || [],
-          creator_persona: values.creatorPersona || [],
-          user_persona: values.userPersona || '',
-          geographic_focus: values.geographicFocus
-            ? GEO_FOCUS_LABEL_TO_VALUE[values.geographicFocus] ?? values.geographicFocus
-            : '',
+          language: values.audienceLanguage || [],
+          creator_persona: values.audienceCreatorPersona || [],
+          user_persona: values.audienceUserPersona || '',
+          geographic_focus: values.geographicFocus || '',
+          geographicFocusOthers: values.geographicFocusOthers || '',
         };
 
         const url = endpoints.campaignBrief.publicSubmit(token);

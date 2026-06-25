@@ -80,26 +80,25 @@ const CampaignGeneralInfo = () => {
     }
   }, [setValue, data, watch]);
 
-  // Auto-set end date 14 days after start date
   useEffect(() => {
-    if (startDate) {
+    if (startDate && !endDate) {
       const start = dayjs(startDate);
       if (start.isValid()) {
         const newEndDate = start.add(14, 'day');
         setValue('campaignEndDate', newEndDate.toDate());
       }
     }
-  }, [startDate, setValue]);
+  }, [startDate, endDate, setValue]);
 
   useEffect(() => {
-    if (postingStartDate) {
+    if (postingStartDate && !postingEndDate) {
       const start = dayjs(postingStartDate);
       if (start.isValid()) {
         const newEndDate = start.add(7, 'day');
         setValue('postingEndDate', newEndDate.toDate());
       }
     }
-  }, [postingStartDate, setValue]);
+  }, [postingStartDate, postingEndDate, setValue]);
 
   return (
     <>
@@ -175,7 +174,7 @@ const CampaignGeneralInfo = () => {
               <Grid item xs={6}>
                 <FormField label="Campaign Start Date">
                   <DatePicker
-                    value={startDate}
+                    value={startDate ? dayjs(startDate).toDate() : null}
                     onChange={(newValue) => {
                       setValue('campaignStartDate', newValue, { shouldValidate: true });
                     }}
@@ -194,7 +193,7 @@ const CampaignGeneralInfo = () => {
               <Grid item xs={6}>
                 <FormField label="Campaign End Date">
                   <DatePicker
-                    value={endDate}
+                    value={endDate ? dayjs(endDate).toDate() : null}
                     onChange={(newValue) => {
                       setValue('campaignEndDate', newValue, { shouldValidate: true });
                     }}
@@ -218,7 +217,7 @@ const CampaignGeneralInfo = () => {
                 <FormField label='Posting Period'>
                   <Box display="flex" flexDirection="row" gap={2}>
                     <DatePicker
-                      value={postingStartDate}
+                      value={postingStartDate ? dayjs(postingStartDate).toDate() : null}
                       onChange={(newValue) => {
                         setValue('postingStartDate', newValue, { shouldValidate: true });
                       }}
@@ -231,7 +230,7 @@ const CampaignGeneralInfo = () => {
                       }}
                     />
                     <DatePicker
-                      value={postingEndDate}
+                      value={postingEndDate ? dayjs(postingEndDate).toDate() : null}
                       onChange={(newValue) => {
                         setValue('postingEndDate', newValue, { shouldValidate: true });
                       }}
@@ -253,7 +252,7 @@ const CampaignGeneralInfo = () => {
           <Grid item xs={12} sm={6}>
             {/* Product/Service Name - Full width */}
             <Box mb={2}>
-              <FormField label="Product/Service Name" required={false}>
+              <FormField label="Product/Service Name">
                 <RHFTextField
                   name="productName"
                   placeholder="Product/Service Name"

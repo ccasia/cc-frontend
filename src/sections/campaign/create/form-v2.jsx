@@ -29,6 +29,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCompany from 'src/hooks/use-get-company';
+import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -112,7 +113,18 @@ const getFrontSectionIndicatorIndex = (internalStep) => {
   return 0; // Additional Details 1
 };
 
-function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
+function CreateCampaignFormV2({
+  onClose,
+  mutate: mutateCampaignList,
+  mode = 'create',
+  campaignId,
+  onSuccess,
+}) {
+  const isActivateMode = mode === 'activate';
+  const confirmLabel = isActivateMode ? 'Confirm Activation' : 'Confirm Campaign';
+  const confirmLoadingLabel = isActivateMode ? 'Activating Campaign...' : 'Creating Campaign...';
+  const confirmShortLoadingLabel = isActivateMode ? 'Activating...' : 'Creating...';
+
   const openCompany = useBoolean();
   const openBrand = useBoolean();
   const confirmation = useBoolean();
@@ -122,6 +134,8 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
 
   const { data: companyListData, mutate: mutateCompanyList } = useGetCompany();
   const { data: defaultTimelines } = useGetDefaultTimeLine();
+  const { campaign: existingCampaign } = useGetCampaignById(isActivateMode ? campaignId : null);
+  const [hasPrefilled, setHasPrefilled] = useState(false);
 
   const [status, setStatus] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -420,6 +434,155 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       setValue('campaignBrand', brandState);
     }
   }, [brandState, setValue]);
+
+  useEffect(() => {
+    if (!isActivateMode || hasPrefilled || !existingCampaign) return;
+
+    const campaign = existingCampaign;
+    const brief = campaign.campaignBrief || {};
+    const req = campaign.campaignRequirement || {};
+    const details = campaign.campaignAdditionalDetails || {};
+
+    const clientFromList =
+      (companyListData || []).find((co) => co.id === campaign.company?.id) || campaign.company || null;
+
+    const deliverables = [];
+    if (campaign.photos) deliverables.push('PHOTOS');
+    if (campaign.rawFootage) deliverables.push('RAW_FOOTAGES');
+    if (campaign.ads) deliverables.push('ADS');
+    if (campaign.crossPosting) deliverables.push('CROSS_POSTING');
+    if (deliverables.length === 0) deliverables.push('UGC_VIDEOS');
+
+    // Map assigned admins to the user objects the manager autocomplete expects.
+    const campaignManager = (campaign.campaignAdmin || [])
+      .map((ca) => ca.admin?.user)
+      .filter(Boolean);
+
+    // Industries may be stored as an array or a comma-joined string.
+    let campaignIndustries = [];
+    if (Array.isArray(brief.industries)) {
+      campaignIndustries = brief.industries;
+    } else if (typeof brief.industries === 'string' && brief.industries) {
+      campaignIndustries = brief.industries.split(',').map((s) => s.trim());
+    }
+
+    reset({
+      ...defaultValues,
+      // General info
+      client: clientFromList,
+      campaignBrand: campaign.brand || null,
+      campaignCredits: campaign.campaignCredits ?? null,
+      campaignName: campaign.name || '',
+      campaignDescription: campaign.description || '',
+      brandAbout: campaign.brandAbout || '',
+      // Campaign Start/End are intentionally left EMPTY on activate. CampaignBrief
+      // requires startDate/endDate columns, so the brief flow fills them with a
+      // fallback (the posting window or "now") even when no real campaign window
+      // was entered — prefilling them would surface that fallback. The CSM sets
+      // the actual campaign dates during activation.
+      campaignStartDate: null,
+      campaignEndDate: null,
+      // Posting period IS prefilled. Store JS Dates (not dayjs) — the date pickers
+      // render via the global date-fns LocalizationProvider, which expects Date
+      // objects; a dayjs value renders blank. onChange also writes Dates.
+      postingStartDate: brief.postingStartDate ? dayjs(brief.postingStartDate).toDate() : null,
+      postingEndDate: brief.postingEndDate ? dayjs(brief.postingEndDate).toDate() : null,
+      productName: campaign.productName || '',
+      campaignIndustries,
+      websiteLink: campaign.websiteLink || '',
+      campaignImages: Array.isArray(brief.images) ? brief.images : [],
+
+      // Objectives
+      campaignObjectives: brief.objectives || '',
+      secondaryObjectives: Array.isArray(brief.secondaryObjectives)
+        ? brief.secondaryObjectives
+        : [],
+      boostContent: brief.boostContent || '',
+      primaryKPI: brief.primaryKPI || '',
+      performanceBaseline: brief.performanceBaseline || '',
+
+      // Target audience
+      country: req.country || '',
+      countries: Array.isArray(req.countries) ? req.countries : [],
+      audienceGender: req.gender || [],
+      audienceAge: req.age || [],
+      audienceLanguage: req.language || [],
+      audienceCreatorPersona: req.creator_persona || [],
+      audienceUserPersona: req.user_persona || '',
+      geographicFocus: req.geographic_focus || '',
+      geographicFocusOthers: req.geographicFocusOthers || '',
+      secondaryAudienceGender: req.secondary_gender || [],
+      secondaryAudienceAge: req.secondary_age || [],
+      secondaryAudienceLanguage: req.secondary_language || [],
+      secondaryAudienceCreatorPersona: req.secondary_creator_persona || [],
+      secondaryAudienceUserPersona: req.secondary_user_persona || '',
+      secondaryCountry: req.secondary_country || '',
+
+      // Logistics
+      logisticsType: campaign.logisticsType || '',
+      products:
+        Array.isArray(campaign.products) && campaign.products.length > 0
+          ? campaign.products.map((p) => ({ name: p.productName }))
+          : [{ name: '' }],
+      schedulingOption: campaign.reservationConfig?.mode === 'AUTO_SCHEDULE' ? 'auto' : 'confirmation',
+      locations:
+        Array.isArray(campaign.reservationConfig?.locations) && campaign.reservationConfig.locations.length > 0
+          ? campaign.reservationConfig.locations
+          : [{ name: '', pic: '', contactNumber: '' }],
+      availabilityRules: Array.isArray(campaign.reservationConfig?.availabilityRules)
+        ? campaign.reservationConfig.availabilityRules
+        : [],
+      allowMultipleBookings: !!campaign.reservationConfig?.allowMultipleBookings,
+      clientRemarks: campaign.reservationConfig?.clientRemarks || '',
+
+      // Campaign management
+      campaignManager: campaignManager.length > 0 ? campaignManager : [],
+      campaignType: campaign.campaignType || 'normal',
+      deliverables,
+      rawFootage: !!campaign.rawFootage,
+      photos: !!campaign.photos,
+      crossPosting: !!campaign.crossPosting,
+      ads: !!campaign.ads,
+      agreementFrom: campaign.agreementTemplate || null,
+
+      // Additional Details
+      socialMediaPlatform: Array.isArray(brief.socialMediaPlatform)
+        ? brief.socialMediaPlatform
+        : [],
+      contentFormat: Array.isArray(details.contentFormat) ? details.contentFormat : [],
+      mainMessage: details.mainMessage || '',
+      keyPoints: details.keyPoints || '',
+      toneAndStyle: details.toneAndStyle || '',
+      referenceContent: details.referenceContent || '',
+      // Brand guidelines: the admin-flow URL (campaignAdditionalDetails) plus any
+      // attachments the prospect/BD uploaded into the brief (otherAttachments).
+      // RHFUpload renders these existing URL strings as previews; only newly
+      // added File objects are re-uploaded on submit.
+      brandGuidelines: [
+        // brandGuidelinesUrl may hold multiple comma-joined URLs (the backend
+        // joins them on save) — split back into individual previews.
+        ...(details.brandGuidelinesUrl
+          ? details.brandGuidelinesUrl.split(',').map((u) => u.trim()).filter(Boolean)
+          : []),
+        ...(Array.isArray(brief.otherAttachments) ? brief.otherAttachments : []),
+      ],
+      productImage1: details.productImage1Url ? [details.productImage1Url] : [],
+      productImage2: details.productImage2Url ? [details.productImage2Url] : [],
+      hashtagsToUse: details.hashtagsToUse || '',
+      mentionsTagsRequired: details.mentionsTagsRequired || '',
+      creatorCompensation: details.creatorCompensation || '',
+      ctaDesiredAction: details.ctaDesiredAction || '',
+      ctaLinkUrl: details.ctaLinkUrl || '',
+      ctaPromoCode: details.ctaPromoCode || '',
+      ctaLinkInBioRequirements: details.ctaLinkInBioRequirements || '',
+      specialNotesInstructions: details.specialNotesInstructions || '',
+      needAds: details.needAds || '',
+      submissionVersion: campaign.submissionVersion || 'v2',
+    });
+
+    setHasPrefilled(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActivateMode, hasPrefilled, existingCampaign, companyListData, reset]);
 
   // Get fields to validate for each step
   const getFieldsForStep = (step) => {
@@ -759,11 +922,14 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       });
     }
 
-    // Append brand guidelines files if available
+    // Append brand guidelines. New File uploads go under `brandGuidelines`;
     if (data.brandGuidelines && Array.isArray(data.brandGuidelines)) {
       for (let i = 0; i < data.brandGuidelines.length; i += 1) {
-        if (data.brandGuidelines[i] instanceof File || data.brandGuidelines[i].type) {
-          formData.append('brandGuidelines', data.brandGuidelines[i]);
+        const item = data.brandGuidelines[i];
+        if (item instanceof File || item.type) {
+          formData.append('brandGuidelines', item);
+        } else if (typeof item === 'string' && item) {
+          formData.append('existingBrandGuidelines', item);
         }
       }
     }
@@ -787,7 +953,10 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
 
     try {
       setIsLoading(true);
-      const res = await axiosInstance.post(endpoints.campaign.createCampaignV2, formData, {
+      const submitUrl = isActivateMode
+        ? endpoints.campaign.activateCampaignFull(campaignId)
+        : endpoints.campaign.createCampaignV2;
+      const res = await axiosInstance.post(submitUrl, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -799,6 +968,9 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       reset();
       if (mutateCampaignList) {
         mutateCampaignList();
+      }
+      if (onSuccess) {
+        onSuccess();
       }
       setStatus('');
       confirmation.onFalse();
@@ -882,6 +1054,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
               }}
               onContinueAdditionalDetails={handleContinueAdditionalDetails}
               isLoading={isLoading}
+              mode={mode}
             />
           );
         case 8:
@@ -901,6 +1074,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       onSubmit,
       handleContinueAdditionalDetails,
       handlePackageLinkSuccess,
+      mode,
     ]
   );
 
@@ -1290,7 +1464,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
                     fontWeight: 600,
                   }}
                 >
-                  {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
+                  {isLoading ? confirmLoadingLabel : confirmLabel}
                 </LoadingButton>
               </Stack>
             )}
@@ -1330,12 +1504,14 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
             <DialogTitle sx={{ textAlign: 'center', pb: 0 }}>
               <Iconify icon="mdi:rocket-launch" width={32} sx={{ color: '#1340FF' }} />
               <Typography variant="h6" mt={1}>
-                Confirm Campaign
+                {isActivateMode ? 'Confirm Activation' : 'Confirm Campaign'}
               </Typography>
             </DialogTitle>
             <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
               <Typography variant="body2" color="text.secondary">
-                Are you sure you want to publish this campaign?
+                {isActivateMode
+                  ? 'Are you sure you want to activate this campaign?'
+                  : 'Are you sure you want to publish this campaign?'}
               </Typography>
             </DialogContent>
             <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
@@ -1366,7 +1542,10 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
                     },
                   }}
                 >
-                  {isLoading ? 'Publishing...' : 'Publish Now'}
+                  {(() => {
+                    if (isActivateMode) return isLoading ? 'Activating...' : 'Activate Now';
+                    return isLoading ? 'Publishing...' : 'Publish Now';
+                  })()}
                 </Button>
               ) : (
                 <Button
@@ -1545,7 +1724,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
                 fontSize: '0.8rem',
               }}
             >
-              {isLoading ? 'Creating...' : 'Confirm'}
+              {isLoading ? confirmShortLoadingLabel : 'Confirm'}
             </LoadingButton>
           </>
         )}
@@ -1567,7 +1746,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
               fontWeight: 600,
             }}
           >
-            {isLoading ? 'Creating...' : 'Confirm Campaign'}
+            {isLoading ? confirmShortLoadingLabel : confirmLabel}
           </LoadingButton>
         )}
       </Box>
@@ -1640,7 +1819,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
               fontFamily: 'Instrument Serif, serif',
             }}
           >
-            Creating Your Campaign
+            {isActivateMode ? 'Activating Your Campaign' : 'Creating Your Campaign'}
           </Typography>
 
           {/* Progress Bar */}
@@ -1690,4 +1869,7 @@ export default CreateCampaignFormV2;
 CreateCampaignFormV2.propTypes = {
   onClose: PropTypes.func,
   mutate: PropTypes.func,
+  mode: PropTypes.oneOf(['create', 'activate']),
+  campaignId: PropTypes.string,
+  onSuccess: PropTypes.func,
 };
