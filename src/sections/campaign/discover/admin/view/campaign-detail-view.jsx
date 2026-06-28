@@ -228,7 +228,7 @@ const CampaignDetailView = ({
   };
 
   const [currentTab, setCurrentTab] = useState(
-    forcedTab || localStorage.getItem('campaigndetail') || 'campaign-content'
+    forcedTab || searchParams.get('tab') || localStorage.getItem('campaigndetail') || 'campaign-content'
   );
 
   // Check if user is client
