@@ -36,6 +36,15 @@ export const endpoints = {
   dashboard: {
     stats: '/api/dashboard/stats',
     campaigns: '/api/dashboard/campaigns',
+    attention: '/api/dashboard/attention',
+    newlyApproved: '/api/dashboard/newly-approved',
+    agreementsPending: '/api/dashboard/agreements-pending',
+    draftsPending: '/api/dashboard/drafts-pending',
+    pitchesPending: '/api/dashboard/pitches-pending',
+    linksPending: '/api/dashboard/links-pending',
+    clientFeedbacks: '/api/dashboard/client-feedbacks',
+    overdueInvoices: '/api/dashboard/overdue-invoices',
+    deleteAgreement: (id) => `/api/dashboard/agreements/${id}`,
   },
   analytics: {
     creatorGrowth: '/api/analytics/v2/creator-growth',
