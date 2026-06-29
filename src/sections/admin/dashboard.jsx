@@ -9,18 +9,23 @@ import { useSettingsContext } from 'src/components/settings';
 
 const DashboardFinance = lazy(() => import('./Finance/Dashboard'));
 const DashboardSuperadmin = lazy(() => import('./dashboard-superadmin'));
+const DashboardAdminRevamped = lazy(() => import('./dashboard-admin'));
 
 const DashboardAdmin = () => {
   const settings = useSettingsContext();
   const { user } = useAuthContext();
 
+  const isSuperadmin = user?.admin?.mode === 'god';
+  const isCSM = user?.admin?.role?.name === 'CSM';
+  const isCSL = user?.admin?.role?.name === 'CSL';
+  const isSalesMarketing = user?.admin?.role?.slug === 'sales_and_marketing';
+  const isFinance = user?.admin?.designation === 'Finance';
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      {(user?.admin?.mode === 'god' ||
-        user?.admin?.role?.name === 'CSM' ||
-        user?.admin?.role?.name === 'CSL' ||
-        user?.admin?.role?.slug === 'sales_and_marketing') && <DashboardSuperadmin />}
-      {user?.admin?.designation === 'Finance' && <DashboardFinance />}
+      {isSuperadmin && <DashboardSuperadmin />}
+      {(isCSM || isCSL || isSalesMarketing) && <DashboardAdminRevamped />}
+      {isFinance && <DashboardFinance />}
     </Container>
   );
 };
