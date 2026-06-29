@@ -13,6 +13,7 @@ import {
   Button,
   Dialog,
   Typography,
+  IconButton,
   DialogTitle,
   DialogActions,
   DialogContent,
@@ -29,8 +30,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import { RHFEditor } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFEditor, RHFTextField } from 'src/components/hook-form';
 
 const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack, mutate }) => {
   const smUp = useResponsive('sm', 'down');
@@ -546,6 +547,34 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack, mutate })
       fullScreen={smUp}
     >
       <FormProvider methods={methods}>
+        <IconButton
+          onClick={() => {
+            const hasContentChanges = value && value !== (draftPitch?.content || pitch?.content);
+            const hasFollowerChanges =
+              followerCountValue &&
+              followerCountValue !==
+                (draftPitch?.followerCount ||
+                  pitch?.followerCount ||
+                  user?.creator?.manualFollowerCount?.toString() ||
+                  '');
+            if (hasContentChanges || hasFollowerChanges) {
+              dialog.onTrue();
+            } else {
+              handleClose();
+              reset();
+            }
+          }}
+          sx={{
+            position: 'absolute',
+            right: 16,
+            top: 24,
+            zIndex: 1,
+            color: '#636366',
+            p: 0.5,
+          }}
+        >
+          <Iconify icon="hugeicons:cancel-01" width={26} />
+        </IconButton>
         <DialogTitle sx={{ pb: 2 }}>
           <Stack direction="column" spacing={2}>
             {/* <Button
