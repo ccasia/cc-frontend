@@ -159,8 +159,8 @@ export default function ClientDemoLinkModal({ open, onClose, companyId }) {
             sx={{
               fontFamily: 'Instrument Serif',
               fontWeight: 400,
-              fontSize: 36,
-              lineHeight: '40px',
+              fontSize: { xs: 28, sm: 36 },
+              lineHeight: { xs: '32px', sm: '40px' },
               color: '#231F20',
             }}
           >
@@ -193,7 +193,7 @@ export default function ClientDemoLinkModal({ open, onClose, companyId }) {
                 spacing={2}
                 sx={{
                   bgcolor: '#F4F5FF',
-                  p: 4,
+                  p: { xs: 3, md: 4 },
                   width: { xs: '100%', md: 340 },
                   flexShrink: 0,
                 }}
@@ -227,7 +227,7 @@ export default function ClientDemoLinkModal({ open, onClose, companyId }) {
               </Stack>
 
               {/* Right: invite link panel */}
-              <Box sx={{ flexGrow: 1, bgcolor: '#FFFFFF', p: 4 }}>
+              <Box sx={{ flexGrow: 1, minWidth: 0, bgcolor: '#FFFFFF', p: { xs: 3, md: 4 } }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                   <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#231F20' }}>
                     Your invite link
@@ -338,8 +338,8 @@ export default function ClientDemoLinkModal({ open, onClose, companyId }) {
 
                 {/* Leaked / regenerate */}
                 <Stack
-                  direction="row"
-                  alignItems="flex-start"
+                  direction={{ xs: 'column', sm: 'row' }}
+                  alignItems={{ xs: 'stretch', sm: 'flex-start' }}
                   justifyContent="space-between"
                   spacing={2}
                 >

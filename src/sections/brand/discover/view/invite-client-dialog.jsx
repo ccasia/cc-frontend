@@ -621,7 +621,6 @@ export default function InviteClientDialog({ open, onClose, onSuccess }) {
             variant="contained"
             disabled={isDemoSubmitting || !demoClientName.trim()}
             onClick={handleDemoGenerate}
-            startIcon={isDemoSubmitting ? <CircularProgress size={20} /> : null}
             sx={{
               width: 95,
               height: 44,
@@ -653,7 +652,7 @@ export default function InviteClientDialog({ open, onClose, onSuccess }) {
               },
             }}
           >
-            {isDemoSubmitting ? 'Creating...' : 'Confirm'}
+            {isDemoSubmitting ? <CircularProgress size={20} sx={{ color: '#FFFFFF' }} /> : 'Confirm'}
           </Button>
         </DialogActions>
       </Dialog>
