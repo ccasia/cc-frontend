@@ -97,6 +97,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
   const { user } = useAuthContext();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isAdmin = user?.role === 'superadmin' || user?.role === 'admin';
 
   const handleChatClick = async (admin) => {
     try {
@@ -148,6 +149,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
   };
 
   const requirement = campaign?.campaignRequirement;
+  const internalComments = campaign?.internalComments;
 
   // Render mobile version on smaller screens
   if (isMobile) {
@@ -233,7 +235,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   {campaign?.description || 'No campaign description available.'}
                 </Typography>
               </Box>
-              
+
               {(campaign?.campaignBrief?.postingStartDate ||
                 campaign?.campaignBrief?.postingEndDate) && (
                 <Box>
@@ -1046,6 +1048,36 @@ const CampaignDetailContentClient = ({ campaign }) => {
 
         {/* Right Column */}
         <Stack sx={{ flex: { xs: 1, md: 1 }, minWidth: 0 }}>
+          {/* INTERNAL COMMENTS */}
+          {internalComments && isAdmin && (
+            <Box sx={{ ...BoxStyle, mt: 1 }}>
+              <Box className="header">
+                <Iconify
+                  icon="material-symbols:notes"
+                  sx={{
+                    color: '#d32f2f',
+                    width: 20,
+                    height: 20,
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  INTERNAL NOTES FROM BD
+                </Typography>
+              </Box>
+
+              <Box className="body" sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Typography>{internalComments}</Typography>
+              </Box>
+            </Box>
+          )}
+
           {/* DELIVERABLES */}
           <Box sx={{ ...BoxStyle, mt: 1 }}>
             <Box className="header">
