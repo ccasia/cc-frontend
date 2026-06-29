@@ -106,11 +106,15 @@ const clientAllowedTabs = [
   'faq',
 ];
 
+// Demo campaigns only have brief data — hide creator/agreement/deliverable/analytics/invoice tabs.
+const demoAllowedTabs = ['overview', 'campaign-content', 'logistics', 'faq'];
+
 const CampaignDetailView = ({
   id,
   publicReadonly = false,
   forcedTab = null,
   publicApprovalEntries = [],
+  isDemo = false,
 }) => {
   const settings = useSettingsContext();
   const router = useRouter();
@@ -120,7 +124,7 @@ const CampaignDetailView = ({
     campaign,
     campaignLoading,
     mutate: campaignMutate,
-  } = useGetCampaignByIdScoped(id, publicReadonly);
+  } = useGetCampaignByIdScoped(id, publicReadonly, isDemo);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
@@ -191,7 +195,7 @@ const CampaignDetailView = ({
 
   const isCampaignHasSpreadSheet = campaign?.spreadSheetURL;
 
-  const { data: campaignAgreements } = useGetAgreements(campaign?.id);
+  const { data: campaignAgreements } = useGetAgreements(isDemo ? null : campaign?.id);
 
   const agreementSubmissions = useMemo(
     () => campaign?.submission?.filter((s) => s.submissionType?.type === 'AGREEMENT_FORM'),
@@ -232,8 +236,9 @@ const CampaignDetailView = ({
     forcedTab || searchParams.get('tab') || localStorage.getItem('campaigndetail') || 'campaign-content'
   );
 
-  // Check if user is client
-  const isClient = publicReadonly || user?.role === 'client' || user?.admin?.role?.name === 'Client';
+  // Check if user is client (demo sessions render the read-only client view)
+  const isClient =
+    publicReadonly || isDemo || user?.role === 'client' || user?.admin?.role?.name === 'Client';
 
   // Check user roles for activation
   const isCSL = user?.admin?.role?.name === 'CSL';
@@ -254,7 +259,9 @@ const CampaignDetailView = ({
       return;
     }
 
-    if (isClient) {
+    if (isDemo) {
+      router.push(paths.dashboard.demoCampaigns.root);
+    } else if (isClient) {
       router.push(paths.dashboard.client);
     } else {
       router.push(paths.dashboard.campaign.root);
@@ -266,11 +273,12 @@ const CampaignDetailView = ({
 
   // Check if current tab is valid for client users
   useEffect(() => {
-    if (isClient && !getAllowedTabs(campaign?.submissionVersion).includes(currentTab)) {
+    const allowed = isDemo ? demoAllowedTabs : getAllowedTabs(campaign?.submissionVersion);
+    if (isClient && !allowed.includes(currentTab)) {
       setCurrentTab('overview');
       localStorage.setItem('campaigndetail', 'overview');
     }
-  }, [currentTab, isClient, campaign?.submissionVersion]);
+  }, [currentTab, isClient, isDemo, campaign?.submissionVersion]);
 
   // Approval public page can force a specific readonly background tab.
   useEffect(() => {
@@ -303,7 +311,7 @@ const CampaignDetailView = ({
     return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
   }, [isClient, campaign?.submissionVersion]);
 
-  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(id);
+  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(isDemo ? null : id);
 
   const tabsContainerRef = useRef(null);
 
@@ -436,7 +444,7 @@ const CampaignDetailView = ({
           }}
         >
           {/* Show different tabs based on user role */}
-          {(user?.role === 'client'
+          {(user?.role === 'client' || isDemo
             ? // Client user tabs (no Pitches tab)
               [
                 { label: 'Overview', value: 'overview' },
@@ -514,6 +522,7 @@ const CampaignDetailView = ({
               ]
           )
             .filter(Boolean)
+            .filter((tab) => !isDemo || demoAllowedTabs.includes(tab.value))
             .map((tab) => (
               <Button
                 key={tab.value}
@@ -1322,4 +1331,5 @@ CampaignDetailView.propTypes = {
   publicReadonly: PropTypes.bool,
   forcedTab: PropTypes.string,
   publicApprovalEntries: PropTypes.array,
+  isDemo: PropTypes.bool,
 };

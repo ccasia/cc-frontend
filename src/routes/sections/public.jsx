@@ -8,6 +8,7 @@ const PublicValidate = lazy(() => import('src/sections/public-access/validation'
 const PublicAccessPage = lazy(() => import('src/sections/public-access/public-access-page'));
 const BDBriefPage = lazy(() => import('src/pages/public/bd-brief'));
 const ClientBriefPage = lazy(() => import('src/pages/public/client-brief'));
+const ClientDemoPage = lazy(() => import('src/pages/public/client-demo'));
 
 const PublicManageCreatorView = lazy(
   () => import('src/sections/public-access/publicCreatorManage')
@@ -55,5 +56,9 @@ export const publicRoutes = [
   {
     path: 'campaign-brief/client/:magicToken',
     element: <ClientBriefPage />,
+  },
+  {
+    path: 'client-demo/:token',
+    element: <ClientDemoPage />,
   },
 ];

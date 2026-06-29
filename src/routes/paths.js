@@ -34,6 +34,10 @@ export const paths = {
     discoveryTool: {
       root: `${ROOTS.DASHBOARD}/discovery-tool`,
     },
+    demoCampaigns: {
+      root: `${ROOTS.DASHBOARD}/demo-campaigns`,
+      details: (id) => `${ROOTS.DASHBOARD}/demo-campaigns/${id}`,
+    },
     faq: `${ROOTS.DASHBOARD}/faq`,
     company: {
       root: `${ROOTS.DASHBOARD}/company`,
@@ -175,5 +179,6 @@ export const paths = {
     },
     bdBrief: (token) => `/campaign-brief/${token}`,
     clientBrief: (magicToken) => `/campaign-brief/client/${magicToken}`,
+    clientDemo: (token) => `/client-demo/${token}`,
   },
 };

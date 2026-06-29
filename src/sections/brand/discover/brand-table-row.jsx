@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
 
 import {
+  Box,
   Avatar,
   Button,
   Tooltip,
@@ -21,6 +22,8 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
+
+import ClientDemoLinkModal from './client-demo-link-modal';
 
 const dictionary = {
   active: 'Active',
@@ -43,6 +46,30 @@ const findLatestPackage = (packages) => {
   return latestPackage;
 };
 
+const DemoBadge = () => (
+  <Box
+    component="span"
+    sx={{
+      display: 'inline-flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      p: '4px',
+      gap: '4px',
+      width: 44,
+      height: 24,
+      bgcolor: 'rgba(255, 224, 178, 0.65)',
+      borderRadius: '6px',
+      color: '#FF9A02',
+      fontFamily: 'InterDisplay',
+      fontWeight: 600,
+      fontSize: 12,
+      lineHeight: '16px',
+    }}
+  >
+    DEMO
+  </Box>
+);
+
 function getRemainingTime(createdDate, months) {
   const created = new Date(createdDate);
   const expiryDate = new Date(created);
@@ -60,10 +87,14 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
   const { logo, name, campaign, brand, id, subscriptions } = row;
 
   const confirm = useBoolean();
+  const demoLinkModal = useBoolean();
 
   const router = useRouter();
 
   const packageItem = subscriptions ? findLatestPackage(subscriptions) : null;
+  const isDemo = row?.clients?.some(
+    (client) => client?.clientType === 'demoClient' || client?.user?.role === 'client_demo'
+  );
 
   const validity = useMemo(() => {
     if (packageItem) {
@@ -77,35 +108,54 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
     return null;
   }, [packageItem]);
 
-  const renderPackageContents = packageItem ? (
-    <>
-      <TableCell>
-        <Label color={packageItem?.status === 'active' ? 'error' : 'success'}>
-          {packageItem?.status}
-        </Label>
-      </TableCell>
-      <TableCell>
-        <Label color={validity?.includes('overdue') ? 'error' : 'default'}>{validity}</Label>
-      </TableCell>
-    </>
-  ) : (
-    <>
-      <TableCell>
-        <Label>
-          <Typography variant="caption" fontWeight={800}>
-            No package is linked
-          </Typography>
-        </Label>
-      </TableCell>
-      <TableCell>
-        <Label>
-          <Typography variant="caption" fontWeight={800}>
-            No package is linked
-          </Typography>
-        </Label>
-      </TableCell>
-    </>
-  );
+  const renderPackageContents = () => {
+    if (isDemo) {
+      return (
+        <>
+          <TableCell>
+            <DemoBadge />
+          </TableCell>
+          <TableCell>
+            <Label>Permanent link</Label>
+          </TableCell>
+        </>
+      );
+    }
+
+    if (packageItem) {
+      return (
+        <>
+          <TableCell>
+            <Label color={packageItem?.status === 'active' ? 'error' : 'success'}>
+              {packageItem?.status}
+            </Label>
+          </TableCell>
+          <TableCell>
+            <Label color={validity?.includes('overdue') ? 'error' : 'default'}>{validity}</Label>
+          </TableCell>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <TableCell>
+          <Label>
+            <Typography variant="caption" fontWeight={800}>
+              No package is linked
+            </Typography>
+          </Label>
+        </TableCell>
+        <TableCell>
+          <Label>
+            <Typography variant="caption" fontWeight={800}>
+              No package is linked
+            </Typography>
+          </Label>
+        </TableCell>
+      </>
+    );
+  };
 
   return (
     <>
@@ -135,9 +185,31 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
           <Label>{campaign?.length || '0'}</Label>
         </TableCell>
 
-        {renderPackageContents}
+        {renderPackageContents()}
 
         <TableCell sx={{ px: 1, whiteSpace: 'nowrap' }}>
+          {isDemo && (
+            <Tooltip title="View demo link" placement="top" arrow>
+              <Button
+                sx={{
+                  mr: 1,
+                  bgcolor: '#FFFFFF',
+                  color: '#231F20',
+                  fontWeight: 600,
+                  border: '1px solid #E8E8E8',
+                  boxShadow: 'inset 0px -3px 0px #E7E7E7',
+                  '&:hover': {
+                    bgcolor: '#F5F5F5',
+                    boxShadow: 'inset 0px -3px 0px #DEDEDE',
+                  },
+                }}
+                variant="contained"
+                onClick={demoLinkModal.onTrue}
+              >
+                View Link
+              </Button>
+            </Tooltip>
+          )}
           <Tooltip title="Edit" placement="top" arrow>
             {/* <IconButton onClick={() => router.push(paths.dashboard.company.companyEdit(id))}>
               <Iconify icon="solar:pen-bold" />
@@ -169,7 +241,11 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
         </TableCell>
       </TableRow>
 
-      {/* <UserQuickEditForm currentUser={row} open={quickEdit.value} onClose={quickEdit.onFalse} /> */}
+      <ClientDemoLinkModal
+        open={demoLinkModal.value}
+        onClose={demoLinkModal.onFalse}
+        companyId={id}
+      />
 
       <ConfirmDialog
         open={confirm.value}
