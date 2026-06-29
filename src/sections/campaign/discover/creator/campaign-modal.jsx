@@ -38,7 +38,8 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
 import MediaKitPopup from './media-kit-popup';
-import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
+// import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
+import CampaignPitchTextModal from './pitch/pitch-text-modal';
 
 const ChipStyle = {
   bgcolor: '#FFF',
@@ -110,9 +111,9 @@ const CampaignModal = ({
   dialog,
   mutate,
 }) => {
-  const [pitchOptionsOpen, setPitchOptionsOpen] = useState(false);
+  // const [pitchOptionsOpen, setPitchOptionsOpen] = useState(false);
   const [textPitchOpen, setTextPitchOpen] = useState(false);
-  const [videoPitchOpen, setVideoPitchOpen] = useState(false);
+  // const [videoPitchOpen, setVideoPitchOpen] = useState(false);
   const [fullImageOpen, setFullImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -205,30 +206,33 @@ const CampaignModal = ({
       return;
     }
 
-    setPitchOptionsOpen(true);
-  };
-
-  const handlePitchOptionsClose = () => {
-    setPitchOptionsOpen(false);
-  };
-
-  const handleOpenTextPitch = () => {
+    // Only Letter pitches are allowed now — open the Letter Pitch modal directly,
+    // skipping the pitch-type selection screen.
+    // setPitchOptionsOpen(true);
     setTextPitchOpen(true);
-    setPitchOptionsOpen(false);
   };
 
-  const handleOpenVideoPitch = () => {
-    setVideoPitchOpen(true);
-    setPitchOptionsOpen(false);
-  };
+  // const handlePitchOptionsClose = () => {
+  //   setPitchOptionsOpen(false);
+  // };
+
+  // const handleOpenTextPitch = () => {
+  //   setTextPitchOpen(true);
+  //   setPitchOptionsOpen(false);
+  // };
+
+  // const handleOpenVideoPitch = () => {
+  //   setVideoPitchOpen(true);
+  //   setPitchOptionsOpen(false);
+  // };
 
   const handleCloseTextPitch = () => {
     setTextPitchOpen(false);
   };
 
-  const handleCloseVideoPitch = () => {
-    setVideoPitchOpen(false);
-  };
+  // const handleCloseVideoPitch = () => {
+  //   setVideoPitchOpen(false);
+  // };
 
   const renderCampaignPostingPeriod = () => {
     const startDate = campaign?.campaignBrief?.postingStartDate;
@@ -1237,6 +1241,8 @@ const CampaignModal = ({
         </Box>
       </DialogContent>
 
+      {/* Pitch-type selection (Letter vs Video) removed — only Letter pitches allowed.
+          Kept for reference in case Video pitches return:
       <CampaignPitchOptionsModal
         open={pitchOptionsOpen}
         handleClose={handlePitchOptionsClose}
@@ -1251,6 +1257,13 @@ const CampaignModal = ({
           value: videoPitchOpen,
           onFalse: handleCloseVideoPitch,
         }}
+        mutate={mutate}
+      /> */}
+      <CampaignPitchTextModal
+        open={textPitchOpen}
+        handleClose={handleCloseTextPitch}
+        campaign={campaign}
+        onBack={handleCloseTextPitch}
         mutate={mutate}
       />
 
