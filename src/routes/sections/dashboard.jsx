@@ -353,7 +353,7 @@ export const dashboardRoutes = [
           {
             path: 'client/:id',
             element: (
-              <RoleBasedGuard roles={['client', 'admin', 'superadmin']} hasContent>
+              <RoleBasedGuard roles={['client', 'admin', 'superadmin', 'client_demo']} hasContent>
                 <ClientMediaKit />
               </RoleBasedGuard>
             ),

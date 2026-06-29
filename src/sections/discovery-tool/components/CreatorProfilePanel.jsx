@@ -378,7 +378,13 @@ const CreatorProfilePanel = ({
       sx={{
         flex: 1,
         minWidth: 0,
-        height: '100%',
+        // In compare mode the panel is a row item and needs an explicit height
+        // to stretch into equal-height columns. In the drawer it's a column
+        // item, so `flex: 1` must own the height — an explicit `height: 100%`
+        // there would make it a full 100vh below the 72px header, overflowing
+        // the Paper and pushing the footer below the fold (not sticky).
+        height: isCompare ? '100%' : 'auto',
+        minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
         bgcolor: '#FFFFFF',
