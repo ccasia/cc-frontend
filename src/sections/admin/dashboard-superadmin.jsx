@@ -412,7 +412,9 @@ const DashboardSuperadmin = () => {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (item.campaign?.id) {
-                          router.push(paths.dashboard.campaign.adminCampaignDetail(item.campaign.id));
+                          router.push(
+                            `${paths.dashboard.campaign.adminCampaignDetail(item.campaign.id)}?tab=agreement&creator=${encodeURIComponent(item.user?.name || '')}`
+                          );
                         }
                       }}
                       sx={{

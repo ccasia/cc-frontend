@@ -24,7 +24,7 @@ import Iconify from 'src/components/iconify';
 
 dayjs.extend(relativeTime);
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 3;
 
 const SUBMISSION_TYPE_LABEL = {
   FIRST_DRAFT: 'First Draft',
@@ -56,10 +56,8 @@ export default function DraftsPendingModal({ open, onClose }) {
     return Object.values(map);
   }, [submissions]);
 
-  const totalPages = Math.ceil(submissions.length / PAGE_SIZE);
-  const pagedIds = new Set(
-    submissions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((s) => s.id)
-  );
+  const totalPages = Math.ceil(grouped.length / PAGE_SIZE);
+  const pagedGroups = grouped.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleViewCampaign = (campaignId) => {
     router.push(paths.dashboard.campaign.adminCampaignDetail(campaignId));
@@ -89,11 +87,7 @@ export default function DraftsPendingModal({ open, onClose }) {
       maxWidth="sm"
       fullWidth
       PaperProps={{
-        sx: {
-          borderRadius: '20px',
-          p: 3,
-          maxHeight: '85vh',
-        },
+        sx: { borderRadius: '20px', p: 3, maxHeight: '85vh', display: 'flex', flexDirection: 'column' },
       }}
     >
       {/* Header */}
@@ -145,13 +139,9 @@ export default function DraftsPendingModal({ open, onClose }) {
       )}
 
       {!isLoading && grouped.length > 0 && (
-        <Box sx={{ overflowY: 'auto', maxHeight: '60vh', pr: 0.5 }}>
+        <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0, pr: 0.5 }}>
           <Stack spacing={3}>
-            {grouped.map(({ campaign, items }) => {
-              const visibleItems = items.filter((s) => pagedIds.has(s.id));
-              if (visibleItems.length === 0) return null;
-
-              return (
+            {pagedGroups.map(({ campaign, items }) => (
                 <Box key={campaign.id}>
                   {/* Campaign header row */}
                   <Stack
@@ -208,26 +198,26 @@ export default function DraftsPendingModal({ open, onClose }) {
                       sx={{
                         height: 34,
                         borderRadius: '8px',
-                        border: '1px solid #E7E7E7',
-                        bgcolor: '#FFFFFF',
-                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        border: '1px solid #3A3A3C',
+                        bgcolor: '#3A3A3C',
+                        boxShadow: '0px -3px 0px 0px #00000073 inset',
                         px: '16px',
                         py: '6px',
                         gap: '6px',
                         fontSize: '0.72rem',
                         fontWeight: 600,
-                        color: '#374151',
+                        color: '#FFFFFF',
                         textTransform: 'uppercase',
-                        '&:hover': { bgcolor: '#f9fafb' },
+                        '&:hover': { bgcolor: '#2a2a2c' },
                       }}
                     >
-                      View Campaign
+                      Go to campaign
                     </Button>
                   </Stack>
 
                   {/* Creator rows */}
                   <Stack spacing={1}>
-                    {visibleItems.map((submission) => (
+                    {items.map((submission) => (
                       <Box
                         key={submission.id}
                         sx={{
@@ -255,22 +245,20 @@ export default function DraftsPendingModal({ open, onClose }) {
                           </Box>
                           <Button
                             size="small"
-                            endIcon={<Iconify icon="mingcute:external-link-line" width={14} />}
                             onClick={() => handleViewSubmission(submission)}
                             sx={{
                               height: 34,
                               borderRadius: '8px',
-                              border: '1px solid #1340FF',
+                              border: '1px solid #E7E7E7',
                               bgcolor: '#FFFFFF',
-                              boxShadow: '0px -3px 0px 0px #1340FF inset',
+                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
                               px: '16px',
                               py: '6px',
-                              gap: '6px',
                               fontSize: '0.72rem',
                               fontWeight: 600,
-                              color: '#1340FF',
+                              color: '#374151',
                               textTransform: 'uppercase',
-                              '&:hover': { bgcolor: '#f0f4ff' },
+                              '&:hover': { bgcolor: '#f9fafb' },
                             }}
                           >
                             View Submission
@@ -281,44 +269,31 @@ export default function DraftsPendingModal({ open, onClose }) {
                   </Stack>
                   <Divider sx={{ mt: 2 }} />
                 </Box>
-              );
-            })}
+            ))}
           </Stack>
         </Box>
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {submissions.length > 0 && (
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 2.5 }}>
           <Typography sx={{ fontSize: '0.8rem', color: '#9ca3af' }}>
-            Page {page} of {totalPages}
+            Page {page} of {totalPages || 1}
           </Typography>
           <Stack direction="row" spacing={1}>
             <IconButton
               size="small"
               disabled={page === 1}
               onClick={() => setPage((p) => p - 1)}
-              sx={{
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                width: 32,
-                height: 32,
-                '&:disabled': { opacity: 0.4 },
-              }}
+              sx={{ border: '1px solid #e5e7eb', borderRadius: '8px', width: 32, height: 32, '&:disabled': { opacity: 0.4 } }}
             >
               <Iconify icon="mingcute:left-line" width={16} />
             </IconButton>
             <IconButton
               size="small"
-              disabled={page === totalPages}
+              disabled={page >= (totalPages || 1)}
               onClick={() => setPage((p) => p + 1)}
-              sx={{
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                width: 32,
-                height: 32,
-                '&:disabled': { opacity: 0.4 },
-              }}
+              sx={{ border: '1px solid #e5e7eb', borderRadius: '8px', width: 32, height: 32, '&:disabled': { opacity: 0.4 } }}
             >
               <Iconify icon="mingcute:right-line" width={16} />
             </IconButton>

@@ -24,16 +24,19 @@ import Iconify from 'src/components/iconify';
 
 dayjs.extend(relativeTime);
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 3;
 
 const BTN = {
+  width: 87,
   height: 34,
   borderRadius: '8px',
   px: '16px',
   py: '6px',
+  gap: '6px',
   fontSize: '0.72rem',
   fontWeight: 600,
   textTransform: 'uppercase',
+  bgcolor: '#FFFFFF',
 };
 
 export default function LinksToApproveModal({ open, onClose }) {
@@ -60,10 +63,8 @@ export default function LinksToApproveModal({ open, onClose }) {
     return Object.values(map);
   }, [submissions]);
 
-  const totalPages = Math.ceil(submissions.length / PAGE_SIZE);
-  const pagedIds = new Set(
-    submissions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((s) => s.id)
-  );
+  const totalPages = Math.ceil(grouped.length / PAGE_SIZE);
+  const pagedGroups = grouped.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleGoToCampaign = (campaignId) => {
     router.push(paths.dashboard.campaign.adminCampaignDetail(campaignId));
@@ -100,7 +101,7 @@ export default function LinksToApproveModal({ open, onClose }) {
       maxWidth="sm"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: '20px', p: 3, maxHeight: '85vh' },
+        sx: { borderRadius: '20px', p: 3, maxHeight: '85vh', display: 'flex', flexDirection: 'column' },
       }}
     >
       {/* Header */}
@@ -145,13 +146,9 @@ export default function LinksToApproveModal({ open, onClose }) {
       )}
 
       {!isLoading && grouped.length > 0 && (
-        <Box sx={{ overflowY: 'auto', maxHeight: '60vh', pr: 0.5 }}>
+        <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0, pr: 0.5 }}>
           <Stack spacing={3}>
-            {grouped.map(({ campaign, items }) => {
-              const visibleItems = items.filter((s) => pagedIds.has(s.id));
-              if (visibleItems.length === 0) return null;
-
-              return (
+            {pagedGroups.map(({ campaign, items }) => (
                 <Box key={campaign.id}>
                   {/* Campaign header */}
                   <Stack
@@ -201,34 +198,33 @@ export default function LinksToApproveModal({ open, onClose }) {
                         </Typography>
                       </Box>
                     </Stack>
-                    <Box
+                    <Button
+                      size="small"
+                      endIcon={<Iconify icon="mingcute:external-link-line" width={14} />}
                       onClick={() => handleGoToCampaign(campaign.id)}
                       sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
                         height: 34,
                         borderRadius: '8px',
-                        border: '1px solid #E7E7E7',
-                        bgcolor: '#FFFFFF',
-                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                        px: '14px',
-                        cursor: 'pointer',
-                        '&:hover': { bgcolor: '#f9fafb' },
+                        border: '1px solid #3A3A3C',
+                        bgcolor: '#3A3A3C',
+                        boxShadow: '0px -3px 0px 0px #00000073 inset',
+                        px: '16px',
+                        py: '6px',
+                        gap: '6px',
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        color: '#FFFFFF',
+                        textTransform: 'uppercase',
+                        '&:hover': { bgcolor: '#2a2a2c' },
                       }}
                     >
-                      <Typography
-                        sx={{ fontSize: '0.72rem', fontWeight: 600, color: '#374151', textTransform: 'uppercase' }}
-                      >
-                        Go to campaign
-                      </Typography>
-                      <Iconify icon="mingcute:external-link-line" width={14} sx={{ color: '#374151' }} />
-                    </Box>
+                      Go to campaign
+                    </Button>
                   </Stack>
 
                   {/* Creator rows */}
                   <Stack spacing={1}>
-                    {visibleItems.map((submission) => (
+                    {items.map((submission) => (
                       <Box
                         key={submission.id}
                         sx={{
@@ -286,7 +282,6 @@ export default function LinksToApproveModal({ open, onClose }) {
                               sx={{
                                 ...BTN,
                                 border: '1px solid #D4321C',
-                                bgcolor: '#FFFFFF',
                                 boxShadow: '0px -3px 0px 0px #D4321C inset',
                                 color: '#D4321C',
                                 '&:hover': { bgcolor: '#fff5f5' },
@@ -303,10 +298,10 @@ export default function LinksToApproveModal({ open, onClose }) {
                               sx={{
                                 ...BTN,
                                 border: '1px solid #1ABF66',
-                                bgcolor: '#1ABF66',
-                                boxShadow: '0px -3px 0px 0px #158f4d inset',
-                                color: '#FFFFFF',
-                                '&:hover': { bgcolor: '#18b05e' },
+                                boxShadow: '0px -3px 0px 0px #1ABF66 inset',
+                                color: '#1ABF66',
+                                fontWeight: 700,
+                                '&:hover': { bgcolor: '#f0fdf4' },
                               }}
                             >
                               {loadingId === `${submission.id}-approve` ? '...' : 'Approve'}
@@ -318,17 +313,16 @@ export default function LinksToApproveModal({ open, onClose }) {
                   </Stack>
                   <Divider sx={{ mt: 2 }} />
                 </Box>
-              );
-            })}
+            ))}
           </Stack>
         </Box>
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {submissions.length > 0 && (
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 2.5 }}>
           <Typography sx={{ fontSize: '0.8rem', color: '#9ca3af' }}>
-            Page {page} of {totalPages}
+            Page {page} of {totalPages || 1}
           </Typography>
           <Stack direction="row" spacing={1}>
             <IconButton
@@ -341,7 +335,7 @@ export default function LinksToApproveModal({ open, onClose }) {
             </IconButton>
             <IconButton
               size="small"
-              disabled={page === totalPages}
+              disabled={page >= (totalPages || 1)}
               onClick={() => setPage((p) => p + 1)}
               sx={{ border: '1px solid #e5e7eb', borderRadius: '8px', width: 32, height: 32, '&:disabled': { opacity: 0.4 } }}
             >
