@@ -282,6 +282,8 @@ export default function ClientDemoLinkModal({ open, onClose, companyId }) {
                       minWidth: 0,
                       fontFamily: 'monospace',
                       fontSize: 14,
+                      fontWeight: 500,
+                      letterSpacing: '-0.3px',
                       color: 'text.primary',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
