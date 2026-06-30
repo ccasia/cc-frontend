@@ -146,6 +146,9 @@ export const paths = {
     creditTier: {
       root: `${ROOTS.DASHBOARD}/credit-tier`,
     },
+    videoOfTheMonth: {
+      root: `${ROOTS.DASHBOARD}/video-of-the-month`,
+    },
     feedback: {
       root: `${ROOTS.DASHBOARD}/feedback`,
     },

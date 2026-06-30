@@ -202,6 +202,12 @@ export function useNavData() {
             icon: <Iconify icon="mdi:account-star-outline" width={25} />,
           },
           {
+            roles: ['superadmin', 'god', 'sales_and_marketing'],
+            title: 'Videos of the Month',
+            path: paths.dashboard.videoOfTheMonth.root,
+            icon: <Iconify icon="mdi:star-outline" width={25} />,
+          },
+          {
             roles: ['superadmin', 'god'],
             title: 'Feedback',
             path: paths.dashboard.feedback.root,

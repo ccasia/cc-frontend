@@ -33,6 +33,13 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
+  videoOfTheMonth: {
+    list: '/api/video-of-the-month',
+    submissions: '/api/video-of-the-month/submissions',
+    create: '/api/video-of-the-month',
+    update: (id) => `/api/video-of-the-month/${id}`,
+    delete: (id) => `/api/video-of-the-month/${id}`,
+  },
   dashboard: {
     stats: '/api/dashboard/stats',
     campaigns: '/api/dashboard/campaigns',

@@ -122,6 +122,10 @@ const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 
 // Credit Tier
 const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tier'));
+// Videos of the Month
+const VideoOfTheMonth = lazy(() =>
+  import('src/pages/dashboard/video-of-the-month/video-of-the-month')
+);
 
 // Feedback
 const Feedback = lazy(() => import('src/pages/dashboard/feedback/feedback'));
@@ -722,6 +726,14 @@ export const dashboardRoutes = [
         element: (
           <RoleBasedGuard roles={['superadmin', 'god', 'sales_and_marketing']} hasContent>
             <CreditTier />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'video-of-the-month',
+        element: (
+          <RoleBasedGuard roles={['superadmin', 'god', 'sales_and_marketing']} hasContent>
+            <VideoOfTheMonth />
           </RoleBasedGuard>
         ),
       },
