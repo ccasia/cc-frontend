@@ -231,7 +231,7 @@ export function useNavData() {
             icon: <Iconify icon="iconamoon:invoice" width={25} />,
           },
           {
-            roles: ['superadmin', 'BD', 'god', 'sales_and_marketing', 'CSL'],
+            roles: ['superadmin', 'BD', 'god', 'sales_and_marketing', 'CSL', 'CSM'],
             title: 'Draft Brief',
             path: paths.dashboard.campaign.briefs,
             icon: <Iconify icon="line-md:briefcase" width={25} />,

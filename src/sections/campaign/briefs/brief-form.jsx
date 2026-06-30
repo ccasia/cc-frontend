@@ -625,7 +625,11 @@ export default function BriefForm({
   // Public submit: validate the whole form, then hand the values to the parent
   // which maps them to the public-invite payload and POSTs.
   const submit = handleSubmit((values) => {
-    if (onSubmit) onSubmit(values, pendingFiles.map((p) => p.file));
+    if (onSubmit)
+      onSubmit(
+        values,
+        pendingFiles.map((p) => p.file)
+      );
   });
 
   return (
@@ -687,12 +691,12 @@ export default function BriefForm({
         <Box>
           <SectionHeader number="02" title="Timeline" />
           <Typography variant="body2" sx={{ color: '#6B7280', mb: 3 }}>
-            When does this go live? Give us a window so we can plan accordingly.
+            When does this go live?
           </Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
             <Box sx={{ flex: 1 }}>
               <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                Earliest Posting Date <EditedIndicator shown={editedFields.has('dateFrom')} />
+                Start Date <EditedIndicator shown={editedFields.has('dateFrom')} />
               </Typography>
               <FieldWrap>
                 <RHFDatePicker
@@ -716,7 +720,7 @@ export default function BriefForm({
             </Box>
             <Box sx={{ flex: 1 }}>
               <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                Latest Posting Date <EditedIndicator shown={editedFields.has('dateTo')} />
+                End Date <EditedIndicator shown={editedFields.has('dateTo')} />
               </Typography>
               <FieldWrap>
                 <RHFDatePicker
@@ -874,7 +878,8 @@ export default function BriefForm({
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                  Creator Niche <EditedIndicator shown={editedFields.has('audienceCreatorPersona')} />
+                  Creator Niche{' '}
+                  <EditedIndicator shown={editedFields.has('audienceCreatorPersona')} />
                 </Typography>
                 <FieldWrap>
                   <RHFMultiSelect
@@ -1050,9 +1055,7 @@ export default function BriefForm({
                 !readOnly &&
                 (onUploadAttachment || isSubmitMode) &&
                 (atAttachmentLimit ? (
-                  <Typography
-                    sx={{ mt: 1, fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}
-                  >
+                  <Typography sx={{ mt: 1, fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}>
                     Maximum of {MAX_ATTACHMENTS} attachments reached.
                   </Typography>
                 ) : (
