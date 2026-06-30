@@ -29,6 +29,7 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcru
 import BriefForm from './brief-form';
 import BriefFormLayout from './brief-form-layout';
 import HandoverDialog from './dialogs/handover-dialog';
+import AssignCsmDialog from './dialogs/assign-csm-dialog';
 import { STATUS_CONFIG } from './components/status-badge';
 import SendToClientDialog from './dialogs/send-to-client-dialog';
 
@@ -47,6 +48,7 @@ export default function CampaignBriefDetailView() {
 
   const [sendOpen, setSendOpen] = useState(false);
   const [handoverOpen, setHandoverOpen] = useState(false);
+  const [assignCsmOpen, setAssignCsmOpen] = useState(false);
   const [clearSignal, setClearSignal] = useState(0);
   const [resetSignal, setResetSignal] = useState(0);
   const [resetting, setResetting] = useState(false);
@@ -55,6 +57,9 @@ export default function CampaignBriefDetailView() {
   // client's reset-to-snapshot) vs. wiping to empty. Only CLIENT_INVITED briefs
   // have a captured submission snapshot to revert to.
   const isFromPublicForm = brief?.draftOrigin === 'CLIENT_INVITED';
+  // CSL-authored briefs skip the CSL-group handoff: the CSL assigns a CSM
+  // directly at APPROVED (the assign action self-handovers server-side).
+  const isCslAuthored = brief?.draftOrigin === 'CSL_CREATED';
 
   // BD reset — mirror of the client's handleResetToSnapshot: revert on the
   // server to the stored snapshot, refresh the brief, then bump resetSignal so
@@ -170,7 +175,11 @@ export default function CampaignBriefDetailView() {
         case 'SENT_TO_CLIENT':
           return { label: 'RESEND TO CLIENT', onClick: () => setSendOpen(true) };
         case 'APPROVED':
-          return { label: 'HANDOVER TO CS', onClick: () => setHandoverOpen(true) };
+          // CSL-authored briefs assign a CSM directly (self-handover); everyone
+          // else hands over to the CSL group.
+          return isCslAuthored
+            ? { label: 'ASSIGN CSM', onClick: () => setAssignCsmOpen(true), bg: '#1340FF' }
+            : { label: 'HANDOVER TO CS', onClick: () => setHandoverOpen(true) };
         case 'PENDING_REVIEW':
           // Public-form submission awaiting BD review. BD reviews/edits, then
           // forwards to the client — same send dialog and transition as DRAFTED.
@@ -376,6 +385,15 @@ export default function CampaignBriefDetailView() {
         brief={brief}
         onClose={() => setHandoverOpen(false)}
         onHandedOver={() => {
+          mutate();
+          navigate(paths.dashboard.campaign.briefs);
+        }}
+      />
+      <AssignCsmDialog
+        open={assignCsmOpen}
+        brief={brief}
+        onClose={() => setAssignCsmOpen(false)}
+        onAssigned={() => {
           mutate();
           navigate(paths.dashboard.campaign.briefs);
         }}
