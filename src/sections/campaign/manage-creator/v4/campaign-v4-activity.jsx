@@ -85,6 +85,18 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
       )
     : null;
 
+  // Prefer the signed PDF (stored on the submission's content) once the creator has
+  // submitted it, falling back to the blank template before submission.
+  const signedContent = agreementSubmission?.content;
+  const signedAgreementUrl = signedContent
+    ? signedContent.replace(
+        'https://storage.googleapis.com/cult-prod/',
+        `${window.location.origin}/api/agreement/agreement-template/`
+      )
+    : null;
+
+  const displayUrl = signedAgreementUrl || agreementUrl;
+
   const isAgreementSubmitted =
     agreementSubmission?.status === 'PENDING_REVIEW' ||
     agreementSubmission?.status === 'APPROVED' ||
@@ -316,7 +328,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
             }}
           >
             <Document
-              file={agreementUrl}
+              file={displayUrl}
               onLoadSuccess={onDocumentLoadSuccess}
               onLoadError={onDocumentLoadError}
             >
@@ -371,7 +383,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
             {agreementUrl && (
               <Button
                 variant="contained"
-                onClick={() => handleDownload(agreementUrl)}
+                onClick={() => handleDownload(displayUrl)}
                 sx={{
                   bgcolor: '#fff',
                   border: 1,
@@ -2339,6 +2351,7 @@ AgreementSubmission.propTypes = {
   agreementSubmission: PropTypes.shape({
     id: PropTypes.string,
     status: PropTypes.string,
+    content: PropTypes.string,
   }),
   onUpdate: PropTypes.func,
 };
