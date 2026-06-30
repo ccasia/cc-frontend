@@ -5,33 +5,39 @@ import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
+import { DEMO_CAMPAIGN_ID, demoCampaignCard } from 'src/_mock/_demo-campaign';
+
 import Image from 'src/components/image';
 
 // ----------------------------------------------------------------------
-// Static, non-interactive demo campaign card shown to demo clients.
-// Mirrors the visual of `campaign/discover/admin/campaign-item.jsx` but
-// uses fixed placeholder data and intentionally navigates nowhere.
+// Demo campaign card shown to demo clients. Mirrors the visual of
+// `campaign/discover/admin/campaign-item.jsx`. Data comes from the editable
+// mock file (`src/_mock/_demo-campaign.js`); clicking opens the full mock
+// campaign detail view.
 
-const DEMO_CAMPAIGN = {
-  name: 'Try the Bell. Ring the Flavour',
-  company: 'CultCreative Sdn Bhd',
-  industry: 'F&B',
-  dateRange: '07 May 2025 - 21 Nov 2025',
-  image: '/assets/placeholder.svg',
-  logo: '/assets/icons/auth/cult.svg',
-};
+const DEMO_CAMPAIGN = demoCampaignCard;
 
 export default function DemoCampaignCard() {
+  const router = useRouter();
+
   return (
     <Card
+      onClick={() => router.push(paths.dashboard.demoCampaigns.details(DEMO_CAMPAIGN_ID))}
       sx={{
         overflow: 'hidden',
-        cursor: 'default',
+        cursor: 'pointer',
         bgcolor: 'background.default',
         borderRadius: '12px',
         border: '1px solid #EBEBEB',
         boxShadow: 'none',
         pb: 1.5,
+        transition: 'border-color 0.15s ease',
+        '&:hover': {
+          borderColor: '#1340ff',
+        },
       }}
     >
       <Box sx={{ position: 'relative', height: 143, overflow: 'hidden' }}>

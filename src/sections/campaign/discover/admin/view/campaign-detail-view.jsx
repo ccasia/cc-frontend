@@ -32,8 +32,8 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
-import { useGetCampaignByIdScoped } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
+import { useGetCampaignByIdScoped } from 'src/hooks/use-get-campaign-by-id';
 import { useCampaignPermissions } from 'src/hooks/use-campaign-permissions';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -106,8 +106,16 @@ const clientAllowedTabs = [
   'faq',
 ];
 
-// Demo campaigns only have brief data — hide creator/agreement/deliverable/analytics/invoice tabs.
-const demoAllowedTabs = ['overview', 'campaign-content', 'logistics', 'faq'];
+// Demo campaigns mirror the client layout (no Agreements/Invoices tabs). Data is fully mocked.
+const demoAllowedTabs = [
+  'overview',
+  'campaign-content',
+  'creator-master-list',
+  'submissions-v4',
+  'analytics',
+  'logistics',
+  'faq',
+];
 
 const CampaignDetailView = ({
   id,
@@ -195,7 +203,7 @@ const CampaignDetailView = ({
 
   const isCampaignHasSpreadSheet = campaign?.spreadSheetURL;
 
-  const { data: campaignAgreements } = useGetAgreements(isDemo ? null : campaign?.id);
+  const { data: campaignAgreements } = useGetAgreements(campaign?.id);
 
   const agreementSubmissions = useMemo(
     () => campaign?.submission?.filter((s) => s.submissionType?.type === 'AGREEMENT_FORM'),
@@ -311,7 +319,7 @@ const CampaignDetailView = ({
     return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
   }, [isClient, campaign?.submissionVersion]);
 
-  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(isDemo ? null : id);
+  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(id);
 
   const tabsContainerRef = useRef(null);
 
@@ -658,7 +666,7 @@ const CampaignDetailView = ({
           <CampaignAgreements
             campaign={campaign}
             campaignMutate={campaignMutate}
-            isDisabled={isDisabled}
+            isDisabled={isDisabled || isDemo}
           />
         );
       case 'logistics':
@@ -677,7 +685,7 @@ const CampaignDetailView = ({
           <CampaignInvoicesList
             campId={campaign?.id}
             campaignMutate={campaignMutate}
-            isDisabled={isDisabled}
+            isDisabled={isDisabled || isDemo}
           />
         );
       case 'client':
@@ -701,7 +709,7 @@ const CampaignDetailView = ({
           <CampaignCreatorDeliverables campaign={campaign} isDisabled={isDisabled} />
         );
       case 'submissions-v4':
-        return <CampaignCreatorSubmissionsV4 campaign={campaign} isDisabled={isDisabled} />;
+        return <CampaignCreatorSubmissionsV4 campaign={campaign} isDisabled={isDisabled || isDemo} />;
       case 'analytics':
         return (
           <CampaignAnalytics

@@ -3,9 +3,16 @@ import { useMemo } from 'react';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
+import { demoAgreements, DEMO_CAMPAIGN_ID } from 'src/_mock/_demo-campaign';
+
+const noop = () => {};
+
 export const useGetAgreements = (campaignId) => {
+  // Demo campaign: serve mocked agreements from the editable mock file.
+  const isDemoCampaign = campaignId === DEMO_CAMPAIGN_ID;
+
   const { data, isLoading, mutate } = useSWR(
-    endpoints.campaign.creatorAgreement(campaignId),
+    isDemoCampaign ? null : endpoints.campaign.creatorAgreement(campaignId),
     fetcher,
     {
       revalidateOnMount: true,
@@ -16,11 +23,11 @@ export const useGetAgreements = (campaignId) => {
 
   const memoizedValue = useMemo(
     () => ({
-      data,
-      isLoading,
-      mutate,
+      data: isDemoCampaign ? demoAgreements : data,
+      isLoading: isDemoCampaign ? false : isLoading,
+      mutate: isDemoCampaign ? noop : mutate,
     }),
-    [data, isLoading, mutate]
+    [isDemoCampaign, data, isLoading, mutate]
   );
 
   return memoizedValue;
