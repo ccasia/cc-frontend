@@ -257,7 +257,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, isInvitedC
                   <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
                 )}
                 <Link
-                  href={profileLink}
+                  href={profileLink?.startsWith('http') ? profileLink : `https://${profileLink}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   underline="hover"

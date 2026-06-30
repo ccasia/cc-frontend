@@ -842,13 +842,22 @@ const ApprovalPageView = () => {
 
                     const instagramProfileLink = creator?.instagramProfileLink;
                     const tiktokProfileLink = creator?.tiktokProfileLink;
-                    const igUsername =
-                      igStats?.username ||
-                      extractUsernameFromProfileLink(instagramProfileLink);
-                    const tkUsername =
-                      tkStats?.username || extractUsernameFromProfileLink(tiktokProfileLink);
+                    const genericProfileLink = creator?.profileLink;
+
+                    let igUsername = igStats?.username || extractUsernameFromProfileLink(instagramProfileLink);
+                    let tkUsername = tkStats?.username || extractUsernameFromProfileLink(tiktokProfileLink);
+
+                    // For guest/non-platform creators, fall back to the generic profileLink
+                    if (!igUsername && !tkUsername && genericProfileLink) {
+                      if (/instagram\.com/i.test(genericProfileLink)) {
+                        igUsername = extractUsernameFromProfileLink(genericProfileLink);
+                      } else if (/tiktok\.com/i.test(genericProfileLink)) {
+                        tkUsername = extractUsernameFromProfileLink(genericProfileLink);
+                      }
+                    }
+
                     const igProfileHref =
-                      createSocialProfileUrl(igUsername, 'instagram') || instagramProfileLink;
+                      createSocialProfileUrl(igUsername, 'instagram') || instagramProfileLink || genericProfileLink;
                     const tkProfileHref =
                       createSocialProfileUrl(tkUsername, 'tiktok') || tiktokProfileLink;
 
@@ -907,19 +916,19 @@ const ApprovalPageView = () => {
                               <Stack direction="row" spacing={1.1} alignItems="center">
                                 {igUsername && (
                                   <Stack direction="row" spacing={0.35} alignItems="center">
-                                    <Iconify icon="mdi:instagram" width={12} sx={{ color: '#8E8E93' }} />
+                                    <Iconify icon="mdi:instagram" width={12} sx={{ color: '#1340FF' }} />
                                     {igProfileHref ? (
                                       <Link
                                         href={igProfileHref}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         underline="hover"
-                                        sx={{ ...handleSx, color: 'text.secondary' }}
+                                        sx={{ ...handleSx, color: '#1340FF', '&:hover': { textDecorationColor: '#1340FF' } }}
                                       >
                                         {igUsername}
                                       </Link>
                                     ) : (
-                                      <Typography color="text.secondary" sx={handleSx}>
+                                      <Typography sx={{ ...handleSx, color: '#1340FF' }}>
                                         {igUsername}
                                       </Typography>
                                     )}
@@ -927,19 +936,19 @@ const ApprovalPageView = () => {
                                 )}
                                 {tkUsername && (
                                   <Stack direction="row" spacing={0.35} alignItems="center">
-                                    <Iconify icon="ic:baseline-tiktok" width={12} sx={{ color: '#8E8E93' }} />
+                                    <Iconify icon="ic:baseline-tiktok" width={12} sx={{ color: '#1340FF' }} />
                                     {tkProfileHref ? (
                                       <Link
                                         href={tkProfileHref}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         underline="hover"
-                                        sx={{ ...handleSx, color: 'text.secondary' }}
+                                        sx={{ ...handleSx, color: '#1340FF', '&:hover': { textDecorationColor: '#1340FF' } }}
                                       >
                                         {tkUsername}
                                       </Link>
                                     ) : (
-                                      <Typography color="text.secondary" sx={handleSx}>
+                                      <Typography sx={{ ...handleSx, color: '#1340FF' }}>
                                         {tkUsername}
                                       </Typography>
                                     )}
@@ -1263,13 +1272,22 @@ const ApprovalPageView = () => {
 
                         const instagramProfileLink = creator?.instagramProfileLink;
                         const tiktokProfileLink = creator?.tiktokProfileLink;
-                        const igUsername =
-                          igStats?.username ||
-                          extractUsernameFromProfileLink(instagramProfileLink);
-                        const tkUsername =
-                          tkStats?.username || extractUsernameFromProfileLink(tiktokProfileLink);
+                        const genericProfileLink = creator?.profileLink;
+
+                        let igUsername = igStats?.username || extractUsernameFromProfileLink(instagramProfileLink);
+                        let tkUsername = tkStats?.username || extractUsernameFromProfileLink(tiktokProfileLink);
+
+                        // For guest/non-platform creators, fall back to the generic profileLink
+                        if (!igUsername && !tkUsername && genericProfileLink) {
+                          if (/instagram\.com/i.test(genericProfileLink)) {
+                            igUsername = extractUsernameFromProfileLink(genericProfileLink);
+                          } else if (/tiktok\.com/i.test(genericProfileLink)) {
+                            tkUsername = extractUsernameFromProfileLink(genericProfileLink);
+                          }
+                        }
+
                         const igProfileHref =
-                          createSocialProfileUrl(igUsername, 'instagram') || instagramProfileLink;
+                          createSocialProfileUrl(igUsername, 'instagram') || instagramProfileLink || genericProfileLink;
                         const tkProfileHref =
                           createSocialProfileUrl(tkUsername, 'tiktok') || tiktokProfileLink;
 
@@ -1315,19 +1333,19 @@ const ApprovalPageView = () => {
                                       <Stack direction="row" spacing={1.1} alignItems="center">
                                         {igUsername && (
                                           <Stack direction="row" spacing={0.35} alignItems="center">
-                                            <Iconify icon="mdi:instagram" width={14} sx={{ color: '#8E8E93' }} />
+                                            <Iconify icon="mdi:instagram" width={14} sx={{ color: '#1340FF' }} />
                                             {igProfileHref ? (
                                               <Link
                                                 href={igProfileHref}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 underline="hover"
-                                                sx={{ ...desktopHandleSx, color: 'text.secondary' }}
+                                                sx={{ ...desktopHandleSx, color: '#1340FF', '&:hover': { textDecorationColor: '#1340FF' } }}
                                               >
                                                 {igUsername}
                                               </Link>
                                             ) : (
-                                              <Typography color="text.secondary" sx={desktopHandleSx}>
+                                              <Typography sx={{ ...desktopHandleSx, color: '#1340FF' }}>
                                                 {igUsername}
                                               </Typography>
                                             )}
@@ -1335,19 +1353,19 @@ const ApprovalPageView = () => {
                                         )}
                                         {tkUsername && (
                                           <Stack direction="row" spacing={0.35} alignItems="center">
-                                            <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#8E8E93' }} />
+                                            <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#1340FF' }} />
                                             {tkProfileHref ? (
                                               <Link
                                                 href={tkProfileHref}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 underline="hover"
-                                                sx={{ ...desktopHandleSx, color: 'text.secondary' }}
+                                                sx={{ ...desktopHandleSx, color: '#1340FF', '&:hover': { textDecorationColor: '#1340FF' } }}
                                               >
                                                 {tkUsername}
                                               </Link>
                                             ) : (
-                                              <Typography color="text.secondary" sx={desktopHandleSx}>
+                                              <Typography sx={{ ...desktopHandleSx, color: '#1340FF' }}>
                                                 {tkUsername}
                                               </Typography>
                                             )}
