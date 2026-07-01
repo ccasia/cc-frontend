@@ -142,14 +142,27 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const [sortColumn, setSortColumn] = useState('name'); // 'name', 'followers', 'tier', 'date', 'type', 'status'
   const [sortDirection, setSortDirection] = useState('asc');
-  const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState(
+    () => new URLSearchParams(location.search).get('creator') || ''
+  );
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.has('creator')) {
+      params.delete('creator');
+      navigate({ search: params.toString() }, { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [addCreatorOpen, setAddCreatorOpen] = useState(false);
   const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
   const [outreachStatusFilter, setOutreachStatusFilter] = useState([]);
   const [outreachFilterAnchorEl, setOutreachFilterAnchorEl] = useState(null);
-  const location = useLocation();
-  const navigate = useNavigate();
+  // Merge prop-based isDisabled with existing Finance role check
 
   const financeDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',

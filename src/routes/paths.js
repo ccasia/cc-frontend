@@ -32,7 +32,10 @@ export const paths = {
     client: `${ROOTS.DASHBOARD}/client`,
     discoveryTool: {
       root: `${ROOTS.DASHBOARD}/discovery-tool`,
-      npc: `${ROOTS.DASHBOARD}/discovery-tool/npc`,
+    },
+    demoCampaigns: {
+      root: `${ROOTS.DASHBOARD}/demo-campaigns`,
+      details: (id) => `${ROOTS.DASHBOARD}/demo-campaigns/${id}`,
     },
     faq: `${ROOTS.DASHBOARD}/faq`,
     company: {
@@ -142,6 +145,9 @@ export const paths = {
     creditTier: {
       root: `${ROOTS.DASHBOARD}/credit-tier`,
     },
+    videoOfTheMonth: {
+      root: `${ROOTS.DASHBOARD}/video-of-the-month`,
+    },
     feedback: {
       root: `${ROOTS.DASHBOARD}/feedback`,
     },
@@ -172,5 +178,6 @@ export const paths = {
     },
     bdBrief: (token) => `/campaign-brief/${token}`,
     clientBrief: (magicToken) => `/campaign-brief/client/${magicToken}`,
+    clientDemo: (token) => `/client-demo/${token}`,
   },
 };

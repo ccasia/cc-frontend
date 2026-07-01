@@ -17,6 +17,11 @@ export default function Page() {
   const router = useRouter();
 
   useEffect(() => {
+    if (user?.role === 'client_demo') {
+      router.push(paths.dashboard.discoveryTool.root);
+      return;
+    }
+
     // Redirect client users to the client dashboard
     if (user && user.role.includes('client')) {
       // Check for client role directly

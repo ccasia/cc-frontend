@@ -266,7 +266,37 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, onC
                   You:{' '}
                 </Box>
               )}
-              {latestMessage.content}
+              {(() => {
+                const ft = latestMessage.fileType || '';
+                const isImage = ft.startsWith('image/');
+                const isVideo = ft.startsWith('video/');
+                const isFile = ft && !isImage && !isVideo;
+                if (isImage) {
+                  return (
+                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, verticalAlign: 'middle' }}>
+                      <Iconify icon="eva:image-outline" width={14} />
+                      {latestMessage.content || 'Photo'}
+                    </Box>
+                  );
+                }
+                if (isVideo) {
+                  return (
+                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, verticalAlign: 'middle' }}>
+                      <Iconify icon="eva:video-outline" width={14} />
+                      {latestMessage.content || 'Video'}
+                    </Box>
+                  );
+                }
+                if (isFile) {
+                  return (
+                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, verticalAlign: 'middle' }}>
+                      <Iconify icon="eva:file-text-outline" width={14} />
+                      {latestMessage.content || latestMessage.fileName || 'File'}
+                    </Box>
+                  );
+                }
+                return latestMessage.content;
+              })()}
             </>
           )}
         </Typography>

@@ -1,6 +1,8 @@
 import PropTypes from 'prop-types';
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 
+import { useSearchParams } from 'react-router-dom';
+
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
@@ -120,7 +122,7 @@ ScrollingName.propTypes = {
   name: PropTypes.string.isRequired,
 };
 
-function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false }) {
+function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false, autoExpand = false }) {
   // Get V4 submissions for this creator to check if they have any
   const { submissions, submissionsLoading } = useGetV4Submissions(campaign?.id, creator?.userId);
 
@@ -157,17 +159,10 @@ function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false
     return null;
   }
 
-  return (
-    <CreatorAccordion
-      creator={creator}
-      campaign={campaign}
-      isDisabled={isDisabled}
-      displayProducts={displayProducts}
-    />
-  );
+  return <CreatorAccordion creator={creator} campaign={campaign} isDisabled={isDisabled} autoExpand={autoExpand} />;
 }
 
-function CreatorAccordion({ creator, campaign, isDisabled = false, displayProducts }) {
+function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = false }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const [expandedSubmission, setExpandedSubmission] = useState(null);
@@ -175,6 +170,18 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, displayProduc
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
+
+  const displayProducts = useMemo(() => {
+    if (!creator || !campaign?.logistics?.length) return '';
+    const info = campaign.logistics.find((a) => a.creatorId === creator.user.id);
+    const items = info?.deliveryDetails?.items ?? [];
+    return items
+      .map(({ product, quantity }) =>
+        quantity > 1 ? `${product.productName} (${quantity})` : product.productName
+      )
+      .join(', ');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaign.logistics, creator.id]);
 
   const { campaignType } = campaign;
 
@@ -187,6 +194,31 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, displayProduc
   const handleListUpdate = useCallback(() => {
     submissionsMutate();
   }, [submissionsMutate]);
+
+  // Auto-expand the first PENDING_REVIEW submission when navigated from the dashboard modal
+  useEffect(() => {
+    if (!autoExpand || submissionsLoading) return;
+    const groupEntries = [
+      { prefix: 'video', list: grouped.videos },
+      { prefix: 'rawFootage', list: grouped.rawFootage },
+      { prefix: 'photo', list: grouped.photos },
+    ];
+    for (const { prefix, list } of groupEntries) {
+      const pending = (list || []).find(
+        (s) =>
+          s.status === 'PENDING_REVIEW' ||
+          s.status === 'APPROVE_LINK' ||
+          s.status === 'CLIENT_FEEDBACK'
+      );
+      if (pending) {
+        const key = `${prefix}-${pending.id}`;
+        setExpandedSubmission(key);
+        setRenderedSubmission(key);
+        break;
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoExpand, submissionsLoading]);
 
   const handleSubmissionUpdate = useCallback(
     (shouldCollapse = false) => {
@@ -923,7 +955,9 @@ CreatorAccordion.propTypes = {
 export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = false }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams] = useSearchParams();
+  const creatorParam = searchParams.get('creator') || '';
+  const [searchTerm, setSearchTerm] = useState(creatorParam);
   const [sortDirection, setSortDirection] = useState('asc');
 
   const handleSearchChange = useCallback((event) => {
@@ -1122,6 +1156,7 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
                 creator={creator}
                 campaign={campaign}
                 isDisabled={isDisabled}
+                autoExpand={!!creatorParam && searchTerm === creatorParam}
               />
             ))}
           </Stack>

@@ -170,16 +170,6 @@ export function useNavData() {
             title: 'Creator Discovery Tool',
             path: paths.dashboard.discoveryTool.root,
             icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
-            children: [
-              {
-                title: 'Platform Creators',
-                path: paths.dashboard.discoveryTool.root,
-              },
-              {
-                title: 'Non-Platform Creators',
-                path: paths.dashboard.discoveryTool.npc,
-              },
-            ],
           },
           // {
           //   title: 'My Tasks',
@@ -212,6 +202,12 @@ export function useNavData() {
             icon: <Iconify icon="mdi:account-star-outline" width={25} />,
           },
           {
+            roles: ['superadmin', 'god', 'sales_and_marketing'],
+            title: 'Videos of the Month',
+            path: paths.dashboard.videoOfTheMonth.root,
+            icon: <Iconify icon="mdi:star-outline" width={25} />,
+          },
+          {
             roles: ['superadmin', 'god'],
             title: 'Feedback',
             path: paths.dashboard.feedback.root,
@@ -241,7 +237,7 @@ export function useNavData() {
             icon: <Iconify icon="iconamoon:invoice" width={25} />,
           },
           {
-            roles: ['superadmin', 'BD', 'god', 'sales_and_marketing', 'CSL'],
+            roles: ['superadmin', 'BD', 'god', 'sales_and_marketing', 'CSL', 'CSM'],
             title: 'Draft Brief',
             path: paths.dashboard.campaign.briefs,
             icon: <Iconify icon="line-md:briefcase" width={25} />,
@@ -359,6 +355,26 @@ export function useNavData() {
   // CS Lead navigations - adminNavigations without calendar and chats
   const csLeadNavigations = useMemo(() => adminNavigations, [adminNavigations]);
 
+  const clientDemoNavigations = useMemo(
+    () => [
+      {
+        items: [
+          {
+            title: 'Client Discovery Tool',
+            path: paths.dashboard.discoveryTool.root,
+            icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
+          },
+          {
+            title: 'Campaigns',
+            path: paths.dashboard.demoCampaigns.root,
+            icon: ICONS.mycampaigns,
+          },
+        ],
+      },
+    ],
+    []
+  );
+
   // // add finance naviagation
   const navigations = useMemo(
     // eslint-disable-next-line no-nested-ternary
@@ -371,6 +387,9 @@ export function useNavData() {
       }
       if (user?.role === 'client') {
         return adminNavigations;
+      }
+      if (user?.role === 'client_demo') {
+        return clientDemoNavigations;
       }
       if (user?.role === 'admin' && user?.admin?.role?.name === 'Finance') {
         return financeNavigations;
@@ -390,11 +409,15 @@ export function useNavData() {
       return [];
     },
 
-    [adminNavigations, creatorNavigations, user, financeNavigations, csLeadNavigations]
+    [adminNavigations, creatorNavigations, user, financeNavigations, csLeadNavigations, clientDemoNavigations]
   );
 
   const data = useMemo(() => {
     const baseData = [...navigations];
+
+    if (user?.role === 'client_demo') {
+      return baseData;
+    }
 
     // CS Lead should not have access to calendar and chats
     if (user?.admin?.role?.name !== 'CSL') {

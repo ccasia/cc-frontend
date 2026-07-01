@@ -20,6 +20,7 @@ import {
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
+import socket from 'src/hooks/socket';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
@@ -141,6 +142,52 @@ const CampaignCreatorDeliverables = ({ campaign, isDisabled = false }) => {
     selectedCreator?.userId,
     campaign?.id
   );
+
+  useEffect(() => {
+    if (!socket || !campaign?.id) return undefined;
+
+    socket.emit('join-campaign', campaign.id);
+
+    const refreshSelectedCreator = () => {
+      submissionMutate();
+      deliverableMutate();
+    };
+
+    const handlePostingUpdated = (payload = {}) => {
+      if (payload.campaignId && payload.campaignId !== campaign.id) return;
+
+      if (payload.creatorId && payload.newStatus) {
+        setCreatorStatuses((prev) => ({
+          ...prev,
+          [payload.creatorId]: payload.newStatus,
+        }));
+      }
+
+      if (!payload.creatorId || payload.creatorId === selectedCreator?.userId) {
+        refreshSelectedCreator();
+      }
+    };
+
+    const handleCampaignUpdated = (payload = {}) => {
+      if (payload.campaignId && payload.campaignId !== campaign.id) return;
+      refreshSelectedCreator();
+    };
+
+    socket.on('v2:posting:updated', handlePostingUpdated);
+    socket.on('v4:posting:updated', handlePostingUpdated);
+    socket.on('v2:campaign:updated', handleCampaignUpdated);
+
+    return () => {
+      socket.off('v2:posting:updated', handlePostingUpdated);
+      socket.off('v4:posting:updated', handlePostingUpdated);
+      socket.off('v2:campaign:updated', handleCampaignUpdated);
+    };
+  }, [
+    campaign?.id,
+    deliverableMutate,
+    selectedCreator?.userId,
+    submissionMutate,
+  ]);
 
   // Find submissions by type
   const firstDraftSubmission = useMemo(() => {

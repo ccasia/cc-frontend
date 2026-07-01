@@ -49,6 +49,7 @@ import ViewOnlyBanner from 'src/components/banner/view-only-banner';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
+import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 // HIDE: logistics
 import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
@@ -60,7 +61,6 @@ import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignOverviewClient from '../campaign-overview-client';
-import ActivateCampaignDialog from '../activate-campaign-dialog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailContentClient from '../campaign-detail-content-client';
@@ -109,11 +109,15 @@ const clientAllowedTabs = [
   'faq',
 ];
 
+// Demo campaigns only have brief data — hide creator/agreement/deliverable/analytics/invoice tabs.
+const demoAllowedTabs = ['overview', 'campaign-content', 'logistics', 'faq'];
+
 const CampaignDetailView = ({
   id,
   publicReadonly = false,
   forcedTab = null,
   publicApprovalEntries = [],
+  isDemo = false,
 }) => {
   const settings = useSettingsContext();
   const router = useRouter();
@@ -123,8 +127,7 @@ const CampaignDetailView = ({
     campaign,
     campaignLoading,
     mutate: campaignMutate,
-  } = useGetCampaignByIdScoped(id, publicReadonly);
-
+  } = useGetCampaignByIdScoped(id, publicReadonly, isDemo);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
@@ -148,6 +151,7 @@ const CampaignDetailView = ({
 
   const [pages, setPages] = useState(0);
   const lgUp = useResponsive('up', 'lg');
+  const smDown = useResponsive('down', 'sm');
   const templateModal = useBoolean();
   const linking = useBoolean();
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -194,7 +198,7 @@ const CampaignDetailView = ({
 
   const isCampaignHasSpreadSheet = campaign?.spreadSheetURL;
 
-  const { data: campaignAgreements } = useGetAgreements(campaign?.id);
+  const { data: campaignAgreements } = useGetAgreements(isDemo ? null : campaign?.id);
 
   const agreementSubmissions = useMemo(
     () => campaign?.submission?.filter((s) => s.submissionType?.type === 'AGREEMENT_FORM'),
@@ -232,12 +236,12 @@ const CampaignDetailView = ({
   };
 
   const [currentTab, setCurrentTab] = useState(
-    forcedTab || localStorage.getItem('campaigndetail') || 'campaign-content'
+    forcedTab || searchParams.get('tab') || localStorage.getItem('campaigndetail') || 'campaign-content'
   );
 
-  // Check if user is client
+  // Check if user is client (demo sessions render the read-only client view)
   const isClient =
-    publicReadonly || user?.role === 'client' || user?.admin?.role?.name === 'Client';
+    publicReadonly || isDemo || user?.role === 'client' || user?.admin?.role?.name === 'Client';
 
   // Check user roles for activation
   const isCSL = user?.admin?.role?.name === 'CSL';
@@ -258,7 +262,9 @@ const CampaignDetailView = ({
       return;
     }
 
-    if (isClient) {
+    if (isDemo) {
+      router.push(paths.dashboard.demoCampaigns.root);
+    } else if (isClient) {
       router.push(paths.dashboard.client);
     } else {
       router.push(paths.dashboard.campaign.root);
@@ -270,11 +276,12 @@ const CampaignDetailView = ({
 
   // Check if current tab is valid for client users
   useEffect(() => {
-    if (isClient && !getAllowedTabs(campaign?.submissionVersion).includes(currentTab)) {
+    const allowed = isDemo ? demoAllowedTabs : getAllowedTabs(campaign?.submissionVersion);
+    if (isClient && !allowed.includes(currentTab)) {
       setCurrentTab('overview');
       localStorage.setItem('campaigndetail', 'overview');
     }
-  }, [currentTab, isClient, campaign?.submissionVersion]);
+  }, [currentTab, isClient, isDemo, campaign?.submissionVersion]);
 
   // Approval public page can force a specific readonly background tab.
   useEffect(() => {
@@ -307,7 +314,7 @@ const CampaignDetailView = ({
     return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
   }, [isClient, campaign?.submissionVersion]);
 
-  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(id);
+  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(isDemo ? null : id);
 
   const tabsContainerRef = useRef(null);
 
@@ -446,7 +453,7 @@ const CampaignDetailView = ({
           }}
         >
           {/* Show different tabs based on user role */}
-          {(user?.role === 'client'
+          {(user?.role === 'client' || isDemo
             ? // Client user tabs (no Pitches tab)
               [
                 { label: 'Overview', value: 'overview' },
@@ -514,6 +521,7 @@ const CampaignDetailView = ({
               ]
           )
             .filter(Boolean)
+            .filter((tab) => !isDemo || demoAllowedTabs.includes(tab.value))
             .map((tab) => (
               <Button
                 key={tab.value}
@@ -1157,11 +1165,35 @@ const CampaignDetailView = ({
         onClose={() => campaignLog.onFalse()}
       />
 
-      <ActivateCampaignDialog
+      <Dialog
+        fullWidth
+        fullScreen
+        PaperProps={{
+          sx: {
+            bgcolor: (theme) => theme.palette.background.paper,
+            borderRadius: 2,
+            p: 4,
+            m: 2,
+            height: '97vh',
+            overflow: 'hidden',
+            ...(smDown && {
+              height: 1,
+              m: 0,
+            }),
+          },
+        }}
+        scroll="paper"
         open={activateDialog.value}
-        onClose={() => activateDialog.onFalse()}
-        campaignId={id}
-      />
+      >
+        {activateDialog.value && (
+          <CreateCampaignFormV2
+            mode="activate"
+            campaignId={id}
+            onClose={() => activateDialog.onFalse()}
+            onSuccess={() => campaignMutate()}
+          />
+        )}
+      </Dialog>
 
       <InitialActivateCampaignDialog
         open={initialActivateDialog.value}
@@ -1303,4 +1335,5 @@ CampaignDetailView.propTypes = {
   publicReadonly: PropTypes.bool,
   forcedTab: PropTypes.string,
   publicApprovalEntries: PropTypes.array,
+  isDemo: PropTypes.bool,
 };

@@ -37,6 +37,7 @@ import {
 
 import ChatMessageList from 'src/sections/chat/chat-message-list';
 import ChatNavItem from 'src/sections/chat/chat-nav-item';
+import ChatArchiveModal from 'src/sections/chat/chatArchiveModal';
 
 // ----------------------------------------------------------------------
 
@@ -254,6 +255,7 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
 
   const [threadMessages, setThreadMessages] = useState({});
   const [optimisticMessages, setOptimisticMessages] = useState({});
+  const [openArchiveModal, setOpenArchiveModal] = useState(false);
   const [archivedChats, setArchivedChats] = useState([]);
 
   // Message input state
@@ -516,7 +518,7 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
 
         <Stack direction="row" spacing={0.5}>
           <IconButton
-            onClick={handleArchive}
+            onClick={() => setOpenArchiveModal(true)}
             sx={{
               border: 1,
               borderRadius: 1,
@@ -698,6 +700,14 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
           </IconButton>
         </Stack>
       </Box>
+
+      <ChatArchiveModal
+        open={openArchiveModal}
+        onClose={() => setOpenArchiveModal(false)}
+        onArchive={async () => { await handleArchive(); setOpenArchiveModal(false); }}
+        archivedChats={archivedChats}
+        threadId={threadId}
+      />
     </Box>
   );
 }

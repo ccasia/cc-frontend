@@ -65,6 +65,10 @@ const STATUS_OPTIONS = [
     value: 'unlinkPackage',
     label: 'Unlinked package',
   },
+  {
+    value: 'DEMO',
+    label: 'Demo',
+  },
 ];
 
 const findLatestPackage = (packages) => {
@@ -81,6 +85,11 @@ const findLatestPackage = (packages) => {
 
   return latestPackage;
 };
+
+const isDemoCompany = (company) =>
+  company?.clients?.some(
+    (client) => client?.clientType === 'demoClient' || client?.user?.role === 'client_demo'
+  );
 
 const BrandLists = ({ dataFiltered }) => {
   const table = useTable();
@@ -106,6 +115,10 @@ const BrandLists = ({ dataFiltered }) => {
       if (status === 'unlinkPackage') {
         return dataFiltered.filter((client) => findLatestPackage(client?.subscriptions) === null)
           ?.length;
+      }
+
+      if (status === 'DEMO') {
+        return dataFiltered.filter((client) => isDemoCompany(client))?.length;
       }
 
       return (
@@ -161,6 +174,7 @@ const BrandLists = ({ dataFiltered }) => {
                 color={
                   (tab.value === 'ACTIVE' && 'success') ||
                   (tab.value === 'INACTIVE' && 'error') ||
+                  (tab.value === 'DEMO' && 'warning') ||
                   'default'
                 }
               >
@@ -284,7 +298,11 @@ function applyFilter({ inputData, comparator, filters }) {
     inputData = inputData?.filter((client) => findLatestPackage(client?.subscriptions) === null);
   }
 
-  if (status !== 'all' && status !== 'unlinkPackage') {
+  if (status === 'DEMO') {
+    inputData = inputData?.filter((client) => isDemoCompany(client));
+  }
+
+  if (status !== 'all' && status !== 'unlinkPackage' && status !== 'DEMO') {
     inputData = inputData?.filter(
       (client) => findLatestPackage(client.subscriptions)?.status === status
     );

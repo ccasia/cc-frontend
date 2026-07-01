@@ -208,7 +208,7 @@ const ApprovalSetupModal = ({
               </Typography>
               <TextField
                 fullWidth
-                placeholder="Enter approver name"
+                placeholder="Enter approver namess"
                 value={approverName}
                 onChange={(e) => { setApproverName(e.target.value); setNameError(''); }}
                 error={Boolean(nameError)}
@@ -290,7 +290,29 @@ const ApprovalSetupModal = ({
                         },
                       }}
                     >
-                      {selectedPitches.map((pitch) => (
+                      {selectedPitches.map((pitch) => {
+                        const creator = pitch.user?.creator;
+                        const igUsername =
+                          creator?.instagramUser?.username ||
+                          extractUsernameFromProfileLink(creator?.instagramProfileLink);
+                        const tkUsername =
+                          creator?.tiktokUser?.username ||
+                          extractUsernameFromProfileLink(creator?.tiktokProfileLink);
+                        const guestRawLink =
+                          !igUsername && !tkUsername
+                            ? creator?.profileLink || pitch.user?.profileLink
+                            : null;
+                        const guestUsername = guestRawLink
+                          ? extractUsernameFromProfileLink(guestRawLink)
+                          : null;
+                        const guestHref = guestRawLink
+                          ? guestRawLink.startsWith('http')
+                            ? guestRawLink
+                            : `https://${guestRawLink}`
+                          : null;
+                        const guestIsTiktok = pitch.selectedPlatform === 'tiktok';
+
+                        return (
                         <TableRow
                           key={pitch.id}
                           sx={{
@@ -312,30 +334,55 @@ const ApprovalSetupModal = ({
                                   {pitch.user?.name || '-'}
                                 </Typography>
                                 <Stack direction="row" spacing={1.25} alignItems="center">
-                                  {(pitch.user?.creator?.instagramUser?.username
-                                    || extractUsernameFromProfileLink(pitch.user?.creator?.instagramProfileLink)) && (
-                                      <Stack direction="row" spacing={0.4} alignItems="center">
-                                        <Iconify icon="mdi:instagram" width={14} sx={{ color: '#E4405F' }} />
-                                        <Typography sx={{ fontSize: '0.8rem' }} color="text.secondary" noWrap>
-                                          {pitch.user?.creator?.instagramUser?.username
-                                            || extractUsernameFromProfileLink(
-                                              pitch.user?.creator?.instagramProfileLink
-                                            )}
-                                        </Typography>
-                                      </Stack>
-                                    )}
-                                  {(pitch.user?.creator?.tiktokUser?.username
-                                    || extractUsernameFromProfileLink(pitch.user?.creator?.tiktokProfileLink)) && (
-                                      <Stack direction="row" spacing={0.4} alignItems="center">
-                                        <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#000000' }} />
-                                        <Typography sx={{ fontSize: '0.8rem' }} color="text.secondary" noWrap>
-                                          {pitch.user?.creator?.tiktokUser?.username
-                                            || extractUsernameFromProfileLink(
-                                              pitch.user?.creator?.tiktokProfileLink
-                                            )}
-                                        </Typography>
-                                      </Stack>
-                                    )}
+                                  {igUsername && (
+                                    <Stack direction="row" spacing={0.4} alignItems="center">
+                                      <Iconify icon="mdi:instagram" width={14} sx={{ color: '#E4405F' }} />
+                                      <Typography
+                                        component="a"
+                                        href={`https://www.instagram.com/${igUsername}/`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        sx={{ fontSize: '0.8rem', color: '#636366', textDecoration: 'none', '&:hover': { color: '#1340FF', textDecoration: 'underline' } }}
+                                        noWrap
+                                      >
+                                        {igUsername}
+                                      </Typography>
+                                    </Stack>
+                                  )}
+                                  {tkUsername && (
+                                    <Stack direction="row" spacing={0.4} alignItems="center">
+                                      <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#000000' }} />
+                                      <Typography
+                                        component="a"
+                                        href={`https://www.tiktok.com/@${tkUsername}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        sx={{ fontSize: '0.8rem', color: '#636366', textDecoration: 'none', '&:hover': { color: '#1340FF', textDecoration: 'underline' } }}
+                                        noWrap
+                                      >
+                                        {tkUsername}
+                                      </Typography>
+                                    </Stack>
+                                  )}
+                                  {guestRawLink && (
+                                    <Stack direction="row" spacing={0.4} alignItems="center">
+                                      <Iconify
+                                        icon={guestIsTiktok ? 'ic:baseline-tiktok' : 'mdi:instagram'}
+                                        width={14}
+                                        sx={{ color: guestIsTiktok ? '#000000' : '#E4405F' }}
+                                      />
+                                      <Typography
+                                        component="a"
+                                        href={guestHref}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        sx={{ fontSize: '0.8rem', color: '#636366', textDecoration: 'none', '&:hover': { color: '#1340FF', textDecoration: 'underline' } }}
+                                        noWrap
+                                      >
+                                        {guestUsername || guestRawLink}
+                                      </Typography>
+                                    </Stack>
+                                  )}
                                 </Stack>
                               </Box>
                             </Stack>
@@ -398,7 +445,8 @@ const ApprovalSetupModal = ({
                             </IconButton>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>

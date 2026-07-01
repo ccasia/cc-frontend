@@ -3,7 +3,6 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
@@ -41,6 +40,7 @@ import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 
+import { useNavigate, useLocation } from 'react-router';
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
@@ -436,8 +436,20 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
   const { data, isLoading, mutate: mutateAgreements } = useGetAgreements(campaign?.id);
   const { socket } = useSocketContext();
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(
+    () => new URLSearchParams(location.search).get('creator') || ''
+  );
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.has('creator')) {
+      params.delete('creator');
+      navigate({ search: params.toString() }, { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
   const [sortColumn, setSortColumn] = useState('name'); // 'name', 'date', 'status'

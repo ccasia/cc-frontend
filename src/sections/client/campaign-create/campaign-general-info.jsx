@@ -47,7 +47,7 @@ FormField.propTypes = {
   required: PropTypes.bool,
 };
 
-const ClientCampaignGeneralInfo = () => {
+const ClientCampaignGeneralInfo = ({ isDemo = false }) => {
   const { data, isLoading, mutate } = useSWR(endpoints.campaign.total, fetcher);
   const { setValue, watch } = useFormContext();
   const { availableCredits, isLoading: isLoadingCredits } = useGetClientCredits();
@@ -61,6 +61,12 @@ const ClientCampaignGeneralInfo = () => {
   const postingEndDate = watch('postingEndDate');
 
   const credits = watch('campaignCredits');
+
+  // Demo sessions show "Unlimited"; real clients show their live balance.
+  let availableCreditsLabel = 'Unlimited';
+  if (!isDemo) {
+    availableCreditsLabel = isLoadingCredits ? 'Loading...' : availableCredits.toString();
+  }
 
   // Persist available credits for parent validation
   useEffect(() => {
@@ -90,13 +96,21 @@ const ClientCampaignGeneralInfo = () => {
 
   useEffect(() => {
     try {
+      // Demo sessions never gate on credits.
       window.dispatchEvent(
-        new CustomEvent('client-campaign-credits-error', { detail: blockInvalid })
+        new CustomEvent('client-campaign-credits-error', { detail: isDemo ? false : blockInvalid })
       );
     } catch (e) {
       // Ignore failures when notifying window listeners
     }
-  }, [blockInvalid]);
+  }, [blockInvalid, isDemo]);
+
+  // Demo sessions have no real credits — keep a fixed prefilled value.
+  useEffect(() => {
+    if (isDemo) {
+      setValue('campaignCredits', 10);
+    }
+  }, [isDemo, setValue]);
 
   useEffect(() => {
     if (socket) {
@@ -120,9 +134,9 @@ const ClientCampaignGeneralInfo = () => {
     }
   }, [setValue, data, watch]);
 
-  // Auto-set end date 14 days after start date
+  // Auto-set end date 14 days after start date — only when no end date is set
   useEffect(() => {
-    if (startDate) {
+    if (startDate && !endDate) {
       // Ensure startDate is a valid dayjs object
       const start = dayjs(startDate);
       if (start.isValid()) {
@@ -131,17 +145,17 @@ const ClientCampaignGeneralInfo = () => {
         setValue('campaignEndDate', newEndDate.toDate());
       }
     }
-  }, [startDate, setValue]);
+  }, [startDate, endDate, setValue]);
 
   useEffect(() => {
-    if (postingStartDate) {
+    if (postingStartDate && !postingEndDate) {
       const start = dayjs(postingStartDate);
       if (start.isValid()) {
         const newEndDate = start.add(7, 'day');
         setValue('postingEndDate', newEndDate.toDate());
       }
     }
-  }, [postingStartDate, setValue]);
+  }, [postingStartDate, postingEndDate, setValue]);
 
   return (
     <>
@@ -149,7 +163,11 @@ const ClientCampaignGeneralInfo = () => {
       <Box sx={{ maxWidth: '816px', mx: 'auto', mb: 8, mt: 4 }}>
         <Stack alignItems="self-end" spacing={0.5} mb={2}>
           <Typography variant="subtitle2">Campaign ID</Typography>
-          {!isLoading && <Label color="info">C0{data + 1}</Label>}
+          {isDemo ? (
+            <Label color="info">C0001</Label>
+          ) : (
+            !isLoading && <Label color="info">C0{data + 1}</Label>
+          )}
         </Stack>
 
         {/* Campaign Title & Industry - Two Columns */}
@@ -217,7 +235,7 @@ const ClientCampaignGeneralInfo = () => {
               <Grid item xs={6}>
                 <FormField label="Campaign Start Date">
                   <DatePicker
-                    value={startDate}
+                    value={startDate ? dayjs(startDate).toDate() : null}
                     onChange={(newValue) => {
                       setValue('campaignStartDate', newValue, { shouldValidate: true });
                     }}
@@ -236,7 +254,7 @@ const ClientCampaignGeneralInfo = () => {
               <Grid item xs={6}>
                 <FormField label="Campaign End Date">
                   <DatePicker
-                    value={endDate}
+                    value={endDate ? dayjs(endDate).toDate() : null}
                     onChange={(newValue) => {
                       setValue('campaignEndDate', newValue, { shouldValidate: true });
                     }}
@@ -260,7 +278,7 @@ const ClientCampaignGeneralInfo = () => {
                 <FormField label='Posting Period'>
                   <Box display="flex" flexDirection="row" gap={2}>
                     <DatePicker
-                      value={postingStartDate}
+                      value={postingStartDate ? dayjs(postingStartDate).toDate() : null}
                       onChange={(newValue) => {
                         setValue('postingStartDate', newValue, { shouldValidate: true });
                       }}
@@ -273,7 +291,7 @@ const ClientCampaignGeneralInfo = () => {
                       }}
                     />
                     <DatePicker
-                      value={postingEndDate}
+                      value={postingEndDate ? dayjs(postingEndDate).toDate() : null}
                       onChange={(newValue) => {
                         setValue('postingEndDate', newValue, { shouldValidate: true });
                       }}
@@ -326,7 +344,7 @@ const ClientCampaignGeneralInfo = () => {
                     fullWidth
                     disabled
                     size="small"
-                    value={isLoadingCredits ? 'Loading...' : availableCredits.toString()}
+                    value={availableCreditsLabel}
                     InputProps={{
                       readOnly: true,
                     }}
@@ -340,14 +358,15 @@ const ClientCampaignGeneralInfo = () => {
                     name="campaignCredits"
                     placeholder="Assign Credits"
                     type="number"
+                    disabled={isDemo}
                     InputProps={{
                       inputProps: {
                         min: 1,
                         max: numericAvailable > 0 ? numericAvailable : 0,
                       },
                     }}
-                    helperText={creditHelperText}
-                    error={Boolean(creditHelperText)}
+                    helperText={isDemo ? '' : creditHelperText}
+                    error={isDemo ? false : Boolean(creditHelperText)}
                     sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
                   />
                 </FormField>
@@ -371,6 +390,10 @@ const ClientCampaignGeneralInfo = () => {
       </Box>
     </>
   );
+};
+
+ClientCampaignGeneralInfo.propTypes = {
+  isDemo: PropTypes.bool,
 };
 
 export default memo(ClientCampaignGeneralInfo);
