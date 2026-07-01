@@ -37,10 +37,7 @@ function MobileSubmissionRow({
       switch (submissionStatus) {
         case 'APPROVED':
         case 'CLIENT_APPROVED':
-          if (
-            campaignType === 'normal' &&
-            (submissionType === 'video' || submissionType === 'photo')
-          ) {
+          if (campaignType === 'normal' && (submissionType === 'video' || submissionType === 'photo')) {
             return getStatusColor('PENDING_LINK');
           }
           return getStatusColor(submissionStatus);

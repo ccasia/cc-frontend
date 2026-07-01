@@ -52,6 +52,8 @@ const PostingLinkSuperadminView = lazy(
 const AdminEditCampaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
 );
+// const DraftCampaignList = lazy(() => import('src/pages/dashboard/campaign/draftList'));
+// const DraftCampaignDetail = lazy(() => import('src/pages/dashboard/campaign/draftDetail'));
 const CampaignBriefList = lazy(() => import('src/pages/dashboard/campaign/briefList'));
 const CampaignBriefDetail = lazy(() => import('src/pages/dashboard/campaign/briefDetail'));
 const CampaignPitchDetail = lazy(
@@ -97,8 +99,11 @@ const Report = lazy(() => import('src/pages/dashboard/report/report'));
 
 // Creator Discovery Tool
 const DiscoveryTool = lazy(() => import('src/pages/dashboard/discovery-tool/discovery-tool'));
-const DiscoveryToolNpc = lazy(
-  () => import('src/pages/dashboard/discovery-tool/discovery-tool-npc')
+
+// Client Demo Campaigns
+const DemoCampaigns = lazy(() => import('src/pages/dashboard/demo-campaigns/demo-campaigns'));
+const DemoCampaignDetails = lazy(() =>
+  import('src/pages/dashboard/demo-campaigns/demo-campaign-details')
 );
 
 // Roles
@@ -117,6 +122,10 @@ const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 
 // Credit Tier
 const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tier'));
+// Videos of the Month
+const VideoOfTheMonth = lazy(() =>
+  import('src/pages/dashboard/video-of-the-month/video-of-the-month')
+);
 
 // Feedback
 const Feedback = lazy(() => import('src/pages/dashboard/feedback/feedback'));
@@ -253,17 +262,30 @@ export const dashboardRoutes = [
         children: [
           {
             element: (
-              <RoleBasedGuard roles={['superadmin', 'god', 'sales_and_marketing']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'god', 'client_demo']} hasContent>
                 <DiscoveryTool />
               </RoleBasedGuard>
             ),
             index: true,
           },
+        ],
+      },
+      {
+        path: 'demo-campaigns',
+        children: [
           {
-            path: 'npc',
             element: (
-              <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
-                <DiscoveryToolNpc />
+              <RoleBasedGuard roles={['superadmin', 'god', 'client_demo']} hasContent>
+                <DemoCampaigns />
+              </RoleBasedGuard>
+            ),
+            index: true,
+          },
+          {
+            path: ':id',
+            element: (
+              <RoleBasedGuard roles={['superadmin', 'god', 'client_demo']} hasContent>
+                <DemoCampaignDetails />
               </RoleBasedGuard>
             ),
           },
@@ -329,7 +351,7 @@ export const dashboardRoutes = [
           {
             path: 'client/:id',
             element: (
-              <RoleBasedGuard roles={['client', 'admin', 'superadmin']} hasContent>
+              <RoleBasedGuard roles={['client', 'admin', 'superadmin', 'client_demo']} hasContent>
                 <ClientMediaKit />
               </RoleBasedGuard>
             ),
@@ -698,6 +720,14 @@ export const dashboardRoutes = [
         element: (
           <RoleBasedGuard roles={['superadmin', 'god', 'sales_and_marketing']} hasContent>
             <CreditTier />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'video-of-the-month',
+        element: (
+          <RoleBasedGuard roles={['superadmin', 'god', 'sales_and_marketing']} hasContent>
+            <VideoOfTheMonth />
           </RoleBasedGuard>
         ),
       },

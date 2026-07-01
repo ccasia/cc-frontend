@@ -26,12 +26,17 @@ export const useGetCampaignById = (id) => {
   return memoizedValue;
 };
 
-export const useGetCampaignByIdScoped = (id, usePublicEndpoint = false) => {
-  const endpoint = id
-    ? usePublicEndpoint
-      ? endpoints.campaign.getCampaignPitchById(id)
-      : endpoints.campaign.getCampaignById(id)
-    : null;
+export const useGetCampaignByIdScoped = (id, usePublicEndpoint = false, isDemo = false) => {
+  let endpoint = null;
+  if (id) {
+    if (isDemo) {
+      endpoint = endpoints.clientDemo.getCampaign(id);
+    } else if (usePublicEndpoint) {
+      endpoint = endpoints.campaign.getCampaignPitchById(id);
+    } else {
+      endpoint = endpoints.campaign.getCampaignById(id);
+    }
+  }
 
   const { data, error, mutate, isLoading } = useSWR(endpoint, fetcher, options);
 

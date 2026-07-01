@@ -58,8 +58,8 @@ const VideoCard = ({
   handleAdminSendToCreator,
   // View-only mode
   isDisabled = false,
-  // Feedback IDs already shown on previous draft cards
-  excludeFeedbackIds,
+  // Feedback that belongs to the current draft (previous-draft feedback is shown on its own cards)
+  currentFeedback,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -134,27 +134,12 @@ const VideoCard = ({
     isVideoNotApproved &&
     !hasRevisionRequested;
 
-  const getVideoFeedback = () => {
-    let feedback;
-    // Check for individual feedback first
-    if (videoItem.individualFeedback && videoItem.individualFeedback.length > 0) {
-      feedback = [...videoItem.individualFeedback];
-    } else {
-      // Fallback to submission-level feedback
-      feedback = [...(submission?.feedback || [])]
-        .filter((f) => f.videosToUpdate?.includes(videoItem.id))
-        .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
-    }
-
-    // Exclude feedback already shown on previous draft cards
-    if (excludeFeedbackIds?.size > 0) {
-      feedback = feedback.filter((f) => !excludeFeedbackIds.has(f.id));
-    }
-
-    return feedback;
-  };
-
-  const videoFeedback = getVideoFeedback();
+  // Feedback for the current draft is computed in the parent (DraftVideos) so that
+  // previous-draft feedback is mapped onto its own cards and never leaks here.
+  // Display newest first.
+  const videoFeedback = [...(currentFeedback || [])].sort((a, b) =>
+    dayjs(b.createdAt).diff(dayjs(a.createdAt))
+  );
 
   // Helper function to determine border color
   const getBorderColor = () => {
@@ -993,8 +978,8 @@ VideoCard.propTypes = {
   handleAdminSendToCreator: PropTypes.func,
   // View-only mode
   isDisabled: PropTypes.bool,
-  // Feedback IDs already shown on previous draft cards
-  excludeFeedbackIds: PropTypes.instanceOf(Set),
+  // Feedback that belongs to the current draft
+  currentFeedback: PropTypes.array,
 };
 
 const DraftVideos = ({
@@ -1201,14 +1186,15 @@ const DraftVideos = ({
     }
   };
 
-  // Map feedback entries to previous drafts chronologically
-  // When admin requests changes → Feedback record created → creator re-uploads → old URL appended to previousDrafts
-  // So previousDrafts[0] (oldest) corresponds to the oldest feedback, etc.
+  // Split each video's feedback between its previous-draft cards and its current card.
+  // The deliverables endpoint inherits the whole resubmission chain's feedback onto the
+  // current video, so we partition it here by position: the oldest N feedback entries map
+  // to the N previous drafts, and anything left over belongs to the current upload.
+  // When admin requests changes → Feedback record created → creator re-uploads → old URL
+  // appended to previousDrafts, so previousDrafts[0] (oldest) lines up with the oldest feedback.
   const feedbackByVideo = useMemo(() => {
     const map = {};
     deliverables?.videos?.forEach((video) => {
-      if (!video.previousDrafts?.length) return;
-
       let allFeedback = [];
       if (video.individualFeedback?.length > 0) {
         allFeedback = [...video.individualFeedback];
@@ -1221,14 +1207,21 @@ const DraftVideos = ({
       // Sort ascending (oldest first) to match previousDrafts order
       allFeedback.sort((a, b) => dayjs(a.createdAt).diff(dayjs(b.createdAt)));
 
-      const draftFeedback = []; // feedback[i] → previousDrafts[i]
-      const matchedIds = new Set();
-      for (let i = 0; i < video.previousDrafts.length && i < allFeedback.length; i += 1) {
-        draftFeedback.push(allFeedback[i]);
-        if (allFeedback[i].id) matchedIds.add(allFeedback[i].id);
-      }
+      // Dedupe (by id, falling back to a content+createdAt signature) to guard against
+      // duplicate feedback rows skewing the positional split.
+      const seen = new Set();
+      allFeedback = allFeedback.filter((f) => {
+        const key = f.id || `${f.content}|${f.createdAt}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
 
-      map[video.id] = { draftFeedback, matchedIds };
+      const prevCount = video.previousDrafts?.length || 0;
+      map[video.id] = {
+        draftFeedback: allFeedback.slice(0, prevCount), // feedback[i] → previousDrafts[i]
+        currentFeedback: allFeedback.slice(prevCount), // remaining feedback → current draft
+      };
     });
     return map;
   }, [deliverables?.videos, submission?.feedback]);
@@ -1291,7 +1284,7 @@ const DraftVideos = ({
                   handleAdminEditFeedback={handleAdminEditFeedback}
                   handleAdminSendToCreator={handleAdminSendToCreator}
                   isDisabled={isDisabled}
-                  excludeFeedbackIds={feedbackByVideo[video.id]?.matchedIds}
+                  currentFeedback={feedbackByVideo[video.id]?.currentFeedback}
                 />
               </Box>
               {video.previousDrafts?.length > 0 && (
@@ -1470,7 +1463,7 @@ const DraftVideos = ({
                   handleAdminEditFeedback={handleAdminEditFeedback}
                   handleAdminSendToCreator={handleAdminSendToCreator}
                   isDisabled={isDisabled}
-                  excludeFeedbackIds={feedbackByVideo[video.id]?.matchedIds}
+                  currentFeedback={feedbackByVideo[video.id]?.currentFeedback}
                 />
               </Grid>
               {video.previousDrafts?.length > 0 && (

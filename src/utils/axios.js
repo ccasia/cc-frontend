@@ -6,7 +6,7 @@ import { HOST_API } from 'src/config-global';
 
 const axiosInstance = axios.create({ baseURL: HOST_API });
 
-// axiosInstance.defaults.withCredentials = false;
+// axiosInstance.defaults.withCredentials = true;
 
 axiosInstance.interceptors.request.use((request) => {
   request.headers.app = 'Cult Creative App';
@@ -33,9 +33,25 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
+  videoOfTheMonth: {
+    list: '/api/video-of-the-month',
+    submissions: '/api/video-of-the-month/submissions',
+    create: '/api/video-of-the-month',
+    update: (id) => `/api/video-of-the-month/${id}`,
+    delete: (id) => `/api/video-of-the-month/${id}`,
+  },
   dashboard: {
     stats: '/api/dashboard/stats',
     campaigns: '/api/dashboard/campaigns',
+    attention: '/api/dashboard/attention',
+    newlyApproved: '/api/dashboard/newly-approved',
+    agreementsPending: '/api/dashboard/agreements-pending',
+    draftsPending: '/api/dashboard/drafts-pending',
+    pitchesPending: '/api/dashboard/pitches-pending',
+    linksPending: '/api/dashboard/links-pending',
+    clientFeedbacks: '/api/dashboard/client-feedbacks',
+    overdueInvoices: '/api/dashboard/overdue-invoices',
+    deleteAgreement: (id) => `/api/dashboard/agreements/${id}`,
   },
   analytics: {
     creatorGrowth: '/api/analytics/v2/creator-growth',
@@ -240,6 +256,11 @@ export const endpoints = {
     shortlistCreator: '/api/campaign/shortlistCreator',
     guestShortListCreator: '/api/campaign/v3/shortlistCreator/guest',
     activateClientCampaign: (id) => `/api/campaign/activateClientCampaign/${id}`,
+    activateCampaignFull: (id) => `/api/campaign/activateCampaignFull/${id}`,
+    getDrafts: '/api/campaign/drafts',
+    deleteDraft: (id) => `/api/campaign/${id}/draft`,
+    submitDraftForReview: (id) => `/api/campaign/${id}/submit-for-review`,
+    unlinkCompany: (id) => `/api/campaign/${id}/unlink-company`,
     timeline: {
       createNewTimeline: '/api/campaign/createNewTimeline',
       defaultTimeline: '/api/campaign/defaultTimeline',
@@ -343,6 +364,8 @@ export const endpoints = {
         `/api/submissions/v4/submission/${submissionId}/send-to-creator`,
       sendToClient: (submissionId) =>
         `/api/submissions/v4/submission/${submissionId}/send-to-client`,
+      updateCaption: (submissionId) =>
+        `/api/submissions/v4/submission/${submissionId}/caption`,
       resolveComment: (commentId) => `/api/submissions/v4/comments/${commentId}/resolve`,
       toggleCommentVisibility: (commentId) =>
         `/api/submissions/v4/comments/${commentId}/visibility`,
@@ -403,8 +426,10 @@ export const endpoints = {
   },
   discovery: {
     creators: '/api/discovery/creators',
-    nonPlatformCreators: '/api/discovery/non-platform-creators',
+    creatorsExportData: '/api/discovery/creators/export-data',
     inviteCreators: '/api/discovery/invite-creators',
+    bookmarkLists: '/api/discovery/bookmark-lists',
+    bookmarkListCreators: '/api/discovery/bookmark-lists/creators',
   },
   invoice: {
     getAll: '/api/invoice/',
@@ -447,6 +472,15 @@ export const endpoints = {
     checkCompany: '/api/client/checkCompany',
     createCompany: '/api/client/createCompany',
     createCampaign: '/api/client/createClientCampaign',
+  },
+  clientDemo: {
+    create: '/api/client-demo',
+    session: (token) => `/api/client-demo/session/${token}`,
+    linkByCompany: (companyId) => `/api/client-demo/company/${companyId}/link`,
+    regenerate: (companyId) => `/api/client-demo/company/${companyId}/regenerate`,
+    createCampaign: '/api/client-demo/campaigns',
+    listCampaigns: '/api/client-demo/campaigns',
+    getCampaign: (id) => `/api/client-demo/campaigns/${id}`,
   },
   approvalRequests: {
     create: '/api/approval-requests',

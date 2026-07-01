@@ -30,6 +30,9 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { fetcher, endpoints } from 'src/utils/axios';
@@ -74,6 +77,16 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
   const [loading, setLoading] = useState(false);
 
   const [showUploadOption, setShowUploadOption] = useState(false);
+  const [paymentGateOpen, setPaymentGateOpen] = useState(false);
+
+  const { user } = useAuthContext();
+  const router = useRouter();
+
+  const hasCompletePaymentDetails = !!(
+    user?.paymentForm?.bankAccountName?.trim() &&
+    user?.paymentForm?.bankAccountNumber?.trim() &&
+    user?.paymentForm?.icNumber?.trim()
+  );
 
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
@@ -270,13 +283,21 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
     }
   };
 
-  // Handler to open the upload modal with a clean state
+  // Handler to open the upload modal with a clean state (gated by payment details)
   const handleOpenUploadModal = () => {
-    reset(); // Clears the react-hook-form state
+    if (!hasCompletePaymentDetails) {
+      setPaymentGateOpen(true);
+      return;
+    }
+    reset();
     setOpenUploadModal(true);
   };
 
   const handleOpenEditor = () => {
+    if (!hasCompletePaymentDetails) {
+      setPaymentGateOpen(true);
+      return;
+    }
     setAnnotations([]);
     setSignURL(null);
     editor.onTrue();
@@ -766,6 +787,97 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
             </LoadingButton>
           </DialogActions>
         </FormProvider>
+      </Dialog>
+
+      {/* Payment details required gate */}
+      <Dialog
+        open={paymentGateOpen}
+        onClose={() => setPaymentGateOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, bgcolor: '#f4f4f4' } }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 1.5, px: 1.5 }}>
+          <IconButton onClick={() => setPaymentGateOpen(false)} size="small" sx={{ color: '#8e8e93' }}>
+            <Iconify icon="hugeicons:cancel-01" width={20} />
+          </IconButton>
+        </Box>
+        <DialogContent sx={{ px: 3, pt: 0, pb: 2 }}>
+          <Stack spacing={2} alignItems="center" sx={{ textAlign: 'center' }}>
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                bgcolor: '#fff8ec',
+                fontSize: '38px',
+              }}
+            >
+              💳
+            </Box>
+            <Typography
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontSize: '1.8rem',
+                fontWeight: 550,
+                color: '#221f20',
+                lineHeight: 1.2,
+              }}
+            >
+              Payment Details Required
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#636366' }}>
+              Please fill in your bank account information to proceed.
+            </Typography>
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3, pt: 1, flexDirection: 'column', gap: 1 }}>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => {
+              setPaymentGateOpen(false);
+              router.push(paths.dashboard.user.profileTabs.payment);
+            }}
+            sx={{
+              bgcolor: '#3a3a3c',
+              color: 'white',
+              borderBottom: 3.5,
+              borderBottomColor: '#202021',
+              borderRadius: 1.5,
+              boxShadow: 'none',
+              fontWeight: 600,
+              py: 1.4,
+              '&:hover': { bgcolor: '#3a3a3c', opacity: 0.9, boxShadow: 'none' },
+            }}
+          >
+            Complete Payment Details
+          </Button>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => setPaymentGateOpen(false)}
+            sx={{
+              bgcolor: '#ffffff',
+              color: '#221f20',
+              border: 1,
+              borderColor: '#e7e7e7',
+              borderBottom: 3,
+              borderBottomColor: '#e7e7e7',
+              borderRadius: 1.5,
+              boxShadow: 'none',
+              fontWeight: 600,
+              py: 1.4,
+              '&:hover': { bgcolor: '#f5f5f5', boxShadow: 'none' },
+            }}
+          >
+            Cancel
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );

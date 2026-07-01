@@ -36,7 +36,8 @@ import { LoadingScreen } from 'src/components/loading-screen';
 
 import CreatorForm from './creator-form';
 import CampaignModalMobile from './campaign-modal-mobile';
-import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
+// import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
+import CampaignPitchTextModal from './pitch/pitch-text-modal';
 
 // ----------------------------------------------------------------------
 
@@ -170,37 +171,40 @@ const MobileModalView = () => {
     [campaignData, user]
   );
 
-  const [pitchOptionsOpen, setPitchOptionsOpen] = useState(false);
+  // const [pitchOptionsOpen, setPitchOptionsOpen] = useState(false);
   const [textPitchOpen, setTextPitchOpen] = useState(false);
-  const [videoPitchOpen, setVideoPitchOpen] = useState(false);
+  // const [videoPitchOpen, setVideoPitchOpen] = useState(false);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
 
   const handlePitch = () => {
-    setPitchOptionsOpen(true);
-  };
-
-  const handlePitchOptionsClose = () => {
-    setPitchOptionsOpen(false);
-  };
-
-  const handleOpenTextPitch = () => {
+    // Only Letter pitches are allowed now — open the Letter Pitch modal directly,
+    // skipping the pitch-type selection screen.
+    // setPitchOptionsOpen(true);
     setTextPitchOpen(true);
-    setPitchOptionsOpen(false);
   };
 
-  const handleOpenVideoPitch = () => {
-    setVideoPitchOpen(true);
-    setPitchOptionsOpen(false);
-  };
+  // const handlePitchOptionsClose = () => {
+  //   setPitchOptionsOpen(false);
+  // };
+
+  // const handleOpenTextPitch = () => {
+  //   setTextPitchOpen(true);
+  //   setPitchOptionsOpen(false);
+  // };
+
+  // const handleOpenVideoPitch = () => {
+  //   setVideoPitchOpen(true);
+  //   setPitchOptionsOpen(false);
+  // };
 
   const handleCloseTextPitch = () => {
     setTextPitchOpen(false);
   };
 
-  const handleCloseVideoPitch = () => {
-    setVideoPitchOpen(false);
-  };
+  // const handleCloseVideoPitch = () => {
+  //   setVideoPitchOpen(false);
+  // };
 
   const handleJoinNowClick = () => {
     setJoinDialogOpen(true);
@@ -710,6 +714,8 @@ const MobileModalView = () => {
       )}
 
       {campaignData ? <CampaignModalMobile campaign={campaignData} /> : <LoadingScreen />}
+      {/* Pitch-type selection (Letter vs Video) removed — only Letter pitches allowed.
+          Kept for reference in case Video pitches return:
       <CampaignPitchOptionsModal
         key={`pitch-options-${campaignData?.id}-${campaignData?.pitch?.length || 0}`}
         open={pitchOptionsOpen}
@@ -725,6 +731,14 @@ const MobileModalView = () => {
           value: videoPitchOpen,
           onFalse: handleCloseVideoPitch,
         }}
+        mutate={mutate}
+      /> */}
+      <CampaignPitchTextModal
+        key={`pitch-text-${campaignData?.id}-${campaignData?.pitch?.length || 0}`}
+        open={textPitchOpen}
+        handleClose={handleCloseTextPitch}
+        campaign={campaignData}
+        onBack={handleCloseTextPitch}
         mutate={mutate}
       />
 

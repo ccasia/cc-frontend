@@ -1,20 +1,28 @@
 import { useSnackbar } from 'notistack';
-import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useState, useCallback } from 'react';
 
-import { Box, Container, Pagination, Typography } from '@mui/material';
+import { Container, Typography } from '@mui/material';
 
 import useGetDiscoveryCreators from 'src/hooks/use-get-discovery-creators';
+import useGetDiscoveryListCreators from 'src/hooks/use-get-discovery-list-creators';
+import useGetDiscoveryBookmarkLists from 'src/hooks/use-get-discovery-bookmark-lists';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import InviteCreatorsDialog from './invite-creators-dialog';
-import CompareCreatorsDialog from './compare-creators-dialog';
-import { CreatorList, DiscoveryFilterBar } from '../components';
+import { CreatorList, DiscoveryFilterBar, CreatorDetailsDrawer } from '../components';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+const getCreatorRowKey = (creator, index) =>
+  creator.rowId || `${creator.userId}-${creator.platform || index}`;
+
 const DiscoveryToolView = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuthContext();
+  const isClientDemo = user?.role === 'client_demo';
   const [filters, setFilters] = useState({
     platform: 'all',
     debouncedKeyword: '',
@@ -28,96 +36,58 @@ const DiscoveryToolView = () => {
     interests: [],
   });
 
-  // Track whether the current filter results should be displayed
-  const [showResults, setShowResults] = useState(true);
-  const isInitialMount = useRef(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const [sortByFollowers, setSortByFollowers] = useState(false);
 
-  // Check if any filter is active (non-default)
-  const hasActiveFilters = useMemo(
-    () =>
-      filters.platform !== 'all' ||
-      filters.debouncedKeyword !== '' ||
-      filters.debouncedHashtag !== '' ||
-      filters.ageRange !== '' ||
-      filters.country !== null ||
-      filters.city !== null ||
-      filters.gender !== '' ||
-      filters.creditTier !== '' ||
-      filters.languages.length > 0 ||
-      filters.interests.length > 0,
-    [filters]
-  );
-
-  // While users are editing filters, run lightweight queries only.
-  // Full hydration happens after they click Show Results.
-  const shouldHydrateMissing = useMemo(
-    () => isInitialMount.current || !hasActiveFilters || showResults,
-    [hasActiveFilters, showResults]
-  );
-
   // All filters are now server-side — pass them all to the SWR hook
-  const { creators, pagination, availableLocations, isLoading, isError } = useGetDiscoveryCreators({
-    platform: filters.platform,
-    gender: filters.gender || undefined,
-    ageRange: filters.ageRange || undefined,
-    country: filters.country || undefined,
-    city: filters.city || undefined,
-    creditTier: filters.creditTier || undefined,
-    languages: filters.languages?.length ? filters.languages : undefined,
-    interests: filters.interests?.length ? filters.interests : undefined,
-    keyword: filters.debouncedKeyword || undefined,
-    hashtag: filters.debouncedHashtag || undefined,
-    sortBy: sortByFollowers ? 'followers' : 'name',
-    sortDirection: sortByFollowers ? 'desc' : 'asc',
-    hydrateMissing: shouldHydrateMissing,
-    page: currentPage,
-    limit: 20,
-  });
+  const discoveryQuery = useMemo(
+    () => ({
+      platform: filters.platform,
+      gender: filters.gender || undefined,
+      ageRange: filters.ageRange || undefined,
+      country: filters.country || undefined,
+      city: filters.city || undefined,
+      creditTier: filters.creditTier || undefined,
+      languages: filters.languages?.length ? filters.languages : undefined,
+      interests: filters.interests?.length ? filters.interests : undefined,
+      keyword: filters.debouncedKeyword || undefined,
+      hashtag: filters.debouncedHashtag || undefined,
+      sortBy: sortByFollowers ? 'followers' : 'name',
+      sortDirection: sortByFollowers ? 'desc' : 'asc',
+      hydrateMissing: true,
+      limit: 20,
+    }),
+    [filters, sortByFollowers]
+  );
 
-  // Show results if explicitly applied OR no filters are active (default view)
-  const shouldShowResults = showResults || !hasActiveFilters;
-
-  // Result count for the "Show X Creators" button
-  const resultCount = isLoading ? null : (pagination?.total ?? null);
+  const {
+    creators,
+    pagination,
+    availableLocations,
+    isLoading,
+    isLoadingMore,
+    isValidating,
+    isReachingEnd,
+    size,
+    setSize,
+    isError,
+  } = useGetDiscoveryCreators(discoveryQuery);
 
   // Stable callback for the filter bar
   const handleFiltersChange = useCallback((newFilters) => {
     setFilters(newFilters);
   }, []);
 
-  // When filters change (after initial mount), hide results so the user must click "Show Results"
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    setShowResults(false);
-    setCurrentPage(1);
-  }, [filters]);
-
-  const handleShowResults = useCallback(() => {
-    setShowResults(true);
-  }, []);
-
-  const totalPages = useMemo(() => {
-    if (!pagination?.total || !pagination?.limit) return 1;
-    return Math.max(1, Math.ceil(pagination.total / pagination.limit));
-  }, [pagination]);
-
-  const handlePageChange = useCallback((_event, nextPage) => {
-    setCurrentPage(nextPage);
-  }, []);
-
   const handleToggleFollowersSort = useCallback(() => {
     setSortByFollowers((prev) => !prev);
-    setCurrentPage(1);
   }, []);
 
+  const handleLoadMore = useCallback(() => {
+    if (isValidating || isReachingEnd) return;
+    setSize(size + 1);
+  }, [isReachingEnd, isValidating, setSize, size]);
+
   // Creator selection & comparison
-  const [selectedCreatorIds, setSelectedCreatorIds] = useState([]);
-  const [compareOpen, setCompareOpen] = useState(false);
+  const [inviteCreatorIds, setInviteCreatorIds] = useState([]);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteCampaigns, setInviteCampaigns] = useState([]);
   const [inviteCampaignId, setInviteCampaignId] = useState('');
@@ -126,19 +96,123 @@ const DiscoveryToolView = () => {
   const inviteCampaignsLoadedRef = useRef(false);
   const inviteCampaignsRequestRef = useRef(null);
 
-  const handleSelectCreator = useCallback((rowId) => {
-    setSelectedCreatorIds((prev) =>
-      prev.includes(rowId) ? prev.filter((id) => id !== rowId) : [...prev, rowId]
-    );
+  // Per-account bookmark lists (with counts) + membership lookup
+  const {
+    lists,
+    membershipsByRowKey,
+    isLoading: isLoadingLists,
+    mutate: mutateLists,
+  } = useGetDiscoveryBookmarkLists();
+
+  // Lists currently selected to filter the grid
+  const [selectedListIds, setSelectedListIds] = useState([]);
+
+  // Drop any selected list ids that no longer exist (e.g. after deletion)
+  const validSelectedListIds = useMemo(() => {
+    const listIdSet = new Set(lists.map((list) => list.id));
+    return selectedListIds.filter((id) => listIdSet.has(id));
+  }, [lists, selectedListIds]);
+
+  const {
+    listCreators,
+    isLoading: isLoadingListCreators,
+    mutate: mutateListCreators,
+  } = useGetDiscoveryListCreators(validSelectedListIds);
+
+  const refreshBookmarkData = useCallback(() => {
+    mutateLists();
+    mutateListCreators();
+  }, [mutateLists, mutateListCreators]);
+
+  const handleCreateList = useCallback(
+    async (name) => {
+      try {
+        await axiosInstance.post(endpoints.discovery.bookmarkLists, { name });
+        await mutateLists();
+        enqueueSnackbar(`List "${name}" created.`, { variant: 'success' });
+      } catch (error) {
+        console.error('Failed to create list:', error);
+        enqueueSnackbar(error?.response?.data?.message || 'Failed to create list', {
+          variant: 'error',
+        });
+      }
+    },
+    [enqueueSnackbar, mutateLists]
+  );
+
+  const handleDeleteList = useCallback(
+    async (listId) => {
+      try {
+        await axiosInstance.delete(`${endpoints.discovery.bookmarkLists}/${listId}`);
+        setSelectedListIds((prev) => prev.filter((id) => id !== listId));
+        refreshBookmarkData();
+        enqueueSnackbar('List deleted.', { variant: 'success' });
+      } catch (error) {
+        console.error('Failed to delete list:', error);
+        enqueueSnackbar(error?.response?.data?.message || 'Failed to delete list', {
+          variant: 'error',
+        });
+      }
+    },
+    [enqueueSnackbar, refreshBookmarkData]
+  );
+
+  const handleToggleCreatorInList = useCallback(
+    async (listId, creator, isInList) => {
+      if (!creator?.userId || !creator?.platform || !listId) return;
+
+      const creatorUserId = creator.userId;
+      const { platform } = creator;
+      const url = `${endpoints.discovery.bookmarkLists}/${listId}/creators`;
+
+      try {
+        if (isInList) {
+          await axiosInstance.delete(url, { params: { creatorUserId, platform } });
+        } else {
+          await axiosInstance.post(url, { creatorUserId, platform });
+        }
+        refreshBookmarkData();
+      } catch (error) {
+        console.error('Failed to update list membership:', error);
+        enqueueSnackbar(error?.response?.data?.message || 'Failed to update list', {
+          variant: 'error',
+        });
+      }
+    },
+    [enqueueSnackbar, refreshBookmarkData]
+  );
+
+  // Imperative handle to open the "Select List" dropdown (e.g. from a card's
+  // empty-state link). The dropdown itself is rendered inside CreatorList.
+  const listDropdownRef = useRef(null);
+  const handleOpenListManager = useCallback(() => {
+    listDropdownRef.current?.open();
   }, []);
 
-  // Resolve selected creator objects for comparison dialog
-  const selectedCreators = useMemo(
-    () =>
-      selectedCreatorIds
-        .map((id) => creators.find((c) => (c.rowId || c.userId) === id))
-        .filter(Boolean),
-    [selectedCreatorIds, creators]
+  // Creator details sidebar
+  const [detailsCreatorId, setDetailsCreatorId] = useState(null);
+
+  const handleOpenDetails = useCallback((rowId) => {
+    setDetailsCreatorId(rowId);
+  }, []);
+
+  // List-filtered creators may not be part of the loaded pages, so search both lists
+  const findCreatorByRowKey = useCallback(
+    (rowKey) =>
+      creators.find((creator, index) => getCreatorRowKey(creator, index) === rowKey) ||
+      listCreators.find((creator, index) => getCreatorRowKey(creator, index) === rowKey) ||
+      null,
+    [creators, listCreators]
+  );
+
+  const detailsCreator = useMemo(
+    () => (detailsCreatorId ? findCreatorByRowKey(detailsCreatorId) : null),
+    [detailsCreatorId, findCreatorByRowKey]
+  );
+
+  const inviteCreators = useMemo(
+    () => inviteCreatorIds.map(findCreatorByRowKey).filter(Boolean),
+    [inviteCreatorIds, findCreatorByRowKey]
   );
 
   const selectedCampaignExistingCreatorIds = useMemo(() => {
@@ -146,10 +220,6 @@ const DiscoveryToolView = () => {
     const selectedCampaign = inviteCampaigns.find((campaign) => campaign.id === inviteCampaignId);
     return selectedCampaign?.existingCreatorIds || [];
   }, [inviteCampaignId, inviteCampaigns]);
-
-  const handleCompare = useCallback(() => {
-    setCompareOpen(true);
-  }, []);
 
   const loadInviteCampaigns = useCallback(
     async (force = false) => {
@@ -213,19 +283,20 @@ const DiscoveryToolView = () => {
     [enqueueSnackbar]
   );
 
-  const handleInviteOpen = useCallback(async () => {
-    if (!selectedCreatorIds.length) {
-      enqueueSnackbar('Select at least one creator to invite', { variant: 'warning' });
-      return;
-    }
+  const handleInviteOne = useCallback(
+    async (rowId) => {
+      if (!rowId) return;
 
-    setInviteCampaignId('');
-    setInviteOpen(true);
+      setInviteCreatorIds([rowId]);
+      setInviteCampaignId('');
+      setInviteOpen(true);
 
-    if (!inviteCampaignsLoadedRef.current && !inviteCampaignsRequestRef.current) {
-      await loadInviteCampaigns();
-    }
-  }, [enqueueSnackbar, loadInviteCampaigns, selectedCreatorIds.length]);
+      if (!inviteCampaignsLoadedRef.current && !inviteCampaignsRequestRef.current) {
+        await loadInviteCampaigns();
+      }
+    },
+    [loadInviteCampaigns]
+  );
 
   const handleInviteClose = useCallback(() => {
     if (inviteSubmitting) return;
@@ -234,19 +305,19 @@ const DiscoveryToolView = () => {
 
   const handleInviteCancel = useCallback(() => {
     if (inviteSubmitting) return;
-    setSelectedCreatorIds([]);
+    setInviteCreatorIds([]);
     setInviteCampaignId('');
     setInviteOpen(false);
   }, [inviteSubmitting]);
 
   const handleRemoveInvitedCreator = useCallback((creatorIdentifier) => {
     if (!creatorIdentifier) return;
-    setSelectedCreatorIds((prev) => prev.filter((id) => id !== creatorIdentifier));
+    setInviteCreatorIds((prev) => prev.filter((id) => id !== creatorIdentifier));
   }, []);
 
   const handleInviteSubmit = useCallback(async () => {
     const selectedCreatorUserIds = Array.from(
-      new Set(selectedCreators.map((creator) => creator?.userId).filter(Boolean))
+      new Set(inviteCreators.map((creator) => creator?.userId).filter(Boolean))
     );
     const invitableCreatorUserIds = selectedCreatorUserIds.filter(
       (userId) => !selectedCampaignExistingCreatorIds.includes(userId)
@@ -278,7 +349,7 @@ const DiscoveryToolView = () => {
       enqueueSnackbar(`${invitedCount} creator${invitedCount === 1 ? '' : 's'} invited`, {
         variant: 'success',
       });
-      setSelectedCreatorIds([]);
+      setInviteCreatorIds([]);
       setInviteOpen(false);
     } catch (error) {
       console.error('Failed to invite creators:', error);
@@ -288,21 +359,13 @@ const DiscoveryToolView = () => {
     } finally {
       setInviteSubmitting(false);
     }
-  }, [enqueueSnackbar, inviteCampaignId, selectedCampaignExistingCreatorIds, selectedCreators]);
-
-  // Log results only when they actually change
-  useEffect(() => {
-    console.log(
-      `Discovery creators (${creators.length}${pagination ? ` of ${pagination.total}` : ''})`
-    );
-    console.log('Creators array: ', creators);
-  }, [creators, pagination]);
+  }, [enqueueSnackbar, inviteCampaignId, inviteCreators, selectedCampaignExistingCreatorIds]);
 
   return (
     <Container maxWidth="xl">
       <Typography
         sx={{
-          fontFamily: 'Aileron',
+          fontFamily: 'Instrument Serif',
           fontSize: { xs: 24, md: 48 },
           fontWeight: 400,
         }}
@@ -313,52 +376,52 @@ const DiscoveryToolView = () => {
       <DiscoveryFilterBar
         onFiltersChange={handleFiltersChange}
         availableLocations={availableLocations}
-        resultCount={resultCount}
-        isCountLoading={isLoading}
-        onShowResults={handleShowResults}
-        showButton={hasActiveFilters && !showResults}
       />
 
-      {shouldShowResults && (
-        <CreatorList
-          creators={creators}
-          isLoading={isLoading}
-          isError={isError}
-          pagination={pagination}
-          sortByFollowers={sortByFollowers}
-          onToggleFollowersSort={handleToggleFollowersSort}
-          selectedIds={selectedCreatorIds}
-          onSelect={handleSelectCreator}
-          onCompare={handleCompare}
-          onInvite={handleInviteOpen}
-        />
-      )}
+      <CreatorList
+        creators={creators}
+        isLoading={isLoading}
+        isLoadingMore={isLoadingMore}
+        isError={isError}
+        isReachingEnd={isReachingEnd}
+        pagination={pagination}
+        sortByFollowers={sortByFollowers}
+        onToggleFollowersSort={handleToggleFollowersSort}
+        onLoadMore={handleLoadMore}
+        lists={lists}
+        membershipsByRowKey={membershipsByRowKey}
+        listCreators={listCreators}
+        isLoadingListCreators={isLoadingListCreators || isLoadingLists}
+        selectedListIds={validSelectedListIds}
+        onSelectedListIdsChange={setSelectedListIds}
+        onCreateList={handleCreateList}
+        onDeleteList={handleDeleteList}
+        onToggleCreatorInList={handleToggleCreatorInList}
+        onOpenListManager={handleOpenListManager}
+        listDropdownRef={listDropdownRef}
+        onInviteOne={isClientDemo ? undefined : handleInviteOne}
+        onOpenDetails={handleOpenDetails}
+      />
 
-      {shouldShowResults && !isLoading && totalPages > 1 && (
-        <Box display="flex" justifyContent="center" mt={2}>
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={handlePageChange}
-            size="medium"
-            variant="contained"
-          />
-        </Box>
-      )}
-
-      {/* Compare Dialog */}
-      <CompareCreatorsDialog
-        open={compareOpen}
-        onClose={() => setCompareOpen(false)}
-        creators={selectedCreators}
+      {/* Creator details sidebar */}
+      <CreatorDetailsDrawer
+        open={!!detailsCreatorId}
+        creator={detailsCreator}
+        rowKey={detailsCreatorId}
+        lists={lists}
+        creatorListIds={membershipsByRowKey?.get(detailsCreatorId)}
+        onClose={() => setDetailsCreatorId(null)}
+        onToggleList={handleToggleCreatorInList}
+        onOpenListManager={handleOpenListManager}
+        onInvite={isClientDemo ? undefined : handleInviteOne}
       />
 
       <InviteCreatorsDialog
         open={inviteOpen}
         onClose={handleInviteClose}
         onCancel={handleInviteCancel}
-        selectedCreatorsCount={selectedCreators.length}
-        creators={selectedCreators}
+        selectedCreatorsCount={inviteCreators.length}
+        creators={inviteCreators}
         existingCreatorIds={selectedCampaignExistingCreatorIds}
         onRemoveCreator={handleRemoveInvitedCreator}
         campaigns={inviteCampaigns}

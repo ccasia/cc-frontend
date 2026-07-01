@@ -312,44 +312,25 @@ const PitchRow = ({
                   </Stack>
                 )}
               </Stack>
-            ) : (
-              profileUsername && (
-                <Stack direction="row" alignItems="center" spacing={0.3}>
-                  {profileLink?.includes('instagram.com') && (
-                    <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
-                  )}
-                  {profileLink?.includes('tiktok.com') && (
-                    <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
-                  )}
-                  <Link
-                    href={profileLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    underline="hover"
-                    sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {profileUsername}
-                  </Link>
-                </Stack>
-              )
-            )}
-
-            {/* Display logistic products information */}
-            {displayProducts && (
-              <Box sx={{ display: 'inline-flex', gap: 0.5, alignItems: 'start' }}>
-                <Iconify
-                  icon="solar:box-bold"
-                  color="rgba(19, 64, 255, 1)"
-                  width={16}
-                  sx={{ fontWeight: 700 }}
-                />
-                <Typography
-                  sx={{ color: 'rgba(19, 64, 255, 1)', fontSize: '12px', fontWeight: 700 }}
+            ) : profileUsername && (
+              <Stack direction="row" alignItems="center" spacing={0.3}>
+                {profileLink?.includes('instagram.com') && (
+                  <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
+                )}
+                {profileLink?.includes('tiktok.com') && (
+                  <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
+                )}
+                <Link
+                  href={profileLink?.startsWith('http') ? profileLink : `https://${profileLink}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="hover"
+                  sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  {displayProducts}
-                </Typography>
-              </Box>
+                  {profileUsername}
+                </Link>
+              </Stack>
             )}
           </Stack>
         </Stack>

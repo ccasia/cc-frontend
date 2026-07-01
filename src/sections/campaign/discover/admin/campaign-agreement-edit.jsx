@@ -221,7 +221,13 @@ const CampaignAgreementEdit = ({
     if (!matched.length) return null;
     return matched.sort((a, b) => (b?.minFollowers || 0) - (a?.minFollowers || 0))[0];
   }, [campaign?.isCreditTier, creditTierList, effectiveFollowerCountForTier]);
-  const previewTierSource = hasPlatformChanged ? liveTierData : (liveTierData || tierData);
+  // Only fall back to stored tierData when there is genuinely no follower count (0/unknown).
+  // If we have a count but it doesn't match any tier, show null so the "no match" warning appears.
+  const previewTierSource = hasPlatformChanged
+    ? liveTierData
+    : effectiveFollowerCountForTier > 0
+      ? liveTierData
+      : (tierData || null);
   const displayTierData =
     campaign?.isCreditTier && previewTierSource
       ? {

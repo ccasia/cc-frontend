@@ -331,7 +331,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId, isClient })
                 width: 38,
                 boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
               }}
-              onClick={handleOpenInfoModal}
+              onClick={handleOpenArchiveModal}
             >
               <Iconify icon="tabler:archive" style={{ color: 'black' }} />
             </IconButton>

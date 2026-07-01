@@ -42,21 +42,14 @@ import DeleteBriefDialog from './dialogs/delete-brief-dialog';
 import SendToClientDialog from './dialogs/send-to-client-dialog';
 import BriefApprovedDialog from './dialogs/brief-approved-dialog';
 
-const CS_ROLE_NAMES = ['CSM', 'CSL', 'Customer Success Manager', 'CS Lead'];
-
 const classifyRole = (user) => {
   if (!user) return 'other';
   if (user.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode || '')) return 'superadmin';
   const name = (user?.admin?.role?.name || '').toLowerCase();
   if (name === 'bd' || name.includes('business development') || name.includes('sales and marketing')) return 'BD';
-  if (CS_ROLE_NAMES.some((n) => name === n.toLowerCase() || name.includes(n.toLowerCase()))) return 'CS';
+  if (name === 'csl' || name.includes('cs lead')) return 'CSL';
+  if (name === 'csm' || name.includes('customer success')) return 'CSM';
   return 'other';
-};
-
-// CSL specifically (not CSM) — only CSL assigns CSMs to handed-over campaigns.
-const isCslUser = (user) => {
-  const name = (user?.admin?.role?.name || '').toLowerCase();
-  return name === 'csl' || name.includes('cs lead');
 };
 
 export default function CampaignBriefListView() {
@@ -66,9 +59,19 @@ export default function CampaignBriefListView() {
   const { enqueueSnackbar } = useSnackbar();
 
   const role = classifyRole(user);
-  const isBD = role === 'BD' || role === 'superadmin';
-  // CSL (or superadmin) may assign CSMs to handed-over campaigns.
-  const canAssignCsm = isCslUser(user) || role === 'superadmin';
+  const isSuperAdmin = role === 'superadmin';
+  // Who may author briefs: BD, CSL, CSM, superadmin.
+  const canCreate = ['BD', 'CSL', 'CSM', 'superadmin'].includes(role);
+  // Who sees the full BD lifecycle toolset / tabs.
+  const isBD = role === 'BD' || isSuperAdmin;
+  // CSL (or superadmin) may assign CSMs.
+  const canAssignCsm = role === 'CSL' || isSuperAdmin;
+  // A brief authored by a CSL gets the direct assign-CSM shortcut at APPROVED.
+  const isCslAuthored = (b) => b?.draftOrigin === 'CSL_CREATED';
+  // A brief the current user authored. For CSL/CSM, listBriefs only returns
+  // pre-handover briefs they own (plus handed-over ones), so this identifies the
+  // briefs they may drive through the lifecycle.
+  const isMyBrief = (b) => Boolean(user?.id) && briefOwnerOf(b)?.id === user.id;
 
   const { data, isLoading, mutate } = useSWR(endpoints.campaignBrief.list, fetcher);
 
@@ -87,8 +90,6 @@ export default function CampaignBriefListView() {
   // Displayed status mirrors the badge: an activated campaign shows ACTIVE,
   // otherwise the draft lifecycle status.
   const effectiveStatus = (b) => (b.status === 'ACTIVE' ? 'ACTIVE' : b.draftStatus);
-
-  const isSuperAdmin = role === 'superadmin';
 
   // Resolve a brief's BD owner — prefer the enriched briefOwner, fall back to
   // the owner-role campaignAdmin (present pre-handover).
@@ -138,7 +139,7 @@ export default function CampaignBriefListView() {
 
   // Status tabs shown depend on role: BD/superadmin see the full lifecycle;
   // CSL/CSM only ever have handed-over/active briefs.
-  const TAB_DEFS = isBD
+  const TAB_DEFS = (isBD || role === 'CSL' || role === 'CSM')
     ? [
         { value: 'ALL', label: 'All' },
         { value: 'DRAFTED', label: 'Draft' },
@@ -328,9 +329,33 @@ export default function CampaignBriefListView() {
       </Button>
     );
 
+    // Non-BD authors (CSL/CSM) drive their own briefs through the lifecycle.
+    // CSL additionally gets the direct Assign-CSM shortcut.
     if (!isBD) {
-      // Once handed over, the brief is a real campaign. CSL can assign a CSM;
-      // everyone in CS can open the campaign page.
+      const mineInProgress = isMyBrief(brief) && status !== 'HANDED_OVER';
+
+      // CSL-authored brief at APPROVED → assign a CSM directly (self-handover).
+      if (canAssignCsm && isCslAuthored(brief) && status === 'APPROVED') {
+        return <>{copyLinkIcon}{assignCsmBtn}{editIcon}{deleteIcon}</>;
+      }
+      // CSL/CSM author actions for their own in-progress brief.
+      if (mineInProgress) {
+        switch (status) {
+          case 'DRAFTED':
+            return <>{sendIconBtn()}{editIcon}{deleteIcon}</>;
+          case 'SENT_TO_CLIENT':
+            return <>{copyLinkIcon}{sendIconBtn(true)}{editIcon}{deleteIcon}</>;
+          case 'PENDING_REVIEW':
+            return <>{copyLinkIcon}{sendIconBtn()}{editIcon}{deleteIcon}</>;
+          case 'APPROVED':
+            // CSM-authored (BD_CREATED) brief → hand over to the CSL group, same
+            // as the BD path. (CSL-authored APPROVED is handled above.)
+            return <>{copyLinkIcon}{handoverBtn}{editIcon}{deleteIcon}</>;
+          default:
+            return <>{editIcon}{deleteIcon}</>;
+        }
+      }
+      // Handed-over briefs: CSL can assign a CSM; everyone in CS opens the campaign.
       if (status === 'HANDED_OVER') {
         return (
           <>
@@ -349,7 +374,7 @@ export default function CampaignBriefListView() {
       case 'PENDING_REVIEW':
         // Public-form submission awaiting BD review → BD forwards to client
         // (Send), not a direct approve. Matches the brief detail-view CTA.
-        return <>{copyLinkIcon}{sendIconBtn()}{deleteIcon}</>;
+        return <>{sendIconBtn()}{deleteIcon}</>;
       case 'APPROVED':
         return <>{copyLinkIcon}{handoverBtn}{deleteIcon}</>;
       case 'HANDED_OVER':
@@ -421,7 +446,7 @@ export default function CampaignBriefListView() {
           ))}
         </Box>
 
-        {isBD && (
+        {canCreate && (
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, flexShrink: 0 }}>
             <Button
               onClick={handleCreate}
@@ -445,26 +470,28 @@ export default function CampaignBriefListView() {
             >
               Create Brief
             </Button>
-            <Button
-              onClick={() => setInviteLinkOpen(true)}
-              sx={{
-                px: 1.5,
-                height: '38px',
-                minWidth: 'auto',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                whiteSpace: 'nowrap',
-                color: '#1340FF',
-                bgcolor: 'transparent',
-                '&:hover': { bgcolor: 'rgba(19, 64, 255, 0.04)' },
-              }}
-            >
-              Invite Link
-            </Button>
+            {isBD && (
+              <Button
+                onClick={() => setInviteLinkOpen(true)}
+                sx={{
+                  px: 1.5,
+                  height: '38px',
+                  minWidth: 'auto',
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                  borderRadius: 1,
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  color: '#1340FF',
+                  bgcolor: 'transparent',
+                  '&:hover': { bgcolor: 'rgba(19, 64, 255, 0.04)' },
+                }}
+              >
+                Invite Link
+              </Button>
+            )}
           </Box>
         )}
       </Stack>
