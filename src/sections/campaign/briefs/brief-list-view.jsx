@@ -41,12 +41,19 @@ import InviteLinkDialog from './dialogs/invite-link-dialog';
 import DeleteBriefDialog from './dialogs/delete-brief-dialog';
 import SendToClientDialog from './dialogs/send-to-client-dialog';
 import BriefApprovedDialog from './dialogs/brief-approved-dialog';
+import LostBriefDialog from './dialogs/lost-brief-dialog';
 
 const classifyRole = (user) => {
   if (!user) return 'other';
-  if (user.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode || '')) return 'superadmin';
+  if (user.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode || ''))
+    return 'superadmin';
   const name = (user?.admin?.role?.name || '').toLowerCase();
-  if (name === 'bd' || name.includes('business development') || name.includes('sales and marketing')) return 'BD';
+  if (
+    name === 'bd' ||
+    name.includes('business development') ||
+    name.includes('sales and marketing')
+  )
+    return 'BD';
   if (name === 'csl' || name.includes('cs lead')) return 'CSL';
   if (name === 'csm' || name.includes('customer success')) return 'CSM';
   return 'other';
@@ -80,6 +87,7 @@ export default function CampaignBriefListView() {
   const [bdFilter, setBdFilter] = useState('ALL');
   const [sendTarget, setSendTarget] = useState(null);
   const [handoverTarget, setHandoverTarget] = useState(null);
+  const [lostTarget, setLostTarget] = useState(null);
   const [assignCsmTarget, setAssignCsmTarget] = useState(null);
   const [approvedNotice, setApprovedNotice] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -117,6 +125,7 @@ export default function CampaignBriefListView() {
     // live only under the explicit ACTIVE tab.
     if (statusTab === 'ALL') {
       if (status === 'ACTIVE') return false;
+      if (status === 'LOST') return false;
     } else if (status !== statusTab) {
       return false;
     }
@@ -139,21 +148,24 @@ export default function CampaignBriefListView() {
 
   // Status tabs shown depend on role: BD/superadmin see the full lifecycle;
   // CSL/CSM only ever have handed-over/active briefs.
-  const TAB_DEFS = (isBD || role === 'CSL' || role === 'CSM')
-    ? [
-        { value: 'ALL', label: 'All' },
-        { value: 'DRAFTED', label: 'Draft' },
-        { value: 'SENT_TO_CLIENT', label: 'Sent' },
-        { value: 'PENDING_REVIEW', label: 'Pending' },
-        { value: 'APPROVED', label: 'Approved' },
-        { value: 'HANDED_OVER', label: 'Handed Over' },
-        { value: 'ACTIVE', label: 'Active' },
-      ]
-    : [
-        { value: 'ALL', label: 'All' },
-        { value: 'HANDED_OVER', label: 'Handed Over' },
-        { value: 'ACTIVE', label: 'Active' },
-      ];
+  const TAB_DEFS =
+    isBD || role === 'CSL' || role === 'CSM'
+      ? [
+          { value: 'ALL', label: 'All' },
+          { value: 'DRAFTED', label: 'Draft' },
+          { value: 'SENT_TO_CLIENT', label: 'Sent' },
+          { value: 'PENDING_REVIEW', label: 'Pending' },
+          { value: 'APPROVED', label: 'Approved' },
+          { value: 'HANDED_OVER', label: 'Handed Over' },
+          { value: 'LOST', label: 'Lost' },
+          { value: 'ACTIVE', label: 'Active' },
+        ]
+      : [
+          { value: 'ALL', label: 'All' },
+          { value: 'HANDED_OVER', label: 'Handed Over' },
+          { value: 'LOST', label: 'Lost' },
+          { value: 'ACTIVE', label: 'Active' },
+        ];
 
   // Per-status counts (respect the BD filter, but not search or the active tab,
   // so each tab shows how many briefs it holds). "All" = everything but ACTIVE.
@@ -169,6 +181,7 @@ export default function CampaignBriefListView() {
   })();
 
   const STATUS_TABS = TAB_DEFS.map((t) => ({ ...t, count: statusCounts[t.value] || 0 }));
+  console.log(statusTab);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -177,7 +190,9 @@ export default function CampaignBriefListView() {
       enqueueSnackbar('Brief created', { variant: 'success' });
       navigate(paths.dashboard.campaign.briefDetails(res.data.id));
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Failed to create brief', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to create brief', {
+        variant: 'error',
+      });
     } finally {
       setCreating(false);
     }
@@ -192,16 +207,16 @@ export default function CampaignBriefListView() {
       setConfirmDelete(null);
       mutate();
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Failed to delete brief', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to delete brief', {
+        variant: 'error',
+      });
     } finally {
       setDeleting(false);
     }
   };
 
   const getOwnerName = (brief) =>
-    brief.briefOwner?.name ||
-    brief.campaignAdmin?.[0]?.admin?.user?.name ||
-    'Cult Creative';
+    brief.briefOwner?.name || brief.campaignAdmin?.[0]?.admin?.user?.name || 'Cult Creative';
 
   // Re-copy the client review link after the brief has been sent. The backend
   // builds it from the magic token (clientLink), so the BD isn't limited to the
@@ -279,7 +294,11 @@ export default function CampaignBriefListView() {
       </IconButton>
     );
     const deleteIcon = (
-      <IconButton size="small" onClick={() => setConfirmDelete(brief)} sx={{ ...actionBtnSx, color: '#DC2626' }}>
+      <IconButton
+        size="small"
+        onClick={() => setConfirmDelete(brief)}
+        sx={{ ...actionBtnSx, color: '#DC2626' }}
+      >
         <Iconify icon="material-symbols:delete-outline-rounded" width={18} />
       </IconButton>
     );
@@ -328,6 +347,15 @@ export default function CampaignBriefListView() {
         Assign CSM
       </Button>
     );
+    const lostBtn = (
+      <IconButton
+        size="small"
+        onClick={() => setLostTarget(brief)}
+        sx={{ ...actionBtnSx, color: '#DC2626' }}
+      >
+        <Iconify icon="material-symbols:cancel-outline-rounded" width={18} />
+      </IconButton>
+    );
 
     // Non-BD authors (CSL/CSM) drive their own briefs through the lifecycle.
     // CSL additionally gets the direct Assign-CSM shortcut.
@@ -336,23 +364,66 @@ export default function CampaignBriefListView() {
 
       // CSL-authored brief at APPROVED → assign a CSM directly (self-handover).
       if (canAssignCsm && isCslAuthored(brief) && status === 'APPROVED') {
-        return <>{copyLinkIcon}{assignCsmBtn}{editIcon}{deleteIcon}</>;
+        return (
+          <>
+            {copyLinkIcon}
+            {assignCsmBtn}
+            {editIcon}
+            {deleteIcon}
+          </>
+        );
       }
       // CSL/CSM author actions for their own in-progress brief.
       if (mineInProgress) {
         switch (status) {
           case 'DRAFTED':
-            return <>{sendIconBtn()}{editIcon}{deleteIcon}</>;
+            return (
+              <>
+                {sendIconBtn()}
+                {editIcon}
+                {lostBtn}
+                {deleteIcon}
+              </>
+            );
           case 'SENT_TO_CLIENT':
-            return <>{copyLinkIcon}{sendIconBtn(true)}{editIcon}{deleteIcon}</>;
+            return (
+              <>
+                {copyLinkIcon}
+                {sendIconBtn(true)}
+                {editIcon}
+                {lostBtn}
+                {deleteIcon}
+              </>
+            );
           case 'PENDING_REVIEW':
-            return <>{copyLinkIcon}{sendIconBtn()}{editIcon}{deleteIcon}</>;
+            return (
+              <>
+                {copyLinkIcon}
+                {sendIconBtn()}
+                {editIcon}
+                {lostBtn}
+                {deleteIcon}
+              </>
+            );
           case 'APPROVED':
             // CSM-authored (BD_CREATED) brief → hand over to the CSL group, same
             // as the BD path. (CSL-authored APPROVED is handled above.)
-            return <>{copyLinkIcon}{handoverBtn}{editIcon}{deleteIcon}</>;
+            return (
+              <>
+                {copyLinkIcon}
+                {handoverBtn}
+                {editIcon}
+                {lostBtn}
+                {deleteIcon}
+              </>
+            );
           default:
-            return <>{editIcon}{deleteIcon}</>;
+            return (
+              <>
+                {editIcon}
+                {deleteIcon}
+              </>
+            );
         }
       }
       // Handed-over briefs: CSL can assign a CSM; everyone in CS opens the campaign.
@@ -368,15 +439,41 @@ export default function CampaignBriefListView() {
     }
     switch (status) {
       case 'DRAFTED':
-        return <>{sendIconBtn()}{deleteIcon}</>;
+        return (
+          <>
+            {sendIconBtn()}
+            {lostBtn}
+            {deleteIcon}
+          </>
+        );
       case 'SENT_TO_CLIENT':
-        return <>{copyLinkIcon}{sendIconBtn(true)}{deleteIcon}</>;
+        return (
+          <>
+            {copyLinkIcon}
+            {sendIconBtn(true)}
+            {lostBtn}
+            {deleteIcon}
+          </>
+        );
       case 'PENDING_REVIEW':
         // Public-form submission awaiting BD review → BD forwards to client
         // (Send), not a direct approve. Matches the brief detail-view CTA.
-        return <>{sendIconBtn()}{deleteIcon}</>;
+        return (
+          <>
+            {sendIconBtn()}
+            {lostBtn}
+            {deleteIcon}
+          </>
+        );
       case 'APPROVED':
-        return <>{copyLinkIcon}{handoverBtn}{deleteIcon}</>;
+        return (
+          <>
+            {copyLinkIcon}
+            {handoverBtn}
+            {lostBtn}
+            {deleteIcon}
+          </>
+        );
       case 'HANDED_OVER':
         // Superadmin sees the full handed-over toolset (CS-side actions too).
         if (isSuperAdmin) {
@@ -389,9 +486,28 @@ export default function CampaignBriefListView() {
             </>
           );
         }
-        return <>{editIcon}{deleteIcon}</>;
+        return (
+          <>
+            {editIcon}
+            {deleteIcon}
+          </>
+        );
+        // case 'LOST':
+
       default:
-        return <>{editIcon}{deleteIcon}</>;
+          if (isSuperAdmin) {
+          return (
+            <>
+              {editIcon}
+              {deleteIcon}
+            </>
+          );
+        }
+        return (
+          <>
+            {editIcon}
+          </>
+        );
     }
   };
 
@@ -546,45 +662,64 @@ export default function CampaignBriefListView() {
             return <EmptyContent title="No briefs yet" sx={{ py: 6 }} />;
           }
           return (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ bgcolor: '#F9FAFB' }}>
-                  <TableCell sx={{ fontWeight: 600, color: '#6B7280' }}>Brand Name</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#6B7280' }}>Client Email</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#6B7280' }}>Created</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#6B7280' }}>BD Owner</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#6B7280' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#6B7280' }} align="right" />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {briefs.map((b) => (
-                  <TableRow
-                    key={b.id}
-                    hover
-                    onClick={() => navigate(paths.dashboard.campaign.briefDetails(b.id))}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    <TableCell>{b.name || '—'}</TableCell>
-                    <TableCell>{b.clientEmail || '—'}</TableCell>
-                    <TableCell>{b.createdAt ? dayjs(b.createdAt).format('DD MMM YYYY') : '—'}</TableCell>
-                    <TableCell>{getOwnerName(b)}</TableCell>
-                    <TableCell>
-                      <StatusBadge
-                        status={b.status === 'ACTIVE' ? 'ACTIVE' : b.draftStatus}
-                      />
-                    </TableCell>
-                    <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                      <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
-                        {renderActions(b)}
-                      </Stack>
-                    </TableCell>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: '#F9FAFB' }}>
+                    <TableCell sx={{ fontWeight: 600, color: '#6B7280' }}>Brand Name</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#6B7280' }}>Client Email</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#6B7280' }}>Created</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#6B7280' }}>BD Owner</TableCell>
+                    {statusTab === 'LOST' && (
+                      <>
+                        <TableCell sx={{ fontWeight: 600, color: '#6B7280' }}>Reason</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#6B7280' }}>Amount</TableCell>
+                      </>
+                    )}{' '}
+                    <TableCell sx={{ fontWeight: 600, color: '#6B7280' }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#6B7280' }} align="right" />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {briefs.map((b) => (
+                    <TableRow
+                      key={b.id}
+                      hover
+                      onClick={() => navigate(paths.dashboard.campaign.briefDetails(b.id))}
+                      sx={{ cursor: 'pointer' }}
+                    >
+                      <TableCell>{b.name || '—'}</TableCell>
+                      <TableCell>{b.clientEmail || '—'}</TableCell>
+                      <TableCell>
+                        {b.createdAt ? dayjs(b.createdAt).format('DD MMM YYYY') : '—'}
+                      </TableCell>
+                      <TableCell>{getOwnerName(b)}</TableCell>
+                      {statusTab === 'LOST' && (
+                        <>
+                          <TableCell>{b.lostReason}</TableCell>
+                          <TableCell>
+                            {b.lostCurrency} {b.lostAmount}
+                          </TableCell>
+                        </>
+                      )}
+                      <TableCell>
+                        <StatusBadge status={b.status === 'ACTIVE' ? 'ACTIVE' : b.draftStatus} />
+                      </TableCell>
+                      <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          justifyContent="flex-end"
+                          alignItems="center"
+                        >
+                          {renderActions(b)}
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           );
         })()}
       </Card>
@@ -623,6 +758,13 @@ export default function CampaignBriefListView() {
         onConfirm={handleDelete}
         onClose={() => setConfirmDelete(null)}
         loading={deleting}
+      />
+
+      <LostBriefDialog
+        open={Boolean(lostTarget)}
+        brief={lostTarget}
+        onClose={() => setLostTarget(null)}
+        onLost={() => mutate()}
       />
     </Container>
   );
