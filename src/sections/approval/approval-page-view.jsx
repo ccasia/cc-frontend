@@ -873,6 +873,10 @@ const ApprovalPageView = () => {
                       ?.find((c) => c.pitchId === pitchId)
                       ?.comment?.trim();
 
+                    const csComment = data?.creators
+                      ?.find((c) => c.pitchId === pitchId)
+                      ?.csComment?.trim();
+
                     return (
                       <Paper
                         key={pitchId}
@@ -1082,6 +1086,35 @@ const ApprovalPageView = () => {
                             </Button>
                           )}
                         </Stack>
+
+                        {csComment && (
+                          <Stack
+                            direction="row"
+                            spacing={0.75}
+                            alignItems="flex-start"
+                            sx={{ pt: 0.75, borderTop: '1px solid #F0F0F0' }}
+                          >
+                            <Iconify
+                              icon="solar:chat-round-dots-bold"
+                              width={14}
+                              sx={{ color: '#AEAEB2', mt: 0.2, flexShrink: 0 }}
+                            />
+                            <Stack spacing={0.15} sx={{ minWidth: 0 }}>
+                              <Typography sx={approvalNoteLabelSx}>Comments</Typography>
+                              <Typography
+                                sx={{
+                                  fontSize: '0.78rem',
+                                  lineHeight: 1.4,
+                                  color: '#3A3A3C',
+                                  whiteSpace: 'pre-wrap',
+                                  wordBreak: 'break-word',
+                                }}
+                              >
+                                {csComment}
+                              </Typography>
+                            </Stack>
+                          </Stack>
+                        )}
 
                         {/* Note UI only after undo window ends — same time "Add note" is available */}
                         {isActioned && !showUndo && (
@@ -1302,11 +1335,17 @@ const ApprovalPageView = () => {
                         const serverCommentDesktop = data?.creators
                           ?.find((c) => c.pitchId === pitchId)
                           ?.comment?.trim();
+                        const csCommentDesktop = data?.creators
+                          ?.find((c) => c.pitchId === pitchId)
+                          ?.csComment?.trim();
                         return (
+                          <React.Fragment key={pitchId}>
                           <TableRow
-                            key={pitchId}
                             sx={{
-                              '& td': { borderBottom: '1px solid', borderColor: 'divider' },
+                              '& td': {
+                                borderBottom: csCommentDesktop ? 'none' : '1px solid',
+                                borderColor: 'divider',
+                              },
                               bgcolor: 'transparent',
                             }}
                           >
@@ -1536,6 +1575,36 @@ const ApprovalPageView = () => {
                               )}
                             </TableCell>
                           </TableRow>
+                          {csCommentDesktop && (
+                            <TableRow sx={{ '& td': { borderBottom: '1px solid', borderColor: 'divider' } }}>
+                              <TableCell colSpan={6} sx={{ px: 2, pt: 0, pb: 1.25, bgcolor: '#FAFAFA' }}>
+                                <Stack direction="row" spacing={0.75} alignItems="flex-start" sx={{ pt: 1 }}>
+                                  <Iconify
+                                    icon="solar:chat-round-dots-bold"
+                                    width={14}
+                                    sx={{ color: '#AEAEB2', mt: 0.2, flexShrink: 0 }}
+                                  />
+                                  <Stack direction="row" spacing={0.75} alignItems="baseline" sx={{ minWidth: 0 }}>
+                                    <Typography sx={{ ...approvalNoteLabelSx, flexShrink: 0 }}>
+                                      Comments:
+                                    </Typography>
+                                    <Typography
+                                      sx={{
+                                        fontSize: '0.82rem',
+                                        lineHeight: 1.4,
+                                        color: '#3A3A3C',
+                                        whiteSpace: 'pre-wrap',
+                                        wordBreak: 'break-word',
+                                      }}
+                                    >
+                                      {csCommentDesktop}
+                                    </Typography>
+                                  </Stack>
+                                </Stack>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                          </React.Fragment>
                         );
                       })}
                     </TableBody>
