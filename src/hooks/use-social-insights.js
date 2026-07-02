@@ -2,6 +2,8 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { demoInsights, DEMO_CAMPAIGN_ID } from 'src/_mock/_demo-campaign';
+
 // Global cache for insights data
 const insightsCache = new Map();
 const campaignAveragesCache = new Map();
@@ -42,6 +44,15 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
   );
 
   const fetchInsights = useCallback(async () => {
+    // Demo campaign: serve mocked insights from the editable mock file (no network).
+    if (campaignId === DEMO_CAMPAIGN_ID) {
+      setData(demoInsights);
+      setFailedUrls([]);
+      setIsLoading(false);
+      setLoadingProgress({ loaded: demoInsights.length, total: demoInsights.length });
+      return;
+    }
+
     if (!postingSubmissions || postingSubmissions.length === 0) {
       setData([]);
       setFailedUrls([]);

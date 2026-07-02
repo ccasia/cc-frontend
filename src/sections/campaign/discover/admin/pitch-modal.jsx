@@ -52,6 +52,7 @@ const PitchModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
   const { user } = useAuthContext();
+  const isClientRole = user?.role === 'client' || user?.role === 'client_demo';
   const [totalUGCVideos] = useState(null);
   const { mutate } = useGetCampaignById(campaign.id);
   const navigate = useNavigate();
@@ -228,7 +229,7 @@ const PitchModal = ({
         console.log('Using V3 endpoint with pitch ID:', v3PitchId);
 
         // Check user role to call the correct endpoint
-        if (user?.role === 'client') {
+        if (isClientRole) {
           // Client approves pitch
           console.log('Client approving pitch with ID:', v3PitchId);
           response = await axiosInstance.patch(
@@ -285,7 +286,7 @@ const PitchModal = ({
         const v3PitchId = pitch.pitchId || pitch.id; // Use pitchId as it seems to be the correct identifier
 
         // Check user role to call the correct endpoint
-        if (user?.role === 'client') {
+        if (isClientRole) {
           let requestBody = {};
 
           if (maybeReason === 'others') {
@@ -349,7 +350,7 @@ const PitchModal = ({
 
       let response;
 
-      if (campaign?.submissionVersion === 'v4' && user?.role === 'client') {
+      if (campaign?.submissionVersion === 'v4' && isClientRole) {
         const v3PitchId = pitch.pitchId || pitch.id;
 
         // Build request body
@@ -1426,22 +1427,16 @@ const PitchModal = ({
                     p: 3,
                     borderRadius: 2,
                     bgcolor: '#ffffff',
-                    border: '1px solid #203ff5',
-                    // borderBottom: '3px solid #203ff5',
-                    '& p': {
-                      margin: 0,
-                      '& + p': {
-                        mt: 0.5,
-                      },
-                    },
+                    border: '1px solid #e7e7e7',
                   }}
                 >
                   <Markdown children={currentPitch.content || ''} />
                 </Box>
               )}
+
             </Box>
             {/* CS Comments for client */}
-            {user?.role === 'client' && adminCommentsText.length > 0 && (
+            {isClientRole && adminCommentsText.length > 0 && (
               <Box>
                 <Typography
                   variant="subtitle2"
@@ -1534,7 +1529,7 @@ const PitchModal = ({
             >
               Approve
             </Button>
-            {user?.role === 'client' && (
+            {isClientRole && (
               <Button
                 variant="contained"
                 onClick={() => setMaybeOpen(true)}
@@ -1572,7 +1567,7 @@ const PitchModal = ({
       <Dialog open={confirmDialog.open} onClose={handleCloseConfirmDialog} maxWidth="xs" fullWidth>
         <DialogContent>
           {/* CONDITIONAL BODY */}
-          {confirmDialog.type === 'decline' && user?.role === 'client' ? (
+          {confirmDialog.type === 'decline' && isClientRole ? (
             // --- Client Decline: reason UI (reusing the dialog) ---
             <Stack spacing={2} sx={{ pt: 2 }}>
               <Typography
@@ -1694,7 +1689,7 @@ const PitchModal = ({
 
           <Button
             onClick={
-              confirmDialog.type === 'decline' && user?.role === 'client'
+              confirmDialog.type === 'decline' && isClientRole
                 ? handleDecline
                 : confirmDialog.type === 'approve'
                   ? handleApprove
@@ -1727,7 +1722,7 @@ const PitchModal = ({
                 )}
                 {confirmDialog.type === 'approve'
                   ? 'Yes, approve!'
-                  : user?.role === 'client' && confirmDialog.type === 'decline'
+                  : isClientRole && confirmDialog.type === 'decline'
                     ? 'Submit Reason' // 🔥 client-side decline
                     : 'Yes, decline!'}
               </>

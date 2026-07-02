@@ -151,7 +151,10 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
   const [renderedSubmission, setRenderedSubmission] = useState(null);
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  const isClient = userRole.toLowerCase() === 'client';
+  // Treat client_demo as a (view-only) client so the demo renders the client
+  // submission view rather than the admin view. Actions are gated by isDisabled
+  // (the demo passes isDisabled/isDemo down from campaign-detail-view).
+  const isClient = userRole.toLowerCase() === 'client' || userRole.toLowerCase() === 'client_demo';
 
   const { campaignType } = campaign;
 
@@ -175,19 +178,22 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
       { prefix: 'rawFootage', list: grouped.rawFootage },
       { prefix: 'photo', list: grouped.photos },
     ];
-    for (const { prefix, list } of groupEntries) {
-      const pending = (list || []).find(
-        (s) =>
-          s.status === 'PENDING_REVIEW' ||
-          s.status === 'APPROVE_LINK' ||
-          s.status === 'CLIENT_FEEDBACK'
-      );
-      if (pending) {
-        const key = `${prefix}-${pending.id}`;
-        setExpandedSubmission(key);
-        setRenderedSubmission(key);
-        break;
-      }
+    const pendingEntry = groupEntries
+      .map(({ prefix, list }) => ({
+        prefix,
+        pending: (list || []).find(
+          (s) =>
+            s.status === 'PENDING_REVIEW' ||
+            s.status === 'APPROVE_LINK' ||
+            s.status === 'CLIENT_FEEDBACK'
+        ),
+      }))
+      .find(({ pending }) => pending);
+
+    if (pendingEntry) {
+      const key = `${pendingEntry.prefix}-${pendingEntry.pending.id}`;
+      setExpandedSubmission(key);
+      setRenderedSubmission(key);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoExpand, submissionsLoading]);
@@ -898,12 +904,14 @@ CreatorAccordionWithSubmissions.propTypes = {
   creator: PropTypes.object.isRequired,
   campaign: PropTypes.object.isRequired,
   isDisabled: PropTypes.bool,
+  autoExpand: PropTypes.bool,
 };
 
 CreatorAccordion.propTypes = {
   creator: PropTypes.object.isRequired,
   campaign: PropTypes.object.isRequired,
   isDisabled: PropTypes.bool,
+  autoExpand: PropTypes.bool,
 };
 
 export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = false }) {

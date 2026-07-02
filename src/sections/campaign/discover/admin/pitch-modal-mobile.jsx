@@ -41,10 +41,12 @@ const PitchModalMobile = ({
   onClose,
   campaign,
   onUpdate,
+  readOnly = false,
   showClientApprovalNote = false,
 }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
+  const isClientRole = user?.role === 'client' || user?.role === 'client_demo';
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
@@ -200,7 +202,7 @@ const PitchModalMobile = ({
         const v3PitchId = pitch.pitchId || pitch.id;
 
         // Check user role to call the correct endpoint
-        if (user?.role === 'client') {
+        if (isClientRole) {
           // Client approves pitch
           response = await axiosInstance.patch(
             endpoints.campaign.pitch.v3.approveClient(v3PitchId)
@@ -255,7 +257,7 @@ const PitchModalMobile = ({
         const v3PitchId = pitch.pitchId || pitch.id;
 
         // Check user role to call the correct endpoint
-        if (user?.role === 'client') {
+        if (isClientRole) {
           // Client rejects pitch
           response = await axiosInstance.patch(
             endpoints.campaign.pitch.v3.rejectClient(v3PitchId),
@@ -328,7 +330,7 @@ const PitchModalMobile = ({
     try {
       setIsSubmitting(true);
 
-      if (campaign?.submissionVersion === 'v4' && user?.role === 'client') {
+      if (campaign?.submissionVersion === 'v4' && isClientRole) {
         const v3PitchId = pitch.pitchId || pitch.id;
 
         // Build request body
@@ -955,7 +957,7 @@ const PitchModalMobile = ({
             </Box>
 
             {/* CS Comments for client */}
-            {user?.role === 'client' && adminCommentsText.length > 0 && (
+            {isClientRole && adminCommentsText.length > 0 && (
               <Box>
                 <Typography
                   variant="subtitle2"
@@ -984,7 +986,7 @@ const PitchModalMobile = ({
         </DialogContent>
 
         {/* Action Buttons */}
-        {(currentPitch?.status === 'PENDING_REVIEW' ||
+        {!readOnly && (currentPitch?.status === 'PENDING_REVIEW' ||
           currentPitch?.displayStatus === 'PENDING_REVIEW' ||
           currentPitch?.status === 'undecided' ||
           currentPitch?.displayStatus === 'undecided' ||
@@ -1043,7 +1045,7 @@ const PitchModalMobile = ({
               Approve
             </Button>
 
-            {user?.role === 'client' && (
+            {isClientRole && (
               <Button
                 variant="outlined"
                 fullWidth
@@ -1082,7 +1084,7 @@ const PitchModalMobile = ({
       <Dialog open={confirmDialog.open} onClose={handleCloseConfirmDialog} maxWidth="xs" fullWidth>
         <DialogContent>
           {/* CONDITIONAL BODY */}
-          {confirmDialog.type === 'decline' && user?.role === 'client' ? (
+          {confirmDialog.type === 'decline' && isClientRole ? (
             // --- Client Decline: reason UI (reusing the dialog) ---
             <Stack spacing={2} sx={{ pt: 2 }}>
               <Typography
@@ -1204,7 +1206,7 @@ const PitchModalMobile = ({
 
           <Button
             onClick={
-              confirmDialog.type === 'decline' && user?.role === 'client'
+              confirmDialog.type === 'decline' && isClientRole
                 ? handleDecline
                 : confirmDialog.type === 'approve'
                   ? handleApprove
@@ -1216,7 +1218,7 @@ const PitchModalMobile = ({
               color:
                 confirmDialog.type === 'approve'
                   ? '#fff'
-                  : user?.role === 'client' && confirmDialog.type === 'decline'
+                  : isClientRole && confirmDialog.type === 'decline'
                     ? '#D4321C'
                     : '#ff3b30',
               border: confirmDialog.type === 'approve' ? 'none' : '1.5px solid #e7e7e7',
@@ -1241,7 +1243,7 @@ const PitchModalMobile = ({
                 )}
                 {confirmDialog.type === 'approve'
                   ? 'Yes, approve!'
-                  : user?.role === 'client' && confirmDialog.type === 'decline'
+                  : isClientRole && confirmDialog.type === 'decline'
                     ? 'Submit Reason'
                     : 'Yes, decline!'}
               </>
@@ -1371,6 +1373,7 @@ PitchModalMobile.propTypes = {
   onClose: PropTypes.func,
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
+  readOnly: PropTypes.bool,
   showClientApprovalNote: PropTypes.bool,
 };
 
