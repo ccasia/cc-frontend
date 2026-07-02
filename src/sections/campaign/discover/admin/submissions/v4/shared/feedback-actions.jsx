@@ -867,6 +867,7 @@ export default function FeedbackActions({
           open={reviewModalOpen}
           onClose={() => setReviewModalOpen(false)}
           submission={submission}
+          creator={submission?.user || submission?.creator}
           videoOrder="asc"
           rightSideContent={({
             currentTime,

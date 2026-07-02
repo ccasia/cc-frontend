@@ -46,7 +46,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   const { showNpsModal } = useNps();
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  const isClient = userRole.toLowerCase() === 'client';
+  const normalizedUserRole = userRole.toLowerCase();
+  const isClient = normalizedUserRole === 'client' || normalizedUserRole === 'client_demo';
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];

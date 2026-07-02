@@ -63,9 +63,13 @@ const VideoSubmissionModal = ({
   videoOrder = 'desc',
 }) => {
   const { user } = useAuthContext();
-  const isClient = user?.role === 'client';
+  // client_demo is a view-only client: renders the client layout (isAdmin false,
+  // so admin controls are hidden) and follows normal client video visibility.
+  const isClientDemo = user?.role === 'client_demo';
+  const isClient = user?.role === 'client' || isClientDemo;
   const isCreator = user?.role === 'creator';
   const isAdmin = !isClient && !isCreator;
+  const isDemoSubmission = Boolean(submission?.campaign?.isDemo);
   const [videoPage, setVideoPage] = useState(0);
   const [isCaptionOpen, setIsCaptionOpen] = useState(false);
   const [freshSubmission, setFreshSubmission] = useState(submission);
@@ -105,7 +109,7 @@ const VideoSubmissionModal = ({
   }, [videoPage]);
 
   const refreshSubmission = async () => {
-    if (!submission?.id) return;
+    if (!submission?.id || isDemoSubmission) return;
     try {
       const res = await axiosInstance.get(`${endpoints.submission.v4.getById}/${submission.id}`);
       setFreshSubmission(res?.data?.submission || submission);
@@ -118,6 +122,10 @@ const VideoSubmissionModal = ({
     let isMounted = true;
     const run = async () => {
       if (!open || !submission?.id) return;
+      if (isDemoSubmission) {
+        setFreshSubmission(submission);
+        return;
+      }
       try {
         const res = await axiosInstance.get(`${endpoints.submission.v4.getById}/${submission.id}`);
         if (isMounted) {
@@ -131,7 +139,7 @@ const VideoSubmissionModal = ({
     return () => {
       isMounted = false;
     };
-  }, [open, submission?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, submission?.id, isDemoSubmission]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Countdown timer for feedbackDeadline (display-only, no auto-submit)
   useEffect(() => {
@@ -231,10 +239,9 @@ const VideoSubmissionModal = ({
         : allVideos.slice(0, MAX_VIDEO_PAGES).reverse();
     videos = clipped;
   } else {
-    // Client/Creator path: keep DESC, filter for clients
-    const visibleVideos = isClient
-      ? allVideos.filter((v) => CLIENT_ALLOWED_STATUSES.includes(v.status))
-      : allVideos;
+    // Client/Creator path: keep DESC, filter for clients.
+    const visibleVideos =
+      isClient ? allVideos.filter((v) => CLIENT_ALLOWED_STATUSES.includes(v.status)) : allVideos;
     videos =
       visibleVideos.length <= MAX_VIDEO_PAGES
         ? visibleVideos
@@ -253,9 +260,8 @@ const VideoSubmissionModal = ({
     videoOrder === 'asc' ? effectiveVideoPage !== videoCount - 1 : effectiveVideoPage !== 0;
 
   const captionText = effectiveSubmission.caption || '';
-  const campaignName = submission.campaign?.name || 'Campaign';
 
-  const creatorInfo = creator || effectiveSubmission.user || effectiveSubmission.creator || {};
+  const creatorInfo = creator?.user || creator || effectiveSubmission.user || effectiveSubmission.creator || {};
   const creatorName =
     creatorInfo.name || creatorInfo.firstName || effectiveSubmission.creatorName || 'Creator';
   const creatorPhoto =
@@ -299,6 +305,14 @@ const VideoSubmissionModal = ({
   // Role-based status chip helpers
   const campaignType = effectiveSubmission.campaign?.campaignType;
   const submissionStatus = effectiveSubmission.status;
+  const clientDemoProcessingStatuses = [
+    'IN_PROGRESS',
+    'PENDING_REVIEW',
+    'CLIENT_FEEDBACK',
+    'CHANGES_REQUIRED',
+  ];
+  const isProcessing =
+    isClientDemo && clientDemoProcessingStatuses.includes(submissionStatus);
 
   const getModalStatusColor = (status) => {
     if (isCreator) {
@@ -808,7 +822,7 @@ const VideoSubmissionModal = ({
                   position: 'relative',
                 }}
               >
-                {videoUrl && isAdmin && (
+                {videoUrl && !isProcessing && isAdmin && (
                   <DarkGlassTooltip title={copied ? 'Copied!' : 'Copy Link'} placement="right">
                     <IconButton
                       onClick={handleCopyLink}
@@ -849,38 +863,61 @@ const VideoSubmissionModal = ({
                     </IconButton>
                   </DarkGlassTooltip>
                 )}
-                {videoUrl ? (
-                  <video
-                    key={currentVideo?.id}
-                    ref={modalVideoRef}
-                    src={videoUrl}
-                    controls
-                    controlsList={isCreator ? 'nodownload' : undefined}
-                    preload="metadata"
-                    playsInline
-                    onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)}
-                    onLoadedMetadata={(e) => {
-                      if (Number.isFinite(e.target.duration)) setModalDuration(e.target.duration);
-                    }}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                    }}
-                  >
-                    <track kind="captions" />
-                  </video>
-                ) : (
-                  <Typography
-                    sx={{
-                      color: 'white',
-                      fontFamily:
-                        'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    }}
-                  >
-                    No video available
-                  </Typography>
-                )}
+                {(() => {
+                  if (isProcessing) {
+                    return (
+                      <Typography
+                        sx={{
+                          color: 'white',
+                          fontFamily:
+                            'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontWeight: 600,
+                          textAlign: 'center',
+                          px: 2,
+                        }}
+                      >
+                        Video content is being processed.
+                      </Typography>
+                    );
+                  }
+
+                  if (videoUrl) {
+                    return (
+                      <video
+                        key={currentVideo?.id}
+                        ref={modalVideoRef}
+                        src={videoUrl}
+                        controls
+                        controlsList={isCreator ? 'nodownload' : undefined}
+                        preload="metadata"
+                        playsInline
+                        onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)}
+                        onLoadedMetadata={(e) => {
+                          if (Number.isFinite(e.target.duration)) setModalDuration(e.target.duration);
+                        }}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                        }}
+                      >
+                        <track kind="captions" />
+                      </video>
+                    );
+                  }
+
+                  return (
+                    <Typography
+                      sx={{
+                        color: 'white',
+                        fontFamily:
+                          'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      }}
+                    >
+                      No video available
+                    </Typography>
+                  );
+                })()}
               </Box>
             </Box>
 
@@ -1081,6 +1118,7 @@ VideoSubmissionModal.propTypes = {
     creatorName: PropTypes.string,
     campaign: PropTypes.shape({
       name: PropTypes.string,
+      isDemo: PropTypes.bool,
     }),
   }),
   creator: PropTypes.shape({
