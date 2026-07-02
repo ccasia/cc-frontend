@@ -42,6 +42,7 @@ const ApprovalSetupModal = ({
   const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [comments, setComments] = useState({});
 
   const validate = () => {
     let valid = true;
@@ -74,6 +75,10 @@ const ApprovalSetupModal = ({
         approverName: approverName.trim(),
         approverEmail: approverEmail.trim(),
         pitchIds: selectedPitches.map((p) => p.id),
+        csComments: selectedPitches.reduce((acc, p) => {
+          acc[p.id] = comments[p.id] ?? p.adminComments ?? '';
+          return acc;
+        }, {}),
       });
       onSuccess(res.data.link);
     } catch (err) {
@@ -89,8 +94,13 @@ const ApprovalSetupModal = ({
       setApproverEmail('');
       setNameError('');
       setEmailError('');
+      setComments({});
       onClose();
     }
+  };
+
+  const handleCommentChange = (pitchId, value) => {
+    setComments((prev) => ({ ...prev, [pitchId]: value }));
   };
 
   const handleViewPitch = (pitch) => {
@@ -311,12 +321,13 @@ const ApprovalSetupModal = ({
                             : `https://${guestRawLink}`
                           : null;
                         const guestIsTiktok = pitch.selectedPlatform === 'tiktok';
+                        const commentValue = comments[pitch.id] ?? pitch.adminComments ?? '';
 
                         return (
+                        <React.Fragment key={pitch.id}>
                         <TableRow
-                          key={pitch.id}
                           sx={{
-                            '& td': { borderBottom: '1px solid', borderColor: '#EAEAEA' },
+                            '& td': { borderBottom: 'none', borderColor: '#EAEAEA' },
                             bgcolor: 'transparent',
                           }}
                         >
@@ -445,6 +456,38 @@ const ApprovalSetupModal = ({
                             </IconButton>
                           </TableCell>
                         </TableRow>
+                        <TableRow
+                          sx={{
+                            '& td': { borderBottom: '1px solid', borderColor: '#EAEAEA' },
+                            bgcolor: 'transparent',
+                          }}
+                        >
+                          <TableCell colSpan={7} sx={{ px: 2, pt: 0, pb: 1.5 }}>
+                            <Typography
+                              sx={{
+                                mb: 0.5,
+                                fontFamily: 'Inter Display, Inter, sans-serif',
+                                fontWeight: 500,
+                                fontSize: '12px',
+                                lineHeight: '16px',
+                                color: 'text.secondary',
+                              }}
+                            >
+                              Comments
+                            </Typography>
+                            <TextField
+                              fullWidth
+                              multiline
+                              minRows={2}
+                              placeholder="Add a comment for the approver..."
+                              value={commentValue}
+                              onChange={(e) => handleCommentChange(pitch.id, e.target.value)}
+                              size="small"
+                              sx={{ '& .MuiInputBase-root': { bgcolor: '#FFFFFF' } }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                        </React.Fragment>
                         );
                       })}
                     </TableBody>
