@@ -37,12 +37,24 @@ const OPTIONS = [
 
 // ----------------------------------------------------------------------
 
+const getAccountSubtitle = (user) => {
+  if (user?.role === 'client_demo') {
+    return 'Demo account';
+  }
+
+  return user?.email;
+};
+
+// ----------------------------------------------------------------------
+
 export default function AccountPopover({ isOnline }) {
   const router = useRouter();
 
   const { logout, user } = useAuthContext();
 
   const popover = usePopover();
+  const isClientDemo = user?.role === 'client_demo';
+  const menuOptions = isClientDemo ? [] : OPTIONS;
 
   const handleLogout = async () => {
     try {
@@ -166,25 +178,31 @@ export default function AccountPopover({ isOnline }) {
                 {user?.name}
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
-                {user?.email}
+                {getAccountSubtitle(user)}
               </Typography>
             </Box>
           </Stack>
         </Box>
 
-        <Stack sx={{ p: 1 }}>
-          {OPTIONS.map((option) => (
-            <MenuItem
-              key={option.label}
-              sx={{ minHeight: '40px' }}
-              onClick={() => handleClickItem(option.linkTo, option.label)}
-            >
-              {option.label}
-            </MenuItem>
-          ))}
-        </Stack>
+        {isClientDemo && <Divider sx={{ marginLeft: '10px', marginRight: '10px' }} />}
 
-        <Divider sx={{ marginLeft: '10px', marginRight: '10px' }} />
+        {menuOptions.length > 0 && (
+          <>
+            <Stack sx={{ p: 1 }}>
+              {menuOptions.map((option) => (
+                <MenuItem
+                  key={option.label}
+                  sx={{ minHeight: '40px' }}
+                  onClick={() => handleClickItem(option.linkTo, option.label)}
+                >
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Stack>
+
+            <Divider sx={{ marginLeft: '10px', marginRight: '10px' }} />
+          </>
+        )}
 
         <MenuItem
           onClick={handleLogout}

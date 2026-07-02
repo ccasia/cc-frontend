@@ -2,24 +2,39 @@ import useSWR from 'swr';
 
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
+import { DEMO_CAMPAIGN_ID, getDemoV4Submissions } from 'src/_mock/_demo-campaign';
+
 // ----------------------------------------------------------------------
 
+const noop = () => {};
+
 export const useGetV4Submissions = (campaignId, userId) => {
+  // Demo campaign: serve mocked submissions from the editable mock file.
+  const isDemoCampaign = campaignId === DEMO_CAMPAIGN_ID;
+
   const URL = `${endpoints.submission.v4.getSubmissions}?campaignId=${campaignId}${userId ? `&userId=${userId}` : ''}`;
 
-  const { data, isLoading, error, mutate } = useSWR(campaignId ? URL : null, fetcher, {
-    revalidateIfStale: true,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  });
+  const { data, isLoading, error, mutate } = useSWR(
+    campaignId && !isDemoCampaign ? URL : null,
+    fetcher,
+    {
+      revalidateIfStale: true,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
 
-  const test = data?.grouped;
-
-  if (test?.agreement?.userId === 'cmiduug6103x6l7013wl2pxbs') {
-    console.log(test);
+  if (isDemoCampaign) {
+    const demo = getDemoV4Submissions(userId);
+    return {
+      submissions: demo.submissions,
+      grouped: demo.grouped,
+      total: demo.total,
+      submissionsLoading: false,
+      submissionsError: undefined,
+      submissionsMutate: noop,
+    };
   }
-
-  // console.log(test?.filter((a) => a.agreement.userId === 'cmiduug6103x6l7013wl2pxbs'));
 
   const memoizedValue = {
     submissions: data?.submissions || [],

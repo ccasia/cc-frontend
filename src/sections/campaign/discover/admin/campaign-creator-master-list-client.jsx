@@ -302,6 +302,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
             type: 'text',
             content: item.user?.creator?.about || 'No content available',
             isShortlisted: true,
+            outreachStatus: item.outreachStatus,
             selectedPlatform: item.selectedPlatform,
           }))
           .filter((creator) => creator.user && creator.user.creator)
