@@ -364,8 +364,7 @@ export const endpoints = {
         `/api/submissions/v4/submission/${submissionId}/send-to-creator`,
       sendToClient: (submissionId) =>
         `/api/submissions/v4/submission/${submissionId}/send-to-client`,
-      updateCaption: (submissionId) =>
-        `/api/submissions/v4/submission/${submissionId}/caption`,
+      updateCaption: (submissionId) => `/api/submissions/v4/submission/${submissionId}/caption`,
       resolveComment: (commentId) => `/api/submissions/v4/comments/${commentId}/resolve`,
       toggleCommentVisibility: (commentId) =>
         `/api/submissions/v4/comments/${commentId}/visibility`,
@@ -503,6 +502,7 @@ export const endpoints = {
     approve: (id) => `/api/briefs/${id}/approve`,
     reset: (id) => `/api/briefs/${id}/reset`,
     handover: (id) => `/api/briefs/${id}/handover`,
+    lost: (id) => `/api/briefs/${id}/lost`,
     assignCsm: (id) => `/api/briefs/${id}/assign-csm`,
     attachments: (id) => `/api/briefs/${id}/attachments`,
     delete: (id) => `/api/briefs/${id}`,

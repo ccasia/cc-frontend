@@ -11,8 +11,7 @@ export const STATUS_CONFIG = {
   PENDING_REVIEW: { label: 'PENDING REVIEW', color: '#CA8A04', bg: 'transparent', border: '#CA8A04' },
   APPROVED: { label: 'APPROVED', color: '#15803D', bg: 'transparent', border: '#15803D' },
   HANDED_OVER: { label: 'HANDED OVER', color: '#1340FF', bg: 'transparent', border: '#1340FF' },
-  // Campaign lifecycle status (not a draftStatus): shown once the handed-over
-  // brief's campaign has been activated.
+  LOST: { label: 'LOST', color: '#DC2626', bg: 'transparent', border: '#DC2626' },
   ACTIVE: { label: 'ACTIVE', color: '#15803D', bg: 'transparent', border: '#15803D' },
 };
 
