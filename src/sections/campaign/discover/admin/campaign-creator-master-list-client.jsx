@@ -2,8 +2,8 @@
 import dayjs from 'dayjs';
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
-import React, { useCallback, useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
+import React, { useMemo, useState, useCallback } from 'react';
 
 import {
   Box,
@@ -30,6 +30,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
+import { getUserDisplay } from 'src/utils/user-display';
 import { extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -42,9 +43,9 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import PitchModal from './pitch-modal';
 import MediaKitModal from './media-kit-modal';
 import PitchModalMobile from './pitch-modal-mobile';
+import ApprovalSetupModal from './approval-setup-modal';
 import CreatorMasterListRow from './creator-master-list-row';
 import usePitchSocket from '../client/v3-pitches/use-pitch-socket';
-import ApprovalSetupModal from './approval-setup-modal';
 import ApprovalConfirmationModal from './approval-confirmation-modal';
 
 // Status display helper function
@@ -247,8 +248,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
               pitchId: pitch.id,
               user: {
                 id: pitch.userId || pitch.user?.id,
-                name: pitch.user?.name,
-                email: pitch.user?.email,
+                name: getUserDisplay(pitch.user).name,
+                email: getUserDisplay(pitch.user).email,
                 ig_username: pitch.user?.creator?.instagramUser?.username,
                 tiktok_username: pitch.user?.creator?.tiktokUser?.username,
                 photoURL: pitch.user?.photoURL,
@@ -366,8 +367,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
             pitchId: pitch?.id || entry?.pitchId,
             user: {
               id: pitch?.userId || pitch?.user?.id,
-              name: pitch?.user?.name,
-              email: pitch?.user?.email,
+              name: getUserDisplay(pitch?.user).name,
+              email: getUserDisplay(pitch?.user).email,
               ig_username: pitch?.user?.creator?.instagramUser?.username,
               tiktok_username: pitch?.user?.creator?.tiktokUser?.username,
               photoURL: pitch?.user?.photoURL,

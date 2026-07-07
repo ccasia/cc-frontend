@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
-import { useRef, useState, useEffect, useCallback } from 'react';
-
 import { useSearchParams } from 'react-router-dom';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -9,8 +8,8 @@ import {
   Stack,
   Avatar,
   Button,
-  Collapse,
   Tooltip,
+  Collapse,
   TextField,
   Typography,
   useMediaQuery,
@@ -19,6 +18,8 @@ import {
 } from '@mui/material';
 
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
+
+import { getUserDisplay } from 'src/utils/user-display';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { getStatusColor } from 'src/contants/statusColors';
@@ -146,6 +147,7 @@ function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false
 
 function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = false }) {
   const { user } = useAuthContext();
+  const creatorDisplay = getUserDisplay(creator?.user);
   const { socket } = useSocketContext();
   const [expandedSubmission, setExpandedSubmission] = useState(null);
   const [renderedSubmission, setRenderedSubmission] = useState(null);
@@ -824,7 +826,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
         >
           <Avatar
             src={creator.user?.photoURL}
-            alt={creator.user?.name}
+            alt={creatorDisplay.name}
             sx={{
               width: { xs: 32, sm: 35 },
               height: { xs: 32, sm: 35 },
@@ -832,10 +834,10 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
               flexShrink: 0,
             }}
           >
-            {creator.user?.name?.charAt(0).toUpperCase()}
+            {creatorDisplay.name?.charAt(0).toUpperCase()}
           </Avatar>
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Tooltip title={creator.user?.name || 'Unknown Creator'} arrow>
+            <Tooltip title={creatorDisplay.name || 'Unknown Creator'} arrow>
               <Typography
                 variant="subtitle1"
                 noWrap
@@ -845,7 +847,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
                   fontSize: { xs: '0.9rem', sm: '1rem' },
                 }}
               >
-                {creator.user?.name || 'Unknown Creator'}
+                {creatorDisplay.name || 'Unknown Creator'}
               </Typography>
             </Tooltip>
           </Box>
@@ -941,8 +943,9 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
 
   const filteredCreators =
     sortedCreators.filter((creator) => {
-      const name = creator.user?.name?.toLowerCase() || '';
-      const email = creator.user?.email?.toLowerCase() || '';
+      const display = getUserDisplay(creator.user);
+      const name = display.name.toLowerCase();
+      const email = display.email.toLowerCase();
       const searchLower = searchTerm.toLowerCase();
       return name.includes(searchLower) || email.includes(searchLower);
     }) || [];

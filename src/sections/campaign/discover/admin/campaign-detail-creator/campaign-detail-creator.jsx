@@ -31,6 +31,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
+import { getUserDisplay } from 'src/utils/user-display';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -408,7 +409,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                           borderRadius: 2,
                         }}
                       />
-                      <ListItemText primary={option?.name} secondary={option?.email} />
+                      <ListItemText primary={getUserDisplay(option).name} secondary={getUserDisplay(option).email} />
                     </Box>
                   );
                 }}
@@ -620,7 +621,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                             borderRadius: 2,
                           }}
                         />
-                        <ListItemText primary={option?.name} secondary={option?.email} />
+                        <ListItemText primary={getUserDisplay(option).name} secondary={getUserDisplay(option).email} />
                       </Box>
                     );
                   }}

@@ -30,6 +30,7 @@ import {
 
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
+import { getUserDisplay } from 'src/utils/user-display';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -490,10 +491,10 @@ const PitchModal = ({
                         });
                       }}
                     >
-                      {currentPitch?.user?.name}
+                      {getUserDisplay(currentPitch?.user).name}
                     </Typography>
                     {(() => {
-                      const email = currentPitch?.user?.email;
+                      const {email} = getUserDisplay(currentPitch?.user);
                       const isGuest =
                         email?.includes('@tempmail.com') || email?.startsWith('guest_');
                       return email && !isGuest ? (

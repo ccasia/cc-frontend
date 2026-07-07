@@ -4,8 +4,9 @@ import { useTheme } from '@emotion/react';
 
 import { Box, Link, Stack, Avatar, Button, Tooltip, TableRow, TableCell, Typography } from '@mui/material';
 
-import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+import { getUserDisplay } from 'src/utils/user-display';
 import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
+import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 import { getOutreachStatusConfig } from 'src/contants/outreach';
 
@@ -17,6 +18,7 @@ import Iconify from 'src/components/iconify';
  */
 const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isCreditTier, isSelected, onToggleSelect }) => {
   const theme = useTheme();
+  const rowUser = getUserDisplay(pitch.user);
   // Profile link is stored on Creator model
   const instagramStats = pitch?.user?.creator?.instagramUser || null;
   const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
@@ -161,7 +163,7 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
         <Stack direction="row" alignItems="center" spacing={2}>
           <Avatar
             src={pitch.user?.photoURL}
-            alt={pitch.user?.name}
+            alt={rowUser.name}
             sx={{
               width: 40,
               height: 40,
@@ -170,9 +172,9 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
               boxShadow: theme.customShadows.z8,
             }}
           >
-            {pitch.user?.name?.charAt(0).toUpperCase()}
+            {rowUser.name?.charAt(0).toUpperCase()}
           </Avatar>
-          <Typography variant="body2">{pitch.user?.name}</Typography>
+          <Typography variant="body2">{rowUser.name}</Typography>
         </Stack>
       </TableCell>
       <TableCell>
