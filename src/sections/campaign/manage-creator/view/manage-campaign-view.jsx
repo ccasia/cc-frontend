@@ -115,6 +115,13 @@ const ManageCampaignView = () => {
         }) || [],
       pending:
         filteredCampaigns?.filter((campaign) => {
+          // A rejected pitch (creator not shortlisted) is never pending.
+          if (
+            campaign?.pitch?.status === 'rejected' ||
+            campaign?.pitch?.status === 'REJECTED'
+          ) {
+            return false;
+          }
           // For campaigns: PENDING_REVIEW should be in pending
           if (campaign?.pitch?.status === 'PENDING_REVIEW') {
             return true;
