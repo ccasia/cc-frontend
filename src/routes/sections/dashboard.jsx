@@ -262,7 +262,7 @@ export const dashboardRoutes = [
         children: [
           {
             element: (
-              <RoleBasedGuard roles={['superadmin', 'god', 'client_demo']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'god', 'client_demo', 'admin']} hasContent>
                 <DiscoveryTool />
               </RoleBasedGuard>
             ),
