@@ -146,12 +146,12 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
         ...packageItem,
         totalCredits:
           packageItem.totalCredits ||
-          packageItem.package.credits ||
-          packageItem.customPackage.customCredits,
+          packageItem.package?.credits ||
+          packageItem.customPackage?.customCredits,
         availableCredits:
           (packageItem.totalCredits ||
-            packageItem.package.credits ||
-            packageItem.customPackage.customCredits) - packageItem.creditsUsed,
+            packageItem.package?.credits ||
+            packageItem.customPackage?.customCredits) - packageItem.creditsUsed,
       };
       return packageItem;
     }
