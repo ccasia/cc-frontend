@@ -441,6 +441,13 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
   return (
     <Box p={1.5} sx={{ pb: 0 }}>
+      <input
+        ref={fileInputRef}
+        type="file"
+        hidden
+        accept="application/pdf"
+        onChange={handleFileUpload}
+      />
       {!agreementStatus && !agreementUrl ? (
         <Box
           display="flex"
@@ -618,13 +625,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   gap: { xs: 1.5, sm: 1 } 
                 }}
               >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  hidden
-                  accept="application/pdf"
-                  onChange={handleFileUpload}
-                />
                 <Button
                   variant="contained"
                   onClick={handleUploadClick}
