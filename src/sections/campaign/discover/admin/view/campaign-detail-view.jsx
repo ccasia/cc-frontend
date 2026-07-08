@@ -705,7 +705,13 @@ const CampaignDetailView = ({
           <CampaignCreatorDeliverables campaign={campaign} isDisabled={isDisabled} />
         );
       case 'submissions-v4':
-        return <CampaignCreatorSubmissionsV4 campaign={campaign} isDisabled={isDisabled || isDemo} />;
+        return (
+          <CampaignCreatorSubmissionsV4
+            campaign={campaign}
+            isDisabled={isDisabled || isDemo}
+            onRated={campaignMutate}
+          />
+        );
       case 'analytics':
         return (
           <CampaignAnalytics
