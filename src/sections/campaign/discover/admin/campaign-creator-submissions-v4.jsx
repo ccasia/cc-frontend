@@ -11,6 +11,8 @@ import {
   Button,
   Tooltip,
   Collapse,
+  Dialog,
+  Divider,
   TextField,
   Typography,
   IconButton,
