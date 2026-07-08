@@ -10,10 +10,10 @@ import {
   Stack,
   Avatar,
   Button,
-  Tooltip,
-  Collapse,
   Dialog,
+  Tooltip,
   Divider,
+  Collapse,
   TextField,
   Typography,
   IconButton,
@@ -35,6 +35,7 @@ import { getStatusColor } from 'src/contants/statusColors';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
+import StarRating from 'src/components/star-rating';
 import EmptyContent from 'src/components/empty-content';
 
 import V4VideoSubmission from './submissions/v4/video-submission';
@@ -133,78 +134,6 @@ ScrollingName.propTypes = {
 };
 
 // ----------------------------------------------------------------------
-
-// Renders 5 stars for a numeric rating, showing a half star when the fractional
-// part falls between .3 and .7 (e.g. 4.5 -> 4 full + 1 half; 4.25 -> 4 full).
-function StarRating({ value, activeColor, emptyColor, width, sx }) {
-  const fraction = value - Math.floor(value);
-  const fullStars = Math.floor(value);
-  const hasHalf = fraction >= 0.3 && fraction <= 0.7;
-  // Anything above .7 rounds the fractional star up to a full star.
-  const roundedUpFull = fraction > 0.7 ? fullStars + 1 : fullStars;
-
-  return (
-    <Stack direction="row" spacing={0.25} sx={sx}>
-      {[1, 2, 3, 4, 5].map((star) => {
-        if (star <= roundedUpFull) {
-          return (
-            <Iconify
-              key={star}
-              icon="material-symbols:star-rounded"
-              width={width}
-              sx={{ color: activeColor }}
-            />
-          );
-        }
-        // Half star: a base star in emptyColor (right/white half) with a gold
-        // star clipped to its left half laid on top — no gold outline bleeds to
-        // the right side.
-        if (hasHalf && star === fullStars + 1) {
-          return (
-            <Box key={star} sx={{ position: 'relative', width, height: width, flexShrink: 0 }}>
-              <Iconify
-                icon="material-symbols:star-rounded"
-                width={width}
-                sx={{ color: emptyColor, position: 'absolute', top: 0, left: 0 }}
-              />
-              <Iconify
-                icon="material-symbols:star-rounded"
-                width={width}
-                sx={{
-                  color: activeColor,
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  clipPath: 'inset(0 50% 0 0)',
-                }}
-              />
-            </Box>
-          );
-        }
-        return (
-          <Iconify
-            key={star}
-            icon="material-symbols:star-rounded"
-            width={width}
-            sx={{ color: emptyColor }}
-          />
-        );
-      })}
-    </Stack>
-  );
-}
-
-StarRating.propTypes = {
-  value: PropTypes.number.isRequired,
-  activeColor: PropTypes.string.isRequired,
-  emptyColor: PropTypes.string.isRequired,
-  width: PropTypes.number,
-  sx: PropTypes.object,
-};
-
-StarRating.defaultProps = {
-  sx: { my: 1 },
-};
 
 function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false, onRated, autoExpand = false }) {
   // Get V4 submissions for this creator to check if they have any
@@ -1277,6 +1206,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
                   activeColor="#FFC702"
                   emptyColor="#D9D9D9"
                   width={20}
+                  sx={{ my: 1 }}
                 />
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: '12px' }}>
                   {value > 0 ? value.toFixed(1) : 'NOT SET'}

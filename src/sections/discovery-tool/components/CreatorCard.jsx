@@ -7,6 +7,7 @@ import { formatNumber } from 'src/utils/socialMetricsCalculator';
 import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
+import StarRating from 'src/components/star-rating';
 
 import BookmarkButton from './BookmarkButton';
 import {
@@ -19,27 +20,40 @@ import {
   resolveCreatorRating,
 } from './creator-helpers';
 
-const StatItem = ({ label, value }) => (
-  <Box sx={{ minWidth: label === 'Engagement Rate' ? 126 : 72, flex: '0 0 auto' }}>
+const StatItem = ({ label, shortLabel, value }) => (
+  <Box sx={{ flex: '0 0 auto' }}>
     <Typography
+      component="span"
       sx={{
         display: 'block',
         color: BLUE,
-        fontSize: 13,
+        fontSize: 10,
         fontWeight: 600,
-        lineHeight: '17px',
+        lineHeight: '14px',
         whiteSpace: 'nowrap',
       }}
     >
-      {label}
+      {shortLabel ? (
+        <>
+          {/* Full label on wider cards, short label once the card narrows. */}
+          <Box component="span" sx={{ '@container creator-card (max-width: 280px)': { display: 'none' } }}>
+            {label}
+          </Box>
+          <Box component="span" sx={{ '@container creator-card (min-width: 280.05px)': { display: 'none' } }}>
+            {shortLabel}
+          </Box>
+        </>
+      ) : (
+        label
+      )}
     </Typography>
     <Typography
       sx={{
         color: BLUE,
         fontFamily: 'Instrument Serif',
-        fontSize: 27,
+        fontSize: 20,
         fontWeight: 400,
-        lineHeight: '31px',
+        lineHeight: '24px',
       }}
     >
       {value}
@@ -49,38 +63,22 @@ const StatItem = ({ label, value }) => (
 
 StatItem.propTypes = {
   label: PropTypes.string.isRequired,
+  shortLabel: PropTypes.string,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
 
-const RatingStars = ({ rating }) => {
-  const activeStars = Math.round(rating);
-
-  return (
-    <Stack direction="row" alignItems="center" spacing={0.5}>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Iconify
-          key={star}
-          icon="material-symbols:star-rounded"
-          width={17}
-          color={star <= activeStars ? '#FFC702' : '#D9D9D9'}
-        />
-      ))}
-    </Stack>
-  );
-};
-
-RatingStars.propTypes = {
-  rating: PropTypes.number.isRequired,
+StatItem.defaultProps = {
+  shortLabel: null,
 };
 
 const CreatorRating = ({ rating }) => (
-  <Box sx={{ width: 172, flex: '0 0 auto' }}>
+  <Box sx={{ flex: '0 0 auto' }}>
     <Typography
       sx={{
         color: ONYX,
-        fontSize: 13,
+        fontSize: 10,
         fontWeight: 400,
-        lineHeight: '17px',
+        lineHeight: '14px',
         textTransform: 'uppercase',
       }}
     >
@@ -91,9 +89,9 @@ const CreatorRating = ({ rating }) => (
         <Typography
           sx={{
             color: BLUE,
-            fontSize: 26,
+            fontSize: 18,
             fontWeight: 600,
-            lineHeight: '30px',
+            lineHeight: '22px',
           }}
         >
           {rating.toFixed(1)}
@@ -110,7 +108,13 @@ const CreatorRating = ({ rating }) => (
           / 5.0
         </Typography>
       </Stack>
-      <RatingStars rating={rating} />
+      <StarRating
+        value={rating}
+        activeColor="#FFC702"
+        emptyColor="#D9D9D9"
+        width={17}
+        sx={{ alignItems: 'center' }}
+      />
     </Stack>
   </Box>
 );
@@ -245,6 +249,10 @@ const CreatorCard = ({
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
+        // Establish a container so stat labels can respond to the card's own
+        // width (cards live in a 1/2/3-col grid, so viewport size ≠ card size).
+        containerType: 'inline-size',
+        containerName: 'creator-card',
         minHeight: { xs: 350, lg: 404, xl: 430 },
         p: 2.25,
         gap: 1.75,
@@ -331,37 +339,37 @@ const CreatorCard = ({
       <Stack
         direction="row"
         alignItems="flex-end"
-        justifyContent="space-between"
         sx={{
-          columnGap: 2,
-          rowGap: 1,
-          flexWrap: 'wrap',
+          flexWrap: 'nowrap',
         }}
       >
         <CreatorRating rating={rating} />
+        <Box sx={{ flex: '1 1 auto', minWidth: 16 }} />
         <Stack
           direction="row"
           alignItems="center"
           sx={{
-            columnGap: 1.5,
-            rowGap: 1,
-            flexWrap: 'wrap',
+            columnGap: 2,
+            flexWrap: 'nowrap',
             justifyContent: 'flex-end',
-            minWidth: 0,
-            flex: '1 1 220px',
+            flex: '0 0 auto',
           }}
         >
           <StatItem label="Followers" value={formatNumber(followers)} />
-          <StatItem label="Engagement Rate" value={formatEngagementRate(engagementRate)} />
+          <StatItem
+            label="Engagement Rate"
+            shortLabel="Engagement"
+            value={formatEngagementRate(engagementRate)}
+          />
         </Stack>
       </Stack>
 
       <Typography
         sx={{
           color: ONYX,
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: 400,
-          lineHeight: '18px',
+          lineHeight: '16px',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
