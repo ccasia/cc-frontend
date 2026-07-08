@@ -10,7 +10,6 @@ import {
   Stack,
   Avatar,
   Button,
-  Dialog,
   Tooltip,
   Collapse,
   Dialog,
