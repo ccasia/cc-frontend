@@ -414,7 +414,7 @@ function CreateCampaignFormV2({
     needAds: '',
     submissionVersion: 'v2',
 
-    isV4Submission: false,
+    isV4Submission: true,
     isCreditTier: false,
   };
 
