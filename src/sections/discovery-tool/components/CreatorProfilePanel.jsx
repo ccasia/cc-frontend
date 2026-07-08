@@ -19,6 +19,7 @@ import {
   formatEngagementRate,
   resolveCreatorRating,
 } from './creator-helpers';
+import StarRating from 'src/components/star-rating';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -67,9 +68,7 @@ StatItem.propTypes = {
 };
 
 const DetailItem = ({ label, value }) => {
-  const values = (Array.isArray(value) ? value : [value]).filter(
-    (item) => item || item === 0
-  );
+  const values = (Array.isArray(value) ? value : [value]).filter((item) => item || item === 0);
 
   return (
     <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
@@ -489,7 +488,13 @@ const CreatorProfilePanel = ({
                     &nbsp;/ 5.0
                   </Typography>
                 </Stack>
-                <RatingStars rating={rating} />
+                <StarRating
+                  value={rating}
+                  activeColor="#FFC702"
+                  emptyColor="#D9D9D9"
+                  width={17}
+                  sx={{ alignItems: 'center' }}
+                />
               </Stack>
             </Box>
 
