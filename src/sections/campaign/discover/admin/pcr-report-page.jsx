@@ -1195,16 +1195,12 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   // Global paste event listener to strip formatting from all pasted content
   useEffect(() => {
     const handleGlobalPaste = (e) => {
-      // Only apply to inputs, textareas, and contentEditable elements within the report
+      // Only contentEditable fields need manual paste cleanup. Controlled MUI inputs
+      // must keep native paste so React state receives the change event correctly.
       const { target } = e;
       const isInReport = reportRef.current?.contains(target);
 
-      if (
-        isInReport &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.contentEditable === 'true')
-      ) {
+      if (isInReport && target.contentEditable === 'true') {
         handlePlainTextPaste(e);
       }
     };
@@ -9576,7 +9572,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                                       multiline
                                                       rows={2}
                                                       inputProps={{
-                                                        maxLength: 200,
                                                         style: {
                                                           fontFamily: 'Inter Display, sans-serif',
                                                           fontWeight: 400,
@@ -9946,7 +9941,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                                       multiline
                                                       rows={2}
                                                       inputProps={{
-                                                        maxLength: 200,
                                                         style: {
                                                           fontFamily: 'Inter Display, sans-serif',
                                                           fontWeight: 400,
