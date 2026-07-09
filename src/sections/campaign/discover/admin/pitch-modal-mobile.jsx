@@ -47,11 +47,12 @@ const PitchModalMobile = ({
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const isClientRole = user?.role === 'client' || user?.role === 'client_demo';
+  const isDemoCampaign = Boolean(campaign?.isDemo);
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
   const [totalUGCVideos] = useState(null);
-  const { mutate } = useGetCampaignById(campaign.id);
+  const { mutate } = useGetCampaignById(isDemoCampaign ? null : campaign?.id);
   const navigate = useNavigate();
 
   const [maybeOpen, setMaybeOpen] = useState(false);
@@ -90,7 +91,7 @@ const PitchModalMobile = ({
   useEffect(() => {
     let cancelled = false;
     const userId = currentPitch?.user?.id;
-    if (open && userId) {
+    if (open && userId && !isDemoCampaign) {
       setCreatorProfileFull(null);
       axiosInstance
         .get(endpoints.creators.getCreatorFullInfo(userId))
@@ -107,7 +108,7 @@ const PitchModalMobile = ({
     return () => {
       cancelled = true;
     };
-  }, [open, currentPitch?.user?.id]);
+  }, [open, currentPitch?.user?.id, isDemoCampaign]);
 
   // Derive creator profile data from multiple possible sources
   const creatorProfile = currentPitch?.user?.creator || {};
@@ -191,6 +192,16 @@ const PitchModalMobile = ({
   );
 
   const handleApprove = async () => {
+    if (isDemoCampaign) {
+      const updatedPitch = { ...pitch, status: 'APPROVED', displayStatus: 'APPROVED' };
+      setCurrentPitch(updatedPitch);
+      onUpdate?.(updatedPitch);
+      enqueueSnackbar('Pitch approved successfully');
+      setConfirmDialog({ open: false, type: null });
+      onClose();
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
@@ -246,6 +257,16 @@ const PitchModalMobile = ({
   };
 
   const handleDecline = async () => {
+    if (isDemoCampaign) {
+      const updatedPitch = { ...pitch, status: 'REJECTED', displayStatus: 'REJECTED' };
+      setCurrentPitch(updatedPitch);
+      onUpdate?.(updatedPitch);
+      enqueueSnackbar('Pitch declined successfully');
+      setConfirmDialog({ open: false, type: null });
+      onClose();
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
@@ -327,6 +348,30 @@ const PitchModalMobile = ({
   };
 
   const handleMaybeSubmit = async () => {
+    if (isDemoCampaign) {
+      const reasonLabel =
+        maybeReason === 'others'
+          ? 'Other'
+          : MAYBE_REASONS.find((reason) => reason.value === maybeReason)?.label || 'Unspecified';
+      const updatedPitch = {
+        ...pitch,
+        status: 'MAYBE',
+        displayStatus: 'MAYBE',
+        rejectionReason: reasonLabel,
+        ...(maybeReason === 'others' && maybeNote.trim()
+          ? { customRejectionText: maybeNote.trim() }
+          : {}),
+      };
+
+      setCurrentPitch(updatedPitch);
+      onUpdate?.(updatedPitch);
+      enqueueSnackbar('Pitch marked as Maybe');
+      setMaybeOpen(false);
+      setMaybeReason('');
+      setMaybeNote('');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 

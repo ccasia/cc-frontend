@@ -1,16 +1,20 @@
 import useSWR from 'swr';
+import { useState, useEffect, useCallback } from 'react';
 
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
-import { DEMO_CAMPAIGN_ID, getDemoV4Submissions } from 'src/_mock/_demo-campaign';
+import {
+  DEMO_CAMPAIGN_ID,
+  getDemoV4Submissions,
+  subscribeDemoV4Submissions,
+} from 'src/_mock/_demo-campaign';
 
 // ----------------------------------------------------------------------
-
-const noop = () => {};
 
 export const useGetV4Submissions = (campaignId, userId) => {
   // Demo campaign: serve mocked submissions from the editable mock file.
   const isDemoCampaign = campaignId === DEMO_CAMPAIGN_ID;
+  const [, setDemoVersion] = useState(0);
 
   const URL = `${endpoints.submission.v4.getSubmissions}?campaignId=${campaignId}${userId ? `&userId=${userId}` : ''}`;
 
@@ -24,15 +28,23 @@ export const useGetV4Submissions = (campaignId, userId) => {
     }
   );
 
+  useEffect(() => {
+    if (!isDemoCampaign) return undefined;
+    return subscribeDemoV4Submissions(() => setDemoVersion((version) => version + 1));
+  }, [isDemoCampaign]);
+
+  const demoMutate = useCallback(() => Promise.resolve(getDemoV4Submissions(userId)), [userId]);
+
   if (isDemoCampaign) {
-    const demo = getDemoV4Submissions(userId);
+    const demoData = getDemoV4Submissions(userId);
+
     return {
-      submissions: demo.submissions,
-      grouped: demo.grouped,
-      total: demo.total,
+      submissions: demoData.submissions,
+      grouped: demoData.grouped,
+      total: demoData.total,
       submissionsLoading: false,
       submissionsError: undefined,
-      submissionsMutate: noop,
+      submissionsMutate: demoMutate,
     };
   }
 

@@ -7,12 +7,12 @@ import {
   Card,
   Chip,
   Stack,
+  Avatar,
   Button,
   Slider,
   TextField,
   Typography,
   IconButton,
-  Avatar,
 } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
@@ -21,16 +21,16 @@ import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { updateDemoV4Submission } from 'src/_mock/_demo-campaign';
 
 import Iconify from 'src/components/iconify';
 import { useNps } from 'src/components/nps-feedback/nps-provider';
+import TypographyMotion from 'src/components/animate/motion-typography';
+import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
 
 import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissions/admin-feedback-modal';
 import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
 import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
-
-import TypographyMotion from 'src/components/animate/motion-typography';
-import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
 
 import FeedbackLogs from './shared/feedback-logs';
 import FeedbackSection from './shared/feedback-section';
@@ -48,6 +48,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const normalizedUserRole = userRole.toLowerCase();
   const isClient = normalizedUserRole === 'client' || normalizedUserRole === 'client_demo';
+  const isDemoCampaign = Boolean(campaign?.isDemo);
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
@@ -263,6 +264,42 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         setLoading(true);
         setLocalActionInProgress(true);
 
+        if (isDemoCampaign) {
+          const feedbackDeadline = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+          const feedbackSentByName = user?.name || 'Demo account';
+
+          updateDemoV4Submission(submission.id, (current) => ({
+            status: 'CLIENT_FEEDBACK',
+            updatedAt: new Date().toISOString(),
+            video: (current.video || []).map((item) =>
+              item.id === videoIdToPublish
+                ? {
+                    ...item,
+                    status: 'CLIENT_FEEDBACK',
+                    feedbackDeadline,
+                    feedbackSentByName,
+                  }
+                : item
+            ),
+          }));
+
+          setLocalFeedbackDeadline(feedbackDeadline);
+          setLocalFeedbackSentByName(feedbackSentByName);
+
+          if (shouldRefresh) {
+            enqueueSnackbar('Feedback for current video locked', { variant: 'success' });
+          } else {
+            enqueueSnackbar('Feedback sent to Admin', { variant: 'success' });
+          }
+
+          onUpdate?.(shouldRefresh);
+
+          setTimeout(() => {
+            setLocalActionInProgress(false);
+          }, 500);
+          return;
+        }
+
         const response = await axiosInstance.post('/api/submissions/v4/approve/client', {
           submissionId: submission.id,
           action: 'request_changes',
@@ -302,7 +339,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         }
       }
     },
-    [submission.id, onUpdate, showNpsModal, localActionInProgress]
+    [isDemoCampaign, submission.id, user?.name, onUpdate, showNpsModal, localActionInProgress]
   );
 
   const videoControls = useMemo(
@@ -1164,6 +1201,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
               ref={feedbackRef}
               submissionId={submission.id}
               videoId={modalVideoId || clientVideo?.id || video?.id}
+              isDemo={isDemoCampaign}
               currentVideoTime={videoControls.formatTime(modalCurrentTime || 0)}
               onSeek={onSeekTo}
               onSendToAdmin={handleSendAndRefresh}

@@ -37,9 +37,8 @@ const COVER_IMAGE =
 // Kahf Malaysia client logo, matching the stored GCS URL from the real campaign.
 const COMPANY_LOGO =
   'https://storage.googleapis.com/cult_production/companyLogo/Screenshot%202025-12-30%20at%209.26.02%C3%A2%C2%80%C2%AFAM.png';
-const ADMIN_AVATAR_1 = 'https://storage.googleapis.com/cult_production/admin/_MG_4004.JPG';
-const ADMIN_AVATAR_2 =
-  'https://lh3.googleusercontent.com/a/ACg8ocI7ey9Z1lBM3e6muozZQS8sQLjp-xU1IwpJY7lrvz7z68il_4o=s96-c';
+const SOFI_ADMIN_AVATAR =
+  'https://storage.googleapis.com/cult_production/admin/Headshots 2025 (20).png';
 const SAMPLE_AGREEMENT_PDF =
   'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
 // Fallback post thumbnail for Analytics creator cards (used when a creator has no avatar).
@@ -92,7 +91,7 @@ const CREATORS = [
     amount: 570,
     shortlistedDate: '2026-06-19T03:51:50.289Z',
     followers: 6115,
-    submissionStatus: 'POSTED',
+    submissionStatus: 'SENT_TO_CLIENT',
     platform: 'TikTok',
     postingUrl: 'https://vt.tiktok.com/ZSCFwcKya/',
     submittedAt: '2026-06-19T06:58:30.338Z',
@@ -121,7 +120,7 @@ const CREATORS = [
     amount: 370,
     shortlistedDate: '2026-06-19T03:52:12.341Z',
     followers: 2537,
-    submissionStatus: 'POSTED',
+    submissionStatus: 'SENT_TO_CLIENT',
     platform: 'TikTok',
     postingUrl: 'https://vt.tiktok.com/ZSCYPKwNX/',
     submittedAt: '2026-06-19T06:26:30.246Z',
@@ -830,45 +829,90 @@ const demoLogisticsProducts = [
 const DEMO_LOGISTICS_ADDRESS = 'Delivery address confirmed with creator.';
 
 const DEMO_LOGISTICS_ROWS = [
-  ['cmqkeq5p101fbo201t8pvlosl', 'cmkqc0h5t0e3qo301hijgv3vm', '2026-06-19T04:06:49.429Z', '2026-06-24T05:54:08.286Z'],
-  ['cmqkopmp802ngo2017alb3ugo', 'cml6877x7024foo015zigvdmn', '2026-06-19T08:46:20.972Z', '2026-06-26T19:54:35.597Z'],
-  ['cmqlrbb0y04g4o201cpnpq9ig', 'cm7q46xt800crms01uk73l8fl', '2026-06-20T02:46:57.682Z', '2026-07-01T13:31:56.008Z'],
-  ['cmqn7ji0x05s5o201it3f0dku', 'cm9ju40gz011wqv01jo8fqbfm', '2026-06-21T03:09:00.033Z', '2026-06-29T11:20:14.749Z'],
-  ['cmqokv4po07hno201xfmmyr8y', 'cmbytbkvo02nplg01cz46i1c9', '2026-06-22T02:09:43.836Z', '2026-06-26T15:16:02.742Z'],
-  ['cmqouwecs08nho201d1n0dp7o', 'cm40xzc9o00a954qgz5t9f80i', '2026-06-22T06:50:39.147Z', '2026-06-24T09:12:22.379Z'],
-  ['cmqowui6f0906o201mj6k1syz', 'cmqm09ia604mbo201v78sxf4w', '2026-06-22T07:45:10.023Z', '2026-07-01T22:24:52.023Z'],
-  ['cmqpaocqe09o9o2019zyqz0cg', 'cm7cngq8400rpp901q6gzlnrr', '2026-06-22T14:12:17.654Z', '2026-06-23T20:38:51.905Z'],
-  ['cmqpwc0zh0aq6o201ct1lar07', 'cmawcfwsw050xky01g7nv3duc', '2026-06-23T00:18:34.109Z', '2026-06-26T07:45:53.184Z'],
-  ['cmqrgx9h20h65o201c3sjevlb', 'cml5zpmas00xooo0177td48sy', '2026-06-24T02:42:43.382Z', '2026-06-24T02:48:27.342Z'],
-  ['cmqrqnoej0ig8o201zyvq59ml', 'cmnpmyssw03neo8017g29os1z', '2026-06-24T07:15:12.331Z', '2026-06-26T06:28:32.902Z'],
-  ['cmqs33oay0jj1o2019mrbcgv0', 'cmkqima2v0f6so30169il9wno', '2026-06-24T13:03:34.090Z', '2026-06-27T12:24:26.162Z'],
-  ['cmqs9qvkn0juso201v4fv9x95', 'cmkqoxf3g00q8o701909ehnva', '2026-06-24T16:09:34.295Z', '2026-06-26T06:06:26.271Z'],
-  ['cmqsxi1jj0l40o201fi8xkv4x', 'cmqmk44i0058ho201hnbnlhuv', '2026-06-25T03:14:32.911Z', '2026-06-25T09:20:39.337Z'],
-  ['cmqszcwz80ldfo201zjsugb91', 'cmqkql0ku03g8o201w8xq77bc', '2026-06-25T04:06:32.949Z', '2026-06-25T13:06:58.330Z'],
-  ['cmqu9kltx02tko20117g8dxld', 'cmikhz3890861o601bao05fkf', '2026-06-26T01:40:14.085Z', '2026-06-26T01:41:58.441Z'],
-  ['cmqul39va03vqo201abaz3pvq', 'cmqlj0nc504ero20108ek4i2a', '2026-06-26T07:02:40.822Z', '2026-06-26T07:17:11.043Z'],
-  ['cmquojpw4048ko201re31dp2o', 'cmc1imiai07dglg01j596cnif', '2026-06-26T08:39:26.932Z', '2026-06-26T08:40:26.634Z'],
-  ['cmqyrnn3v0a1ao201palpdr4u', 'cm6vnl4qs016eqo01gg3vbver', '2026-06-29T05:17:33.500Z', '2026-06-29T05:20:10.294Z'],
+  ['cmqpaocqe09o9o2019zyqz0cg', 'cm7cngq8400rpp901q6gzlnrr', '2026-06-22T14:12:17.654Z', 'DELIVERED'],
+  ['cmqkeq5p101fbo201t8pvlosl', 'cmkqc0h5t0e3qo301hijgv3vm', '2026-06-19T04:06:49.429Z', 'SHIPPED'],
+  ['cmqrgx9h20h65o201c3sjevlb', 'cml5zpmas00xooo0177td48sy', '2026-06-24T02:42:43.382Z', 'SCHEDULED'],
+  ['cmqowui6f0906o201mj6k1syz', 'cmqm09ia604mbo201v78sxf4w', '2026-06-22T07:45:10.023Z', 'PENDING_ASSIGNMENT'],
+  ['cmqouwecs08nho201d1n0dp7o', 'cm40xzc9o00a954qgz5t9f80i', '2026-06-22T06:50:39.147Z', 'ISSUE_REPORTED'],
+  ['cmqlrbb0y04g4o201cpnpq9ig', 'cm7q46xt800crms01uk73l8fl', '2026-06-20T02:46:57.682Z', 'DELIVERED'],
+  ['cmqdemoericlogistics', 'cmqkfl5ce01mso201ti5ambug', '2026-06-23T04:10:00.000Z', 'SCHEDULED'],
+  ['cmqdemoammarwazienlogistics', 'cmm1kbibv00uwqs010ieka28i', '2026-06-23T05:20:00.000Z', 'PENDING_ASSIGNMENT'],
+  ['cmqdemosakuralogistics', 'cmqkgldwk01poo201tupzq7qj', '2026-06-24T06:15:00.000Z', 'SHIPPED'],
+  ['cmqdemotengkulogistics', 'cmqoigndj075vo2015z81utm5', '2026-06-24T07:45:00.000Z', 'ISSUE_REPORTED'],
 ];
 
-const demoLogistics = DEMO_LOGISTICS_ROWS.map(([id, creatorId, createdAt, completedAt]) => {
-  const creator = demoCreatorUsersById[creatorId] || {
+const demoLogisticsStubCreatorsById = {
+  cmqkfl5ce01mso201ti5ambug: {
+    id: 'cmqkfl5ce01mso201ti5ambug',
+    name: 'Eric Lim',
+    photoURL: '',
+    creator: {
+      tiktokUser: { username: 'ericlimzvv' },
+    },
+  },
+  cmm1kbibv00uwqs010ieka28i: {
+    id: 'cmm1kbibv00uwqs010ieka28i',
+    name: 'Ammar Wazien',
+    photoURL: '',
+    creator: {
+      tiktokUser: { username: 'ammarwazien' },
+    },
+  },
+  cmqkgldwk01poo201tupzq7qj: {
+    id: 'cmqkgldwk01poo201tupzq7qj',
+    name: 'Sakura',
+    photoURL: '',
+    creator: {
+      instagramUser: { username: 'jasonvivyy' },
+    },
+  },
+  cmqoigndj075vo2015z81utm5: {
+    id: 'cmqoigndj075vo2015z81utm5',
+    name: 'Tengku',
+    photoURL: '',
+    creator: {
+      tiktokUser: { username: 'tengkumer' },
+    },
+  },
+};
+
+const demoLogisticsTimestampByStatus = (createdAt, status) => {
+  const createdTime = new Date(createdAt).getTime();
+  const addHours = (hours) => new Date(createdTime + hours * 60 * 60 * 1000).toISOString();
+
+  return {
+    updatedAt: ['DELIVERED', 'SHIPPED', 'SCHEDULED', 'ISSUE_REPORTED'].includes(status)
+      ? addHours(24)
+      : createdAt,
+    shippedAt: ['SHIPPED', 'DELIVERED'].includes(status) ? addHours(12) : null,
+    deliveredAt: status === 'DELIVERED' ? addHours(24) : null,
+    completedAt: status === 'DELIVERED' ? addHours(24) : null,
+    expectedDeliveryDate:
+      status === 'SCHEDULED' || status === 'SHIPPED'
+        ? addHours(status === 'SHIPPED' ? 48 : 72)
+        : null,
+  };
+};
+
+const demoLogistics = DEMO_LOGISTICS_ROWS.map(([id, creatorId, createdAt, status]) => {
+  const creator = demoCreatorUsersById[creatorId] || demoLogisticsStubCreatorsById[creatorId] || {
     id: creatorId,
     name: 'Creator',
     photoURL: '',
     creator: {},
   };
+  const timestamps = demoLogisticsTimestampByStatus(createdAt, status);
 
   return {
     id,
     type: 'PRODUCT_DELIVERY',
-    status: 'COMPLETED',
+    status,
     createdAt,
-    updatedAt: completedAt,
-    shippedAt: null,
-    deliveredAt: null,
-    receivedAt: null,
-    completedAt,
+    updatedAt: timestamps.updatedAt,
+    shippedAt: timestamps.shippedAt,
+    deliveredAt: timestamps.deliveredAt,
+    receivedAt: timestamps.deliveredAt,
+    completedAt: timestamps.completedAt,
     campaignId: DEMO_CAMPAIGN_ID,
     creatorId,
     creator,
@@ -877,13 +921,24 @@ const demoLogistics = DEMO_LOGISTICS_ROWS.map(([id, creatorId, createdAt, comple
       id: `${id}details`,
       trackingLink: null,
       address: DEMO_LOGISTICS_ADDRESS,
-      expectedDeliveryDate: null,
+      expectedDeliveryDate: timestamps.expectedDeliveryDate,
       dietaryRestrictions: '',
-      isConfirmed: true,
+      isConfirmed: status !== 'PENDING_ASSIGNMENT',
       createdAt,
       items: [],
     },
-    issues: [],
+    issues:
+      status === 'ISSUE_REPORTED'
+        ? [
+            {
+              id: `${id}issue`,
+              type: 'DELIVERY_DELAY',
+              description: 'Courier reported a delivery exception.',
+              status: 'OPEN',
+              createdAt: timestamps.updatedAt,
+            },
+          ]
+        : [],
   };
 });
 
@@ -906,10 +961,9 @@ const demoSubmissionCreators = demoCreators.filter(
 
 // --- Creator pitches (Overview > Creator Pitches + client Master List) -----
 // The client master list reads pitches (via useGetV3Pitches) and renders each
-// pitch's real `status`, so this list carries the organic status mix
-// (APPROVED for shortlisted/confirmed creators, REJECTED for the rest). Note:
-// the master list maps these with isShortlisted:false, so `status` drives the
-// pill directly. IDs are hyphen-free (see submission-id note below).
+// pitch's `status`. Demo review actions are frontend-only, so every row starts
+// at PENDING_REVIEW and local component state handles temporary changes until
+// the browser refreshes. IDs are hyphen-free (see submission-id note below).
 const CREATOR_MASTER_LIST_KEYS = new Set([
   'adam',
   'ahmadjaris',
@@ -932,7 +986,7 @@ const CREATOR_MASTER_LIST_STUBS = [
     tkFollowers: 59200,
     selectedPlatform: 'tiktok',
     followers: 59200,
-    status: 'APPROVED',
+    status: 'PENDING_REVIEW',
     outreach: 'UNRESPONSIVE',
     createdAt: '2026-06-19T06:36:16.626Z',
   },
@@ -945,7 +999,7 @@ const CREATOR_MASTER_LIST_STUBS = [
     igFollowers: 311,
     selectedPlatform: 'tiktok',
     followers: 2654,
-    status: 'REJECTED',
+    status: 'PENDING_REVIEW',
     outreach: 'INTERESTED',
     createdAt: '2026-06-18T09:30:00.000Z',
   },
@@ -957,7 +1011,7 @@ const CREATOR_MASTER_LIST_STUBS = [
     igFollowers: 8338,
     selectedPlatform: 'instagram',
     followers: 8338,
-    status: 'REJECTED',
+    status: 'PENDING_REVIEW',
     outreach: 'REJECTED',
     createdAt: '2026-06-19T06:39:49.826Z',
   },
@@ -969,7 +1023,7 @@ const CREATOR_MASTER_LIST_STUBS = [
     tkFollowers: 59800,
     selectedPlatform: 'tiktok',
     followers: 59800,
-    status: 'REJECTED',
+    status: 'PENDING_REVIEW',
     outreach: 'OUTREACHED',
     createdAt: '2026-06-19T07:00:00.000Z',
   },
@@ -1007,8 +1061,8 @@ export const demoPitches = [
     id: `demopitch${creator.key}`,
     pitchId: `demopitch${creator.key}`,
     userId: creator.user.id,
-    status: creator.pitchStatus,
-    displayStatus: creator.pitchStatus,
+    status: 'PENDING_REVIEW',
+    displayStatus: 'PENDING_REVIEW',
     type: 'text',
     content: '',
     createdAt: creator.shortlistedDate,
@@ -1070,7 +1124,7 @@ const makeVideoSubmission = (creator) => {
     status: creator.submissionStatus,
     submissionType: { type: 'VIDEO' },
     caption: creator.caption || '',
-    content: creator.postingUrl || '', // posting link (only set for POSTED)
+    content: creator.submissionStatus === 'POSTED' ? creator.postingUrl || '' : '',
     userId: creator.user.id,
     user: creator.user,
     creatorName: creator.user.name,
@@ -1115,13 +1169,203 @@ const demoCampaignSubmissions = allSubmissions.filter((submission) =>
   demoSubmissionCreatorIds.has(submission.userId)
 );
 
+const demoSubmissionOverrides = {};
+const demoSubmissionListeners = new Set();
+const demoCommentStore = new Map();
+let demoCommentSequence = 0;
+
+const notifyDemoSubmissionListeners = () => {
+  demoSubmissionListeners.forEach((listener) => listener());
+};
+
+export const subscribeDemoV4Submissions = (listener) => {
+  demoSubmissionListeners.add(listener);
+  return () => demoSubmissionListeners.delete(listener);
+};
+
+const cloneDemoSubmission = (submission) => ({
+  ...submission,
+  campaign: submission.campaign ? { ...submission.campaign } : submission.campaign,
+  user: submission.user,
+  submissionType: submission.submissionType
+    ? { ...submission.submissionType }
+    : submission.submissionType,
+  video: (submission.video || []).map((video) => ({ ...video })),
+  photos: (submission.photos || []).map((photo) => ({ ...photo })),
+  rawFootages: (submission.rawFootages || []).map((rawFootage) => ({ ...rawFootage })),
+  feedback: (submission.feedback || []).map((feedback) => ({ ...feedback })),
+});
+
+const applyDemoSubmissionOverride = (submission) => {
+  const override = demoSubmissionOverrides[submission.id];
+  const cloned = cloneDemoSubmission(submission);
+
+  if (!override) return cloned;
+
+  return {
+    ...cloned,
+    ...override,
+    video: override.video ? override.video.map((video) => ({ ...video })) : cloned.video,
+    photos: override.photos ? override.photos.map((photo) => ({ ...photo })) : cloned.photos,
+    rawFootages: override.rawFootages
+      ? override.rawFootages.map((rawFootage) => ({ ...rawFootage }))
+      : cloned.rawFootages,
+    feedback: override.feedback
+      ? override.feedback.map((feedback) => ({ ...feedback }))
+      : cloned.feedback,
+  };
+};
+
+const buildDemoV4Submissions = (payload) => {
+  const submissions = payload.submissions.map(applyDemoSubmissionOverride);
+  const videos = submissions.filter((submission) => submission.submissionType?.type === 'VIDEO');
+  const photos = submissions.filter((submission) => submission.submissionType?.type === 'PHOTO');
+  const rawFootage = submissions.filter(
+    (submission) => submission.submissionType?.type === 'RAW_FOOTAGE'
+  );
+  const agreement =
+    submissions.find((submission) => submission.submissionType?.type === 'AGREEMENT_FORM') || null;
+
+  return {
+    submissions,
+    grouped: { videos, photos, rawFootage, agreement },
+    total: submissions.length,
+  };
+};
+
+export const updateDemoV4Submission = (submissionId, updater) => {
+  const base = allSubmissions.find((submission) => submission.id === submissionId);
+  if (!base) return null;
+
+  const current = applyDemoSubmissionOverride(base);
+  const next = typeof updater === 'function' ? updater(current) : updater;
+
+  demoSubmissionOverrides[submissionId] = {
+    ...demoSubmissionOverrides[submissionId],
+    ...next,
+  };
+  notifyDemoSubmissionListeners();
+
+  return applyDemoSubmissionOverride(base);
+};
+
+const getDemoCommentKey = (submissionId, videoId) => `${submissionId}:${videoId}`;
+
+const cloneDemoComment = (comment) => ({
+  ...comment,
+  user: comment.user ? { ...comment.user } : comment.user,
+  agreedBy: (comment.agreedBy || []).map((agreement) => ({ ...agreement })),
+  replies: (comment.replies || []).map(cloneDemoComment),
+});
+
+const getDemoCommentList = (submissionId, videoId) => {
+  const key = getDemoCommentKey(submissionId, videoId);
+  if (!demoCommentStore.has(key)) {
+    demoCommentStore.set(key, []);
+  }
+  return demoCommentStore.get(key);
+};
+
+const findDemoComment = (comments, commentId) =>
+  (comments || []).reduce((found, comment) => {
+    if (found) return found;
+    if (comment.id === commentId) return comment;
+    return findDemoComment(comment.replies || [], commentId);
+  }, null);
+
+export const getDemoSubmissionComments = (submissionId, videoId) =>
+  getDemoCommentList(submissionId, videoId).map(cloneDemoComment);
+
+export const addDemoSubmissionComment = ({
+  submissionId,
+  videoId,
+  text,
+  timestamp,
+  parentId = null,
+  user = {},
+  isClientDraft = false,
+}) => {
+  const comments = getDemoCommentList(submissionId, videoId);
+  const now = new Date().toISOString();
+  demoCommentSequence += 1;
+  const comment = {
+    id: `democomment${Date.now()}${demoCommentSequence}`,
+    submissionId,
+    videoId,
+    text,
+    timestamp,
+    parentId,
+    userId: user.id,
+    createdAt: now,
+    updatedAt: now,
+    isClientDraft,
+    agreedBy: [],
+    replies: [],
+    user: {
+      id: user.id,
+      name: user.name || 'Demo account',
+      photoURL: user.photoURL || '',
+      client: user.client,
+      role: 'client',
+    },
+  };
+
+  if (parentId) {
+    const parent = findDemoComment(comments, parentId);
+    if (parent) {
+      parent.replies = [...(parent.replies || []), comment];
+    }
+  } else {
+    comments.push(comment);
+  }
+
+  return cloneDemoComment(comment);
+};
+
+export const toggleDemoSubmissionCommentAgreement = ({
+  submissionId,
+  videoId,
+  commentId,
+  user = {},
+}) => {
+  const comments = getDemoCommentList(submissionId, videoId);
+  const comment = findDemoComment(comments, commentId);
+  if (!comment) return { agreed: false, agreedBy: [] };
+
+  const agreedBy = comment.agreedBy || [];
+  const hasAgreed = agreedBy.some((agreement) => agreement.userId === user.id);
+  comment.agreedBy = hasAgreed
+    ? agreedBy.filter((agreement) => agreement.userId !== user.id)
+    : [
+        ...agreedBy,
+        { userId: user.id, user: { id: user.id, name: user.name || 'Demo account' } },
+      ];
+
+  return { agreed: !hasAgreed, agreedBy: comment.agreedBy.map((agreement) => ({ ...agreement })) };
+};
+
+export const deleteDemoSubmissionComment = ({ submissionId, videoId, commentId }) => {
+  const removeComment = (comments) =>
+    comments
+      .filter((comment) => comment.id !== commentId)
+      .map((comment) => ({
+        ...comment,
+        replies: removeComment(comment.replies || []),
+      }));
+
+  const key = getDemoCommentKey(submissionId, videoId);
+  demoCommentStore.set(key, removeComment(getDemoCommentList(submissionId, videoId)));
+};
+
 // --- V4 submissions (useGetV4Submissions → per-creator) --------------------
 export const getDemoV4Submissions = (userId) =>
-  submissionsByUser[userId] || {
-    submissions: [],
-    grouped: { videos: [], photos: [], rawFootage: [], agreement: null },
-    total: 0,
-  };
+  submissionsByUser[userId]
+    ? buildDemoV4Submissions(submissionsByUser[userId])
+    : {
+        submissions: [],
+        grouped: { videos: [], photos: [], rawFootage: [], agreement: null },
+        total: 0,
+      };
 
 // --- Social insights (useSocialInsights → { data }) ------------------------
 // One entry per POSTED video that carries an `insight`. Shape matches
@@ -1310,7 +1554,7 @@ export const demoCampaign = {
     address: '',
     email: '',
     website: 'https://www.kahfeveryday.com/',
-    pic: [{ name: 'Ibnu', email: 'ibnu.aswan@paracorpgroup.com' }],
+    pic: [{ name: 'Kahf Demo Contact', email: 'demo@kahfeveryday.com' }],
     // Drives the "Credits Tracking" card (must be non-empty to show the breakdown).
     subscriptions: [
       {
@@ -1327,18 +1571,10 @@ export const demoCampaign = {
   campaignAdmin: [
     {
       id: 'demo-ca-1',
-      adminId: 'cm3fjl5jx000ibrupm44bbxmz',
+      adminId: 'cmg8qbg82006amy01ndflgdgg',
       admin: {
-        user: { id: 'cm3fjl5jx000ibrupm44bbxmz', name: 'Dulya Wijeratne', photoURL: ADMIN_AVATAR_1 },
+        user: { id: 'cmg8qbg82006amy01ndflgdgg', name: 'Sofi', photoURL: SOFI_ADMIN_AVATAR },
         role: { name: 'CSM' },
-      },
-    },
-    {
-      id: 'demo-ca-2',
-      adminId: 'cmbfzddtu00lao101ggfym0j6',
-      admin: {
-        user: { id: 'cmbfzddtu00lao101ggfym0j6', name: 'Irsalina', photoURL: ADMIN_AVATAR_2 },
-        role: { name: 'CSL' },
       },
     },
   ],

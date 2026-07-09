@@ -12,8 +12,8 @@ const noop = () => {};
 
 export default function useGetV3Pitches(campaignId = null, status = null) {
   // Demo campaign: serve mocked pitches so the client master list shows the
-  // real status spread (APPROVED for confirmed creators, REJECTED for the
-  // rest) instead of falling back to shortlisted (which forces all APPROVED).
+  // reset state (PENDING_REVIEW for every creator) without falling back to
+  // shortlisted rows, which force approved statuses.
   const isDemoCampaign = campaignId === DEMO_CAMPAIGN_ID;
 
   let url = '/api/pitch/v3';
@@ -41,4 +41,4 @@ export default function useGetV3Pitches(campaignId = null, status = null) {
     isError: error,
     mutate,
   };
-} 
+}
