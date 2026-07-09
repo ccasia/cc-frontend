@@ -716,6 +716,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
   
   // Check if user is a client
   const isClient = user?.role?.includes('client');
+  const canViewReport = isClient && (campaign?.isPCRReady || campaign?.isDemo);
 
   // Fetch manual creator entries
   const { entries: manualEntries, mutate: mutateManualEntries } = useGetManualCreatorEntries(campaignId);
@@ -1193,7 +1194,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
         </Button>
         )}
         {/* View Report Button - Client only, when PCR is ready */}
-        {isClient && campaign?.isPCRReady && (
+        {canViewReport && (
         <Button
           sx={{
             width: '186.07px',

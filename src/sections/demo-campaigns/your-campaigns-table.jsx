@@ -86,7 +86,11 @@ StatusPill.propTypes = {
   status: PropTypes.string,
 };
 
-export default function YourCampaignsTable({ campaigns = [], isLoading = false }) {
+export default function YourCampaignsTable({
+  campaigns = [],
+  isLoading = false,
+  onCreateCampaign,
+}) {
   const router = useRouter();
   const [page, setPage] = useState(0);
 
@@ -193,7 +197,28 @@ export default function YourCampaignsTable({ campaigns = [], isLoading = false }
           // Empty state
           <Box sx={{ px: 1.75, flexGrow: 1, display: 'flex', alignItems: 'center' }}>
             <Typography sx={{ fontSize: 16, fontWeight: 500, lineHeight: '20px' }}>
-              <Box component="span" sx={{ color: '#0062CD' }}>
+              <Box
+                component={isLoading ? 'span' : 'button'}
+                type={isLoading ? undefined : 'button'}
+                onClick={isLoading ? undefined : onCreateCampaign}
+                sx={{
+                  p: 0,
+                  border: 0,
+                  bgcolor: 'transparent',
+                  color: '#0062CD',
+                  font: 'inherit',
+                  fontWeight: 'inherit',
+                  cursor: isLoading ? 'default' : 'pointer',
+                  '&:hover': {
+                    textDecoration: isLoading ? 'none' : 'underline',
+                  },
+                  '&:focus-visible': {
+                    outline: '2px solid #1340FF',
+                    outlineOffset: 2,
+                    borderRadius: '2px',
+                  },
+                }}
+              >
                 {isLoading ? 'Loading campaigns' : 'Create a campaign'}
               </Box>{' '}
               <Box component="span" sx={{ color: '#636366' }}>
@@ -248,4 +273,5 @@ export default function YourCampaignsTable({ campaigns = [], isLoading = false }
 YourCampaignsTable.propTypes = {
   campaigns: PropTypes.array,
   isLoading: PropTypes.bool,
+  onCreateCampaign: PropTypes.func,
 };
