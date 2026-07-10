@@ -165,6 +165,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
   const [renderedSubmission, setRenderedSubmission] = useState(null);
   const [rateDialogOpen, setRateDialogOpen] = useState(false);
   const [selectedStars, setSelectedStars] = useState(0);
+  const [hoveredStars, setHoveredStars] = useState(0);
   const [selectedTags, setSelectedTags] = useState([]);
   const [ratingNote, setRatingNote] = useState('');
   const [submittingRating, setSubmittingRating] = useState(false);
@@ -206,6 +207,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
 
   const handleOpenRateDialog = () => {
     setSelectedStars(ownRating);
+    setHoveredStars(0);
     // Tags/note are admin-only; clients rate stars only.
     setSelectedTags(isClient ? [] : creator.adminRatingTags || []);
     setRatingNote(isClient ? '' : creator.adminRatingNote || '');
@@ -1091,22 +1093,40 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
             <Typography variant="body2" color="text.secondary">
               How was your experience working with {creator.user?.name?.split(' ')[0] || 'them'}?
             </Typography>
-            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <IconButton
-                  key={star}
-                  onClick={() => setSelectedStars(star)}
-                  disabled={isReadOnly}
-                  disableRipple={isReadOnly}
-                  sx={{ p: 0.5, cursor: isReadOnly ? 'default' : 'pointer' }}
-                >
-                  <Iconify
-                    icon="material-symbols:star-rounded"
-                    width={40}
-                    sx={{ color: star <= selectedStars ? '#FFC702' : '#D9D9D9' }}
-                  />
-                </IconButton>
-              ))}
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ mt: 1 }}
+              onMouseLeave={() => setHoveredStars(0)}
+            >
+              {[1, 2, 3, 4, 5].map((star) => {
+                let starColor = '#D9D9D9';
+
+                if (hoveredStars > 0 && star <= hoveredStars) {
+                  starColor = 'rgba(255, 199, 2, 0.55)';
+                } else if (star <= selectedStars) {
+                  starColor = '#FFC702';
+                }
+
+                return (
+                  <IconButton
+                    key={star}
+                    onClick={() => setSelectedStars(star)}
+                    onMouseEnter={() => {
+                      if (!isReadOnly) setHoveredStars(star);
+                    }}
+                    disabled={isReadOnly}
+                    disableRipple={isReadOnly}
+                    sx={{ p: 0.5, cursor: isReadOnly ? 'default' : 'pointer' }}
+                  >
+                    <Iconify
+                      icon="material-symbols:star-rounded"
+                      width={40}
+                      sx={{ color: starColor }}
+                    />
+                  </IconButton>
+                );
+              })}
             </Stack>
           </Stack>
 
