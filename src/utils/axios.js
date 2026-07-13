@@ -77,6 +77,7 @@ export const endpoints = {
     avgSubmissionResponseDetails: '/api/analytics/v2/avg-submission-response/details',
     clientRejectionRate: '/api/analytics/v2/client-rejection-rate',
     creditsPerCS: '/api/analytics/v2/credits-per-cs',
+    csmWorkload: '/api/analytics/v2/csm-workload',
     rejectionReasons: '/api/analytics/v2/rejection-reasons',
     requireChangesRate: '/api/analytics/v2/require-changes-rate',
     topShortlistedCreators: '/api/analytics/v2/top-shortlisted-creators',
