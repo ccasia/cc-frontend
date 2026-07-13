@@ -478,7 +478,8 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
   const getTierDataForItem = (item) => {
     if (!campaign?.isCreditTier) return null;
 
-    // First try: creditTier from shortlisted record
+    // Only ever show the tier agreed for THIS campaign. The creator's live tier tracks their
+    // media kit and drifts as they grow, so falling back to it would misreport what we pay.
     const shortlisted = item?.user?.shortlisted?.[0] || item?.shortlistedCreator;
     if (shortlisted?.creditTier) {
       return {
@@ -487,16 +488,6 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
       };
     }
 
-    // Second try: creditTier from creator record (current tier)
-    const creatorTier = item?.user?.creator?.creditTier;
-    if (creatorTier) {
-      return {
-        name: creatorTier.name || 'Unknown Tier',
-        creditsPerVideo: creatorTier.creditsPerVideo ?? 1,
-      };
-    }
-
-    // Third try: look in campaign.shortlisted for this user
     const campaignShortlisted = campaign?.shortlisted?.find((s) => s.userId === item?.user?.id);
     if (campaignShortlisted?.creditTier) {
       return {
