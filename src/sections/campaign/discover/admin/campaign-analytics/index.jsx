@@ -21,7 +21,7 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import { TopCreatorsLineChart, EngagementRateHeatmap } from 'src/components/trend-analysis';
 
-import PCRReportPage from '../pcr-report-page';
+import PCRReportPage from '../pcr-report/pcr-report-page';
 import CreatorList from './components/CreatorList';
 import DeleteDialog from './components/DeleteDialog';
 import PlatformToggle from './components/PlatformToggle';
