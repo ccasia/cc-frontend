@@ -44,7 +44,7 @@ import {
   PlatformOverviewDesktop,
 } from 'src/components/campaign-analytics';
 
-import PCRReportPage from './pcr-report-page';
+import PCRReportPage from './pcr-report/pcr-report-page';
 
 // Stagger animation configuration for skeleton to content transitions
 
