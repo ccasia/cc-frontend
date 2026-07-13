@@ -23,9 +23,14 @@ const DashboardAdmin = () => {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      {isSuperadmin && <DashboardSuperadmin />}
-      {(isCSM || isCSL || isSalesMarketing) && <DashboardAdminRevamped />}
-      {isFinance && <DashboardFinance />}
+      {isSuperadmin || isSalesMarketing ? (
+        <DashboardSuperadmin />
+      ) : (
+        <>
+          {(isCSM || isCSL) && <DashboardAdminRevamped />}
+          {isFinance && <DashboardFinance />}
+        </>
+      )}
     </Container>
   );
 };
