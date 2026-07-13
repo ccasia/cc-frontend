@@ -37,11 +37,11 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcru
 import StatusBadge from './components/status-badge';
 import HandoverDialog from './dialogs/handover-dialog';
 import AssignCsmDialog from './dialogs/assign-csm-dialog';
+import LostBriefDialog from './dialogs/lost-brief-dialog';
 import InviteLinkDialog from './dialogs/invite-link-dialog';
 import DeleteBriefDialog from './dialogs/delete-brief-dialog';
 import SendToClientDialog from './dialogs/send-to-client-dialog';
 import BriefApprovedDialog from './dialogs/brief-approved-dialog';
-import LostBriefDialog from './dialogs/lost-brief-dialog';
 
 const classifyRole = (user) => {
   if (!user) return 'other';
@@ -75,6 +75,9 @@ export default function CampaignBriefListView() {
   const canAssignCsm = role === 'CSL' || isSuperAdmin;
   // A brief authored by a CSL gets the direct assign-CSM shortcut at APPROVED.
   const isCslAuthored = (b) => b?.draftOrigin === 'CSL_CREATED';
+  // A brief authored by a CSM finalizes into their own campaign at APPROVED —
+  // no handover, no CSM selection.
+  const isCsmAuthored = (b) => b?.draftOrigin === 'CSM_CREATED';
   // A brief the current user authored. For CSL/CSM, listBriefs only returns
   // pre-handover briefs they own (plus handed-over ones), so this identifies the
   // briefs they may drive through the lifecycle.
@@ -347,6 +350,18 @@ export default function CampaignBriefListView() {
         Assign CSM
       </Button>
     );
+    // CSM finalizes their own brief into a campaign — reuses the assign dialog in
+    // 'finalize' mode (derived from draftOrigin at the mount).
+    const finalizeBtn = (
+      <Button
+        size="small"
+        variant="outlined"
+        onClick={() => setAssignCsmTarget(brief)}
+        sx={labeledBtnSx}
+      >
+        Attach Client
+      </Button>
+    );
     const lostBtn = (
       <IconButton
         size="small"
@@ -406,12 +421,13 @@ export default function CampaignBriefListView() {
               </>
             );
           case 'APPROVED':
-            // CSM-authored (BD_CREATED) brief → hand over to the CSL group, same
-            // as the BD path. (CSL-authored APPROVED is handled above.)
+            // CSM-authored brief → the CSM finalizes it into their own campaign.
+            // Otherwise (a CSM's BD_CREATED brief) → hand over to the CSL group.
+            // (CSL-authored APPROVED is handled above.)
             return (
               <>
                 {copyLinkIcon}
-                {handoverBtn}
+                {isCsmAuthored(brief) ? finalizeBtn : handoverBtn}
                 {editIcon}
                 {lostBtn}
                 {deleteIcon}
@@ -740,6 +756,7 @@ export default function CampaignBriefListView() {
       <AssignCsmDialog
         open={Boolean(assignCsmTarget)}
         brief={assignCsmTarget}
+        mode={isCsmAuthored(assignCsmTarget) ? 'finalize' : 'assign'}
         onClose={() => setAssignCsmTarget(null)}
         onAssigned={() => mutate()}
       />

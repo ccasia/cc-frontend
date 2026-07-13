@@ -27,8 +27,15 @@ import Iconify from 'src/components/iconify';
 
 import AttachClientPackage from './attach-client-package';
 
-export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
+// mode:
+//   'assign'   — CSL assigns one or more CSMs (shows the CSM picker).
+//   'finalize' — a CSM finalizes their OWN brief into a campaign they manage.
+//                No CSM picker; on save it just attaches the client/package and
+//                calls the finalize endpoint (server keeps the CSM as manager).
+export default function AssignCsmDialog({ open, brief, onClose, onAssigned, mode = 'assign' }) {
   const { enqueueSnackbar } = useSnackbar();
+
+  const isFinalize = mode === 'finalize';
 
   const attachRef = useRef(null);
 
@@ -50,10 +57,13 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
     setError('');
     setInternalComments('');
     setLoading(true);
-    Promise.all([
-      axiosInstance.get('/api/admin/getAllAdmins'),
-      axiosInstance.get(endpoints.campaignBrief.get(brief.id)),
-    ])
+
+    // Finalize mode doesn't pick CSMs, so skip the admins fetch.
+    const adminsReq = isFinalize
+      ? Promise.resolve({ data: [] })
+      : axiosInstance.get('/api/admin/getAllAdmins');
+
+    Promise.all([adminsReq, axiosInstance.get(endpoints.campaignBrief.get(brief.id))])
       .then(([adminsRes, briefRes]) => {
         const csms = (adminsRes.data || []).filter(
           (a) =>
@@ -87,14 +97,14 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
 
         setInternalComments(briefRes.data?.internalComments || '');
       })
-      .catch(() => enqueueSnackbar('Failed to load CSM admins', { variant: 'error' }))
+      .catch(() => enqueueSnackbar('Failed to load brief', { variant: 'error' }))
       .finally(() => setLoading(false));
-  }, [open, brief?.id, enqueueSnackbar]);
+  }, [open, brief?.id, isFinalize, enqueueSnackbar]);
 
   const assignedIds = new Set(assigned.map((a) => a.id));
 
   const handleSubmit = async () => {
-    if (selected.length === 0) {
+    if (!isFinalize && selected.length === 0) {
       setError('Select at least one CSM.');
       return;
     }
@@ -113,17 +123,26 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
         });
       }
 
-      await axiosInstance.post(endpoints.campaignBrief.assignCsm(brief.id), {
-        csmIds: selected,
-        internalComments: internalComments || '',
-      });
-      enqueueSnackbar('CSM assigned', { variant: 'success' });
+      if (isFinalize) {
+        // CSM finalizes their own brief — no CSM selection, they stay as manager.
+        await axiosInstance.post(endpoints.campaignBrief.finalize(brief.id), {
+          internalComments: internalComments || '',
+        });
+        enqueueSnackbar('Campaign created', { variant: 'success' });
+      } else {
+        await axiosInstance.post(endpoints.campaignBrief.assignCsm(brief.id), {
+          csmIds: selected,
+          internalComments: internalComments || '',
+        });
+        enqueueSnackbar('CSM assigned', { variant: 'success' });
+      }
       onAssigned?.();
       onClose?.();
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || err?.message || 'Failed to assign CSM', {
-        variant: 'error',
-      });
+      enqueueSnackbar(
+        err?.response?.data?.message || err?.message || `Failed to ${isFinalize ? 'finalize brief' : 'assign CSM'}`,
+        { variant: 'error' }
+      );
     } finally {
       setSubmitting(false);
     }
@@ -158,6 +177,10 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
               </>
             )}
 
+            {/* CSM picker — only in assign mode. In finalize mode the CSM
+                finalizes their own brief and stays as manager. */}
+            {!isFinalize && (
+              <>
             {/* Currently assigned — so CSL doesn't double-assign. */}
             {assigned.length > 0 && (
               <Box sx={{ mb: 2 }}>
@@ -230,6 +253,8 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
               </Select>
               {error && <FormHelperText>{error}</FormHelperText>}
             </FormControl>
+              </>
+            )}
 
             {/* Internal comments for the CS team. */}
             <Box>
@@ -272,4 +297,5 @@ AssignCsmDialog.propTypes = {
   brief: PropTypes.object,
   onClose: PropTypes.func,
   onAssigned: PropTypes.func,
+  mode: PropTypes.oneOf(['assign', 'finalize']),
 };
