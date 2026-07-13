@@ -36,7 +36,12 @@ import { setFormState } from 'src/sections/campaign/discover/admin/campaign-anal
 const createManualCreatorSchema = (selectedPlatform) =>
   Yup.object().shape({
     creatorName: Yup.string().required('Creator name is required'),
-    creatorUsername: Yup.string().required('Username is required'),
+    creatorUsername: Yup.string()
+      .required('Username is required')
+      .matches(
+        /^@?[A-Za-z0-9_.]+$/,
+        'Username can only contain letters, numbers, periods and underscores (paste a plain handle, not a share link)'
+      ),
     postUrl: Yup.string()
       .nullable()
       .test({
@@ -419,6 +424,7 @@ const ManualCreatorEntryForm = forwardRef(
       try {
         const payload = {
           ...data,
+          creatorUsername: data.creatorUsername.trim().replace(/^@/, ''),
           platform: detectedPlatform,
           views: toNumberOrZero(data.views),
           likes: toNumberOrZero(data.likes),
