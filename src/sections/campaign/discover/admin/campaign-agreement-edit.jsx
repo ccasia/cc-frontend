@@ -96,16 +96,31 @@ const CampaignAgreementEdit = ({
 
   const isGuestCreator = agreement?.user?.creator?.isGuest === true;
   const requiresUGCCredits = !isGuestCreator;
-  const [selectedPlatform, setSelectedPlatform] = useState(
-    agreement?.shortlistedCreator?.selectedPlatform || 'instagram'
-  );
 
-  // Get credit tier data for display (only for credit tier campaigns)
+  // What this campaign already agreed for the creator. The shortlist is the snapshot; the
+  // pitch holds what the admin recorded when they first sourced them, which is the only
+  // place that number survives for a creator who was shortlisted before the snapshot existed.
+  const shortlistedRecord = agreement?.user?.shortlisted?.[0] || agreement?.shortlistedCreator;
+  const pitchRecord = campaign?.pitch?.find((p) => p.userId === agreement?.user?.id);
+
+  const toFollowerCount = (value) => {
+    const parsed = parseInt(String(value ?? '').replace(/[^0-9]/g, ''), 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  };
+
+  const agreedPlatform =
+    shortlistedRecord?.selectedPlatform || pitchRecord?.selectedPlatform || 'instagram';
+  const agreedFollowerCount =
+    toFollowerCount(shortlistedRecord?.followerCount) || toFollowerCount(pitchRecord?.followerCount);
+
+  const [selectedPlatform, setSelectedPlatform] = useState(agreedPlatform);
+
+  // Get credit tier data for display (only for credit tier campaigns).
+  // Only the tier agreed for THIS campaign counts — never the creator's live tier, which
+  // follows their media kit and would misreport what the campaign is paying.
   const getTierData = () => {
-    // Try multiple sources for tier data
-    const shortlisted = agreement?.user?.shortlisted?.[0] || agreement?.shortlistedCreator;
+    const shortlisted = shortlistedRecord;
 
-    // First try: creditTier from shortlisted record
     if (shortlisted?.creditTier) {
       return {
         name: shortlisted.creditTier?.name || 'Unknown Tier',
@@ -113,16 +128,6 @@ const CampaignAgreementEdit = ({
       };
     }
 
-    // Second try: creditTier from creator record (current tier)
-    const creatorTier = agreement?.user?.creator?.creditTier;
-    if (creatorTier) {
-      return {
-        name: creatorTier.name || 'Unknown Tier',
-        creditsPerVideo: creatorTier.creditsPerVideo ?? 1,
-      };
-    }
-
-    // Third try: look in campaign.shortlisted for this user
     const campaignShortlisted = campaign?.shortlisted?.find(
       (s) => s.userId === agreement?.user?.id
     );
@@ -156,26 +161,30 @@ const CampaignAgreementEdit = ({
     [requiresUGCCredits]
   );
 
+  // The count to prefill the field with, most authoritative first:
+  //   1. what this campaign already agreed for the creator (only valid for that platform)
+  //   2. a count an admin recorded on the creator for this platform
+  //   3. the media kit, which can be stale or lag the real account
+  // The admin can always overwrite it — this only decides the starting value.
   const getFollowerCountByPlatform = (platform) => {
+    if (platform === agreedPlatform && agreedFollowerCount > 0) return agreedFollowerCount;
+
     const creatorData = agreement?.user?.creator;
     if (!creatorData) return 0;
 
-    const hasInstagramConnected = !!creatorData.instagramUser;
-    const hasTiktokConnected = !!creatorData.tiktokUser;
-    const manualInstagramFollowers = creatorData.manualInstagramFollowerCount || 0;
-    const manualTiktokFollowers = creatorData.manualTiktokFollowerCount || 0;
-    const instagramFollowers = creatorData.instagramUser?.followers_count || 0;
-    const tiktokFollowers = creatorData.tiktokUser?.follower_count || 0;
-
     if (platform === 'tiktok') {
-      // If TikTok is connected, always trust media-kit value.
-      if (hasTiktokConnected) return tiktokFollowers;
-      return manualTiktokFollowers || 0;
+      return creatorData.manualTiktokFollowerCount || creatorData.tiktokUser?.follower_count || 0;
     }
 
-    // If Instagram is connected, always trust media-kit value.
-    if (hasInstagramConnected) return instagramFollowers;
-    return manualInstagramFollowers || 0;
+    return creatorData.manualInstagramFollowerCount || creatorData.instagramUser?.followers_count || 0;
+  };
+
+  // What the media kit reports, shown alongside the field so the admin can see when their
+  // number disagrees with it.
+  const getMediaKitFollowerCount = (platform) => {
+    const creatorData = agreement?.user?.creator;
+    if (platform === 'tiktok') return creatorData?.tiktokUser?.follower_count || 0;
+    return creatorData?.instagramUser?.followers_count || 0;
   };
 
   const methods = useForm({
@@ -201,13 +210,14 @@ const CampaignAgreementEdit = ({
   const ugcCreditsValue = watch('ugcCredits');
   const paymentAmountValue = watch('paymentAmount');
   const platformFollowerValue = watch('platformFollowerCount');
-  const originalPlatform = agreement?.shortlistedCreator?.selectedPlatform || 'instagram';
+  const originalPlatform = agreedPlatform;
   const hasPlatformChanged = selectedPlatform !== originalPlatform;
   const selectedPlatformFollower = getFollowerCountByPlatform(selectedPlatform);
-  const requiresPlatformFollowerInput = selectedPlatformFollower <= 0;
-  const effectiveFollowerCountForTier = requiresPlatformFollowerInput
-    ? Number(platformFollowerValue || 0)
-    : Number(selectedPlatformFollower || 0);
+  const mediaKitFollower = getMediaKitFollowerCount(selectedPlatform);
+  // The admin is authoritative on the follower count, so what they type always decides the
+  // tier. We only fall back to the known count when they leave the field untouched.
+  const effectiveFollowerCountForTier =
+    Number(platformFollowerValue || 0) || Number(selectedPlatformFollower || 0);
   const liveTierData = useMemo(() => {
     if (!campaign?.isCreditTier || !Array.isArray(creditTierList)) return null;
     if (!effectiveFollowerCountForTier || effectiveFollowerCountForTier <= 0) return null;
@@ -251,9 +261,12 @@ const CampaignAgreementEdit = ({
 
     setValue('paymentAmount', agreement?.shortlistedCreator?.amount);
     setValue('ugcCredits', currentCredits);
-    setSelectedPlatform(agreement?.shortlistedCreator?.selectedPlatform || 'instagram');
-    setValue('platformFollowerCount', '');
-  }, [setValue, isDefault, agreement]);
+    setSelectedPlatform(agreedPlatform);
+    // Show the count the tier will actually be priced from, rather than an empty field, so
+    // the admin can see and correct it instead of unknowingly accepting a media-kit number.
+    setValue('platformFollowerCount', String(getFollowerCountByPlatform(agreedPlatform) || ''));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setValue, isDefault, agreement, agreedPlatform]);
 
   // Removed unused handler: inline send flow is handled in onSubmit
 
@@ -331,7 +344,8 @@ const CampaignAgreementEdit = ({
       if (realTimeCreditsLeft !== null && realTimeCreditsLeft < 0) return true;
     }
 
-    if (requiresPlatformFollowerInput && (!platformFollowerValue || Number(platformFollowerValue) <= 0)) {
+    // A tier campaign cannot price the agreement without a follower count from somewhere.
+    if (campaign?.isCreditTier && effectiveFollowerCountForTier <= 0) {
       return true;
     }
 
@@ -346,8 +360,7 @@ const CampaignAgreementEdit = ({
     ugcCreditsValue,
     campaign?.campaignCredits,
     realTimeCreditsLeft,
-    requiresPlatformFollowerInput,
-    platformFollowerValue,
+    effectiveFollowerCountForTier,
     campaign?.isCreditTier,
     displayTierData,
   ]);
@@ -355,9 +368,9 @@ const CampaignAgreementEdit = ({
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
     const creditsToAssign = requiresUGCCredits ? Number(ugcCreditsValue) : null;
-    const parsedPlatformFollower = data.platformFollowerCount
-      ? parseInt(data.platformFollowerCount, 10)
-      : undefined;
+    // Always send the count the tier was priced from, so the backend snapshot matches
+    // what the admin saw in this dialog.
+    const parsedPlatformFollower = effectiveFollowerCountForTier || undefined;
 
     try {
       // Validate credits against max allowed
@@ -837,7 +850,10 @@ const CampaignAgreementEdit = ({
                         variant={selectedPlatform === platform.value ? 'contained' : 'outlined'}
                         onClick={() => {
                           setSelectedPlatform(platform.value);
-                          setValue('platformFollowerCount', '');
+                          setValue(
+                            'platformFollowerCount',
+                            String(getFollowerCountByPlatform(platform.value) || '')
+                          );
                         }}
                         sx={{
                           height: 44,
@@ -861,28 +877,36 @@ const CampaignAgreementEdit = ({
                     ))}
                   </Box>
 
-                  {requiresPlatformFollowerInput ? (
-                    <RHFTextField
-                      name="platformFollowerCount"
-                      type="text"
-                      label={`Follower Count (${selectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram'})`}
-                      value={platformFollowerValue || ''}
-                      onChange={(e) => {
-                        const sanitized = e.target.value.replace(/[^0-9]/g, '');
-                        setValue('platformFollowerCount', sanitized);
-                      }}
-                      InputLabelProps={{ shrink: true }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                          bgcolor: '#fff',
-                          minHeight: 48,
-                        },
-                      }}
-                    />
-                  ) : (
+                  <RHFTextField
+                    name="platformFollowerCount"
+                    type="text"
+                    label={`Follower Count (${selectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram'})`}
+                    placeholder={selectedPlatformFollower ? selectedPlatformFollower.toLocaleString() : ''}
+                    value={platformFollowerValue || ''}
+                    onChange={(e) => {
+                      const sanitized = e.target.value.replace(/[^0-9]/g, '');
+                      setValue('platformFollowerCount', sanitized);
+                    }}
+                    InputLabelProps={{ shrink: true }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1,
+                        bgcolor: '#fff',
+                        minHeight: 48,
+                      },
+                    }}
+                  />
+                  {mediaKitFollower > 0 && effectiveFollowerCountForTier !== mediaKitFollower && (
                     <Typography variant="caption" sx={{ color: '#637381', px: 0.25 }}>
-                      Current follower count: {selectedPlatformFollower.toLocaleString()}
+                      Their {selectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram'} media kit says{' '}
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        {mediaKitFollower.toLocaleString()}
+                      </Box>{' '}
+                      followers. This agreement is priced on the{' '}
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        {effectiveFollowerCountForTier.toLocaleString()}
+                      </Box>{' '}
+                      you entered.
                     </Typography>
                   )}
                   {campaign?.isCreditTier && !displayTierData && (
