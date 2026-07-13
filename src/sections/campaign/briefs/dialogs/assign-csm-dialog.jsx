@@ -1,7 +1,6 @@
-import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { useState, useEffect } from 'react';
 import { useSnackbar } from 'notistack';
+import { useRef, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -10,26 +9,28 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
 import Avatar from '@mui/material/Avatar';
+import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import InputLabel from '@mui/material/InputLabel';
 import IconButton from '@mui/material/IconButton';
-import FormControl from '@mui/material/FormControl';
 import Typography from '@mui/material/Typography';
+import FormControl from '@mui/material/FormControl';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import DialogContent from '@mui/material/DialogContent';
 import FormHelperText from '@mui/material/FormHelperText';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import useGetPackages from 'src/hooks/use-get-packges';
-
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 
+import AttachClientPackage from './attach-client-package';
+
 export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
   const { enqueueSnackbar } = useSnackbar();
-  const { data: packages, isLoading: packagesLoading } = useGetPackages();
+
+  const attachRef = useRef(null);
 
   const [csmOptions, setCsmOptions] = useState([]);
   const [assigned, setAssigned] = useState([]); // [{ id, name, email }]
@@ -38,19 +39,15 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  // Whether the linked company already has an active package. When true we skip
+  // the client/package attach section entirely.
   const [hasActivePackage, setHasActivePackage] = useState(true);
-  const [packageType, setPackageType] = useState('');
-  const [currency, setCurrency] = useState('MYR');
-  const [packageError, setPackageError] = useState('');
   const [internalComments, setInternalComments] = useState('');
 
   useEffect(() => {
     if (!open || !brief?.id) return;
     setSelected([]);
     setError('');
-    setPackageError('');
-    setPackageType('');
-    setCurrency('MYR');
     setInternalComments('');
     setLoading(true);
     Promise.all([
@@ -96,57 +93,26 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
 
   const assignedIds = new Set(assigned.map((a) => a.id));
 
-  const attachPackage = async () => {
-    const pkg = (packages || []).find((p) => p.id === packageType);
-    if (!pkg) throw new Error('Selected package not found');
-    const price = pkg.prices?.find((pr) => pr.currency === currency)?.amount;
-
-    const fd = new FormData();
-    fd.append(
-      'data',
-      JSON.stringify({
-        type: 'directClient',
-        companyName: brief?.name || 'Untitled Client',
-        companyEmail: brief?.clientEmail || '',
-        personInChargeName: brief?.clientName || brief?.name || 'Client',
-        personInChargeEmail: brief?.clientEmail || '',
-        personInChargeDesignation: 'Client',
-        packageType: 'Fixed',
-        packageId: pkg.id,
-        packageValue: String(price ?? ''),
-        totalUGCCredits: String(pkg.credits ?? ''),
-        validityPeriod: String(pkg.validityPeriod ?? ''),
-        currency,
-        invoiceDate: dayjs().toISOString(),
-      })
-    );
-    const res = await axiosInstance.post(endpoints.company.create, fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    const companyId = res.data?.company?.id;
-    const companyName = res.data?.company?.name;
-    if (!companyId) throw new Error('Company creation returned no id');
-
-    await axiosInstance.patch(endpoints.campaign.editCampaignBrandOrCompany, {
-      campaignBrand: { id: companyId, name: companyName },
-      id: brief.id,
-    });
-  };
-
   const handleSubmit = async () => {
     if (selected.length === 0) {
       setError('Select at least one CSM.');
       return;
     }
-    if (!hasActivePackage && !packageType) {
-      setPackageError('Pick a client package.');
-      return;
-    }
     setSubmitting(true);
     try {
+      // Attach a client + package when the brief has no active package yet.
       if (!hasActivePackage) {
-        await attachPackage();
+        const result = await attachRef.current?.resolveCompany();
+        if (!result?.ok) {
+          setSubmitting(false);
+          return;
+        }
+        await axiosInstance.patch(endpoints.campaign.editCampaignBrandOrCompany, {
+          campaignBrand: { id: result.id, name: result.name },
+          id: brief.id,
+        });
       }
+
       await axiosInstance.post(endpoints.campaignBrief.assignCsm(brief.id), {
         csmIds: selected,
         internalComments: internalComments || '',
@@ -155,7 +121,9 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
       onAssigned?.();
       onClose?.();
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Failed to assign CSM', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || err?.message || 'Failed to assign CSM', {
+        variant: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -164,17 +132,16 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
       <DialogContent sx={{ p: 4 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
           <Typography variant="h4" sx={{ fontFamily: 'Instrument Serif, serif', fontWeight: 400 }}>
-            Assign CSM
+            Attach Client &amp; Package
           </Typography>
           <IconButton onClick={onClose} size="small">
             <Iconify icon="eva:close-fill" />
           </IconButton>
         </Stack>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          Assign one or more CSMs to <strong>{brief?.name || 'this campaign'}</strong>. They&apos;ll
-          complete activation.
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {brief?.name || 'this campaign'}
         </Typography>
 
         {loading ? (
@@ -183,50 +150,12 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
           </Box>
         ) : (
           <>
-            {/* Package step — only when no active package is linked yet. */}
+            {/* Client + package attach — only when no active package is linked yet. */}
             {!hasActivePackage && (
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600 }}>
-                  Attach a package
-                </Typography>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 1 }}>
-                  <FormControl fullWidth size="small" error={!!packageError}>
-                    <InputLabel>Client Package</InputLabel>
-                    <Select
-                      value={packageType}
-                      onChange={(e) => {
-                        setPackageType(e.target.value);
-                        setPackageError('');
-                      }}
-                      input={<OutlinedInput label="Client Package" />}
-                    >
-                      {packagesLoading ? (
-                        <MenuItem disabled>
-                          <CircularProgress size={16} />
-                        </MenuItem>
-                      ) : (
-                        (packages || []).map((p) => (
-                          <MenuItem key={p.id} value={p.id}>
-                            {p.name}
-                          </MenuItem>
-                        ))
-                      )}
-                    </Select>
-                    {packageError && <FormHelperText>{packageError}</FormHelperText>}
-                  </FormControl>
-                  <FormControl size="small" sx={{ width: { xs: '100%', sm: 140 } }}>
-                    <InputLabel>Currency</InputLabel>
-                    <Select
-                      value={currency}
-                      onChange={(e) => setCurrency(e.target.value)}
-                      input={<OutlinedInput label="Currency" />}
-                    >
-                      <MenuItem value="MYR">MYR</MenuItem>
-                      <MenuItem value="SGD">SGD</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Stack>
-              </Box>
+              <>
+                <AttachClientPackage ref={attachRef} brief={brief} />
+                <Divider sx={{ my: 2 }} />
+              </>
             )}
 
             {/* Currently assigned — so CSL doesn't double-assign. */}
@@ -249,7 +178,7 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
               </Box>
             )}
 
-            <FormControl fullWidth error={!!error} sx={{ mb: 3 }}>
+            <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
               <InputLabel>CSM Admins</InputLabel>
               <Select
                 multiple
@@ -303,16 +232,20 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
             </FormControl>
 
             {/* Internal comments for the CS team. */}
-            <TextField
-              label="Internal Comments"
-              value={internalComments}
-              onChange={(e) => setInternalComments(e.target.value)}
-              placeholder="Anything the CS team should know?"
-              fullWidth
-              multiline
-              minRows={2}
-              sx={{ mb: 1 }}
-            />
+            <Box>
+              <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600, mb: 1, display: 'block' }}>
+                Internal Comments
+              </Typography>
+              <TextField
+                value={internalComments}
+                onChange={(e) => setInternalComments(e.target.value)}
+                placeholder="Anything the CS team should know?"
+                fullWidth
+                multiline
+                minRows={2}
+                sx={{ mb: 1 }}
+              />
+            </Box>
           </>
         )}
 
@@ -326,7 +259,7 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
             disabled={submitting || loading}
             sx={{ bgcolor: '#1340FF', '&:hover': { bgcolor: '#0F33CC' }, px: 4, textTransform: 'none' }}
           >
-            {submitting ? 'Assigning…' : 'Assign'}
+            {submitting ? 'Saving…' : 'Save'}
           </Button>
         </Stack>
       </DialogContent>
