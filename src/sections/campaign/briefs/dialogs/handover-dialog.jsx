@@ -1,104 +1,61 @@
-import dayjs from 'dayjs';
-import * as yup from 'yup';
 import PropTypes from 'prop-types';
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import { useSnackbar } from 'notistack';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { useRef, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Dialog from '@mui/material/Dialog';
-import MenuItem from '@mui/material/MenuItem';
 import { LoadingButton } from '@mui/lab';
+import Dialog from '@mui/material/Dialog';
+import Divider from '@mui/material/Divider';
+import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogContent from '@mui/material/DialogContent';
-import CircularProgress from '@mui/material/CircularProgress';
-
-import useGetPackages from 'src/hooks/use-get-packges';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
-// Simplified handover: clients are assumed new, so we create the company from
-// the brief's brand/client details and attach the chosen package — no company
-// search or manual company/PIC entry. The BD only picks a package + currency
-// and (optionally) leaves notes for the CSL.
-const schema = yup.object({
-  packageType: yup.string().required('Pick a client package'),
-  currency: yup.string().required('Pick a currency'),
-  internalComments: yup.string().nullable(),
-});
+import AttachClientPackage from './attach-client-package';
 
+// Handover attaches the client + package (new or existing) and finalizes the
+// handover to CS. The client/package UI is shared with the CSL assign-csm dialog
+// via AttachClientPackage.
 export default function HandoverDialog({ open, brief, onClose, onHandedOver }) {
   const { enqueueSnackbar } = useSnackbar();
-  const { data: packages, isLoading: packagesLoading } = useGetPackages();
 
-  const methods = useForm({
-    resolver: yupResolver(schema),
-    defaultValues: { packageType: '', currency: 'MYR', internalComments: '' },
-  });
+  const attachRef = useRef(null);
 
-  const {
-    handleSubmit,
-    reset,
-    formState: { isSubmitting },
-  } = methods;
+  const [internalComments, setInternalComments] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    reset({ packageType: '', currency: 'MYR', internalComments: '' });
-  }, [open, brief?.id, reset]);
+    setInternalComments('');
+  }, [open, brief?.id]);
 
-  const onSubmit = handleSubmit(async (values) => {
+  const onSubmit = async () => {
+    setSubmitting(true);
     try {
-      const pkg = (packages || []).find((p) => p.id === values.packageType);
-      if (!pkg) throw new Error('Selected package not found');
+      // 1. Resolve the client company (create new / link existing) + package.
+      const result = await attachRef.current?.resolveCompany();
+      if (!result?.ok) {
+        setSubmitting(false);
+        return;
+      }
 
-      const price = pkg.prices?.find((pr) => pr.currency === values.currency)?.amount;
-
-      // 1. Create the client company + subscription from the brief details.
-      const fd = new FormData();
-      fd.append(
-        'data',
-        JSON.stringify({
-          type: 'directClient',
-          companyName: brief?.name || 'Untitled Client',
-          companyEmail: brief?.clientEmail || '',
-          personInChargeName: brief?.clientName || brief?.name || 'Client',
-          personInChargeEmail: brief?.clientEmail || '',
-          personInChargeDesignation: 'Client',
-          packageType: 'Fixed',
-          packageId: pkg.id,
-          packageValue: String(price ?? ''),
-          totalUGCCredits: String(pkg.credits ?? ''),
-          validityPeriod: String(pkg.validityPeriod ?? ''),
-          currency: values.currency,
-          invoiceDate: dayjs().toISOString(),
-        })
-      );
-      const res = await axiosInstance.post(endpoints.company.create, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      const companyId = res.data?.company?.id;
-      const companyName = res.data?.company?.name;
-      if (!companyId) throw new Error('Company creation returned no id');
-
-      // 2. Link the new company to the campaign.
+      // 2. Link the company to the campaign.
       await axiosInstance.patch(endpoints.campaign.editCampaignBrandOrCompany, {
-        campaignBrand: { id: companyId, name: companyName },
+        campaignBrand: { id: result.id, name: result.name },
         id: brief.id,
       });
 
       // 3. Finalize handover.
       await axiosInstance.post(endpoints.campaignBrief.handover(brief.id), {
-        internalComments: values.internalComments || '',
+        internalComments: internalComments || '',
       });
 
-      enqueueSnackbar('Brief handed over to CSL', { variant: 'success' });
+      enqueueSnackbar('Brief handed over to CS', { variant: 'success' });
       onHandedOver?.();
       onClose?.();
     } catch (error) {
@@ -106,74 +63,54 @@ export default function HandoverDialog({ open, brief, onClose, onHandedOver }) {
         error?.response?.data?.message || error?.message || 'Failed to hand over brief',
         { variant: 'error' }
       );
+    } finally {
+      setSubmitting(false);
     }
-  });
+  };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2.5, bgcolor: '#F4F4F4' } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
       <DialogContent sx={{ p: 4 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
           <Typography variant="h4" sx={{ fontFamily: 'Instrument Serif, serif', fontWeight: 400 }}>
-            Handover To CS
+            Attach Client &amp; Package
           </Typography>
           <IconButton onClick={onClose} size="small">
             <Iconify icon="eva:close-fill" />
           </IconButton>
         </Stack>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {brief?.name || 'this campaign'}
+        </Typography>
 
-        <FormProvider methods={methods} onSubmit={onSubmit}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500, mb: 0.5, display: 'block' }}>
-                Client Package
-              </Typography>
-              <RHFSelect name="packageType" size="small" fullWidth>
-                {packagesLoading ? (
-                  <MenuItem disabled>
-                    <CircularProgress size={16} />
-                  </MenuItem>
-                ) : (
-                  (packages || []).map((p) => (
-                    <MenuItem key={p.id} value={p.id}>
-                      {p.name}
-                    </MenuItem>
-                  ))
-                )}
-              </RHFSelect>
-            </Box>
-            <Box sx={{ width: { xs: '100%', sm: 140 } }}>
-              <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500, mb: 0.5, display: 'block' }}>
-                Currency
-              </Typography>
-              <RHFSelect name="currency" size="small" fullWidth>
-                <MenuItem value="MYR">MYR</MenuItem>
-                <MenuItem value="SGD">SGD</MenuItem>
-              </RHFSelect>
-            </Box>
-            <Box sx={{ flex: 1.4 }}>
-              <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500, mb: 0.5, display: 'block' }}>
-                Internal Comments
-              </Typography>
-              <RHFTextField
-                name="internalComments"
-                size="small"
-                fullWidth
-                placeholder="Anything the CS team should know?"
-              />
-            </Box>
-          </Stack>
+        <AttachClientPackage ref={attachRef} brief={brief} />
 
-          <Stack direction="row" justifyContent="flex-end">
-            <LoadingButton
-              type="submit"
-              variant="contained"
-              loading={isSubmitting}
-              sx={{ bgcolor: '#1340FF', '&:hover': { bgcolor: '#0F33CC' }, px: 4, borderRadius: 1.5 }}
-            >
-              Save
-            </LoadingButton>
-          </Stack>
-        </FormProvider>
+        <Divider sx={{ my: 2 }} />
+
+        <Box>
+          <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600, mb: 1, display: 'block' }}>
+            Internal Comments
+          </Typography>
+          <TextField
+            value={internalComments}
+            onChange={(e) => setInternalComments(e.target.value)}
+            placeholder="Anything the CS team should know?"
+            fullWidth
+            multiline
+            minRows={2}
+          />
+        </Box>
+
+        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
+          <LoadingButton
+            variant="contained"
+            loading={submitting}
+            onClick={onSubmit}
+            sx={{ bgcolor: '#1340FF', '&:hover': { bgcolor: '#0F33CC' }, px: 4, borderRadius: 1.5, textTransform: 'none' }}
+          >
+            Save
+          </LoadingButton>
+        </Stack>
       </DialogContent>
     </Dialog>
   );
