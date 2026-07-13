@@ -26,57 +26,76 @@ import Iconify from 'src/components/iconify';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 // Validation schema factory - creates schema based on selected platform
-const createManualCreatorSchema = (selectedPlatform) => Yup.object().shape({
-  creatorName: Yup.string().required('Creator name is required'),
-  creatorUsername: Yup.string().required('Username is required'),
-  postUrl: Yup.string()
-    .nullable()
-    .test({
-      name: 'valid-url',
-      message: (value) => {
-        if (!value) return '';
-        const validation = validateUrl(value, selectedPlatform);
-        return validation.reason || (selectedPlatform 
-          ? `Must be a valid ${selectedPlatform} URL` 
-          : 'Must be a valid Instagram or TikTok URL');
-      },
-      test: (value) => {
-        if (!value) return true;
-        const validation = validateUrl(value, selectedPlatform);
-        return validation.isValid;
-      },
-    }),
-  views: Yup.number()
-    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
-    .typeError('Views must be a number')
-    .min(0, 'Views cannot be negative')
-    .nullable()
-    .notRequired(),
-  likes: Yup.number()
-    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
-    .typeError('Likes must be a number')
-    .min(0, 'Likes cannot be negative')
-    .nullable()
-    .notRequired(),
-  comments: Yup.number()
-    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
-    .typeError('Comments must be a number')
-    .min(0, 'Comments cannot be negative')
-    .nullable()
-    .notRequired(),
-  shares: Yup.number()
-    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
-    .typeError('Shares must be a number')
-    .min(0, 'Shares cannot be negative')
-    .nullable()
-    .notRequired(),
-  saved: Yup.number()
-    .transform((value, originalValue) => (originalValue === '' || originalValue === null ? 0 : value))
-    .typeError('Saves must be a number')
-    .min(0, 'Saves cannot be negative')
-    .nullable()
-    .notRequired(),
-});
+const createManualCreatorSchema = (selectedPlatform) =>
+  Yup.object().shape({
+    creatorName: Yup.string().required('Creator name is required'),
+    creatorUsername: Yup.string()
+      .required('Username is required')
+      .matches(
+        /^@?[A-Za-z0-9_.]+$/,
+        'Username can only contain letters, numbers, periods and underscores (paste a plain handle, not a share link)'
+      ),
+    postUrl: Yup.string()
+      .nullable()
+      .test({
+        name: 'valid-url',
+        message: (value) => {
+          if (!value) return '';
+          const validation = validateUrl(value, selectedPlatform);
+          return (
+            validation.reason ||
+            (selectedPlatform
+              ? `Must be a valid ${selectedPlatform} URL`
+              : 'Must be a valid Instagram or TikTok URL')
+          );
+        },
+        test: (value) => {
+          if (!value) return true;
+          const validation = validateUrl(value, selectedPlatform);
+          return validation.isValid;
+        },
+      }),
+    views: Yup.number()
+      .transform((value, originalValue) =>
+        originalValue === '' || originalValue === null ? 0 : value
+      )
+      .typeError('Views must be a number')
+      .min(0, 'Views cannot be negative')
+      .nullable()
+      .notRequired(),
+    likes: Yup.number()
+      .transform((value, originalValue) =>
+        originalValue === '' || originalValue === null ? 0 : value
+      )
+      .typeError('Likes must be a number')
+      .min(0, 'Likes cannot be negative')
+      .nullable()
+      .notRequired(),
+    comments: Yup.number()
+      .transform((value, originalValue) =>
+        originalValue === '' || originalValue === null ? 0 : value
+      )
+      .typeError('Comments must be a number')
+      .min(0, 'Comments cannot be negative')
+      .nullable()
+      .notRequired(),
+    shares: Yup.number()
+      .transform((value, originalValue) =>
+        originalValue === '' || originalValue === null ? 0 : value
+      )
+      .typeError('Shares must be a number')
+      .min(0, 'Shares cannot be negative')
+      .nullable()
+      .notRequired(),
+    saved: Yup.number()
+      .transform((value, originalValue) =>
+        originalValue === '' || originalValue === null ? 0 : value
+      )
+      .typeError('Saves must be a number')
+      .min(0, 'Saves cannot be negative')
+      .nullable()
+      .notRequired(),
+  });
 
 // Resolves creator data for a single submission (uses hooks, must be a component)
 const CreatorOptionResolver = ({ submission, onResolved }) => {
@@ -380,19 +399,20 @@ const ManualCreatorEntryForm = forwardRef(({ campaignId, editingEntry, onSuccess
     return (((likes + comments + shares) / views) * 100).toFixed(2);
   }, [watchedValues, detectedPlatform]);
 
-  // Form submission
-  const onSubmit = async (data) => {
-    setIsSubmitting(true);
-    try {
-      const payload = {
-        ...data,
-        platform: detectedPlatform,
-        views: toNumberOrZero(data.views),
-        likes: toNumberOrZero(data.likes),
-        comments: toNumberOrZero(data.comments),
-        shares: toNumberOrZero(data.shares),
-        saved: detectedPlatform === 'Instagram' ? toNumberOrZero(data.saved) : undefined,
-      };
+    // Form submission
+    const onSubmit = async (data) => {
+      setIsSubmitting(true);
+      try {
+        const payload = {
+          ...data,
+          creatorUsername: data.creatorUsername.trim().replace(/^@/, ''),
+          platform: detectedPlatform,
+          views: toNumberOrZero(data.views),
+          likes: toNumberOrZero(data.likes),
+          comments: toNumberOrZero(data.comments),
+          shares: toNumberOrZero(data.shares),
+          saved: detectedPlatform === 'Instagram' ? toNumberOrZero(data.saved) : undefined,
+        };
 
       if (isEditMode) {
         await updateManualCreatorEntry(campaignId, editingEntry.id, payload);
