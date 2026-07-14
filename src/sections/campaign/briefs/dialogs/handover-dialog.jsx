@@ -70,13 +70,13 @@ export default function HandoverDialog({ open, brief, onClose, onHandedOver }) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-      <DialogContent sx={{ p: 4 }}>
+      <DialogContent sx={{ p: 4, minHeight: 610 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
-          <Typography variant="h4" sx={{ fontFamily: 'Instrument Serif, serif', fontWeight: 400 }}>
+          <Typography variant="h3" sx={{ fontFamily: 'Instrument Serif, serif', fontWeight: 400 }}>
             Attach Client &amp; Package
           </Typography>
-          <IconButton onClick={onClose} size="small">
-            <Iconify icon="eva:close-fill" />
+          <IconButton onClick={onClose} size="medium">
+            <Iconify width={24} icon="eva:close-fill" />
           </IconButton>
         </Stack>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
