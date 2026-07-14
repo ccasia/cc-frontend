@@ -400,13 +400,13 @@ const CampaignAgreementEdit = ({
         <AgreementTemplate
           DATE={dayjs().format('LL')}
           IC_NUMBER={agreement?.user?.paymentForm?.icNumber}
-          FREELANCER_FULL_NAME={agreement?.user?.name}
+          FREELANCER_FULL_NAME={agreement?.user?.paymentForm?.bankAccountName || agreement?.user?.name || 'N/A'}
           ADDRESS={agreement?.user?.creator?.address}
           ccEmail="hello@cultcreative.com"
           ccPhoneNumber="+60162678757"
           effectiveDate={dayjs().add(4, 'day').format('LL')}
           creatorPayment={`${CURRENCY_PREFIXES[data.currency]?.prefix}${data.paymentAmount}`}
-          CREATOR_NAME={agreement?.user?.name}
+          CREATOR_NAME={agreement?.user?.paymentForm?.bankAccountName || agreement?.user?.name || 'N/A'}
           CREATOR_ACCOUNT_NUMBER={agreement?.user?.paymentForm?.bankAccountNumber}
           CREATOR_BANK_ACCOUNT_NAME={
             agreement?.user?.paymentForm?.bankAccountName || agreement?.user?.name || 'N/A'
