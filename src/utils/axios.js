@@ -454,6 +454,12 @@ export const endpoints = {
     getCreatorInvoice: `/api/invoice/creatorInvoice`,
     delete: (id) => `/api/invoice/${id}`,
   },
+  finance: {
+    dashboard: '/api/finance/dashboard',
+    invoices: '/api/finance/invoices',
+    newClients: '/api/finance/new-clients',
+    campaignBreakdown: (companyId) => `/api/finance/client/${companyId}/campaign-breakdown`,
+  },
   agreementTemplate: {
     all: '/api/campaign/template',
     byId: (id) => `/api/campaign/template/${id}`,
