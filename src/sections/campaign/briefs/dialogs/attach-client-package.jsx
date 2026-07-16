@@ -184,15 +184,23 @@ const AttachClientPackage = forwardRef(({ brief }, ref) => {
 
     const v = getValues();
 
+    // Deal value snapshot — surfaced so the handover/finalize can record
+    // wonAmount/wonCurrency for the BD dashboard. When reusing an existing active
+    // package (no package fields shown), the value isn't re-entered here, so it's
+    // left null rather than guessed.
+    const deal = v.showPackageFields
+      ? { packageValue: v.pkgValue ? Number(v.pkgValue) : null, currency: v.currency || null }
+      : { packageValue: null, currency: v.currency || null };
+
     // Existing client, reuse active package -> just link the company.
     if (v.clientMode === 'existing' && !v.showPackageFields) {
-      return { ok: true, id: v.company.id, name: v.company.name };
+      return { ok: true, id: v.company.id, name: v.company.name, ...deal };
     }
 
     // Existing client, attach a fresh package to that company.
     if (v.clientMode === 'existing') {
       await axiosInstance.patch(endpoints.company.linkPackage(v.company.id), buildBase());
-      return { ok: true, id: v.company.id, name: v.company.name };
+      return { ok: true, id: v.company.id, name: v.company.name, ...deal };
     }
 
     // New client -> create the company from the brief details + package.
@@ -215,7 +223,7 @@ const AttachClientPackage = forwardRef(({ brief }, ref) => {
     const id = res.data?.company?.id;
     const name = res.data?.company?.name;
     if (!id) throw new Error('Company creation returned no id');
-    return { ok: true, id, name };
+    return { ok: true, id, name, ...deal };
   }, [trigger, getValues, buildBase, brief]);
 
   useImperativeHandle(ref, () => ({ resolveCompany }), [resolveCompany]);

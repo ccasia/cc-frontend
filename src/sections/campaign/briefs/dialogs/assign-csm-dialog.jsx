@@ -111,12 +111,15 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned, mode
     setSubmitting(true);
     try {
       // Attach a client + package when the brief has no active package yet.
+      // When a package is attached here, capture its value for won-deal tracking.
+      let deal = null;
       if (!hasActivePackage) {
         const result = await attachRef.current?.resolveCompany();
         if (!result?.ok) {
           setSubmitting(false);
           return;
         }
+        deal = { wonAmount: result.packageValue ?? null, wonCurrency: result.currency ?? null };
         await axiosInstance.patch(endpoints.campaign.editCampaignBrandOrCompany, {
           campaignBrand: { id: result.id, name: result.name },
           id: brief.id,
@@ -127,6 +130,7 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned, mode
         // CSM finalizes their own brief — no CSM selection, they stay as manager.
         await axiosInstance.post(endpoints.campaignBrief.finalize(brief.id), {
           internalComments: internalComments || '',
+          ...(deal || {}),
         });
         enqueueSnackbar('Campaign created', { variant: 'success' });
       } else {

@@ -50,9 +50,11 @@ export default function HandoverDialog({ open, brief, onClose, onHandedOver }) {
         id: brief.id,
       });
 
-      // 3. Finalize handover.
+      // 3. Finalize handover. Record the deal value (won) for the BD dashboard.
       await axiosInstance.post(endpoints.campaignBrief.handover(brief.id), {
         internalComments: internalComments || '',
+        wonAmount: result.packageValue ?? null,
+        wonCurrency: result.currency ?? null,
       });
 
       enqueueSnackbar('Brief handed over to CS', { variant: 'success' });
