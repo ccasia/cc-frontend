@@ -412,7 +412,9 @@ function CreateCampaignFormV2({
     ctaLinkInBioRequirements: '',
     specialNotesInstructions: '',
     needAds: '',
-    submissionVersion: 'v2',
+    // All new campaigns use the v4 flow; the isV4Submission toggle now only controls
+    // client attachment (client campaign), not the version.
+    submissionVersion: 'v4',
 
     isV4Submission: false,
     isCreditTier: false,
@@ -898,8 +900,10 @@ function CreateCampaignFormV2({
       ctaLinkInBioRequirements: data.ctaLinkInBioRequirements || '',
       specialNotesInstructions: data.specialNotesInstructions || '',
       needAds: data.needAds || '',
-      // Use form value - 'v2' by default, 'v4' if admin enables client campaign toggle
-      submissionVersion: data.submissionVersion || 'v2',
+      // 'v4' for all new campaigns; activate-mode prefill preserves a legacy campaign's version
+      submissionVersion: data.submissionVersion || 'v4',
+      // Attach the selected company's client users as client managers
+      isClientCampaign: !!data.isV4Submission,
     };
 
     formData.append('rawFootage', campaignData.rawFootage ? 'true' : 'false');

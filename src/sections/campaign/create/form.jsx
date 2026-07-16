@@ -357,7 +357,7 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     availabilityRules: [],
     campaignCredits: null,
     isV4Submission: false,
-    submissionVersion: 'v2',
+    submissionVersion: 'v4',
     isCreditTier: false,
   };
 

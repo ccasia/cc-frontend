@@ -1238,6 +1238,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
             duration={modalDuration}
             onSeek={onSeek}
             submission={modalSubmission || submission}
+            campaign={campaign}
             videoId={modalVideoId || video?.id}
             videoPage={videoPage}
             setVideoPage={setVideoPage}
