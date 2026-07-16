@@ -29,6 +29,7 @@ import {
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { campaignHasClient } from 'src/utils/campaign-flow';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -48,7 +49,34 @@ const PitchModalMobile = ({
   const { user } = useAuthContext();
   const isClientRole = user?.role === 'client' || user?.role === 'client_demo';
   const isDemoCampaign = Boolean(campaign?.isDemo);
+  const hasClient = campaignHasClient(campaign);
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
+
+  // 'send_to_client' shares the approve styling but has its own copy and handler intent
+  const isApproveLikeDialog =
+    confirmDialog.type === 'approve' || confirmDialog.type === 'send_to_client';
+
+  const confirmDialogCopy = (() => {
+    if (confirmDialog.type === 'send_to_client') {
+      return {
+        title: 'Send to Client?',
+        description: 'Send this pitch to the client for review?',
+        cta: 'Yes, send!',
+      };
+    }
+    if (confirmDialog.type === 'approve') {
+      return {
+        title: 'Approve Pitch?',
+        description: 'Are you sure you want to approve this pitch?',
+        cta: 'Yes, approve!',
+      };
+    }
+    return {
+      title: 'Decline Pitch?',
+      description: 'Are you sure you want to decline this pitch?',
+      cta: isClientRole ? 'Submit Reason' : 'Yes, decline!',
+    };
+  })();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
   const [totalUGCVideos] = useState(null);
@@ -192,6 +220,9 @@ const PitchModalMobile = ({
   );
 
   const handleApprove = async () => {
+    // Hybrid pitch UX: 'approve' is final; 'send_to_client' forwards to client review
+    const sendingToClient = confirmDialog.type === 'send_to_client';
+
     if (isDemoCampaign) {
       const updatedPitch = { ...pitch, status: 'APPROVED', displayStatus: 'APPROVED' };
       setCurrentPitch(updatedPitch);
@@ -219,8 +250,11 @@ const PitchModalMobile = ({
             endpoints.campaign.pitch.v3.approveClient(v3PitchId)
           );
         } else {
-          // Admin approves pitch
-          response = await axiosInstance.patch(endpoints.campaign.pitch.v3.approve(v3PitchId));
+          // Admin approves pitch — explicit action tells the backend whether this is a
+          // final approval or a forward to client review
+          response = await axiosInstance.patch(endpoints.campaign.pitch.v3.approve(v3PitchId), {
+            action: sendingToClient ? 'send_to_client' : 'approve',
+          });
         }
       } else {
         // Use V2 endpoint for admin-created campaigns
@@ -237,7 +271,7 @@ const PitchModalMobile = ({
         response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, requestData);
       }
 
-      const updatedPitch = { ...pitch, status: 'approved' };
+      const updatedPitch = { ...pitch, status: sendingToClient ? 'SENT_TO_CLIENT' : 'approved' };
       setCurrentPitch(updatedPitch);
 
       if (onUpdate) {
@@ -1090,6 +1124,34 @@ const PitchModalMobile = ({
               Approve
             </Button>
 
+            {!isClientRole && campaign?.submissionVersion === 'v4' && hasClient && (
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => setConfirmDialog({ open: true, type: 'send_to_client' })}
+                disabled={isDisabled || isSubmitting}
+                sx={{
+                  bgcolor: '#fff',
+                  color: '#1340FF',
+                  borderRadius: 1,
+                  py: 1,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  flex: 1,
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
+                    border: '1.5px solid',
+                    borderColor: '#1340FF',
+                    borderBottom: '3px solid',
+                    borderBottomColor: '#1340FF',
+                  },
+                }}
+              >
+                Send to Client
+              </Button>
+            )}
+
             {isClientRole && (
               <Button
                 variant="outlined"
@@ -1195,12 +1257,12 @@ const PitchModalMobile = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: '50%',
-                  bgcolor: confirmDialog.type === 'approve' ? '#5abc6f' : '#ff3b30',
+                  bgcolor: isApproveLikeDialog ? '#5abc6f' : '#ff3b30',
                   fontSize: '50px',
                   mb: -2,
                 }}
               >
-                {confirmDialog.type === 'approve' ? '🫣' : '🥹'}
+                {isApproveLikeDialog ? '🫣' : '🥹'}
               </Box>
               <Stack spacing={1} alignItems="center">
                 <Typography
@@ -1211,12 +1273,10 @@ const PitchModalMobile = ({
                     fontWeight: 550,
                   }}
                 >
-                  {confirmDialog.type === 'approve' ? 'Approve Pitch?' : 'Decline Pitch?'}
+                  {confirmDialogCopy.title}
                 </Typography>
                 <Typography variant="body1" sx={{ color: '#636366', mt: -0.5, mb: -3 }}>
-                  {confirmDialog.type === 'approve'
-                    ? 'Are you sure you want to approve this pitch?'
-                    : 'Are you sure you want to decline this pitch?'}
+                  {confirmDialogCopy.description}
                 </Typography>
               </Stack>
             </Stack>
@@ -1253,29 +1313,29 @@ const PitchModalMobile = ({
             onClick={
               confirmDialog.type === 'decline' && isClientRole
                 ? handleDecline
-                : confirmDialog.type === 'approve'
+                : isApproveLikeDialog
                   ? handleApprove
                   : handleDecline
             }
             disabled={isSubmitting}
             sx={{
-              bgcolor: confirmDialog.type === 'approve' ? '#026D54' : '#ffffff',
+              bgcolor: isApproveLikeDialog ? '#026D54' : '#ffffff',
               color:
-                confirmDialog.type === 'approve'
+                isApproveLikeDialog
                   ? '#fff'
                   : isClientRole && confirmDialog.type === 'decline'
                     ? '#D4321C'
                     : '#ff3b30',
-              border: confirmDialog.type === 'approve' ? 'none' : '1.5px solid #e7e7e7',
+              border: isApproveLikeDialog ? 'none' : '1.5px solid #e7e7e7',
               borderBottom: '3px solid',
-              borderBottomColor: confirmDialog.type === 'approve' ? '#202021' : '#e7e7e7',
+              borderBottomColor: isApproveLikeDialog ? '#202021' : '#e7e7e7',
               borderRadius: 1.15,
               flex: 1,
               py: 1.2,
               ml: 1,
               fontWeight: 600,
               '&:hover': {
-                bgcolor: confirmDialog.type === 'approve' ? '#1e4a3a' : '#e7e7e7',
+                bgcolor: isApproveLikeDialog ? '#1e4a3a' : '#e7e7e7',
               },
             }}
           >
@@ -1283,14 +1343,10 @@ const PitchModalMobile = ({
               <CircularProgress size={20} color="inherit" />
             ) : (
               <>
-                {confirmDialog.type === 'approve' && (
+                {isApproveLikeDialog && (
                   <Iconify icon="eva:checkmark-fill" width={20} sx={{ mr: 0.5 }} />
                 )}
-                {confirmDialog.type === 'approve'
-                  ? 'Yes, approve!'
-                  : isClientRole && confirmDialog.type === 'decline'
-                    ? 'Submit Reason'
-                    : 'Yes, decline!'}
+                {confirmDialogCopy.cta}
               </>
             )}
           </Button>

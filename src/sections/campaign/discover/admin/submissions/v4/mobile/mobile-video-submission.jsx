@@ -558,6 +558,7 @@ export default function MobileVideoSubmission({
             duration={modalDuration}
             onSeek={onSeek}
             submission={modalSubmission || submission}
+            campaign={campaign}
             videoId={modalVideoId || video?.id}
             videoPage={videoPage}
             setVideoPage={setVideoPage}

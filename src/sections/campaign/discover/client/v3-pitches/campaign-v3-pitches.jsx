@@ -39,6 +39,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance from 'src/utils/axios';
+import { campaignHasClient } from 'src/utils/campaign-flow';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllCreators } from 'src/api/creator';
@@ -1710,6 +1711,12 @@ const ListboxComponent = React.forwardRef((props, ref) => {
 export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdated }) {
   const { data, isLoading } = useGetAllCreators();
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuthContext();
+
+  // Admins on client campaigns choose between direct approval and client review;
+  // clients (and no-client campaigns) get the single default action
+  const showShortlistActionChoice =
+    user?.role !== 'client' && campaign?.submissionVersion === 'v4' && campaignHasClient(campaign);
   const [creatorRows, setCreatorRows] = useState([
     {
       id: 1,
@@ -1890,7 +1897,11 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
     onClose?.();
   };
 
-  const handleSubmit = async () => {
+  // action: 'approve' = admin approval is final even with a client attached;
+  // 'send_to_client' = route through client review; undefined = derived from client presence
+  const handleSubmit = async (action) => {
+    const explicitAction = action === 'approve' || action === 'send_to_client' ? action : undefined;
+
     // Get valid rows (with creator selected)
     const validRows = creatorRows.filter((row) => row.creator !== null);
     if (!validRows.length || !campaign?.id) return;
@@ -1931,6 +1942,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
 
       await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
         campaignId: campaign.id,
+        ...(explicitAction ? { action: explicitAction } : {}),
         creators: validRows.map((row) => {
           const parsedFollowerCount = row.followerCount
             ? parseInt(row.followerCount, 10)
@@ -2402,8 +2414,46 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
             Cancel
           </Button>
 
+          {showShortlistActionChoice && (
+            <LoadingButton
+              onClick={() => handleSubmit('approve')}
+              disabled={
+                getValidCreatorsFromRows().length === 0 ||
+                hasMissingPlatformSelection ||
+                hasMissingFollowerCount
+              }
+              loading={submitting}
+              loadingIndicator={<CircularProgress size={20} sx={{ color: '#1ABF66' }} />}
+              sx={{
+                bgcolor: '#FFFFFF',
+                border: '1.5px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1.15,
+                height: 44,
+                color: '#1ABF66',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                px: 3,
+                textTransform: 'none',
+                '&:hover': {
+                  bgcolor: 'rgba(26, 191, 102, 0.08)',
+                  border: '1.5px solid #1ABF66',
+                  borderBottom: '3px solid #1ABF66',
+                },
+                '&:disabled:not(.MuiLoadingButton-loading)': {
+                  bgcolor: '#e7e7e7',
+                  color: '#999999',
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '3px solid #d1d1d1',
+                },
+              }}
+            >
+              Approve Directly
+            </LoadingButton>
+          )}
+
           <LoadingButton
-            onClick={handleSubmit}
+            onClick={() => handleSubmit(showShortlistActionChoice ? 'send_to_client' : undefined)}
             disabled={
               getValidCreatorsFromRows().length === 0 ||
               hasMissingPlatformSelection ||
@@ -2436,7 +2486,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
               },
             }}
           >
-            Add Creators
+            {showShortlistActionChoice ? 'Send to Client' : 'Add Creators'}
           </LoadingButton>
         </DialogActions>
       </Dialog>
