@@ -78,6 +78,7 @@ export const endpoints = {
     clientRejectionRate: '/api/analytics/v2/client-rejection-rate',
     creditsPerCS: '/api/analytics/v2/credits-per-cs',
     csmWorkload: '/api/analytics/v2/csm-workload',
+    csmWorkloadDetail: (adminUserId) => `/api/analytics/v2/csm-workload/${adminUserId}`,
     rejectionReasons: '/api/analytics/v2/rejection-reasons',
     requireChangesRate: '/api/analytics/v2/require-changes-rate',
     topShortlistedCreators: '/api/analytics/v2/top-shortlisted-creators',

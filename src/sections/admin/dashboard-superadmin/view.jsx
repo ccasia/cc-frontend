@@ -42,10 +42,10 @@ const TABS = [
 ];
 
 const PLATFORM_TOTALS = (stats) => [
-  { label: 'ACTIVE CAMPAIGNS', value: stats.activeCampaigns || 0 },
-  { label: 'ACTIVE CLIENTS', value: stats.totalClients || 0 },
-  { label: 'ACTIVE CREATORS', value: stats.totalCreators || 0 },
-  { label: 'COMPLETED CAMPAIGNS', value: stats.completedCampaigns || 0 },
+  { label: 'ACTIVE CAMPAIGNS', value: stats.activeCampaigns || 0, color: '#1340FF' },
+  { label: 'ACTIVE CLIENTS', value: stats.totalClients || 0, color: '#8A5AFE' },
+  { label: 'ACTIVE CREATORS', value: stats.totalCreators || 0, color: '#1ABF66' },
+  { label: 'COMPLETED CAMPAIGNS', value: stats.completedCampaigns || 0, color: '#FF3500' },
 ];
 
 function getRangeForValue(value) {
@@ -221,7 +221,7 @@ const DashboardSuperadminView = () => {
                 >
                   {item.label}
                 </Typography>
-                <Typography sx={{ fontSize: '1.9rem', fontWeight: 700, color: '#111827', lineHeight: 1 }}>
+                <Typography sx={{ fontSize: '1.9rem', fontWeight: 700, color: item.color, lineHeight: 1 }}>
                   {item.value.toLocaleString()}
                 </Typography>
               </Card>

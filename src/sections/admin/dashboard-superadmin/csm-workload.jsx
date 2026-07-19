@@ -18,6 +18,8 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 
+import CSMWorkloadDrawer from './csm-workload-drawer';
+
 const SWR_OPTS = { revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 60000 };
 
 const MINI_STATS = (csm) => [
@@ -29,6 +31,7 @@ const MINI_STATS = (csm) => [
 
 const CSMWorkloadTab = ({ dateRange }) => {
   const [search, setSearch] = useState('');
+  const [selectedCSM, setSelectedCSM] = useState(null);
 
   const query = dateRange
     ? `${endpoints.analytics.csmWorkload}?startDate=${encodeURIComponent(dateRange.startDate)}&endDate=${encodeURIComponent(dateRange.endDate)}`
@@ -93,6 +96,7 @@ const CSMWorkloadTab = ({ dateRange }) => {
             return (
               <Grid item xs={12} sm={6} md={3} key={csm.adminUserId || csm.email}>
                 <Card
+                  onClick={() => setSelectedCSM(csm)}
                   sx={{
                     p: 2,
                     borderRadius: 2,
@@ -185,6 +189,8 @@ const CSMWorkloadTab = ({ dateRange }) => {
           })}
         </Grid>
       )}
+
+      <CSMWorkloadDrawer csm={selectedCSM} onClose={() => setSelectedCSM(null)} />
     </Box>
   );
 };
