@@ -28,7 +28,9 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 
+import { formatCurrencyAmount } from 'src/utils/currency';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { getCampaignBudget } from 'src/utils/campaign-budget';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -138,6 +140,8 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
 
   // const creditAssignModal = useBoolean();
   // const [campaigns, setCampaigns] = useState(null);
+
+  const campaignBudget = useMemo(() => getCampaignBudget(campaign), [campaign]);
 
   const latestPackageItem = useMemo(() => {
     if (client && client?.subscriptions?.length) {
@@ -638,7 +642,22 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                             </Typography>
                           )}
                         </Stack>
-                        
+
+                        {campaignBudget != null && (
+                          <>
+                            <Divider />
+                            {/* Campaign Budget Row (v4 only, computed) */}
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                              <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
+                                Campaign Budget
+                              </Typography>
+                              <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
+                                {formatCurrencyAmount(campaignBudget, 'MYR')}
+                              </Typography>
+                            </Stack>
+                          </>
+                        )}
+
                         {/* Edit Action Buttons */}
                         {isEditingCredit && (
                           <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 1 }}>
