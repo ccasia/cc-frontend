@@ -25,6 +25,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
 
+import { classifyBriefRole } from 'src/utils/brief-roles';
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -43,29 +44,13 @@ import DeleteBriefDialog from './dialogs/delete-brief-dialog';
 import SendToClientDialog from './dialogs/send-to-client-dialog';
 import BriefApprovedDialog from './dialogs/brief-approved-dialog';
 
-const classifyRole = (user) => {
-  if (!user) return 'other';
-  if (user.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode || ''))
-    return 'superadmin';
-  const name = (user?.admin?.role?.name || '').toLowerCase();
-  if (
-    name === 'bd' ||
-    name.includes('business development') ||
-    name.includes('sales and marketing')
-  )
-    return 'BD';
-  if (name === 'csl' || name.includes('cs lead')) return 'CSL';
-  if (name === 'csm' || name.includes('customer success')) return 'CSM';
-  return 'other';
-};
-
 export default function CampaignBriefListView() {
   const settings = useSettingsContext();
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
 
-  const role = classifyRole(user);
+  const role = classifyBriefRole(user);
   const isSuperAdmin = role === 'superadmin';
   // Who may author briefs: BD, CSL, CSM, superadmin.
   const canCreate = ['BD', 'CSL', 'CSM', 'superadmin'].includes(role);
