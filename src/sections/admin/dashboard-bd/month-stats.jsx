@@ -23,6 +23,11 @@ const SECTION_LABEL_SX = {
 
 const SERIF = { fontFamily: '"Instrument Serif", serif', fontWeight: 400, lineHeight: 1 };
 
+const firstNameTitled = (name) => {
+  const first = (name || '').trim().split(/\s+/)[0] || '';
+  return first ? first.charAt(0).toUpperCase() + first.slice(1).toLowerCase() : '';
+};
+
 const emptyBucket = { wonCount: 0, wonAmount: 0, lostCount: 0, lostAmount: 0, winRate: null };
 
 function StatBlock({ figure, label, faded }) {
@@ -96,7 +101,7 @@ export default function MonthStats({ data, currency, currentUserId }) {
                       <Typography
                         sx={{ fontSize: '0.85rem', fontWeight: isMe ? 700 : 500, color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                       >
-                        {m.name}
+                        {firstNameTitled(m.name)}
                       </Typography>
                       {isMe && (
                         <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#1340FF', letterSpacing: '0.05em' }}>

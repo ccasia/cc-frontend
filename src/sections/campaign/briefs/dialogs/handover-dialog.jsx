@@ -10,6 +10,7 @@ import Divider from '@mui/material/Divider';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -71,9 +72,29 @@ export default function HandoverDialog({ open, brief, onClose, onHandedOver }) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-      <DialogContent sx={{ p: 4, minHeight: 610 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        // Bound the dialog height and lay it out as a column so the body scrolls
+        // while the Save footer stays pinned to the bottom.
+        sx: {
+          borderRadius: 2,
+          maxHeight: 'calc(100vh - 64px)',
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      }}
+    >
+      <DialogContent sx={{ p: 4, flex: 1, overflowY: 'auto' }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="flex-start"
+          sx={{ mb: 0.5 }}
+        >
           <Typography variant="h3" sx={{ fontFamily: 'Instrument Serif, serif', fontWeight: 400 }}>
             Attach Client &amp; Package
           </Typography>
@@ -90,7 +111,10 @@ export default function HandoverDialog({ open, brief, onClose, onHandedOver }) {
         <Divider sx={{ my: 2 }} />
 
         <Box>
-          <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600, mb: 1, display: 'block' }}>
+          <Typography
+            variant="caption"
+            sx={{ color: '#6B7280', fontWeight: 600, mb: 1, display: 'block' }}
+          >
             Internal Comments
           </Typography>
           <TextField
@@ -102,18 +126,25 @@ export default function HandoverDialog({ open, brief, onClose, onHandedOver }) {
             minRows={2}
           />
         </Box>
-
-        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
-          <LoadingButton
-            variant="contained"
-            loading={submitting}
-            onClick={onSubmit}
-            sx={{ bgcolor: '#1340FF', '&:hover': { bgcolor: '#0F33CC' }, px: 4, borderRadius: 1.5, textTransform: 'none' }}
-          >
-            Save
-          </LoadingButton>
-        </Stack>
       </DialogContent>
+
+      {/* Pinned footer — stays at the bottom while the content above scrolls. */}
+      <DialogActions sx={{ px: 4, py: 2.5 }}>
+        <LoadingButton
+          variant="contained"
+          loading={submitting}
+          onClick={onSubmit}
+          sx={{
+            bgcolor: '#1340FF',
+            '&:hover': { bgcolor: '#0F33CC' },
+            px: 4,
+            borderRadius: 1.5,
+            textTransform: 'none',
+          }}
+        >
+          Save
+        </LoadingButton>
+      </DialogActions>
     </Dialog>
   );
 }

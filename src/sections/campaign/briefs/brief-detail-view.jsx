@@ -1,5 +1,6 @@
 import useSWR from 'swr';
 import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -31,12 +32,15 @@ import AssignCsmDialog from './dialogs/assign-csm-dialog';
 import { STATUS_CONFIG } from './components/status-badge';
 import SendToClientDialog from './dialogs/send-to-client-dialog';
 
-export default function CampaignBriefDetailView() {
+export default function CampaignBriefDetailView({ briefId, onClose }) {
   const settings = useSettingsContext();
   const navigate = useNavigate();
   const { user } = useAuthContext();
-  const { id } = useParams();
+  const params = useParams();
   const { enqueueSnackbar } = useSnackbar();
+
+  const id = briefId ?? params.id;
+  const inDialog = Boolean(briefId);
 
   const {
     data: brief,
@@ -205,12 +209,22 @@ export default function CampaignBriefDetailView() {
   return (
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
-      sx={{ px: { xs: 2, sm: 3, md: 2 }, pb: 4, overflowX: 'hidden' }}
+      sx={{
+        px: { xs: 2, sm: 3, md: 2 },
+        overflowX: 'hidden',
+        ...(inDialog
+          ? { height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, py: 2 }
+          : { pb: 4 }),
+      }}
     >
       <BriefFormLayout
+        scrollMode={inDialog ? 'internal' : 'page'}
         topLeft={
-          <Button variant="outlined" onClick={() => navigate(paths.dashboard.campaign.briefs)}>
-            Back
+          <Button
+            variant="outlined"
+            onClick={() => (inDialog ? onClose?.() : navigate(paths.dashboard.campaign.briefs))}
+          >
+            {inDialog ? 'Close' : 'Back'}
           </Button>
         }
         leftExtra={
@@ -391,7 +405,8 @@ export default function CampaignBriefDetailView() {
         onClose={() => setHandoverOpen(false)}
         onHandedOver={() => {
           mutate();
-          navigate(paths.dashboard.campaign.briefs);
+          if (inDialog) onClose?.();
+          else navigate(paths.dashboard.campaign.briefs);
         }}
       />
       <AssignCsmDialog
@@ -401,9 +416,15 @@ export default function CampaignBriefDetailView() {
         onClose={() => setAssignCsmOpen(false)}
         onAssigned={() => {
           mutate();
-          navigate(paths.dashboard.campaign.briefs);
+          if (inDialog) onClose?.();
+          else navigate(paths.dashboard.campaign.briefs);
         }}
       />
     </Container>
   );
 }
+
+CampaignBriefDetailView.propTypes = {
+  briefId: PropTypes.string,
+  onClose: PropTypes.func,
+};

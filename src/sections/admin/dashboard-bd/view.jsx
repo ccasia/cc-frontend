@@ -26,6 +26,7 @@ import SendToClientDialog from 'src/sections/campaign/briefs/dialogs/send-to-cli
 
 import MonthStats from './month-stats';
 import PipelineBoard from './pipeline-board';
+import BriefPreviewDialog from './brief-preview-dialog';
 import { headerCounts, greetingForNow } from './pipeline-utils';
 
 // ----------------------------------------------------------------------
@@ -42,6 +43,7 @@ export default function DashboardBdView() {
   const [handoverTarget, setHandoverTarget] = useState(null);
   const [lostTarget, setLostTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [previewTarget, setPreviewTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
   const { data: briefs, isLoading: briefsLoading, mutate: mutateBriefs } = useSWR(
@@ -89,7 +91,7 @@ export default function DashboardBdView() {
   const actions = {
     onSend: setSendTarget,
     onCopyLink: handleCopyLink,
-    onReview: (brief) => router.push(paths.dashboard.campaign.briefDetails(brief.id)),
+    onReview: setPreviewTarget,
     onHandover: setHandoverTarget,
     onView: (brief) =>
       router.push(
@@ -113,8 +115,7 @@ export default function DashboardBdView() {
   }
 
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ py: 3 }}>
-      {/* Greeting header */}
+    <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ pt: 3 }}>
       <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: 4 }}>
         <Box>
           <Typography sx={{ fontFamily: '"Instrument Serif", serif', fontWeight: 400, fontSize: { xs: '2rem', sm: '2.6rem' }, color: '#111827', lineHeight: 1.1 }}>
@@ -157,6 +158,12 @@ export default function DashboardBdView() {
         <PipelineBoard briefs={briefs} actions={actions} />
       </Stack>
 
+      <BriefPreviewDialog
+        open={Boolean(previewTarget)}
+        brief={previewTarget}
+        onClose={() => setPreviewTarget(null)}
+        onChanged={refresh}
+      />
       <SendToClientDialog
         open={Boolean(sendTarget)}
         brief={sendTarget}
