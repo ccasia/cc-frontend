@@ -8,6 +8,7 @@ import {
   Stack,
   Avatar,
   Drawer,
+  Collapse,
   Typography,
   IconButton,
   ButtonBase,
@@ -34,6 +35,28 @@ const STATUS_GROUPS = [
   { key: 'ACTIVE', label: 'Active' },
   { key: 'COMPLETED', label: 'Completed' },
   { key: 'OTHER', label: 'Other' },
+];
+
+const ACTION_ITEM_ROWS = [
+  { key: 'pitchesPendingReview', label: 'Pitches to review', icon: 'hugeicons:user-group', color: '#6366F1' },
+  { key: 'agreementsPendingReview', label: 'Agreements to approve', icon: 'hugeicons:file-edit', color: '#F59E0B' },
+  { key: 'submissionsPendingReview', label: 'Video submissions to review', icon: 'hugeicons:video-01', color: '#10B981' },
+  { key: 'clientFeedbacks', label: 'Client feedbacks to review', icon: 'hugeicons:message-02', color: '#EC4899' },
+  { key: 'linksToApprove', label: 'Links to approve', icon: 'hugeicons:link-01', color: '#06B6D4' },
+  { key: 'overdueInvoices', label: 'Overdue invoices', icon: 'hugeicons:invoice-01', color: '#EF4444' },
+];
+
+const RESPONSE_TIME_ROWS = [
+  { key: 'pitchReviewHours', label: 'Pitch review', icon: 'hugeicons:user-group', color: '#6366F1' },
+  { key: 'agreementReviewHours', label: 'Agreement', icon: 'hugeicons:file-edit', color: '#F59E0B' },
+  { key: 'draftReviewHours', label: 'Draft review', icon: 'hugeicons:video-01', color: '#10B981' },
+  { key: 'postingReviewHours', label: 'Posting review', icon: 'hugeicons:link-01', color: '#06B6D4' },
+];
+
+const REJECTION_CARDS = [
+  { key: 'highest', label: 'Highest', sublabel: 'Campaign with toughest client', icon: 'eva:arrow-upward-fill', color: '#EF4444' },
+  { key: 'median', label: 'Median', sublabel: 'Typical campaign', icon: 'eva:arrow-forward-fill', color: '#F59E0B' },
+  { key: 'lowest', label: 'Lowest', sublabel: 'Smoothest-running campaign', icon: 'eva:arrow-downward-fill', color: '#10B981' },
 ];
 
 function getInitials(name) {
@@ -341,10 +364,12 @@ ClientCard.propTypes = { client: PropTypes.object.isRequired };
 export default function CSMWorkloadDrawer({ csm, onClose }) {
   const open = !!csm;
   const [tab, setTab] = useState('campaigns');
+  const [expandedActionRow, setExpandedActionRow] = useState(null);
 
   // Always start on the Campaigns tab whenever a (new) CSM is selected
   useEffect(() => {
     if (open) setTab('campaigns');
+    setExpandedActionRow(null);
   }, [open, csm?.adminUserId]);
 
   const { data, isLoading } = useSWR(
@@ -357,7 +382,12 @@ export default function CSMWorkloadDrawer({ csm, onClose }) {
   const campaigns = useMemo(() => detail?.campaigns || [], [detail]);
   const clients = detail?.clients || [];
   const creators = detail?.creators || [];
-  const stats = detail?.stats || {};
+  const attention = detail?.attention || {};
+  const actionItems = attention.actionItems || {};
+  const actionItemLists = attention.items || {};
+  const responseTime = attention.responseTime || {};
+  const rejectionRate = attention.rejectionRate || {};
+  const totalActionItems = ACTION_ITEM_ROWS.reduce((sum, row) => sum + (actionItems[row.key] || 0), 0);
 
   const groupedCampaigns = useMemo(() => {
     const groups = { ACTIVE: [], COMPLETED: [], OTHER: [] };
@@ -373,7 +403,7 @@ export default function CSMWorkloadDrawer({ csm, onClose }) {
     campaigns: campaigns.length,
     clients: clients.length,
     creators: creators.length,
-    stats: formatHours(stats.avgSubmissionResponseHours),
+    stats: formatHours(responseTime.avgResponseHours),
   };
 
   return (
@@ -538,28 +568,230 @@ export default function CSMWorkloadDrawer({ csm, onClose }) {
                 )}
 
                 {tab === 'stats' && (
-                  <Stack spacing={1.5}>
-                    <Box sx={{ bgcolor: '#fff', border: '1px solid #e5e7eb', borderRadius: 2, p: 2.5 }}>
-                      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', mb: 1 }}>
-                        Avg. Agreement Response
-                      </Typography>
-                      <Typography sx={{ fontSize: '1.6rem', fontWeight: 700, color: '#111827' }}>
-                        {formatHours(stats.avgAgreementResponseHours)}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-                        Time from agreement sent to creator signing
-                      </Typography>
+                  <Stack spacing={2}>
+                    {/* Action items pending */}
+                    <Box
+                      sx={{
+                        bgcolor: '#fff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: 2,
+                        p: 2.5,
+                        boxShadow: '4px 4px 4px 0px #8D8D9440',
+                      }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                        <Iconify icon="hugeicons:task-01" width={18} sx={{ color: '#1340FF' }} />
+                        <Typography sx={{ fontWeight: 700, fontSize: '0.88rem', color: '#111827' }}>
+                          Action items pending
+                        </Typography>
+                      </Stack>
+                      <Stack direction="row" alignItems="baseline" spacing={1} sx={{ mb: 2 }}>
+                        <Typography sx={{ fontSize: '1.6rem', fontWeight: 700, color: '#111827' }}>
+                          {totalActionItems}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                          items need attention
+                        </Typography>
+                      </Stack>
+                      <Stack spacing={1}>
+                        {ACTION_ITEM_ROWS.map((row) => {
+                          const count = actionItems[row.key] || 0;
+                          const list = actionItemLists[row.key] || [];
+                          const isExpanded = expandedActionRow === row.key;
+                          return (
+                            <Box
+                              key={row.key}
+                              sx={{
+                                bgcolor: '#F9FAFB',
+                                borderRadius: '10px',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              <ButtonBase
+                                onClick={() =>
+                                  count > 0 && setExpandedActionRow(isExpanded ? null : row.key)
+                                }
+                                sx={{
+                                  width: '100%',
+                                  justifyContent: 'space-between',
+                                  px: 1.5,
+                                  py: 1,
+                                  cursor: count > 0 ? 'pointer' : 'default',
+                                }}
+                              >
+                                <Stack direction="row" alignItems="center" spacing={1.2} sx={{ minWidth: 0 }}>
+                                  <Iconify icon={row.icon} width={16} sx={{ color: row.color, flexShrink: 0 }} />
+                                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#111827' }}>
+                                    {row.label}
+                                  </Typography>
+                                </Stack>
+                                <Stack direction="row" alignItems="center" spacing={0.75}>
+                                  <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827' }}>
+                                    {count}
+                                  </Typography>
+                                  <Iconify
+                                    icon="eva:chevron-down-fill"
+                                    width={14}
+                                    sx={{
+                                      color: '#d1d5db',
+                                      transform: isExpanded ? 'rotate(180deg)' : 'none',
+                                      transition: 'transform 0.15s ease',
+                                    }}
+                                  />
+                                </Stack>
+                              </ButtonBase>
+
+                              <Collapse in={isExpanded} unmountOnExit>
+                                <Stack
+                                  spacing={0.75}
+                                  sx={{ px: 1.5, pb: 1.25, pt: 0.5, borderTop: '1px solid #f3f4f6' }}
+                                >
+                                  {list.map((item) => (
+                                    <Stack
+                                      key={item.id}
+                                      direction="row"
+                                      alignItems="center"
+                                      spacing={1}
+                                      sx={{ bgcolor: '#fff', borderRadius: '8px', px: 1, py: 0.75 }}
+                                    >
+                                      <Avatar
+                                        src={item.creatorPhoto || undefined}
+                                        sx={{ width: 22, height: 22, fontSize: '0.6rem', bgcolor: '#e5e7eb' }}
+                                      >
+                                        {getInitials(item.creatorName)}
+                                      </Avatar>
+                                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Typography noWrap sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#111827' }}>
+                                          {item.creatorName}
+                                        </Typography>
+                                        <Typography noWrap variant="caption" sx={{ color: '#9ca3af' }}>
+                                          {item.campaignName}
+                                          {item.meta ? ` · ${item.meta}` : ''}
+                                        </Typography>
+                                      </Box>
+                                      <Typography sx={{ fontSize: '0.68rem', color: '#9ca3af', flexShrink: 0 }}>
+                                        {item.date ? dayjs(item.date).format('D MMM') : ''}
+                                      </Typography>
+                                    </Stack>
+                                  ))}
+                                  {count > list.length && (
+                                    <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af', textAlign: 'center', pt: 0.25 }}>
+                                      +{count - list.length} more
+                                    </Typography>
+                                  )}
+                                </Stack>
+                              </Collapse>
+                            </Box>
+                          );
+                        })}
+                      </Stack>
                     </Box>
-                    <Box sx={{ bgcolor: '#fff', border: '1px solid #e5e7eb', borderRadius: 2, p: 2.5 }}>
-                      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', mb: 1 }}>
-                        Avg. Submission Response
+
+                    {/* Avg response time */}
+                    <Box
+                      sx={{
+                        bgcolor: '#fff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: 2,
+                        p: 2.5,
+                        boxShadow: '4px 4px 4px 0px #8D8D9440',
+                      }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                        <Iconify icon="hugeicons:clock-01" width={18} sx={{ color: '#1340FF' }} />
+                        <Typography sx={{ fontWeight: 700, fontSize: '0.88rem', color: '#111827' }}>
+                          Avg response time
+                        </Typography>
+                      </Stack>
+                      <Typography sx={{ fontSize: '1.6rem', fontWeight: 700, color: '#111827', mb: 2 }}>
+                        {formatHours(responseTime.avgResponseHours)}
                       </Typography>
-                      <Typography sx={{ fontSize: '1.6rem', fontWeight: 700, color: '#111827' }}>
-                        {formatHours(stats.avgSubmissionResponseHours)}
+                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                        {RESPONSE_TIME_ROWS.map((row) => (
+                          <Box
+                            key={row.key}
+                            sx={{
+                              bgcolor: `${row.color}0F`,
+                              border: `1px solid ${row.color}26`,
+                              borderRadius: '12px',
+                              p: 1.4,
+                            }}
+                          >
+                            <Iconify icon={row.icon} width={17} sx={{ color: row.color, mb: 0.8 }} />
+                            <Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827' }}>
+                              {formatHours(responseTime[row.key])}
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.74rem', fontWeight: 600, color: '#374151' }}>
+                              {row.label}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+
+                    {/* Avg client rejection rate */}
+                    <Box
+                      sx={{
+                        bgcolor: '#fff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: 2,
+                        p: 2.5,
+                        boxShadow: '4px 4px 4px 0px #8D8D9440',
+                      }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                        <Iconify icon="hugeicons:alert-02" width={18} sx={{ color: '#1340FF' }} />
+                        <Typography sx={{ fontWeight: 700, fontSize: '0.88rem', color: '#111827' }}>
+                          Avg client rejection rate
+                        </Typography>
+                      </Stack>
+                      <Typography sx={{ fontSize: '1.6rem', fontWeight: 700, color: '#111827', mb: 2 }}>
+                        {rejectionRate.avgRate ?? 0}%
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-                        Time from agreement signed to first draft submitted
-                      </Typography>
+                      <Stack spacing={1.2}>
+                        {REJECTION_CARDS.map((card) => {
+                          const entry = rejectionRate[card.key];
+                          if (!entry) return null;
+                          return (
+                            <Box
+                              key={card.key}
+                              sx={{ border: `1.5px solid ${card.color}`, borderRadius: '10px', p: 1.5 }}
+                            >
+                              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                                <Stack direction="row" alignItems="center" spacing={0.6}>
+                                  <Iconify icon={card.icon} width={13} sx={{ color: card.color }} />
+                                  <Typography
+                                    sx={{
+                                      fontSize: '0.65rem',
+                                      fontWeight: 700,
+                                      color: card.color,
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.03em',
+                                    }}
+                                  >
+                                    {card.label}
+                                  </Typography>
+                                </Stack>
+                                <Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: card.color }}>
+                                  {entry.rate}%
+                                </Typography>
+                              </Stack>
+                              <Typography
+                                noWrap
+                                sx={{ fontSize: '0.78rem', color: '#6b7280', mt: 0.3 }}
+                                title={entry.campaignName}
+                              >
+                                {entry.campaignName}
+                              </Typography>
+                            </Box>
+                          );
+                        })}
+                        {!rejectionRate.highest && (
+                          <Typography variant="body2" sx={{ color: '#9ca3af', textAlign: 'center', py: 2 }}>
+                            Not enough pitch data yet
+                          </Typography>
+                        )}
+                      </Stack>
                     </Box>
                   </Stack>
                 )}
