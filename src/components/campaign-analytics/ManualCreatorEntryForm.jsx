@@ -139,8 +139,7 @@ CreatorOptionResolver.propTypes = {
   onResolved: PropTypes.func.isRequired,
 };
 
-// Dropdown component listing creators whose postings have no insight data
-const CreatorDropdownSelect = ({ submissions, value, onChange }) => {
+const CreatorDropdownSelect = ({ submissions, value, inputValue, onChange, onInputChange }) => {
   const [resolvedCreators, setResolvedCreators] = useState({});
 
   const handleResolved = useCallback((submissionId, data) => {
@@ -156,10 +155,15 @@ const CreatorDropdownSelect = ({ submissions, value, onChange }) => {
         <CreatorOptionResolver key={sub.id} submission={sub} onResolved={handleResolved} />
       ))}
       <Autocomplete
+        freeSolo
         options={options}
-        getOptionLabel={(option) => option.name || ''}
+        getOptionLabel={(option) => (typeof option === 'string' ? option : option.name || '')}
         value={value}
-        onChange={(_, newValue) => onChange(newValue)}
+        inputValue={inputValue}
+        onChange={(_, newValue) => onChange(typeof newValue === 'object' ? newValue : null)}
+        onInputChange={(_, newInputValue, reason) => {
+          if (reason === 'input') onInputChange(newInputValue);
+        }}
         loading={isResolving}
         isOptionEqualToValue={(option, val) => option.submissionId === val?.submissionId}
         componentsProps={{ paper: { sx: { minWidth: 250 } } }}
@@ -247,11 +251,14 @@ CreatorDropdownSelect.propTypes = {
     postUrl: PropTypes.string,
     photoURL: PropTypes.string,
   }),
+  inputValue: PropTypes.string,
   onChange: PropTypes.func.isRequired,
+  onInputChange: PropTypes.func.isRequired,
 };
 
 CreatorDropdownSelect.defaultProps = {
   value: null,
+  inputValue: '',
 };
 
 // Helper to get platform-appropriate avatar background colour
@@ -314,12 +321,8 @@ const ManualCreatorEntryForm = forwardRef(
     const [detectedPlatform, setDetectedPlatform] = useState(initialPlatform);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedCreator, setSelectedCreator] = useState(null);
-
-    // Show dropdown when there are untracked submissions and we're not in edit mode
-    const showCreatorDropdown =
-      !isEditMode &&
-      Array.isArray(submissionsWithoutInsights) &&
-      submissionsWithoutInsights.length > 0;
+    const dropdownSubmissions =
+      !isEditMode && Array.isArray(submissionsWithoutInsights) ? submissionsWithoutInsights : [];
 
     const toNumberOrZero = (value) => {
       if (value === '' || value === undefined || value === null) return 0;
@@ -400,6 +403,14 @@ const ManualCreatorEntryForm = forwardRef(
       [setValue]
     );
 
+    const handleCreatorNameTyped = useCallback(
+      (text) => {
+        setSelectedCreator(null);
+        setValue('creatorName', text, { shouldValidate: true });
+      },
+      [setValue]
+    );
+
     // Handler for formatted number inputs
     const handleFormattedNumberChange = (fieldName, value) => {
       const cleaned = parseFormattedNumber(value);
@@ -431,6 +442,7 @@ const ManualCreatorEntryForm = forwardRef(
           comments: toNumberOrZero(data.comments),
           shares: toNumberOrZero(data.shares),
           saved: detectedPlatform === 'Instagram' ? toNumberOrZero(data.saved) : undefined,
+          photoURL: selectedCreator?.photoURL,
         };
 
         if (isEditMode) {
@@ -518,123 +530,45 @@ const ManualCreatorEntryForm = forwardRef(
                       )}
                     </Avatar>
 
-                    {showCreatorDropdown ? (
-                      <Stack
-                        direction="column"
-                        spacing={0.5}
-                        sx={{ minWidth: 0, flex: 1, maxWidth: '100%' }}
-                      >
-                        <CreatorDropdownSelect
-                          submissions={submissionsWithoutInsights}
-                          value={selectedCreator}
-                          onChange={handleCreatorSelected}
-                        />
-                        <RHFTextField
-                          name="creatorUsername"
-                          placeholder="Creator Username"
-                          size="small"
-                          sx={{
-                            width: '100%',
-                            maxWidth: '100%',
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 1,
-                              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#1340FF',
-                                borderWidth: '1.5px',
-                              },
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#1340FF',
-                              },
-                              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e7e7e7' },
+                    <Stack
+                      direction="column"
+                      spacing={0.5}
+                      sx={{ minWidth: 0, flex: 1, maxWidth: '100%' }}
+                    >
+                      <CreatorDropdownSelect
+                        submissions={dropdownSubmissions}
+                        value={selectedCreator}
+                        inputValue={watch('creatorName')}
+                        onChange={handleCreatorSelected}
+                        onInputChange={handleCreatorNameTyped}
+                      />
+                      <RHFTextField
+                        name="creatorUsername"
+                        placeholder="Creator Username"
+                        size="small"
+                        sx={{
+                          width: '100%',
+                          maxWidth: '100%',
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 1,
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#1340FF',
+                              borderWidth: '1.5px',
                             },
-                            '& .MuiInputBase-input': {
-                              py: 0.75,
-                              fontSize: '0.875rem',
-                              color: '#000000',
-                              '&::placeholder': { color: '#B0B0B0', opacity: 1 },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#1340FF',
                             },
-                          }}
-                        />
-                      </Stack>
-                    ) : (
-                      <Stack
-                        direction="column"
-                        spacing={0.5}
-                        sx={{ minWidth: 0, flex: 1, maxWidth: '100%' }}
-                      >
-                        <RHFTextField
-                          name="creatorName"
-                          placeholder="Creator Name"
-                          size="small"
-                          sx={{
-                            width: '100%',
-                            maxWidth: '100%',
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 1,
-                              '&.Mui-focused': {
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: '#1340FF',
-                                  borderWidth: '1.5px',
-                                },
-                              },
-                              '&:hover': {
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: '#1340FF',
-                                },
-                              },
-                              '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#e7e7e7',
-                              },
-                            },
-                            '& .MuiInputBase-input': {
-                              py: 0.75,
-                              fontSize: '0.95rem',
-                              fontWeight: 400,
-                              color: '#000000',
-                              '&::placeholder': {
-                                color: '#B0B0B0',
-                                opacity: 1,
-                              },
-                            },
-                          }}
-                        />
-                        <RHFTextField
-                          name="creatorUsername"
-                          placeholder="Creator Username"
-                          size="small"
-                          sx={{
-                            width: '100%',
-                            maxWidth: '100%',
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 1,
-                              '&.Mui-focused': {
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: '#1340FF',
-                                  borderWidth: '1.5px',
-                                },
-                              },
-                              '&:hover': {
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: '#1340FF',
-                                },
-                              },
-                              '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#e7e7e7',
-                              },
-                            },
-                            '& .MuiInputBase-input': {
-                              py: 0.75,
-                              fontSize: '0.875rem',
-                              color: '#000000',
-                              '&::placeholder': {
-                                color: '#B0B0B0',
-                                opacity: 1,
-                              },
-                            },
-                          }}
-                        />
-                      </Stack>
-                    )}
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e7e7e7' },
+                          },
+                          '& .MuiInputBase-input': {
+                            py: 0.75,
+                            fontSize: '0.875rem',
+                            color: '#000000',
+                            '&::placeholder': { color: '#B0B0B0', opacity: 1 },
+                          },
+                        }}
+                      />
+                    </Stack>
                   </Stack>
 
                   {/* Center: Metrics - same divider style as saved entries */}
@@ -921,100 +855,36 @@ const ManualCreatorEntryForm = forwardRef(
                         <Iconify icon="mdi:account" width={32} sx={{ color: '#FFFFFF' }} />
                       )}
                     </Avatar>
-                    {showCreatorDropdown ? (
-                      <Stack direction="column" spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
-                        <CreatorDropdownSelect
-                          submissions={submissionsWithoutInsights}
-                          value={selectedCreator}
-                          onChange={handleCreatorSelected}
-                        />
-                        <RHFTextField
-                          name="creatorUsername"
-                          placeholder="Creator Username"
-                          size="small"
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#1340FF',
-                                borderWidth: '1.5px',
-                              },
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#1340FF',
-                              },
-                              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e7e7e7' },
+                    <Stack direction="column" spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+                      <CreatorDropdownSelect
+                        submissions={dropdownSubmissions}
+                        value={selectedCreator}
+                        inputValue={watch('creatorName')}
+                        onChange={handleCreatorSelected}
+                        onInputChange={handleCreatorNameTyped}
+                      />
+                      <RHFTextField
+                        name="creatorUsername"
+                        placeholder="Creator Username"
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#1340FF',
+                              borderWidth: '1.5px',
                             },
-                            '& .MuiInputBase-input': {
-                              color: '#000000',
-                              '&::placeholder': { color: '#B0B0B0', opacity: 1 },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#1340FF',
                             },
-                          }}
-                        />
-                      </Stack>
-                    ) : (
-                      <Stack direction="column" spacing={0.5} sx={{ flex: 1 }}>
-                        <RHFTextField
-                          name="creatorName"
-                          placeholder="Creator Name"
-                          size="small"
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              '&.Mui-focused': {
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: '#1340FF',
-                                  borderWidth: '1.5px',
-                                },
-                              },
-                              '&:hover': {
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: '#1340FF',
-                                },
-                              },
-                              '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#e7e7e7',
-                              },
-                            },
-                            '& .MuiInputBase-input': {
-                              fontWeight: 400,
-                              color: '#000000',
-                              '&::placeholder': {
-                                color: '#B0B0B0',
-                                opacity: 1,
-                              },
-                            },
-                          }}
-                        />
-                        <RHFTextField
-                          name="creatorUsername"
-                          placeholder="Creator Username"
-                          size="small"
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              '&.Mui-focused': {
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: '#1340FF',
-                                  borderWidth: '1.5px',
-                                },
-                              },
-                              '&:hover': {
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: '#1340FF',
-                                },
-                              },
-                              '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#e7e7e7',
-                              },
-                            },
-                            '& .MuiInputBase-input': {
-                              color: '#000000',
-                              '&::placeholder': {
-                                color: '#B0B0B0',
-                                opacity: 1,
-                              },
-                            },
-                          }}
-                        />
-                      </Stack>
-                    )}
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e7e7e7' },
+                          },
+                          '& .MuiInputBase-input': {
+                            color: '#000000',
+                            '&::placeholder': { color: '#B0B0B0', opacity: 1 },
+                          },
+                        }}
+                      />
+                    </Stack>
                   </Stack>
                   <Grid container spacing={1}>
                     <Grid item xs={6}>

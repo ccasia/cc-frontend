@@ -195,20 +195,15 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
   };
 
   const creatorListRowsSorted = useMemo(() => {
-    const rows = [];
+    const manualRows = filteredManualEntries.map((entry) => ({
+      kind: 'manual',
+      dedupKey: `manual::${entry.id}`,
+      engagementRate: Number(entry.engagementRate) || 0,
+      entry,
+    }));
 
-    filteredManualEntries.forEach((entry) => {
-      const canonical = canonicalizePostUrl(entry.postUrl);
-      const dedupKey = canonical
-        ? `url::${entry.platform}::${canonical}`
-        : `manual::${entry.platform}::${(entry.creatorUsername || entry.id).toLowerCase()}`;
-      rows.push({
-        kind: 'manual',
-        dedupKey,
-        engagementRate: Number(entry.engagementRate) || 0,
-        entry,
-      });
-    });
+    const submissionRows = [];
+    const seenSubmissionKeys = new Set();
 
     filteredSubmissions.forEach((submission) => {
       const insightData = insightsData.find(
@@ -221,10 +216,13 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
       const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
       const canonical = canonicalizePostUrl(submission.postUrl);
       const dedupKey = canonical
-        ? `url::${submission.platform}::${canonical}`
+        ? `submission-url::${submission.platform}::${canonical}`
         : `submission::${submission.platform}::${submission.user}::${submission.id}`;
 
-      rows.push({
+      if (seenSubmissionKeys.has(dedupKey)) return;
+      seenSubmissionKeys.add(dedupKey);
+
+      submissionRows.push({
         kind: 'submission',
         dedupKey,
         engagementRate,
@@ -233,15 +231,7 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
       });
     });
 
-    rows.sort((a, b) => b.engagementRate - a.engagementRate);
-
-    const seen = new Set();
-
-    return rows.filter((row) => {
-      if (seen.has(row.dedupKey)) return false;
-      seen.add(row.dedupKey);
-      return true;
-    });
+    return [...manualRows, ...submissionRows].sort((a, b) => b.engagementRate - a.engagementRate);
   }, [filteredManualEntries, filteredSubmissions, insightsData, loadingInsights]);
 
   const handleDeleteClick = (entry) => {
@@ -489,7 +479,6 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
                 campaignId={campaign?.id}
                 loadingInsights={loadingInsights}
                 filteredSubmissions={filteredSubmissions}
-                insightsData={insightsData}
                 mutateManualEntries={mutateManualEntries}
                 isDisabled={isDisabled}
                 creatorListRowsSorted={creatorListRowsSorted}

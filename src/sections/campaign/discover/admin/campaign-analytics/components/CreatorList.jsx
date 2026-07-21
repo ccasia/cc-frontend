@@ -18,7 +18,6 @@ const CreatorList = ({
   campaignId,
   loadingInsights,
   filteredSubmissions,
-  insightsData,
   mutateManualEntries,
   isDisabled,
   creatorListRowsSorted,
@@ -32,23 +31,16 @@ const CreatorList = ({
   const formState = useAnalyticsStore((state) => state.formState);
   const selectedPlatform = useAnalyticsStore((state) => state.selectedPlatform);
   console.log('FORM', formState);
-
-  const existingKeys = useMemo(
-    () =>
-      creatorListRowsSorted?.map((item) => item?.insightData?.postUrl || item?.entry?.postUrl) ||
-      [],
-    [creatorListRowsSorted]
-  );
-
-  const sanitizedList = useMemo(
-    () =>
-      filteredSubmissions?.filter(
-        (sub) =>
-          !insightsData.find((d) => d.submissionId === sub.id) &&
-          !existingKeys?.includes(sub?.postUrl)
-      ),
-    [existingKeys, filteredSubmissions, insightsData]
-  );
+  const sanitizedList = useMemo(() => {
+    const seenUsers = new Set();
+    return (
+      filteredSubmissions?.filter((sub) => {
+        if (seenUsers.has(sub?.user)) return false;
+        seenUsers.add(sub?.user);
+        return true;
+      }) || []
+    );
+  }, [filteredSubmissions]);
 
   return (
     <Box>
@@ -263,7 +255,6 @@ CreatorList.propTypes = {
   campaignId: PropTypes.string,
   loadingInsights: PropTypes.bool,
   filteredSubmissions: PropTypes.array,
-  insightsData: PropTypes.array,
   mutateManualEntries: PropTypes.func,
   isDisabled: PropTypes.bool,
   creatorListRowsSorted: PropTypes.array,
