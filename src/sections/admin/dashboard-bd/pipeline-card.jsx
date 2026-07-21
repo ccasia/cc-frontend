@@ -172,12 +172,16 @@ export default function PipelineCard({
                 {isLive ? 'Live' : 'Not live yet'}
               </Typography>
             </Stack>
-            <Button
-              onClick={() => onView(brief)}
-              sx={{ color: '#1340FF', fontWeight: 700, fontSize: '0.8rem', minWidth: 0, px: 1 }}
-            >
-              View
-            </Button>
+            {/* Only live campaigns have a campaign page to view — before that
+                the card click (brief preview) is the only way in. */}
+            {isLive && (
+              <Button
+                onClick={() => onView(brief)}
+                sx={{ color: '#1340FF', fontWeight: 700, fontSize: '0.8rem', minWidth: 0, px: 1 }}
+              >
+                View
+              </Button>
+            )}
           </Stack>
         );
       }

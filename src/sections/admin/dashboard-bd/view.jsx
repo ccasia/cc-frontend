@@ -93,12 +93,9 @@ export default function DashboardBdView() {
     onCopyLink: handleCopyLink,
     onReview: setPreviewTarget,
     onHandover: setHandoverTarget,
-    onView: (brief) =>
-      router.push(
-        brief.status === 'ACTIVE'
-          ? paths.dashboard.campaign.adminCampaignDetail(brief.id)
-          : paths.dashboard.campaign.briefDetails(brief.id)
-      ),
+    // Only surfaced on live campaigns (see pipeline-card.jsx), so this always
+    // goes to the campaign page — the brief itself opens via the card click.
+    onView: (brief) => router.push(paths.dashboard.campaign.adminCampaignDetail(brief.id)),
     onLost: setLostTarget,
     onDelete: setDeleteTarget,
   };
