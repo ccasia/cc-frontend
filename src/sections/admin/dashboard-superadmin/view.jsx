@@ -261,7 +261,7 @@ const DashboardSuperadminView = () => {
         ))}
       </Tabs>
 
-      {tab === 'bd' && <BusinessDevelopmentTab />}
+      {tab === 'bd' && <BusinessDevelopmentTab dateRange={dateRange}/>}
       {tab === 'csm' && <CSMWorkloadTab dateRange={dateRange} />}
       {tab === 'campaigns' && <CampaignsTab />}
       {tab === 'clients' && <ClientsTab />}

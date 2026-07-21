@@ -499,6 +499,7 @@ export const endpoints = {
     // BD-authored brief flow
     list: '/api/briefs',
     bdDashboard: '/api/briefs/bd-dashboard',
+    bdOverview: '/api/briefs/bd-overview',
     create: '/api/briefs',
     get: (id) => `/api/briefs/${id}`,
     patch: (id) => `/api/briefs/${id}`,
