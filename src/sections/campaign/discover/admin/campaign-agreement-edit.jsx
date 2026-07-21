@@ -6,8 +6,8 @@ import { useForm } from 'react-hook-form';
 import { pdf } from '@react-pdf/renderer';
 import { enqueueSnackbar } from 'notistack';
 import { SyncLoader } from 'react-spinners';
-import React, { useMemo, useEffect, useState } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -23,15 +23,15 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 import useGetCreditTiers from 'src/hooks/use-get-credit-tiers';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
 
 import Iconify from 'src/components/iconify';
-import { useSettingsContext } from 'src/components/settings';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFCheckbox, RHFTextField } from 'src/components/hook-form';
 
@@ -89,8 +89,9 @@ const CampaignAgreementEdit = ({
   campaignMutate,
   agreementsMutate,
 }) => {
-  const settings = useSettingsContext();
   const loading = useBoolean();
+  const { user } = useAuthContext();
+  const isSuperAdmin = user?.role === 'superadmin';
   const { data: agreements } = useGetAgreements(campaign?.id);
   const { data: creditTierList } = useGetCreditTiers();
 
@@ -110,8 +111,10 @@ const CampaignAgreementEdit = ({
 
   const agreedPlatform =
     shortlistedRecord?.selectedPlatform || pitchRecord?.selectedPlatform || 'instagram';
-  const agreedFollowerCount =
-    toFollowerCount(shortlistedRecord?.followerCount) || toFollowerCount(pitchRecord?.followerCount);
+  // A record written before selectedPlatform existed carries no platform; read it as Instagram,
+  // which is what the backend and this dialog already default those rows to.
+  const getSnapshotFollowerCount = (record, platform) =>
+    (record?.selectedPlatform || 'instagram') === platform ? toFollowerCount(record?.followerCount) : 0;
 
   const [selectedPlatform, setSelectedPlatform] = useState(agreedPlatform);
 
@@ -161,22 +164,28 @@ const CampaignAgreementEdit = ({
     [requiresUGCCredits]
   );
 
-  // The count to prefill the field with, most authoritative first:
-  //   1. what this campaign already agreed for the creator (only valid for that platform)
-  //   2. a count an admin recorded on the creator for this platform
-  //   3. the media kit, which can be stale or lag the real account
-  // The admin can always overwrite it — this only decides the starting value.
+  // The count this platform already has, most authoritative first:
+  //   1. what this campaign agreed for the creator (shortlist snapshot, then pitch)
+  //   2. the connected account
+  //   3. a count recorded manually on the creator
+  // This MUST stay in step with resolveAgreementFollowerCount in the backend's
+  // agreementFollowerUtils.ts. It decides both what the dialog prices from and whether the field is
+  // editable, and the payload omits the count when it is not — so if the two orders disagree, the
+  // admin is shown one number and the server stores another.
   const getFollowerCountByPlatform = (platform) => {
-    if (platform === agreedPlatform && agreedFollowerCount > 0) return agreedFollowerCount;
+    const agreedFollowerCount =
+      getSnapshotFollowerCount(shortlistedRecord, platform) ||
+      getSnapshotFollowerCount(pitchRecord, platform);
+    if (agreedFollowerCount > 0) return agreedFollowerCount;
 
     const creatorData = agreement?.user?.creator;
     if (!creatorData) return 0;
 
     if (platform === 'tiktok') {
-      return creatorData.manualTiktokFollowerCount || creatorData.tiktokUser?.follower_count || 0;
+      return creatorData.tiktokUser?.follower_count || creatorData.manualTiktokFollowerCount || 0;
     }
 
-    return creatorData.manualInstagramFollowerCount || creatorData.instagramUser?.followers_count || 0;
+    return creatorData.instagramUser?.followers_count || creatorData.manualInstagramFollowerCount || 0;
   };
 
   // What the media kit reports, shown alongside the field so the admin can see when their
@@ -214,10 +223,14 @@ const CampaignAgreementEdit = ({
   const hasPlatformChanged = selectedPlatform !== originalPlatform;
   const selectedPlatformFollower = getFollowerCountByPlatform(selectedPlatform);
   const mediaKitFollower = getMediaKitFollowerCount(selectedPlatform);
-  // The admin is authoritative on the follower count, so what they type always decides the
-  // tier. We only fall back to the known count when they leave the field untouched.
-  const effectiveFollowerCountForTier =
-    Number(platformFollowerValue || 0) || Number(selectedPlatformFollower || 0);
+  // Overwriting a count we already hold is a superadmin call. Supplying one for a platform we
+  // know nothing about is not an override — there is nothing to overwrite, and without it a
+  // tier campaign cannot be priced at all, which leaves the admin with no way to send.
+  const canEditFollowerCount = isSuperAdmin || selectedPlatformFollower <= 0;
+  const platformLabel = selectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram';
+  const effectiveFollowerCountForTier = canEditFollowerCount
+    ? Number(platformFollowerValue || 0) || Number(selectedPlatformFollower || 0)
+    : Number(selectedPlatformFollower || 0);
   const liveTierData = useMemo(() => {
     if (!campaign?.isCreditTier || !Array.isArray(creditTierList)) return null;
     if (!effectiveFollowerCountForTier || effectiveFollowerCountForTier <= 0) return null;
@@ -233,18 +246,20 @@ const CampaignAgreementEdit = ({
   }, [campaign?.isCreditTier, creditTierList, effectiveFollowerCountForTier]);
   // Only fall back to stored tierData when there is genuinely no follower count (0/unknown).
   // If we have a count but it doesn't match any tier, show null so the "no match" warning appears.
-  const previewTierSource = hasPlatformChanged
-    ? liveTierData
-    : effectiveFollowerCountForTier > 0
-      ? liveTierData
-      : (tierData || null);
-  const displayTierData =
-    campaign?.isCreditTier && previewTierSource
-      ? {
-          name: previewTierSource?.name || 'Unknown Tier',
-          creditsPerVideo: previewTierSource?.creditsPerVideo || 1,
-        }
-      : null;
+  let previewTierSource = tierData || null;
+  if (hasPlatformChanged || effectiveFollowerCountForTier > 0) {
+    previewTierSource = liveTierData;
+  }
+  const displayTierData = useMemo(
+    () =>
+      campaign?.isCreditTier && previewTierSource
+        ? {
+            name: previewTierSource?.name || 'Unknown Tier',
+            creditsPerVideo: previewTierSource?.creditsPerVideo || 1,
+          }
+        : null,
+    [campaign?.isCreditTier, previewTierSource]
+  );
 
   useEffect(() => {
     const currentCredits =
@@ -262,8 +277,8 @@ const CampaignAgreementEdit = ({
     setValue('paymentAmount', agreement?.shortlistedCreator?.amount);
     setValue('ugcCredits', currentCredits);
     setSelectedPlatform(agreedPlatform);
-    // Show the count the tier will actually be priced from, rather than an empty field, so
-    // the admin can see and correct it instead of unknowingly accepting a media-kit number.
+    // Show the count the tier will actually be priced from. Superadmins can correct it;
+    // other admin roles can review the trusted value without overriding it.
     setValue('platformFollowerCount', String(getFollowerCountByPlatform(agreedPlatform) || ''));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setValue, isDefault, agreement, agreedPlatform]);
@@ -368,9 +383,11 @@ const CampaignAgreementEdit = ({
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
     const creditsToAssign = requiresUGCCredits ? Number(ugcCreditsValue) : null;
-    // Always send the count the tier was priced from, so the backend snapshot matches
-    // what the admin saw in this dialog.
-    const parsedPlatformFollower = effectiveFollowerCountForTier || undefined;
+    // Only a superadmin may submit a follower override. Other roles send the selected platform
+    // and let the backend resolve the trusted count used for pricing and snapshots.
+    const parsedPlatformFollower = canEditFollowerCount
+      ? effectiveFollowerCountForTier || undefined
+      : undefined;
 
     try {
       // Validate credits against max allowed
@@ -434,10 +451,9 @@ const CampaignAgreementEdit = ({
         isNew: agreement?.isNew || false,
         credits: creditsToAssign, // Include credits for V4 submission updates
         selectedPlatform,
-        followerCount:
-          !Number.isNaN(parsedPlatformFollower) && parsedPlatformFollower
-            ? parsedPlatformFollower
-            : undefined,
+        ...(!Number.isNaN(parsedPlatformFollower) && parsedPlatformFollower
+          ? { followerCount: parsedPlatformFollower }
+          : {}),
       };
 
       console.log('Sending data to backend:', requestData);
@@ -452,15 +468,15 @@ const CampaignAgreementEdit = ({
       const agreementIdToSend = res?.data?.agreement?.id || agreement?.id;
 
       const sendAgreementPayload = {
-        ...agreement,
+        user: agreement?.user,
+        campaignId: agreement?.campaignId,
         id: agreementIdToSend,
         isNew: agreement?.isNew || false,
         credits: creditsToAssign,
         selectedPlatform,
-        followerCount:
-          !Number.isNaN(parsedPlatformFollower) && parsedPlatformFollower
-            ? parsedPlatformFollower
-            : undefined,
+        ...(!Number.isNaN(parsedPlatformFollower) && parsedPlatformFollower
+          ? { followerCount: parsedPlatformFollower }
+          : {}),
       };
 
       await axiosInstance.patch(endpoints.campaign.sendAgreement, sendAgreementPayload);
@@ -880,9 +896,10 @@ const CampaignAgreementEdit = ({
                   <RHFTextField
                     name="platformFollowerCount"
                     type="text"
-                    label={`Follower Count (${selectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram'})`}
+                    label={`Follower Count (${platformLabel})`}
                     placeholder={selectedPlatformFollower ? selectedPlatformFollower.toLocaleString() : ''}
                     value={platformFollowerValue || ''}
+                    disabled={!canEditFollowerCount}
                     onChange={(e) => {
                       const sanitized = e.target.value.replace(/[^0-9]/g, '');
                       setValue('platformFollowerCount', sanitized);
@@ -898,18 +915,28 @@ const CampaignAgreementEdit = ({
                   />
                   {mediaKitFollower > 0 && effectiveFollowerCountForTier !== mediaKitFollower && (
                     <Typography variant="caption" sx={{ color: '#637381', px: 0.25 }}>
-                      Their {selectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram'} media kit says{' '}
+                      Their {platformLabel} media kit says{' '}
                       <Box component="span" sx={{ fontWeight: 700 }}>
                         {mediaKitFollower.toLocaleString()}
                       </Box>{' '}
-                      followers. This agreement is priced on the{' '}
+                      followers. This agreement is priced on{' '}
                       <Box component="span" sx={{ fontWeight: 700 }}>
                         {effectiveFollowerCountForTier.toLocaleString()}
                       </Box>{' '}
-                      you entered.
+                      followers.
                     </Typography>
                   )}
-                  {campaign?.isCreditTier && !displayTierData && (
+                  {!canEditFollowerCount && (
+                    <Typography variant="caption" sx={{ color: '#637381', px: 0.25 }}>
+                      Using the {platformLabel} follower count already on record for this creator.
+                    </Typography>
+                  )}
+                  {campaign?.isCreditTier && effectiveFollowerCountForTier <= 0 && (
+                    <Typography variant="caption" sx={{ color: 'error.main', px: 0.25 }}>
+                      Enter a {platformLabel} follower count to price this agreement.
+                    </Typography>
+                  )}
+                  {campaign?.isCreditTier && effectiveFollowerCountForTier > 0 && !displayTierData && (
                     <Typography variant="caption" sx={{ color: 'error.main', px: 0.25 }}>
                       No credit tier matches the selected platform follower count.
                     </Typography>
