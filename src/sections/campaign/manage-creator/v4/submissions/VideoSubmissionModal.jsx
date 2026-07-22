@@ -176,7 +176,7 @@ const VideoSubmissionModal = ({
   }, [freshSubmission, submission, videoPage, videoOrder]);
 
   // Whether admin caption editing is allowed for the current submission
-  const captionEditableStatus = ['PENDING_REVIEW', 'APPROVE_LINK'];
+  const captionEditableStatus = ['PENDING_REVIEW', 'APPROVE_LINK', 'CLIENT_FEEDBACK'];
   const canEditCaption =
     isAdmin && captionEditableStatus.includes((freshSubmission || submission)?.status);
 
