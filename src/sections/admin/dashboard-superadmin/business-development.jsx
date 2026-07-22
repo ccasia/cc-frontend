@@ -44,6 +44,15 @@ const stageMatches = (brief, stageKey) => {
 const nf = (n) => Math.round(n || 0).toLocaleString('en-US');
 const fmtMoney = (currency, amount) => `${currency} ${nf(amount)}`;
 
+// Conversion-rate chip colours: under 50% red, over 80% green, black between.
+const CONV_NEUTRAL = { bg: '#f3f4f6', fg: '#9ca3af' };
+const convRateColors = (pct) => {
+  if (pct == null) return CONV_NEUTRAL;
+  if (pct < 50) return { bg: '#fdecea', fg: '#c0341d' };
+  if (pct > 80) return { bg: '#e7f6ee', fg: '#1e7e45' };
+  return { bg: '#f3f4f6', fg: '#111827' };
+};
+
 function PipelineByStage({ pipeline, briefs, onSelectBrief }) {
   const [openStage, setOpenStage] = useState(null);
   const max = Math.max(1, ...pipeline.map((s) => s.count));
@@ -191,6 +200,25 @@ function PeopleTable({ people }) {
                         {p.name?.charAt(0)?.toUpperCase() || 'B'}
                       </Avatar>
                       <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#111827' }}>{p.name}</Typography>
+                      {!p.isBd && p.role && (
+                        <Box
+                          component="span"
+                          sx={{
+                            px: 0.75,
+                            py: 0.15,
+                            borderRadius: '999px',
+                            fontSize: '0.62rem',
+                            fontWeight: 700,
+                            color: '#6b7280',
+                            bgcolor: '#f3f4f6',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.02em',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {p.role}
+                        </Box>
+                      )}
                     </Stack>
                   </TableCell>
                   <TableCell align="right" sx={{ borderBottom: '1px solid #f3f4f6', fontWeight: 700, color: '#111827' }}>
@@ -214,8 +242,8 @@ function PeopleTable({ people }) {
                         borderRadius: '999px',
                         fontSize: '0.72rem',
                         fontWeight: 700,
-                        bgcolor: pct == null ? '#f3f4f6' : '#e7f6ee',
-                        color: pct == null ? '#9ca3af' : '#1e7e45',
+                        bgcolor: convRateColors(pct).bg,
+                        color: convRateColors(pct).fg,
                       }}
                     >
                       {pct == null ? '—' : `${pct}%`}
@@ -388,6 +416,10 @@ const BusinessDevelopmentTab = ({ dateRange }) => {
       />
     </Box>
   );
+};
+
+BusinessDevelopmentTab.propTypes = {
+  dateRange: PropTypes.object,
 };
 
 export default BusinessDevelopmentTab;

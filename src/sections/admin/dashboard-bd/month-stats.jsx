@@ -30,10 +30,19 @@ const firstNameTitled = (name) => {
 
 const emptyBucket = { wonCount: 0, wonAmount: 0, lostCount: 0, lostAmount: 0, winRate: null };
 
-function StatBlock({ figure, label, faded }) {
+// Win-rate colour bands: under 50% red, over 80% green, black between.
+const winRateColor = (pct) => {
+  if (pct == null) return '#111827';
+  if (pct < 50) return '#c0341d';
+  if (pct > 80) return '#1e7e45';
+  return '#111827';
+};
+
+function StatBlock({ figure, label, faded, color }) {
+  const resolvedColor = color || (faded ? '#c4c4c8' : '#111827');
   return (
     <Box sx={{ flex: 1 }}>
-      <Typography sx={{ ...SERIF, fontSize: { xs: '2rem', sm: '2.6rem' }, color: faded ? '#c4c4c8' : '#111827' }}>
+      <Typography sx={{ ...SERIF, fontSize: { xs: '2rem', sm: '2.6rem' }, color: resolvedColor }}>
         {figure}
       </Typography>
       <Typography sx={{ fontSize: '0.85rem', color: '#6b7280', mt: 1 }}>{label}</Typography>
@@ -45,6 +54,7 @@ StatBlock.propTypes = {
   figure: PropTypes.node,
   label: PropTypes.node,
   faded: PropTypes.bool,
+  color: PropTypes.string,
 };
 
 // ----------------------------------------------------------------------
@@ -54,7 +64,8 @@ export default function MonthStats({ data, currency, currentUserId }) {
   const members = data?.team?.members || [];
   const totals = data?.team?.totals?.[currency] || { wonCount: 0, wonAmount: 0 };
 
-  const winRateDisplay = me.winRate == null ? '—' : `${Math.round(me.winRate * 100)}%`;
+  const winRatePct = me.winRate == null ? null : Math.round(me.winRate * 100);
+  const winRateDisplay = winRatePct == null ? '—' : `${winRatePct}%`;
 
   // Order members by won amount desc, then pin the current user to the top.
   const ranked = [...members]
@@ -77,7 +88,7 @@ export default function MonthStats({ data, currency, currentUserId }) {
           <Stack direction="row" spacing={2} divider={<Divider orientation="vertical" flexItem />}>
             <StatBlock figure={formatMoney(me.wonAmount, currency)} label={`Won · ${me.wonCount}`} />
             <StatBlock figure={formatMoney(me.lostAmount, currency)} label={`Lost · ${me.lostCount}`} faded />
-            <StatBlock figure={winRateDisplay} label="Win rate" />
+            <StatBlock figure={winRateDisplay} label="Win rate" color={winRateColor(winRatePct)} />
           </Stack>
         </Grid>
 
