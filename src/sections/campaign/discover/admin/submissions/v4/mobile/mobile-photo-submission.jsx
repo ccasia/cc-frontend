@@ -184,7 +184,7 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate, 
   });
 
   const renderCaptionContent = () => {
-    if (pendingReview) {
+    if (pendingReview || isClientFeedback) {
       return (
         <TextField
           fullWidth

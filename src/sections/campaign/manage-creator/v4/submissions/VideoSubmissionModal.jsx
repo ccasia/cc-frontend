@@ -176,7 +176,7 @@ const VideoSubmissionModal = ({
   }, [freshSubmission, submission, videoPage, videoOrder]);
 
   // Whether admin caption editing is allowed for the current submission
-  const captionEditableStatus = ['PENDING_REVIEW', 'APPROVE_LINK'];
+  const captionEditableStatus = ['PENDING_REVIEW', 'APPROVE_LINK', 'CLIENT_FEEDBACK'];
   const canEditCaption =
     isAdmin && captionEditableStatus.includes((freshSubmission || submission)?.status);
 
@@ -904,6 +904,10 @@ const VideoSubmissionModal = ({
                   onSeekTo: handleModalSeek,
                   ref: feedbackPanelRef,
                   refreshSubmission,
+                  // Lets the right-side panel (e.g. Send to Creator/Client) flush any
+                  // unsaved caption edit before it fires — otherwise a caption typed
+                  // here is silently dropped since sending never touches the caption.
+                  saveCaptionIfDirty: handleSaveCaption,
                   // Admin-facing fields (raw seconds)
                   currentTime: modalCurrentTime,
                   duration: modalDuration,

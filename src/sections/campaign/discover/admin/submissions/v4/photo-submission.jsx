@@ -281,7 +281,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate, isDi
                           Caption
                         </Typography>
                         {(() => {
-                          if (pendingReview) {
+                          if (pendingReview || isClientFeedback) {
                             return (
                               <Box>
                                 <TextField

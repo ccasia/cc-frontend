@@ -13,6 +13,7 @@ import {
   MenuItem,
   TextField,
   Typography,
+  IconButton,
   FormControl,
 } from '@mui/material';
 
@@ -20,11 +21,14 @@ import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Iconify from 'src/components/iconify';
 import TypographyMotion from 'src/components/animate/motion-typography';
 import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 
 import { BUTTON_STYLES } from './submission-styles';
 import { posting_link_options_changes } from '../constants';
+
+const MAX_POSTING_LINKS = 2;
 
 export default function PostingLinkSection({
   submission,
@@ -35,25 +39,50 @@ export default function PostingLinkSection({
   isClient = false,
 }) {
   const { user } = useAuthContext();
-  const [postingLink, setPostingLink] = useState(submission.content || '');
+  const [postingLinks, setPostingLinks] = useState(
+    submission.videos?.length ? submission.videos : ['']
+  );
   const [loading, setLoading] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [action, setAction] = useState('approve');
   const [reasons, setReasons] = useState([]);
+  const [newPostedLink, setNewPostedLink] = useState('');
+  const [addLinkLoading, setAddLinkLoading] = useState(false);
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isSuperAdmin = userRole.toLowerCase() === 'superadmin';
 
+  const handlePostingLinkChange = useCallback((index, value) => {
+    setPostingLinks((prev) => prev.map((link, i) => (i === index ? value : link)));
+  }, []);
+
+  const handleAddPostingLinkField = useCallback(() => {
+    setPostingLinks((prev) => (prev.length >= MAX_POSTING_LINKS ? prev : [...prev, '']));
+  }, []);
+
+  const handleRemovePostingLinkField = useCallback((index) => {
+    setPostingLinks((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
   const handleSubmitPostingLink = useCallback(async () => {
-    if (!postingLink.trim()) {
+    const trimmedLinks = postingLinks.map((link) => link.trim()).filter(Boolean);
+
+    if (trimmedLinks.length === 0) {
       enqueueSnackbar('Please enter a posting link', { variant: 'warning' });
       return;
     }
 
-    try {
-      // eslint-disable-next-line no-new
-      new URL(postingLink.trim());
-    } catch {
+    const allValid = trimmedLinks.every((link) => {
+      try {
+        // eslint-disable-next-line no-new
+        new URL(link);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+
+    if (!allValid) {
       enqueueSnackbar('Please enter a valid URL', { variant: 'error' });
       return;
     }
@@ -62,7 +91,7 @@ export default function PostingLinkSection({
       setLoading(true);
       await axiosInstance.put('/api/submissions/v4/posting-link', {
         submissionId: submission.id,
-        postingLink: postingLink.trim(),
+        postingLinks: trimmedLinks,
       });
 
       enqueueSnackbar('Posting link updated successfully', { variant: 'success' });
@@ -74,7 +103,42 @@ export default function PostingLinkSection({
     } finally {
       setLoading(false);
     }
-  }, [postingLink, submission.id, onUpdate]);
+  }, [postingLinks, submission.id, onUpdate]);
+
+  const handleAddLinkToPostedSubmission = useCallback(async () => {
+    const trimmed = newPostedLink.trim();
+
+    if (!trimmed) {
+      enqueueSnackbar('Please enter a posting link', { variant: 'warning' });
+      return;
+    }
+
+    try {
+      // eslint-disable-next-line no-new
+      new URL(trimmed);
+    } catch {
+      enqueueSnackbar('Please enter a valid URL', { variant: 'error' });
+      return;
+    }
+
+    try {
+      setAddLinkLoading(true);
+      await axiosInstance.post('/api/submissions/v4/posting-link/add', {
+        submissionId: submission.id,
+        postingLink: trimmed,
+      });
+
+      enqueueSnackbar('Posting link added successfully', { variant: 'success' });
+      setNewPostedLink('');
+      onUpdate?.();
+    } catch (error) {
+      enqueueSnackbar(error.response?.data?.message || 'Failed to add posting link', {
+        variant: 'error',
+      });
+    } finally {
+      setAddLinkLoading(false);
+    }
+  }, [newPostedLink, submission.id, onUpdate]);
 
   const handleApprovePosting = useCallback(async () => {
     try {
@@ -343,6 +407,37 @@ export default function PostingLinkSection({
             )}
           </Box>
         )}
+        {/* Admin can add another posting link even after the submission is POSTED — no approval step */}
+        {!isClient && isPosted && (submission.videos?.length || 0) < MAX_POSTING_LINKS && (
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Add another posting link..."
+              value={newPostedLink}
+              onChange={(e) => setNewPostedLink(e.target.value)}
+              disabled={addLinkLoading}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: 'background.paper',
+                },
+              }}
+            />
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleAddLinkToPostedSubmission}
+              disabled={addLinkLoading}
+              sx={{
+                ...actionButtonSx,
+                color: '#1ABF66',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {addLinkLoading ? 'Adding...' : '+ Add Link'}
+            </Button>
+          </Stack>
+        )}
         {!isClient && !isPosted && postingLinkAddedByAdmin && submission.content && (
           <Box display="flex" sx={{ mb: 1 }}>
             <Typography variant="caption" color="#636366" sx={{ fontStyle: 'italic' }}>
@@ -351,34 +446,38 @@ export default function PostingLinkSection({
           </Box>
         )}
 
-        {/* The posting link itself is part of the internal flow — clients only see it once POSTED */}
+        {/* The posting link(s) themselves are part of the internal flow — clients only see them once POSTED */}
         {submission.content && (!isClient || isPosted) && (
-          <Box
-            sx={{
-              p: 2,
-              border: '1px solid #E7E7E7',
-              borderRadius: 1,
-              bgcolor: 'background.paper',
-              mb: 2,
-            }}
-          >
-            <Link
-              href={submission.content}
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                wordBreak: 'break-all',
-                color: '#0062CD',
-                textDecoration: 'underline',
-                fontSize: 14,
-                '&:hover': {
-                  color: '#004A9F',
-                },
-              }}
-            >
-              {submission.content}
-            </Link>
-          </Box>
+          <Stack spacing={1} sx={{ mb: 2 }}>
+            {(submission.videos?.length ? submission.videos : [submission.content]).map((link) => (
+              <Box
+                key={link}
+                sx={{
+                  p: 2,
+                  border: '1px solid #E7E7E7',
+                  borderRadius: 1,
+                  bgcolor: 'background.paper',
+                }}
+              >
+                <Link
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    wordBreak: 'break-all',
+                    color: '#0062CD',
+                    textDecoration: 'underline',
+                    fontSize: 14,
+                    '&:hover': {
+                      color: '#004A9F',
+                    },
+                  }}
+                >
+                  {link}
+                </Link>
+              </Box>
+            ))}
+          </Stack>
         )}
         {/* Posting link submitted by creator */} {/* To be review */}
         {!isClient &&
@@ -393,23 +492,49 @@ export default function PostingLinkSection({
           submission.content &&
           isSuperAdmin &&
           renderActionButtons()}
-        {/* No posting link yet — admin can enter one */}
+        {/* No posting link yet — admin can enter one (or two) */}
         {!isClient && !submission.content && (
           <Box display="flex" flexDirection="column">
-            <TextField
-              fullWidth
-              size="medium"
-              placeholder="Enter posting link URL..."
-              value={postingLink}
-              onChange={(e) => setPostingLink(e.target.value)}
-              disabled={loading || isDisabled}
-              sx={{
-                mb: 2,
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'background.paper',
-                },
-              }}
-            />
+            <Stack spacing={1} sx={{ mb: 2 }}>
+              {postingLinks.map((link, index) => (
+                <Stack key={index} direction="row" spacing={1} alignItems="center">
+                  <TextField
+                    fullWidth
+                    size="medium"
+                    placeholder="Enter posting link URL..."
+                    value={link}
+                    onChange={(e) => handlePostingLinkChange(index, e.target.value)}
+                    disabled={loading || isDisabled}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: 'background.paper',
+                      },
+                    }}
+                  />
+                  {index > 0 && (
+                    <IconButton
+                      size="small"
+                      onClick={() => handleRemovePostingLinkField(index)}
+                      disabled={loading || isDisabled}
+                      aria-label="Remove posting link"
+                    >
+                      <Iconify icon="eva:close-fill" />
+                    </IconButton>
+                  )}
+                </Stack>
+              ))}
+              {postingLinks.length < MAX_POSTING_LINKS && (
+                <Button
+                  size="small"
+                  startIcon={<Iconify icon="eva:plus-fill" />}
+                  onClick={handleAddPostingLinkField}
+                  disabled={loading || isDisabled}
+                  sx={{ alignSelf: 'flex-start', textTransform: 'none' }}
+                >
+                  Add another link
+                </Button>
+              )}
+            </Stack>
             <Box alignSelf="flex-end">
               <Button
                 variant="contained"

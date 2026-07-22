@@ -510,7 +510,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           Caption
                         </Typography>
                         {(() => {
-                          if (pendingReview) {
+                          if (pendingReview || isClientFeedback) {
                             return (
                               <Box>
                                 <TextField

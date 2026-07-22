@@ -261,7 +261,7 @@ export default function MobileVideoSubmission({
   });
 
   const renderCaptionContent = () => {
-    if (pendingReview) {
+    if (pendingReview || isClientFeedback) {
       return (
         <TextField
           fullWidth

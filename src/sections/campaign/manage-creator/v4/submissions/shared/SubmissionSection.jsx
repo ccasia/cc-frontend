@@ -22,11 +22,12 @@ const SubmissionSection = ({
   
   // Posting link props
   hasPostingLink = false,
-  postingLink = '',
+  postingLinks = [],
   onPostingLinkChange,
+  onAddPostingLink,
+  onRemovePostingLink,
   isPostingLinkEditable = false,
-  submissionContent = null,
-  
+
   // Feedback props
   feedback = [],
   hasChangesRequired = false,
@@ -49,11 +50,12 @@ const SubmissionSection = ({
     {/* Posting Link Field */}
     {hasPostingLink && (
       <SubmissionPostingLinkField
-        postingLink={postingLink}
+        postingLinks={postingLinks}
         onPostingLinkChange={onPostingLinkChange}
+        onAddPostingLink={onAddPostingLink}
+        onRemovePostingLink={onRemovePostingLink}
         isEditable={isPostingLinkEditable}
         disabled={postingLoading}
-        submissionContent={submissionContent}
       />
     )}
 
@@ -74,11 +76,12 @@ SubmissionSection.propTypes = {
   
   // Posting link props
   hasPostingLink: PropTypes.bool,
-  postingLink: PropTypes.string,
+  postingLinks: PropTypes.arrayOf(PropTypes.string),
   onPostingLinkChange: PropTypes.func,
+  onAddPostingLink: PropTypes.func,
+  onRemovePostingLink: PropTypes.func,
   isPostingLinkEditable: PropTypes.bool,
-  submissionContent: PropTypes.string,
-  
+
   // Feedback props
   feedback: PropTypes.array,
   hasChangesRequired: PropTypes.bool,
