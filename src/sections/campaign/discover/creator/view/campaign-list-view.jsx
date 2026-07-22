@@ -121,29 +121,32 @@ export default function CampaignListView() {
   const backdrop = useBoolean(!user?.creator?.isFormCompleted);
 
   const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
-  
-  const targetUserIds = useMemo(() => [
-    'cm8gvqtcv01hwph01uof2u9xu',
-    'cm49lve6i00patrd2ax5fj67h',
-    'cm4132k9p00wb54qgcrs71v0t',
-    'cmauqo8oy03ioky0157sbr2jg',
-    'cm8jxuuvy0272ph01nr0h7din',
-    'cm5b5p0zu00r2ylfpo241kqki',
-    'cmewrex4p054ipx01u5xqkqhj',
-    'cm7oe0q15005bms010ujmjb3r',
-    'cm44lei3t00si132zq87a5lan',
-    'cm9kzqz1u00ziqe01q2tsdptg',
-    'cmfb25m4r003vqn01zoe9atng',
-    'cmj9pz1n40a3hs40154b31l90',
-    'cm8mh5ic5032sph011r87rw4e',
-    'cm40womsf001k54qg4epuacmu',
-    'cm4utxiyv02mu9wevfkpyt8qj',
-    'cmfwczmov0t5rqp01aq687n4a',
-    'cmj7kdxxi05sqs401pro45vik',
-    'cmj21yl0102ghpc01xmy9zkwa',
-    'cm3pyp3vm006qm9m8qm1ep02d',
-    'cm4ey6g9401w4trd2ip0zf1et',
-  ], []);
+
+  const targetUserIds = useMemo(
+    () => [
+      'cm8gvqtcv01hwph01uof2u9xu',
+      'cm49lve6i00patrd2ax5fj67h',
+      'cm4132k9p00wb54qgcrs71v0t',
+      'cmauqo8oy03ioky0157sbr2jg',
+      'cm8jxuuvy0272ph01nr0h7din',
+      'cm5b5p0zu00r2ylfpo241kqki',
+      'cmewrex4p054ipx01u5xqkqhj',
+      'cm7oe0q15005bms010ujmjb3r',
+      'cm44lei3t00si132zq87a5lan',
+      'cm9kzqz1u00ziqe01q2tsdptg',
+      'cmfb25m4r003vqn01zoe9atng',
+      'cmj9pz1n40a3hs40154b31l90',
+      'cm8mh5ic5032sph011r87rw4e',
+      'cm40womsf001k54qg4epuacmu',
+      'cm4utxiyv02mu9wevfkpyt8qj',
+      'cmfwczmov0t5rqp01aq687n4a',
+      'cmj7kdxxi05sqs401pro45vik',
+      'cmj21yl0102ghpc01xmy9zkwa',
+      'cm3pyp3vm006qm9m8qm1ep02d',
+      'cm4ey6g9401w4trd2ip0zf1et',
+    ],
+    []
+  );
 
   const load = useBoolean();
   const [upload, setUpload] = useState([]);
@@ -301,34 +304,8 @@ export default function CampaignListView() {
     </Box>
   );
 
-  // const handlePageChange = (event, value) => {
-  //   setPage(value);
-  // };
-
-  // const filteredData = useMemo(() => {
-  //   const indexOfLastItem = page * MAX_ITEM;
-  //   const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
-
-  // return applyFilter({
-  //   inputData: campaigns
-  //     ?.filter((campaign) => campaign?.status === 'ACTIVE')
-  //     ?.slice(indexOfFirstItem, indexOfLastItem),
-  //   filter,
-  //   user,
-  //   sortBy,
-  //   search,
-  // });
-  // }, [campaigns, filter, user, sortBy, page, search]);
-
   const filteredData = useMemo(() => {
     const campaigns = data ? data?.flatMap((item) => item?.data?.campaigns) : [];
-
-    console.log('🔍 Campaign discover - Data pages received:', data?.length || 0);
-    console.log(
-      '🔍 Campaign discover - Raw campaigns:',
-      campaigns?.map((c) => ({ id: c.id, name: c.name, createdAt: c.createdAt, origin: c.origin }))
-    );
-    console.log('🔍 Campaign discover - Total raw campaigns received:', campaigns?.length || 0);
 
     // Log pagination metadata for each page
     data?.forEach((page, index) => {
@@ -339,10 +316,8 @@ export default function CampaignListView() {
       });
     });
 
-    const activeCampaigns = campaigns?.filter((campaign) => campaign?.status === 'ACTIVE');
-    console.log(
-      '🔍 Campaign discover - Active campaigns after status filter:',
-      activeCampaigns?.length || 0
+    const activeCampaigns = campaigns?.filter(
+      (campaign) => campaign?.status === 'ACTIVE' && !campaign?.isForMobile
     );
 
     const finalFiltered = applyFilter({
@@ -353,65 +328,8 @@ export default function CampaignListView() {
       search,
     });
 
-    console.log('🔍 Campaign discover - Final filtered campaigns:', finalFiltered?.length || 0);
-    console.log('🔍 Campaign discover - Filter applied:', filter);
-    console.log('🔍 Campaign discover - Search query:', search.query);
-
     return finalFiltered;
   }, [data, filter, user, sortBy, search]);
-
-  // const filteredData = useMemo(
-  //   () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
-  //   [data]
-  // );
-
-  // const handleSearch = useCallback(
-  //   (inputValue) => {
-  //     setSearch((prevState) => ({
-  //       ...prevState,
-  //       query: inputValue,
-  //     }));
-
-  //     if (inputValue && filteredData) {
-  //       const filteredCampaigns = applyFilter({ inputData: filteredData, filter, user });
-  //       const results = filteredCampaigns.filter(
-  //         (campaign) =>
-  //           campaign.name.toLowerCase().includes(inputValue.toLowerCase()) ||
-  //           campaign.company.name.toLowerCase().includes(inputValue.toLowerCase())
-  //       );
-
-  //       setSearch((prevState) => ({
-  //         ...prevState,
-  //         results,
-  //       }));
-  //     }
-  //   },
-  //   [filteredData, filter, user]
-  // );
-
-  // const handleScroll = useCallback(() => {
-  //   if (!scrollContainerRef.current) return;
-
-  //   const bottom =
-  //     scrollContainerRef.current.scrollHeight <=
-  //     scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight + 1;
-
-  //   if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
-  //     setSize(size + 1);
-  //   }
-  // }, [data, isValidating, setSize, size]);
-
-  // useEffect(() => {
-  //   const scrollContainer = scrollContainerRef.current;
-  //   if (!scrollContainer) return;
-
-  //   const scrollListener = () => handleScroll();
-  //   scrollContainer.addEventListener('scroll', scrollListener);
-  //   // eslint-disable-next-line consistent-return
-  //   return () => {
-  //     scrollContainer.removeEventListener('scroll', scrollListener);
-  //   };
-  // }, [data, isValidating, size, setSize, handleScroll]);
 
   const handleScroll = useCallback(() => {
     if (lgUp) {
