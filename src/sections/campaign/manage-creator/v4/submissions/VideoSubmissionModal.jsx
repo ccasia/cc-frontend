@@ -904,6 +904,10 @@ const VideoSubmissionModal = ({
                   onSeekTo: handleModalSeek,
                   ref: feedbackPanelRef,
                   refreshSubmission,
+                  // Lets the right-side panel (e.g. Send to Creator/Client) flush any
+                  // unsaved caption edit before it fires — otherwise a caption typed
+                  // here is silently dropped since sending never touches the caption.
+                  saveCaptionIfDirty: handleSaveCaption,
                   // Admin-facing fields (raw seconds)
                   currentTime: modalCurrentTime,
                   duration: modalDuration,
