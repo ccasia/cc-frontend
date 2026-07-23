@@ -74,7 +74,7 @@ const InvoiceLists = ({ invoices }) => {
                     />
                   </Stack>
                 </TableCell>
-                <TableCell>{dayjs(invoice.issued).format('LL')}</TableCell>
+                <TableCell>{dayjs(invoice.dueDate).format('LL')}</TableCell>
                 <TableCell>
                   {formatCurrencyAmount(
                     invoice.amount,
