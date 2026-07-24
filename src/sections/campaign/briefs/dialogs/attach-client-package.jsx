@@ -209,9 +209,9 @@ const AttachClientPackage = forwardRef(({ brief }, ref) => {
       'data',
       JSON.stringify({
         type: 'directClient',
-        companyName: brief?.name || 'Untitled Client',
+        companyName: brief?.brandName || brief?.name || 'Untitled Client',
         companyEmail: brief?.clientEmail || '',
-        personInChargeName: brief?.clientName || brief?.name || 'Client',
+        personInChargeName: brief?.clientName || brief?.brandName || brief?.name || 'Client',
         personInChargeEmail: brief?.clientEmail || '',
         personInChargeDesignation: 'Client',
         ...buildBase(),
