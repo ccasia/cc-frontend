@@ -115,6 +115,8 @@ export default function CampaignBriefListView() {
   const briefs = (data || []).filter((b) => {
     const status = effectiveStatus(b);
 
+    if (status === 'PENDING_REVIEW') return false;
+
     // Status tab. "ALL" shows everything except activated campaigns — those
     // live only under the explicit ACTIVE tab.
     if (statusTab === 'ALL') {
@@ -148,7 +150,6 @@ export default function CampaignBriefListView() {
           { value: 'ALL', label: 'All' },
           { value: 'DRAFTED', label: 'Draft' },
           { value: 'SENT_TO_CLIENT', label: 'Sent' },
-          { value: 'PENDING_REVIEW', label: 'Pending' },
           { value: 'APPROVED', label: 'Approved' },
           { value: 'HANDED_OVER', label: 'Handed Over' },
           { value: 'LOST', label: 'Lost' },
@@ -175,7 +176,6 @@ export default function CampaignBriefListView() {
   })();
 
   const STATUS_TABS = TAB_DEFS.map((t) => ({ ...t, count: statusCounts[t.value] || 0 }));
-  console.log(statusTab);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -586,7 +586,7 @@ export default function CampaignBriefListView() {
             >
               Create Brief
             </Button>
-            {isBD && (
+            {/* {isBD && (
               <Button
                 onClick={() => setInviteLinkOpen(true)}
                 sx={{
@@ -607,7 +607,7 @@ export default function CampaignBriefListView() {
               >
                 Invite Link
               </Button>
-            )}
+            )} */}
           </Box>
         )}
       </Stack>
