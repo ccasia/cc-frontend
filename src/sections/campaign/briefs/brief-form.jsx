@@ -37,11 +37,12 @@ import { countriesCities } from 'src/contants/countries';
 const schema = yup.object({
   brandName: yup.string().trim(),
   industry: yup.string(),
+  campaignName: yup.string(),
   dateFrom: yup.mixed().nullable(),
   dateTo: yup.mixed().nullable(),
   secondaryObjectives: yup.array().of(yup.string()).default([]),
   kpis: yup.array().of(yup.string()).default([]),
-  kpiNotes: yup.string().max(300),
+  kpiNotes: yup.string().max(500),
   extraNotes: yup.string().max(500),
   audienceGender: yup.array().of(yup.string()).default([]),
   audienceAge: yup.array().of(yup.string()).default([]),
@@ -411,6 +412,7 @@ EditedIndicator.propTypes = { shown: PropTypes.bool };
 const EMPTY_VALUES = {
   brandName: '',
   industry: '',
+  campaignName: '',
   dateFrom: null,
   dateTo: null,
   secondaryObjectives: [],
@@ -471,8 +473,9 @@ export default function BriefForm({
     const combinedObjectives = brief?.campaignBrief?.secondaryObjectives || [];
 
     return {
-      brandName: brief?.name || '',
+      brandName: brief?.brandName || '',
       industry: brief?.campaignBrief?.industries || '',
+      campaignName: brief?.name || '',
       dateFrom: brief?.campaignBrief?.postingStartDate
         ? dayjs(brief.campaignBrief.postingStartDate)
         : null,
@@ -689,51 +692,69 @@ export default function BriefForm({
 
         {/* 02. Timeline */}
         <Box>
-          <SectionHeader number="02" title="Timeline" />
-          <Typography variant="body2" sx={{ color: '#6B7280', mb: 3 }}>
-            When does this go live?
+          <SectionHeader number="02" title="Campaign Timeline" />
+          <Typography variant="body2" sx={{ color: '#6B7280', mb: 2 }}>
+            Tell us what to call your campaign and when does it go live?
           </Typography>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
-            <Box sx={{ flex: 1 }}>
+          <Stack spacing={3}>
+            <Box>
               <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                Start Date <EditedIndicator shown={editedFields.has('dateFrom')} />
+                Campaign Name <EditedIndicator shown={editedFields.has('campaignName')} />
               </Typography>
               <FieldWrap>
-                <RHFDatePicker
-                  name="dateFrom"
-                  disabled={readOnly}
-                  maxDate={watch('dateTo') ? dayjs(watch('dateTo')) : undefined}
-                  slots={{ openPickerIcon: CalendarTodayOutlinedIcon }}
-                  slotProps={DATEPICKER_SLOT_PROPS}
+                <RHFTextField
+                  name="campaignName"
+                  placeholder="Your Campaign Name"
+                  size="small"
                   sx={noBoxSx}
-                  onClose={() => {
-                    saveField('dateFrom');
-                    const from = getValues('dateFrom');
-                    const to = getValues('dateTo');
-                    if (from && to && new Date(from) > new Date(to)) {
-                      setValue('dateTo', null, { shouldDirty: true });
-                      saveField('dateTo');
-                    }
-                  }}
+                  onBlur={onBlurHandler('campaignName')}
+                  disabled={readOnly}
+                  fullWidth
                 />
               </FieldWrap>
             </Box>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                End Date <EditedIndicator shown={editedFields.has('dateTo')} />
-              </Typography>
-              <FieldWrap>
-                <RHFDatePicker
-                  name="dateTo"
-                  disabled={readOnly}
-                  minDate={watch('dateFrom') ? dayjs(watch('dateFrom')) : undefined}
-                  slots={{ openPickerIcon: CalendarTodayOutlinedIcon }}
-                  slotProps={DATEPICKER_SLOT_PROPS}
-                  sx={noBoxSx}
-                  onClose={() => saveField('dateTo')}
-                />
-              </FieldWrap>
-            </Box>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
+                  Start Date <EditedIndicator shown={editedFields.has('dateFrom')} />
+                </Typography>
+                <FieldWrap>
+                  <RHFDatePicker
+                    name="dateFrom"
+                    disabled={readOnly}
+                    maxDate={watch('dateTo') ? dayjs(watch('dateTo')) : undefined}
+                    slots={{ openPickerIcon: CalendarTodayOutlinedIcon }}
+                    slotProps={DATEPICKER_SLOT_PROPS}
+                    sx={noBoxSx}
+                    onClose={() => {
+                      saveField('dateFrom');
+                      const from = getValues('dateFrom');
+                      const to = getValues('dateTo');
+                      if (from && to && new Date(from) > new Date(to)) {
+                        setValue('dateTo', null, { shouldDirty: true });
+                        saveField('dateTo');
+                      }
+                    }}
+                  />
+                </FieldWrap>
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 500 }}>
+                  End Date <EditedIndicator shown={editedFields.has('dateTo')} />
+                </Typography>
+                <FieldWrap>
+                  <RHFDatePicker
+                    name="dateTo"
+                    disabled={readOnly}
+                    minDate={watch('dateFrom') ? dayjs(watch('dateFrom')) : undefined}
+                    slots={{ openPickerIcon: CalendarTodayOutlinedIcon }}
+                    slotProps={DATEPICKER_SLOT_PROPS}
+                    sx={noBoxSx}
+                    onClose={() => saveField('dateTo')}
+                  />
+                </FieldWrap>
+              </Box>
+            </Stack>
           </Stack>
         </Box>
 
@@ -783,8 +804,8 @@ export default function BriefForm({
               sx={noBoxSx}
               disabled={readOnly}
               onBlur={onBlurHandler('kpiNotes')}
+              multiline
               fullWidth
-              inputProps={{ maxLength: 300 }}
             />
           </FieldWrap>
         </Box>
@@ -908,7 +929,7 @@ export default function BriefForm({
                     onBlur={onBlurHandler('audienceUserPersona')}
                     disabled={readOnly}
                     fullWidth
-                    inputProps={{ maxLength: 500 }}
+                    multiline
                   />
                 </FieldWrap>
               </Box>
@@ -1165,7 +1186,6 @@ export default function BriefForm({
                 disabled={readOnly}
                 fullWidth
                 multiline
-                inputProps={{ maxLength: 500 }}
               />
             </FieldWrap>
           </Box>

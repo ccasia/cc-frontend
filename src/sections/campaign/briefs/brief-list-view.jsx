@@ -689,7 +689,7 @@ export default function CampaignBriefListView() {
                       onClick={() => navigate(paths.dashboard.campaign.briefDetails(b.id))}
                       sx={{ cursor: 'pointer' }}
                     >
-                      <TableCell>{b.name || '—'}</TableCell>
+                      <TableCell>{b.brandName || b.name || '—'}</TableCell>
                       <TableCell>{b.clientEmail || '—'}</TableCell>
                       <TableCell>
                         {b.createdAt ? dayjs(b.createdAt).format('DD MMM YYYY') : '—'}

@@ -78,7 +78,7 @@ export default function SendToClientDialog({ open, brief, onClose, onSent }) {
             <Stack direction="row" spacing={3} alignItems="center">
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" color="text.secondary">Brand Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>{brief?.name || '—'}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>{brief?.brandName || brief?.name || '—'}</Typography>
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>Status</Typography>
