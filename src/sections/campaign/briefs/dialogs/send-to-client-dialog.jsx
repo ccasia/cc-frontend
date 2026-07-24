@@ -1,7 +1,7 @@
 import * as yup from 'yup';
 import PropTypes from 'prop-types';
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
 import { useSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -35,7 +35,15 @@ export default function SendToClientDialog({ open, brief, onClose, onSent }) {
     defaultValues: { clientName: brief?.clientName || '', clientEmail: brief?.clientEmail || '' },
   });
 
-  const { handleSubmit, formState: { isSubmitting } } = methods;
+  const { handleSubmit, reset, formState: { isSubmitting } } = methods;
+
+  // defaultValues only applies on the first mount; the dialog is mounted once
+  // and reused per brief, so re-seed the fields each time it opens.
+  useEffect(() => {
+    if (open) {
+      reset({ clientName: brief?.clientName || '', clientEmail: brief?.clientEmail || '' });
+    }
+  }, [open, brief?.id, brief?.clientName, brief?.clientEmail, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
     try {

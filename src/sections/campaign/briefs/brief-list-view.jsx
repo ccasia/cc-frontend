@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -19,6 +20,8 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemIcon from '@mui/material/ListItemIcon';
 import InputAdornment from '@mui/material/InputAdornment';
 import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -80,6 +83,9 @@ export default function CampaignBriefListView() {
   const [approvedNotice, setApprovedNotice] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  // Overflow ([...]) menu that collapses Mark-as-Loss + Delete on Draft rows.
+  const [moreMenu, setMoreMenu] = useState({ anchorEl: null, brief: null });
+  const closeMoreMenu = () => setMoreMenu({ anchorEl: null, brief: null });
   const [inviteLinkOpen, setInviteLinkOpen] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -281,15 +287,6 @@ export default function CampaignBriefListView() {
         <Iconify icon="iconamoon:send-bold" width={18} />
       </IconButton>
     );
-    const deleteIcon = (
-      <IconButton
-        size="small"
-        onClick={() => setConfirmDelete(brief)}
-        sx={{ ...actionBtnSx, color: '#DC2626' }}
-      >
-        <Iconify icon="material-symbols:delete-outline-rounded" width={18} />
-      </IconButton>
-    );
     // Re-copy the client review link (only present once a brief has been sent).
     const copyLinkIcon = brief.clientLink ? (
       <Tooltip title="Copy client link">
@@ -356,6 +353,33 @@ export default function CampaignBriefListView() {
         <Iconify icon="material-symbols:cancel-outline-rounded" width={18} />
       </IconButton>
     );
+    // Draft-row overflow: collapses Mark-as-Loss + Delete behind a [...] menu.
+    const moreMenuBtn = (
+      <IconButton
+        size="small"
+        onClick={(e) => setMoreMenu({ anchorEl: e.currentTarget, brief })}
+        sx={actionBtnSx}
+      >
+        <Iconify icon="eva:more-horizontal-fill" width={18} />
+      </IconButton>
+    );
+    // Activated campaigns open the campaign page rather than the brief form.
+    const viewActiveCampaignBtn = (
+      <Button
+        size="small"
+        variant="outlined"
+        onClick={() => navigate(paths.dashboard.campaign.adminCampaignDetail(brief.id))}
+        sx={labeledBtnSx}
+      >
+        View
+      </Button>
+    );
+
+    // An activated campaign is done with the brief flow — [View] opens the
+    // campaign page instead of the brief form, for every role.
+    if (brief.status === 'ACTIVE') {
+      return viewActiveCampaignBtn;
+    }
 
     // Non-BD authors (CSL/CSM) drive their own briefs through the lifecycle.
     // CSL additionally gets the direct Assign-CSM shortcut.
@@ -363,13 +387,13 @@ export default function CampaignBriefListView() {
       const mineInProgress = isMyBrief(brief) && status !== 'HANDED_OVER';
 
       // CSL-authored brief at APPROVED → assign a CSM directly (self-handover).
+      // Delete is Draft-only, so it is no longer offered here.
       if (canAssignCsm && isCslAuthored(brief) && status === 'APPROVED') {
         return (
           <>
             {copyLinkIcon}
             {assignCsmBtn}
             {editIcon}
-            {deleteIcon}
           </>
         );
       }
@@ -377,22 +401,22 @@ export default function CampaignBriefListView() {
       if (mineInProgress) {
         switch (status) {
           case 'DRAFTED':
+            // Draft: Send + Edit, with Mark-as-Loss and Delete under a [...] menu.
             return (
               <>
                 {sendIconBtn()}
                 {editIcon}
-                {lostBtn}
-                {deleteIcon}
+                {moreMenuBtn}
               </>
             );
           case 'SENT_TO_CLIENT':
+            // Send stays enabled so the brief can be re-sent. Delete is Draft-only.
             return (
               <>
                 {copyLinkIcon}
-                {sendIconBtn(true)}
+                {sendIconBtn()}
                 {editIcon}
                 {lostBtn}
-                {deleteIcon}
               </>
             );
           case 'PENDING_REVIEW':
@@ -402,7 +426,6 @@ export default function CampaignBriefListView() {
                 {sendIconBtn()}
                 {editIcon}
                 {lostBtn}
-                {deleteIcon}
               </>
             );
           case 'APPROVED':
@@ -415,16 +438,10 @@ export default function CampaignBriefListView() {
                 {isCsmAuthored(brief) ? finalizeBtn : handoverBtn}
                 {editIcon}
                 {lostBtn}
-                {deleteIcon}
               </>
             );
           default:
-            return (
-              <>
-                {editIcon}
-                {deleteIcon}
-              </>
-            );
+            return editIcon;
         }
       }
       // Handed-over briefs: CSL can assign a CSM; everyone in CS opens the campaign.
@@ -440,20 +457,21 @@ export default function CampaignBriefListView() {
     }
     switch (status) {
       case 'DRAFTED':
+        // Draft: Send + a [...] menu collapsing Mark-as-Loss and Delete.
         return (
           <>
             {sendIconBtn()}
-            {lostBtn}
-            {deleteIcon}
+            {moreMenuBtn}
           </>
         );
       case 'SENT_TO_CLIENT':
+        // Send stays enabled so BD can re-send the brief to the client.
+        // Delete is Draft-only, so only Mark-as-Loss remains here.
         return (
           <>
             {copyLinkIcon}
-            {sendIconBtn(true)}
+            {sendIconBtn()}
             {lostBtn}
-            {deleteIcon}
           </>
         );
       case 'PENDING_REVIEW':
@@ -463,7 +481,6 @@ export default function CampaignBriefListView() {
           <>
             {sendIconBtn()}
             {lostBtn}
-            {deleteIcon}
           </>
         );
       case 'APPROVED':
@@ -472,43 +489,25 @@ export default function CampaignBriefListView() {
             {copyLinkIcon}
             {handoverBtn}
             {lostBtn}
-            {deleteIcon}
           </>
         );
       case 'HANDED_OVER':
         // Superadmin sees the full handed-over toolset (CS-side actions too).
+        // Delete is Draft-only, so it is no longer offered here.
         if (isSuperAdmin) {
           return (
             <>
               {assignCsmBtn}
               {viewCampaignBtn}
               {editIcon}
-              {deleteIcon}
             </>
           );
         }
-        return (
-          <>
-            {editIcon}
-            {deleteIcon}
-          </>
-        );
+        return editIcon;
         // case 'LOST':
 
       default:
-          if (isSuperAdmin) {
-          return (
-            <>
-              {editIcon}
-              {deleteIcon}
-            </>
-          );
-        }
-        return (
-          <>
-            {editIcon}
-          </>
-        );
+        return editIcon;
     }
   };
 
@@ -768,6 +767,40 @@ export default function CampaignBriefListView() {
         onClose={() => setLostTarget(null)}
         onLost={() => mutate()}
       />
+
+      {/* Draft-row overflow menu: Mark as Loss + Delete */}
+      <Menu
+        anchorEl={moreMenu.anchorEl}
+        open={Boolean(moreMenu.anchorEl)}
+        onClose={closeMoreMenu}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem
+          onClick={() => {
+            setLostTarget(moreMenu.brief);
+            closeMoreMenu();
+          }}
+          sx={{ color: '#DC2626' }}
+        >
+          <ListItemIcon>
+            <Iconify icon="material-symbols:cancel-outline-rounded" width={18} sx={{ color: '#DC2626' }} />
+          </ListItemIcon>
+          <ListItemText>Mark as Loss</ListItemText>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setConfirmDelete(moreMenu.brief);
+            closeMoreMenu();
+          }}
+          sx={{ color: '#DC2626' }}
+        >
+          <ListItemIcon>
+            <Iconify icon="material-symbols:delete-outline-rounded" width={18} sx={{ color: '#DC2626' }} />
+          </ListItemIcon>
+          <ListItemText>Delete</ListItemText>
+        </MenuItem>
+      </Menu>
     </Container>
   );
 }
