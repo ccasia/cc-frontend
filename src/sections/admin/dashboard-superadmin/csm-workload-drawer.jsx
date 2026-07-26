@@ -121,12 +121,6 @@ TabStat.propTypes = {
   onClick: PropTypes.func.isRequired,
 };
 
-function getUsageColor(pct) {
-  if (pct >= 90) return '#EF4444';
-  if (pct >= 70) return '#F59E0B';
-  return '#10B981';
-}
-
 function CampaignCard({ campaign }) {
   const pct = campaign.credits > 0 ? Math.min(100, Math.round((campaign.creditsUtilized / campaign.credits) * 100)) : 0;
 
@@ -134,7 +128,6 @@ function CampaignCard({ campaign }) {
     campaign.creatorBudget > 0
       ? Math.min(100, Math.round((campaign.creatorBudgetSpent / campaign.creatorBudget) * 100))
       : 0;
-  const budgetBarColor = getUsageColor(budgetPct);
 
   return (
     <Box sx={{ bgcolor: '#fff', border: '1px solid #e5e7eb', borderRadius: 2, p: 2, boxShadow: '4px 4px 4px 0px #8D8D9440' }}>
@@ -207,7 +200,10 @@ function CampaignCard({ campaign }) {
               height: 6,
               borderRadius: '999px',
               bgcolor: '#f3f4f6',
-              '& .MuiLinearProgress-bar': { bgcolor: budgetBarColor, borderRadius: '999px' },
+              '& .MuiLinearProgress-bar': {
+                background: 'linear-gradient(90deg, #111827 0%, #1340FF 100%)',
+                borderRadius: '999px',
+              },
             }}
           />
           <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.6 }}>
@@ -538,7 +534,13 @@ export default function CSMWorkloadDrawer({ csm, onClose }) {
                     {creators.map((creator) => (
                       <Box
                         key={creator.userId}
-                        sx={{ bgcolor: '#fff', border: '1px solid #e5e7eb', borderRadius: 2, p: 2 }}
+                        sx={{
+                          bgcolor: '#fff',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: 2,
+                          p: 2,
+                          boxShadow: '4px 4px 4px 0px #8D8D9440',
+                        }}
                       >
                         <Stack direction="row" alignItems="center" spacing={1.5}>
                           <Avatar
@@ -551,10 +553,20 @@ export default function CSMWorkloadDrawer({ csm, onClose }) {
                             <Typography noWrap sx={{ fontWeight: 700, color: '#111827', fontSize: '0.88rem' }}>
                               {creator.name}
                             </Typography>
-                            <Typography noWrap variant="caption" sx={{ color: '#9ca3af' }} title={creator.campaignNames.join(', ')}>
-                              {creator.campaignCount} campaign{creator.campaignCount === 1 ? '' : 's'} ·{' '}
-                              {creator.campaignNames.join(', ')}
-                            </Typography>
+                            <Stack direction="row" spacing={1.5} sx={{ mt: 0.3 }}>
+                              <Stack direction="row" alignItems="center" spacing={0.5}>
+                                <Iconify icon="mdi:instagram" width={13} sx={{ color: '#E4405F', flexShrink: 0 }} />
+                                <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                                  {creator.instagramTierName || '-'}
+                                </Typography>
+                              </Stack>
+                              <Stack direction="row" alignItems="center" spacing={0.5}>
+                                <Iconify icon="ic:baseline-tiktok" width={13} sx={{ color: '#000000', flexShrink: 0 }} />
+                                <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                                  {creator.tiktokTierName || '-'}
+                                </Typography>
+                              </Stack>
+                            </Stack>
                           </Box>
                         </Stack>
                       </Box>
