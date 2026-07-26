@@ -27,11 +27,13 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
     isReuploadMode,
     hasSubmitted,
     caption,
-    postingLink,
+    postingLinks,
     postingLoading,
     photosToRemove,
     setCaption,
-    setPostingLink,
+    handlePostingLinkChange,
+    handleAddPostingLink,
+    handleRemovePostingLink,
     setPhotosToRemove,
     handleCaptionChange,
     handleFilesChange,
@@ -400,10 +402,11 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                 hasPostingLink={
                   requiresPostingLink && (isApproved || isApproveLink || isPosted || isPostingLinkRejected)
                 }
-                postingLink={postingLink}
-                onPostingLinkChange={(e) => setPostingLink(e.target.value)}
+                postingLinks={isPostingLinkEditable ? postingLinks : submission.videos || []}
+                onPostingLinkChange={handlePostingLinkChange}
+                onAddPostingLink={handleAddPostingLink}
+                onRemovePostingLink={handleRemovePostingLink}
                 isPostingLinkEditable={isPostingLinkEditable}
-                submissionContent={submission.content}
                 feedback={relevantFeedback}
                 hasChangesRequired={hasChangesRequired}
                 uploading={uploading}

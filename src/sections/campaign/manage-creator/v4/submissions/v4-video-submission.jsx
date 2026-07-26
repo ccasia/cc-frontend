@@ -100,9 +100,11 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
     isReuploadMode,
     hasSubmitted,
     caption,
-    postingLink,
+    postingLinks,
     postingLoading,
-    setPostingLink,
+    handlePostingLinkChange,
+    handleAddPostingLink,
+    handleRemovePostingLink,
     handleCaptionChange,
     handleFilesChange,
     handleReuploadMode,
@@ -310,10 +312,11 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
             hasPostingLink={
               requiresPostingLink && (isApproved || isApproveLink || isPosted || isPostingLinkRejected)
             }
-            postingLink={postingLink}
-            onPostingLinkChange={(e) => setPostingLink(e.target.value)}
+            postingLinks={isPostingLinkEditable ? postingLinks : submission.videos || []}
+            onPostingLinkChange={handlePostingLinkChange}
+            onAddPostingLink={handleAddPostingLink}
+            onRemovePostingLink={handleRemovePostingLink}
             isPostingLinkEditable={isPostingLinkEditable}
-            submissionContent={submission.content}
             feedback={relevantFeedback}
             hasChangesRequired={hasChangesRequired}
             uploading={uploading}
@@ -406,6 +409,7 @@ const MemoizedV4VideoSubmission = React.memo(
     prevProps.submission.status === nextProps.submission.status &&
     prevProps.submission.caption === nextProps.submission.caption &&
     prevProps.submission.content === nextProps.submission.content &&
+    JSON.stringify(prevProps.submission.videos) === JSON.stringify(nextProps.submission.videos) &&
     JSON.stringify(prevProps.submission.video) === JSON.stringify(nextProps.submission.video) &&
     JSON.stringify(prevProps.submission.feedback) ===
       JSON.stringify(nextProps.submission.feedback) &&
