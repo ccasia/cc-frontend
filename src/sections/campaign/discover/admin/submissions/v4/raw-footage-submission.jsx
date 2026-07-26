@@ -392,7 +392,7 @@ export default function V4RawFootageSubmission({
                           Caption
                         </Typography>
                         {(() => {
-                          if (pendingReview) {
+                          if (pendingReview || isClientFeedback) {
                             return (
                               <Box>
                                 <TextField
