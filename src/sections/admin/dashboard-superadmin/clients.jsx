@@ -243,11 +243,15 @@ function ClientsTable({ clients }) {
 
 ClientsTable.propTypes = { clients: PropTypes.array.isRequired };
 
-const ClientsTab = () => {
+const ClientsTab = ({ dateRange }) => {
   const [search, setSearch] = useState('');
   const [view, setView] = useState('list');
 
-  const { data, isLoading } = useSWR(endpoints.analytics.clientsOverview, fetcher, SWR_OPTS);
+  const query = dateRange
+    ? `${endpoints.analytics.clientsOverview}?startDate=${encodeURIComponent(dateRange.startDate)}&endDate=${encodeURIComponent(dateRange.endDate)}`
+    : endpoints.analytics.clientsOverview;
+
+  const { data, isLoading } = useSWR(query, fetcher, SWR_OPTS);
   const clients = useMemo(() => data?.data?.clients || [], [data]);
 
   const filtered = useMemo(() => {
@@ -334,6 +338,10 @@ const ClientsTab = () => {
       {filtered.length > 0 && view === 'list' && <ClientsTable clients={filtered} />}
     </Box>
   );
+};
+
+ClientsTab.propTypes = {
+  dateRange: PropTypes.object,
 };
 
 export default ClientsTab;
