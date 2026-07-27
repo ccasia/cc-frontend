@@ -303,6 +303,7 @@ DealValue.propTypes = {
 };
 
 const CURRENCIES = ['MYR', 'SGD'];
+const CURRENCY_FLAGS = { MYR: 'circle-flags:my', SGD: 'circle-flags:sg' };
 
 const BusinessDevelopmentTab = ({ dateRange }) => {
   const [currency, setCurrency] = useState('MYR');
@@ -348,7 +349,10 @@ const BusinessDevelopmentTab = ({ dateRange }) => {
                 type="button"
                 onClick={() => setCurrency(c)}
                 sx={{
-                  px: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.75,
+                  px: 1.5,
                   py: 0.5,
                   border: 0,
                   cursor: 'pointer',
@@ -362,6 +366,7 @@ const BusinessDevelopmentTab = ({ dateRange }) => {
                   transition: 'color 0.15s, background-color 0.15s',
                 }}
               >
+                <Iconify icon={CURRENCY_FLAGS[c]} width={15} />
                 {c}
               </Box>
             );

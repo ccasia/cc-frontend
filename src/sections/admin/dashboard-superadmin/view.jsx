@@ -63,7 +63,7 @@ function getRangeForValue(value) {
 }
 
 const DashboardSuperadminView = () => {
-  const [tab, setTab] = useState('csm');
+  const [tab, setTab] = useState('bd');
   const [timeRange, setTimeRange] = useState('all');
   const [customAnchor, setCustomAnchor] = useState(null);
   const [customRange, setCustomRange] = useState({ startDate: '', endDate: '' });
@@ -263,7 +263,7 @@ const DashboardSuperadminView = () => {
 
       {tab === 'bd' && <BusinessDevelopmentTab dateRange={dateRange}/>}
       {tab === 'csm' && <CSMWorkloadTab dateRange={dateRange} />}
-      {tab === 'campaigns' && <CampaignsTab />}
+      {tab === 'campaigns' && <CampaignsTab dateRange={dateRange} />}
       {tab === 'clients' && <ClientsTab />}
     </Box>
   );
