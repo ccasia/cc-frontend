@@ -4,12 +4,11 @@ import dayjs from 'dayjs';
 // follow-up and sorted to the top of its column.
 export const FOLLOW_UP_DAYS = 7;
 
-// Pipeline columns, in board order. `key` maps to Campaign.draftStatus.
 export const PIPELINE_COLUMNS = [
   { key: 'DRAFTED', label: 'TO SEND', color: '#9ca3af' },
   { key: 'SENT_TO_CLIENT', label: 'AWAITING', color: '#7c3aed' },
-  { key: 'PENDING_REVIEW', label: 'NEEDS REVIEW', color: '#d97706' },
   { key: 'APPROVED', label: 'HAND OVER', color: '#16a34a' },
+  { key: 'ON_HOLD', label: 'ON HOLD', color: '#B45309' },
   { key: 'HANDED_OVER', label: 'MONITORING', color: '#2563eb' },
 ];
 
@@ -29,7 +28,10 @@ export function groupBriefsIntoColumns(briefs) {
   });
 
   (briefs || []).forEach((b) => {
-    if (b.draftStatus && byStatus[b.draftStatus]) {
+    if (!b.draftStatus) return;
+    if (b.onHoldAt && b.draftStatus !== 'LOST') {
+      byStatus.ON_HOLD.push(b);
+    } else if (byStatus[b.draftStatus]) {
       byStatus[b.draftStatus].push(b);
     }
   });
@@ -50,8 +52,9 @@ export function headerCounts(briefs) {
   (briefs || []).forEach((b) => {
     const s = b.draftStatus;
     if (!s) return;
+    if (b.onHoldAt) return;
     if (s !== 'LOST' && s !== 'HANDED_OVER') activeDeals += 1;
-    if (s === 'DRAFTED' || s === 'PENDING_REVIEW' || s === 'APPROVED') {
+    if (s === 'DRAFTED' || s === 'APPROVED') {
       needsAttention += 1;
     } else if (s === 'SENT_TO_CLIENT') {
       const days = daysSinceSent(b.sentToClientAt);

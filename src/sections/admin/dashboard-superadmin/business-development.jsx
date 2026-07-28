@@ -27,16 +27,22 @@ import BriefPreviewDialog from 'src/sections/admin/dashboard-bd/brief-preview-di
 const STAGE_COLOR = {
   DRAFTED: '#9ca3af',
   SENT_TO_CLIENT: '#8A5AFE',
-  PENDING_REVIEW: '#f59e0b',
   APPROVED: '#1ABF66',
+  ON_HOLD: '#B45309',
   HANDED_OVER: '#1340FF',
   ACTIVE: '#38bdf8',
   LOST: '#FF3500',
 };
 
 const stageMatches = (brief, stageKey) => {
-  if (stageKey === 'ACTIVE') return brief.draftStatus === 'HANDED_OVER' && brief.status === 'ACTIVE';
-  if (stageKey === 'HANDED_OVER') return brief.draftStatus === 'HANDED_OVER' && brief.status !== 'ACTIVE';
+  if (stageKey === 'ON_HOLD') return Boolean(brief.onHoldAt);
+  if (stageKey === 'ACTIVE')
+    return brief.draftStatus === 'HANDED_OVER' && brief.status === 'ACTIVE';
+  if (stageKey === 'HANDED_OVER')
+    return brief.draftStatus === 'HANDED_OVER' && brief.status !== 'ACTIVE';
+  // Held briefs are surfaced under On hold, not the stage they are paused in —
+  // mirrors the backend subtracting them from their underlying stage count.
+  if (brief.onHoldAt) return false;
   return brief.draftStatus === stageKey;
 };
 
@@ -58,8 +64,12 @@ function PipelineByStage({ pipeline, briefs, onSelectBrief }) {
   const max = Math.max(1, ...pipeline.map((s) => s.count));
 
   return (
-    <Card sx={{ p: 3, borderRadius: 2, border: '1px solid #e5e7eb', boxShadow: 'none', height: '100%' }}>
-      <Typography sx={{ fontWeight: 700, color: '#111827', mb: 0.25 }}>Pipeline by stage</Typography>
+    <Card
+      sx={{ p: 3, borderRadius: 2, border: '1px solid #e5e7eb', boxShadow: 'none', height: '100%' }}
+    >
+      <Typography sx={{ fontWeight: 700, color: '#111827', mb: 0.25 }}>
+        Pipeline by stage
+      </Typography>
       <Typography variant="caption" sx={{ color: '#9ca3af' }}>
         Click a stage to see its briefs.
       </Typography>
@@ -85,10 +95,20 @@ function PipelineByStage({ pipeline, briefs, onSelectBrief }) {
                   '&:hover': { bgcolor: '#f9fafb' },
                 }}
               >
-                <Typography sx={{ width: 96, flexShrink: 0, fontSize: '0.82rem', color: '#374151' }}>
+                <Typography
+                  sx={{ width: 96, flexShrink: 0, fontSize: '0.82rem', color: '#374151' }}
+                >
                   {stage.label}
                 </Typography>
-                <Box sx={{ flex: 1, height: 18, borderRadius: '999px', bgcolor: '#f3f4f6', overflow: 'hidden' }}>
+                <Box
+                  sx={{
+                    flex: 1,
+                    height: 18,
+                    borderRadius: '999px',
+                    bgcolor: '#f3f4f6',
+                    overflow: 'hidden',
+                  }}
+                >
                   <Box
                     sx={{
                       height: '100%',
@@ -96,17 +116,29 @@ function PipelineByStage({ pipeline, briefs, onSelectBrief }) {
                       minWidth: stage.count > 0 ? 16 : 0,
                       borderRadius: '999px',
                       bgcolor: STAGE_COLOR[stage.key] || '#9ca3af',
-                      background: `linear-gradient(90deg, #111827d8 0%, ${STAGE_COLOR[stage.key]} 100%)`
+                      background: `linear-gradient(90deg, #111827d8 0%, ${STAGE_COLOR[stage.key]} 100%)`,
                     }}
                   />
                 </Box>
-                <Typography sx={{ width: 28, textAlign: 'right', fontWeight: 700, color: '#111827', fontSize: '0.85rem' }}>
+                <Typography
+                  sx={{
+                    width: 28,
+                    textAlign: 'right',
+                    fontWeight: 700,
+                    color: '#111827',
+                    fontSize: '0.85rem',
+                  }}
+                >
                   {stage.count}
                 </Typography>
                 <Iconify
                   icon="eva:arrow-ios-forward-fill"
                   width={16}
-                  sx={{ color: '#9ca3af', transform: isOpen ? 'rotate(90deg)' : 'none', transition: '0.15s' }}
+                  sx={{
+                    color: '#9ca3af',
+                    transform: isOpen ? 'rotate(90deg)' : 'none',
+                    transition: '0.15s',
+                  }}
                 />
               </Stack>
 
@@ -139,10 +171,16 @@ function PipelineByStage({ pipeline, briefs, onSelectBrief }) {
                           '&:hover': { bgcolor: '#f3f4f6' },
                         }}
                       >
-                        <Typography noWrap sx={{ fontSize: '0.8rem', color: '#111827', maxWidth: 220 }}>
+                        <Typography
+                          noWrap
+                          sx={{ fontSize: '0.8rem', color: '#111827', maxWidth: 220 }}
+                        >
                           {b.name || b.clientName || 'Untitled brief'}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: '#9ca3af', flexShrink: 0, ml: 1 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: '#9ca3af', flexShrink: 0, ml: 1 }}
+                        >
                           {b.briefOwner?.name || '—'}
                         </Typography>
                       </Stack>
@@ -165,9 +203,18 @@ PipelineByStage.propTypes = {
 };
 
 function PeopleTable({ people }) {
-  const head = ['BD person', 'Sent', 'Pending', 'Converted', 'Lost', 'Conv. %'];
+  const head = ['BD person', 'Sent', 'On hold', 'Converted', 'Lost', 'Conv. %'];
   return (
-    <Card sx={{ p: 0, borderRadius: 2, border: '1px solid #e5e7eb', boxShadow: 'none', height: '100%', overflow: 'hidden' }}>
+    <Card
+      sx={{
+        p: 0,
+        borderRadius: 2,
+        border: '1px solid #e5e7eb',
+        boxShadow: 'none',
+        height: '100%',
+        overflow: 'hidden',
+      }}
+    >
       <Table size="small">
         <TableHead>
           <TableRow sx={{ bgcolor: '#f9fafb' }}>
@@ -175,7 +222,13 @@ function PeopleTable({ people }) {
               <TableCell
                 key={h}
                 align={i === 0 ? 'left' : 'right'}
-                sx={{ fontSize: '0.72rem', fontWeight: 600, color: '#6b7280', borderBottom: '1px solid #e5e7eb', py: 1.25 }}
+                sx={{
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  color: '#6b7280',
+                  borderBottom: '1px solid #e5e7eb',
+                  py: 1.25,
+                }}
               >
                 {h}
               </TableCell>
@@ -185,7 +238,11 @@ function PeopleTable({ people }) {
         <TableBody>
           {people.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={head.length} align="center" sx={{ py: 6, color: '#9ca3af', border: 0 }}>
+              <TableCell
+                colSpan={head.length}
+                align="center"
+                sx={{ py: 6, color: '#9ca3af', border: 0 }}
+              >
                 No BD activity in this range.
               </TableCell>
             </TableRow>
@@ -196,10 +253,21 @@ function PeopleTable({ people }) {
                 <TableRow key={p.userId} sx={{ '&:last-of-type td': { border: 0 } }}>
                   <TableCell sx={{ borderBottom: '1px solid #f3f4f6', py: 1.25 }}>
                     <Stack direction="row" alignItems="center" spacing={1.25}>
-                      <Avatar src={p.photoURL || undefined} sx={{ width: 28, height: 28, fontSize: '0.8rem', bgcolor: '#e5e7eb', color: '#374151' }}>
+                      <Avatar
+                        src={p.photoURL || undefined}
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          fontSize: '0.8rem',
+                          bgcolor: '#e5e7eb',
+                          color: '#374151',
+                        }}
+                      >
                         {p.name?.charAt(0)?.toUpperCase() || 'B'}
                       </Avatar>
-                      <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#111827' }}>{p.name}</Typography>
+                      <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#111827' }}>
+                        {p.name}
+                      </Typography>
                       {!p.isBd && p.role && (
                         <Box
                           component="span"
@@ -221,16 +289,31 @@ function PeopleTable({ people }) {
                       )}
                     </Stack>
                   </TableCell>
-                  <TableCell align="right" sx={{ borderBottom: '1px solid #f3f4f6', fontWeight: 700, color: '#111827' }}>
+                  <TableCell
+                    align="right"
+                    sx={{ borderBottom: '1px solid #f3f4f6', fontWeight: 700, color: '#111827' }}
+                  >
                     {p.sent}
                   </TableCell>
-                  <TableCell align="right" sx={{ borderBottom: '1px solid #f3f4f6', color: '#6b7280' }}>
-                    {p.pending}
+                  <TableCell
+                    align="right"
+                    sx={{ borderBottom: '1px solid #f3f4f6', color: '#6b7280' }}
+                  >
+                    {p.onHold}
                   </TableCell>
-                  <TableCell align="right" sx={{ borderBottom: '1px solid #f3f4f6', color: '#6b7280' }}>
+                  <TableCell
+                    align="right"
+                    sx={{ borderBottom: '1px solid #f3f4f6', color: '#6b7280' }}
+                  >
                     {p.converted}
                   </TableCell>
-                  <TableCell align="right" sx={{ borderBottom: '1px solid #f3f4f6', color: p.lost > 0 ? '#FF3500' : '#6b7280' }}>
+                  <TableCell
+                    align="right"
+                    sx={{
+                      borderBottom: '1px solid #f3f4f6',
+                      color: p.lost > 0 ? '#FF3500' : '#6b7280',
+                    }}
+                  >
                     {p.lost}
                   </TableCell>
                   <TableCell align="right" sx={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -263,7 +346,12 @@ PeopleTable.propTypes = {
   people: PropTypes.array,
 };
 
-function DealValue({ people, valueTotals, currency }) {
+const CURRENCIES = ['MYR', 'SGD'];
+const CURRENCY_FLAGS = { MYR: 'circle-flags:my', SGD: 'circle-flags:sg' };
+
+function DealValue({ people, valueTotals }) {
+  const [currency, setCurrency] = useState('MYR');
+
   // Real won/lost value from the selected currency bucket.
   const rows = useMemo(
     () =>
@@ -283,91 +371,24 @@ function DealValue({ people, valueTotals, currency }) {
 
   return (
     <Card sx={{ p: 3, borderRadius: 2, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
-      <Typography sx={{ fontWeight: 700, color: '#111827', mb: 0.25 }}>Deal value</Typography>
-      <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-        Won vs lost by BD person · {fmtMoney(currency, totalWon)} won team-wide. Values captured at handover.
-      </Typography>
-
-      {rows.length === 0 ? (
-        <Typography variant="body2" sx={{ color: '#9ca3af', mt: 3 }}>
-          No deal value recorded for {currency} in this range yet. Won amounts are captured when a brief is handed over.
-        </Typography>
-      ) : (
-        <Stack spacing={1.25} sx={{ mt: 2.5 }}>
-          {rows.map((r) => (
-            <Stack key={r.userId} direction="row" alignItems="center" spacing={2}>
-              <Typography noWrap sx={{ width: 130, flexShrink: 0, fontSize: '0.82rem', color: '#374151' }}>
-                {r.name}
-              </Typography>
-              <Box sx={{ flex: 1, height: 16, borderRadius: '999px', bgcolor: '#f3f4f6', overflow: 'hidden' }}>
-                <Box
-                  sx={{
-                    height: '100%',
-                    width: `${(r.won / max) * 100}%`,
-                    minWidth: r.won > 0 ? 8 : 0,
-                    borderRadius: '999px',
-                    background: 'linear-gradient(90deg, #111827d8 0%, #1ABF66 100%)',
-                  }}
-                />
-              </Box>
-              <Typography sx={{ width: 120, textAlign: 'right', fontSize: '0.82rem', fontWeight: 700, color: '#111827' }}>
-                {fmtMoney(currency, r.won)}
-              </Typography>
-              <Typography sx={{ width: 90, textAlign: 'right', fontSize: '0.8rem', color: r.lost > 0 ? '#FF3500' : '#9ca3af' }}>
-                −{nf(r.lost)}
-              </Typography>
-            </Stack>
-          ))}
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        spacing={1.5}
+        sx={{ mb: 2 }}
+      >
+        <Stack direction="column">
+          <Typography sx={{ fontWeight: 700, color: '#111827', mb: 0.25 }}>Deal value</Typography>
+          <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+            Won vs lost by BD person · {fmtMoney(currency, totalWon)} won team-wide. Values captured
+            at handover.
+          </Typography>
         </Stack>
-      )}
-    </Card>
-  );
-}
-
-DealValue.propTypes = {
-  people: PropTypes.array,
-  valueTotals: PropTypes.object,
-  currency: PropTypes.string,
-};
-
-const CURRENCIES = ['MYR', 'SGD'];
-const CURRENCY_FLAGS = { MYR: 'circle-flags:my', SGD: 'circle-flags:sg' };
-
-const BusinessDevelopmentTab = ({ dateRange }) => {
-  const [currency, setCurrency] = useState('MYR');
-  const [previewTarget, setPreviewTarget] = useState(null);
-
-  const { pipeline, people, valueTotals, isLoading, mutate: mutateOverview } = useGetBdOverview(dateRange);
-  // The pipeline drill-down needs the raw briefs list (current snapshot).
-  const { briefs, mutate: mutateBriefs } = useGetBriefs();
-
-  // A brief edited in the preview can change stage, which moves both the
-  // pipeline counts and the drill-down list — refresh both.
-  const refresh = () => {
-    mutateOverview();
-    mutateBriefs();
-  };
-
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress size={20} sx={{ color: '#1340FF' }} />
-      </Box>
-    );
-  }
-
-  return (
-    <Box>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5} sx={{ mb: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Box>
-            <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-              Brief pipeline, conversion and BD performance.
-            </Typography>
-          </Box>
-        </Stack>
-
-        <Stack direction="row" sx={{ p: 0.4, borderRadius: '999px', bgcolor: '#f3f4f6', flexShrink: 0 }}>
+        <Stack
+          direction="row"
+          sx={{ p: 0.4, borderRadius: '999px', bgcolor: '#f3f4f6', flexShrink: 0 }}
+        >
           {CURRENCIES.map((c) => {
             const active = currency === c;
             return (
@@ -402,6 +423,121 @@ const BusinessDevelopmentTab = ({ dateRange }) => {
         </Stack>
       </Stack>
 
+      {rows.length === 0 ? (
+        <Typography variant="body2" sx={{ color: '#9ca3af', mt: 3 }}>
+          No deal value recorded for {currency} in this range yet. Won amounts are captured when a
+          brief is handed over.
+        </Typography>
+      ) : (
+        <Stack spacing={1.25} sx={{ mt: 2.5 }}>
+          {rows.map((r) => (
+            <Stack key={r.userId} direction="row" alignItems="center" spacing={2}>
+              <Typography
+                noWrap
+                sx={{ width: 130, flexShrink: 0, fontSize: '0.82rem', color: '#374151' }}
+              >
+                {r.name}
+              </Typography>
+              <Box
+                sx={{
+                  flex: 1,
+                  height: 16,
+                  borderRadius: '999px',
+                  bgcolor: '#f3f4f6',
+                  overflow: 'hidden',
+                }}
+              >
+                <Box
+                  sx={{
+                    height: '100%',
+                    width: `${(r.won / max) * 100}%`,
+                    minWidth: r.won > 0 ? 8 : 0,
+                    borderRadius: '999px',
+                    background: 'linear-gradient(90deg, #111827d8 0%, #1ABF66 100%)',
+                  }}
+                />
+              </Box>
+              <Typography
+                sx={{
+                  width: 120,
+                  textAlign: 'right',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: '#111827',
+                }}
+              >
+                {fmtMoney(currency, r.won)}
+              </Typography>
+              <Typography
+                sx={{
+                  width: 90,
+                  textAlign: 'right',
+                  fontSize: '0.8rem',
+                  color: r.lost > 0 ? '#FF3500' : '#9ca3af',
+                }}
+              >
+                −{nf(r.lost)}
+              </Typography>
+            </Stack>
+          ))}
+        </Stack>
+      )}
+    </Card>
+  );
+}
+
+DealValue.propTypes = {
+  people: PropTypes.array,
+  valueTotals: PropTypes.object,
+  currency: PropTypes.string,
+};
+
+const BusinessDevelopmentTab = ({ dateRange }) => {
+  const [previewTarget, setPreviewTarget] = useState(null);
+
+  const {
+    pipeline,
+    people,
+    valueTotals,
+    isLoading,
+    mutate: mutateOverview,
+  } = useGetBdOverview(dateRange);
+  // The pipeline drill-down needs the raw briefs list (current snapshot).
+  const { briefs, mutate: mutateBriefs } = useGetBriefs();
+
+  // A brief edited in the preview can change stage, which moves both the
+  // pipeline counts and the drill-down list — refresh both.
+  const refresh = () => {
+    mutateOverview();
+    mutateBriefs();
+  };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress size={20} sx={{ color: '#1340FF' }} />
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        spacing={1.5}
+        sx={{ mb: 2 }}
+      >
+        {/* <Stack direction="row" alignItems="center" spacing={1.5}> */}
+        <Box>
+          <Typography variant="body2" sx={{ color: '#9ca3af' }}>
+            Brief pipeline, conversion and BD performance.
+          </Typography>
+        </Box>
+        {/* </Stack> */}
+      </Stack>
+
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={12} md={5}>
           <PipelineByStage pipeline={pipeline} briefs={briefs} onSelectBrief={setPreviewTarget} />
@@ -411,7 +547,7 @@ const BusinessDevelopmentTab = ({ dateRange }) => {
         </Grid>
       </Grid>
 
-      <DealValue people={people} valueTotals={valueTotals} currency={currency} />
+      <DealValue people={people} valueTotals={valueTotals} />
 
       <BriefPreviewDialog
         open={Boolean(previewTarget)}
