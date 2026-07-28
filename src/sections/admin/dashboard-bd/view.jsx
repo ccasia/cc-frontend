@@ -88,11 +88,26 @@ export default function DashboardBdView() {
     }
   };
 
+  const handleToggleHold = async (brief) => {
+    if (!brief) return;
+    const next = !brief.onHoldAt;
+    try {
+      await axiosInstance.post(endpoints.campaignBrief.hold(brief.id), { onHold: next });
+      enqueueSnackbar(next ? 'Brief put on hold' : 'Brief resumed', { variant: 'success' });
+      refresh();
+    } catch (error) {
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to update hold status', {
+        variant: 'error',
+      });
+    }
+  };
+
   const actions = {
     onSend: setSendTarget,
     onCopyLink: handleCopyLink,
     onReview: setPreviewTarget,
     onHandover: setHandoverTarget,
+    onToggleHold: handleToggleHold,
     // Only surfaced on live campaigns (see pipeline-card.jsx), so this always
     // goes to the campaign page — the brief itself opens via the card click.
     onView: (brief) => router.push(paths.dashboard.campaign.adminCampaignDetail(brief.id)),

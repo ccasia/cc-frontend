@@ -68,6 +68,7 @@ export default function PipelineCard({
   onView,
   onLost,
   onDelete,
+  onToggleHold,
 }) {
   const [menuEl, setMenuEl] = useState(null);
   const [pressed, setPressed] = useState(false);
@@ -76,6 +77,8 @@ export default function PipelineCard({
   const status = brief.draftStatus;
   const email = brief.clientEmail;
   const canDelete = status === 'DRAFTED';
+  const onHold = Boolean(brief.onHoldAt);
+  const canHold = ['DRAFTED', 'SENT_TO_CLIENT', 'APPROVED'].includes(status);
 
   const renderBody = () => {
     switch (status) {
@@ -146,9 +149,6 @@ export default function PipelineCard({
           </Stack>
         );
       }
-
-      case 'PENDING_REVIEW':
-        return <ActionButton label="Review" color="amber" onClick={() => onReview(brief)} />;
 
       case 'APPROVED':
         return (
@@ -255,6 +255,24 @@ export default function PipelineCard({
       </Box>
 
       <Menu anchorEl={menuEl} open={Boolean(menuEl)} onClose={closeMenu}>
+        {(canHold || onHold) && (
+          <MenuItem
+            onClick={() => {
+              closeMenu();
+              onToggleHold(brief);
+            }}
+            sx={{ color: onHold ? '#15803D' : '#B45309' }}
+          >
+            <Iconify
+              icon={
+                onHold ? 'material-symbols:play-arrow-rounded' : 'material-symbols:pause-rounded'
+              }
+              width={18}
+              sx={{ mr: 1 }}
+            />
+            {onHold ? 'Resume brief' : 'Put on hold'}
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
             closeMenu();
@@ -290,4 +308,5 @@ PipelineCard.propTypes = {
   onView: PropTypes.func,
   onLost: PropTypes.func,
   onDelete: PropTypes.func,
+  onToggleHold: PropTypes.func,
 };
