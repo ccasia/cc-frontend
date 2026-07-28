@@ -1,35 +1,15 @@
-import React, { lazy } from 'react';
+import React, { lazy, Suspense } from 'react';
 
-import { Container } from '@mui/material';
+import { LoadingScreen } from 'src/components/loading-screen';
 
-import { paths } from 'src/routes/paths';
+const FinanceDashboardView = lazy(() => import('./dashboard/view'));
 
-import { useSettingsContext } from 'src/components/settings';
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
-
-const DashboardFinance = lazy(() => import('../admin/Finance/Dashboard'));
-
-function FianaceDiscover() {
-  const settings = useSettingsContext();
+function FinanceDiscover() {
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <CustomBreadcrumbs
-        heading="Finance"
-        links={[
-          { name: 'Dashboard', href: paths.dashboard.finance.root },
-          {
-            name: 'Finance',
-            href: paths.dashboard.finance.root,
-          },
-        ]}
-        sx={{
-          mb: { xs: 3, md: 5 },
-        }}
-      />
-
-      <DashboardFinance />
-    </Container>
+    <Suspense fallback={<LoadingScreen />}>
+      <FinanceDashboardView />
+    </Suspense>
   );
 }
 
-export default FianaceDiscover;
+export default FinanceDiscover;
