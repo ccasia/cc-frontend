@@ -69,7 +69,7 @@ const LoadingDots = () => {
 const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) => {
   const [preview, setPreview] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user, dispatch } = useAuthContext();
+  const { user } = useAuthContext();
   const display = useBoolean();
   const router = useRouter();
 
@@ -288,15 +288,8 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
       setSubmitStatus('success');
     } catch (error) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      if (error?.message === 'Forbidden') {
-        dispatch({
-          type: 'LOGOUT',
-        });
-        enqueueSnackbar('Your session is expired. Please re-login', {
-          variant: 'error',
-        });
-        return;
-      }
+      // 401s are handled globally by the axios interceptor (session cleared +
+      // redirect to login), so only genuine submission failures land here.
       enqueueSnackbar('Submission of agreement failed', {
         variant: 'error',
       });

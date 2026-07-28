@@ -74,7 +74,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   // All hooks must be called before any conditional returns
   const dependency = getDependency(submission?.id);
   const dialog = useBoolean();
-  const { user, dispatch } = useAuthContext();
+  const { user } = useAuthContext();
   const router = useRouter();
   const [openPostingModal, setOpenPostingModal] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
@@ -336,18 +336,8 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
       setSubmitStatus('success');
     } catch (error) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      if (error?.message === 'Forbidden') {
-        dispatch({
-          type: 'LOGOUT',
-        });
-        enqueueSnackbar('Your session is expired. Please re-login', {
-          variant: 'error',
-        });
-        return;
-      }
-      // enqueueSnackbar('Error submitting post link', {
-      //   variant: 'error',
-      // });
+      // 401s are handled globally by the axios interceptor (session cleared +
+      // redirect to login), so only genuine submission failures land here.
       setSubmitStatus('error');
     }
   });

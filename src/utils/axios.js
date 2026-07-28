@@ -510,6 +510,7 @@ export const endpoints = {
     reset: (id) => `/api/briefs/${id}/reset`,
     handover: (id) => `/api/briefs/${id}/handover`,
     lost: (id) => `/api/briefs/${id}/lost`,
+    hold: (id) => `/api/briefs/${id}/hold`,
     assignCsm: (id) => `/api/briefs/${id}/assign-csm`,
     finalize: (id) => `/api/briefs/${id}/finalize`,
     attachments: (id) => `/api/briefs/${id}/attachments`,
