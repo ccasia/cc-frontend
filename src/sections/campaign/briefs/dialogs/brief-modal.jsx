@@ -63,7 +63,7 @@ const VARIANT_SX = {
   },
 };
 
-export default function BriefModal({ open, emoji, iconBg, title, body, actions, onClose }) {
+export default function BriefModal({ open, emoji, iconBg, title, body, extra, actions, onClose }) {
   return (
     <Dialog
       open={open}
@@ -109,6 +109,10 @@ export default function BriefModal({ open, emoji, iconBg, title, body, actions, 
           {body}
         </Typography>
 
+        {/* Optional slot rendered between the body and the action buttons
+            (e.g. the social-share row on the "Brief Sent!" dialog). */}
+        {extra ? <Box sx={{ mb: 3 }}>{extra}</Box> : null}
+
         <Stack spacing={1.25}>
           {actions.map((action) => (
             <Button
@@ -132,6 +136,7 @@ BriefModal.propTypes = {
   iconBg: PropTypes.string,
   title: PropTypes.node,
   body: PropTypes.node,
+  extra: PropTypes.node,
   actions: PropTypes.arrayOf(
     PropTypes.shape({
       label: PropTypes.string,

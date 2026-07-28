@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -19,6 +20,8 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemIcon from '@mui/material/ListItemIcon';
 import InputAdornment from '@mui/material/InputAdornment';
 import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -80,6 +83,12 @@ export default function CampaignBriefListView() {
   const [approvedNotice, setApprovedNotice] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  // Overflow ([...]) menu. Contents depend on the row's status: Hold/Resume on
+  // every pre-handover row, Mark-as-Loss on all of them, Delete on Draft only.
+  const [moreMenu, setMoreMenu] = useState({ anchorEl: null, brief: null });
+  const closeMoreMenu = () => setMoreMenu({ anchorEl: null, brief: null });
+  const menuBrief = moreMenu.brief;
+  const menuCanDelete = menuBrief?.draftStatus === 'DRAFTED';
   const [inviteLinkOpen, setInviteLinkOpen] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -109,9 +118,11 @@ export default function CampaignBriefListView() {
   const briefs = (data || []).filter((b) => {
     const status = effectiveStatus(b);
 
-    // Status tab. "ALL" shows everything except activated campaigns — those
-    // live only under the explicit ACTIVE tab.
-    if (statusTab === 'ALL') {
+    if (status === 'PENDING_REVIEW') return false;
+
+    if (statusTab === 'ON_HOLD') {
+      if (!b.onHoldAt) return false;
+    } else if (statusTab === 'ALL') {
       if (status === 'ACTIVE') return false;
       if (status === 'LOST') return false;
     } else if (status !== statusTab) {
@@ -134,42 +145,34 @@ export default function CampaignBriefListView() {
     return true;
   });
 
-  // Status tabs shown depend on role: BD/superadmin see the full lifecycle;
-  // CSL/CSM only ever have handed-over/active briefs.
-  const TAB_DEFS =
-    isBD || role === 'CSL' || role === 'CSM'
-      ? [
-          { value: 'ALL', label: 'All' },
-          { value: 'DRAFTED', label: 'Draft' },
-          { value: 'SENT_TO_CLIENT', label: 'Sent' },
-          { value: 'PENDING_REVIEW', label: 'Pending' },
-          { value: 'APPROVED', label: 'Approved' },
-          { value: 'HANDED_OVER', label: 'Handed Over' },
-          { value: 'LOST', label: 'Lost' },
-          { value: 'ACTIVE', label: 'Active' },
-        ]
-      : [
-          { value: 'ALL', label: 'All' },
-          { value: 'HANDED_OVER', label: 'Handed Over' },
-          { value: 'LOST', label: 'Lost' },
-          { value: 'ACTIVE', label: 'Active' },
-        ];
+  const TAB_DEFS = [
+    { value: 'ALL', label: 'All' },
+    { value: 'DRAFTED', label: 'Draft' },
+    { value: 'SENT_TO_CLIENT', label: 'Sent' },
+    { value: 'APPROVED', label: 'Approved' },
+    { value: 'ON_HOLD', label: 'On Hold' },
+    { value: 'HANDED_OVER', label: 'Handed Over' },
+    { value: 'LOST', label: 'Lost' },
+    { value: 'ACTIVE', label: 'Active' },
+  ];
 
   // Per-status counts (respect the BD filter, but not search or the active tab,
   // so each tab shows how many briefs it holds). "All" = everything but ACTIVE.
   const statusCounts = (() => {
-    const counts = { ALL: 0 };
+    // ON_HOLD is seeded so the += below can't produce NaN on an empty list.
+    const counts = { ALL: 0, ON_HOLD: 0 };
     (data || []).forEach((b) => {
       if (isSuperAdmin && bdFilter !== 'ALL' && briefOwnerOf(b)?.id !== bdFilter) return;
       const s = effectiveStatus(b);
       counts[s] = (counts[s] || 0) + 1;
       if (s !== 'ACTIVE') counts.ALL += 1;
+      // Counted independently of the lifecycle status it sits on top of.
+      if (b.onHoldAt) counts.ON_HOLD += 1;
     });
     return counts;
   })();
 
   const STATUS_TABS = TAB_DEFS.map((t) => ({ ...t, count: statusCounts[t.value] || 0 }));
-  console.log(statusTab);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -200,6 +203,20 @@ export default function CampaignBriefListView() {
       });
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleToggleHold = async (brief) => {
+    if (!brief) return;
+    const next = !brief.onHoldAt;
+    try {
+      await axiosInstance.post(endpoints.campaignBrief.hold(brief.id), { onHold: next });
+      enqueueSnackbar(next ? 'Brief put on hold' : 'Brief resumed', { variant: 'success' });
+      mutate();
+    } catch (error) {
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to update hold status', {
+        variant: 'error',
+      });
     }
   };
 
@@ -281,15 +298,6 @@ export default function CampaignBriefListView() {
         <Iconify icon="iconamoon:send-bold" width={18} />
       </IconButton>
     );
-    const deleteIcon = (
-      <IconButton
-        size="small"
-        onClick={() => setConfirmDelete(brief)}
-        sx={{ ...actionBtnSx, color: '#DC2626' }}
-      >
-        <Iconify icon="material-symbols:delete-outline-rounded" width={18} />
-      </IconButton>
-    );
     // Re-copy the client review link (only present once a brief has been sent).
     const copyLinkIcon = brief.clientLink ? (
       <Tooltip title="Copy client link">
@@ -347,15 +355,33 @@ export default function CampaignBriefListView() {
         Attach Client
       </Button>
     );
-    const lostBtn = (
+    // Pre-handover overflow: Hold/Resume + Mark-as-Loss (+ Delete on drafts).
+    const moreMenuBtn = (
       <IconButton
         size="small"
-        onClick={() => setLostTarget(brief)}
-        sx={{ ...actionBtnSx, color: '#DC2626' }}
+        onClick={(e) => setMoreMenu({ anchorEl: e.currentTarget, brief })}
+        sx={actionBtnSx}
       >
-        <Iconify icon="material-symbols:cancel-outline-rounded" width={18} />
+        <Iconify icon="eva:more-horizontal-fill" width={18} />
       </IconButton>
     );
+    // Activated campaigns open the campaign page rather than the brief form.
+    const viewActiveCampaignBtn = (
+      <Button
+        size="small"
+        variant="outlined"
+        onClick={() => navigate(paths.dashboard.campaign.adminCampaignDetail(brief.id))}
+        sx={labeledBtnSx}
+      >
+        View
+      </Button>
+    );
+
+    // An activated campaign is done with the brief flow — [View] opens the
+    // campaign page instead of the brief form, for every role.
+    if (brief.status === 'ACTIVE') {
+      return viewActiveCampaignBtn;
+    }
 
     // Non-BD authors (CSL/CSM) drive their own briefs through the lifecycle.
     // CSL additionally gets the direct Assign-CSM shortcut.
@@ -363,13 +389,13 @@ export default function CampaignBriefListView() {
       const mineInProgress = isMyBrief(brief) && status !== 'HANDED_OVER';
 
       // CSL-authored brief at APPROVED → assign a CSM directly (self-handover).
+      // Delete is Draft-only, so it is no longer offered here.
       if (canAssignCsm && isCslAuthored(brief) && status === 'APPROVED') {
         return (
           <>
             {copyLinkIcon}
             {assignCsmBtn}
             {editIcon}
-            {deleteIcon}
           </>
         );
       }
@@ -377,22 +403,22 @@ export default function CampaignBriefListView() {
       if (mineInProgress) {
         switch (status) {
           case 'DRAFTED':
+            // Draft: Send + Edit, with Mark-as-Loss and Delete under a [...] menu.
             return (
               <>
                 {sendIconBtn()}
                 {editIcon}
-                {lostBtn}
-                {deleteIcon}
+                {moreMenuBtn}
               </>
             );
           case 'SENT_TO_CLIENT':
+            // Send stays enabled so the brief can be re-sent. Delete is Draft-only.
             return (
               <>
                 {copyLinkIcon}
-                {sendIconBtn(true)}
+                {sendIconBtn()}
                 {editIcon}
-                {lostBtn}
-                {deleteIcon}
+                {moreMenuBtn}
               </>
             );
           case 'PENDING_REVIEW':
@@ -401,8 +427,7 @@ export default function CampaignBriefListView() {
                 {copyLinkIcon}
                 {sendIconBtn()}
                 {editIcon}
-                {lostBtn}
-                {deleteIcon}
+                {moreMenuBtn}
               </>
             );
           case 'APPROVED':
@@ -414,17 +439,11 @@ export default function CampaignBriefListView() {
                 {copyLinkIcon}
                 {isCsmAuthored(brief) ? finalizeBtn : handoverBtn}
                 {editIcon}
-                {lostBtn}
-                {deleteIcon}
+                {moreMenuBtn}
               </>
             );
           default:
-            return (
-              <>
-                {editIcon}
-                {deleteIcon}
-              </>
-            );
+            return editIcon;
         }
       }
       // Handed-over briefs: CSL can assign a CSM; everyone in CS opens the campaign.
@@ -440,20 +459,21 @@ export default function CampaignBriefListView() {
     }
     switch (status) {
       case 'DRAFTED':
+        // Draft: Send + a [...] menu collapsing Hold, Mark-as-Loss and Delete.
         return (
           <>
             {sendIconBtn()}
-            {lostBtn}
-            {deleteIcon}
+            {moreMenuBtn}
           </>
         );
       case 'SENT_TO_CLIENT':
+        // Send stays enabled so BD can re-send the brief to the client.
+        // Delete is Draft-only, so the menu holds Hold + Mark-as-Loss here.
         return (
           <>
             {copyLinkIcon}
-            {sendIconBtn(true)}
-            {lostBtn}
-            {deleteIcon}
+            {sendIconBtn()}
+            {moreMenuBtn}
           </>
         );
       case 'PENDING_REVIEW':
@@ -462,8 +482,7 @@ export default function CampaignBriefListView() {
         return (
           <>
             {sendIconBtn()}
-            {lostBtn}
-            {deleteIcon}
+            {moreMenuBtn}
           </>
         );
       case 'APPROVED':
@@ -471,44 +490,26 @@ export default function CampaignBriefListView() {
           <>
             {copyLinkIcon}
             {handoverBtn}
-            {lostBtn}
-            {deleteIcon}
+            {moreMenuBtn}
           </>
         );
       case 'HANDED_OVER':
         // Superadmin sees the full handed-over toolset (CS-side actions too).
+        // Delete is Draft-only, so it is no longer offered here.
         if (isSuperAdmin) {
           return (
             <>
               {assignCsmBtn}
               {viewCampaignBtn}
               {editIcon}
-              {deleteIcon}
             </>
           );
         }
-        return (
-          <>
-            {editIcon}
-            {deleteIcon}
-          </>
-        );
-        // case 'LOST':
+        return editIcon;
+      // case 'LOST':
 
       default:
-          if (isSuperAdmin) {
-          return (
-            <>
-              {editIcon}
-              {deleteIcon}
-            </>
-          );
-        }
-        return (
-          <>
-            {editIcon}
-          </>
-        );
+        return editIcon;
     }
   };
 
@@ -587,7 +588,7 @@ export default function CampaignBriefListView() {
             >
               Create Brief
             </Button>
-            {isBD && (
+            {/* {isBD && (
               <Button
                 onClick={() => setInviteLinkOpen(true)}
                 sx={{
@@ -608,7 +609,7 @@ export default function CampaignBriefListView() {
               >
                 Invite Link
               </Button>
-            )}
+            )} */}
           </Box>
         )}
       </Stack>
@@ -689,7 +690,7 @@ export default function CampaignBriefListView() {
                       onClick={() => navigate(paths.dashboard.campaign.briefDetails(b.id))}
                       sx={{ cursor: 'pointer' }}
                     >
-                      <TableCell>{b.name || '—'}</TableCell>
+                      <TableCell>{b.brandName || b.name || '—'}</TableCell>
                       <TableCell>{b.clientEmail || '—'}</TableCell>
                       <TableCell>
                         {b.createdAt ? dayjs(b.createdAt).format('DD MMM YYYY') : '—'}
@@ -704,7 +705,13 @@ export default function CampaignBriefListView() {
                         </>
                       )}
                       <TableCell>
-                        <StatusBadge status={b.status === 'ACTIVE' ? 'ACTIVE' : b.draftStatus} />
+                        <StatusBadge
+                          status={(() => {
+                            if (b.status === 'ACTIVE') return 'ACTIVE';
+                            if (b.onHoldAt) return 'ON_HOLD';
+                            return b.draftStatus;
+                          })()}
+                        />
                       </TableCell>
                       <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                         <Stack
@@ -768,6 +775,71 @@ export default function CampaignBriefListView() {
         onClose={() => setLostTarget(null)}
         onLost={() => mutate()}
       />
+
+      {/* Overflow menu: Hold/Resume + Mark as Loss (+ Delete on Draft rows) */}
+      <Menu
+        anchorEl={moreMenu.anchorEl}
+        open={Boolean(moreMenu.anchorEl)}
+        onClose={closeMoreMenu}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem
+          onClick={() => {
+            handleToggleHold(menuBrief);
+            closeMoreMenu();
+          }}
+          sx={{ color: menuBrief?.onHoldAt ? '#15803D' : '#B45309' }}
+        >
+          <ListItemIcon>
+            <Iconify
+              icon={
+                menuBrief?.onHoldAt
+                  ? 'material-symbols:play-arrow-rounded'
+                  : 'material-symbols:pause-rounded'
+              }
+              width={18}
+              sx={{ color: menuBrief?.onHoldAt ? '#15803D' : '#B45309' }}
+            />
+          </ListItemIcon>
+          <ListItemText>{menuBrief?.onHoldAt ? 'Resume Brief' : 'Put On Hold'}</ListItemText>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setLostTarget(menuBrief);
+            closeMoreMenu();
+          }}
+          sx={{ color: '#DC2626' }}
+        >
+          <ListItemIcon>
+            <Iconify
+              icon="material-symbols:cancel-outline-rounded"
+              width={18}
+              sx={{ color: '#DC2626' }}
+            />
+          </ListItemIcon>
+          <ListItemText>Mark as Loss</ListItemText>
+        </MenuItem>
+        {/* Delete stays Draft-only. */}
+        {menuCanDelete && (
+          <MenuItem
+            onClick={() => {
+              setConfirmDelete(menuBrief);
+              closeMoreMenu();
+            }}
+            sx={{ color: '#DC2626' }}
+          >
+            <ListItemIcon>
+              <Iconify
+                icon="material-symbols:delete-outline-rounded"
+                width={18}
+                sx={{ color: '#DC2626' }}
+              />
+            </ListItemIcon>
+            <ListItemText>Delete</ListItemText>
+          </MenuItem>
+        )}
+      </Menu>
     </Container>
   );
 }
