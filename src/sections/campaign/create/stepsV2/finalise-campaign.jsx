@@ -55,6 +55,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pd
 const campaignTypeOptions = [
   { value: 'normal', label: 'UGC (With Posting)' },
   { value: 'ugc', label: 'UGC (No Posting)' },
+  { value: 'seedingCampaign', label: 'Seeding Campaign' },
 ];
 
 // Deliverable options (matching activate-campaign-dialog.jsx)

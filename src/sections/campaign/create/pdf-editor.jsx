@@ -9,16 +9,22 @@ import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
+import { RestartAlt } from '@mui/icons-material';
 import {
   Box,
   Step,
   Stack,
+  Radio,
   Dialog,
   Button,
   Stepper,
-  Checkbox,
+  Tooltip,
   StepLabel,
+  FormLabel,
+  RadioGroup,
+  IconButton,
   DialogTitle,
+  FormControl,
   DialogContent,
   DialogActions,
   FormControlLabel,
@@ -36,6 +42,12 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 const stepsPDF = ['Fill in missing information', 'Digital Signature'];
 
+const schema = Yup.object().shape({
+  name: Yup.string().required('Name is required'),
+  icNumber: Yup.string().required('IC Number is required.'),
+  campaignType: Yup.string().oneOf(['seedingCampaign', 'surfSharkCampaign']),
+});
+
 const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [url, setURL] = useState('');
@@ -43,35 +55,33 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
   const [signURL, setSignURL] = useState('');
   const [annotations, setAnnotations] = useState([]);
   const loading = useBoolean();
-  const [isForSurfShark, setIsForSurfShark] = useState(false);
+
+  // const [campaignType, setCampaignType] = useState(null);
 
   const smDown = useResponsive('down', 'sm');
-
-  const schema = Yup.object().shape({
-    name: Yup.string().required('Name is required'),
-    icNumber: Yup.string().required('IC Number is required.'),
-  });
 
   const methods = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       name: user?.name || '',
       icNumber: '',
+      campaignType: '',
     },
     reValidateMode: 'onChange',
     mode: 'onChange',
   });
 
-  const { handleSubmit, watch, reset } = methods;
+  const { handleSubmit, watch, reset, setValue } = methods;
 
-  const { name, icNumber } = watch();
+  const { name, icNumber, campaignType } = watch();
 
   const processPdf = async () => {
     const blob = await pdf(
       <AgreementTemplate
         ADMIN_IC_NUMBER={icNumber}
         ADMIN_NAME={name}
-        isForSurfShark={isForSurfShark}
+        isForSurfShark={campaignType === 'surfSharkCampaign'}
+        isSeedingCampaign={campaignType === 'seedingCampaign'}
       />
     ).toBlob();
 
@@ -145,7 +155,7 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
       const blob = await response.blob();
 
       const formData = new FormData();
-      formData.append('data', JSON.stringify({ ...user, ...data, campaignId }));
+      formData.append('data', JSON.stringify({ name: user?.name, ...data, campaignId }));
       formData.append('signedAgreement', agreementBlob);
       formData.append('signatureImage', blob);
 
@@ -200,18 +210,56 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
             </Stepper>
             <Box mt={4}>
               {activeStep === 0 && (
-                <Stack gap={1.5} py={2}>
+                <Stack gap={1.5}>
                   <RHFTextField name="name" label="Name" />
                   <RHFTextField name="icNumber" label="IC Number" />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={isForSurfShark}
-                        onChange={(e) => setIsForSurfShark(e.target.checked)}
+                  <FormControl>
+                    <FormLabel
+                      sx={{
+                        color: 'black',
+                        letterSpacing: 0.3,
+                        '&.Mui-focused': {
+                          color: 'black',
+                        },
+                      }}
+                    >
+                      Generate for:
+                    </FormLabel>
+                    <RadioGroup
+                      row
+                      value={campaignType}
+                      onChange={(e) => {
+                        setValue('campaignType', e.target.value);
+                      }}
+                      sx={{
+                        '&.MuiRadioGroup-root .Mui-checked': {
+                          color: 'black',
+                        },
+                      }}
+                    >
+                      <FormControlLabel
+                        control={<Radio />}
+                        value="surfSharkCampaign"
+                        label="Surf Shark campaign"
                       />
-                    }
-                    label="For Surf Shark campaign"
-                  />
+                      <FormControlLabel
+                        control={<Radio />}
+                        value="seedingCampaign"
+                        label="Seeding campaign"
+                      />
+                      {campaignType && (
+                        <Tooltip title="This will reset to default agreement" arrow>
+                          <IconButton
+                            onClick={() => setValue('campaignType', '')}
+
+                            size="small"
+                          >
+                            <RestartAlt />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </RadioGroup>
+                  </FormControl>
                 </Stack>
               )}
               {activeStep === 1 && (
@@ -232,13 +280,18 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
               Cancel
             </Button>
           ) : (
-            <Button onClick={handlePrev} variant="outlined" size="small">
+            <Button onClick={handlePrev} size="small">
               Back
             </Button>
           )}
 
           {activeStep === stepsPDF.length - 1 ? (
-            <LoadingButton color="success" size="small" onClick={onSubmit} loading={loading.value}>
+            <LoadingButton
+              size="small"
+              variant="contained"
+              onClick={onSubmit}
+              loading={loading.value}
+            >
               Save
             </LoadingButton>
           ) : (

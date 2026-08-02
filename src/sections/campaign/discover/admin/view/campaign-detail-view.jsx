@@ -236,7 +236,10 @@ const CampaignDetailView = ({
   };
 
   const [currentTab, setCurrentTab] = useState(
-    forcedTab || searchParams.get('tab') || localStorage.getItem('campaigndetail') || 'campaign-content'
+    forcedTab ||
+      searchParams.get('tab') ||
+      localStorage.getItem('campaigndetail') ||
+      'campaign-content'
   );
 
   // Check if user is client (demo sessions render the read-only client view)

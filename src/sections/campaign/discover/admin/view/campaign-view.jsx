@@ -1,8 +1,7 @@
-import useSWR from 'swr';
 import { debounce } from 'lodash';
 import useSWRInfinite from 'swr/infinite';
-import { m, AnimatePresence, useMotionValueEvent, useMotionValue, useScroll } from 'framer-motion';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { m, useScroll, AnimatePresence, useMotionValueEvent } from 'framer-motion';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -39,6 +38,7 @@ import CampaignTabs from 'src/components/campaign/CampaignTabs';
 import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 
 import CampaignItem from '../campaign-item';
+import useSWR from 'swr';
 
 const CampaignView = () => {
   const settings = useSettingsContext();

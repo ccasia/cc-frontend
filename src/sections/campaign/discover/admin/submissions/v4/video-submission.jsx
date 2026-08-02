@@ -34,7 +34,6 @@ import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submiss
 import FeedbackLogs from './shared/feedback-logs';
 import FeedbackActions from './shared/feedback-actions';
 import PostingLinkSection from './shared/posting-link-section';
-import useCaptionOverflow from './shared/use-caption-overflow';
 import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
 
@@ -57,9 +56,15 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
     const clientVisible =
       !isClient ||
-      ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'CLIENT_APPROVED', 'APPROVED', 'REJECTED', 'APPROVE_LINK','POSTED'].includes(
-        submission.status
-      );
+      [
+        'SENT_TO_CLIENT',
+        'CLIENT_FEEDBACK',
+        'CLIENT_APPROVED',
+        'APPROVED',
+        'REJECTED',
+        'APPROVE_LINK',
+        'POSTED',
+      ].includes(submission.status);
 
     return {
       video,
@@ -75,8 +80,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     submissionProps;
 
   const postingLinkStatuses = ['APPROVED', 'CLIENT_APPROVED', 'APPROVE_LINK', 'POSTED', 'REJECTED'];
+
   const showPostingLinkSection =
-    postingLinkStatuses.includes(submission.status) && campaign?.campaignType === 'normal';
+    postingLinkStatuses.includes(submission.status) &&
+    (campaign?.campaignType === 'normal' || campaign?.campaignType === 'seeding_campaign');
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
@@ -92,17 +99,13 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   const [volume, setVolume] = useState(1);
   const videoRef = useRef(null);
   const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0, aspectRatio: 1 });
-  const [videoModalOpen, setVideoModalOpen] = useState(false);
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const captionMeasureRef = useRef(null);
+
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
   const [videoSubmissionModalOpen, setVideoSubmissionModalOpen] = useState(false);
   const [adminReviewModalOpen, setAdminReviewModalOpen] = useState(false);
   const [localFeedbackDeadline, setLocalFeedbackDeadline] = useState(null);
   const [localFeedbackSentByName, setLocalFeedbackSentByName] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-
-  const captionOverflows = useCaptionOverflow(captionMeasureRef, submission.caption);
 
   const handleApprove = useCallback(async () => {
     try {
@@ -566,6 +569,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           }
                           return null;
                         })()}
+
                         {!isClient &&
                           [
                             'PENDING_REVIEW',
@@ -708,6 +712,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           </button> */}
                         </Box>
                       )}
+
                       {!isClient && (
                         <FeedbackActions
                           submission={submission}

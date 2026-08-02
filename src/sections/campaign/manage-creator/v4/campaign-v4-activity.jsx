@@ -798,7 +798,11 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
         PaperProps={{ sx: { borderRadius: 3, bgcolor: '#f4f4f4' } }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 1.5, px: 1.5 }}>
-          <IconButton onClick={() => setPaymentGateOpen(false)} size="small" sx={{ color: '#8e8e93' }}>
+          <IconButton
+            onClick={() => setPaymentGateOpen(false)}
+            size="small"
+            sx={{ color: '#8e8e93' }}
+          >
             <Iconify icon="hugeicons:cancel-01" width={20} />
           </IconButton>
         </Box>
@@ -1536,8 +1540,6 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
 
   const { grouped, progress, total, completed } = submissionsData;
 
-  console.log(submissionsData);
-
   const showPendingAgreementCard = !isAgreementApproved && overviewData?.agreementStatus;
   const showLogisticsCard = isDelivery;
   const canShowSubmissions =
@@ -1999,6 +2001,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
           </Collapse>
         </Card>
       )}
+
       {/* Collapsible Submission Cards */}
       {canShowSubmissions && (
         <Stack spacing={2} sx={{ px: 1, pb: 1, mx: -1 }}>

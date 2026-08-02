@@ -94,10 +94,6 @@ export default function AgreementTemplate({
   DATE,
   IC_NUMBER,
   FREELANCER_FULL_NAME,
-  ADDRESS,
-  ccEmail,
-  ccPhoneNumber,
-  effectiveDate,
   creatorPayment,
   CREATOR_NAME,
   CREATOR_ACCOUNT_NUMBER,
@@ -110,6 +106,7 @@ export default function AgreementTemplate({
   ADMIN_NAME,
   SIGNATURE,
   isForSurfShark = false,
+  isSeedingCampaign = false,
 }) {
   return (
     <Document pageLayout="singlePage">
@@ -410,52 +407,70 @@ export default function AgreementTemplate({
       <Page size="A4" style={styles.page}>
         <View style={{ marginHorizontal: 30 }}>
           <Image src="/logo.png" style={styles.image} />
-          <View style={styles.section}>
-            <Text style={styles.titlee}>4. Remuneration</Text>
-            <Text>
-              The Freelancer shall receive a payment of{' '}
-              <Text style={styles.bold}>{creatorPayment}</Text> upon completion of the accepted and
-              approved services & deliverables for the duration of this agreement.
-            </Text>
-            <Text style={{ marginTop: 10 }}>
-              The Freelancer shall receive an invoice from Cult Creative and henceforth Cult
-              Creative shall pay the invoice within twenty-eight (28) calendar days of the date on
-              the invoice. If the 28th day falls on a weekend or public holiday, the payment shall
-              be made on the next business day. The payment shall be paid via bank transfer as
-              follows:
-            </Text>
-          </View>
 
-          <View style={styles.paymentView}>
-            <Text>Name On Account: </Text>
-            <Text
-              style={{
-                fontWeight: 600,
-              }}
-            >
-              {CREATOR_BANK_ACCOUNT_NAME || CREATOR_NAME}
-            </Text>
-          </View>
-          <View style={styles.paymentView}>
-            <Text>Account Number: </Text>
-            <Text
-              style={{
-                fontWeight: 600,
-              }}
-            >
-              {CREATOR_ACCOUNT_NUMBER}
-            </Text>
-          </View>
-          <View style={styles.paymentView}>
-            <Text>Bank Name: </Text>
-            <Text
-              style={{
-                fontWeight: 600,
-              }}
-            >
-              {CREATOR_BANK_NAME}
-            </Text>
-          </View>
+          {isSeedingCampaign ? (
+            <View style={styles.section}>
+              <Text style={styles.titlee}>4. Remuneration</Text>
+
+              <Text>
+                The Freelancer will receive a gifting amount of up to RM350. This gift may be used
+                exclusively for purchases from Cult Creative’s client&apos;s website or store, with
+                the purchased items belonging to the Freelancer. These items are not on loan and are
+                to be incorporated into the agreed-upon deliverables, including content creation and
+                showcasing the items as described above. This credit is provided in lieu of
+                additional financial compensation, and no other payments will be made beyond this
+                arrangement.
+              </Text>
+            </View>
+          ) : (
+            <>
+              <View style={styles.section}>
+                <Text style={styles.titlee}>4. Remuneration</Text>
+                <Text>
+                  The Freelancer shall receive a payment of{' '}
+                  <Text style={styles.bold}>{creatorPayment}</Text> upon completion of the accepted
+                  and approved services & deliverables for the duration of this agreement.
+                </Text>
+                <Text style={{ marginTop: 10 }}>
+                  The Freelancer shall receive an invoice from Cult Creative and henceforth Cult
+                  Creative shall pay the invoice within twenty-eight (28) calendar days of the date
+                  on the invoice. If the 28th day falls on a weekend or public holiday, the payment
+                  shall be made on the next business day. The payment shall be paid via bank
+                  transfer as follows:
+                </Text>
+              </View>
+              <View style={styles.paymentView}>
+                <Text>Name On Account: </Text>
+                <Text
+                  style={{
+                    fontWeight: 600,
+                  }}
+                >
+                  {CREATOR_BANK_ACCOUNT_NAME || CREATOR_NAME}
+                </Text>
+              </View>
+              <View style={styles.paymentView}>
+                <Text>Account Number: </Text>
+                <Text
+                  style={{
+                    fontWeight: 600,
+                  }}
+                >
+                  {CREATOR_ACCOUNT_NUMBER}
+                </Text>
+              </View>
+              <View style={styles.paymentView}>
+                <Text>Bank Name: </Text>
+                <Text
+                  style={{
+                    fontWeight: 600,
+                  }}
+                >
+                  {CREATOR_BANK_NAME}
+                </Text>
+              </View>
+            </>
+          )}
 
           <View style={styles.section}>
             <Text style={styles.titlee}>5. Duration</Text>

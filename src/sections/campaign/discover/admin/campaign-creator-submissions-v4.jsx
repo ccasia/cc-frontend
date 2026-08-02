@@ -122,7 +122,12 @@ ScrollingName.propTypes = {
   name: PropTypes.string.isRequired,
 };
 
-function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false, autoExpand = false }) {
+function CreatorAccordionWithSubmissions({
+  creator,
+  campaign,
+  isDisabled = false,
+  autoExpand = false,
+}) {
   // Get V4 submissions for this creator to check if they have any
   const { submissions, submissionsLoading } = useGetV4Submissions(campaign?.id, creator?.userId);
 
@@ -159,7 +164,14 @@ function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false
     return null;
   }
 
-  return <CreatorAccordion creator={creator} campaign={campaign} isDisabled={isDisabled} autoExpand={autoExpand} />;
+  return (
+    <CreatorAccordion
+      creator={creator}
+      campaign={campaign}
+      isDisabled={isDisabled}
+      autoExpand={autoExpand}
+    />
+  );
 }
 
 function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = false }) {
@@ -217,7 +229,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
         break;
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoExpand, submissionsLoading]);
 
   const handleSubmissionUpdate = useCallback(

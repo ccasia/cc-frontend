@@ -165,7 +165,6 @@ export default function FeedbackActions({
                 {loading ? 'Processing...' : 'Request a Change'}
               </Button>
             )}
-
             {legacyShowChangeRequestForm && (
               <Box
                 display="flex"
@@ -201,7 +200,6 @@ export default function FeedbackActions({
                 </Button>
               </Box>
             )}
-
             {legacyShowApproveButton && (
               <Button
                 variant="contained"
@@ -215,7 +213,6 @@ export default function FeedbackActions({
                 {loading ? 'Processing...' : !isClient ? 'Send to Client' : 'Approve'}
               </Button>
             )}
-
             {legacyShowAdminClientFeedbackActions && (
               <Box
                 sx={{
