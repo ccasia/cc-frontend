@@ -105,7 +105,7 @@ const CampaignAgreementEdit = ({
   const shortlistedRecord = agreement?.user?.shortlisted?.[0] || agreement?.shortlistedCreator;
   const pitchRecord = campaign?.pitch?.find((p) => p.userId === agreement?.user?.id);
 
-  const isSeedingCampaign = useMemo(() => campaign.campaignType === 'seeding_campaign', [campaign]);
+  const isSeedingCampaign = useMemo(() => campaign.campaignType === 'seedingCampaign', [campaign]);
 
   const toFollowerCount = (value) => {
     const parsed = parseInt(String(value ?? '').replace(/[^0-9]/g, ''), 10);
