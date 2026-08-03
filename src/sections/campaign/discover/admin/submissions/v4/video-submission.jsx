@@ -83,7 +83,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
   const showPostingLinkSection =
     postingLinkStatuses.includes(submission.status) &&
-    (campaign?.campaignType === 'normal' || campaign?.campaignType === 'seeding_campaign');
+    (campaign?.campaignType === 'normal' || campaign?.campaignType === 'seedingCampaign');
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
