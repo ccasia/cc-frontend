@@ -186,16 +186,6 @@ export default function CampaignItem({
     const adminUserIdMatch = admin.admin?.userId === user?.id;
     const adminUserMatch = admin.admin?.user?.id === user?.id;
 
-    console.log('Checking admin assignment:', {
-      adminId: admin.adminId,
-      adminUserId: admin.admin?.userId,
-      adminUser: admin.admin?.user?.id,
-      userId: user?.id,
-      adminIdMatch,
-      adminUserIdMatch,
-      adminUserMatch,
-    });
-
     return adminIdMatch || adminUserIdMatch || adminUserMatch;
   });
 

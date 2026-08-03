@@ -357,7 +357,7 @@ function ClientCard({ client }) {
 
 ClientCard.propTypes = { client: PropTypes.object.isRequired };
 
-export default function CSMWorkloadDrawer({ csm, onClose }) {
+export default function CSMWorkloadDrawer({ csm, dateRange, onClose }) {
   const open = !!csm;
   const [tab, setTab] = useState('campaigns');
   const [expandedActionRow, setExpandedActionRow] = useState(null);
@@ -368,11 +368,15 @@ export default function CSMWorkloadDrawer({ csm, onClose }) {
     setExpandedActionRow(null);
   }, [open, csm?.adminUserId]);
 
-  const { data, isLoading } = useSWR(
-    open ? endpoints.analytics.csmWorkloadDetail(csm.adminUserId) : null,
-    fetcher,
-    SWR_OPTS
-  );
+  const query =
+    open &&
+    `${endpoints.analytics.csmWorkloadDetail(csm.adminUserId)}${
+      dateRange
+        ? `?startDate=${encodeURIComponent(dateRange.startDate)}&endDate=${encodeURIComponent(dateRange.endDate)}`
+        : ''
+    }`;
+
+  const { data, isLoading } = useSWR(query || null, fetcher, SWR_OPTS);
 
   const detail = data?.data;
   const campaigns = useMemo(() => detail?.campaigns || [], [detail]);
@@ -818,5 +822,6 @@ export default function CSMWorkloadDrawer({ csm, onClose }) {
 
 CSMWorkloadDrawer.propTypes = {
   csm: PropTypes.object,
+  dateRange: PropTypes.object,
   onClose: PropTypes.func.isRequired,
 };
