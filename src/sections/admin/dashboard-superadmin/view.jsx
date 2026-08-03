@@ -68,7 +68,11 @@ const DashboardSuperadminView = () => {
   const [customAnchor, setCustomAnchor] = useState(null);
   const [customRange, setCustomRange] = useState({ startDate: '', endDate: '' });
 
-  const { data: dashboardStats, isLoading: statsLoading } = useSWR(endpoints.dashboard.stats, fetcher, SWR_OPTS);
+  const { data: dashboardStats, isLoading: statsLoading } = useSWR(
+    `${endpoints.dashboard.stats}?version=v4`,
+    fetcher,
+    SWR_OPTS
+  );
   const stats = dashboardStats?.data || {};
 
   const dateRange = useMemo(() => {
