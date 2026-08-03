@@ -129,6 +129,10 @@ function CampaignCard({ campaign }) {
       ? Math.min(100, Math.round((campaign.creatorBudgetSpent / campaign.creatorBudget) * 100))
       : 0;
 
+  const hasBudgetSpend = campaign.creatorBudgetSpent > 0;
+  const hasOtherCurrencySpend = campaign.creatorBudgetSpentOther?.length > 0;
+  const showCreatorBudget = campaign.creatorBudget != null || hasBudgetSpend || hasOtherCurrencySpend;
+
   return (
     <Box sx={{ bgcolor: '#fff', border: '1px solid #e5e7eb', borderRadius: 2, p: 2, boxShadow: '4px 4px 4px 0px #8D8D9440' }}>
       <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: 1.5 }}>
@@ -185,35 +189,51 @@ function CampaignCard({ campaign }) {
         </Typography>
       </Stack>
 
-      {campaign.creatorBudget != null && (
+      {showCreatorBudget && (
         <Box sx={{ borderTop: '1px solid #f3f4f6', mt: 1.5, pt: 1.5 }}>
           <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.6 }}>
             <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
               Creator Budget
             </Typography>
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#111827' }}>{budgetPct}%</Typography>
+            {campaign.creatorBudget != null && (
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#111827' }}>{budgetPct}%</Typography>
+            )}
           </Stack>
-          <LinearProgress
-            variant="determinate"
-            value={budgetPct}
-            sx={{
-              height: 6,
-              borderRadius: '999px',
-              bgcolor: '#f3f4f6',
-              '& .MuiLinearProgress-bar': {
-                background: 'linear-gradient(90deg, #111827 0%, #1340FF 100%)',
-                borderRadius: '999px',
-              },
-            }}
-          />
-          <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.6 }}>
+          {campaign.creatorBudget != null ? (
+            <>
+              <LinearProgress
+                variant="determinate"
+                value={budgetPct}
+                sx={{
+                  height: 6,
+                  borderRadius: '999px',
+                  bgcolor: '#f3f4f6',
+                  '& .MuiLinearProgress-bar': {
+                    background: 'linear-gradient(90deg, #111827 0%, #1340FF 100%)',
+                    borderRadius: '999px',
+                  },
+                }}
+              />
+              <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.6 }}>
+                <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                  {formatCurrencyAmount(campaign.creatorBudgetSpent, 'MYR')} spent
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                  of {formatCurrencyAmount(campaign.creatorBudget, 'MYR')}
+                </Typography>
+              </Stack>
+            </>
+          ) : (
             <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-              {formatCurrencyAmount(campaign.creatorBudgetSpent, 'MYR')} spent
+              {formatCurrencyAmount(campaign.creatorBudgetSpent, 'MYR')} spent (no credit-based cap set)
             </Typography>
-            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-              of {formatCurrencyAmount(campaign.creatorBudget, 'MYR')}
+          )}
+          {hasOtherCurrencySpend && (
+            <Typography variant="caption" sx={{ display: 'block', mt: 0.6, color: '#9ca3af' }}>
+              + {campaign.creatorBudgetSpentOther.map((o) => formatCurrencyAmount(o.amount, o.currency)).join(', ')}{' '}
+              spent (not included above)
             </Typography>
-          </Stack>
+          )}
         </Box>
       )}
     </Box>
