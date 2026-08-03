@@ -302,6 +302,8 @@ import { useQueries, useQueryClient } from '@tanstack/react-query';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { demoInsights, DEMO_CAMPAIGN_ID } from 'src/_mock/_demo-campaign';
+
 // Cap concurrent insight requests to respect the API's rate limits.
 // Shared at module scope so the limit holds across EVERY query in the hook,
 // not per-component. This replaces the manual batch-of-3 + 200ms delay.

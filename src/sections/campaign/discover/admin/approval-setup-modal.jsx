@@ -315,16 +315,15 @@ const ApprovalSetupModal = ({
                         const guestUsername = guestRawLink
                           ? extractUsernameFromProfileLink(guestRawLink)
                           : null;
+                        // eslint-disable-next-line no-nested-ternary
                         const guestHref = guestRawLink
                           ? guestRawLink.startsWith('http')
                             ? guestRawLink
                             : `https://${guestRawLink}`
                           : null;
                         const guestIsTiktok = pitch.selectedPlatform === 'tiktok';
-                        const commentValue = comments[pitch.id] ?? pitch.adminComments ?? '';
 
                         return (
-                        <React.Fragment key={pitch.id}>
                         <TableRow
                           sx={{
                             '& td': { borderBottom: 'none', borderColor: '#EAEAEA' },
@@ -456,38 +455,6 @@ const ApprovalSetupModal = ({
                             </IconButton>
                           </TableCell>
                         </TableRow>
-                        <TableRow
-                          sx={{
-                            '& td': { borderBottom: '1px solid', borderColor: '#EAEAEA' },
-                            bgcolor: 'transparent',
-                          }}
-                        >
-                          <TableCell colSpan={7} sx={{ px: 2, pt: 0, pb: 1.5 }}>
-                            <Typography
-                              sx={{
-                                mb: 0.5,
-                                fontFamily: 'Inter Display, Inter, sans-serif',
-                                fontWeight: 500,
-                                fontSize: '12px',
-                                lineHeight: '16px',
-                                color: 'text.secondary',
-                              }}
-                            >
-                              Comments
-                            </Typography>
-                            <TextField
-                              fullWidth
-                              multiline
-                              minRows={2}
-                              placeholder="Add a comment for the approver..."
-                              value={commentValue}
-                              onChange={(e) => handleCommentChange(pitch.id, e.target.value)}
-                              size="small"
-                              sx={{ '& .MuiInputBase-root': { bgcolor: '#FFFFFF' } }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                        </React.Fragment>
                         );
                       })}
                     </TableBody>

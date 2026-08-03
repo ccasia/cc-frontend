@@ -8,6 +8,7 @@ import { formatNumber } from 'src/utils/socialMetricsCalculator';
 import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
+import StarRating from 'src/components/star-rating';
 
 import BookmarkButton from './BookmarkButton';
 import {
@@ -67,9 +68,7 @@ StatItem.propTypes = {
 };
 
 const DetailItem = ({ label, value }) => {
-  const values = (Array.isArray(value) ? value : [value]).filter(
-    (item) => item || item === 0
-  );
+  const values = (Array.isArray(value) ? value : [value]).filter((item) => item || item === 0);
 
   return (
     <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
@@ -489,7 +488,13 @@ const CreatorProfilePanel = ({
                     &nbsp;/ 5.0
                   </Typography>
                 </Stack>
-                <RatingStars rating={rating} />
+                <StarRating
+                  value={rating}
+                  activeColor="#FFC702"
+                  emptyColor="#D9D9D9"
+                  width={17}
+                  sx={{ alignItems: 'center' }}
+                />
               </Stack>
             </Box>
 

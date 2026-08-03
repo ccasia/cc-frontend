@@ -102,8 +102,8 @@ const DiscoveryTool = lazy(() => import('src/pages/dashboard/discovery-tool/disc
 
 // Client Demo Campaigns
 const DemoCampaigns = lazy(() => import('src/pages/dashboard/demo-campaigns/demo-campaigns'));
-const DemoCampaignDetails = lazy(() =>
-  import('src/pages/dashboard/demo-campaigns/demo-campaign-details')
+const DemoCampaignDetails = lazy(
+  () => import('src/pages/dashboard/demo-campaigns/demo-campaign-details')
 );
 
 // Roles
@@ -123,8 +123,8 @@ const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 // Credit Tier
 const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tier'));
 // Videos of the Month
-const VideoOfTheMonth = lazy(() =>
-  import('src/pages/dashboard/video-of-the-month/video-of-the-month')
+const VideoOfTheMonth = lazy(
+  () => import('src/pages/dashboard/video-of-the-month/video-of-the-month')
 );
 
 // Feedback
@@ -527,7 +527,18 @@ export const dashboardRoutes = [
               {
                 index: true,
                 element: (
-                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing', 'CSM', 'CSL']}>
+                  <RoleBasedGuard
+                    hasContent
+                    roles={[
+                      'superadmin',
+                      'BD',
+                      'god',
+                      'admin',
+                      'sales_and_marketing',
+                      'CSM',
+                      'CSL',
+                    ]}
+                  >
                     <CampaignBriefList />
                   </RoleBasedGuard>
                 ),
@@ -535,7 +546,18 @@ export const dashboardRoutes = [
               {
                 path: ':id',
                 element: (
-                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing', 'CSM', 'CSL']}>
+                  <RoleBasedGuard
+                    hasContent
+                    roles={[
+                      'superadmin',
+                      'BD',
+                      'god',
+                      'admin',
+                      'sales_and_marketing',
+                      'CSM',
+                      'CSL',
+                    ]}
+                  >
                     <CampaignBriefDetail />
                   </RoleBasedGuard>
                 ),

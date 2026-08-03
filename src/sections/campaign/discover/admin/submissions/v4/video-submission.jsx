@@ -7,9 +7,9 @@ import {
   Card,
   Chip,
   Stack,
+  Avatar,
   Button,
   Slider,
-  Avatar,
   TextField,
   Typography,
   IconButton,
@@ -21,6 +21,7 @@ import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { updateDemoV4Submission } from 'src/_mock/_demo-campaign';
 
 import Iconify from 'src/components/iconify';
 import { useNps } from 'src/components/nps-feedback/nps-provider';
@@ -43,7 +44,9 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   const { showNpsModal } = useNps();
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  const isClient = userRole.toLowerCase() === 'client';
+  const normalizedUserRole = userRole.toLowerCase();
+  const isClient = normalizedUserRole === 'client' || normalizedUserRole === 'client_demo';
+  const isDemoCampaign = Boolean(campaign?.isDemo);
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
@@ -56,15 +59,9 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
     const clientVisible =
       !isClient ||
-      [
-        'SENT_TO_CLIENT',
-        'CLIENT_FEEDBACK',
-        'CLIENT_APPROVED',
-        'APPROVED',
-        'REJECTED',
-        'APPROVE_LINK',
-        'POSTED',
-      ].includes(submission.status);
+      ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'CLIENT_APPROVED', 'APPROVED', 'REJECTED', 'APPROVE_LINK','POSTED'].includes(
+        submission.status
+      );
 
     return {
       video,
@@ -80,10 +77,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     submissionProps;
 
   const postingLinkStatuses = ['APPROVED', 'CLIENT_APPROVED', 'APPROVE_LINK', 'POSTED', 'REJECTED'];
-
   const showPostingLinkSection =
-    postingLinkStatuses.includes(submission.status) &&
-    (campaign?.campaignType === 'normal' || campaign?.campaignType === 'seedingCampaign');
+    postingLinkStatuses.includes(submission.status) && campaign?.campaignType === 'normal';
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
@@ -265,6 +260,42 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         setLoading(true);
         setLocalActionInProgress(true);
 
+        if (isDemoCampaign) {
+          const feedbackDeadline = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+          const feedbackSentByName = user?.name || 'Demo account';
+
+          updateDemoV4Submission(submission.id, (current) => ({
+            status: 'CLIENT_FEEDBACK',
+            updatedAt: new Date().toISOString(),
+            video: (current.video || []).map((item) =>
+              item.id === videoIdToPublish
+                ? {
+                    ...item,
+                    status: 'CLIENT_FEEDBACK',
+                    feedbackDeadline,
+                    feedbackSentByName,
+                  }
+                : item
+            ),
+          }));
+
+          setLocalFeedbackDeadline(feedbackDeadline);
+          setLocalFeedbackSentByName(feedbackSentByName);
+
+          if (shouldRefresh) {
+            enqueueSnackbar('Feedback for current video locked', { variant: 'success' });
+          } else {
+            enqueueSnackbar('Feedback sent to Admin', { variant: 'success' });
+          }
+
+          onUpdate?.(shouldRefresh);
+
+          setTimeout(() => {
+            setLocalActionInProgress(false);
+          }, 500);
+          return;
+        }
+
         const response = await axiosInstance.post('/api/submissions/v4/approve/client', {
           submissionId: submission.id,
           action: 'request_changes',
@@ -305,7 +336,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         }
       }
     },
-    [submission.id, onUpdate, showNpsModal, localActionInProgress]
+    [isDemoCampaign, submission.id, user?.name, onUpdate, showNpsModal, localActionInProgress]
   );
 
   const videoControls = useMemo(
@@ -1171,6 +1202,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
               ref={feedbackRef}
               submissionId={submission.id}
               videoId={modalVideoId || clientVideo?.id || video?.id}
+              isDemo={isDemoCampaign}
               currentVideoTime={videoControls.formatTime(modalCurrentTime || 0)}
               onSeek={onSeekTo}
               onPause={onPause}
@@ -1213,6 +1245,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
             onPause={onPause}
             onPlay={onPlay}
             submission={modalSubmission || submission}
+            campaign={campaign}
             videoId={modalVideoId || video?.id}
             videoPage={videoPage}
             setVideoPage={setVideoPage}

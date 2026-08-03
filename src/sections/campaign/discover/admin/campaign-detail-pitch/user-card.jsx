@@ -11,6 +11,8 @@ import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 import { alpha, useTheme } from '@mui/material/styles';
 
+import { getUserDisplay } from 'src/utils/user-display';
+
 import { _socials, _userAbout } from 'src/_mock';
 import { AvatarShape } from 'src/assets/illustrations';
 
@@ -21,6 +23,7 @@ import Iconify from 'src/components/iconify';
 
 export default function UserCard({ creator, campaignId, selectedPitch }) {
   const theme = useTheme();
+  const cardUser = getUserDisplay(creator?.user);
 
   return (
     <Box component="div">
@@ -48,7 +51,7 @@ export default function UserCard({ creator, campaignId, selectedPitch }) {
           />
 
           <Avatar
-            alt={creator?.user?.name}
+            alt={cardUser.name}
             src={creator?.user?.photoURL}
             sx={{
               width: 64,
@@ -74,7 +77,7 @@ export default function UserCard({ creator, campaignId, selectedPitch }) {
           sx={{ mt: 7, mb: 1 }}
           primary={
             <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-              {creator?.user?.name}
+              {cardUser.name}
               <Iconify icon="mdi:tick-decagram" color="success.main" />
             </Stack>
           }

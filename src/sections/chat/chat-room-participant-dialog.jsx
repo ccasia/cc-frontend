@@ -8,11 +8,14 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogContent from '@mui/material/DialogContent';
 
+import { getUserDisplay } from 'src/utils/user-display';
+
 import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
 export default function ChatRoomParticipantDialog({ participant, open, onClose }) {
+  const participantDisplay = getUserDisplay(participant);
   return (
     <Dialog fullWidth maxWidth="xs" open={open} onClose={onClose}>
       <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}>
@@ -20,7 +23,7 @@ export default function ChatRoomParticipantDialog({ participant, open, onClose }
       </IconButton>
       <DialogContent sx={{ py: 5, px: 3, display: 'flex' }}>
         <Avatar
-          alt={participant.name}
+          alt={participantDisplay.name}
           src={participant.avatarUrl}
           sx={{ width: 96, height: 96, mr: 3 }}
         />
@@ -30,7 +33,7 @@ export default function ChatRoomParticipantDialog({ participant, open, onClose }
             {participant.role}
           </Typography>
 
-          <Typography variant="subtitle1">{participant.name}</Typography>
+          <Typography variant="subtitle1">{participantDisplay.name}</Typography>
           <Stack direction="row" sx={{ typography: 'caption', color: 'text.disabled' }}>
             <Iconify
               icon="mingcute:location-fill"

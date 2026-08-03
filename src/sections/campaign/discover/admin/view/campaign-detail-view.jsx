@@ -56,7 +56,7 @@ import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-vie
 
 import CampaignFAQ from '../campaign-faq';
 import CampaignOverview from '../campaign-overview';
-
+import CampaignAnalysis from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
@@ -69,9 +69,6 @@ import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
-import CampaignAnayltics from '../campaign-analytics';
-import CampaignAnalysis from '../campaign-analytics';
-import CampaignAnalytics from '../campaign-analyticss';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -109,8 +106,16 @@ const clientAllowedTabs = [
   'faq',
 ];
 
-// Demo campaigns only have brief data — hide creator/agreement/deliverable/analytics/invoice tabs.
-const demoAllowedTabs = ['overview', 'campaign-content', 'logistics', 'faq'];
+// Demo campaigns mirror the client layout (no Agreements/Invoices tabs). Data is fully mocked.
+const demoAllowedTabs = [
+  'overview',
+  'campaign-content',
+  'creator-master-list',
+  'submissions-v4',
+  'analytics',
+  'logistics',
+  'faq',
+];
 
 const CampaignDetailView = ({
   id,
@@ -129,8 +134,6 @@ const CampaignDetailView = ({
     mutate: campaignMutate,
   } = useGetCampaignByIdScoped(id, publicReadonly, isDemo);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const reminderRef = useRef(null);
   const loading = useBoolean();
   const [url, setUrl] = useState('');
   const copyDialog = useBoolean();
@@ -236,15 +239,17 @@ const CampaignDetailView = ({
   };
 
   const [currentTab, setCurrentTab] = useState(
-    forcedTab ||
-      searchParams.get('tab') ||
-      localStorage.getItem('campaigndetail') ||
-      'campaign-content'
+    forcedTab || searchParams.get('tab') || localStorage.getItem('campaigndetail') || 'campaign-content'
   );
 
   // Check if user is client (demo sessions render the read-only client view)
   const isClient =
     publicReadonly || isDemo || user?.role === 'client' || user?.admin?.role?.name === 'Client';
+
+  const getClientAllowedTabs = useCallback(
+    () => (isDemo ? demoAllowedTabs : getAllowedTabs(campaign?.submissionVersion)),
+    [isDemo, campaign?.submissionVersion]
+  );
 
   // Check user roles for activation
   const isCSL = user?.admin?.role?.name === 'CSL';
@@ -279,29 +284,31 @@ const CampaignDetailView = ({
 
   // Check if current tab is valid for client users
   useEffect(() => {
-    const allowed = isDemo ? demoAllowedTabs : getAllowedTabs(campaign?.submissionVersion);
+    const allowed = getClientAllowedTabs();
     if (isClient && !allowed.includes(currentTab)) {
       setCurrentTab('overview');
       localStorage.setItem('campaigndetail', 'overview');
     }
-  }, [currentTab, isClient, isDemo, campaign?.submissionVersion]);
+  }, [currentTab, isClient, getClientAllowedTabs]);
 
   // Approval public page can force a specific readonly background tab.
   useEffect(() => {
     if (!forcedTab) return;
-    if (isClient && !getAllowedTabs(campaign?.submissionVersion).includes(forcedTab)) return;
+    const allowed = getClientAllowedTabs();
+    if (isClient && !allowed.includes(forcedTab)) return;
     setCurrentTab(forcedTab);
-  }, [forcedTab, isClient, campaign?.submissionVersion]);
+  }, [forcedTab, isClient, getClientAllowedTabs]);
 
   const handleChangeTab = useCallback(
     (event, newValue) => {
-      if (isClient && !getAllowedTabs(campaign?.submissionVersion).includes(newValue)) {
+      const allowed = getClientAllowedTabs();
+      if (isClient && !allowed.includes(newValue)) {
         return;
       }
       localStorage.setItem('campaigndetail', newValue);
       setCurrentTab(newValue);
     },
-    [isClient, campaign?.submissionVersion]
+    [isClient, getClientAllowedTabs]
   );
 
   // Allow children to request tab switching via a window event
@@ -309,13 +316,14 @@ const CampaignDetailView = ({
     const handleSwitchTab = (e) => {
       const targetTab = e?.detail;
       if (typeof targetTab !== 'string') return;
-      if (isClient && !getAllowedTabs(campaign?.submissionVersion).includes(targetTab)) return;
+      const allowed = getClientAllowedTabs();
+      if (isClient && !allowed.includes(targetTab)) return;
       localStorage.setItem('campaigndetail', targetTab);
       setCurrentTab(targetTab);
     };
     window.addEventListener('switchCampaignTab', handleSwitchTab);
     return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
-  }, [isClient, campaign?.submissionVersion]);
+  }, [isClient, getClientAllowedTabs]);
 
   const { campaigns: campaignInvoices } = useGetInvoicesByCampId(isDemo ? null : id);
 
@@ -468,7 +476,7 @@ const CampaignDetailView = ({
                 { label: 'Campaign Analytics', value: 'analytics' },
                 campaign?.logisticsType && campaign.logisticsType !== ''
                   ? {
-                      label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                      label: 'Logistics',
                       value: 'logistics',
                     }
                   : null,
@@ -515,7 +523,7 @@ const CampaignDetailView = ({
                 },
                 campaign?.logisticsType && campaign.logisticsType !== ''
                   ? {
-                      label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                      label: 'Logistics',
                       value: 'logistics',
                     }
                   : null,
@@ -581,16 +589,6 @@ const CampaignDetailView = ({
       </Stack>
     </Box>
   );
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (reminderRef.current && !reminderRef.current.contains(event.target)) {
-        setAnchorEl(false);
-      }
-    };
-    window.addEventListener('click', handleClickOutside);
-    return () => window.removeEventListener('click', handleClickOutside);
-  }, []);
 
   const generatePublicUrl = async () => {
     try {
@@ -660,7 +658,7 @@ const CampaignDetailView = ({
           <CampaignAgreements
             campaign={campaign}
             campaignMutate={campaignMutate}
-            isDisabled={isDisabled}
+            isDisabled={isDisabled || isDemo}
           />
         );
       case 'logistics':
@@ -670,7 +668,7 @@ const CampaignDetailView = ({
             openBulkAssign={bulkAssign.value}
             setOpenBulkAssign={bulkAssign.setValue}
             isAdmin={!isClient}
-            isDisabled={isDisabled}
+            isDisabled={isDisabled || isDemo}
             isSuperAdmin={isSuperAdmin}
           />
         );
@@ -679,7 +677,7 @@ const CampaignDetailView = ({
           <CampaignInvoicesList
             campId={campaign?.id}
             campaignMutate={campaignMutate}
-            isDisabled={isDisabled}
+            isDisabled={isDisabled || isDemo}
           />
         );
       case 'client':
@@ -703,7 +701,13 @@ const CampaignDetailView = ({
           <CampaignCreatorDeliverables campaign={campaign} isDisabled={isDisabled} />
         );
       case 'submissions-v4':
-        return <CampaignCreatorSubmissionsV4 campaign={campaign} isDisabled={isDisabled} />;
+        return (
+          <CampaignCreatorSubmissionsV4
+            campaign={campaign}
+            isDisabled={isDisabled || isDemo}
+            onRated={campaignMutate}
+          />
+        );
       case 'analytics':
         return (
           <CampaignAnalysis

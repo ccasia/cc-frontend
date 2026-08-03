@@ -77,6 +77,10 @@ export const endpoints = {
     avgSubmissionResponseDetails: '/api/analytics/v2/avg-submission-response/details',
     clientRejectionRate: '/api/analytics/v2/client-rejection-rate',
     creditsPerCS: '/api/analytics/v2/credits-per-cs',
+    csmWorkload: '/api/analytics/v2/csm-workload',
+    csmWorkloadDetail: (adminUserId) => `/api/analytics/v2/csm-workload/${adminUserId}`,
+    campaignsOverview: '/api/analytics/v2/campaigns-overview',
+    clientsOverview: '/api/analytics/v2/clients-overview',
     rejectionReasons: '/api/analytics/v2/rejection-reasons',
     requireChangesRate: '/api/analytics/v2/require-changes-rate',
     topShortlistedCreators: '/api/analytics/v2/top-shortlisted-creators',
@@ -247,6 +251,7 @@ export const endpoints = {
     getDefaultTimeline: '/api/campaign/defaultTimeline',
     getTimelineType: '/api/campaign/timelineType',
     getAllActiveCampaign: '/api/campaign/getAllActiveCampaign',
+    rateCreator: '/api/campaign/rateCreator',
     getAllCampaigns: '/api/campaign/getAllCampaignsFinance',
     getMatchedCampaign: '/api/campaign/matchCampaignWithCreator',
     getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
@@ -364,8 +369,7 @@ export const endpoints = {
         `/api/submissions/v4/submission/${submissionId}/send-to-creator`,
       sendToClient: (submissionId) =>
         `/api/submissions/v4/submission/${submissionId}/send-to-client`,
-      updateCaption: (submissionId) =>
-        `/api/submissions/v4/submission/${submissionId}/caption`,
+      updateCaption: (submissionId) => `/api/submissions/v4/submission/${submissionId}/caption`,
       resolveComment: (commentId) => `/api/submissions/v4/comments/${commentId}/resolve`,
       toggleCommentVisibility: (commentId) =>
         `/api/submissions/v4/comments/${commentId}/visibility`,
@@ -453,6 +457,12 @@ export const endpoints = {
     getCreatorInvoice: `/api/invoice/creatorInvoice`,
     delete: (id) => `/api/invoice/${id}`,
   },
+  finance: {
+    dashboard: '/api/finance/dashboard',
+    invoices: '/api/finance/invoices',
+    newClients: '/api/finance/new-clients',
+    campaignBreakdown: (companyId) => `/api/finance/client/${companyId}/campaign-breakdown`,
+  },
   agreementTemplate: {
     all: '/api/campaign/template',
     byId: (id) => `/api/campaign/template/${id}`,
@@ -496,6 +506,8 @@ export const endpoints = {
 
     // BD-authored brief flow
     list: '/api/briefs',
+    bdDashboard: '/api/briefs/bd-dashboard',
+    bdOverview: '/api/briefs/bd-overview',
     create: '/api/briefs',
     get: (id) => `/api/briefs/${id}`,
     patch: (id) => `/api/briefs/${id}`,
@@ -503,7 +515,10 @@ export const endpoints = {
     approve: (id) => `/api/briefs/${id}/approve`,
     reset: (id) => `/api/briefs/${id}/reset`,
     handover: (id) => `/api/briefs/${id}/handover`,
+    lost: (id) => `/api/briefs/${id}/lost`,
+    hold: (id) => `/api/briefs/${id}/hold`,
     assignCsm: (id) => `/api/briefs/${id}/assign-csm`,
+    finalize: (id) => `/api/briefs/${id}/finalize`,
     attachments: (id) => `/api/briefs/${id}/attachments`,
     delete: (id) => `/api/briefs/${id}`,
 

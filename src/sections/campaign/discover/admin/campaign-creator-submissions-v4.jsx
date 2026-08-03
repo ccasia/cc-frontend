@@ -1,30 +1,41 @@
 import PropTypes from 'prop-types';
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-
+import { enqueueSnackbar } from 'notistack';
 import { useSearchParams } from 'react-router-dom';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
+  Chip,
   Stack,
   Avatar,
   Button,
+  Dialog,
+  Divider,
   Tooltip,
   Collapse,
   TextField,
   Typography,
+  IconButton,
+  DialogTitle,
   useMediaQuery,
+  DialogContent,
+  DialogActions,
   InputAdornment,
   CircularProgress,
 } from '@mui/material';
 
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
 
+import { getUserDisplay } from 'src/utils/user-display';
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 import { getStatusColor } from 'src/contants/statusColors';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
+import StarRating from 'src/components/star-rating';
 import EmptyContent from 'src/components/empty-content';
 
 import V4VideoSubmission from './submissions/v4/video-submission';
@@ -122,10 +133,13 @@ ScrollingName.propTypes = {
   name: PropTypes.string.isRequired,
 };
 
+// ----------------------------------------------------------------------
+
 function CreatorAccordionWithSubmissions({
   creator,
   campaign,
   isDisabled = false,
+  onRated,
   autoExpand = false,
 }) {
   // Get V4 submissions for this creator to check if they have any
@@ -169,19 +183,47 @@ function CreatorAccordionWithSubmissions({
       creator={creator}
       campaign={campaign}
       isDisabled={isDisabled}
+      onRated={onRated}
       autoExpand={autoExpand}
     />
   );
 }
 
-function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = false }) {
+function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, autoExpand = false }) {
   const { user } = useAuthContext();
+  const creatorDisplay = getUserDisplay(creator?.user);
   const { socket } = useSocketContext();
   const [expandedSubmission, setExpandedSubmission] = useState(null);
   const [renderedSubmission, setRenderedSubmission] = useState(null);
+  const [rateDialogOpen, setRateDialogOpen] = useState(false);
+  const [selectedStars, setSelectedStars] = useState(0);
+  const [hoveredStars, setHoveredStars] = useState(0);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [ratingNote, setRatingNote] = useState('');
+  const [submittingRating, setSubmittingRating] = useState(false);
+
+  const theme = useTheme();
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  const isClient = userRole.toLowerCase() === 'client';
+  // Treat client_demo as a (view-only) client so the demo renders the client
+  // submission view rather than the admin view. Actions are gated by isDisabled
+  // (the demo passes isDisabled/isDemo down from campaign-detail-view).
+  const isClient = userRole.toLowerCase() === 'client' || userRole.toLowerCase() === 'client_demo';
+  // The demo/showcase role can re-rate freely; everyone else rates once.
+  const isDemo = userRole.toLowerCase() === 'client_demo';
+
+  // Each side owns its own rating; the button/dialog surface differs by role.
+  const ownRating = isClient ? creator.clientRating || 0 : creator.adminRating || 0;
+  const counterpartRating = isClient ? creator.adminRating || 0 : creator.clientRating || 0;
+  const finalRating =
+    ownRating > 0 && counterpartRating > 0 ? (ownRating + counterpartRating) / 2 : 0;
+  const [rating, setRating] = useState(finalRating || ownRating || 0);
+
+  // Each side may only rate once. Once this side has rated, the dialog opens
+  // read-only (view the score + breakdown, no editing/re-submit). The demo is
+  // exempt so the showcase can be re-rated.
+  const hasRated = isClient ? Boolean(creator.clientRatedAt) : Boolean(creator.adminRatedAt);
+  const isReadOnly = hasRated && !isDemo;
 
   const displayProducts = useMemo(() => {
     if (!creator || !campaign?.logistics?.length) return '';
@@ -203,6 +245,50 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
     creator?.userId
   );
 
+  const RATING_TAG_OPTIONS = ['On Brief', 'Creative', 'Easy to work with', 'On Time'];
+
+  const handleOpenRateDialog = () => {
+    setSelectedStars(ownRating);
+    setHoveredStars(0);
+    // Tags/note are admin-only; clients rate stars only.
+    setSelectedTags(isClient ? [] : creator.adminRatingTags || []);
+    setRatingNote(isClient ? '' : creator.adminRatingNote || '');
+    setRateDialogOpen(true);
+  };
+
+  const handleToggleTag = (tag) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleSubmitRating = async () => {
+    setSubmittingRating(true);
+    try {
+      await axiosInstance.post(endpoints.campaign.rateCreator, {
+        campaignId: campaign.id,
+        creatorId: creator.userId,
+        rating: selectedStars,
+        tags: isClient ? [] : selectedTags,
+        note: isClient ? '' : ratingNote,
+      });
+      setRating(counterpartRating > 0 ? (selectedStars + counterpartRating) / 2 : selectedStars);
+      setRateDialogOpen(false);
+      // Re-fetch the campaign so creator.clientRating/clientRatedAt (and the
+      // read-only gate) reflect the new rating instead of the stale prop.
+      await onRated?.();
+      enqueueSnackbar('Rating submitted successfully', { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar(error?.message || 'Failed to submit rating', { variant: 'error' });
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
+  useEffect(() => {
+    setRating(finalRating || ownRating || 0);
+  }, [finalRating, ownRating]);
+
   const handleListUpdate = useCallback(() => {
     submissionsMutate();
   }, [submissionsMutate]);
@@ -215,19 +301,22 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
       { prefix: 'rawFootage', list: grouped.rawFootage },
       { prefix: 'photo', list: grouped.photos },
     ];
-    for (const { prefix, list } of groupEntries) {
-      const pending = (list || []).find(
-        (s) =>
-          s.status === 'PENDING_REVIEW' ||
-          s.status === 'APPROVE_LINK' ||
-          s.status === 'CLIENT_FEEDBACK'
-      );
-      if (pending) {
-        const key = `${prefix}-${pending.id}`;
-        setExpandedSubmission(key);
-        setRenderedSubmission(key);
-        break;
-      }
+    const pendingEntry = groupEntries
+      .map(({ prefix, list }) => ({
+        prefix,
+        pending: (list || []).find(
+          (s) =>
+            s.status === 'PENDING_REVIEW' ||
+            s.status === 'APPROVE_LINK' ||
+            s.status === 'CLIENT_FEEDBACK'
+        ),
+      }))
+      .find(({ pending }) => pending);
+
+    if (pendingEntry) {
+      const key = `${pendingEntry.prefix}-${pendingEntry.pending.id}`;
+      setExpandedSubmission(key);
+      setRenderedSubmission(key);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoExpand, submissionsLoading]);
@@ -859,7 +948,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
         >
           <Avatar
             src={creator.user?.photoURL}
-            alt={creator.user?.name}
+            alt={creatorDisplay.name}
             sx={{
               width: { xs: 32, sm: 35 },
               height: { xs: 32, sm: 35 },
@@ -867,11 +956,11 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
               flexShrink: 0,
             }}
           >
-            {creator.user?.name?.charAt(0).toUpperCase()}
+            {creatorDisplay.name?.charAt(0).toUpperCase()}
           </Avatar>
 
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Tooltip title={creator.user?.name || 'Unknown Creator'} arrow>
+            <Tooltip title={creatorDisplay.name || 'Unknown Creator'} arrow>
               <Typography
                 variant="subtitle1"
                 noWrap
@@ -881,7 +970,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
                   fontSize: { xs: '0.9rem', sm: '1rem' },
                 }}
               >
-                {creator.user?.name || 'Unknown Creator'}
+                {creatorDisplay.name || 'Unknown Creator'}
               </Typography>
             </Tooltip>
             {displayProducts && (
@@ -936,6 +1025,90 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
             return renderSubmissionPills();
           })()}
         </Box>
+
+        {/* Rating Section */}
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{
+            width: '2px',
+            bgcolor: '#BDBDBD',
+            border: 'none',
+            borderRadius: '1',
+            my: 1,
+            mx: 1.5,
+          }}
+        />
+        <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, pr: 1.5 }}>
+          {rating > 0 ? (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleOpenRateDialog}
+              startIcon={<Iconify icon="material-symbols:star-rounded" sx={{ color: '#FFC702' }} />}
+              sx={{
+                width: '61px',
+                height: '30px',
+                pt: '6px',
+                pr: '8px',
+                pb: '6px',
+                pl: '8px',
+                gap: '4px',
+                bgcolor: '#FFFFFF',
+                color: '#FFC702',
+                fontWeight: 700,
+                textTransform: 'none',
+                borderRadius: '8px',
+                border: '1.5px solid #FFC702',
+                transition: 'transform 0.06s ease',
+                '&:hover': {
+                  bgcolor: '#FFFFFF',
+                  border: '1.5px solid #FFC702',
+                },
+                '&:active': {
+                  transform: 'translateY(2px)',
+                },
+              }}
+            >
+              {rating.toFixed(1)}
+            </Button>
+          ) : (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleOpenRateDialog}
+              startIcon={<Iconify icon="material-symbols:star-rounded" sx={{ color: '#D9D9D9' }} />}
+              sx={{
+                width: '61px',
+                height: '30px',
+                pt: '6px',
+                pr: '8px',
+                pb: '9px',
+                pl: '8px',
+                gap: '4px',
+                bgcolor: '#FFFFFF',
+                color: '#212B36',
+                fontWeight: 700,
+                textTransform: 'none',
+                borderRadius: '8px',
+                border: '1.5px solid #D3D3D3',
+                boxShadow: 'inset 0px -3px 0px 0px #D3D3D3',
+                transition: 'transform 0.06s ease, box-shadow 0.06s ease',
+                '&:hover': {
+                  bgcolor: '#FFFFFF',
+                  border: '1.5px solid #D3D3D3',
+                  boxShadow: 'inset 0px -3px 0px 0px #D3D3D3',
+                },
+                '&:active': {
+                  transform: 'translateY(3px)',
+                  boxShadow: 'inset 0px 0px 0px 0px #D3D3D3',
+                },
+              }}
+            >
+              Rate
+            </Button>
+          )}
+        </Box>
       </Box>
 
       {/* Expanded Submission Content */}
@@ -947,6 +1120,352 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, autoExpand = 
       >
         <Box sx={{ p: 0, overflow: 'hidden' }}>{renderExpandedSubmission()}</Box>
       </Collapse>
+
+      {/* Rate Creator Dialog */}
+      <Dialog
+        open={rateDialogOpen}
+        onClose={() => setRateDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 2, bgcolor: '#EBEBEB' } }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 3,
+            pt: 3,
+          }}
+        >
+          <DialogTitle
+            sx={{
+              p: 0,
+              fontFamily: `${theme.typography.fontSecondaryFamily} !important`,
+              fontWeight: 'normal !important',
+              fontSize: '35px !important',
+              lineHeight: '1.2 !important',
+            }}
+          >
+            Rate {creator.user?.name || 'Creator'}
+          </DialogTitle>
+          <IconButton onClick={() => setRateDialogOpen(false)}>
+            <Iconify icon="eva:close-fill" />
+          </IconButton>
+        </Box>
+
+        <Divider sx={{ mt: 2 }} />
+
+        <DialogContent>
+          <Stack spacing={0.5} alignItems="center" sx={{ py: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              How was your experience working with {creator.user?.name?.split(' ')[0] || 'them'}?
+            </Typography>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ mt: 1 }}
+              onMouseLeave={() => setHoveredStars(0)}
+            >
+              {[1, 2, 3, 4, 5].map((star) => {
+                let starColor = '#D9D9D9';
+
+                if (hoveredStars > 0 && star <= hoveredStars) {
+                  starColor = 'rgba(255, 199, 2, 0.55)';
+                } else if (star <= selectedStars) {
+                  starColor = '#FFC702';
+                }
+
+                return (
+                  <IconButton
+                    key={star}
+                    onClick={() => setSelectedStars(star)}
+                    onMouseEnter={() => {
+                      if (!isReadOnly) setHoveredStars(star);
+                    }}
+                    disabled={isReadOnly}
+                    disableRipple={isReadOnly}
+                    sx={{ p: 0.5, cursor: isReadOnly ? 'default' : 'pointer' }}
+                  >
+                    <Iconify
+                      icon="material-symbols:star-rounded"
+                      width={40}
+                      sx={{ color: starColor }}
+                    />
+                  </IconButton>
+                );
+              })}
+            </Stack>
+          </Stack>
+
+          <Divider sx={{ mb: 3 }} />
+
+          {/* Tags and note are admin-only; clients rate stars only. */}
+          {!isClient && (
+            <>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  mb: 1.5,
+                  color: '#636366',
+                  fontFamily: theme.typography.fontFamily,
+                  fontWeight: 500,
+                }}
+              >
+                Tags (Optional)
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 3 }}>
+                {RATING_TAG_OPTIONS.map((tag) => {
+                  const isSelected = selectedTags.includes(tag);
+                  return (
+                    <Chip
+                      key={tag}
+                      label={tag}
+                      onClick={isReadOnly ? undefined : () => handleToggleTag(tag)}
+                      variant={isSelected ? 'filled' : 'outlined'}
+                      sx={{
+                        borderRadius: '16px',
+                        fontWeight: 600,
+                        ...(isReadOnly && { pointerEvents: 'none' }),
+                        ...(isSelected
+                          ? {
+                              bgcolor: '#1340FF',
+                              color: '#FFFFFF',
+                              '&:hover': { bgcolor: '#1340FF' },
+                            }
+                          : { color: 'text.secondary', borderColor: '#8E8E93' }),
+                      }}
+                    />
+                  );
+                })}
+              </Stack>
+
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  mb: 1.5,
+                  color: '#636366',
+                  fontFamily: theme.typography.fontFamily,
+                  fontWeight: 500,
+                }}
+              >
+                Add a note (Optional)
+              </Typography>
+              <TextField
+                multiline
+                rows={4}
+                fullWidth
+                disabled={isReadOnly}
+                placeholder="Share feedback on submissions, communication, or anything other brands should know..."
+                value={ratingNote}
+                onChange={(e) => setRatingNote(e.target.value)}
+                sx={{
+                  mb: 3,
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#FFFFFF',
+                  },
+                }}
+              />
+
+              <Divider sx={{ mb: 3 }} />
+            </>
+          )}
+
+          {(() => {
+            const yourCell = {
+              label: 'Your Rating',
+              value: selectedStars,
+              gold: true,
+            };
+            const counterpartCell = {
+              label: isClient ? 'Admin Rating' : 'Client Rating',
+              value: counterpartRating,
+              gold: counterpartRating > 0,
+            };
+            const [firstCell, secondCell] = isClient
+              ? [yourCell, counterpartCell]
+              : [counterpartCell, yourCell];
+
+            const livePreviewFinal =
+              selectedStars > 0 && counterpartRating > 0
+                ? (selectedStars + counterpartRating) / 2
+                : 0;
+
+            const renderCell = ({ label, value, gold }) => (
+              <Box sx={{ flex: 1 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: '#8E8E93',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  {label}
+                </Typography>
+                <StarRating
+                  value={gold ? value : 0}
+                  activeColor="#FFC702"
+                  emptyColor="#D9D9D9"
+                  width={20}
+                  sx={{ my: 1 }}
+                />
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: '12px' }}>
+                  {value > 0 ? value.toFixed(1) : 'NOT SET'}
+                </Typography>
+              </Box>
+            );
+
+            return (
+              <Stack direction="row" alignItems="center">
+                <Stack
+                  direction="row"
+                  sx={{
+                    flex: 1,
+                    bgcolor: '#FFFFFF',
+                    border: '1px solid #EBEBEB',
+                    borderRadius: '8px',
+                    py: 1.25,
+                    px: 2.5,
+                  }}
+                >
+                  {renderCell(firstCell)}
+
+                  <Stack alignItems="center" justifyContent="center" sx={{ px: 2 }}>
+                    <Typography variant="h5" sx={{ color: '#B0B0B5' }}>
+                      +
+                    </Typography>
+                  </Stack>
+
+                  {renderCell(secondCell)}
+
+                  <Stack alignItems="center" justifyContent="center" sx={{ px: 2 }}>
+                    <Typography variant="h5" sx={{ color: '#B0B0B5' }}>
+                      =
+                    </Typography>
+                  </Stack>
+                </Stack>
+
+                <Box
+                  sx={{
+                    width: '170px',
+                    flexShrink: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    gap: 1,
+                    py: 1.6,
+                    px: 3,
+                    ml: -2,
+                    mr: -0.5,
+                    position: 'relative',
+                    zIndex: 1,
+                    bgcolor: '#231F20',
+                    color: '#FFFFFF',
+                    borderRadius: '8px',
+                    boxShadow: '-4px 0px 8px 0px rgba(0,0,0,0.08)',
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    noWrap
+                    sx={{
+                      color: 'grey.500',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    Final Rating
+                  </Typography>
+                  <StarRating
+                    value={livePreviewFinal}
+                    activeColor="#FFC702"
+                    emptyColor="#FFFFFF"
+                    width={20}
+                    sx={{}}
+                  />
+                  <Typography variant="subtitle1" noWrap sx={{ fontWeight: 700, fontSize: '12px' }}>
+                    {livePreviewFinal > 0 ? livePreviewFinal.toFixed(1) : 'AWAITING BOTH'}
+                  </Typography>
+                </Box>
+              </Stack>
+            );
+          })()}
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 3,
+            display: 'flex',
+            justifyContent: isClient && !isReadOnly ? 'flex-end' : 'space-between',
+          }}
+        >
+          {isReadOnly ? (
+            <Typography variant="caption" color="text.secondary">
+              You&apos;ve already rated this creator
+            </Typography>
+          ) : (
+            !isClient && (
+              <Typography variant="caption" color="text.secondary">
+                Only final rating is shown to the creator
+              </Typography>
+            )
+          )}
+          {isReadOnly ? (
+            <Button
+              variant="outlined"
+              onClick={() => setRateDialogOpen(false)}
+              sx={{
+                height: '44px',
+                px: 3,
+                borderRadius: '8px',
+                color: '#231F20',
+                bgcolor: '#FFFFFF',
+                border: '1.5px solid #D3D3D3',
+                boxShadow: 'inset 0px -3px 0px 0px #D3D3D3',
+                transition: 'transform 0.08s ease, box-shadow 0.08s ease',
+                '&:hover': {
+                  bgcolor: '#FFFFFF',
+                  border: '1.5px solid #D3D3D3',
+                  transform: 'translateY(3px)',
+                  boxShadow: 'inset 0px 0px 0px 0px #D3D3D3',
+                },
+              }}
+            >
+              Close
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              disabled={selectedStars === 0 || submittingRating}
+              onClick={handleSubmitRating}
+              sx={{
+                width: '139px',
+                height: '44px',
+                pt: '10px',
+                pr: '16px',
+                pb: '13px',
+                pl: '16px',
+                gap: '6px',
+                borderRadius: '8px',
+                bgcolor: '#1340FF',
+                boxShadow: 'inset 0px -3px 0px 0px #0000001A',
+                '&:hover': { bgcolor: '#1340FF', boxShadow: 'inset 0px -3px 0px 0px #0000001A' },
+                '&.Mui-disabled': { bgcolor: '#A9B2F3', color: '#FFFFFF' },
+              }}
+            >
+              {submittingRating ? (
+                <CircularProgress size={20} sx={{ color: '#FFFFFF' }} />
+              ) : (
+                'Submit Rating'
+              )}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
@@ -955,16 +1474,19 @@ CreatorAccordionWithSubmissions.propTypes = {
   creator: PropTypes.object.isRequired,
   campaign: PropTypes.object.isRequired,
   isDisabled: PropTypes.bool,
+  onRated: PropTypes.func,
+  autoExpand: PropTypes.bool,
 };
 
 CreatorAccordion.propTypes = {
   creator: PropTypes.object.isRequired,
   campaign: PropTypes.object.isRequired,
   isDisabled: PropTypes.bool,
-  displayProducts: PropTypes.object,
+  onRated: PropTypes.func,
+  autoExpand: PropTypes.bool,
 };
 
-export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = false }) {
+export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = false, onRated }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [searchParams] = useSearchParams();
@@ -991,8 +1513,9 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
 
   const filteredCreators =
     sortedCreators.filter((creator) => {
-      const name = creator.user?.name?.toLowerCase() || '';
-      const email = creator.user?.email?.toLowerCase() || '';
+      const display = getUserDisplay(creator.user);
+      const name = display.name.toLowerCase();
+      const email = display.email.toLowerCase();
       const searchLower = searchTerm.toLowerCase();
       return name.includes(searchLower) || email.includes(searchLower);
     }) || [];
@@ -1168,6 +1691,7 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
                 creator={creator}
                 campaign={campaign}
                 isDisabled={isDisabled}
+                onRated={onRated}
                 autoExpand={!!creatorParam && searchTerm === creatorParam}
               />
             ))}
@@ -1181,4 +1705,5 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
 CampaignCreatorSubmissionsV4.propTypes = {
   campaign: PropTypes.object,
   isDisabled: PropTypes.bool,
+  onRated: PropTypes.func,
 };

@@ -14,12 +14,9 @@ import {
   Typography,
 } from '@mui/material';
 
+import { getUserDisplay } from 'src/utils/user-display';
 import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
-import {
-  formatNumber,
-  createSocialProfileUrl,
-  extractUsernameFromProfileLink,
-} from 'src/utils/media-kit-utils';
+import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 import { getOutreachStatusConfig } from 'src/contants/outreach';
 
@@ -40,7 +37,7 @@ const CreatorMasterListRow = ({
   logistics,
 }) => {
   const theme = useTheme();
-
+  const rowUser = getUserDisplay(pitch.user);
   // Profile link is stored on Creator model
   const instagramStats = pitch?.user?.creator?.instagramUser || null;
   const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
@@ -211,7 +208,7 @@ const CreatorMasterListRow = ({
         <Stack direction="row" alignItems="center" spacing={2}>
           <Avatar
             src={pitch.user?.photoURL}
-            alt={pitch.user?.name}
+            alt={rowUser.name}
             sx={{
               width: 40,
               height: 40,
@@ -220,26 +217,9 @@ const CreatorMasterListRow = ({
               boxShadow: theme.customShadows.z8,
             }}
           >
-            {pitch.user?.name?.charAt(0).toUpperCase()}
+            {rowUser.name?.charAt(0).toUpperCase()}
           </Avatar>
-          <Stack>
-            <Typography variant="body2">{pitch.user?.name}</Typography>
-            {displayProducts && (
-              <Box sx={{ display: 'inline-flex', gap: 0.5, alignItems: 'start' }}>
-                <Iconify
-                  icon="solar:box-bold"
-                  color="rgba(19, 64, 255, 1)"
-                  width={16}
-                  sx={{ fontWeight: 700 }}
-                />
-                <Typography
-                  sx={{ color: 'rgba(19, 64, 255, 1)', fontSize: '12px', fontWeight: 700 }}
-                >
-                  {displayProducts}
-                </Typography>
-              </Box>
-            )}
-          </Stack>
+          <Typography variant="body2">{rowUser.name}</Typography>
         </Stack>
       </TableCell>
       <TableCell>

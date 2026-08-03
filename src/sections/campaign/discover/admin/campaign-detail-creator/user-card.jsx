@@ -19,6 +19,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import { getUserDisplay } from 'src/utils/user-display';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -38,6 +39,7 @@ export default function UserCard({
   campaignMutate,
 }) {
   const theme = useTheme();
+  const cardUser = getUserDisplay(creator);
   const router = useRouter();
   const loading = useBoolean();
   const confirmationDialog = useBoolean();
@@ -141,7 +143,7 @@ export default function UserCard({
           {/* Left Side - Profile Picture & Name */}
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Avatar
-              alt={creator?.name}
+              alt={cardUser.name}
               src={creator?.photoURL}
               sx={{
                 width: 64,
@@ -151,7 +153,7 @@ export default function UserCard({
                 mb: 2,
               }}
             >
-              {creator?.name?.charAt(0).toUpperCase()}
+              {cardUser.name?.charAt(0).toUpperCase()}
             </Avatar>
             <Typography
               variant="subtitle1"
@@ -165,7 +167,7 @@ export default function UserCard({
                 whiteSpace: 'nowrap',
               }}
             >
-              {`${creator?.name?.charAt(0).toUpperCase()}${creator?.name?.slice(1)}`}
+              {`${cardUser.name?.charAt(0).toUpperCase()}${cardUser.name?.slice(1)}`}
             </Typography>
           </Box>
 

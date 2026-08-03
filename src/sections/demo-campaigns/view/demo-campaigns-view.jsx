@@ -110,7 +110,11 @@ export default function DemoCampaignsView() {
         <Stack spacing={2} sx={{ flexGrow: 1, width: '100%' }}>
           <Typography sx={SECTION_TITLE_SX}>Your Campaigns</Typography>
           <Box sx={{ width: '100%' }}>
-            <YourCampaignsTable campaigns={campaigns} isLoading={isLoading} />
+            <YourCampaignsTable
+              campaigns={campaigns}
+              isLoading={isLoading}
+              onCreateCampaign={create.onTrue}
+            />
           </Box>
         </Stack>
       </Stack>

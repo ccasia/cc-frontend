@@ -22,6 +22,7 @@ import {
 } from 'src/api/chat';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useAuthContext } from 'src/auth/hooks';
+import { getUserDisplay } from 'src/utils/user-display';
 
 // ----------------------------------------------------------------------
 
@@ -63,7 +64,7 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, onC
       return thread.title;
     }
     // For 1:1 chats, use other user's name
-    return otherUser?.name || 'Unknown';
+    return getUserDisplay(otherUser).name || 'Unknown';
   };
 
   // Get avatar URL: campaign brief images > thread photoURL > other user photoURL

@@ -722,6 +722,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
 
   // Check if user is a client
   const isClient = user?.role?.includes('client');
+  const canViewReport = isClient && (campaign?.isPCRReady || campaign?.isDemo);
 
   // Fetch manual creator entries
   const { entries: manualEntries, mutate: mutateManualEntries } =

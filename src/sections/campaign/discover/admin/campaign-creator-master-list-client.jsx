@@ -30,6 +30,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
+import { getUserDisplay } from 'src/utils/user-display';
 import { extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -125,8 +126,10 @@ const CampaignCreatorMasterListClient = ({
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const [isPitchModalReadOnly, setIsPitchModalReadOnly] = useState(false);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
+  const [demoPitchStatuses, setDemoPitchStatuses] = useState({});
   const mediaKit = useBoolean();
   const smDown = useResponsive('down', 'sm');
+  const isDemoCampaign = Boolean(campaign?.isDemo);
 
   // Bulk approval selection state
   const [selectedPitchIds, setSelectedPitchIds] = useState([]);
@@ -214,6 +217,7 @@ const CampaignCreatorMasterListClient = ({
   const [expandedSections, setExpandedSections] = useState({
     pending: true,
     approved: true,
+    maybe: true,
     rejected: false,
   });
 
@@ -259,14 +263,15 @@ const CampaignCreatorMasterListClient = ({
     if (campaign.submissionVersion === 'v4' && v3Pitches) {
       const creatorsFromV3 = v3Pitches
         .map((pitch) => {
-          const sc = shortlistByUserId.get(pitch.userId || pitch.user?.id);
+          const demoStatus = isDemoCampaign ? demoPitchStatuses[pitch.id] : null;
+
           return {
             id: pitch.id,
             pitchId: pitch.id,
             user: {
               id: pitch.userId || pitch.user?.id,
-              name: pitch.user?.name,
-              email: pitch.user?.email,
+              name: getUserDisplay(pitch.user).name,
+              email: getUserDisplay(pitch.user).email,
               ig_username: pitch.user?.creator?.instagramUser?.username,
               tiktok_username: pitch.user?.creator?.tiktokUser?.username,
               photoURL: pitch.user?.photoURL,
@@ -276,8 +281,8 @@ const CampaignCreatorMasterListClient = ({
               followerCount: pitch.user?.instagramUser?.followers_count,
               profileLink: pitch.user?.creator?.profileLink,
             },
-            status: pitch.displayStatus || pitch.status || 'undecided',
-            displayStatus: pitch.displayStatus || pitch.status || 'undecided',
+            status: demoStatus || pitch.displayStatus || pitch.status || 'undecided',
+            displayStatus: demoStatus || pitch.displayStatus || pitch.status || 'undecided',
             createdAt: pitch.createdAt || new Date().toISOString(),
             type: pitch.type || 'text',
             content: pitch.content || pitch.user?.creator?.about || 'No content available',
@@ -289,12 +294,9 @@ const CampaignCreatorMasterListClient = ({
             engagementRate: pitch.engagementRate,
             isShortlisted: false,
             outreachStatus: pitch.outreachStatus,
-            _creditTier: sc?.creditTier ?? null,
-            _creditPerVideo: sc?.creditPerVideo ?? null,
             selectedPlatform: pitch.selectedPlatform,
           };
         })
-
         .filter((creator) => !!creator.user && !!creator.user.id)
         .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT');
 
@@ -324,8 +326,9 @@ const CampaignCreatorMasterListClient = ({
             content: item.user?.creator?.about || 'No content available',
             isShortlisted: true,
             _creditTier: item.creditTier ?? null,
-            _creditPerVideo: item.creditPerVideo ?? null,
-            selectedPlatform: item.selectedPlatform,
+            _creditPerVideo: item?.creditPerVideo ?? null,
+            outreachStatus: item?.outreachStatus,
+            selectedPlatform: item?.selectedPlatform,
           }))
           .filter((creator) => creator.user && creator.user.creator)
       : [];
@@ -392,8 +395,8 @@ const CampaignCreatorMasterListClient = ({
             pitchId: pitch?.id || entry?.pitchId,
             user: {
               id: pitch?.userId || pitch?.user?.id,
-              name: pitch?.user?.name,
-              email: pitch?.user?.email,
+              name: getUserDisplay(pitch?.user).name,
+              email: getUserDisplay(pitch?.user).email,
               ig_username: pitch?.user?.creator?.instagramUser?.username,
               tiktok_username: pitch?.user?.creator?.tiktokUser?.username,
               photoURL: pitch?.user?.photoURL,
@@ -425,7 +428,7 @@ const CampaignCreatorMasterListClient = ({
     }
 
     return [];
-  }, [campaign, v3Pitches, fallbackApprovalEntries]);
+  }, [campaign, v3Pitches, fallbackApprovalEntries, isDemoCampaign, demoPitchStatuses]);
 
   const activeCount = creators.length || 0;
   const pendingCount =
@@ -435,6 +438,8 @@ const CampaignCreatorMasterListClient = ({
     creators.filter(
       (creator) => getStatusInfo(creator).normalizedStatus === 'APPROVED' && !creator.isShortlisted
     ).length || 0;
+  const maybeCount =
+    creators.filter((creator) => getStatusInfo(creator).normalizedStatus === 'MAYBE').length || 0;
   const rejectedCount =
     creators.filter((creator) => getStatusInfo(creator).normalizedStatus === 'REJECTED').length ||
     0;
@@ -457,6 +462,8 @@ const CampaignCreatorMasterListClient = ({
         (creator) =>
           getStatusInfo(creator).normalizedStatus === 'APPROVED' && !creator.isShortlisted
       );
+    } else if (selectedFilter === 'maybe') {
+      filtered = filtered.filter((creator) => getStatusInfo(creator).normalizedStatus === 'MAYBE');
     } else if (selectedFilter === 'rejected') {
       filtered = filtered.filter(
         (creator) => getStatusInfo(creator).normalizedStatus === 'REJECTED'
@@ -567,6 +574,25 @@ const CampaignCreatorMasterListClient = ({
   };
 
   const handlePitchUpdate = (updatedPitch) => {
+    if (isDemoCampaign && updatedPitch?.id) {
+      const nextStatus = updatedPitch.displayStatus || updatedPitch.status;
+
+      if (nextStatus) {
+        setDemoPitchStatuses((prev) => ({
+          ...prev,
+          [updatedPitch.id]: nextStatus,
+        }));
+        setSelectedPitch((prev) =>
+          prev?.id === updatedPitch.id
+            ? { ...prev, ...updatedPitch, status: nextStatus, displayStatus: nextStatus }
+            : prev
+        );
+        setSelectedPitchIds((prev) => prev.filter((id) => id !== updatedPitch.id));
+      }
+
+      return;
+    }
+
     // Refresh V3 pitches data when a pitch is updated (approved/rejected/maybe)
     if (fetchV3Pitches) {
       v3PitchesMutate();
@@ -588,11 +614,14 @@ const CampaignCreatorMasterListClient = ({
     const approved = filteredCreators.filter(
       (creator) => getStatusInfo(creator).normalizedStatus === 'APPROVED' && !creator.isShortlisted
     );
+    const maybe = filteredCreators.filter(
+      (creator) => getStatusInfo(creator).normalizedStatus === 'MAYBE'
+    );
     const rejected = filteredCreators.filter(
       (creator) => getStatusInfo(creator).normalizedStatus === 'REJECTED'
     );
 
-    return { pending, approved, rejected };
+    return { pending, approved, maybe, rejected };
   }, [filteredCreators]);
 
   // Show loading state for V3 pitches
@@ -619,6 +648,13 @@ const CampaignCreatorMasterListClient = ({
     if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
     return count.toString();
   };
+
+  const pendingCreators = filteredCreators.filter(
+    (p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW'
+  );
+
+  const allPendingSelected =
+    pendingCreators.length > 0 && pendingCreators.every((p) => selectedPitchIds.includes(p.id));
 
   // Mobile View
   if (!mdUp) {
@@ -658,6 +694,11 @@ const CampaignCreatorMasterListClient = ({
                 <Typography fontWeight={600}>Approved</Typography>
               </Stack>
             </MenuItem>
+            <MenuItem value="maybe">
+              <Stack direction="row" alignItems="center">
+                <Typography fontWeight={600}>Maybe</Typography>
+              </Stack>
+            </MenuItem>
             <MenuItem value="rejected">
               <Stack direction="row" alignItems="center">
                 <Typography fontWeight={600}>Rejected</Typography>
@@ -695,6 +736,19 @@ const CampaignCreatorMasterListClient = ({
                   onViewPitch={handleViewPitch}
                   formatFollowerCount={formatFollowerCount}
                   logistics={campaign?.logistics ?? []}
+                />
+              )}
+              {maybeCount > 0 && (
+                <MobileSection
+                  title="MAYBE"
+                  count={maybeCount}
+                  color="#FFC702"
+                  creators={groupedCreators.maybe}
+                  sectionKey="maybe"
+                  isExpanded={expandedSections.maybe}
+                  onToggle={toggleSection}
+                  onViewPitch={handleViewPitch}
+                  formatFollowerCount={formatFollowerCount}
                 />
               )}
               {rejectedCount > 0 && (
@@ -742,6 +796,18 @@ const CampaignCreatorMasterListClient = ({
               onViewPitch={handleViewPitch}
               formatFollowerCount={formatFollowerCount}
               logistics={campaign?.logistics ?? []}
+            />
+          ) : selectedFilter === 'maybe' ? (
+            <MobileSection
+              title="MAYBE"
+              count={maybeCount}
+              color="#FFC702"
+              creators={groupedCreators.maybe}
+              sectionKey="maybe"
+              isExpanded={expandedSections.maybe}
+              onToggle={toggleSection}
+              onViewPitch={handleViewPitch}
+              formatFollowerCount={formatFollowerCount}
             />
           ) : (
             <MobileSection
@@ -948,6 +1014,36 @@ const CampaignCreatorMasterListClient = ({
 
           <Button
             fullWidth={!mdUp}
+            onClick={() => setSelectedFilter('maybe')}
+            sx={{
+              px: 1.5,
+              py: 2.5,
+              height: '42px',
+              border: '1px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1,
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              textTransform: 'none',
+              ...(selectedFilter === 'maybe'
+                ? {
+                    color: '#203ff5',
+                    bgcolor: 'rgba(32, 63, 245, 0.04)',
+                  }
+                : {
+                    color: '#637381',
+                    bgcolor: 'transparent',
+                  }),
+              '&:hover': {
+                bgcolor: selectedFilter === 'maybe' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+              },
+            }}
+          >
+            {`Maybe (${maybeCount})`}
+          </Button>
+
+          <Button
+            fullWidth={!mdUp}
             onClick={() => setSelectedFilter('rejected')}
             sx={{
               px: 1.5,
@@ -1107,31 +1203,10 @@ const CampaignCreatorMasterListClient = ({
                       <Box
                         component="span"
                         sx={{
-                          ...(function () {
-                            const pending = filteredCreators.filter(
-                              (p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW'
-                            );
-                            const allPendingSelected =
-                              pending.length > 0 &&
-                              pending.every((p) => selectedPitchIds.includes(p.id));
-                            return { allPendingSelected };
-                          })(),
                           width: 18,
                           height: 18,
                           borderRadius: 0,
-                          border: `2px solid ${
-                            (function () {
-                              const pending = filteredCreators.filter(
-                                (p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW'
-                              );
-                              return (
-                                pending.length > 0 &&
-                                pending.every((p) => selectedPitchIds.includes(p.id))
-                              );
-                            })()
-                              ? '#1340FF'
-                              : '#7B7B7B'
-                          }`,
+                          border: `2px solid ${allPendingSelected ? '#1340FF' : '#7B7B7B'}`,
                           bgcolor: 'transparent',
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -1142,15 +1217,7 @@ const CampaignCreatorMasterListClient = ({
                           verticalAlign: 'middle',
                         }}
                       >
-                        {(function () {
-                          const pending = filteredCreators.filter(
-                            (p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW'
-                          );
-                          return (
-                            pending.length > 0 &&
-                            pending.every((p) => selectedPitchIds.includes(p.id))
-                          );
-                        })() && (
+                        {allPendingSelected && (
                           <Iconify
                             icon="eva:checkmark-fill"
                             width={13}
@@ -1313,6 +1380,7 @@ const CampaignCreatorMasterListClient = ({
           onClose={handleClosePitchModal}
           onUpdate={handlePitchUpdate}
           campaign={campaign}
+          readOnly={isPitchModalReadOnly}
           showClientApprovalNote
         />
       ) : (

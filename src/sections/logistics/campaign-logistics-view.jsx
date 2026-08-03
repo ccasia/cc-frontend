@@ -60,20 +60,25 @@ export default function CampaignLogisticsView({
   const [filterStatus, setFilterStatus] = useState('all');
   const [openDrawer, setOpenDrawer] = useState(false);
   const [selectedLogisticId, setSelectedLogisticId] = useState(null);
+  const demoLogistics =
+    campaign?.isDemo && Array.isArray(campaign?.logistic) ? campaign.logistic : null;
+  const childCampaignId = campaign?.isDemo ? null : campaign?.id;
+  const canManageLogistics = isAdmin && !isDisabled;
 
-  const { data: logistics, mutate } = useSWR(
-    campaign?.id ? `/api/logistics/campaign/${campaign?.id}` : null,
+  const { data: logistics, mutate: mutateLogistics } = useSWR(
+    campaign?.id && !demoLogistics ? `/api/logistics/campaign/${campaign?.id}` : null,
     fetcher
   );
+  const mutate = demoLogistics ? () => undefined : mutateLogistics;
 
   const { data: reservationConfig } = useSWR(
-    campaign?.id && isReservation
-      ? `/api/logistics/campaign/${campaign?.id}/reservation-config`
+    childCampaignId && isReservation
+      ? `/api/logistics/campaign/${childCampaignId}/reservation-config`
       : null,
     fetcher
   );
 
-  const safeLogistics = useMemo(() => logistics || [], [logistics]);
+  const safeLogistics = useMemo(() => demoLogistics || logistics || [], [demoLogistics, logistics]);
 
   const filteredLogistics = useMemo(
     () =>
@@ -113,10 +118,6 @@ export default function CampaignLogisticsView({
 
   const handleFilterName = (event) => {
     setFilterName(event.target.value);
-  };
-
-  const handleFilterStatus = (event) => {
-    setFilterStatus(event.target.value);
   };
 
   return (
@@ -276,7 +277,7 @@ export default function CampaignLogisticsView({
         </Box>
 
         {/* Edit & Bulk Assign Button */}
-        {!isReservation && (
+        {canManageLogistics && !isReservation && (
           <Button
             variant="contained"
             size="small"
@@ -306,9 +307,9 @@ export default function CampaignLogisticsView({
         )}
       </Box>
       <LogisticsList
-        campaignId={campaign?.id}
+        campaignId={childCampaignId}
         logistics={filteredLogistics}
-        isAdmin={isAdmin}
+        isAdmin={canManageLogistics}
         isReservation={isReservation}
         onClick={handleOpenDrawer}
         isSuperAdmin={isSuperAdmin}
@@ -319,12 +320,12 @@ export default function CampaignLogisticsView({
         onClose={handleCloseDrawer}
         logistic={selectedLogistic}
         onUpdate={mutate}
-        campaignId={campaign?.id}
+        campaignId={childCampaignId}
         isReservation={isReservation}
-        isAdmin={isAdmin}
+        isAdmin={canManageLogistics}
       />
 
-      {campaign && (
+      {campaign && canManageLogistics && !campaign?.isDemo && (
         <BulkAssignView
           open={openBulkAssign}
           onClose={() => setOpenBulkAssign(false)}

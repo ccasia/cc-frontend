@@ -30,6 +30,23 @@ import { useAuthContext } from 'src/auth/hooks';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
+// OAuth-connected creators have a bare handle in `instagram`/`tiktok`; creators who
+// entered a link manually (no OAuth) only have `instagramProfileLink`/`tiktokProfileLink`,
+// which may be missing the protocol (e.g. "www.instagram.com/user") since it's free text.
+const withProtocol = (url) => (/^https?:\/\//i.test(url) ? url : `https://${url}`);
+
+const resolveSocialHref = (handle, profileLink, handleUrl) => {
+  if (handle) return handleUrl(handle);
+  if (profileLink) return withProtocol(profileLink);
+  return undefined;
+};
+
+const socialTooltip = (platform, isOAuthConnected, href) => {
+  if (isOAuthConnected) return `${platform} account connected`;
+  if (href) return `${platform} link added manually`;
+  return `${platform} account not connected`;
+};
+
 const BoxStyle = {
   border: '1px solid #e0e0e0',
   borderRadius: 2,
@@ -487,104 +504,93 @@ const CreatorProfileView = ({ id }) => {
               </Box>
             </Box>
 
-            <Stack direction="row" spacing={1}>
-              <Tooltip
-                title={
-                  data?.user?.creator?.instagram
-                    ? 'Instagram account connected'
-                    : 'Instagram account not connected'
-                }
-              >
-                <span style={{ display: 'inline-block' }}>
-                  <Button
-                    component={data?.user?.creator?.instagram ? 'a' : 'button'}
-                    href={
-                      data?.user?.creator?.instagram
-                        ? `https://instagram.com/${data?.user?.creator?.instagram}`
-                        : undefined
-                    }
-                    target="_blank"
-                    disabled={!data?.user?.creator?.instagram}
-                    startIcon={
-                      <Iconify
-                        icon="mdi:instagram"
-                        color={data?.user?.creator?.instagram ? '#231F20' : '#8e8e93'}
-                      />
-                    }
-                    sx={{
-                      px: 1.5,
-                      py: 0.5,
-                      color: data?.user?.creator?.instagram ? '#231F20' : '#8e8e93',
-                      border: '1px solid #e7e7e7',
-                      borderBottom: '3px solid #e7e7e7',
-                      borderRadius: 1,
-                      cursor: data?.user?.creator?.instagram ? 'pointer' : 'not-allowed',
-                      opacity: data?.user?.creator?.instagram ? 1 : 0.6,
-                      '&:hover': {
-                        bgcolor: data?.user?.creator?.instagram
-                          ? alpha('#636366', 0.08)
-                          : 'transparent',
-                      },
-                      '&.Mui-disabled': {
-                        color: '#8e8e93',
-                        border: '1px solid #e7e7e7',
-                        borderBottom: '3px solid #e7e7e7',
-                      },
-                    }}
-                  >
-                    Instagram
-                  </Button>
-                </span>
-              </Tooltip>
-              <Tooltip
-                title={
-                  data?.user?.creator?.tiktok
-                    ? 'TikTok account connected'
-                    : 'TikTok account not connected'
-                }
-              >
-                <span style={{ display: 'inline-block' }}>
-                  <Button
-                    component={data?.user?.creator?.tiktok ? 'a' : 'button'}
-                    href={
-                      data?.user?.creator?.tiktok
-                        ? `https://tiktok.com/@${data?.user?.creator?.tiktok}`
-                        : undefined
-                    }
-                    target="_blank"
-                    disabled={!data?.user?.creator?.tiktok}
-                    startIcon={
-                      <Iconify
-                        icon="ic:baseline-tiktok"
-                        color={data?.user?.creator?.tiktok ? '#231F20' : '#8e8e93'}
-                      />
-                    }
-                    sx={{
-                      px: 2,
-                      py: 0.5,
-                      color: data?.user?.creator?.tiktok ? '#231F20' : '#8e8e93',
-                      border: '1px solid #e7e7e7',
-                      borderBottom: '3px solid #e7e7e7',
-                      borderRadius: 1,
-                      cursor: data?.user?.creator?.tiktok ? 'pointer' : 'not-allowed',
-                      opacity: data?.user?.creator?.tiktok ? 1 : 0.6,
-                      '&:hover': {
-                        bgcolor: data?.user?.creator?.tiktok
-                          ? alpha('#636366', 0.08)
-                          : 'transparent',
-                      },
-                      '&.Mui-disabled': {
-                        color: '#8e8e93',
-                        border: '1px solid #e7e7e7',
-                        borderBottom: '3px solid #e7e7e7',
-                      },
-                    }}
-                  >
-                    TikTok
-                  </Button>
-                </span>
-              </Tooltip>
-            </Stack>
+            {(() => {
+              const instagramHandle = data?.user?.creator?.instagram;
+              const tiktokHandle = data?.user?.creator?.tiktok;
+              const instagramHref = resolveSocialHref(
+                instagramHandle,
+                data?.user?.creator?.instagramProfileLink,
+                (h) => `https://instagram.com/${h}`
+              );
+              const tiktokHref = resolveSocialHref(
+                tiktokHandle,
+                data?.user?.creator?.tiktokProfileLink,
+                (h) => `https://tiktok.com/@${h}`
+              );
+              const instagramTooltip = socialTooltip('Instagram', !!instagramHandle, instagramHref);
+              const tiktokTooltip = socialTooltip('TikTok', !!tiktokHandle, tiktokHref);
+
+              return (
+                <Stack direction="row" spacing={1}>
+                  <Tooltip title={instagramTooltip}>
+                    <span style={{ display: 'inline-block' }}>
+                      <Button
+                        component={instagramHref ? 'a' : 'button'}
+                        href={instagramHref}
+                        target="_blank"
+                        disabled={!instagramHref}
+                        startIcon={
+                          <Iconify icon="mdi:instagram" color={instagramHref ? '#231F20' : '#8e8e93'} />
+                        }
+                        sx={{
+                          px: 1.5,
+                          py: 0.5,
+                          color: instagramHref ? '#231F20' : '#8e8e93',
+                          border: '1px solid #e7e7e7',
+                          borderBottom: '3px solid #e7e7e7',
+                          borderRadius: 1,
+                          cursor: instagramHref ? 'pointer' : 'not-allowed',
+                          opacity: instagramHref ? 1 : 0.6,
+                          '&:hover': {
+                            bgcolor: instagramHref ? alpha('#636366', 0.08) : 'transparent',
+                          },
+                          '&.Mui-disabled': {
+                            color: '#8e8e93',
+                            border: '1px solid #e7e7e7',
+                            borderBottom: '3px solid #e7e7e7',
+                          },
+                        }}
+                      >
+                        Instagram
+                      </Button>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title={tiktokTooltip}>
+                    <span style={{ display: 'inline-block' }}>
+                      <Button
+                        component={tiktokHref ? 'a' : 'button'}
+                        href={tiktokHref}
+                        target="_blank"
+                        disabled={!tiktokHref}
+                        startIcon={
+                          <Iconify icon="ic:baseline-tiktok" color={tiktokHref ? '#231F20' : '#8e8e93'} />
+                        }
+                        sx={{
+                          px: 2,
+                          py: 0.5,
+                          color: tiktokHref ? '#231F20' : '#8e8e93',
+                          border: '1px solid #e7e7e7',
+                          borderBottom: '3px solid #e7e7e7',
+                          borderRadius: 1,
+                          cursor: tiktokHref ? 'pointer' : 'not-allowed',
+                          opacity: tiktokHref ? 1 : 0.6,
+                          '&:hover': {
+                            bgcolor: tiktokHref ? alpha('#636366', 0.08) : 'transparent',
+                          },
+                          '&.Mui-disabled': {
+                            color: '#8e8e93',
+                            border: '1px solid #e7e7e7',
+                            borderBottom: '3px solid #e7e7e7',
+                          },
+                        }}
+                      >
+                        TikTok
+                      </Button>
+                    </span>
+                  </Tooltip>
+                </Stack>
+              );
+            })()}
           </Box>
         </Grid>
 

@@ -31,8 +31,12 @@ import DeleteProductDialog from './dialogs/delete-product-dialog';
 export default function BulkAssignView({ open, onClose, campaign, logistics, onUpdate }) {
   const { enqueueSnackbar } = useSnackbar();
 
-  const productsApiUrl = campaign?.id ? `/api/logistics/products/campaign/${campaign.id}` : null;
-  const { data: products } = useSWR(productsApiUrl, fetcher);
+  const productsApiUrl =
+    campaign?.id && !campaign?.isDemo ? `/api/logistics/products/campaign/${campaign.id}` : null;
+  const { data: fetchedProducts } = useSWR(productsApiUrl, fetcher);
+  const products = campaign?.isDemo && Array.isArray(campaign?.products)
+    ? campaign.products
+    : fetchedProducts;
 
   const creators = useMemo(() => {
     const realCreators =

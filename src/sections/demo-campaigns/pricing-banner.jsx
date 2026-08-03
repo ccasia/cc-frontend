@@ -1,9 +1,9 @@
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
 
-const PRICING_URL = 'https://cultcreativeasia.com/my/for-brands';
+const PRICING_URL = 'https://cultcreativeasia.com/for-brands#pricing';
 
 export default function PricingBanner() {
   const theme = useTheme();

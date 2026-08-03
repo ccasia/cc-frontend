@@ -30,6 +30,12 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+import {
+  addDemoSubmissionComment,
+  getDemoSubmissionComments,
+  deleteDemoSubmissionComment,
+  toggleDemoSubmissionCommentAgreement,
+} from 'src/_mock/_demo-campaign';
 
 import Iconify from 'src/components/iconify';
 import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
@@ -822,6 +828,7 @@ const ClientFeedbackModal = forwardRef(
       videoCount,
       feedbackDeadline,
       feedbackSentByName,
+      isDemo = false,
     },
     ref
   ) => {
@@ -872,9 +879,13 @@ const ClientFeedbackModal = forwardRef(
 
     // Restore any unsent "Leave feedback" draft for this user/submission/video.
     useEffect(() => {
+      if (isDemo) {
+        setFeedbackText('');
+        return;
+      }
       const saved = localStorage.getItem(STORAGE_KEY_DRAFT);
       setFeedbackText(saved || '');
-    }, [STORAGE_KEY_DRAFT]);
+    }, [STORAGE_KEY_DRAFT, isDemo]);
 
     const [timeLeft, setTimeLeft] = useState(() => {
       if (!feedbackDeadline) return 0;
@@ -936,6 +947,12 @@ const ClientFeedbackModal = forwardRef(
     // 1. Fetch Comments from Backend
     useEffect(() => {
       if (!submissionId || !videoId) return;
+
+      if (isDemo) {
+        setComments(getDemoSubmissionComments(submissionId, videoId));
+        return;
+      }
+
       const fetchComments = async () => {
         try {
           const { data } = await axiosInstance.get(
@@ -970,7 +987,7 @@ const ClientFeedbackModal = forwardRef(
         }
       };
       fetchComments();
-    }, [submissionId, videoId, user.id]);
+    }, [submissionId, videoId, user.id, isDemo]);
 
     useEffect(() => {
       if (!feedbackDeadline) {
@@ -1002,7 +1019,7 @@ const ClientFeedbackModal = forwardRef(
 
     // Real-time: listen for admin replies to client parent comments
     useEffect(() => {
-      if (!socket || !submissionId) return undefined;
+      if (isDemo || !socket || !submissionId) return undefined;
 
       const handleReplyAdded = (data) => {
         if (data.submissionId !== submissionId || data.videoId !== videoId) return;
@@ -1196,7 +1213,7 @@ const ClientFeedbackModal = forwardRef(
         socket.off('v4:comment:deleted', handleCommentDeleted);
         socket.off('v4:comment:agreed', handleCommentAgreed);
       };
-    }, [socket, submissionId, videoId, user.id]);
+    }, [socket, submissionId, videoId, user.id, isDemo]);
 
     const scrollToElement = (id) => {
       const element = commentRefs.current?.[id];
@@ -1228,6 +1245,28 @@ const ClientFeedbackModal = forwardRef(
     // 2. Toggle Agree (Like) with API
     const handleAgree = async (commentId) => {
       try {
+        if (isDemo) {
+          const data = toggleDemoSubmissionCommentAgreement({
+            submissionId,
+            videoId,
+            commentId,
+            user,
+          });
+
+          setComments((prevComments) => {
+            const toggleAgree = (list) =>
+              list.map((comment) => {
+                if (comment.id === commentId) {
+                  return { ...comment, agreedBy: data.agreedBy };
+                }
+                if (comment.replies) return { ...comment, replies: toggleAgree(comment.replies) };
+                return comment;
+              });
+            return toggleAgree(prevComments);
+          });
+          return;
+        }
+
         const { data } = await axiosInstance.post(
           `/api/submissions/v4/comments/${commentId}/agree`
         );
@@ -1255,35 +1294,42 @@ const ClientFeedbackModal = forwardRef(
     };
 
     // 3. Delete comment/reply
-    const handleDeleteComment = useCallback((commentId) => {
-      if (pendingDeletesRef.current.has(commentId)) return;
-      const startTime = Date.now();
-      const timeoutId = setTimeout(async () => {
-        try {
-          await axiosInstance.delete(endpoints.submission.v4.deleteCommentByClient(commentId));
-          await new Promise((r) => setTimeout(r, 1000));
-          setComments((prev) => {
-            const filtered = prev.filter((c) => c.id !== commentId);
-            return filtered.map((c) => ({
-              ...c,
-              replies: c.replies?.filter((r) => r.id !== commentId) || [],
-            }));
+    const handleDeleteComment = useCallback(
+      (commentId) => {
+        if (pendingDeletesRef.current.has(commentId)) return;
+        const startTime = Date.now();
+        const timeoutId = setTimeout(async () => {
+          try {
+            if (isDemo) {
+              deleteDemoSubmissionComment({ submissionId, videoId, commentId });
+            } else {
+              await axiosInstance.delete(endpoints.submission.v4.deleteCommentByClient(commentId));
+            }
+            await new Promise((r) => setTimeout(r, 1000));
+            setComments((prev) => {
+              const filtered = prev.filter((c) => c.id !== commentId);
+              return filtered.map((c) => ({
+                ...c,
+                replies: c.replies?.filter((r) => r.id !== commentId) || [],
+              }));
+            });
+          } catch (error) {
+            console.error('Failed to delete comment:', error);
+          }
+          setPendingDeletes((prev) => {
+            const next = new Map(prev);
+            next.delete(commentId);
+            return next;
           });
-        } catch (error) {
-          console.error('Failed to delete comment:', error);
-        }
+        }, 6000);
         setPendingDeletes((prev) => {
           const next = new Map(prev);
-          next.delete(commentId);
+          next.set(commentId, { timeoutId, startTime });
           return next;
         });
-      }, 6000);
-      setPendingDeletes((prev) => {
-        const next = new Map(prev);
-        next.set(commentId, { timeoutId, startTime });
-        return next;
-      });
-    }, []);
+      },
+      [isDemo, submissionId, videoId]
+    );
 
     const handleUndoDelete = useCallback((commentId) => {
       setPendingDeletes((prev) => {
@@ -1303,16 +1349,25 @@ const ClientFeedbackModal = forwardRef(
           (c) => c.id === targetComment.id || c.replies?.some((r) => r.id === targetComment.id)
         )?.id;
 
-        const { data } = await axiosInstance.post(
-          `/api/submissions/v4/submission/${submissionId}/comments`,
-          {
-            text,
-            parentId: rootParentId,
-            timestamp: null,
-            videoId,
-            isClientDraft: !isCountingDown,
-          }
-        );
+        const data = isDemo
+          ? addDemoSubmissionComment({
+              submissionId,
+              videoId,
+              text,
+              parentId: rootParentId,
+              timestamp: null,
+              user,
+              isClientDraft: !isCountingDown,
+            })
+          : (
+              await axiosInstance.post(`/api/submissions/v4/submission/${submissionId}/comments`, {
+                text,
+                parentId: rootParentId,
+                timestamp: null,
+                videoId,
+                isClientDraft: !isCountingDown,
+              })
+            ).data;
 
         const newReply = {
           ...data,
@@ -1350,16 +1405,25 @@ const ClientFeedbackModal = forwardRef(
       if (!feedbackText.trim()) return;
 
       try {
-        const { data } = await axiosInstance.post(
-          `/api/submissions/v4/submission/${submissionId}/comments`,
-          {
-            text: feedbackText,
-            timestamp: draftTimestamp ?? currentVideoTime,
-            parentId: null,
-            videoId,
-            isClientDraft: !isCountingDown,
-          }
-        );
+        const data = isDemo
+          ? addDemoSubmissionComment({
+              submissionId,
+              videoId,
+              text: feedbackText,
+              timestamp: draftTimestamp ?? currentVideoTime,
+              parentId: null,
+              user,
+              isClientDraft: !isCountingDown,
+            })
+          : (
+              await axiosInstance.post(`/api/submissions/v4/submission/${submissionId}/comments`, {
+                text: feedbackText,
+                timestamp: draftTimestamp ?? currentVideoTime,
+                parentId: null,
+                videoId,
+                isClientDraft: !isCountingDown,
+              })
+            ).data;
 
         const newComment = {
           ...data,
@@ -1377,7 +1441,7 @@ const ClientFeedbackModal = forwardRef(
 
         setComments((prev) => insertSortedByTimestamp(prev, newComment));
         setFeedbackText('');
-        localStorage.removeItem(STORAGE_KEY_DRAFT);
+        if (!isDemo) localStorage.removeItem(STORAGE_KEY_DRAFT);
         setHasTyped(false);
         setNewAbove({ replies: 0, messages: 0, targetId: null });
         setNewBelow({ replies: 0, messages: 0, targetId: null });
@@ -1395,7 +1459,7 @@ const ClientFeedbackModal = forwardRef(
       setIsSendConfirmOpen(false);
       if (onSendToAdmin) onSendToAdmin(videoId);
       const endTime = Date.now() + COUNTDOWN_SECONDS * 1000;
-      localStorage.setItem(STORAGE_KEY_END_TIME, endTime.toString());
+      if (!isDemo) localStorage.setItem(STORAGE_KEY_END_TIME, endTime.toString());
       setTimeLeft(COUNTDOWN_SECONDS);
       setIsCountingDown(true);
     };
@@ -1837,8 +1901,10 @@ const ClientFeedbackModal = forwardRef(
                     const next = e.target.value;
                     setFeedbackText(next);
                     if (next.trim().length > 0) setHasTyped(true);
-                    if (next) localStorage.setItem(STORAGE_KEY_DRAFT, next);
-                    else localStorage.removeItem(STORAGE_KEY_DRAFT);
+                    if (!isDemo) {
+                      if (next) localStorage.setItem(STORAGE_KEY_DRAFT, next);
+                      else localStorage.removeItem(STORAGE_KEY_DRAFT);
+                    }
                   }}
                   onFocus={() => {
                     if (effectiveIsLocked) return;
@@ -2177,6 +2243,8 @@ ClientFeedbackModal.propTypes = {
   submissionId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   videoId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   currentVideoTime: PropTypes.string,
+  onPause: PropTypes.func,
+  onPlay: PropTypes.func,
   onSeek: PropTypes.func,
   onSendToAdmin: PropTypes.func,
   isLocked: PropTypes.bool,
@@ -2186,6 +2254,7 @@ ClientFeedbackModal.propTypes = {
   videoCount: PropTypes.number,
   feedbackDeadline: PropTypes.string,
   feedbackSentByName: PropTypes.string,
+  isDemo: PropTypes.bool,
 };
 
 ClientFeedbackModal.displayName = 'ClientFeedbackModal';

@@ -19,7 +19,9 @@ export const SIDE_STEPS = [
   { n: 3, title: 'You call the shots', desc: "Approve and launch when you're ready" },
 ];
 
-export default function BriefFormLayout({ topLeft, leftExtra, children }) {
+export default function BriefFormLayout({ topLeft, leftExtra, children, scrollMode }) {
+  const internal = scrollMode === 'internal';
+
   return (
     <Box
       sx={{
@@ -27,17 +29,27 @@ export default function BriefFormLayout({ topLeft, leftExtra, children }) {
         gridTemplateColumns: { xs: '1fr', md: '1fr 2fr' },
         gap: 4,
         alignItems: 'flex-start',
+        ...(internal && {
+          height: '100%',
+          minHeight: 0,
+          alignItems: 'stretch',
+        }),
       }}
     >
-      {/* Left side — title and steps. Sticky on desktop so it stays in view
-          while the form (right column) scrolls. */}
+      {/* Left side — title and steps. On the page it's sticky to the viewport;
+          inside a fixed-height container it just stays put while the right
+          column (the form) scrolls. */}
       <Box
         sx={{
           minWidth: 0,
-          position: { md: 'sticky' },
-          top: { md: 24 },
-          maxHeight: { md: 'calc(100vh - 48px)' },
-          overflowY: { md: 'auto' },
+          ...(internal
+            ? { maxHeight: '100%', overflowY: 'auto' }
+            : {
+                position: { md: 'sticky' },
+                top: { md: 24 },
+                maxHeight: { md: 'calc(100vh - 48px)' },
+                overflowY: { md: 'auto' },
+              }),
         }}
       >
         {topLeft}
@@ -133,8 +145,16 @@ export default function BriefFormLayout({ topLeft, leftExtra, children }) {
 
       {/* Right side — form + actions. minWidth:0 keeps a wide child (e.g. a
           long chip label) from forcing this grid column past its track and
-          eating the page's right padding on mobile. */}
-      <Box sx={{ minWidth: 0, borderLeft: { md: '1px solid #E5E7EB' }, pl: { md: 4 } }}>
+          eating the page's right padding on mobile. In 'internal' mode this is
+          the sole scroll area, so the left column stays fixed. */}
+      <Box
+        sx={{
+          minWidth: 0,
+          borderLeft: { md: '1px solid #E5E7EB' },
+          pl: { md: 4 },
+          ...(internal && { minHeight: 0, overflowY: 'auto', pr: { md: 1 } }),
+        }}
+      >
         {children}
       </Box>
     </Box>
@@ -148,4 +168,5 @@ BriefFormLayout.propTypes = {
   leftExtra: PropTypes.node,
   // Right-column content (the form + action bar).
   children: PropTypes.node,
+  scrollMode: PropTypes.oneOf(['page', 'internal']),
 };

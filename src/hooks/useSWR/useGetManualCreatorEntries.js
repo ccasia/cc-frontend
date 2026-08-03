@@ -4,13 +4,17 @@ import { useMemo } from 'react';
 
 import axiosInstance from 'src/utils/axios';
 
+import { DEMO_CAMPAIGN_ID } from 'src/_mock/_demo-campaign';
+
 /**
  * Hook to fetch manual creator entries for a campaign
  * @param {string} campaignId - Campaign ID
  * @returns {object} SWR data object with entries
  */
 export const useGetManualCreatorEntries = (campaignId) => {
-  const url = campaignId ? `/api/campaign/${campaignId}/manual-creators` : null;
+  // Demo campaign: no manual entries, and no live API call.
+  const isDemoCampaign = campaignId === DEMO_CAMPAIGN_ID;
+  const url = campaignId && !isDemoCampaign ? `/api/campaign/${campaignId}/manual-creators` : null;
 
   const { data, error, isLoading, mutate } = useSWR(
     url,
@@ -27,13 +31,11 @@ export const useGetManualCreatorEntries = (campaignId) => {
   );
 
   const memoizedValue = useMemo(
-    () => ({
-      entries: data?.data || [],
-      isLoading,
-      error,
-      mutate,
-    }),
-    [data, isLoading, error, mutate]
+    () =>
+      isDemoCampaign
+        ? { entries: [], isLoading: false, error: undefined, mutate: noop }
+        : { entries: data?.data || [], isLoading, error, mutate },
+    [isDemoCampaign, data, isLoading, error, mutate]
   );
 
   return memoizedValue;

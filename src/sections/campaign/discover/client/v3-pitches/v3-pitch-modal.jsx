@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { campaignHasClient } from 'src/utils/campaign-flow';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllCreators } from 'src/api/creator';
@@ -188,16 +189,14 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
         onUpdate({ ...pitch, ...response.data.pitch });
       } else {
         // If no pitch data returned, create a mock update with the expected status change
+        const mockStatusByAction = {
+          reject: 'REJECTED',
+          approve: 'APPROVED',
+          send_to_client: 'SENT_TO_CLIENT',
+        };
         const mockUpdatedPitch = {
           ...pitch,
-          status:
-            action === 'reject'
-              ? 'REJECTED'
-              : action === 'approve'
-                ? endpoint.includes('client')
-                  ? 'APPROVED'
-                  : 'SENT_TO_CLIENT'
-                : pitch.status,
+          status: mockStatusByAction[action] || pitch.status,
         };
         onUpdate(mockUpdatedPitch);
       }
@@ -217,9 +216,16 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
 
   const handleApprove = () => {
     if (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE')) {
-      handleAction('approve', 'approve', { adminComments: comments });
+      // Explicit action: admin approval is final (forwarding is the Send to Client button)
+      handleAction('approve', 'approve', { adminComments: comments, action: 'approve' });
     } else if (isClient && displayStatus === 'PENDING_REVIEW') {
       handleAction('approve', 'approve/client', { adminComments: comments });
+    }
+  };
+
+  const handleSendToClient = () => {
+    if (isAdmin && displayStatus === 'PENDING_REVIEW') {
+      handleAction('send_to_client', 'approve', { adminComments: comments, action: 'send_to_client' });
     }
   };
 
@@ -313,6 +319,16 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
           },
           { label: 'Reject', action: 'reject', icon: 'eva:close-circle-fill', color: 'error' }
         );
+        // MAYBE approvals are always final on the backend, so only offer forwarding
+        // for PENDING_REVIEW pitches on campaigns that actually have a client
+        if (displayStatus === 'PENDING_REVIEW' && campaignHasClient(campaign)) {
+          actions.push({
+            label: 'Send to Client',
+            action: 'send_to_client',
+            icon: 'eva:paper-plane-fill',
+            color: 'primary',
+          });
+        }
       } else if (displayStatus === 'APPROVED' || displayStatus === 'approved') {
         actions.push({
           label: 'Set Agreement',
@@ -1465,6 +1481,40 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
                     availableActions.find((action) => action.action === 'approve')?.label ||
                     'Approve'
                   )}
+                </Button>
+              )}
+              {availableActions.find((action) => action.action === 'send_to_client') && (
+                <Button
+                  variant="contained"
+                  onClick={handleSendToClient}
+                  disabled={loading || isDisabled}
+                  sx={{
+                    textTransform: 'none',
+                    minHeight: 42,
+                    minWidth: 100,
+                    bgcolor: '#FFFFFF',
+                    color: '#1340FF',
+                    border: '1.5px solid',
+                    borderColor: '#E7E7E7',
+                    borderBottom: '3px solid',
+                    borderBottomColor: '#E7E7E7',
+                    borderRadius: 1.15,
+                    fontWeight: 600,
+                    fontSize: '16px',
+                    '&:hover': {
+                      bgcolor: '#f5f5f5',
+                      border: '1.5px solid',
+                      borderColor: '#1340FF',
+                      borderBottom: '3px solid',
+                      borderBottomColor: '#1340FF',
+                    },
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
+                  }}
+                >
+                  {loading ? <CircularProgress size={20} color="inherit" /> : 'Send to Client'}
                 </Button>
               )}
               {availableActions.find((action) => action.action === 'agreement') && (

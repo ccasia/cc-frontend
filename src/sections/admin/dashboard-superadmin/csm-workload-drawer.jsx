@@ -1,0 +1,827 @@
+import useSWR from 'swr';
+import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
+import { useMemo, useState, useEffect } from 'react';
+
+import {
+  Box,
+  Stack,
+  Avatar,
+  Drawer,
+  Collapse,
+  Typography,
+  IconButton,
+  ButtonBase,
+  LinearProgress,
+  CircularProgress,
+} from '@mui/material';
+
+import { fetcher, endpoints } from 'src/utils/axios';
+import { formatCurrencyAmount } from 'src/utils/currency';
+
+import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
+
+const SWR_OPTS = { revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 60000 };
+
+const TABS = [
+  { value: 'campaigns', label: 'Campaigns', icon: 'hugeicons:megaphone-01', color: '#1340FF' },
+  { value: 'clients', label: 'Clients', icon: 'hugeicons:building-06', color: '#1340FF' },
+  { value: 'creators', label: 'Creators', icon: 'hugeicons:user-group', color: '#1340FF' },
+  { value: 'stats', label: 'Stats', icon: 'hugeicons:clock-01', color: '#10B981' },
+];
+
+const STATUS_GROUPS = [
+  { key: 'ACTIVE', label: 'Active' },
+  { key: 'COMPLETED', label: 'Completed' },
+  { key: 'OTHER', label: 'Other' },
+];
+
+const ACTION_ITEM_ROWS = [
+  { key: 'pitchesPendingReview', label: 'Pitches to review', icon: 'hugeicons:user-group', color: '#6366F1' },
+  { key: 'agreementsPendingReview', label: 'Agreements to approve', icon: 'hugeicons:file-edit', color: '#F59E0B' },
+  { key: 'submissionsPendingReview', label: 'Video submissions to review', icon: 'hugeicons:video-01', color: '#10B981' },
+  { key: 'clientFeedbacks', label: 'Client feedbacks to review', icon: 'hugeicons:message-02', color: '#EC4899' },
+  { key: 'linksToApprove', label: 'Links to approve', icon: 'hugeicons:link-01', color: '#06B6D4' },
+  { key: 'overdueInvoices', label: 'Overdue invoices', icon: 'hugeicons:invoice-01', color: '#EF4444' },
+];
+
+const RESPONSE_TIME_ROWS = [
+  { key: 'pitchReviewHours', label: 'Pitch review', icon: 'hugeicons:user-group', color: '#6366F1' },
+  { key: 'agreementReviewHours', label: 'Agreement', icon: 'hugeicons:file-edit', color: '#F59E0B' },
+  { key: 'draftReviewHours', label: 'Draft review', icon: 'hugeicons:video-01', color: '#10B981' },
+  { key: 'postingReviewHours', label: 'Posting review', icon: 'hugeicons:link-01', color: '#06B6D4' },
+];
+
+const REJECTION_CARDS = [
+  { key: 'highest', label: 'Highest', sublabel: 'Campaign with toughest client', icon: 'eva:arrow-upward-fill', color: '#EF4444' },
+  { key: 'median', label: 'Median', sublabel: 'Typical campaign', icon: 'eva:arrow-forward-fill', color: '#F59E0B' },
+  { key: 'lowest', label: 'Lowest', sublabel: 'Smoothest-running campaign', icon: 'eva:arrow-downward-fill', color: '#10B981' },
+];
+
+function getInitials(name) {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function formatHours(hours) {
+  if (hours == null) return 'N/A';
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  return `${hours.toFixed(1)}h`;
+}
+
+function TabStat({ tab, value, active, onClick }) {
+  return (
+    <ButtonBase
+      onClick={onClick}
+      sx={{
+        flex: 1,
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: 0.5,
+        py: 1,
+        px: 1.5,
+        borderRadius: '10px',
+        border: '1.5px solid',
+        borderColor: active ? tab.color : '#e5e7eb',
+        bgcolor: active ? `${tab.color}0A` : '#fff',
+        transition: 'border-color 0.15s ease, background-color 0.15s ease',
+      }}
+    >
+      <Stack direction="row" spacing={0.6} alignItems="center">
+        <Iconify icon={tab.icon} width={13} sx={{ color: active ? tab.color : '#9ca3af' }} />
+        <Typography
+          sx={{
+            fontSize: '0.62rem',
+            fontWeight: 700,
+            color: active ? tab.color : '#9ca3af',
+            textTransform: 'uppercase',
+            letterSpacing: '0.03em',
+          }}
+        >
+          {tab.label}
+        </Typography>
+      </Stack>
+      <Typography sx={{ fontSize: '1.05rem', fontWeight: 700, color: active ? tab.color : '#111827', lineHeight: 1 }}>
+        {value}
+      </Typography>
+    </ButtonBase>
+  );
+}
+
+TabStat.propTypes = {
+  tab: PropTypes.object.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  active: PropTypes.bool.isRequired,
+  onClick: PropTypes.func.isRequired,
+};
+
+function CampaignCard({ campaign }) {
+  const pct = campaign.credits > 0 ? Math.min(100, Math.round((campaign.creditsUtilized / campaign.credits) * 100)) : 0;
+
+  const budgetPct =
+    campaign.creatorBudget > 0
+      ? Math.min(100, Math.round((campaign.creatorBudgetSpent / campaign.creatorBudget) * 100))
+      : 0;
+
+  return (
+    <Box sx={{ bgcolor: '#fff', border: '1px solid #e5e7eb', borderRadius: 2, p: 2, boxShadow: '4px 4px 4px 0px #8D8D9440' }}>
+      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: 1.5 }}>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Avatar
+            src={campaign.campaignImage || undefined}
+            variant="rounded"
+            sx={{ width: 36, height: 36, borderRadius: '8px', bgcolor: '#e5e7eb', fontSize: '0.8rem' }}
+          >
+            {getInitials(campaign.name)}
+          </Avatar>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography noWrap sx={{ fontWeight: 700, color: '#111827', fontSize: '0.88rem' }} title={campaign.name}>
+              {campaign.name}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+              {campaign.companyName || 'No client'}
+            </Typography>
+          </Box>
+        </Stack>
+        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0, pl: 1 }}>
+          <Iconify icon="hugeicons:user-group" width={13} sx={{ color: '#9ca3af' }} />
+          <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>
+            {campaign.creatorCount}
+          </Typography>
+        </Stack>
+      </Stack>
+
+      <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.6 }}>
+        <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+          Campaign Credits
+        </Typography>
+        <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#111827' }}>{pct}%</Typography>
+      </Stack>
+      <LinearProgress
+        variant="determinate"
+        value={pct}
+        sx={{
+          height: 6,
+          borderRadius: '999px',
+          bgcolor: '#f3f4f6',
+          '& .MuiLinearProgress-bar': {
+            background: 'linear-gradient(90deg, #111827 0%, #7c3aed 100%)',
+            borderRadius: '999px',
+          },
+        }}
+      />
+      <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.6 }}>
+        <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+          Utilised: {campaign.creditsUtilized}
+        </Typography>
+        <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+          Pending: {campaign.creditsPending}
+        </Typography>
+      </Stack>
+
+      {campaign.creatorBudget != null && (
+        <Box sx={{ borderTop: '1px solid #f3f4f6', mt: 1.5, pt: 1.5 }}>
+          <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.6 }}>
+            <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+              Creator Budget
+            </Typography>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#111827' }}>{budgetPct}%</Typography>
+          </Stack>
+          <LinearProgress
+            variant="determinate"
+            value={budgetPct}
+            sx={{
+              height: 6,
+              borderRadius: '999px',
+              bgcolor: '#f3f4f6',
+              '& .MuiLinearProgress-bar': {
+                background: 'linear-gradient(90deg, #111827 0%, #1340FF 100%)',
+                borderRadius: '999px',
+              },
+            }}
+          />
+          <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.6 }}>
+            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+              {formatCurrencyAmount(campaign.creatorBudgetSpent, 'MYR')} spent
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+              of {formatCurrencyAmount(campaign.creatorBudget, 'MYR')}
+            </Typography>
+          </Stack>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+CampaignCard.propTypes = { campaign: PropTypes.object.isRequired };
+
+function formatValidity(dateValue) {
+  if (!dateValue) return null;
+  const date = dayjs(dateValue);
+  const diffDays = date.startOf('day').diff(dayjs().startOf('day'), 'day');
+
+  let relative;
+  if (diffDays < 0) relative = `expired ${Math.abs(diffDays)} day${Math.abs(diffDays) === 1 ? '' : 's'} ago`;
+  else if (diffDays === 0) relative = 'expires today';
+  else if (diffDays === 1) relative = 'expires tomorrow';
+  else if (diffDays < 30) relative = `expires in ${diffDays} days`;
+  else if (diffDays < 60) relative = 'expires in a month';
+  else relative = `expires in ${Math.round(diffDays / 30)} months`;
+
+  return { dateLabel: date.format('D MMM YYYY'), relative };
+}
+
+function ClientCard({ client }) {
+  const validity = formatValidity(client.validityEnds);
+  const subtitle = client.packageName
+    ? `${client.packageName} · ${client.isSubscription ? 'UGC subscription' : 'UGC one-off'}`
+    : 'UGC one-off';
+  const isActive = client.status === 'Active';
+
+  return (
+    <Box
+      sx={{
+        bgcolor: '#fff',
+        border: '1px solid #e5e7eb',
+        borderRadius: 2.5,
+        overflow: 'hidden',
+        boxShadow: '4px 4px 4px 0px #8D8D9440',
+      }}
+    >
+      <Box sx={{ p: 2.5 }}>
+        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: 2 }}>
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+            <Avatar
+              src={client.logo || undefined}
+              variant="rounded"
+              sx={{ width: 40, height: 40, borderRadius: '10px', bgcolor: '#F3F4F6', flexShrink: 0 }}
+            >
+              <Iconify icon="hugeicons:building-06" width={20} sx={{ color: '#6b7280' }} />
+            </Avatar>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography noWrap sx={{ fontWeight: 700, color: '#111827', fontSize: '0.92rem' }} title={client.name}>
+                {client.name}
+              </Typography>
+              <Typography noWrap variant="caption" sx={{ color: '#9ca3af' }}>
+                {subtitle}
+              </Typography>
+            </Box>
+          </Stack>
+          <Label variant="soft" color={isActive ? 'success' : 'default'} sx={{ flexShrink: 0, fontWeight: 700 }}>
+            {client.status}
+          </Label>
+        </Stack>
+
+        <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
+          <Box sx={{ flex: 1, bgcolor: '#F9FAFB', borderRadius: '10px', p: 1.5, textAlign: 'center' }}>
+            <Typography
+              sx={{
+                fontSize: '0.62rem',
+                fontWeight: 700,
+                color: '#9ca3af',
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em',
+                mb: 0.5,
+              }}
+            >
+              Active Campaigns
+            </Typography>
+            <Typography sx={{ fontSize: '1.15rem', fontWeight: 700, color: '#1340FF' }}>
+              {client.activeCampaigns}
+            </Typography>
+          </Box>
+          <Box sx={{ flex: 1, bgcolor: '#F9FAFB', borderRadius: '10px', p: 1.5, textAlign: 'center' }}>
+            <Typography
+              sx={{
+                fontSize: '0.62rem',
+                fontWeight: 700,
+                color: '#9ca3af',
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em',
+                mb: 0.5,
+              }}
+            >
+              Validity Ends
+            </Typography>
+            <Typography sx={{ fontSize: '0.9rem', fontWeight: 700, color: '#111827' }}>
+              {validity ? validity.dateLabel : 'N/A'}
+            </Typography>
+            {validity && <Typography sx={{ fontSize: '0.65rem', color: '#9ca3af' }}>{validity.relative}</Typography>}
+          </Box>
+        </Stack>
+
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', mb: 1 }}>
+          Campaigns ({client.campaigns.length})
+        </Typography>
+
+        <Stack spacing={1}>
+          {client.campaigns.map((camp) => (
+            <Stack
+              key={camp.campaignId}
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ bgcolor: '#F9FAFB', borderRadius: '10px', px: 1.5, py: 1.1 }}
+            >
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
+                <Box
+                  sx={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    bgcolor: camp.status === 'ACTIVE' ? '#10B981' : '#9ca3af',
+                    flexShrink: 0,
+                  }}
+                />
+                <Typography noWrap sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#111827' }} title={camp.name}>
+                  {camp.name}
+                </Typography>
+              </Stack>
+              <Typography sx={{ fontSize: '0.75rem', color: '#9ca3af', flexShrink: 0, pl: 1 }}>
+                {camp.creditsUtilized}/{camp.credits} credits
+              </Typography>
+            </Stack>
+          ))}
+        </Stack>
+      </Box>
+    </Box>
+  );
+}
+
+ClientCard.propTypes = { client: PropTypes.object.isRequired };
+
+export default function CSMWorkloadDrawer({ csm, dateRange, onClose }) {
+  const open = !!csm;
+  const [tab, setTab] = useState('campaigns');
+  const [expandedActionRow, setExpandedActionRow] = useState(null);
+
+  // Always start on the Campaigns tab whenever a (new) CSM is selected
+  useEffect(() => {
+    if (open) setTab('campaigns');
+    setExpandedActionRow(null);
+  }, [open, csm?.adminUserId]);
+
+  const query =
+    open &&
+    `${endpoints.analytics.csmWorkloadDetail(csm.adminUserId)}${
+      dateRange
+        ? `?startDate=${encodeURIComponent(dateRange.startDate)}&endDate=${encodeURIComponent(dateRange.endDate)}`
+        : ''
+    }`;
+
+  const { data, isLoading } = useSWR(query || null, fetcher, SWR_OPTS);
+
+  const detail = data?.data;
+  const campaigns = useMemo(() => detail?.campaigns || [], [detail]);
+  const clients = detail?.clients || [];
+  const creators = detail?.creators || [];
+  const attention = detail?.attention || {};
+  const actionItems = attention.actionItems || {};
+  const actionItemLists = attention.items || {};
+  const responseTime = attention.responseTime || {};
+  const rejectionRate = attention.rejectionRate || {};
+  const totalActionItems = ACTION_ITEM_ROWS.reduce((sum, row) => sum + (actionItems[row.key] || 0), 0);
+
+  const groupedCampaigns = useMemo(() => {
+    const groups = { ACTIVE: [], COMPLETED: [], OTHER: [] };
+    campaigns.forEach((c) => {
+      if (c.status === 'ACTIVE') groups.ACTIVE.push(c);
+      else if (c.status === 'COMPLETED') groups.COMPLETED.push(c);
+      else groups.OTHER.push(c);
+    });
+    return groups;
+  }, [campaigns]);
+
+  const tabCounts = {
+    campaigns: campaigns.length,
+    clients: clients.length,
+    creators: creators.length,
+    stats: formatHours(responseTime.avgResponseHours),
+  };
+
+  return (
+    <Drawer
+      open={open}
+      onClose={onClose}
+      anchor="right"
+      slotProps={{ backdrop: { sx: { bgcolor: 'rgba(0, 0, 0, 0.6)' } } }}
+      PaperProps={{
+        sx: {
+          width: { xs: 1, sm: 480 },
+          borderTopLeftRadius: 12,
+          borderBottomLeftRadius: 12,
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '-12px 0 40px -4px rgba(145, 158, 171, 0.24)',
+          borderLeft: '1px solid #e5e7eb',
+        },
+      }}
+    >
+      {open && (
+        <>
+          {/* Sticky header */}
+          <Box
+            sx={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 1,
+              bgcolor: '#fff',
+              borderBottom: '1px solid #e5e7eb',
+              flexShrink: 0,
+            }}
+          >
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ pt: 2.5, px: 2.5 }}>
+              <Stack direction="row" alignItems="center" spacing={1.5}>
+                <Avatar
+                  src={csm.photo || undefined}
+                  sx={{ width: 44, height: 44, bgcolor: '#e5e7eb', color: '#374151', fontWeight: 700 }}
+                >
+                  {getInitials(csm.name)}
+                </Avatar>
+                <Box>
+                  <Typography
+                    sx={{
+                      fontFamily: '"Instrument Serif", serif',
+                      fontWeight: 400,
+                      fontSize: '1.35rem',
+                      color: '#111827',
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {csm.name || 'Unnamed'}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+                    {csm.role === 'CSL' ? 'Customer Success Lead' : 'Customer Success'} · {csm.email}
+                  </Typography>
+                </Box>
+              </Stack>
+              <IconButton onClick={onClose} sx={{ mt: -1 }}>
+                <Iconify icon="eva:close-fill" width={22} />
+              </IconButton>
+            </Stack>
+
+            {/* Tab row */}
+            <Stack direction="row" spacing={1} sx={{ mx: 2.5, mt: 2, mb: 2 }}>
+              {TABS.map((t) => (
+                <TabStat
+                  key={t.value}
+                  tab={t}
+                  value={tabCounts[t.value]}
+                  active={tab === t.value}
+                  onClick={() => setTab(t.value)}
+                />
+              ))}
+            </Stack>
+          </Box>
+
+          {/* Scrollable content */}
+          <Box sx={{ flex: 1, overflow: 'auto', p: 2, bgcolor: '#F9FAFB' }}>
+            {isLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                <CircularProgress size={20} sx={{ color: '#1340FF' }} />
+              </Box>
+            ) : (
+              <>
+                {tab === 'campaigns' && (
+                  <Stack spacing={2.5}>
+                    {STATUS_GROUPS.map(
+                      (group) =>
+                        groupedCampaigns[group.key].length > 0 && (
+                          <Box key={group.key}>
+                            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                              <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#111827' }}>
+                                {group.label}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                                {groupedCampaigns[group.key].length} campaign
+                                {groupedCampaigns[group.key].length === 1 ? '' : 's'}
+                              </Typography>
+                            </Stack>
+                            <Stack spacing={1.5}>
+                              {groupedCampaigns[group.key].map((c) => (
+                                <CampaignCard key={c.campaignId} campaign={c} />
+                              ))}
+                            </Stack>
+                          </Box>
+                        )
+                    )}
+                    {campaigns.length === 0 && (
+                      <Typography variant="body2" sx={{ color: '#9ca3af', textAlign: 'center', py: 4 }}>
+                        No campaigns found
+                      </Typography>
+                    )}
+                  </Stack>
+                )}
+
+                {tab === 'clients' && (
+                  <Stack spacing={1.5}>
+                    {clients.map((client) => (
+                      <ClientCard key={client.companyId} client={client} />
+                    ))}
+                    {clients.length === 0 && (
+                      <Typography variant="body2" sx={{ color: '#9ca3af', textAlign: 'center', py: 4 }}>
+                        No clients found
+                      </Typography>
+                    )}
+                  </Stack>
+                )}
+
+                {tab === 'creators' && (
+                  <Stack spacing={1.5}>
+                    {creators.map((creator) => (
+                      <Box
+                        key={creator.userId}
+                        sx={{
+                          bgcolor: '#fff',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: 2,
+                          p: 2,
+                          boxShadow: '4px 4px 4px 0px #8D8D9440',
+                        }}
+                      >
+                        <Stack direction="row" alignItems="center" spacing={1.5}>
+                          <Avatar
+                            src={creator.photo || undefined}
+                            sx={{ width: 36, height: 36, bgcolor: '#e5e7eb', fontSize: '0.8rem' }}
+                          >
+                            {getInitials(creator.name)}
+                          </Avatar>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography noWrap sx={{ fontWeight: 700, color: '#111827', fontSize: '0.88rem' }}>
+                              {creator.name}
+                            </Typography>
+                            <Stack direction="row" spacing={1.5} sx={{ mt: 0.3 }}>
+                              <Stack direction="row" alignItems="center" spacing={0.5}>
+                                <Iconify icon="mdi:instagram" width={13} sx={{ color: '#E4405F', flexShrink: 0 }} />
+                                <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                                  {creator.instagramTierName || '-'}
+                                </Typography>
+                              </Stack>
+                              <Stack direction="row" alignItems="center" spacing={0.5}>
+                                <Iconify icon="ic:baseline-tiktok" width={13} sx={{ color: '#000000', flexShrink: 0 }} />
+                                <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                                  {creator.tiktokTierName || '-'}
+                                </Typography>
+                              </Stack>
+                            </Stack>
+                          </Box>
+                        </Stack>
+                      </Box>
+                    ))}
+                    {creators.length === 0 && (
+                      <Typography variant="body2" sx={{ color: '#9ca3af', textAlign: 'center', py: 4 }}>
+                        No creators found
+                      </Typography>
+                    )}
+                  </Stack>
+                )}
+
+                {tab === 'stats' && (
+                  <Stack spacing={2}>
+                    {/* Action items pending */}
+                    <Box
+                      sx={{
+                        bgcolor: '#fff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: 2,
+                        p: 2.5,
+                        boxShadow: '4px 4px 4px 0px #8D8D9440',
+                      }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                        <Iconify icon="hugeicons:task-01" width={18} sx={{ color: '#1340FF' }} />
+                        <Typography sx={{ fontWeight: 700, fontSize: '0.88rem', color: '#111827' }}>
+                          Action items pending
+                        </Typography>
+                      </Stack>
+                      <Stack direction="row" alignItems="baseline" spacing={1} sx={{ mb: 2 }}>
+                        <Typography sx={{ fontSize: '1.6rem', fontWeight: 700, color: '#111827' }}>
+                          {totalActionItems}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                          items need attention
+                        </Typography>
+                      </Stack>
+                      <Stack spacing={1}>
+                        {ACTION_ITEM_ROWS.map((row) => {
+                          const count = actionItems[row.key] || 0;
+                          const list = actionItemLists[row.key] || [];
+                          const isExpanded = expandedActionRow === row.key;
+                          return (
+                            <Box
+                              key={row.key}
+                              sx={{
+                                bgcolor: '#F9FAFB',
+                                borderRadius: '10px',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              <ButtonBase
+                                onClick={() =>
+                                  count > 0 && setExpandedActionRow(isExpanded ? null : row.key)
+                                }
+                                sx={{
+                                  width: '100%',
+                                  justifyContent: 'space-between',
+                                  px: 1.5,
+                                  py: 1,
+                                  cursor: count > 0 ? 'pointer' : 'default',
+                                }}
+                              >
+                                <Stack direction="row" alignItems="center" spacing={1.2} sx={{ minWidth: 0 }}>
+                                  <Iconify icon={row.icon} width={16} sx={{ color: row.color, flexShrink: 0 }} />
+                                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#111827' }}>
+                                    {row.label}
+                                  </Typography>
+                                </Stack>
+                                <Stack direction="row" alignItems="center" spacing={0.75}>
+                                  <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827' }}>
+                                    {count}
+                                  </Typography>
+                                  <Iconify
+                                    icon="eva:chevron-down-fill"
+                                    width={14}
+                                    sx={{
+                                      color: '#d1d5db',
+                                      transform: isExpanded ? 'rotate(180deg)' : 'none',
+                                      transition: 'transform 0.15s ease',
+                                    }}
+                                  />
+                                </Stack>
+                              </ButtonBase>
+
+                              <Collapse in={isExpanded} unmountOnExit>
+                                <Stack
+                                  spacing={0.75}
+                                  sx={{ px: 1.5, pb: 1.25, pt: 0.5, borderTop: '1px solid #f3f4f6' }}
+                                >
+                                  {list.map((item) => (
+                                    <Stack
+                                      key={item.id}
+                                      direction="row"
+                                      alignItems="center"
+                                      spacing={1}
+                                      sx={{ bgcolor: '#fff', borderRadius: '8px', px: 1, py: 0.75 }}
+                                    >
+                                      <Avatar
+                                        src={item.creatorPhoto || undefined}
+                                        sx={{ width: 22, height: 22, fontSize: '0.6rem', bgcolor: '#e5e7eb' }}
+                                      >
+                                        {getInitials(item.creatorName)}
+                                      </Avatar>
+                                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Typography noWrap sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#111827' }}>
+                                          {item.creatorName}
+                                        </Typography>
+                                        <Typography noWrap variant="caption" sx={{ color: '#9ca3af' }}>
+                                          {item.campaignName}
+                                          {item.meta ? ` · ${item.meta}` : ''}
+                                        </Typography>
+                                      </Box>
+                                      <Typography sx={{ fontSize: '0.68rem', color: '#9ca3af', flexShrink: 0 }}>
+                                        {item.date ? dayjs(item.date).format('D MMM') : ''}
+                                      </Typography>
+                                    </Stack>
+                                  ))}
+                                  {count > list.length && (
+                                    <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af', textAlign: 'center', pt: 0.25 }}>
+                                      +{count - list.length} more
+                                    </Typography>
+                                  )}
+                                </Stack>
+                              </Collapse>
+                            </Box>
+                          );
+                        })}
+                      </Stack>
+                    </Box>
+
+                    {/* Avg response time */}
+                    <Box
+                      sx={{
+                        bgcolor: '#fff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: 2,
+                        p: 2.5,
+                        boxShadow: '4px 4px 4px 0px #8D8D9440',
+                      }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                        <Iconify icon="hugeicons:clock-01" width={18} sx={{ color: '#1340FF' }} />
+                        <Typography sx={{ fontWeight: 700, fontSize: '0.88rem', color: '#111827' }}>
+                          Avg response time
+                        </Typography>
+                      </Stack>
+                      <Typography sx={{ fontSize: '1.6rem', fontWeight: 700, color: '#111827', mb: 2 }}>
+                        {formatHours(responseTime.avgResponseHours)}
+                      </Typography>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                        {RESPONSE_TIME_ROWS.map((row) => (
+                          <Box
+                            key={row.key}
+                            sx={{
+                              bgcolor: `${row.color}0F`,
+                              border: `1px solid ${row.color}26`,
+                              borderRadius: '12px',
+                              p: 1.4,
+                            }}
+                          >
+                            <Iconify icon={row.icon} width={17} sx={{ color: row.color, mb: 0.8 }} />
+                            <Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827' }}>
+                              {formatHours(responseTime[row.key])}
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.74rem', fontWeight: 600, color: '#374151' }}>
+                              {row.label}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+
+                    {/* Avg client rejection rate */}
+                    <Box
+                      sx={{
+                        bgcolor: '#fff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: 2,
+                        p: 2.5,
+                        boxShadow: '4px 4px 4px 0px #8D8D9440',
+                      }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                        <Iconify icon="hugeicons:alert-02" width={18} sx={{ color: '#1340FF' }} />
+                        <Typography sx={{ fontWeight: 700, fontSize: '0.88rem', color: '#111827' }}>
+                          Avg client rejection rate
+                        </Typography>
+                      </Stack>
+                      <Typography sx={{ fontSize: '1.6rem', fontWeight: 700, color: '#111827', mb: 2 }}>
+                        {rejectionRate.avgRate ?? 0}%
+                      </Typography>
+                      <Stack spacing={1.2}>
+                        {REJECTION_CARDS.map((card) => {
+                          const entry = rejectionRate[card.key];
+                          if (!entry) return null;
+                          return (
+                            <Box
+                              key={card.key}
+                              sx={{ border: `1.5px solid ${card.color}`, borderRadius: '10px', p: 1.5 }}
+                            >
+                              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                                <Stack direction="row" alignItems="center" spacing={0.6}>
+                                  <Iconify icon={card.icon} width={13} sx={{ color: card.color }} />
+                                  <Typography
+                                    sx={{
+                                      fontSize: '0.65rem',
+                                      fontWeight: 700,
+                                      color: card.color,
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.03em',
+                                    }}
+                                  >
+                                    {card.label}
+                                  </Typography>
+                                </Stack>
+                                <Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: card.color }}>
+                                  {entry.rate}%
+                                </Typography>
+                              </Stack>
+                              <Typography
+                                noWrap
+                                sx={{ fontSize: '0.78rem', color: '#6b7280', mt: 0.3 }}
+                                title={entry.campaignName}
+                              >
+                                {entry.campaignName}
+                              </Typography>
+                            </Box>
+                          );
+                        })}
+                        {!rejectionRate.highest && (
+                          <Typography variant="body2" sx={{ color: '#9ca3af', textAlign: 'center', py: 2 }}>
+                            Not enough pitch data yet
+                          </Typography>
+                        )}
+                      </Stack>
+                    </Box>
+                  </Stack>
+                )}
+              </>
+            )}
+          </Box>
+        </>
+      )}
+    </Drawer>
+  );
+}
+
+CSMWorkloadDrawer.propTypes = {
+  csm: PropTypes.object,
+  dateRange: PropTypes.object,
+  onClose: PropTypes.func.isRequired,
+};

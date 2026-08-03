@@ -10,6 +10,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import { useGetThreadById } from 'src/api/chat';
 import { useAuthContext } from 'src/auth/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
+import { getUserDisplay } from 'src/utils/user-display';
 
 import axios from 'axios';
 
@@ -40,6 +41,8 @@ export default function ChatRoomSingle({ thread }) {
     return <div>Loading other user information...</div>;
   }
 
+  const otherUserDisplay = getUserDisplay(otherUser);
+
   return (
     <Box
       sx={{
@@ -52,13 +55,13 @@ export default function ChatRoomSingle({ thread }) {
       }}
     >
       <Avatar
-        alt={otherUser.name}
+        alt={otherUserDisplay.name}
         src={otherUser.photoURL}
         sx={{ alignContent: 'center', cursor: 'pointer', width: 108, height: 108, margin: 2 }}
       />
 
       <Typography variant="h6" align="center" sx={{ marginBottom: 2 }}>
-        {otherUser.name}
+        {otherUserDisplay.name}
       </Typography>
       {/* 
       <Typography variant="body2" align="center" sx={{ marginBottom: 2 }}>
@@ -94,7 +97,7 @@ export default function ChatRoomSingle({ thread }) {
 
         <Stack direction="row">
           <Iconify icon="fluent:mail-24-filled" />
-          <Typography variant="body2">{otherUser.email}</Typography>
+          <Typography variant="body2">{otherUserDisplay.email}</Typography>
         </Stack>
       </Stack>
     </Box>

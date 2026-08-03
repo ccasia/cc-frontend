@@ -1,25 +1,52 @@
 import useSWR from 'swr';
+import { useState, useEffect, useCallback } from 'react';
 
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
+
+import {
+  DEMO_CAMPAIGN_ID,
+  getDemoV4Submissions,
+  subscribeDemoV4Submissions,
+} from 'src/_mock/_demo-campaign';
 
 // ----------------------------------------------------------------------
 
 export const useGetV4Submissions = (campaignId, userId) => {
+  // Demo campaign: serve mocked submissions from the editable mock file.
+  const isDemoCampaign = campaignId === DEMO_CAMPAIGN_ID;
+  const [, setDemoVersion] = useState(0);
+
   const URL = `${endpoints.submission.v4.getSubmissions}?campaignId=${campaignId}${userId ? `&userId=${userId}` : ''}`;
 
-  const { data, isLoading, error, mutate } = useSWR(campaignId ? URL : null, fetcher, {
-    revalidateIfStale: true,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  });
+  const { data, isLoading, error, mutate } = useSWR(
+    campaignId && !isDemoCampaign ? URL : null,
+    fetcher,
+    {
+      revalidateIfStale: true,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
 
-  const test = data?.grouped;
+  useEffect(() => {
+    if (!isDemoCampaign) return undefined;
+    return subscribeDemoV4Submissions(() => setDemoVersion((version) => version + 1));
+  }, [isDemoCampaign]);
 
-  if (test?.agreement?.userId === 'cmiduug6103x6l7013wl2pxbs') {
-    console.log(test);
+  const demoMutate = useCallback(() => Promise.resolve(getDemoV4Submissions(userId)), [userId]);
+
+  if (isDemoCampaign) {
+    const demoData = getDemoV4Submissions(userId);
+
+    return {
+      submissions: demoData.submissions,
+      grouped: demoData.grouped,
+      total: demoData.total,
+      submissionsLoading: false,
+      submissionsError: undefined,
+      submissionsMutate: demoMutate,
+    };
   }
-
-  // console.log(test?.filter((a) => a.agreement.userId === 'cmiduug6103x6l7013wl2pxbs'));
 
   const memoizedValue = {
     submissions: data?.submissions || [],

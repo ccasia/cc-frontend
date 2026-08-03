@@ -92,10 +92,8 @@ const FinaliseCampaign = () => {
   const { control, watch, setValue } = useFormContext();
   const lgUp = useResponsive('up', 'lg');
 
-  const isV4Submission = watch('isV4Submission');
-  useEffect(() => {
-    setValue('submissionVersion', isV4Submission ? 'v4' : 'v2');
-  }, [isV4Submission, setValue]);
+  // Note: the client-campaign toggle (isV4Submission) no longer drives submissionVersion —
+  // all new campaigns are v4; the toggle only controls client attachment.
 
   // Template dialog state
   const templateModal = useBoolean();

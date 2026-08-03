@@ -28,6 +28,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import { getUserDisplay } from 'src/utils/user-display';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -42,6 +43,7 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
   const modal = useBoolean();
   const loading = useBoolean();
   const { user } = useAuthContext();
+  const pitchUser = getUserDisplay(data?.user);
 
   const methods = useForm({
     defaultValues: {
@@ -160,7 +162,7 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
           loading={loading.value}
           disabled={isDisabled}
         >
-          Shortlist {data?.user?.name}
+          Shortlist {pitchUser.name}
         </LoadingButton>
       </DialogActions>
     </Dialog>
@@ -171,8 +173,8 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
       <Stack spacing={2}>
         <Stack direction="row" gap={2} alignItems="center">
           <Stack direction="row" spacing={1} alignItems="center" flexGrow={1}>
-            <Avatar alt={data?.user?.name} src={data?.user?.photoURL} />
-            <Typography>{data?.user?.name}</Typography>
+            <Avatar alt={pitchUser.name} src={data?.user?.photoURL} />
+            <Typography>{pitchUser.name}</Typography>
             <Iconify icon="mdi:tick-decagram" color="success.main" />
           </Stack>
 
@@ -227,7 +229,7 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
           >
             <ListItemText
               primary="Name"
-              secondary={data?.user?.name}
+              secondary={pitchUser.name}
               primaryTypographyProps={{
                 variant: 'subtitle1',
               }}
@@ -237,7 +239,7 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
             />
             <ListItemText
               primary="Email"
-              secondary={data?.user?.email}
+              secondary={pitchUser.email}
               primaryTypographyProps={{
                 variant: 'subtitle1',
               }}

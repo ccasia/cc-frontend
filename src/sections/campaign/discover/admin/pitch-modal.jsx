@@ -30,7 +30,9 @@ import {
 
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
+import { getUserDisplay } from 'src/utils/user-display';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { campaignHasClient } from 'src/utils/campaign-flow';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -52,8 +54,37 @@ const PitchModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
   const { user } = useAuthContext();
+  const isClientRole = user?.role === 'client' || user?.role === 'client_demo';
+  const isDemoCampaign = Boolean(campaign?.isDemo);
+  const hasClient = campaignHasClient(campaign);
+
+  // 'send_to_client' shares the approve styling but has its own copy and handler intent
+  const isApproveLikeDialog =
+    confirmDialog.type === 'approve' || confirmDialog.type === 'send_to_client';
+
+  const confirmDialogCopy = (() => {
+    if (confirmDialog.type === 'send_to_client') {
+      return {
+        title: 'Send to Client?',
+        description: 'Send this pitch to the client for review?',
+        cta: 'Yes, send!',
+      };
+    }
+    if (confirmDialog.type === 'approve') {
+      return {
+        title: 'Approve Pitch?',
+        description: 'Are you sure you want to approve this pitch?',
+        cta: 'Yes, approve!',
+      };
+    }
+    return {
+      title: 'Decline Pitch?',
+      description: 'Are you sure you want to decline this pitch?',
+      cta: isClientRole ? 'Submit Reason' : 'Yes, decline!',
+    };
+  })();
   const [totalUGCVideos] = useState(null);
-  const { mutate } = useGetCampaignById(campaign.id);
+  const { mutate } = useGetCampaignById(isDemoCampaign ? null : campaign?.id);
   const navigate = useNavigate();
 
   const [maybeOpen, setMaybeOpen] = useState(false);
@@ -93,7 +124,7 @@ const PitchModal = ({
   useEffect(() => {
     let cancelled = false;
     const userId = currentPitch?.user?.id;
-    if (open && userId) {
+    if (open && userId && !isDemoCampaign) {
       setCreatorProfileFull(null);
       axiosInstance
         .get(endpoints.creators.getCreatorFullInfo(userId))
@@ -110,7 +141,7 @@ const PitchModal = ({
     return () => {
       cancelled = true;
     };
-  }, [open, currentPitch?.user?.id]);
+  }, [open, currentPitch?.user?.id, isDemoCampaign]);
 
   // Derive creator profile data from multiple possible sources
   const creatorProfile = creatorProfileFull?.creator || currentPitch?.user?.creator || {};
@@ -211,6 +242,19 @@ const PitchModal = ({
   // }, [campaign?.campaignRequirement, pitch]);
 
   const handleApprove = async () => {
+    // Hybrid pitch UX: 'approve' is final; 'send_to_client' forwards to client review
+    const sendingToClient = confirmDialog.type === 'send_to_client';
+
+    if (isDemoCampaign) {
+      const updatedPitch = { ...pitch, status: 'APPROVED', displayStatus: 'APPROVED' };
+      setCurrentPitch(updatedPitch);
+      onUpdate?.(updatedPitch);
+      enqueueSnackbar('Pitch approved successfully');
+      setConfirmDialog({ open: false, type: null });
+      onClose();
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
@@ -228,16 +272,19 @@ const PitchModal = ({
         console.log('Using V3 endpoint with pitch ID:', v3PitchId);
 
         // Check user role to call the correct endpoint
-        if (user?.role === 'client') {
+        if (isClientRole) {
           // Client approves pitch
           console.log('Client approving pitch with ID:', v3PitchId);
           response = await axiosInstance.patch(
             endpoints.campaign.pitch.v3.approveClient(v3PitchId)
           );
         } else {
-          // Admin approves pitch
+          // Admin approves pitch — explicit action tells the backend whether this is a
+          // final approval or a forward to client review
           console.log('Admin approving pitch with ID:', v3PitchId);
-          response = await axiosInstance.patch(endpoints.campaign.pitch.v3.approve(v3PitchId));
+          response = await axiosInstance.patch(endpoints.campaign.pitch.v3.approve(v3PitchId), {
+            action: sendingToClient ? 'send_to_client' : 'approve',
+          });
         }
       } else {
         // Use V2 endpoint for admin-created campaigns
@@ -254,7 +301,7 @@ const PitchModal = ({
         response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, requestData);
       }
 
-      const updatedPitch = { ...pitch, status: 'approved' };
+      const updatedPitch = { ...pitch, status: sendingToClient ? 'SENT_TO_CLIENT' : 'approved' };
       setCurrentPitch(updatedPitch);
 
       if (onUpdate) {
@@ -274,6 +321,31 @@ const PitchModal = ({
   };
 
   const handleDecline = async () => {
+    if (isDemoCampaign) {
+      const reasonLabel =
+        maybeReason === 'others'
+          ? 'Other'
+          : MAYBE_REASONS.find((reason) => reason.value === maybeReason)?.label;
+      const updatedPitch = {
+        ...pitch,
+        status: 'REJECTED',
+        displayStatus: 'REJECTED',
+        ...(reasonLabel ? { rejectionReason: reasonLabel } : {}),
+        ...(maybeReason === 'others' && maybeNote.trim()
+          ? { customRejectionText: maybeNote.trim() }
+          : {}),
+      };
+
+      setCurrentPitch(updatedPitch);
+      onUpdate?.(updatedPitch);
+      enqueueSnackbar('Pitch declined successfully');
+      setConfirmDialog({ open: false, type: null });
+      setMaybeReason('');
+      setMaybeNote('');
+      onClose();
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
@@ -285,7 +357,7 @@ const PitchModal = ({
         const v3PitchId = pitch.pitchId || pitch.id; // Use pitchId as it seems to be the correct identifier
 
         // Check user role to call the correct endpoint
-        if (user?.role === 'client') {
+        if (isClientRole) {
           let requestBody = {};
 
           if (maybeReason === 'others') {
@@ -344,12 +416,37 @@ const PitchModal = ({
   };
 
   const handleMaybeSubmit = async () => {
+    if (isDemoCampaign) {
+      const reasonLabel =
+        maybeReason === 'others'
+          ? 'Other'
+          : MAYBE_REASONS.find((reason) => reason.value === maybeReason)?.label || 'Unspecified';
+      const updatedPitch = {
+        ...pitch,
+        status: 'MAYBE',
+        displayStatus: 'MAYBE',
+        rejectionReason: reasonLabel,
+        ...(maybeReason === 'others' && maybeNote.trim()
+          ? { customRejectionText: maybeNote.trim() }
+          : {}),
+      };
+
+      setCurrentPitch(updatedPitch);
+      onUpdate?.(updatedPitch);
+      enqueueSnackbar('Pitch marked as Maybe');
+      setMaybeOpen(false);
+      setMaybeReason('');
+      setMaybeNote('');
+      onClose();
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
       let response;
 
-      if (campaign?.submissionVersion === 'v4' && user?.role === 'client') {
+      if (campaign?.submissionVersion === 'v4' && isClientRole) {
         const v3PitchId = pitch.pitchId || pitch.id;
 
         // Build request body
@@ -489,10 +586,10 @@ const PitchModal = ({
                         });
                       }}
                     >
-                      {currentPitch?.user?.name}
+                      {getUserDisplay(currentPitch?.user).name}
                     </Typography>
                     {(() => {
-                      const email = currentPitch?.user?.email;
+                      const {email} = getUserDisplay(currentPitch?.user);
                       const isGuest =
                         email?.includes('@tempmail.com') || email?.startsWith('guest_');
                       return email && !isGuest ? (
@@ -1426,22 +1523,16 @@ const PitchModal = ({
                     p: 3,
                     borderRadius: 2,
                     bgcolor: '#ffffff',
-                    border: '1px solid #203ff5',
-                    // borderBottom: '3px solid #203ff5',
-                    '& p': {
-                      margin: 0,
-                      '& + p': {
-                        mt: 0.5,
-                      },
-                    },
+                    border: '1px solid #e7e7e7',
                   }}
                 >
                   <Markdown children={currentPitch.content || ''} />
                 </Box>
               )}
+
             </Box>
             {/* CS Comments for client */}
-            {user?.role === 'client' && adminCommentsText.length > 0 && (
+            {isClientRole && adminCommentsText.length > 0 && (
               <Box>
                 <Typography
                   variant="subtitle2"
@@ -1534,7 +1625,37 @@ const PitchModal = ({
             >
               Approve
             </Button>
-            {user?.role === 'client' && (
+            {!isClientRole && campaign?.submissionVersion === 'v4' && hasClient && (
+              <Button
+                variant="contained"
+                onClick={() => setConfirmDialog({ open: true, type: 'send_to_client' })}
+                disabled={isDisabled || isSubmitting}
+                sx={{
+                  textTransform: 'none',
+                  minHeight: 42,
+                  minWidth: 100,
+                  bgcolor: '#FFFFFF',
+                  color: '#1340FF',
+                  border: '1.5px solid',
+                  borderColor: '#E7E7E7',
+                  borderBottom: '3px solid',
+                  borderBottomColor: '#E7E7E7',
+                  borderRadius: 1.15,
+                  fontWeight: 600,
+                  fontSize: '16px',
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
+                    border: '1.5px solid',
+                    borderColor: '#1340FF',
+                    borderBottom: '3px solid',
+                    borderBottomColor: '#1340FF',
+                  },
+                }}
+              >
+                Send to Client
+              </Button>
+            )}
+            {isClientRole && (
               <Button
                 variant="contained"
                 onClick={() => setMaybeOpen(true)}
@@ -1572,7 +1693,7 @@ const PitchModal = ({
       <Dialog open={confirmDialog.open} onClose={handleCloseConfirmDialog} maxWidth="xs" fullWidth>
         <DialogContent>
           {/* CONDITIONAL BODY */}
-          {confirmDialog.type === 'decline' && user?.role === 'client' ? (
+          {confirmDialog.type === 'decline' && isClientRole ? (
             // --- Client Decline: reason UI (reusing the dialog) ---
             <Stack spacing={2} sx={{ pt: 2 }}>
               <Typography
@@ -1638,12 +1759,12 @@ const PitchModal = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: '50%',
-                  bgcolor: confirmDialog.type === 'approve' ? '#5abc6f' : '#ff3b30',
+                  bgcolor: isApproveLikeDialog ? '#5abc6f' : '#ff3b30',
                   fontSize: '50px',
                   mb: -2,
                 }}
               >
-                {confirmDialog.type === 'approve' ? '🫣' : '🥹'}
+                {isApproveLikeDialog ? '🫣' : '🥹'}
               </Box>
               <Stack spacing={1} alignItems="center">
                 <Typography
@@ -1653,12 +1774,10 @@ const PitchModal = ({
                     fontWeight: 550,
                   }}
                 >
-                  {confirmDialog.type === 'approve' ? 'Approve Pitch?' : 'Decline Pitch?'}
+                  {confirmDialogCopy.title}
                 </Typography>
                 <Typography variant="body1" sx={{ color: '#636366', mt: -0.5, mb: -3 }}>
-                  {confirmDialog.type === 'approve'
-                    ? 'Are you sure you want to approve this pitch?'
-                    : 'Are you sure you want to decline this pitch?'}
+                  {confirmDialogCopy.description}
                 </Typography>
               </Stack>
             </Stack>
@@ -1694,19 +1813,19 @@ const PitchModal = ({
 
           <Button
             onClick={
-              confirmDialog.type === 'decline' && user?.role === 'client'
+              confirmDialog.type === 'decline' && isClientRole
                 ? handleDecline
-                : confirmDialog.type === 'approve'
+                : isApproveLikeDialog
                   ? handleApprove
                   : handleDecline
             }
             disabled={isSubmitting}
             sx={{
-              bgcolor: confirmDialog.type === 'approve' ? '#026D54' : '#ffffff',
-              color: confirmDialog.type === 'approve' ? '#fff' : '#000',
-              border: confirmDialog.type === 'approve' ? 'none' : '1.5px solid #e7e7e7',
+              bgcolor: isApproveLikeDialog ? '#026D54' : '#ffffff',
+              color: isApproveLikeDialog ? '#fff' : '#000',
+              border: isApproveLikeDialog ? 'none' : '1.5px solid #e7e7e7',
               borderBottom: '3px solid',
-              borderBottomColor: confirmDialog.type === 'approve' ? '#202021' : '#e7e7e7',
+              borderBottomColor: isApproveLikeDialog ? '#202021' : '#e7e7e7',
               borderRadius: 1.15,
               px: 2.5,
               py: 1.2,
@@ -1714,7 +1833,7 @@ const PitchModal = ({
               ml: 1,
               fontWeight: 600,
               '&:hover': {
-                bgcolor: confirmDialog.type === 'approve' ? '#1e4a3a' : '#e7e7e7',
+                bgcolor: isApproveLikeDialog ? '#1e4a3a' : '#e7e7e7',
               },
             }}
           >
@@ -1722,14 +1841,10 @@ const PitchModal = ({
               <CircularProgress size={20} color="inherit" />
             ) : (
               <>
-                {confirmDialog.type === 'approve' && (
+                {isApproveLikeDialog && (
                   <Iconify icon="eva:checkmark-fill" width={20} sx={{ mr: 0.5 }} />
                 )}
-                {confirmDialog.type === 'approve'
-                  ? 'Yes, approve!'
-                  : user?.role === 'client' && confirmDialog.type === 'decline'
-                    ? 'Submit Reason' // 🔥 client-side decline
-                    : 'Yes, decline!'}
+                {confirmDialogCopy.cta}
               </>
             )}
           </Button>

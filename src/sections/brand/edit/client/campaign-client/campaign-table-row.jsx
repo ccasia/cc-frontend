@@ -9,6 +9,9 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import { formatCurrencyAmount } from 'src/utils/currency';
+import { getCampaignBudget } from 'src/utils/campaign-budget';
+
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
@@ -76,6 +79,7 @@ const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow, 
     campaignId,
     name,
     campaignCredits,
+    submissionVersion,
     status,
     rawFootage,
     photos,
@@ -87,6 +91,7 @@ const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow, 
   const industries = campaignBrief?.industries || null;
   const startDate = campaignBrief?.startDate || null;
   const campaignImage = campaignBrief?.images?.[0] || null;
+  const campaignBudget = getCampaignBudget({ campaignCredits, submissionVersion });
 
   const confirm = useBoolean();
   const router = useRouter();
@@ -134,6 +139,11 @@ const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow, 
           <Typography variant="body2" fontWeight={600} color="primary.main">
             {campaignCredits || 0}
           </Typography>
+          {campaignBudget != null && (
+            <Typography variant="caption" color="text.secondary" display="block">
+              {formatCurrencyAmount(campaignBudget, 'MYR')}
+            </Typography>
+          )}
         </TableCell>
 
         <TableCell>

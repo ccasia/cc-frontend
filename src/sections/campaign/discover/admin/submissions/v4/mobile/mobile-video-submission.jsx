@@ -37,7 +37,8 @@ export default function MobileVideoSubmission({
   const { socket } = useSocketContext();
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  const isClient = userRole.toLowerCase() === 'client';
+  const normalizedUserRole = userRole.toLowerCase();
+  const isClient = normalizedUserRole === 'client' || normalizedUserRole === 'client_demo';
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
@@ -564,6 +565,7 @@ export default function MobileVideoSubmission({
             onPause={onPause}
             onPlay={onPlay}
             submission={modalSubmission || submission}
+            campaign={campaign}
             videoId={modalVideoId || video?.id}
             videoPage={videoPage}
             setVideoPage={setVideoPage}
