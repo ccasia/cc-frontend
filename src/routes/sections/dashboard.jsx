@@ -126,6 +126,8 @@ const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tie
 const VideoOfTheMonth = lazy(() =>
   import('src/pages/dashboard/video-of-the-month/video-of-the-month')
 );
+// Find Cipta — one-time treasure hunt event (superadmin only)
+const FindCipta = lazy(() => import('src/pages/dashboard/treasure-hunts/find-cipta'));
 
 // Feedback
 const Feedback = lazy(() => import('src/pages/dashboard/feedback/feedback'));
@@ -734,6 +736,14 @@ export const dashboardRoutes = [
         element: (
           <RoleBasedGuard roles={['superadmin', 'god', 'sales_and_marketing']} hasContent>
             <VideoOfTheMonth />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'treasure-hunts',
+        element: (
+          <RoleBasedGuard roles={['superadmin']} hasContent>
+            <FindCipta />
           </RoleBasedGuard>
         ),
       },

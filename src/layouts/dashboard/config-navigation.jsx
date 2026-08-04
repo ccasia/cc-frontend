@@ -208,6 +208,12 @@ export function useNavData() {
             icon: <Iconify icon="mdi:star-outline" width={25} />,
           },
           {
+            roles: ['superadmin'],
+            title: 'Find Cipta',
+            path: paths.dashboard.treasureHunts.root,
+            icon: <Iconify icon="mdi:map-marker-radius-outline" width={25} />,
+          },
+          {
             roles: ['superadmin', 'god'],
             title: 'Feedback',
             path: paths.dashboard.feedback.root,

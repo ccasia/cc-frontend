@@ -40,6 +40,33 @@ export const endpoints = {
     update: (id) => `/api/video-of-the-month/${id}`,
     delete: (id) => `/api/video-of-the-month/${id}`,
   },
+  treasureHunt: {
+    root: '/api/admin/treasure-hunts',
+    // Find Cipta is a one-time event — /current resolves the single hunt.
+    current: '/api/admin/treasure-hunts/current',
+    byId: (id) => `/api/admin/treasure-hunts/${id}`,
+    update: (id) => `/api/admin/treasure-hunts/${id}`,
+    dashboard: (id) => `/api/admin/treasure-hunts/${id}/dashboard`,
+    participants: (id) => `/api/admin/treasure-hunts/${id}/participants`,
+    exportCsv: (id) => `/api/admin/treasure-hunts/${id}/export.csv`,
+    locations: (id) => `/api/admin/treasure-hunts/${id}/locations`,
+    location: (id, locationId) => `/api/admin/treasure-hunts/${id}/locations/${locationId}`,
+    reorderLocations: (id) => `/api/admin/treasure-hunts/${id}/locations/reorder`,
+    publishQr: (id, locationId) =>
+      `/api/admin/treasure-hunts/${id}/locations/${locationId}/publish-qr`,
+    syncAnalytics: (id, locationId) =>
+      `/api/admin/treasure-hunts/${id}/locations/${locationId}/sync-analytics`,
+    publish: (id) => `/api/admin/treasure-hunts/${id}/publish`,
+    pause: (id) => `/api/admin/treasure-hunts/${id}/pause`,
+    resume: (id) => `/api/admin/treasure-hunts/${id}/resume`,
+    reactivate: (id) => `/api/admin/treasure-hunts/${id}/reactivate`,
+    archive: (id) => `/api/admin/treasure-hunts/${id}/archive`,
+    // Audited signed-URL lookup for a creator's scan photo. Lives on the hunts
+    // router because that is where the owner/superadmin access check runs.
+    captureUrl: (claimId) => `/api/hunts/claims/${claimId}/capture-url`,
+    // Public web-fallback preview (no auth).
+    preview: '/api/hunts/preview',
+  },
   dashboard: {
     stats: '/api/dashboard/stats',
     campaigns: '/api/dashboard/campaigns',

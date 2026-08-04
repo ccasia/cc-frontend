@@ -149,6 +149,10 @@ export const paths = {
     videoOfTheMonth: {
       root: `${ROOTS.DASHBOARD}/video-of-the-month`,
     },
+    // Find Cipta — a single one-time event, so there is no per-event detail path.
+    treasureHunts: {
+      root: `${ROOTS.DASHBOARD}/treasure-hunts`,
+    },
     feedback: {
       root: `${ROOTS.DASHBOARD}/feedback`,
     },

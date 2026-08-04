@@ -35,6 +35,9 @@ export default function Upload({
   onRemoveAll,
   sx,
   height = 250,
+  inputId,
+  previewAlt,
+  previewSx,
   ...other
 }) {
   const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections, open } =
@@ -86,7 +89,7 @@ export default function Upload({
         }),
       }}
     >
-      <input {...getInputProps()} />
+      <input {...getInputProps({ id: inputId })} />
 
       <Stack alignItems="center" spacing={2}>
         <Box
@@ -175,7 +178,23 @@ export default function Upload({
   );
 
   const renderSinglePreview = (
-    <SingleFilePreview imgUrl={typeof file === 'string' ? file : file?.preview} />
+    <Box
+      {...getRootProps({ className: 'dropzone' })}
+      sx={{
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: 1.5,
+      }}
+    >
+      <input {...getInputProps({ id: inputId })} />
+
+      <SingleFilePreview
+        imgUrl={typeof file === 'string' ? file : file?.preview}
+        alt={previewAlt}
+        sx={previewSx}
+      />
+
+    </Box>
   );
 
   const removeSinglePreview = hasFile && onDelete && (
@@ -256,7 +275,10 @@ Upload.propTypes = {
   onRemoveAll: PropTypes.func,
   onUpload: PropTypes.func,
   sx: PropTypes.object,
-  height: PropTypes.object,
+  height: PropTypes.oneOfType([PropTypes.number, PropTypes.object]),
+  inputId: PropTypes.string,
+  previewAlt: PropTypes.string,
+  previewSx: PropTypes.object,
   thumbnail: PropTypes.bool,
   uploadType: PropTypes.string,
 };
