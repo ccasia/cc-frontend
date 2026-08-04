@@ -49,8 +49,12 @@ export default function PostingLinkSection({
   const [newPostedLink, setNewPostedLink] = useState('');
   const [addLinkLoading, setAddLinkLoading] = useState(false);
 
-  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  const isSuperAdmin = userRole.toLowerCase() === 'superadmin';
+  const adminRoleName = (user?.admin?.role?.name || '').trim().toLowerCase();
+  const canApproveAdminAddedPostingLink =
+    user?.role === 'superadmin' ||
+    ['god', 'advanced'].includes(user?.admin?.mode) ||
+    adminRoleName === 'csl' ||
+    adminRoleName.includes('cs lead');
 
   const handlePostingLinkChange = useCallback((index, value) => {
     setPostingLinks((prev) => prev.map((link, i) => (i === index ? value : link)));
@@ -490,7 +494,7 @@ export default function PostingLinkSection({
           postingLinkAddedByAdmin &&
           !isPosted &&
           submission.content &&
-          isSuperAdmin &&
+          canApproveAdminAddedPostingLink &&
           renderActionButtons()}
         {/* No posting link yet — admin can enter one (or two) */}
         {!isClient && !submission.content && (
