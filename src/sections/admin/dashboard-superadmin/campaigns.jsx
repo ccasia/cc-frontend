@@ -243,9 +243,22 @@ const CampaignsTab = ({ dateRange }) => {
                             pct={budgetPct}
                             formatValue={fmtMYR}
                           />
+                        ) : c.creatorBudgetSpent > 0 ? (
+                          <Typography variant="caption" sx={{ color: '#374151' }}>
+                            {fmtMYR(c.creatorBudgetSpent)} spent (no cap set)
+                          </Typography>
                         ) : (
                           <Typography variant="caption" sx={{ color: '#9ca3af' }}>
                             N/A
+                          </Typography>
+                        )}
+                        {c.creatorBudgetSpentOther?.length > 0 && (
+                          <Typography variant="caption" sx={{ display: 'block', mt: 0.3, color: '#9ca3af' }}>
+                            +{' '}
+                            {c.creatorBudgetSpentOther
+                              .map((o) => `${o.currency} ${nf(o.amount)}`)
+                              .join(', ')}{' '}
+                            spent
                           </Typography>
                         )}
                       </TableCell>

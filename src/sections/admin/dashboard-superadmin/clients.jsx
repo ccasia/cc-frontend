@@ -61,7 +61,7 @@ function formatValidity(dateValue) {
   return { relative };
 }
 
-function ProgressBlock({ label, used, total, pct, formatValue }) {
+function ProgressBlock({ label, used, total, pct, formatValue, extra }) {
   return (
     <Box sx={{ minWidth: 170 }}>
       <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
@@ -84,6 +84,11 @@ function ProgressBlock({ label, used, total, pct, formatValue }) {
       <Typography variant="caption" sx={{ color: '#9ca3af' }}>
         {formatValue(used)} / {formatValue(total)}
       </Typography>
+      {extra && (
+        <Typography variant="caption" sx={{ display: 'block', color: '#9ca3af' }}>
+          {extra}
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -94,6 +99,7 @@ ProgressBlock.propTypes = {
   total: PropTypes.number.isRequired,
   pct: PropTypes.number.isRequired,
   formatValue: PropTypes.func.isRequired,
+  extra: PropTypes.node,
 };
 
 function ClientLogo({ client }) {
@@ -170,6 +176,11 @@ function ClientCard({ client }) {
           total={client.creatorBudget.total}
           pct={budgetPct}
           formatValue={fmtMYR}
+          extra={
+            client.creatorBudget.spentOther?.length > 0
+              ? `+ ${client.creatorBudget.spentOther.map((o) => `${o.currency} ${nf(o.amount)}`).join(', ')} spent`
+              : null
+          }
         />
       </Stack>
     </Card>
@@ -229,6 +240,11 @@ function ClientsTable({ clients }) {
                       total={client.creatorBudget.total}
                       pct={budgetPct}
                       formatValue={fmtMYR}
+                      extra={
+                        client.creatorBudget.spentOther?.length > 0
+                          ? `+ ${client.creatorBudget.spentOther.map((o) => `${o.currency} ${nf(o.amount)}`).join(', ')} spent`
+                          : null
+                      }
                     />
                   </TableCell>
                 </TableRow>
