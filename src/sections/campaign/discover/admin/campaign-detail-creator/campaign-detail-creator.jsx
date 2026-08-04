@@ -33,6 +33,7 @@ import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import { getUserDisplay } from 'src/utils/user-display';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { campaignHasClient } from 'src/utils/campaign-flow';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { shortlistCreator, useGetAllCreators } from 'src/api/creator';
@@ -200,7 +201,10 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
 
   const selectedCreator = watch('creator');
 
-  const onSubmit = handleSubmit(async (value) => {
+  // action: undefined = derived from client presence; 'approve' = admin approval is
+  // final even with a client attached; 'send_to_client' = route through client review
+  const makeSubmitShortlist = (action) =>
+    handleSubmit(async (value) => {
     try {
       loading.onTrue();
 
@@ -213,6 +217,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         const res = await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
           creators: newVal.map((val) => ({ id: val.id })),
           campaignId: campaign.id,
+          ...(action ? { action } : {}),
         });
         modal.onFalse();
         reset();
@@ -236,7 +241,12 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     } finally {
       loading.onFalse();
     }
-  });
+    });
+
+  const onSubmit = makeSubmitShortlist();
+
+  const hasClient = campaignHasClient(campaign);
+  const showShortlistActionChoice = campaign?.submissionVersion === 'v4' && hasClient;
 
   const handleEditAgreement = (creator) => {
     if (campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4') {
@@ -474,6 +484,36 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               Cancel
             </Button>
 
+            {showShortlistActionChoice && (
+              <LoadingButton
+                disabled={isSubmitting || !creators.length}
+                loading={loading.value}
+                onClick={() => makeSubmitShortlist('approve')()}
+                sx={{
+                  bgcolor: '#ffffff',
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                  height: 44,
+                  color: '#1ABF66',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  px: 3,
+                  '&:hover': {
+                    bgcolor: alpha('#636366', 0.08),
+                    opacity: 0.9,
+                  },
+                  '&:disabled': {
+                    bgcolor: '#e7e7e7',
+                    color: '#999999',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '3px solid #d1d1d1',
+                  },
+                }}
+              >
+                Approve Directly
+              </LoadingButton>
+            )}
+
             <LoadingButton
               disabled={isSubmitting || !creators.length}
               loading={loading.value}
@@ -507,7 +547,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                 },
               }}
             >
-              Continue
+              {showShortlistActionChoice ? 'Send to Client' : 'Continue'}
             </LoadingButton>
           </DialogActions>
         </>
@@ -685,6 +725,36 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                 Cancel
               </Button>
 
+              {showShortlistActionChoice && (
+                <LoadingButton
+                  disabled={isDisabled || !selectedCreator.length || isSubmitting}
+                  loading={loading.value}
+                  onClick={() => makeSubmitShortlist('approve')()}
+                  sx={{
+                    bgcolor: '#ffffff',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
+                    height: 44,
+                    color: '#1ABF66',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    px: 3,
+                    '&:hover': {
+                      bgcolor: alpha('#636366', 0.08),
+                      opacity: 0.9,
+                    },
+                    '&:disabled': {
+                      bgcolor: '#e7e7e7',
+                      color: '#999999',
+                      border: '1px solid #e7e7e7',
+                      borderBottom: '3px solid #d1d1d1',
+                    },
+                  }}
+                >
+                  Approve Directly
+                </LoadingButton>
+              )}
+
               <LoadingButton
                 type="submit"
                 disabled={isDisabled || !selectedCreator.length || isSubmitting}
@@ -710,7 +780,9 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                   },
                 }}
               >
-                Shortlist {selectedCreator.length > 0 && selectedCreator.length} Creators
+                {showShortlistActionChoice
+                  ? `Send ${selectedCreator.length > 0 ? selectedCreator.length : ''} to Client`
+                  : `Shortlist ${selectedCreator.length > 0 ? selectedCreator.length : ''} Creators`}
               </LoadingButton>
             </DialogActions>
           </FormProvider>

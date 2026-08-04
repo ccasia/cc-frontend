@@ -611,6 +611,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     const transformed = manualEntries.map((entry) => ({
       id: entry.id,
       platform: entry.platform,
+      postingLink: entry.postUrl || null,
       user: {
         id: entry.id,
         name: entry.creatorName,

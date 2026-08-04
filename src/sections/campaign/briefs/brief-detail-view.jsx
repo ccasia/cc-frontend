@@ -1,9 +1,9 @@
 import useSWR from 'swr';
-import { useState, useCallback } from 'react';
-import { useSnackbar } from 'notistack';
-import { useParams, useNavigate } from 'react-router-dom';
-
 import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
+import { useSnackbar } from 'notistack';
+import { useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -24,7 +24,6 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import BriefForm from './brief-form';
 import BriefFormLayout from './brief-form-layout';
@@ -33,12 +32,15 @@ import AssignCsmDialog from './dialogs/assign-csm-dialog';
 import { STATUS_CONFIG } from './components/status-badge';
 import SendToClientDialog from './dialogs/send-to-client-dialog';
 
-export default function CampaignBriefDetailView() {
+export default function CampaignBriefDetailView({ briefId, onClose }) {
   const settings = useSettingsContext();
   const navigate = useNavigate();
   const { user } = useAuthContext();
-  const { id } = useParams();
+  const params = useParams();
   const { enqueueSnackbar } = useSnackbar();
+
+  const id = briefId ?? params.id;
+  const inDialog = Boolean(briefId);
 
   const {
     data: brief,
@@ -60,6 +62,9 @@ export default function CampaignBriefDetailView() {
   // CSL-authored briefs skip the CSL-group handoff: the CSL assigns a CSM
   // directly at APPROVED (the assign action self-handovers server-side).
   const isCslAuthored = brief?.draftOrigin === 'CSL_CREATED';
+  // CSM-authored briefs skip handover entirely: the CSM finalizes their own
+  // brief into a campaign they manage (server keeps them as manager).
+  const isCsmAuthored = brief?.draftOrigin === 'CSM_CREATED';
 
   // BD reset — mirror of the client's handleResetToSnapshot: revert on the
   // server to the stored snapshot, refresh the brief, then bump resetSignal so
@@ -175,8 +180,12 @@ export default function CampaignBriefDetailView() {
         case 'SENT_TO_CLIENT':
           return { label: 'RESEND TO CLIENT', onClick: () => setSendOpen(true) };
         case 'APPROVED':
-          // CSL-authored briefs assign a CSM directly (self-handover); everyone
-          // else hands over to the CSL group.
+          // CSM-authored → the CSM finalizes into their own campaign.
+          // CSL-authored → the CSL assigns a CSM directly (self-handover).
+          // Everyone else → hand over to the CSL group.
+          if (isCsmAuthored) {
+            return { label: 'CREATE CAMPAIGN', onClick: () => setAssignCsmOpen(true), bg: '#1340FF' };
+          }
           return isCslAuthored
             ? { label: 'ASSIGN CSM', onClick: () => setAssignCsmOpen(true), bg: '#1340FF' }
             : { label: 'HANDOVER TO CS', onClick: () => setHandoverOpen(true) };
@@ -200,12 +209,22 @@ export default function CampaignBriefDetailView() {
   return (
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
-      sx={{ px: { xs: 2, sm: 3, md: 2 }, pb: 4, overflowX: 'hidden' }}
+      sx={{
+        px: { xs: 2, sm: 3, md: 2 },
+        overflowX: 'hidden',
+        ...(inDialog
+          ? { height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, py: 2 }
+          : { pb: 4 }),
+      }}
     >
       <BriefFormLayout
+        scrollMode={inDialog ? 'internal' : 'page'}
         topLeft={
-          <Button variant="outlined" onClick={() => navigate(paths.dashboard.campaign.briefs)}>
-            Back
+          <Button
+            variant="outlined"
+            onClick={() => (inDialog ? onClose?.() : navigate(paths.dashboard.campaign.briefs))}
+          >
+            {inDialog ? 'Close' : 'Back'}
           </Button>
         }
         leftExtra={
@@ -386,18 +405,26 @@ export default function CampaignBriefDetailView() {
         onClose={() => setHandoverOpen(false)}
         onHandedOver={() => {
           mutate();
-          navigate(paths.dashboard.campaign.briefs);
+          if (inDialog) onClose?.();
+          else navigate(paths.dashboard.campaign.briefs);
         }}
       />
       <AssignCsmDialog
         open={assignCsmOpen}
         brief={brief}
+        mode={isCsmAuthored ? 'finalize' : 'assign'}
         onClose={() => setAssignCsmOpen(false)}
         onAssigned={() => {
           mutate();
-          navigate(paths.dashboard.campaign.briefs);
+          if (inDialog) onClose?.();
+          else navigate(paths.dashboard.campaign.briefs);
         }}
       />
     </Container>
   );
 }
+
+CampaignBriefDetailView.propTypes = {
+  briefId: PropTypes.string,
+  onClose: PropTypes.func,
+};

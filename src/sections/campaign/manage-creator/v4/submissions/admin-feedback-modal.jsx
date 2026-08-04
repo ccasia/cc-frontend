@@ -19,6 +19,7 @@ import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 
 import { fDateTime } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { campaignHasClient } from 'src/utils/campaign-flow';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -1140,6 +1141,7 @@ export default function AdminFeedbackPanel({
   onPause,
   onPlay,
   submission,
+  campaign,
   videoId,
   videoPage,
   setVideoPage,
@@ -1667,8 +1669,10 @@ export default function AdminFeedbackPanel({
     submission?.status === 'CLIENT_APPROVED' ||
     submission?.status === 'POSTED';
 
+  // Only offer Send to Client when the campaign actually has a client attached.
+  // getV4Submissions' campaign select is minimal, so prefer the full campaign prop.
   const showSendToClient =
-    submission?.status === 'PENDING_REVIEW' && submission?.campaign?.origin !== 'ADMIN';
+    submission?.status === 'PENDING_REVIEW' && campaignHasClient(campaign ?? submission?.campaign);
 
   const showSendToCreator =
     submission?.status === 'PENDING_REVIEW' || submission?.status === 'CLIENT_FEEDBACK';
@@ -2397,6 +2401,7 @@ AdminFeedbackPanel.propTypes = {
   duration: PropTypes.number,
   onSeek: PropTypes.func,
   submission: PropTypes.object,
+  campaign: PropTypes.object,
   videoId: PropTypes.string,
   videoPage: PropTypes.number,
   setVideoPage: PropTypes.func,

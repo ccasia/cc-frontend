@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
+
+import { campaignHasClient } from 'src/utils/campaign-flow';
+
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import {
@@ -119,6 +122,10 @@ export default function FeedbackActions({
 
   const isVideoSubmission = submission.submissionType?.type === 'VIDEO';
 
+  // On campaigns without a client, admin approval is final — the approve action
+  // never forwards to client review. See docs/v4-unification-plan.md.
+  const adminSendsToClient = !isClient && campaignHasClient(campaign);
+
   // Legacy flow — photo / raw-footage submissions (desktop + mobile).
   // Mirrors pre-video-flow behavior on main: inline Request a Change / Approve
   // buttons and an optional comments TextField. Video uses the new flow below.
@@ -137,11 +144,14 @@ export default function FeedbackActions({
       !isClient && isClientFeedback && action !== 'request_revision';
     const legacyShowReasonsDropdown = action === 'request_revision' || action === 'request_changes';
 
-    const legacyActionText = !isClient ? 'Send this Submission to Client?' : 'Approve Submission?';
-    const legacyIconSrc = !isClient
+    const legacyApproveLabel = adminSendsToClient ? 'Send to Client' : 'Approve';
+    const legacyActionText = adminSendsToClient
+      ? 'Send this Submission to Client?'
+      : 'Approve Submission?';
+    const legacyIconSrc = adminSendsToClient
       ? '/assets/images/modals/send_to_client.png'
       : '/assets/images/modals/approve.png';
-    const legacyIconAlt = !isClient ? 'send_to_client' : 'approve';
+    const legacyIconAlt = adminSendsToClient ? 'send_to_client' : 'approve';
 
     return (
       <Box sx={{ flex: '0 0 auto' }}>
@@ -210,8 +220,7 @@ export default function FeedbackActions({
                 disabled={loading || isDisabled}
                 sx={{ ...BUTTON_STYLES.base, ...BUTTON_STYLES.success }}
               >
-                {/* eslint-disable-next-line no-nested-ternary */}
-                {loading ? 'Processing...' : !isClient ? 'Send to Client' : 'Approve'}
+                {loading ? 'Processing...' : legacyApproveLabel}
               </Button>
             )}
 
@@ -492,7 +501,7 @@ export default function FeedbackActions({
     );
   }
 
-  const showApproveAction = isClient || isVideoSubmission;
+  const showApproveAction = isClient || isVideoSubmission || !adminSendsToClient;
 
   const actionText = showApproveAction ? 'Approve Submission?' : 'Send this Submission to Client?';
   const modalIconSrc = showApproveAction
@@ -590,7 +599,7 @@ export default function FeedbackActions({
 
           {!isClient && visibility.showApproveButton && (
             <Tooltip
-              title={!isClient && !isVideoSubmission ? 'Send to Client' : ''}
+              title={adminSendsToClient && !isVideoSubmission ? 'Send to Client' : ''}
               arrow
               placement="top"
             >
@@ -884,6 +893,7 @@ export default function FeedbackActions({
               duration={duration}
               onSeek={onSeek}
               submission={submission}
+              campaign={campaign}
               videoId={videoId || submission.video?.[0]?.id}
               videoPage={videoPage}
               setVideoPage={setVideoPage}

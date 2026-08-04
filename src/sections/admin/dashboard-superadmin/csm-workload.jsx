@@ -190,7 +190,7 @@ const CSMWorkloadTab = ({ dateRange }) => {
         </Grid>
       )}
 
-      <CSMWorkloadDrawer csm={selectedCSM} onClose={() => setSelectedCSM(null)} />
+      <CSMWorkloadDrawer csm={selectedCSM} dateRange={dateRange} onClose={() => setSelectedCSM(null)} />
     </Box>
   );
 };

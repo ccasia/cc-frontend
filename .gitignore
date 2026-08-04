@@ -39,3 +39,4 @@ cc-backend
 .cursorignore
 .DS_Store
 CLAUDE.md
+*.md

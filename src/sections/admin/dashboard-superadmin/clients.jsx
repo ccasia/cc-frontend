@@ -1,6 +1,27 @@
-import React from 'react';
+import useSWR from 'swr';
+import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
+import React, { useMemo, useState } from 'react';
 
-import { Box, Card, Typography } from '@mui/material';
+import {
+  Box,
+  Card,
+  Grid,
+  Stack,
+  Table,
+  Avatar,
+  TableRow,
+  TableBody,
+  TableCell,
+  TableHead,
+  Typography,
+  IconButton,
+  OutlinedInput,
+  InputAdornment,
+  CircularProgress,
+} from '@mui/material';
+
+import { fetcher, endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 
@@ -9,6 +30,8 @@ const SWR_OPTS = { revalidateOnFocus: false, revalidateOnReconnect: false, dedup
 const nf = (n) => Math.round(n || 0).toLocaleString('en-US');
 const fmtMYR = (n) => `MYR ${nf(n)}`;
 
+// Rounds to a whole percent, but keeps a decimal for small non-zero values so
+// e.g. 35/10,000 shows as "0.4%" instead of misleadingly rounding down to "0%".
 const formatPct = (rawPct) => {
   if (rawPct <= 0) return '0%';
   if (rawPct < 1) return `${rawPct.toFixed(1)}%`;

@@ -63,12 +63,16 @@ function getRangeForValue(value) {
 }
 
 const DashboardSuperadminView = () => {
-  const [tab, setTab] = useState('csm');
+  const [tab, setTab] = useState('bd');
   const [timeRange, setTimeRange] = useState('all');
   const [customAnchor, setCustomAnchor] = useState(null);
   const [customRange, setCustomRange] = useState({ startDate: '', endDate: '' });
 
-  const { data: dashboardStats, isLoading: statsLoading } = useSWR(endpoints.dashboard.stats, fetcher, SWR_OPTS);
+  const { data: dashboardStats, isLoading: statsLoading } = useSWR(
+    `${endpoints.dashboard.stats}?version=v4`,
+    fetcher,
+    SWR_OPTS
+  );
   const stats = dashboardStats?.data || {};
 
   const dateRange = useMemo(() => {
@@ -261,10 +265,10 @@ const DashboardSuperadminView = () => {
         ))}
       </Tabs>
 
-      {tab === 'bd' && <BusinessDevelopmentTab />}
+      {tab === 'bd' && <BusinessDevelopmentTab dateRange={dateRange}/>}
       {tab === 'csm' && <CSMWorkloadTab dateRange={dateRange} />}
-      {tab === 'campaigns' && <CampaignsTab />}
-      {tab === 'clients' && <ClientsTab />}
+      {tab === 'campaigns' && <CampaignsTab dateRange={dateRange} />}
+      {tab === 'clients' && <ClientsTab dateRange={dateRange} />}
     </Box>
   );
 };

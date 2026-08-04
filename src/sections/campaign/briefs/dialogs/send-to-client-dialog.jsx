@@ -1,7 +1,7 @@
 import * as yup from 'yup';
 import PropTypes from 'prop-types';
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
 import { useSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -24,22 +24,36 @@ import BriefSentDialog from './brief-sent-dialog';
 const schema = yup.object({
   clientName: yup.string().trim().required('Client name is required'),
   clientEmail: yup.string().trim().email('Invalid email').required('Client email is required'),
+  message: yup.string().trim().max(500, 'Message is too long'),
 });
 
 export default function SendToClientDialog({ open, brief, onClose, onSent }) {
   const { enqueueSnackbar } = useSnackbar();
   const [sentLink, setSentLink] = useState(null);
+  // The BD's optional note, carried into the "Brief Sent!" share buttons.
+  const [sentMessage, setSentMessage] = useState('');
 
   const methods = useForm({
     resolver: yupResolver(schema),
-    defaultValues: { clientName: brief?.clientName || '', clientEmail: brief?.clientEmail || '' },
+    defaultValues: { clientName: brief?.clientName || '', clientEmail: brief?.clientEmail || '', message: '' },
   });
 
-  const { handleSubmit, formState: { isSubmitting } } = methods;
+  const { handleSubmit, reset, formState: { isSubmitting } } = methods;
 
-  const onSubmit = handleSubmit(async (values) => {
+  // defaultValues only applies on the first mount; the dialog is mounted once
+  // and reused per brief, so re-seed the fields each time it opens.
+  useEffect(() => {
+    if (open) {
+      reset({ clientName: brief?.clientName || '', clientEmail: brief?.clientEmail || '', message: '' });
+    }
+  }, [open, brief?.id, brief?.clientName, brief?.clientEmail, reset]);
+
+  const onSubmit = handleSubmit(async ({ message, ...values }) => {
     try {
+      // The message is a frontend-only convenience for the social share step —
+      // it is not persisted or emailed, so it stays out of the send payload.
       const res = await axiosInstance.post(endpoints.campaignBrief.send(brief.id), values);
+      setSentMessage((message || '').trim());
       setSentLink(res.data?.link || null);
       onSent?.();
     } catch (error) {
@@ -49,11 +63,12 @@ export default function SendToClientDialog({ open, brief, onClose, onSent }) {
 
   const handleSentClose = () => {
     setSentLink(null);
+    setSentMessage('');
     onClose?.();
   };
 
   if (sentLink) {
-    return <BriefSentDialog open link={sentLink} onClose={handleSentClose} />;
+    return <BriefSentDialog open link={sentLink} message={sentMessage} onClose={handleSentClose} />;
   }
 
   return (
@@ -74,11 +89,21 @@ export default function SendToClientDialog({ open, brief, onClose, onSent }) {
             <RHFTextField name="clientEmail" label="Client Email" fullWidth />
           </Stack>
 
+          <RHFTextField
+            name="message"
+            label="Message to client (optional)"
+            placeholder="Add a short note — it'll be prefilled when you share the link on WhatsApp or Telegram."
+            fullWidth
+            multiline
+            rows={3}
+            sx={{ mb: 3 }}
+          />
+
           <Box sx={{ p: 2, borderRadius: 1, bgcolor: '#FAFAFA', mb: 3 }}>
             <Stack direction="row" spacing={3} alignItems="center">
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" color="text.secondary">Brand Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>{brief?.name || '—'}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>{brief?.brandName || brief?.name || '—'}</Typography>
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>Status</Typography>

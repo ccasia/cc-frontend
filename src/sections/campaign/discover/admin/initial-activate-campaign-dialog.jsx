@@ -29,7 +29,6 @@ import { useSnackbar } from 'src/components/snackbar';
 // ----------------------------------------------------------------------
 
 export default function InitialActivateCampaignDialog({ open, onClose, campaignId }) {
-  console.log('InitialActivateCampaignDialog rendered:', { open, campaignId });
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   

@@ -6,7 +6,7 @@ export default function Page() {
   return (
     <>
       <Helmet>
-        <title>Finance Discover</title>
+        <title>Finance Dashboard</title>
       </Helmet>
 
       <FinanceDiscover />

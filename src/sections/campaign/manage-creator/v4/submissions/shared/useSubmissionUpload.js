@@ -31,8 +31,9 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
   // Caption state (only if hasCaption is true)
   const [caption, setCaption] = useState(hasCaption ? (submission.caption || '') : '');
 
-  // Posting link state (only if hasPostingLink is true)
-  const [postingLink, setPostingLink] = useState(hasPostingLink ? (submission.content || '') : '');
+  // Posting link state (only if hasPostingLink is true) — up to 2 links
+  const initialPostingLinks = submission.videos?.length ? submission.videos : [''];
+  const [postingLinks, setPostingLinks] = useState(hasPostingLink ? initialPostingLinks : []);
   const [postingLoading, setPostingLoading] = useState(false);
 
   // Media-specific state
@@ -43,8 +44,16 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
     setCaption(e.target.value);
   }, []);
 
-  const handlePostingLinkChange = useCallback((e) => {
-    setPostingLink(e.target.value);
+  const handlePostingLinkChange = useCallback((index, value) => {
+    setPostingLinks((prev) => prev.map((link, i) => (i === index ? value : link)));
+  }, []);
+
+  const handleAddPostingLink = useCallback(() => {
+    setPostingLinks((prev) => (prev.length >= 2 ? prev : [...prev, '']));
+  }, []);
+
+  const handleRemovePostingLink = useCallback((index) => {
+    setPostingLinks((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   const handleFilesChange = useCallback((files) => {
@@ -69,7 +78,9 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
   }, []);
 
   const handleSubmitPostingLink = useCallback(async () => {
-    if (!postingLink.trim()) {
+    const trimmedLinks = postingLinks.map((link) => link.trim()).filter(Boolean);
+
+    if (trimmedLinks.length === 0) {
       enqueueSnackbar('Please enter a posting link', { variant: 'error' });
       return;
     }
@@ -78,7 +89,7 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
       setPostingLoading(true);
       await axiosInstance.put(endpoints.submission.creator.v4.updatePostingLink, {
         submissionId: submission.id,
-        postingLink: postingLink.trim(),
+        postingLinks: trimmedLinks,
       });
 
       enqueueSnackbar('Posting link submitted successfully', { variant: 'success' });
@@ -89,7 +100,7 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
     } finally {
       setPostingLoading(false);
     }
-  }, [postingLink, submission.id, onUpdate]);
+  }, [postingLinks, submission.id, onUpdate]);
 
   /**
    * Generic upload handler using XMLHttpRequest for progress tracking
@@ -210,9 +221,9 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
     setCaption,
 
     // Posting link state
-    postingLink,
+    postingLinks,
     postingLoading,
-    setPostingLink,
+    setPostingLinks,
 
     // Media-specific state
     photosToRemove,
@@ -221,6 +232,8 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
     // Handlers
     handleCaptionChange,
     handlePostingLinkChange,
+    handleAddPostingLink,
+    handleRemovePostingLink,
     handleFilesChange,
     handleAdditionalFilesChange,
     handleRemoveFile,

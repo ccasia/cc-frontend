@@ -17,6 +17,7 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 import OutlinedInput from '@mui/material/OutlinedInput';
+import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import FormHelperText from '@mui/material/FormHelperText';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -27,8 +28,15 @@ import Iconify from 'src/components/iconify';
 
 import AttachClientPackage from './attach-client-package';
 
-export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
+// mode:
+//   'assign'   — CSL assigns one or more CSMs (shows the CSM picker).
+//   'finalize' — a CSM finalizes their OWN brief into a campaign they manage.
+//                No CSM picker; on save it just attaches the client/package and
+//                calls the finalize endpoint (server keeps the CSM as manager).
+export default function AssignCsmDialog({ open, brief, onClose, onAssigned, mode = 'assign' }) {
   const { enqueueSnackbar } = useSnackbar();
+
+  const isFinalize = mode === 'finalize';
 
   const attachRef = useRef(null);
 
@@ -50,10 +58,13 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
     setError('');
     setInternalComments('');
     setLoading(true);
-    Promise.all([
-      axiosInstance.get('/api/admin/getAllAdmins'),
-      axiosInstance.get(endpoints.campaignBrief.get(brief.id)),
-    ])
+
+    // Finalize mode doesn't pick CSMs, so skip the admins fetch.
+    const adminsReq = isFinalize
+      ? Promise.resolve({ data: [] })
+      : axiosInstance.get('/api/admin/getAllAdmins');
+
+    Promise.all([adminsReq, axiosInstance.get(endpoints.campaignBrief.get(brief.id))])
       .then(([adminsRes, briefRes]) => {
         const csms = (adminsRes.data || []).filter(
           (a) =>
@@ -87,57 +98,90 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
 
         setInternalComments(briefRes.data?.internalComments || '');
       })
-      .catch(() => enqueueSnackbar('Failed to load CSM admins', { variant: 'error' }))
+      .catch(() => enqueueSnackbar('Failed to load brief', { variant: 'error' }))
       .finally(() => setLoading(false));
-  }, [open, brief?.id, enqueueSnackbar]);
+  }, [open, brief?.id, isFinalize, enqueueSnackbar]);
 
   const assignedIds = new Set(assigned.map((a) => a.id));
 
   const handleSubmit = async () => {
-    if (selected.length === 0) {
+    if (!isFinalize && selected.length === 0) {
       setError('Select at least one CSM.');
       return;
     }
     setSubmitting(true);
     try {
       // Attach a client + package when the brief has no active package yet.
+      // When a package is attached here, capture its value for won-deal tracking.
+      let deal = null;
       if (!hasActivePackage) {
         const result = await attachRef.current?.resolveCompany();
         if (!result?.ok) {
           setSubmitting(false);
           return;
         }
+        deal = { wonAmount: result.packageValue ?? null, wonCurrency: result.currency ?? null };
         await axiosInstance.patch(endpoints.campaign.editCampaignBrandOrCompany, {
           campaignBrand: { id: result.id, name: result.name },
           id: brief.id,
         });
       }
 
-      await axiosInstance.post(endpoints.campaignBrief.assignCsm(brief.id), {
-        csmIds: selected,
-        internalComments: internalComments || '',
-      });
-      enqueueSnackbar('CSM assigned', { variant: 'success' });
+      if (isFinalize) {
+        // CSM finalizes their own brief — no CSM selection, they stay as manager.
+        await axiosInstance.post(endpoints.campaignBrief.finalize(brief.id), {
+          internalComments: internalComments || '',
+          ...(deal || {}),
+        });
+        enqueueSnackbar('Campaign created', { variant: 'success' });
+      } else {
+        await axiosInstance.post(endpoints.campaignBrief.assignCsm(brief.id), {
+          csmIds: selected,
+          internalComments: internalComments || '',
+        });
+        enqueueSnackbar('CSM assigned', { variant: 'success' });
+      }
       onAssigned?.();
       onClose?.();
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || err?.message || 'Failed to assign CSM', {
-        variant: 'error',
-      });
+      enqueueSnackbar(
+        err?.response?.data?.message ||
+          err?.message ||
+          `Failed to ${isFinalize ? 'finalize brief' : 'assign CSM'}`,
+        { variant: 'error' }
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-      <DialogContent sx={{ p: 4 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
-          <Typography variant="h4" sx={{ fontFamily: 'Instrument Serif, serif', fontWeight: 400 }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          maxHeight: 'calc(100vh - 64px)',
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      }}
+    >
+      <DialogContent sx={{ p: 4, flex: 1, overflowY: 'auto' }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="flex-start"
+          sx={{ mb: 0.5 }}
+        >
+          <Typography variant="h3" sx={{ fontFamily: 'Instrument Serif, serif', fontWeight: 400 }}>
             Attach Client &amp; Package
           </Typography>
-          <IconButton onClick={onClose} size="small">
-            <Iconify icon="eva:close-fill" />
+          <IconButton onClick={onClose} size="medium">
+            <Iconify width={24} icon="eva:close-fill" />
           </IconButton>
         </Stack>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -158,82 +202,95 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
               </>
             )}
 
-            {/* Currently assigned — so CSL doesn't double-assign. */}
-            {assigned.length > 0 && (
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600 }}>
-                  Currently assigned
-                </Typography>
-                <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 0 }}>
-                  {assigned.map((a) => (
-                    <Chip
-                      key={a.id}
-                      avatar={<Avatar src={a.photoURL || undefined}>{a.name?.charAt(0) || 'C'}</Avatar>}
-                      label={a.name || a.email || a.id}
-                      size="small"
-                      sx={{ bgcolor: 'transparent', color: 'text.secondary', fontWeight: 600 }}
-                    />
-                  ))}
-                </Stack>
-              </Box>
-            )}
-
-            <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
-              <InputLabel>CSM Admins</InputLabel>
-              <Select
-                multiple
-                value={selected}
-                onChange={(e) => {
-                  setSelected(e.target.value);
-                  setError('');
-                }}
-                input={<OutlinedInput label="CSM Admins" />}
-                renderValue={(vals) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {vals.map((v) => {
-                      const a = csmOptions.find((o) => o.userId === v);
-                      return <Chip key={v} label={a?.user?.name || v} size="small" />;
-                    })}
+            {/* CSM picker — only in assign mode. In finalize mode the CSM
+                finalizes their own brief and stays as manager. */}
+            {!isFinalize && (
+              <>
+                {/* Currently assigned — so CSL doesn't double-assign. */}
+                {assigned.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600 }}>
+                      Currently assigned
+                    </Typography>
+                    <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 0 }}>
+                      {assigned.map((a) => (
+                        <Chip
+                          key={a.id}
+                          avatar={
+                            <Avatar src={a.photoURL || undefined}>
+                              {a.name?.charAt(0) || 'C'}
+                            </Avatar>
+                          }
+                          label={a.name || a.email || a.id}
+                          size="small"
+                          sx={{ bgcolor: 'transparent', color: 'text.secondary', fontWeight: 600 }}
+                        />
+                      ))}
+                    </Stack>
                   </Box>
                 )}
-              >
-                {csmOptions.length > 0 ? (
-                  csmOptions.map((admin) => {
-                    const already = assignedIds.has(admin.userId);
-                    return (
-                      <MenuItem key={admin.userId} value={admin.userId} disabled={already}>
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          alignItems="center"
-                          justifyContent="space-between"
-                          sx={{ width: '100%' }}
-                        >
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Avatar src={admin.user?.photoURL} sx={{ width: 32, height: 32 }}>
-                              {admin.user?.name?.charAt(0) || 'A'}
-                            </Avatar>
-                            <Typography>{admin.user?.name || admin.userId}</Typography>
-                          </Stack>
-                          {already && (
-                            <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
-                              Assigned
-                            </Typography>
-                          )}
-                        </Stack>
-                      </MenuItem>
-                    );
-                  })
-                ) : (
-                  <MenuItem disabled>No CSM admins available</MenuItem>
-                )}
-              </Select>
-              {error && <FormHelperText>{error}</FormHelperText>}
-            </FormControl>
+
+                <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
+                  <InputLabel>CSM Admins</InputLabel>
+                  <Select
+                    multiple
+                    value={selected}
+                    onChange={(e) => {
+                      setSelected(e.target.value);
+                      setError('');
+                    }}
+                    input={<OutlinedInput label="CSM Admins" />}
+                    renderValue={(vals) => (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {vals.map((v) => {
+                          const a = csmOptions.find((o) => o.userId === v);
+                          return <Chip key={v} label={a?.user?.name || v} size="small" />;
+                        })}
+                      </Box>
+                    )}
+                  >
+                    {csmOptions.length > 0 ? (
+                      csmOptions.map((admin) => {
+                        const already = assignedIds.has(admin.userId);
+                        return (
+                          <MenuItem key={admin.userId} value={admin.userId} disabled={already}>
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              alignItems="center"
+                              justifyContent="space-between"
+                              sx={{ width: '100%' }}
+                            >
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Avatar src={admin.user?.photoURL} sx={{ width: 32, height: 32 }}>
+                                  {admin.user?.name?.charAt(0) || 'A'}
+                                </Avatar>
+                                <Typography>{admin.user?.name || admin.userId}</Typography>
+                              </Stack>
+                              {already && (
+                                <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
+                                  Assigned
+                                </Typography>
+                              )}
+                            </Stack>
+                          </MenuItem>
+                        );
+                      })
+                    ) : (
+                      <MenuItem disabled>No CSM admins available</MenuItem>
+                    )}
+                  </Select>
+                  {error && <FormHelperText>{error}</FormHelperText>}
+                </FormControl>
+              </>
+            )}
 
             {/* Internal comments for the CS team. */}
             <Box>
-              <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600, mb: 1, display: 'block' }}>
+              <Typography
+                variant="caption"
+                sx={{ color: '#6B7280', fontWeight: 600, mb: 1, display: 'block' }}
+              >
                 Internal Comments
               </Typography>
               <TextField
@@ -248,21 +305,27 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned }) {
             </Box>
           </>
         )}
-
-        <Stack direction="row" justifyContent="flex-end" spacing={1}>
-          <Button onClick={onClose} sx={{ textTransform: 'none' }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={submitting || loading}
-            sx={{ bgcolor: '#1340FF', '&:hover': { bgcolor: '#0F33CC' }, px: 4, textTransform: 'none' }}
-          >
-            {submitting ? 'Saving…' : 'Save'}
-          </Button>
-        </Stack>
       </DialogContent>
+
+      {/* Pinned footer — stays at the bottom while the content above scrolls. */}
+      <DialogActions sx={{ px: 4, py: 2.5 }}>
+        <Button onClick={onClose} sx={{ textTransform: 'none' }}>
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={submitting || loading}
+          sx={{
+            bgcolor: '#1340FF',
+            '&:hover': { bgcolor: '#0F33CC' },
+            px: 4,
+            textTransform: 'none',
+          }}
+        >
+          {submitting ? 'Saving…' : 'Save'}
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 }
@@ -272,4 +335,5 @@ AssignCsmDialog.propTypes = {
   brief: PropTypes.object,
   onClose: PropTypes.func,
   onAssigned: PropTypes.func,
+  mode: PropTypes.oneOf(['assign', 'finalize']),
 };

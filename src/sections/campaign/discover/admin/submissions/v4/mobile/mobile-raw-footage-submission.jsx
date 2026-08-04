@@ -214,7 +214,7 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
   });
 
   const renderCaptionContent = () => {
-    if (pendingReview) {
+    if (pendingReview || isClientFeedback) {
       return (
         <TextField
           fullWidth

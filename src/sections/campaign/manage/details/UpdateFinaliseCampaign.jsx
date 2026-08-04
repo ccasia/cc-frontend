@@ -22,6 +22,7 @@ import {
 import useGetClients from 'src/hooks/use-get-clients';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { campaignHasClient } from 'src/utils/campaign-flow';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -124,10 +125,11 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
       campaignManager: existingManagers,
       campaignType: campaign?.campaignType || 'normal',
       deliverables: existingDeliverables,
-      isV4Submission: campaign?.submissionVersion === 'v4',
+      // Reflects client attachment, not the (immutable) submissionVersion
+      isV4Submission: campaignHasClient(campaign),
       isCreditTier: campaign?.isCreditTier || false,
     }),
-    [existingManagers, campaign?.submissionVersion, campaign?.campaignType, existingDeliverables, campaign?.isCreditTier]
+    [existingManagers, campaign, existingDeliverables]
   );
 
   const methods = useForm({
@@ -204,7 +206,6 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
         campaignManagers: data.campaignManager,
         campaignType: data.campaignType,
         deliverables: data.deliverables,
-        isV4Submission: data.isV4Submission,
         isCreditTier: data.isCreditTier,
       });
 
@@ -244,23 +245,16 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
               checked={isV4Submission || false}
               onChange={handleV4ToggleChange}
               color="primary"
-              disabled
-              sx={{
-                cursor: 'not-allowed',
-                '& .MuiSwitch-switchBase.Mui-disabled': {
-                  cursor: 'not-allowed',
-                  pointerEvents: 'auto',
-                },
-                '& .MuiSwitch-track': {
-                  cursor: 'not-allowed',
-                },
-              }}
+              disabled={campaign?.submissionVersion !== 'v4'}
             />
           </Stack>
           <Typography variant="caption" fontWeight={400} color="text.secondary">
-            {isV4Submission
-              ? 'Client users will be added as campaign managers. Disabling will remove them.'
-              : 'Enabling this option makes it a campaign that the previously selected client will manage.'}
+            {campaign?.submissionVersion !== 'v4' &&
+              'Legacy campaign — client involvement cannot be changed here.'}
+            {campaign?.submissionVersion === 'v4' &&
+              (isV4Submission
+                ? 'Client users are attached as campaign managers and review approvals. Disabling removes them.'
+                : "Enabling this attaches the campaign's client users as managers — approvals will route through them.")}
           </Typography>
         </Stack>
 
@@ -429,8 +423,9 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
               lineHeight: 1.5,
             }}
           >
-            This action will affect workflow if creators are already shortlisted with agreements
-            sent out. Ensure you are doing this before any creators are shortlisted.
+            {pendingV4Value
+              ? 'Future pitch and submission approvals will route through the client for review. Items already approved stay approved.'
+              : 'Anything currently waiting on client review will be returned to admin review, and admin approvals become final.'}
           </Typography>
 
           {/* Buttons */}

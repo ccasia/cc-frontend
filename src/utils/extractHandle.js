@@ -12,11 +12,7 @@ export const extractHandle = (url) => {
 
   match = url.match(tiktokRegex);
   if (match) {
-    // Extract the username from the TikTok URL
-    const tiktokHandleMatch = url.match(/tiktok\.com\/@([^/]+)/);
-    if (tiktokHandleMatch) {
-      return { platform: 'TikTok', handle: tiktokHandleMatch[1] };
-    }
+    return { platform: 'TikTok', handle: match[3] };
   }
 
   return null; // Return null if no valid handle is found
