@@ -68,13 +68,6 @@ const DashboardSuperadminView = () => {
   const [customAnchor, setCustomAnchor] = useState(null);
   const [customRange, setCustomRange] = useState({ startDate: '', endDate: '' });
 
-  const { data: dashboardStats, isLoading: statsLoading } = useSWR(
-    `${endpoints.dashboard.stats}?version=v4`,
-    fetcher,
-    SWR_OPTS
-  );
-  const stats = dashboardStats?.data || {};
-
   const dateRange = useMemo(() => {
     if (timeRange === 'custom') {
       if (!customRange.startDate || !customRange.endDate) return null;
@@ -85,6 +78,13 @@ const DashboardSuperadminView = () => {
     }
     return getRangeForValue(timeRange);
   }, [timeRange, customRange]);
+
+  const statsQuery = dateRange
+    ? `${endpoints.dashboard.stats}?version=v4&startDate=${encodeURIComponent(dateRange.startDate)}&endDate=${encodeURIComponent(dateRange.endDate)}`
+    : `${endpoints.dashboard.stats}?version=v4`;
+
+  const { data: dashboardStats, isLoading: statsLoading } = useSWR(statsQuery, fetcher, SWR_OPTS);
+  const stats = dashboardStats?.data || {};
 
   const activeRangeLabel =
     timeRange === 'custom' && customRange.startDate && customRange.endDate
@@ -265,10 +265,10 @@ const DashboardSuperadminView = () => {
         ))}
       </Tabs>
 
-      {tab === 'bd' && <BusinessDevelopmentTab dateRange={dateRange}/>}
-      {tab === 'csm' && <CSMWorkloadTab dateRange={dateRange} />}
-      {tab === 'campaigns' && <CampaignsTab dateRange={dateRange} />}
-      {tab === 'clients' && <ClientsTab dateRange={dateRange} />}
+      {tab === 'bd' && <BusinessDevelopmentTab />}
+      {tab === 'csm' && <CSMWorkloadTab />}
+      {tab === 'campaigns' && <CampaignsTab />}
+      {tab === 'clients' && <ClientsTab />}
     </Box>
   );
 };

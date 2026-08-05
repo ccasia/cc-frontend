@@ -50,7 +50,6 @@ const RESPONSE_TIME_ROWS = [
   { key: 'pitchReviewHours', label: 'Pitch review', icon: 'hugeicons:user-group', color: '#6366F1' },
   { key: 'agreementReviewHours', label: 'Agreement', icon: 'hugeicons:file-edit', color: '#F59E0B' },
   { key: 'draftReviewHours', label: 'Draft review', icon: 'hugeicons:video-01', color: '#10B981' },
-  { key: 'postingReviewHours', label: 'Posting review', icon: 'hugeicons:link-01', color: '#06B6D4' },
 ];
 
 const REJECTION_CARDS = [
@@ -742,13 +741,13 @@ export default function CSMWorkloadDrawer({ csm, dateRange, onClose }) {
                       <Typography sx={{ fontSize: '1.6rem', fontWeight: 700, color: '#111827', mb: 2 }}>
                         {formatHours(responseTime.avgResponseHours)}
                       </Typography>
-                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
                         {RESPONSE_TIME_ROWS.map((row) => (
                           <Box
                             key={row.key}
                             sx={{
-                              bgcolor: `${row.color}0F`,
-                              border: `1px solid ${row.color}26`,
+                              bgcolor: '#F9FAFB',
+                              border: '1px solid #e5e7eb',
                               borderRadius: '12px',
                               p: 1.4,
                             }}
