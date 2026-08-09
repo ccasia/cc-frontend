@@ -50,6 +50,8 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
+import LogisticRemarks from 'src/sections/campaign/create/stepsV2/logistic-remarks';
+
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
 	<Stack spacing={0.5}>
@@ -726,22 +728,38 @@ const UpdateLogistics = ({ campaign, campaignMutate, formId, onFormStateChange }
     <FormProvider id={formId} methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 3,
-          maxWidth: logisticsType === 'PRODUCT_DELIVERY' ? 600 : 800,
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: 'minmax(0, 800px)',
+            xl:
+              logisticsType === 'RESERVATION'
+                ? 'minmax(0, 800px) minmax(320px, 600px)'
+                : 'minmax(0, 800px)',
+          },
+          columnGap: 5,
+          alignItems: 'start',
+          width: '100%',
+          maxWidth: logisticsType === 'RESERVATION' ? 1440 : 800,
         }}
       >
-        {/* Logistics Type Selection */}
-        <Stack spacing={2} maxWidth={logisticsType === 'RESERVATION' ? 800 : 600}>
-          <FormField label="Logistics Type" required={false}>
-            <RHFSelect name="logisticsType" placeholder="Select logistics type">
-              <MenuItem value="">No Logistics</MenuItem>
-              <MenuItem value="PRODUCT_DELIVERY">Product Delivery</MenuItem>
-              <MenuItem value="RESERVATION">Reservation</MenuItem>
-            </RHFSelect>
-          </FormField>
-        </Stack>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+            maxWidth: logisticsType === 'PRODUCT_DELIVERY' ? 600 : 800,
+          }}
+        >
+          {/* Logistics Type Selection */}
+          <Stack spacing={2} maxWidth={logisticsType === 'RESERVATION' ? 800 : 600}>
+            <FormField label="Logistics Type" required={false}>
+              <RHFSelect name="logisticsType" placeholder="Select logistics type">
+                <MenuItem value="">No Logistics</MenuItem>
+                <MenuItem value="PRODUCT_DELIVERY">Product Delivery</MenuItem>
+                <MenuItem value="RESERVATION">Reservation</MenuItem>
+              </RHFSelect>
+            </FormField>
+          </Stack>
 
         {/* Product Delivery Section */}
         {logisticsType === 'PRODUCT_DELIVERY' && (
@@ -1498,10 +1516,14 @@ const UpdateLogistics = ({ campaign, campaignMutate, formId, onFormStateChange }
                   </Stack>
                 )}
               </Box>
+
             </Box>
           </>
         )}
 
+        </Box>
+
+        {logisticsType === 'RESERVATION' && <LogisticRemarks align="left" topSpacing={0} />}
       </Box>
     </FormProvider>
   );
