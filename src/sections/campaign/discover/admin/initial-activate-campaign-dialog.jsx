@@ -92,9 +92,10 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
         .then((response) => {
           if (response.data) {
             // Filter for admins with CSM role - check for various possible role names
-            const csmAdmins = response.data.filter(admin => 
-              admin.role?.name === 'CSM' || 
+            const csmAdmins = response.data.filter(admin =>
+              admin.role?.name === 'CSM' ||
               admin.role?.name === 'Customer Success Manager' ||
+              admin.role?.name === 'CSL' ||
               admin.role?.name?.toLowerCase().includes('csm') ||
               admin.role?.name?.toLowerCase().includes('customer success')
             );
