@@ -15,7 +15,6 @@ import {
   Typography,
   IconButton,
   CircularProgress,
-  Chip,
 } from '@mui/material';
 
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -283,6 +282,7 @@ export default function UserPerformanceCard({
     : `https://tiktok.com/@${(creator?.user?.creator?.tiktok || '').replace('@', '')}`;
 
   const isInstagram = submission?.platform === 'Instagram';
+  const postThumbnail = insightData?.thumbnail || insightData?.video?.media_url;
 
   return (
     <Grid item xs={12}>
@@ -668,21 +668,39 @@ export default function UserPerformanceCard({
                         '&:hover img': { filter: 'brightness(1)', opacity: 1 },
                       }}
                     >
-                      <Box
-                        component="img"
-                        src={insightData.thumbnail || insightData.video?.media_url}
-                        alt="Post thumbnail"
-                        sx={{
-                          width: 140,
-                          height: 80,
-                          borderRadius: 2,
-                          objectFit: 'cover',
-                          border: '1px solid #e0e0e0',
-                          filter: 'brightness(0.95)',
-                          opacity: 0.9,
-                          transition: 'filter 0.3s ease, opacity 0.3s ease',
-                        }}
-                      />
+                      {postThumbnail ? (
+                        <Box
+                          component="img"
+                          src={postThumbnail}
+                          alt="Post thumbnail"
+                          sx={{
+                            width: 140,
+                            height: 80,
+                            borderRadius: 2,
+                            objectFit: 'cover',
+                            border: '1px solid #e0e0e0',
+                            filter: 'brightness(0.95)',
+                            opacity: 0.9,
+                            transition: 'filter 0.3s ease, opacity 0.3s ease',
+                          }}
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            width: 140,
+                            height: 80,
+                            borderRadius: 2,
+                            border: '1px solid #e0e0e0',
+                            bgcolor: '#F5F5F5',
+                            color: isInstagram ? '#E4405F' : '#000000',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Iconify icon={isInstagram ? 'prime:instagram' : 'prime:tiktok'} width={30} />
+                        </Box>
+                      )}
                       <Box
                         className="play-overlay"
                         sx={{
@@ -1021,21 +1039,39 @@ export default function UserPerformanceCard({
                       '&:hover img': { filter: 'brightness(1)', opacity: 1 },
                     }}
                   >
-                    <Box
-                      component="img"
-                      src={insightData.thumbnail || insightData.video?.media_url}
-                      alt="Post thumbnail"
-                      sx={{
-                        width: 280,
-                        height: 80,
-                        borderRadius: 2,
-                        objectFit: 'cover',
-                        border: '1px solid #e0e0e0',
-                        filter: 'brightness(0.95)',
-                        opacity: 0.9,
-                        transition: 'filter 0.3s ease, opacity 0.3s ease',
-                      }}
-                    />
+                    {postThumbnail ? (
+                      <Box
+                        component="img"
+                        src={postThumbnail}
+                        alt="Post thumbnail"
+                        sx={{
+                          width: 280,
+                          height: 80,
+                          borderRadius: 2,
+                          objectFit: 'cover',
+                          border: '1px solid #e0e0e0',
+                          filter: 'brightness(0.95)',
+                          opacity: 0.9,
+                          transition: 'filter 0.3s ease, opacity 0.3s ease',
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          width: 280,
+                          height: 80,
+                          borderRadius: 2,
+                          border: '1px solid #e0e0e0',
+                          bgcolor: '#F5F5F5',
+                          color: isInstagram ? '#E4405F' : '#000000',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Iconify icon={isInstagram ? 'prime:instagram' : 'prime:tiktok'} width={30} />
+                      </Box>
+                    )}
                     <Box
                       className="play-overlay"
                       sx={{
@@ -1112,6 +1148,7 @@ export default function UserPerformanceCard({
 }
 
 UserPerformanceCard.propTypes = {
+  index: PropTypes.number,
   engagementRate: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   submission: PropTypes.shape({
     id: PropTypes.string,

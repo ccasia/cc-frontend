@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { enqueueSnackbar } from 'notistack';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Applies a loaded PCR content payload (from initial load or post-save reload) to editor state.
 function applyLoadedContent(loadedContent, setters) {
@@ -57,6 +58,7 @@ export default function usePcrData({
   setSectionEditStates,
   resetHistory,
 }) {
+  const queryClient = useQueryClient();
   const [isLoadingPCR, setIsLoadingPCR] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isPCRReady, setIsPCRReady] = useState(campaign?.isPCRReady || false);
@@ -148,11 +150,15 @@ export default function usePcrData({
   const handleRefreshInsights = async () => {
     try {
       await axios.post(`/api/campaign/${campaign.id}/trends/refresh`);
-      alert('Insights refreshed! Please wait a moment and refresh the page.');
-      window.location.reload();
+      await queryClient.invalidateQueries({
+        queryKey: ['socialInsightSnapshots', campaign.id],
+      });
+      enqueueSnackbar('Analytics updated.', { variant: 'success' });
     } catch (error) {
       console.error('Error refreshing insights:', error);
-      alert(`Failed to refresh insights: ${error.response?.data?.message || error.message}`);
+      enqueueSnackbar(`Failed to refresh insights: ${error.response?.data?.message || error.message}`, {
+        variant: 'error',
+      });
     }
   };
 

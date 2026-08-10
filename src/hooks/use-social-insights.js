@@ -296,155 +296,114 @@
 //   console.log('🗑️ All caches cleared');
 // };
 
-import pLimit from 'p-limit';
 import { useMemo, useCallback } from 'react';
-import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import axiosInstance from 'src/utils/axios';
+import { canonicalizePostUrl } from 'src/utils/extractPostingLinks';
 
-import { demoInsights, DEMO_CAMPAIGN_ID } from 'src/_mock/_demo-campaign';
+const insightQueryKey = (campaignId) => ['socialInsightSnapshots', campaignId];
+const SNAPSHOT_CACHE_TIME = 24 * 60 * 60 * 1000;
 
-// Cap concurrent insight requests to respect the API's rate limits.
-// Shared at module scope so the limit holds across EVERY query in the hook,
-// not per-component. This replaces the manual batch-of-3 + 200ms delay.
-const limit = pLimit(3);
+const getSnapshotKey = ({ platform, postUrl }) =>
+  `${platform || ''}:${canonicalizePostUrl(postUrl)}`;
 
-const INSIGHT_STALE_TIME = 10 * 60 * 1000; // 10 min — was the per-submission TTL
-const INSIGHT_GC_TIME = 15 * 60 * 1000; // 15 min — keep in cache a bit past stale
-
-const buildEndpoint = (submission, campaignId) => {
-  const url = encodeURIComponent(submission.postUrl);
-  if (submission.platform === 'Instagram') {
-    return endpoints.creators.social.getInstagramMediaInsight(submission.user, url, campaignId);
-  }
-  if (submission.platform === 'TikTok') {
-    return endpoints.creators.social.getTikTokMediaInsight(submission.user, url, campaignId);
-  }
-  return null;
-};
-
-const fetchInsight = (submission, campaignId) =>
-  limit(async () => {
-    const endpoint = buildEndpoint(submission, campaignId);
-    if (!endpoint) {
-      throw new Error(`Unsupported platform: ${submission.platform}`);
-    }
-
-    const { data: res } = await axiosInstance.get(endpoint);
-
-    return {
-      submissionId: submission.id,
-      platform: submission.platform,
-      user: submission.user,
-      postUrl: submission.postUrl,
-      thumbnail: res.video?.thumbnail_url || res.video?.media_url,
-      insight: res.insight || [],
-      video: res.video || null,
-      createdAt: submission.createdAt,
-      campaignAverages: res.campaignAverages || null,
-      campaignComparison: res.campaignComparison || null,
-      hasCampaignData: res.hasCampaignData || false,
-    };
-  });
-
-const insightQueryKey = (campaignId, submission) => [
-  'socialInsight',
-  campaignId,
-  submission.platform,
-  submission.user,
-  submission.postUrl,
-];
+const toInsightData = (submission, snapshot) => ({
+  submissionId: submission.id,
+  platform: submission.platform,
+  user: submission.user,
+  postUrl: submission.postUrl,
+  thumbnail: null,
+  insight: [
+    { name: 'views', value: snapshot.views || 0 },
+    { name: 'likes', value: snapshot.likes || 0 },
+    { name: 'comments', value: snapshot.comments || 0 },
+    { name: 'shares', value: snapshot.shares || 0 },
+    { name: 'saved', value: snapshot.saved || 0 },
+    { name: 'reach', value: snapshot.reach || 0 },
+    { name: 'engagementRate', value: snapshot.engagementRate || 0 },
+  ],
+  video: { timestamp: snapshot.postDate },
+  createdAt: submission.createdAt,
+  capturedAt: snapshot.capturedAt,
+  snapshotDate: snapshot.snapshotDate,
+});
 
 export const useSocialInsights = (postingSubmissions, campaignId) => {
   const queryClient = useQueryClient();
-  const submissions = postingSubmissions ?? [];
+  const submissions = useMemo(() => postingSubmissions ?? [], [postingSubmissions]);
+  const submissionSignature = useMemo(
+    () =>
+      submissions
+        .map((submission) => getSnapshotKey(submission))
+        .sort()
+        .join('|'),
+    [submissions]
+  );
 
-  const queries = useQueries({
-    queries: submissions.map((submission) => {
-      const hasRequiredFields = Boolean(submission.user && submission.postUrl);
-      return {
-        queryKey: insightQueryKey(campaignId, submission),
-        queryFn: () => fetchInsight(submission, campaignId),
-        // Disabled queries never run; missing-field submissions are surfaced
-        // as failures in the derivation below, matching the old behaviour.
-        enabled: hasRequiredFields,
-        staleTime: INSIGHT_STALE_TIME,
-        gcTime: INSIGHT_GC_TIME,
-        // Don't retry auth/reconnection failures — they won't fix themselves.
-        retry: (failureCount, error) => {
-          if (error?.response?.data?.requiresReconnection) return false;
-          return failureCount < 2;
-        },
-      };
-    }),
+  const query = useQuery({
+    queryKey: [...insightQueryKey(campaignId), submissionSignature],
+    queryFn: async () => {
+      const { data: response } = await axiosInstance.get(
+        `/api/campaign/${campaignId}/post-engagement-snapshots/latest`
+      );
+      return response.data || [];
+    },
+    enabled: Boolean(campaignId && submissions.length),
+    staleTime: SNAPSHOT_CACHE_TIME,
+    gcTime: SNAPSHOT_CACHE_TIME,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retryOnMount: false,
+    retry: 1,
   });
 
-  // Stable signal so the derivations below only recompute when query state
-  // (or the submission set) actually changes, not on every render.
-  const signal = submissions
-    .map(
-      (s, i) =>
-        `${s.id}:${queries[i]?.status ?? 'idle'}:${queries[i]?.dataUpdatedAt ?? 0}:${
-          queries[i]?.errorUpdatedAt ?? 0
-        }`
-    )
-    .join('|');
-
   const { data, failedUrls, loadingProgress, isLoading, error } = useMemo(() => {
-    const ok = [];
-    const failed = [];
-    let settled = 0;
+    const snapshotsByPost = (query.data || []).reduce((latestByPost, snapshot) => {
+      const key = getSnapshotKey(snapshot);
+      const current = latestByPost.get(key);
+      const snapshotTime = new Date(snapshot.capturedAt || snapshot.snapshotDate).getTime();
+      const currentTime = new Date(current?.capturedAt || current?.snapshotDate || 0).getTime();
 
-    submissions.forEach((submission, i) => {
-      const q = queries[i];
-
-      if (!submission.user || !submission.postUrl) {
-        failed.push({
-          submissionId: submission.id,
-          reason: 'Missing user ID or post URL',
-          url: submission.postUrl,
-        });
-        settled += 1;
-        return;
-      }
-
-      if (!q) return;
-
-      if (q.isSuccess) {
-        ok.push(q.data);
-        settled += 1;
-      } else if (q.isError) {
-        failed.push({
-          submissionId: submission.id,
-          platform: submission.platform,
-          user: submission.user,
-          reason: q.error?.response?.data?.message || q.error?.message,
-          url: submission.postUrl,
-          requiresReconnection: q.error?.response?.data?.requiresReconnection || false,
-        });
-        settled += 1;
-      }
+      if (!current || snapshotTime > currentTime) latestByPost.set(key, snapshot);
+      return latestByPost;
+    }, new Map());
+    const ok = submissions.flatMap((submission) => {
+      const snapshot = snapshotsByPost.get(getSnapshotKey(submission));
+      return snapshot ? [toInsightData(submission, snapshot)] : [];
     });
+    const failed = submissions
+      .filter((submission) => !snapshotsByPost.has(getSnapshotKey(submission)))
+      .map((submission) => ({
+        submissionId: submission.id,
+        platform: submission.platform,
+        user: submission.user,
+        reason: 'No stored analytics snapshot is available yet',
+        url: submission.postUrl,
+        requiresReconnection: false,
+      }));
 
     return {
       data: ok,
       failedUrls: failed,
-      loadingProgress: { loaded: settled, total: submissions.length },
-      isLoading: queries.some((q) => q?.isLoading),
-      error: queries.find((q) => q?.isError)?.error ?? null,
+      loadingProgress: {
+        loaded: query.isFetched ? submissions.length : 0,
+        total: submissions.length,
+      },
+      isLoading: query.isLoading && !query.isFetched,
+      error: query.error ?? null,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signal]);
+  }, [query.data, query.error, query.isFetched, query.isLoading, submissions]);
 
-  // Manual refresh — refetch everything for this campaign.
+  // Explicit refreshes read the newest database snapshots without calling social APIs.
   const mutate = useCallback(
-    () => queryClient.invalidateQueries({ queryKey: ['socialInsight', campaignId] }),
+    () => queryClient.invalidateQueries({ queryKey: insightQueryKey(campaignId) }),
     [queryClient, campaignId]
   );
 
-  // Drop all cached insights for this campaign.
   const clearCache = useCallback(
-    () => queryClient.removeQueries({ queryKey: ['socialInsight', campaignId] }),
+    () => queryClient.removeQueries({ queryKey: insightQueryKey(campaignId) }),
     [queryClient, campaignId]
   );
 
