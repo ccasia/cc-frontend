@@ -158,11 +158,14 @@ const CampaignListView = () => {
     [user]
   );
 
-  // Check if user is a CSM admin (not advanced mode - god/superadmin have different role names)
-  // Note: Role name can be either 'CSM' or 'Customer Success Manager' depending on DB entry
+  // Check if user is a CSM-style admin (not advanced mode - god/superadmin have different role
+  // names). Role name can be either 'CSM' or 'Customer Success Manager' depending on DB entry.
+  // CSL shares this view.
   const isCSM = useMemo(
     () =>
-      (user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager') &&
+      (user?.admin?.role?.name === 'CSM' ||
+        user?.admin?.role?.name === 'Customer Success Manager' ||
+        user?.admin?.role?.name === 'CSL') &&
       user?.admin?.mode !== 'advanced',
     [user]
   );
