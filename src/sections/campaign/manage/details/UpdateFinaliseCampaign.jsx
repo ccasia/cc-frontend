@@ -99,6 +99,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
       .filter(
         (ca) =>
           ca.admin?.role?.name === 'CSM' ||
+          ca.admin?.role?.name === 'CSL' ||
           ca.admin?.role?.name === 'Client' ||
           ca.admin?.user?.role === 'client'
       )

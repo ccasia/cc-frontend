@@ -70,6 +70,7 @@ export default function AssignCsmDialog({ open, brief, onClose, onAssigned, mode
           (a) =>
             a.role?.name === 'CSM' ||
             a.role?.name === 'Customer Success Manager' ||
+            a.role?.name === 'CSL' ||
             a.role?.name?.toLowerCase().includes('csm') ||
             a.role?.name?.toLowerCase().includes('customer success')
         );
