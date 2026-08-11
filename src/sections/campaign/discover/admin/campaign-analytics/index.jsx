@@ -286,9 +286,10 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
         enqueueSnackbar('Analytics updated.', { variant: 'success' });
       }
     } catch (error) {
-      setRefreshFailures(error?.response?.data?.data?.failures || []);
+      const errorData = error?.response?.data || error;
+      setRefreshFailures(errorData?.data?.failures || []);
       enqueueSnackbar(
-        error?.response?.data?.message || error?.message || 'Failed to refresh analytics.',
+        errorData?.message || 'Failed to refresh analytics.',
         { variant: 'error' }
       );
     } finally {
