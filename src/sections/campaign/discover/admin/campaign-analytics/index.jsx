@@ -54,6 +54,7 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
   const { socket } = useSocketContext();
   const { mutate: mutateSWR } = useSWRConfig();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshFailures, setRefreshFailures] = useState([]);
 
   const { entries: manualEntries, mutate: mutateManualEntries } = useGetManualCreatorEntries(
     campaign?.id
@@ -267,7 +268,9 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
   const handleRefreshInsights = async () => {
     try {
       setIsRefreshing(true);
-      await axiosInstance.post(`/api/campaign/${campaign.id}/trends/refresh`);
+      const response = await axiosInstance.post(`/api/campaign/${campaign.id}/trends/refresh`);
+      const result = response.data?.data;
+      setRefreshFailures(result?.failures || []);
       await Promise.all([
         refreshInsights(),
         mutateSWR(
@@ -275,9 +278,19 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
             typeof key === 'string' && key.startsWith(`/api/campaign/${campaign.id}/trends/`)
         ),
       ]);
-      enqueueSnackbar('Analytics updated.', { variant: 'success' });
+      if (result?.failed > 0) {
+        enqueueSnackbar(`Updated ${result.succeeded} posts. ${result.failed} posts failed.`, {
+          variant: 'warning',
+        });
+      } else {
+        enqueueSnackbar('Analytics updated.', { variant: 'success' });
+      }
     } catch (error) {
-      enqueueSnackbar(error?.message || 'Failed to refresh analytics.', { variant: 'error' });
+      setRefreshFailures(error?.response?.data?.data?.failures || []);
+      enqueueSnackbar(
+        error?.response?.data?.message || error?.message || 'Failed to refresh analytics.',
+        { variant: 'error' }
+      );
     } finally {
       setIsRefreshing(false);
     }
@@ -489,6 +502,19 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
             </Stack>
           </Box>
 
+          {refreshFailures.length > 0 && (
+            <Alert severity="warning" onClose={() => setRefreshFailures([])} sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                Some posts could not be refreshed
+              </Typography>
+              {refreshFailures.map((failure) => (
+                <Typography key={`${failure.platform}-${failure.postUrl}`} variant="body2">
+                  {failure.creatorName} ({failure.platform}): {getRefreshFailureMessage(failure)}
+                </Typography>
+              ))}
+            </Alert>
+          )}
+
           {insightsError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               Error loading insights: {insightsError?.message || 'Unknown error'}
@@ -577,6 +603,21 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
     </Box>
   );
 };
+
+function getRefreshFailureMessage(failure) {
+  const messages = {
+    ACCOUNT_NOT_CONNECTED: 'Social account is not connected.',
+    ACCESS_TOKEN_MISSING: 'Access token is missing. Ask the creator to reconnect their account.',
+    TOKEN_EXPIRED: 'Access expired. Ask the creator to reconnect their account.',
+    POST_NOT_ACCESSIBLE: 'Post was deleted, is private, or is not available to the connected account.',
+    POST_IDENTIFIER_MISSING: 'The saved post link does not contain a valid post identifier.',
+    SNAPSHOT_STORAGE_FAILED: 'Insights were fetched, but the snapshot could not be saved.',
+    RATE_LIMITED: 'The platform rate limit was reached. Try again later.',
+    PLATFORM_API_ERROR: 'The platform API could not return insights for this post.',
+  };
+
+  return messages[failure.code] || failure.reason || 'Unknown error.';
+}
 
 export default CampaignAnalysis;
 
