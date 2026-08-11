@@ -24,6 +24,7 @@ import ClientsTab from './clients';
 import CampaignsTab from './campaigns';
 import CSMWorkloadTab from './csm-workload';
 import BusinessDevelopmentTab from './business-development';
+import FinanceDashboardView from '../../finance/dashboard/view';
 
 const SWR_OPTS = { revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 120000 };
 
@@ -39,6 +40,7 @@ const TABS = [
   { value: 'csm', label: 'CSM workload', icon: 'hugeicons:user-group' },
   { value: 'campaigns', label: 'Campaigns', icon: 'hugeicons:megaphone-01' },
   { value: 'clients', label: 'Clients', icon: 'hugeicons:building-06' },
+  { value: 'finance', label: 'Finance', icon: 'hugeicons:money-bag-02' },
 ];
 
 const PLATFORM_TOTALS = (stats) => [
@@ -269,6 +271,7 @@ const DashboardSuperadminView = () => {
       {tab === 'csm' && <CSMWorkloadTab />}
       {tab === 'campaigns' && <CampaignsTab />}
       {tab === 'clients' && <ClientsTab />}
+      {tab === 'finance' && <FinanceDashboardView hideGreeting />}
     </Box>
   );
 };
