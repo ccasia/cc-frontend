@@ -1,15 +1,16 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useFormContext } from 'react-hook-form';
 
 import { Box, TextField, Typography } from '@mui/material';
 
-const LogisticRemarks = () => {
+const LogisticRemarks = ({ align = 'center', topSpacing = 5 }) => {
   const { register } = useFormContext();
 
   return (
-    <Box sx={{ py: 5 }}>
+    <Box sx={{ pt: topSpacing, pb: 5 }}>
       {/* Content */}
-      <Box sx={{ maxWidth: 600, mx: 'auto', mb: 10 }}>
+      <Box sx={{ maxWidth: 600, mx: align === 'left' ? 0 : 'auto', mb: 10 }}>
         <Typography 
           sx={{ 
             fontFamily: 'Inter Display, sans-serif',
@@ -92,6 +93,11 @@ const LogisticRemarks = () => {
       </Box>
     </Box>
   );
+};
+
+LogisticRemarks.propTypes = {
+  align: PropTypes.oneOf(['center', 'left']),
+  topSpacing: PropTypes.number,
 };
 
 export default LogisticRemarks;
