@@ -1,14 +1,26 @@
 /* eslint-disable react/prop-types */
 import PropTypes from 'prop-types';
-import { useMemo, useEffect } from 'react';
+import { useSWRConfig } from 'swr';
 import { enqueueSnackbar } from 'notistack';
 import { AnimatePresence } from 'framer-motion';
+import { useMemo, useState, useEffect } from 'react';
 
-import { Box, Alert, Stack, Button, Typography, CircularProgress } from '@mui/material';
+import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
+import {
+  Box,
+  Alert,
+  Stack,
+  Button,
+  Tooltip,
+  Typography,
+  IconButton,
+  CircularProgress,
+} from '@mui/material';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import { useGetManualCreatorEntries } from 'src/hooks/useSWR/useGetManualCreatorEntries';
 
+import axiosInstance from 'src/utils/axios';
 import { canonicalizePostUrl, extractPostingSubmissions } from 'src/utils/extractPostingLinks';
 import {
   getMetricValue,
@@ -17,14 +29,15 @@ import {
 } from 'src/utils/socialMetricsCalculator';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { DEMO_CAMPAIGN_ID } from 'src/_mock/_demo-campaign';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import { TopCreatorsLineChart, EngagementRateHeatmap } from 'src/components/trend-analysis';
 
-import PCRReportPage from '../pcr-report/pcr-report-page';
 import CreatorList from './components/CreatorList';
 import DeleteDialog from './components/DeleteDialog';
 import PlatformToggle from './components/PlatformToggle';
+import PCRReportPage from '../pcr-report/pcr-report-page';
 import CoreMetricsSection from './components/CoreMetricsSection';
 import AnalyticsPageSkeleton from './components/AnalyticsPageSkeleton';
 import PlatformOverviewLayout from './components/PlatformOverviewLayout';
@@ -39,6 +52,8 @@ import {
 const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
+  const { mutate: mutateSWR } = useSWRConfig();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { entries: manualEntries, mutate: mutateManualEntries } = useGetManualCreatorEntries(
     campaign?.id
@@ -83,8 +98,8 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
     data: insightsData,
     isLoading: loadingInsights,
     error: insightsError,
+    failedUrls,
     mutate: refreshInsights,
-    clearCache,
   } = useSocialInsights(postingSubmissions, campaign?.id);
 
   const filteredInsightsData = useMemo(() => {
@@ -249,6 +264,25 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
     setDeleteModalOpen(true);
   };
 
+  const handleRefreshInsights = async () => {
+    try {
+      setIsRefreshing(true);
+      await axiosInstance.post(`/api/campaign/${campaign.id}/trends/refresh`);
+      await Promise.all([
+        refreshInsights(),
+        mutateSWR(
+          (key) =>
+            typeof key === 'string' && key.startsWith(`/api/campaign/${campaign.id}/trends/`)
+        ),
+      ]);
+      enqueueSnackbar('Analytics updated.', { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar(error?.message || 'Failed to refresh analytics.', { variant: 'error' });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // Socket event listener for media kit connections
   useEffect(() => {
     if (!socket || !campaign?.id) return undefined;
@@ -260,16 +294,11 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
       const hasUserSubmissions = postingSubmissions.some((sub) => sub.user === data.userId);
 
       if (hasUserSubmissions) {
-        console.log(`🔄 ${data.platform} connected for user, refreshing analytics...`);
-        enqueueSnackbar(`${data.platform} connected! Refreshing analytics...`, {
+        console.log(`${data.platform} connected for user; checking stored analytics...`);
+        enqueueSnackbar(`${data.platform} connected. Use Refresh Data to sync analytics now.`, {
           variant: 'success',
         });
 
-        // Clear cache and re-fetch with a small delay to ensure API is ready
-        clearCache();
-        setTimeout(() => {
-          refreshInsights();
-        }, 1500);
       }
     };
 
@@ -281,7 +310,7 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
       socket.off('analytics:refresh', handleAnalyticsRefresh);
       socket.leaveCampaign(campaign?.id);
     };
-  }, [socket, campaign?.id, postingSubmissions, clearCache, refreshInsights]);
+  }, [socket, campaign?.id, postingSubmissions]);
 
   // No campaign
   if (!campaign) {
@@ -329,8 +358,41 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
               Performance Summary
             </Typography>
 
-            {/* eslint-disable-next-line no-nested-ternary */}
-            {!isClient ? (
+            <Stack direction="row" spacing={1}>
+              {!isClient && !isDisabled && campaign?.id !== DEMO_CAMPAIGN_ID && (
+                <Tooltip title="Refresh Data">
+                  <span>
+                    <IconButton
+                      aria-label="Refresh Data"
+                      disabled={isRefreshing}
+                      onClick={handleRefreshInsights}
+                      sx={{
+                        width: 44,
+                        height: 44,
+                        color: '#637381',
+                        bgcolor: '#FFFFFF',
+                        border: '1px solid #E7E7E7',
+                        boxShadow: '0 -3px 0 #E7E7E7 inset',
+                        borderRadius: 1,
+                        '&:hover': {
+                          bgcolor: '#F9FAFB',
+                          border: '1px solid #D1D5DB',
+                          boxShadow: '0 -3px 0 #D1D5DB inset',
+                        },
+                      }}
+                    >
+                      {isRefreshing ? (
+                        <CircularProgress size={18} />
+                      ) : (
+                        <RefreshRoundedIcon sx={{ fontSize: 26 }} />
+                      )}
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              )}
+
+              {/* eslint-disable-next-line no-nested-ternary */}
+              {!isClient ? (
               <Button
                 disabled={reportState === 'loading'}
                 sx={{
@@ -393,7 +455,7 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
                 {reportState === 'loading' && 'Generating...'}
                 {reportState === 'view' && 'View Report'}
               </Button>
-            ) : campaign?.isPCRReady ? (
+              ) : campaign?.isPCRReady ? (
               <Button
                 sx={{
                   width: '186.07px',
@@ -423,12 +485,21 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
                 View Report
                 {showReportPage && 'Test'}
               </Button>
-            ) : null}
+              ) : null}
+            </Stack>
           </Box>
 
           {insightsError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               Error loading insights: {insightsError?.message || 'Unknown error'}
+            </Alert>
+          )}
+
+          {!loadingInsights && !insightsError && failedUrls.length > 0 && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Stored analytics are not available yet for {failedUrls.length}{' '}
+              {failedUrls.length === 1 ? 'post' : 'posts'}. Data will appear after the next
+              analytics sync.
             </Alert>
           )}
 
