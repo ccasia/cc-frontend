@@ -24,12 +24,13 @@ const DashboardAdmin = () => {
   // BD (sales & marketing) admins get the dedicated sales pipeline dashboard.
   const isBD = !isSuperadmin && isBdAdmin(user);
   const isFinance = user?.admin?.designation === 'Finance';
+  const dashboardMaxWidth = isSuperadmin ? 'xl' : 'lg';
 
   // The BD dashboard manages its own full-width container.
   if (isBD) return <DashboardBD />;
 
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
+    <Container maxWidth={settings.themeStretch ? false : dashboardMaxWidth}>
       {isSuperadmin && <DashboardSuperadmin />}
       {(isCSM || isCSL) && <DashboardAdminRevamped />}
       {isFinance && <DashboardFinance />}
