@@ -15,7 +15,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
-import { Box, Grid, Link, Button, Avatar, Dialog, Popover, TextField, Typography, IconButton, DialogTitle, DialogContent, InputAdornment, CircularProgress } from '@mui/material';
+import { Box, Grid, Link, Alert, Button, Avatar, Dialog, Popover, TextField, Typography, IconButton, DialogTitle, DialogContent, InputAdornment, CircularProgress } from '@mui/material';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -580,7 +580,12 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     return entries;
   }, [manualEntriesData]);
 
-  const { data: insightsData } = useSocialInsights(postingSubmissions, campaignId);
+  const {
+    data: insightsData,
+    isLoading: loadingInsights,
+    error: insightsError,
+    failedUrls: missingInsightSnapshots,
+  } = useSocialInsights(postingSubmissions, campaignId);
 
   // Fetch post engagement snapshots (Day 7, 15, 30 ER tracking)
   const {
@@ -1005,6 +1010,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
               },
             }}
             onClick={isPCRReady ? handleMarkAsUnready : handleMarkAsReady}
+            disabled={!isPCRReady && (Boolean(insightsError) || missingInsightSnapshots.length > 0)}
             startIcon={
               isPCRReady ? (
                 <Box component="img" src="/assets/greentick.svg" alt="" sx={{ width: 24, height: 24 }} />
@@ -1016,6 +1022,20 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             Ready for Client Viewing
           </Button>
         </Box>
+      )}
+
+      {!loadingInsights && insightsError && (
+        <Alert severity="error" className="hide-in-pdf" sx={{ width: '1046px', mx: 'auto', mb: 2 }}>
+          Analytics data could not load. Try again before you mark this report as ready.
+        </Alert>
+      )}
+
+      {!loadingInsights && !insightsError && missingInsightSnapshots.length > 0 && (
+        <Alert severity="warning" className="hide-in-pdf" sx={{ width: '1046px', mx: 'auto', mb: 2 }}>
+          This report excludes {missingInsightSnapshots.length}{' '}
+          {missingInsightSnapshots.length === 1 ? 'post' : 'posts'} that are waiting for an analytics
+          sync. Sync the data before you mark the report as ready.
+        </Alert>
       )}
 
       <Box

@@ -93,6 +93,7 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
     data: insightsData,
     isLoading: loadingInsights,
     error: insightsError,
+    failedUrls: missingInsightSnapshots,
   } = useSocialInsights(postingSubmissions, campaign?.id);
 
   const summaryStats = useMemo(() => {
@@ -330,6 +331,12 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                 {insightsError && (
                   <Typography variant="caption" sx={{ color: '#F44336', fontStyle: 'italic' }}>
                     Analytics data unavailable
+                  </Typography>
+                )}
+                {!loadingInsights && !insightsError && missingInsightSnapshots.length > 0 && (
+                  <Typography variant="caption" sx={{ color: '#FFAB00', fontStyle: 'italic' }}>
+                    Partial data: {missingInsightSnapshots.length}{' '}
+                    {missingInsightSnapshots.length === 1 ? 'post is' : 'posts are'} waiting for sync
                   </Typography>
                 )}
               </Stack>
@@ -1012,4 +1019,4 @@ CampaignOverviewClient.propTypes = {
   onUpdate: PropTypes.func,
 };
 
-export default CampaignOverviewClient; 
+export default CampaignOverviewClient;

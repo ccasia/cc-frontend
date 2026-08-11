@@ -143,6 +143,9 @@ function TopEngagementCard({ filteredInsightsData, filteredSubmissions, getCreat
   }, [filteredInsightsData, filteredSubmissions, engagementRateCalc]);
   const { data: creator } = getCreatorById(topEngagementCreator?.user);
   if (!topEngagementCreator) return null;
+  const postThumbnail =
+    topEngagementCreator.insightData.thumbnail || topEngagementCreator.insightData.video?.media_url;
+  const isInstagram = topEngagementCreator.platform === 'Instagram';
   return (
     <Box
       borderRadius={3}
@@ -227,23 +230,39 @@ function TopEngagementCard({ filteredInsightsData, filteredSubmissions, getCreat
             },
           }}
         >
-          <Box
-            component="img"
-            src={
-              topEngagementCreator.insightData.thumbnail ||
-              topEngagementCreator.insightData.video?.media_url
-            }
-            alt="Top performing post"
-            sx={{
-              width: 290,
-              height: 180,
-              mt: 2,
-              borderRadius: 2,
-              objectFit: 'cover',
-              objectPosition: 'left top',
-              border: '1px solid #e0e0e0',
-            }}
-          />
+          {postThumbnail ? (
+            <Box
+              component="img"
+              src={postThumbnail}
+              alt="Top performing post"
+              sx={{
+                width: 290,
+                height: 180,
+                mt: 2,
+                borderRadius: 2,
+                objectFit: 'cover',
+                objectPosition: 'left top',
+                border: '1px solid #e0e0e0',
+              }}
+            />
+          ) : (
+            <Box
+              sx={{
+                width: 290,
+                height: 180,
+                mt: 2,
+                borderRadius: 2,
+                border: '1px solid #e0e0e0',
+                bgcolor: '#FFFFFF',
+                color: isInstagram ? '#E4405F' : '#000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Iconify icon={isInstagram ? 'prime:instagram' : 'prime:tiktok'} width={48} />
+            </Box>
+          )}
         </Link>
       </Box>
     </Box>
