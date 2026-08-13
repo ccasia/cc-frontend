@@ -1010,7 +1010,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
               },
             }}
             onClick={isPCRReady ? handleMarkAsUnready : handleMarkAsReady}
-            disabled={!isPCRReady && (Boolean(insightsError) || missingInsightSnapshots.length > 0)}
             startIcon={
               isPCRReady ? (
                 <Box component="img" src="/assets/greentick.svg" alt="" sx={{ width: 24, height: 24 }} />
