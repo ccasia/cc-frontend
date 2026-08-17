@@ -341,8 +341,8 @@ const VideoSubmissionModal = ({
           return getStatusColor('APPROVED');
         case 'PENDING_REVIEW':
         case 'CHANGES_REQUIRED':
-        case 'CLIENT_FEEDBACK':
         case 'REJECTED':
+        case 'CLIENT_FEEDBACK':
           return getStatusColor('IN_PROGRESS');
         default:
           return getStatusColor(status);
@@ -400,10 +400,11 @@ const VideoSubmissionModal = ({
           return 'APPROVED';
         case 'POSTED':
           return 'POSTED';
-        case 'CLIENT_FEEDBACK':
         case 'CHANGES_REQUIRED':
         case 'REJECTED':
           return 'IN PROGRESS';
+        case 'CLIENT_FEEDBACK':
+          return 'IN REVIEW';
         default:
           return status?.replace(/_/g, ' ') || 'Unknown';
       }

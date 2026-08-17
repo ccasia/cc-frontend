@@ -55,10 +55,9 @@ function MobileSubmissionRow({
       case 'APPROVE_LINK':
         return getStatusColor('APPROVED');
       case 'PENDING_REVIEW':
-        return getStatusColor('IN_PROGRESS');
       case 'CHANGES_REQUIRED':
-      case 'CLIENT_FEEDBACK':
       case 'REJECTED':
+      case 'CLIENT_FEEDBACK':
         return getStatusColor('IN_PROGRESS');
       default:
         return getStatusColor(submissionStatus);
@@ -108,7 +107,7 @@ function MobileSubmissionRow({
       case 'POSTED':
         return 'POSTED';
       case 'CLIENT_FEEDBACK':
-        return 'IN PROGRESS';
+        return 'IN REVIEW';
       case 'CHANGES_REQUIRED':
       case 'REJECTED':
         return 'IN PROGRESS';
