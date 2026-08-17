@@ -395,7 +395,6 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
         case 'SENT_TO_CLIENT':
           return getStatusColor('PENDING_REVIEW');
         case 'PENDING_REVIEW':
-          return getStatusColor('IN_PROGRESS');
         case 'CHANGES_REQUIRED':
         case 'CLIENT_FEEDBACK':
           return getStatusColor('IN_PROGRESS');
@@ -450,7 +449,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
         case 'POSTED':
           return 'POSTED';
         case 'CLIENT_FEEDBACK':
-          return 'IN PROGRESS';
+          return 'IN REVIEW';
         case 'CHANGES_REQUIRED':
           return 'IN PROGRESS';
         default:
