@@ -442,6 +442,7 @@ export const endpoints = {
     seed: '/api/packages/seedPackages',
     get: (id) => `/api/package/${id}`,
     update: (id) => `/api/package/${id}`,
+    delete: (id) => `/api/package/${id}`,
     history: `/api/packages/history/`,
   },
   creditTier: {

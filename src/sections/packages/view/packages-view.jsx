@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
@@ -20,6 +21,8 @@ import {
 import { paths } from 'src/routes/paths';
 
 import useGetPackages from 'src/hooks/use-get-packges';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
@@ -111,6 +114,19 @@ const Packages = () => {
     setEditItem(row);
     setOpenEdit(true);
   }, []);
+
+  const handleDeleteRow = useCallback(
+    async (id) => {
+      try {
+        await axiosInstance.delete(endpoints.package.delete(id));
+        enqueueSnackbar('Package deleted successfully', { variant: 'success' });
+        mutate();
+      } catch (error) {
+        enqueueSnackbar(error?.message || 'Failed to delete package', { variant: 'error' });
+      }
+    },
+    [mutate]
+  );
 
   useEffect(() => {
     if (!isLoading && data) {
@@ -333,7 +349,12 @@ const Packages = () => {
 
             <TableBody>
               {filteredData?.map((row) => (
-                <PackageTableRow key={row.id} row={row} onEditRow={() => handleEditRow(row)} />
+                <PackageTableRow
+                  key={row.id}
+                  row={row}
+                  onEditRow={() => handleEditRow(row)}
+                  onDeleteRow={() => handleDeleteRow(row.id)}
+                />
               ))}
             </TableBody>
           </Table>
