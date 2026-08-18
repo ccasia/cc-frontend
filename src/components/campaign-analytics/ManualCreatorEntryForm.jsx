@@ -97,6 +97,10 @@ const createManualCreatorSchema = (selectedPlatform) =>
       .notRequired(),
   });
 
+// One posting entry = one submission + one post URL. A single submission can carry both an
+// Instagram and a TikTok link, so the submission id alone is not a unique option key.
+const getPostingOptionKey = (submission) => `${submission?.id}::${submission?.postUrl || ''}`;
+
 // Resolves creator data for a single submission (uses hooks, must be a component)
 const CreatorOptionResolver = ({ submission, onResolved }) => {
   const { data: creator, isLoading } = useGetCreatorById(submission?.user)
@@ -109,7 +113,8 @@ const CreatorOptionResolver = ({ submission, onResolved }) => {
       const extracted = extractHandle(profileLink);
       const username = c?.instagram || c?.tiktok || extracted?.handle || '';
 
-      onResolved(submission.id, {
+      onResolved(getPostingOptionKey(submission), {
+        submissionId: submission.id,
         name: creator.user?.name || '',
         username,
         postUrl: submission.postUrl || '',
@@ -137,8 +142,8 @@ CreatorOptionResolver.propTypes = {
 const CreatorDropdownSelect = ({ submissions, value, onChange }) => {
   const [resolvedCreators, setResolvedCreators] = useState({});
 
-  const handleResolved = useCallback((submissionId, data) => {
-    setResolvedCreators((prev) => ({ ...prev, [submissionId]: { submissionId, ...data } }));
+  const handleResolved = useCallback((optionKey, data) => {
+    setResolvedCreators((prev) => ({ ...prev, [optionKey]: { optionKey, ...data } }));
   }, []);
 
   const options = useMemo(() => Object.values(resolvedCreators), [resolvedCreators]);
@@ -147,7 +152,11 @@ const CreatorDropdownSelect = ({ submissions, value, onChange }) => {
   return (
     <>
       {submissions.map((sub) => (
-        <CreatorOptionResolver key={sub.id} submission={sub} onResolved={handleResolved} />
+        <CreatorOptionResolver
+          key={getPostingOptionKey(sub)}
+          submission={sub}
+          onResolved={handleResolved}
+        />
       ))}
       <Autocomplete
         options={options}
@@ -155,7 +164,7 @@ const CreatorDropdownSelect = ({ submissions, value, onChange }) => {
         value={value}
         onChange={(_, newValue) => onChange(newValue)}
         loading={isResolving}
-        isOptionEqualToValue={(option, val) => option.submissionId === val?.submissionId}
+        isOptionEqualToValue={(option, val) => option.optionKey === val?.optionKey}
         componentsProps={{ paper: { sx: { minWidth: 250 } } }}
         renderInput={(params) => (
           <TextField
@@ -214,7 +223,7 @@ const CreatorDropdownSelect = ({ submissions, value, onChange }) => {
                 {option.name}
               </Typography>
               <Typography fontSize={11} color="text.secondary">
-                {option.username}
+                {option.platform ? `${option.username} · ${option.platform}` : option.username}
               </Typography>
             </Box>
           </Box>
