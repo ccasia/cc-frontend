@@ -40,6 +40,8 @@ import NextStepsIcon from 'src/assets/icons/next-steps-icon';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
+import DraftSaveIndicator from './draft-save-indicator';
+import useCampaignDraftAutosave from './hooks/use-campaign-draft-autosave';
 import {
   NextSteps,
   LogisticRemarks,
@@ -112,6 +114,11 @@ const getFrontSectionIndicatorIndex = (internalStep) => {
   if (internalStep >= 9) return 1; // Additional Details 2
   return 0; // Additional Details 1
 };
+
+const getDraftFileUrls = (value) =>
+  (Array.isArray(value) ? value : [value])
+    .filter((item) => item?.draftFile === true && typeof item.url === 'string')
+    .map((item) => item.url);
 
 function CreateCampaignFormV2({
   onClose,
@@ -374,6 +381,7 @@ function CreateCampaignFormV2({
     schedulingOption: 'confirmation',
     locations: [{ name: '', pic: '', contactNumber: '' }],
     availabilityRules: [],
+    reservationDraft: null,
     allowMultipleBookings: false,
     clientRemarks: '',
     venueName: '',
@@ -428,6 +436,26 @@ function CreateCampaignFormV2({
 
   const { handleSubmit, getValues, reset, setValue, watch, trigger } = methods;
 
+  const {
+    status: draftSaveStatus,
+    lastSavedAt,
+    flush: flushDraft,
+    clearDraft,
+  } = useCampaignDraftAutosave({
+    enabled: !isActivateMode,
+    userId: user?.id,
+    methods,
+    activeStep,
+    showAdditionalDetails,
+    setActiveStep,
+    setShowAdditionalDetails,
+  });
+
+  const handleClose = async () => {
+    await flushDraft();
+    onClose();
+  };
+
   // Watch all form values to trigger re-render when values change
   const formValues = watch();
 
@@ -446,7 +474,9 @@ function CreateCampaignFormV2({
     const details = campaign.campaignAdditionalDetails || {};
 
     const clientFromList =
-      (companyListData || []).find((co) => co.id === campaign.company?.id) || campaign.company || null;
+      (companyListData || []).find((co) => co.id === campaign.company?.id) ||
+      campaign.company ||
+      null;
 
     const deliverables = [];
     if (campaign.photos) deliverables.push('PHOTOS');
@@ -526,9 +556,11 @@ function CreateCampaignFormV2({
         Array.isArray(campaign.products) && campaign.products.length > 0
           ? campaign.products.map((p) => ({ name: p.productName }))
           : [{ name: '' }],
-      schedulingOption: campaign.reservationConfig?.mode === 'AUTO_SCHEDULE' ? 'auto' : 'confirmation',
+      schedulingOption:
+        campaign.reservationConfig?.mode === 'AUTO_SCHEDULE' ? 'auto' : 'confirmation',
       locations:
-        Array.isArray(campaign.reservationConfig?.locations) && campaign.reservationConfig.locations.length > 0
+        Array.isArray(campaign.reservationConfig?.locations) &&
+        campaign.reservationConfig.locations.length > 0
           ? campaign.reservationConfig.locations
           : [{ name: '', pic: '', contactNumber: '' }],
       availabilityRules: Array.isArray(campaign.reservationConfig?.availabilityRules)
@@ -564,7 +596,10 @@ function CreateCampaignFormV2({
         // brandGuidelinesUrl may hold multiple comma-joined URLs (the backend
         // joins them on save) — split back into individual previews.
         ...(details.brandGuidelinesUrl
-          ? details.brandGuidelinesUrl.split(',').map((u) => u.trim()).filter(Boolean)
+          ? details.brandGuidelinesUrl
+              .split(',')
+              .map((u) => u.trim())
+              .filter(Boolean)
           : []),
         ...(Array.isArray(brief.otherAttachments) ? brief.otherAttachments : []),
       ],
@@ -602,10 +637,7 @@ function CreateCampaignFormV2({
           'campaignImages',
         ];
       case 1: // Objective
-        return [
-          'campaignObjectives',
-          'secondaryObjectives',
-        ];
+        return ['campaignObjectives', 'secondaryObjectives'];
       case 2: // Audience
         return [
           'country',
@@ -904,7 +936,12 @@ function CreateCampaignFormV2({
       submissionVersion: data.submissionVersion || 'v4',
       // Attach the selected company's client users as client managers
       isClientCampaign: !!data.isV4Submission,
+      draftCampaignImageUrls: getDraftFileUrls(data.campaignImages),
+      draftBrandGuidelineUrls: getDraftFileUrls(data.brandGuidelines),
+      draftProductImage1Url: getDraftFileUrls(data.productImage1)[0] || null,
+      draftProductImage2Url: getDraftFileUrls(data.productImage2)[0] || null,
     };
+    delete campaignData.reservationDraft;
 
     formData.append('rawFootage', campaignData.rawFootage ? 'true' : 'false');
     formData.append('photos', campaignData.photos ? 'true' : 'false');
@@ -913,7 +950,7 @@ function CreateCampaignFormV2({
     // Append images
     if (Array.isArray(data.campaignImages)) {
       data.campaignImages.forEach((img) => {
-        if (img instanceof File || img.type) {
+        if (img instanceof File) {
           formData.append('campaignImages', img);
         }
       });
@@ -930,7 +967,7 @@ function CreateCampaignFormV2({
     if (data.brandGuidelines && Array.isArray(data.brandGuidelines)) {
       for (let i = 0; i < data.brandGuidelines.length; i += 1) {
         const item = data.brandGuidelines[i];
-        if (item instanceof File || item.type) {
+        if (item instanceof File) {
           formData.append('brandGuidelines', item);
         } else if (typeof item === 'string' && item) {
           formData.append('existingBrandGuidelines', item);
@@ -941,7 +978,7 @@ function CreateCampaignFormV2({
     // Append product images
     if (data.productImage1 && Array.isArray(data.productImage1)) {
       for (let i = 0; i < data.productImage1.length; i += 1) {
-        if (data.productImage1[i] instanceof File || data.productImage1[i].type) {
+        if (data.productImage1[i] instanceof File) {
           formData.append('productImage1', data.productImage1[i]);
         }
       }
@@ -949,7 +986,7 @@ function CreateCampaignFormV2({
 
     if (data.productImage2 && Array.isArray(data.productImage2)) {
       for (let i = 0; i < data.productImage2.length; i += 1) {
-        if (data.productImage2[i] instanceof File || data.productImage2[i].type) {
+        if (data.productImage2[i] instanceof File) {
           formData.append('productImage2', data.productImage2[i]);
         }
       }
@@ -969,6 +1006,9 @@ function CreateCampaignFormV2({
       enqueueSnackbar(res?.data?.message, {
         variant: 'success',
       });
+      if (!isActivateMode) {
+        await clearDraft();
+      }
       reset();
       if (mutateCampaignList) {
         mutateCampaignList();
@@ -1090,8 +1130,8 @@ function CreateCampaignFormV2({
         const desc = formValues.campaignDescription;
         const startDate = formValues.campaignStartDate;
         const endDate = formValues.campaignEndDate;
-        const {postingStartDate} = formValues;
-        const {postingEndDate} = formValues;
+        const { postingStartDate } = formValues;
+        const { postingEndDate } = formValues;
         const { productName } = formValues;
         const industries = formValues.campaignIndustries;
         const images = formValues.campaignImages;
@@ -1110,7 +1150,7 @@ function CreateCampaignFormV2({
       case 1: {
         const objectives = formValues.campaignObjectives;
         const secObjectives = formValues.secondaryObjectives;
-        return objectives && secObjectives
+        return objectives && secObjectives;
       }
       case 2: {
         const { country } = formValues;
@@ -1193,7 +1233,16 @@ function CreateCampaignFormV2({
   return (
     <Box>
       <FormProvider methods={methods} onSubmit={methods.handleSubmit(onSubmit)}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
+        {/* 3-column grid: the two `1fr` side columns stay equal, so the step
+            indicator in the middle lands on the true centre of the header. */}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            columnGap: { xs: 1, md: 2 },
+            alignItems: 'start',
+          }}
+        >
           <IconButton
             sx={{
               border: 1,
@@ -1203,22 +1252,21 @@ function CreateCampaignFormV2({
               height: 45,
               width: 45,
               padding: 1,
+              flexShrink: 0,
+              justifySelf: 'start',
             }}
             size="large"
             disabled={isLoading}
-            onClick={onClose}
+            onClick={handleClose}
           >
             <Iconify icon="material-symbols:close" width={20} color="#231F20" />
           </IconButton>
 
-          {/* Step Indicator - Clickable navigation */}
+          {/* Step Indicator - Clickable navigation.
+              In flow (not absolute) so the header never overlaps the nav buttons. */}
           <Box
             sx={{
-              position: 'absolute',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: '100%',
-              maxWidth: { xs: '95%', sm: 900 },
+              minWidth: 0,
               display: { xs: 'none', sm: 'flex' },
               justifyContent: 'center',
               alignItems: 'center',
@@ -1228,7 +1276,7 @@ function CreateCampaignFormV2({
               direction="row"
               alignItems="center"
               justifyContent="center"
-              sx={{ width: '100%' }}
+              sx={{ width: '100%', maxWidth: 900, minWidth: 0 }}
             >
               {/* Back Section (Client, General, Objective, Audience, Logistics, Finalise) */}
               {inBackSection &&
@@ -1237,12 +1285,14 @@ function CreateCampaignFormV2({
                     <Box
                       onClick={() => handleBackSectionStepClick(index)}
                       sx={{
-                        minWidth: 100,
+                        minWidth: { sm: 62, md: 84, lg: 100 },
+                        flexShrink: 1,
+                        px: { sm: 0.75, md: 1.5 },
                         height: 45,
                         py: 1.2,
                         textAlign: 'center',
                         borderRadius: 1,
-                        fontSize: 13,
+                        fontSize: { sm: 11, md: 12, lg: 13 },
                         fontWeight: 400,
                         bgcolor:
                           backSectionIndicator === index
@@ -1277,8 +1327,8 @@ function CreateCampaignFormV2({
                         sx={{
                           height: 1.2,
                           flexGrow: 1,
-                          minWidth: 20,
-                          maxWidth: 40,
+                          minWidth: { sm: 6, md: 12, lg: 20 },
+                          maxWidth: { sm: 16, md: 28, lg: 40 },
                           bgcolor: backSectionIndicator > index ? '#1340FF' : '#636366',
                         }}
                       />
@@ -1292,8 +1342,8 @@ function CreateCampaignFormV2({
                   sx={{
                     height: 1.2,
                     flexGrow: 1,
-                    minWidth: 20,
-                    maxWidth: 40,
+                    minWidth: { sm: 6, md: 12, lg: 20 },
+                    maxWidth: { sm: 16, md: 28, lg: 40 },
                     bgcolor: isNextStepsActive ? '#1340FF' : '#636366',
                   }}
                 />
@@ -1333,20 +1383,22 @@ function CreateCampaignFormV2({
                         sx={{
                           height: 1.2,
                           flexGrow: 1,
-                          minWidth: 20,
-                          maxWidth: 40,
+                          minWidth: { sm: 6, md: 12, lg: 20 },
+                          maxWidth: { sm: 16, md: 28, lg: 40 },
                           bgcolor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
                         }}
                       />
                       <Box
                         onClick={() => handleFrontSectionStepClick(index)}
                         sx={{
-                          minWidth: 100,
+                          minWidth: { sm: 62, md: 84, lg: 100 },
+                          flexShrink: 1,
+                          px: { sm: 0.75, md: 1.5 },
                           height: 45,
                           py: 1.2,
                           textAlign: 'center',
                           borderRadius: 1,
-                          fontSize: 13,
+                          fontSize: { sm: 11, md: 12, lg: 13 },
                           fontWeight: 400,
                           bgcolor:
                             frontSectionIndicator === index
@@ -1382,63 +1434,40 @@ function CreateCampaignFormV2({
             </Stack>
           </Box>
 
-          {/* Navigation buttons */}
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            sx={{
-              py: 3,
-              display: { xs: 'none', md: 'flex' },
-            }}
-          >
-            <Button
-              color="inherit"
-              disabled={activeStep === 0}
-              onClick={handleBack}
+          {/* Navigation buttons, with the autosave status tucked underneath */}
+          <Stack alignItems="flex-end" spacing={1.5} sx={{ justifySelf: 'end', pr: 0.25 }}>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
               sx={{
-                mr: 1,
-                height: 45,
-                bgcolor: 'white',
-                border: '1px solid #E7E7E7',
-                color: '#3A3A3C',
-                '&:hover': {
-                  bgcolor: '#F8F8F8',
-                  border: '1px solid #E7E7E7',
-                },
-                fontWeight: 600,
-                boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
+                display: { xs: 'none', md: 'flex' },
               }}
             >
-              Back
-            </Button>
-
-            <Box sx={{ flexGrow: 1 }} />
-
-            {/* Steps 0-6: Show Next button */}
-            {activeStep >= 0 && activeStep <= 6 && (
               <Button
-                variant="contained"
-                onClick={handleNext}
-                disabled={!isStepValid() || isLoading}
+                color="inherit"
+                disabled={activeStep === 0}
+                onClick={handleBack}
                 sx={{
+                  mr: 1,
                   height: 45,
-                  bgcolor: '#3A3A3C',
+                  bgcolor: 'white',
+                  border: '1px solid #E7E7E7',
+                  color: '#3A3A3C',
                   '&:hover': {
-                    bgcolor: '#47474a',
+                    bgcolor: '#F8F8F8',
+                    border: '1px solid #E7E7E7',
                   },
-                  boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
                   fontWeight: 600,
+                  boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
                 }}
               >
-                Next
+                Back
               </Button>
-            )}
 
-            {/* Step 7 (Next Steps): No navigation buttons - handled by component */}
+              <Box sx={{ flexGrow: 1 }} />
 
-            {/* Step 8: Show Next and Confirm Campaign buttons */}
-            {activeStep === 8 && (
-              <Stack direction="row" spacing={1}>
+              {/* Steps 0-6: Show Next button */}
+              {activeStep >= 0 && activeStep <= 6 && (
                 <Button
                   variant="contained"
                   onClick={handleNext}
@@ -1455,6 +1484,49 @@ function CreateCampaignFormV2({
                 >
                   Next
                 </Button>
+              )}
+
+              {/* Step 7 (Next Steps): No navigation buttons - handled by component */}
+
+              {/* Step 8: Show Next and Confirm Campaign buttons */}
+              {activeStep === 8 && (
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    variant="contained"
+                    onClick={handleNext}
+                    disabled={!isStepValid() || isLoading}
+                    sx={{
+                      height: 45,
+                      bgcolor: '#3A3A3C',
+                      '&:hover': {
+                        bgcolor: '#47474a',
+                      },
+                      boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Next
+                  </Button>
+                  <LoadingButton
+                    variant="contained"
+                    onClick={handleOpenConfirm}
+                    disabled={isLoading || !isStepValid()}
+                    sx={{
+                      bgcolor: '#1340FF',
+                      '&:hover': {
+                        bgcolor: '#0030e0',
+                      },
+                      boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {isLoading ? confirmLoadingLabel : confirmLabel}
+                  </LoadingButton>
+                </Stack>
+              )}
+
+              {/* Step 9: Show only Confirm Campaign button (last step) */}
+              {activeStep === 9 && (
                 <LoadingButton
                   variant="contained"
                   onClick={handleOpenConfirm}
@@ -1468,28 +1540,17 @@ function CreateCampaignFormV2({
                     fontWeight: 600,
                   }}
                 >
-                  {isLoading ? confirmLoadingLabel : confirmLabel}
+                  {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
                 </LoadingButton>
-              </Stack>
-            )}
+              )}
+            </Stack>
 
-            {/* Step 9: Show only Confirm Campaign button (last step) */}
-            {activeStep === 9 && (
-              <LoadingButton
-                variant="contained"
-                onClick={handleOpenConfirm}
-                disabled={isLoading || !isStepValid()}
-                sx={{
-                  bgcolor: '#1340FF',
-                  '&:hover': {
-                    bgcolor: '#0030e0',
-                  },
-                  boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                  fontWeight: 600,
-                }}
-              >
-                {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
-              </LoadingButton>
+            {!isActivateMode && (
+              <DraftSaveIndicator
+                status={draftSaveStatus}
+                lastSavedAt={lastSavedAt}
+                onRetry={flushDraft}
+              />
             )}
           </Stack>
 
@@ -1582,7 +1643,7 @@ function CreateCampaignFormV2({
               )}
             </DialogActions>
           </Dialog>
-        </Stack>
+        </Box>
 
         <Box
           sx={{

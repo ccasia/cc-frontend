@@ -348,6 +348,13 @@ export const endpoints = {
     exportCampaignCreators: '/api/campaign/export/campaign-creators',
     removeCreator: `/api/campaign/removeCreatorFromCampaign`,
   },
+  campaignCreationDrafts: {
+    root: '/api/campaign-creation-drafts',
+    active: '/api/campaign-creation-drafts/active',
+    update: (id) => `/api/campaign-creation-drafts/${id}`,
+    delete: (id) => `/api/campaign-creation-drafts/${id}`,
+    files: (id) => `/api/campaign-creation-drafts/${id}/files`,
+  },
   submission: {
     root: '/api/submission/',
     all: '/api/submission/getAllsubmission',

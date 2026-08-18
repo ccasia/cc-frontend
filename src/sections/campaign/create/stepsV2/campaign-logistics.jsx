@@ -447,7 +447,7 @@ const CampaignLogistics = () => {
 
               {errors.locations && !Array.isArray(errors.locations) && (
                 <Typography variant="caption" color="error" sx={{ fontWeight: 400 }}>
-                  {errors.locations.message}
+                  {typeof errors.locations.message === 'string' ? errors.locations.message : ''}
                 </Typography>
               )}
 
