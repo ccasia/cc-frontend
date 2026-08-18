@@ -10,7 +10,7 @@ import { enqueueSnackbar } from 'notistack';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
@@ -40,7 +40,9 @@ import NextStepsIcon from 'src/assets/icons/next-steps-icon';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
+import CloseDraftDialog from './close-draft-dialog';
 import DraftSaveIndicator from './draft-save-indicator';
+import { diffUserContent } from './utils/has-user-content';
 import useCampaignDraftAutosave from './hooks/use-campaign-draft-autosave';
 import {
   NextSteps,
@@ -146,6 +148,7 @@ function CreateCampaignFormV2({
 
   const [status, setStatus] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [closeDraftOpen, setCloseDraftOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [brandState, setBrandState] = useState('');
@@ -428,6 +431,12 @@ function CreateCampaignFormV2({
     isCreditTier: false,
   };
 
+  // useForm captures defaultValues on the first render only, and every later
+  // reset() rebases formState.defaultValues to whatever it was given -- the
+  // autosave restore does exactly that. Freeze the original so "does this form
+  // hold real work?" is always measured against a pristine form, not a draft.
+  const pristineDefaults = useRef(defaultValues);
+
   const methods = useForm({
     resolver: yupResolver(getSchemaForStep(activeStep)),
     defaultValues,
@@ -452,7 +461,34 @@ function CreateCampaignFormV2({
   });
 
   const handleClose = async () => {
+    // Only ask about the draft when the form really holds something. A draft
+    // record can exist while being completely empty, so compare the values
+    // against the baseline React Hook Form itself captured on first render --
+    // rebuilding `defaultValues` here would drift (e.g. `campaignManager`
+    // resolves to [] before `user` loads and to [user] afterwards).
+    const changed = isActivateMode ? [] : diffUserContent(getValues(), pristineDefaults.current);
+
+    if (changed.length) {
+      setCloseDraftOpen(true);
+      return;
+    }
     await flushDraft();
+    onClose();
+  };
+
+  const handleKeepEditing = () => setCloseDraftOpen(false);
+
+  // The dialog drives its own saving / saved phases and calls back when it is
+  // finished, so these only do the work -- not the closing.
+  const handleSaveAsDraft = () => flushDraft();
+
+  const handleDiscardDraft = async () => {
+    await clearDraft();
+    reset();
+  };
+
+  const handleDraftDialogDone = () => {
+    setCloseDraftOpen(false);
     onClose();
   };
 
@@ -1553,6 +1589,16 @@ function CreateCampaignFormV2({
               />
             )}
           </Stack>
+
+          {/* Close-with-unsaved-draft confirmation */}
+          <CloseDraftDialog
+            open={closeDraftOpen}
+            campaignName={watch('campaignName')}
+            onKeepEditing={handleKeepEditing}
+            onSaveDraft={handleSaveAsDraft}
+            onDiscard={handleDiscardDraft}
+            onDone={handleDraftDialogDone}
+          />
 
           {/* Confirmation Dialog */}
           <Dialog
