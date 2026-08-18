@@ -20,12 +20,18 @@ const CampaignAdminManager = () => {
   const selectedCampaignManagers = useMemo(() => campaignManager || [], [campaignManager]);
 
   const filteredCampaignManagers = useMemo(
-    () => admins?.filter((item) => item.role === 'CSM' || item.role === 'Client').sort((a, b) => a.name.localeCompare(b.name)) || [],
+    () =>
+      admins
+        ?.filter((item) => item.role === 'CSM' || item.role === 'CSL' || item.role === 'Client')
+        .sort((a, b) => a.name.localeCompare(b.name)) || [],
     [admins]
   );
 
   // Check if any selected admin has the 'Client' role
-  const hasClientUser = useMemo(() => selectedCampaignManagers.some((manager) => manager?.role === 'Client'), [selectedCampaignManagers]);
+  const hasClientUser = useMemo(
+    () => selectedCampaignManagers.some((manager) => manager?.role === 'Client'),
+    [selectedCampaignManagers]
+  );
 
   // Automatically set submissionVersion to 'v4' when a client user is added
   useEffect(() => {

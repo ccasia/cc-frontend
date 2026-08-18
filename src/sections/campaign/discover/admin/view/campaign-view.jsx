@@ -88,16 +88,15 @@ const CampaignView = () => {
       .filter((adminUser) => {
         // Only include users with names and admin record
         if (!adminUser?.name || !adminUser?.admin) return false;
-        // Only include CSM admins
         const roleName = adminUser.admin?.role?.name;
-        return roleName === 'CSM' || roleName === 'Customer Success Manager';
+        return roleName === 'CSM' || roleName === 'Customer Success Manager' || roleName === 'CSL';
       })
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
       .map((adminUser) => ({
         id: adminUser.id,
         name: adminUser.name || 'Unknown',
         photoURL: adminUser.photoURL,
-        role: adminUser.admin?.role?.name || 'CSM',
+        role: adminUser.admin?.role?.name || 'Admin',
       }));
   }, [adminsData]);
 
@@ -115,17 +114,14 @@ const CampaignView = () => {
     [user]
   );
 
-  // Check if user is superadmin
-  const isSuperAdmin = useMemo(
-    () => user?.admin?.mode === 'god' || user?.admin?.role?.name === 'CSL',
-    [user]
-  );
+  const isSuperAdmin = useMemo(() => user?.admin?.mode === 'god', [user]);
 
-  // Check if user is a CSM admin (not advanced mode)
+  // Check if user is a CSM-style admin (not advanced mode). CSL shares this view.
   const isCSM = useMemo(
     () =>
       (user?.admin?.role?.name === 'CSM' ||
-        user?.admin?.role?.name === 'Customer Success Manager') &&
+        user?.admin?.role?.name === 'Customer Success Manager' ||
+        user?.admin?.role?.name === 'CSL') &&
       user?.admin?.mode !== 'advanced',
     [user]
   );
@@ -244,15 +240,10 @@ const CampaignView = () => {
 
   // Reset filter if non-superadmin/non-CSM tries to access pending tab
   useEffect(() => {
-    if (
-      filter === 'pending' &&
-      !isSuperAdmin &&
-      user?.admin?.role?.name !== 'CSM' &&
-      user?.admin?.role?.name !== 'Customer Success Manager'
-    ) {
+    if (filter === 'pending' && !isSuperAdmin && !isCSM) {
       setFilter('active');
     }
-  }, [filter, isSuperAdmin, user]);
+  }, [filter, isSuperAdmin, isCSM]);
 
   const handleChangeTab = (value) => {
     setFilter(value);
@@ -496,10 +487,8 @@ const CampaignView = () => {
             >
               Active ({activeCount})
             </Button>
-            {/* Show Pending tab for superadmins and CSM users */}
-            {(isSuperAdmin ||
-              user?.admin?.role?.name === 'CSM' ||
-              user?.admin?.role?.name === 'Customer Success Manager') && (
+            {/* Show Pending tab for superadmins and CSM/CSL users */}
+            {(isSuperAdmin || isCSM) && (
               <Button
                 disableRipple
                 size="large"
