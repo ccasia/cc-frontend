@@ -32,35 +32,42 @@ export function RHFSelect({
     <Controller
       name={name}
       control={control}
-      render={({ field, fieldState: { error } }) => (
-        <TextField
-          {...field}
-          label={label}
-          select
-          fullWidth
-          value={multiple ? field.value || [''] : field.value || ''}
-          SelectProps={{
-            native,
-            multiple,
-            MenuProps: {
-              PaperProps: {
-                sx: {
-                  ...(!native && {
-                    maxHeight: typeof maxHeight === 'number' ? maxHeight : 'unset',
-                  }),
-                  ...PaperPropsSx,
+      render={({ field, fieldState: { error } }) => {
+        const { value: fieldValue } = field;
+        let value = '';
+        if (multiple) value = Array.isArray(fieldValue) ? fieldValue : [];
+        else if (['string', 'number'].includes(typeof fieldValue)) value = fieldValue;
+
+        return (
+          <TextField
+            {...field}
+            label={label}
+            select
+            fullWidth
+            value={value}
+            SelectProps={{
+              native,
+              multiple,
+              MenuProps: {
+                PaperProps: {
+                  sx: {
+                    ...(!native && {
+                      maxHeight: typeof maxHeight === 'number' ? maxHeight : 'unset',
+                    }),
+                    ...PaperPropsSx,
+                  },
                 },
               },
-            },
-            sx: { textTransform: 'capitalize' },
-          }}
-          error={!!error}
-          helperText={error ? error?.message : helperText}
-          {...other}
-        >
-          {children}
-        </TextField>
-      )}
+              sx: { textTransform: 'capitalize' },
+            }}
+            error={!!error}
+            helperText={typeof error?.message === 'string' ? error.message : helperText}
+            {...other}
+          >
+            {children}
+          </TextField>
+        );
+      }}
     />
   );
 }
@@ -93,7 +100,8 @@ export function RHFMultiSelect({
   const { control } = useFormContext();
 
   const renderValues = (selectedIds) => {
-    const selectedItems = options?.filter((item) => (selectedIds || []).includes(item.value));
+    const values = Array.isArray(selectedIds) ? selectedIds : [];
+    const selectedItems = options?.filter((item) => values.includes(item.value));
 
     if (!selectedItems.length && placeholder) {
       return <Box sx={{ color: 'text.disabled' }}>{placeholder}</Box>;
@@ -154,43 +162,47 @@ export function RHFMultiSelect({
     <Controller
       name={name}
       control={control}
-      render={({ field, fieldState: { error } }) => (
-        <FormControl error={!!error} {...other}>
-          {label && <InputLabel id={name}> {label} </InputLabel>}
+      render={({ field, fieldState: { error } }) => {
+        const selectedValues = Array.isArray(field.value) ? field.value : [];
 
-          <Box sx={{ position: 'relative', width: '100%' }}>
-            <Select
-              {...field}
-              value={field.value || []}
-              multiple
-              displayEmpty={!!placeholder}
-              id={`multiple-${name}`}
-              labelId={name}
-              label={label}
-              renderValue={renderValues}
-              fullWidth
-              MenuProps={MenuProps}
-            >
-              {options.map((option) => {
-                const selected = (field.value || []).includes(option.value);
+        return (
+          <FormControl error={!!error} {...other}>
+            {label && <InputLabel id={name}> {label} </InputLabel>}
 
-                return (
-                  <MenuItem key={option.value} value={option.value}>
-                    {checkbox && <Checkbox size="small" disableRipple checked={selected} />}
+            <Box sx={{ position: 'relative', width: '100%' }}>
+              <Select
+                {...field}
+                value={selectedValues}
+                multiple
+                displayEmpty={!!placeholder}
+                id={`multiple-${name}`}
+                labelId={name}
+                label={label}
+                renderValue={renderValues}
+                fullWidth
+                MenuProps={MenuProps}
+              >
+                {options.map((option) => {
+                  const selected = selectedValues.includes(option.value);
 
-                    {option.label}
-                  </MenuItem>
-                );
-              })}
-            </Select>
-            {renderClearAllButton(field.value, field.onChange)}
-          </Box>
+                  return (
+                    <MenuItem key={option.value} value={option.value}>
+                      {checkbox && <Checkbox size="small" disableRipple checked={selected} />}
 
-          {(!!error || helperText) && (
-            <FormHelperText error={!!error}>{error ? error?.message : helperText}</FormHelperText>
-          )}
-        </FormControl>
-      )}
+                      {option.label}
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+              {renderClearAllButton(selectedValues, field.onChange)}
+            </Box>
+
+            {(!!error || helperText) && (
+              <FormHelperText error={!!error}>{error ? error?.message : helperText}</FormHelperText>
+            )}
+          </FormControl>
+        );
+      }}
     />
   );
 }
