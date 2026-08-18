@@ -192,7 +192,7 @@ export const endpoints = {
     updateProfileNewAdmin: '/api/user/admins',
     createAdmin: '/api/user/createAdmin',
     getAdmins: '/api/user/getAdmins',
-    allusers: '/api/users',
+    allusers: '/api/user/',
     changePassword: '/api/user/changePassword',
     getAdminlogs: (id) => `/api/user/admin-logs/${id}`,
   },

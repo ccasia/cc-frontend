@@ -1,10 +1,15 @@
+import axios from 'axios';
+import { toast } from 'sonner';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import { useMutation } from '@tanstack/react-query';
 import React, { useMemo, useState, useCallback } from 'react';
 
 import { Box } from '@mui/material';
 
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
+
+import axiosInstance from 'src/utils/axios';
 
 import CustomV4Upload from 'src/components/upload/custom-v4-upload';
 
@@ -60,32 +65,33 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
     try {
       const storageKey = `feedback_viewed_${submission.id}`;
       const lastViewedTimestamp = localStorage.getItem(storageKey);
-      
+
       const allFeedback = submission?.feedback || [];
-      const legacyFeedbackTime = allFeedback.length > 0
-        ? Math.max(...allFeedback.map(f => new Date(f.createdAt || 0).getTime()))
-        : 0;
+      const legacyFeedbackTime =
+        allFeedback.length > 0
+          ? Math.max(...allFeedback.map((f) => new Date(f.createdAt || 0).getTime()))
+          : 0;
 
       const allComments = comments || [];
-      const commentTimes = allComments.flatMap(comment => {
+      const commentTimes = allComments.flatMap((comment) => {
         const times = [new Date(comment.createdAt || 0).getTime()];
         if (comment.replies && comment.replies.length > 0) {
-          times.push(...comment.replies.map(r => new Date(r.createdAt || 0).getTime()));
+          times.push(...comment.replies.map((r) => new Date(r.createdAt || 0).getTime()));
         }
         return times;
       });
       const latestCommentTime = commentTimes.length > 0 ? Math.max(...commentTimes) : 0;
 
       const latestFeedbackTime = Math.max(legacyFeedbackTime, latestCommentTime);
-      
+
       if (!lastViewedTimestamp && latestFeedbackTime > 0) {
         return true;
       }
-      
+
       if (lastViewedTimestamp && latestFeedbackTime > parseInt(lastViewedTimestamp, 10)) {
         return true;
       }
-      
+
       return false;
     } catch (error) {
       console.error('Error checking new feedback:', error);
@@ -214,6 +220,67 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
     [handleSubmit]
   );
 
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const file = selectedFiles[0];
+
+      const data = {
+        campaignId: campaign.id,
+        submissionId: submission.id,
+        contentType: file?.type ?? '',
+        fileName: file?.name ?? '',
+        fileSize: file?.size ?? '',
+      };
+
+      const res = await axiosInstance.post('/api/upload-sessions/', data);
+
+      return { ...res.data, file };
+    },
+    mutationKey: ['submission', submission.id],
+    onSettled: async (data) => {
+      const startRes = await fetch(data?.signedUrl, {
+        method: 'POST',
+        headers: {
+          'X-Goog-Resumable': 'start',
+          'Content-Type': data?.file.type,
+        },
+      });
+
+      const sessionUri = startRes.headers.get('Location');
+
+      const CHUNK_SIZE = 8 * 1024 * 1024;
+      let offset = 0;
+
+      while (offset < data?.file?.size) {
+        const end = Math.min(offset + CHUNK_SIZE, data.file.size);
+
+        const blob = data.file.slice(offset, end);
+
+        // eslint-disable-next-line no-await-in-loop
+        const res = await fetch(sessionUri, {
+          method: 'PUT',
+          headers: { 'Content-Range': `bytes ${offset}-${end - 1}/${data.file.size}` },
+          body: blob,
+        });
+
+        if (res.status === 308) {
+          // not done — Google says "I have up to byte N"
+          const range = res.headers.get('range');
+          console.log(range);
+          offset = parseInt(range.split('-')[1], 10) + 1;
+        } else if (res.ok) {
+          break; // 200/201 = finished
+        } else {
+          throw new Error(`Upload failed: ${res.status}`);
+        }
+      }
+
+      // await axiosInstance.post(`/api/upload-sessions/${data?.uploadSessionId}/complete`);
+
+      toast.success('Done');
+    },
+  });
+
   const markFeedbackAsViewed = useCallback(() => {
     try {
       const storageKey = `feedback_viewed_${submission.id}`;
@@ -228,7 +295,9 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
   const handleVideoClick = useCallback(() => {
     // Only open modal if there's a submitted video (not in reupload mode or selecting new files)
     if (submittedVideo && !isReuploadMode && selectedFiles.length === 0) {
-      setCommentHighlightCutoffMs(hasNewFeedback ? readFeedbackViewedCutoffMs(submission.id) : null);
+      setCommentHighlightCutoffMs(
+        hasNewFeedback ? readFeedbackViewedCutoffMs(submission.id) : null
+      );
       setShowNewCommentBorders(hasNewFeedback);
       setIsModalOpen(true);
     }
@@ -311,7 +380,8 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
             onCaptionChange={handleCaptionChange}
             isCaptionEditable={isCaptionEditable}
             hasPostingLink={
-              requiresPostingLink && (isApproved || isApproveLink || isPosted || isPostingLinkRejected)
+              requiresPostingLink &&
+              (isApproved || isApproveLink || isPosted || isPostingLinkRejected)
             }
             postingLinks={isPostingLinkEditable ? postingLinks : submission.videos || []}
             onPostingLinkChange={handlePostingLinkChange}
@@ -333,7 +403,10 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
               postingLoading={postingLoading}
               uploadProgress={uploadProgress}
               onReupload={handleReupload}
-              onSubmit={onSubmit}
+              // onSubmit={onSubmit}
+              onSubmit={() => {
+                mutation.mutate();
+              }}
               onPostingLinkSubmit={handleSubmitPostingLink}
               isPostingLinkEditable={isPostingLinkEditable}
               reuploadText="Reupload Draft"
