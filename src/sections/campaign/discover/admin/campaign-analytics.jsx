@@ -1396,7 +1396,12 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
                     submissionsWithoutInsights={
                       !loadingInsights
                         ? filteredSubmissions.filter(
-                            (sub) => !insightsData.find((d) => d.submissionId === sub.id)
+                            (sub) =>
+                              !insightsData.find(
+                                (d) =>
+                                  d.submissionId === sub.id &&
+                                  canonicalizePostUrl(d.postUrl) === canonicalizePostUrl(sub.postUrl)
+                              )
                           )
                         : []
                     }
