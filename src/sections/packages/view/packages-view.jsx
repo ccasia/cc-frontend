@@ -100,7 +100,7 @@ SortableHeader.defaultProps = {
 // ----------------------------------------------------------------------
 
 const Packages = () => {
-  const { data, isLoading, mutate } = useGetPackages();
+  const { data, isLoading, mutate } = useGetPackages(true);
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -118,11 +118,39 @@ const Packages = () => {
   const handleDeleteRow = useCallback(
     async (id) => {
       try {
-        await axiosInstance.delete(endpoints.package.delete(id));
-        enqueueSnackbar('Package deleted successfully', { variant: 'success' });
+        const res = await axiosInstance.delete(endpoints.package.delete(id));
+        enqueueSnackbar(res?.data?.message || 'Package deleted successfully', {
+          variant: 'success',
+        });
         mutate();
       } catch (error) {
         enqueueSnackbar(error?.message || 'Failed to delete package', { variant: 'error' });
+      }
+    },
+    [mutate]
+  );
+
+  const handleArchiveRow = useCallback(
+    async (id) => {
+      try {
+        const res = await axiosInstance.patch(endpoints.package.archive(id));
+        enqueueSnackbar(res?.data?.message || 'Package archived', { variant: 'success' });
+        mutate();
+      } catch (error) {
+        enqueueSnackbar(error?.message || 'Failed to archive package', { variant: 'error' });
+      }
+    },
+    [mutate]
+  );
+
+  const handleUnarchiveRow = useCallback(
+    async (id) => {
+      try {
+        const res = await axiosInstance.patch(endpoints.package.unarchive(id));
+        enqueueSnackbar(res?.data?.message || 'Package restored', { variant: 'success' });
+        mutate();
+      } catch (error) {
+        enqueueSnackbar(error?.message || 'Failed to restore package', { variant: 'error' });
       }
     },
     [mutate]
@@ -354,6 +382,8 @@ const Packages = () => {
                   row={row}
                   onEditRow={() => handleEditRow(row)}
                   onDeleteRow={() => handleDeleteRow(row.id)}
+                  onArchiveRow={() => handleArchiveRow(row.id)}
+                  onUnarchiveRow={() => handleUnarchiveRow(row.id)}
                 />
               ))}
             </TableBody>

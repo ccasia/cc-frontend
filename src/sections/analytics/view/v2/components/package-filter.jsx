@@ -19,7 +19,7 @@ const KNOWN_PACKAGE_COLORS = {
 const DEFAULT_PACKAGE_COLOR = '#919EAB';
 
 function PackageFilterSelect({ value, onChange }) {
-  const { data: packages } = useGetPackages();
+  const { data: packages } = useGetPackages(true);
   const [anchorEl, setAnchorEl] = useState(null);
   const [initialized, setInitialized] = useState(false);
   const menuOpen = Boolean(anchorEl);
