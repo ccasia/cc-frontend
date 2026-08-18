@@ -27,7 +27,13 @@ import { campaignHasClient } from 'src/utils/campaign-flow';
 import { useAuthContext } from 'src/auth/hooks';
 
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFSwitch, RHFSelectV2, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
+import {
+  RHFSwitch,
+  RHFSelectV2,
+  RHFMultiSelect,
+  RHFAutocomplete,
+  RHFCheckbox,
+} from 'src/components/hook-form';
 
 import { useGetAdmins } from '../../create/hooks/get-am';
 
@@ -35,6 +41,7 @@ import { useGetAdmins } from '../../create/hooks/get-am';
 const campaignTypeOptions = [
   { value: 'normal', label: 'UGC (With Posting)' },
   { value: 'ugc', label: 'UGC (No Posting)' },
+  { value: 'seedingCampaign', label: 'Seeding Campaign' },
 ];
 
 // Deliverable options (matching activate-campaign-dialog.jsx)
@@ -76,6 +83,7 @@ const UpdateFinaliseCampaignSchema = Yup.object().shape({
   campaignManager: Yup.array().min(1, 'At least one campaign manager is required'),
   campaignType: Yup.string().required('Campaign type is required'),
   deliverables: Yup.array().min(1, 'At least one deliverable is required'),
+  isNdaRequired: Yup.boolean(),
 });
 
 const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateChange }) => {
@@ -129,6 +137,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
       // Reflects client attachment, not the (immutable) submissionVersion
       isV4Submission: campaignHasClient(campaign),
       isCreditTier: campaign?.isCreditTier || false,
+      isNdaRequired: campaign?.agreementTemplate?.isNdaRequired,
     }),
     [existingManagers, campaign, existingDeliverables]
   );
@@ -208,6 +217,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
         campaignType: data.campaignType,
         deliverables: data.deliverables,
         isCreditTier: data.isCreditTier,
+        isNdaRequired: data.isNdaRequired,
       });
 
       enqueueSnackbar('Campaign finalise settings updated successfully');
@@ -237,7 +247,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
                 color: '#231F20',
                 opacity: 0.6,
                 fontSize: '0.875rem',
-                mr: -0.5
+                mr: -0.5,
               }}
             >
               Enable this as a Client Campaign?
@@ -265,7 +275,9 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
             <Typography
               sx={{
                 fontWeight: 700,
-                color: campaign?.isCreditTier ? '#231F20' : (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+                color: campaign?.isCreditTier
+                  ? '#231F20'
+                  : (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
                 opacity: campaign?.isCreditTier ? 0.6 : 1,
                 fontSize: '0.875rem',
                 mr: 1,
@@ -277,16 +289,20 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
               name="isCreditTier"
               color="primary"
               disabled={!!campaign?.isCreditTier}
-              sx={campaign?.isCreditTier ? {
-                cursor: 'not-allowed',
-                '& .MuiSwitch-switchBase.Mui-disabled': {
-                  cursor: 'not-allowed',
-                  pointerEvents: 'auto',
-                },
-                '& .MuiSwitch-track': {
-                  cursor: 'not-allowed',
-                },
-              } : undefined}
+              sx={
+                campaign?.isCreditTier
+                  ? {
+                      cursor: 'not-allowed',
+                      '& .MuiSwitch-switchBase.Mui-disabled': {
+                        cursor: 'not-allowed',
+                        pointerEvents: 'auto',
+                      },
+                      '& .MuiSwitch-track': {
+                        cursor: 'not-allowed',
+                      },
+                    }
+                  : undefined
+              }
             />
           </Stack>
           <Typography variant="caption" fontWeight={400} color="text.secondary">
@@ -342,7 +358,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
           </Stack>
 
           {/* Right column */}
-          <Stack flex={1} spacing={2}>
+          <Stack flex={1} spacing={1}>
             <FormField label="Campaign Type">
               <RHFSelectV2 name="campaignType" placeholder="Select campaign type">
                 {campaignTypeOptions.map((option) => (
@@ -352,6 +368,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
                 ))}
               </RHFSelectV2>
             </FormField>
+            <RHFCheckbox name="isNdaRequired" label="NDA Agreement" />
           </Stack>
         </Stack>
 
@@ -366,7 +383,6 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
             />
           </FormField>
         </Stack>
-
       </Box>
 
       {/* V4 Submission Warning Dialog */}

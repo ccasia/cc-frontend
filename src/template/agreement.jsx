@@ -107,6 +107,7 @@ export default function AgreementTemplate({
   SIGNATURE,
   isForSurfShark = false,
   isSeedingCampaign = false,
+  isNdaRequired = false,
 }) {
   return (
     <Document pageLayout="singlePage">
@@ -493,6 +494,68 @@ export default function AgreementTemplate({
               Effective Date.
             </Text>
           </View>
+
+          {isNdaRequired && (
+            <View style={styles.section}>
+              <Text style={styles.titlee}>6. Confidentiality</Text>
+
+              <View style={styles.section}>
+                <Text style={styles.titlee}>6.1 Confidential Information</Text>
+                <Text>
+                  All information shared with the Freelancer in connection with this campaign,
+                  including but not limited to the brand name, campaign brief, creative direction,
+                  fee/compensation details, product information, product samples, launch timelines
+                  and any other materials or communications relating to the campaign (“Campaign
+                  Information”) is strictly private and confidential.
+                </Text>
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.titlee}>6.2 Non-Disclosure</Text>
+                <Text>
+                  The Freelancer agrees not to disclose, share, publish, screenshot, forward or
+                  otherwise distribute any Campaign Information to any third party, including but
+                  not limited to friends, family or other Freelancers, social media (public or
+                  private posts, stories, close friends list, group chats) or press, outside of the
+                  individuals directly involved in executing the Campaign.
+                </Text>
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.titlee}>6.3 Pre-Launch Product Restriction</Text>
+                <Text>
+                  Where the Campaign related to a product that has not yet been publicly launched,
+                  the Creator specifically agrees not to disclose, tease, hint at, reference or post
+                  about the product, brand involvement or any details of the Campaign Information
+                  whether directly or indirectly (including via stories, captions, comments,
+                  livestreams or verbal mentions) until the official launch date communicated by the
+                  Company. This restriction applies regardless of whether content has already been
+                  filmed, drafted or submitted for approval.
+                </Text>
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.titlee}>6.4 Duration</Text>
+                <Text>
+                  This confidentiality obligation survives the completion, termination or expiration
+                  of this Agreement and continues to apply after the campaign content has gone live
+                  except with respect to information that becomes publicly available through
+                  official brand or company channels through no fault of the Freelancer.
+                </Text>
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.titlee}>6.5 Consequences of Breach</Text>
+                <Text>
+                  The Freelancer acknowledges that unauthorised disclosure of Campaign Information,
+                  particularly pre-launch product details may cause significant commercial harm to
+                  the Company and the brand. Any breach of this clause may result in immediate
+                  termination of this Agreement/forfeiture of fees/other remedies available under
+                  this Agreement or by law at the Company’s discretion.
+                </Text>
+              </View>
+            </View>
+          )}
 
           {/* Signature */}
           <View style={styles.signatureView}>

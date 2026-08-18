@@ -38,14 +38,15 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import AgreementTemplate from 'src/template/agreement';
 
 import PDFEditor from 'src/components/pdf/pdf-editor';
-import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import FormProvider, { RHFCheckbox, RHFTextField } from 'src/components/hook-form';
 
 const stepsPDF = ['Fill in missing information', 'Digital Signature'];
 
 const schema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
   icNumber: Yup.string().required('IC Number is required.'),
-  campaignType: Yup.string().oneOf(['seedingCampaign', 'surfSharkCampaign']),
+  campaignType: Yup.string().nullable(),
+  isNdaRequired: Yup.boolean().optional(),
 });
 
 const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) => {
@@ -56,8 +57,6 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
   const [annotations, setAnnotations] = useState([]);
   const loading = useBoolean();
 
-  // const [campaignType, setCampaignType] = useState(null);
-
   const smDown = useResponsive('down', 'sm');
 
   const methods = useForm({
@@ -66,14 +65,23 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
       name: user?.name || '',
       icNumber: '',
       campaignType: '',
+      isNdaRequired: false,
     },
     reValidateMode: 'onChange',
     mode: 'onChange',
   });
 
-  const { handleSubmit, watch, reset, setValue } = methods;
+  const {
+    handleSubmit,
+    watch,
+    reset,
+    setValue,
+    formState: { errors },
+  } = methods;
 
-  const { name, icNumber, campaignType } = watch();
+  console.log(errors);
+
+  const { name, icNumber, campaignType, isNdaRequired } = watch();
 
   const processPdf = async () => {
     const blob = await pdf(
@@ -82,6 +90,7 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
         ADMIN_NAME={name}
         isForSurfShark={campaignType === 'surfSharkCampaign'}
         isSeedingCampaign={campaignType === 'seedingCampaign'}
+        isNdaRequired={isNdaRequired}
       />
     ).toBlob();
 
@@ -155,7 +164,10 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
       const blob = await response.blob();
 
       const formData = new FormData();
-      formData.append('data', JSON.stringify({ name: user?.name, ...data, campaignId }));
+      formData.append(
+        'data',
+        JSON.stringify({ name: user?.name, ...data, campaignId, isNdaRequired })
+      );
       formData.append('signedAgreement', agreementBlob);
       formData.append('signatureImage', blob);
 
@@ -260,6 +272,7 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
                       )}
                     </RadioGroup>
                   </FormControl>
+                  <RHFCheckbox name="isNdaRequired" label="NDA Agreement" />
                 </Stack>
               )}
               {activeStep === 1 && (
@@ -290,6 +303,7 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
               size="small"
               variant="contained"
               onClick={onSubmit}
+
               loading={loading.value}
             >
               Save

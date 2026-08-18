@@ -106,6 +106,7 @@ const CampaignAgreementEdit = ({
   const pitchRecord = campaign?.pitch?.find((p) => p.userId === agreement?.user?.id);
 
   const isSeedingCampaign = useMemo(() => campaign.campaignType === 'seedingCampaign', [campaign]);
+  const isNdaRequired = campaign?.agreementTemplate?.isNdaRequired;
 
   const toFollowerCount = (value) => {
     const parsed = parseInt(String(value ?? '').replace(/[^0-9]/g, ''), 10);
@@ -380,6 +381,7 @@ const CampaignAgreementEdit = ({
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
     const creditsToAssign = requiresUGCCredits ? Number(ugcCreditsValue) : null;
+
     // Only a superadmin may submit a follower override. Other roles send the selected platform
     // and let the backend resolve the trusted count used for pricing and snapshots.
     const parsedPlatformFollower = canEditFollowerCount
@@ -432,6 +434,7 @@ const CampaignAgreementEdit = ({
           SIGNATURE={extractAgremmentsInfo?.signURL ?? 'Default'}
           isForSurfShark={campaign?.isForSurfShark}
           isSeedingCampaign={isSeedingCampaign}
+          isNdaRequired={isNdaRequired}
         />
       ).toBlob();
 
