@@ -450,6 +450,8 @@ export const endpoints = {
     get: (id) => `/api/package/${id}`,
     update: (id) => `/api/package/${id}`,
     delete: (id) => `/api/package/${id}`,
+    archive: (id) => `/api/package/${id}/archive`,
+    unarchive: (id) => `/api/package/${id}/unarchive`,
     history: `/api/packages/history/`,
   },
   creditTier: {
