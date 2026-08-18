@@ -25,13 +25,23 @@ export function CustomRHFMultiSelect({
   const { control, setValue } = useFormContext();
   const [open, setOpen] = useState(false);
 
+  const normalizeValues = (values) =>
+    (Array.isArray(values) ? values : [])
+      .map((value) => {
+        if (['string', 'number'].includes(typeof value)) return value;
+        if (['string', 'number'].includes(typeof value?.value)) return value.value;
+        if (['string', 'number'].includes(typeof value?.label)) return value.label;
+        return null;
+      })
+      .filter((value) => value !== null);
+
   const handleRemoveItem = (e, itemValue) => {
     // Stop event from propagating to parent elements
     e.preventDefault();
     e.stopPropagation();
     
     // Get the current field value
-    const currentValue = control._formValues[name] || [];
+    const currentValue = normalizeValues(control._formValues[name]);
     
     // Filter out the item to remove
     const newValue = currentValue.filter(val => val !== itemValue);
@@ -48,7 +58,7 @@ export function CustomRHFMultiSelect({
   };
 
   const renderValues = (selectedIds) => {
-    const selectedItems = (selectedIds || []).map(
+    const selectedItems = normalizeValues(selectedIds).map(
       (id) => options?.find((item) => item.value === id) || { value: id, label: id }
     );
 
@@ -132,73 +142,75 @@ export function CustomRHFMultiSelect({
     <Controller
       name={name}
       control={control}
-      render={({ field, fieldState: { error } }) => (
-        <FormControl error={!!error} fullWidth {...other}>
-          {label && <InputLabel id={name}> {label} </InputLabel>}
+      render={({ field, fieldState: { error } }) => {
+        const selectedValues = normalizeValues(field.value);
 
-          <Select
-            {...field}
-            multiple
-            displayEmpty={!!placeholder}
-            id={`multiple-${name}`}
-            labelId={name}
-            label={label}
-            open={open}
-            onOpen={() => setOpen(true)}
-            onClose={() => setOpen(false)}
-            renderValue={(selected) => renderValues(selected)}
-            MenuProps={{
-              PaperProps: {
-                style: {
-                  maxHeight: 300,
-                  width: 250,
+        return (
+          <FormControl error={!!error} fullWidth {...other}>
+            {label && <InputLabel id={name}> {label} </InputLabel>}
+
+            <Select
+              {...field}
+              value={selectedValues}
+              multiple
+              displayEmpty={!!placeholder}
+              id={`multiple-${name}`}
+              labelId={name}
+              label={label}
+              open={open}
+              onOpen={() => setOpen(true)}
+              onClose={() => setOpen(false)}
+              renderValue={renderValues}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 300,
+                    width: 250,
+                  },
                 },
-              },
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                minHeight: '40px',
-                height: 'auto',
-              },
-              ...other.sx,
-            }}
-            onChange={(event) => {
-              const newValue = event.target.value;
-              field.onChange(newValue);
-              // Keep dropdown open after selection for better UX
-              // setOpen(false); // Remove this line to keep dropdown open
-            }}
-          >
-            {options.map((option) => {
-              const selected = field.value?.includes(option.value);
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  minHeight: '40px',
+                  height: 'auto',
+                },
+                ...other.sx,
+              }}
+              onChange={(event) => field.onChange(normalizeValues(event.target.value))}
+            >
+              {options.map((option) => {
+                const selected = selectedValues.includes(option.value);
 
-              return (
-                <MenuItem key={option.value} value={option.value}>
-                  {checkbox && (
-                    <Checkbox 
-                      size="small" 
-                      disableRipple 
-                      checked={selected}
-                      sx={{
-                        color: '#8E8E93',
-                        '&.Mui-checked': {
-                          color: '#1ABF66',
-                        },
-                      }}
-                    />
-                  )}
+                return (
+                  <MenuItem key={option.value} value={option.value}>
+                    {checkbox && (
+                      <Checkbox
+                        size="small"
+                        disableRipple
+                        checked={selected}
+                        sx={{
+                          color: '#8E8E93',
+                          '&.Mui-checked': {
+                            color: '#1ABF66',
+                          },
+                        }}
+                      />
+                    )}
 
-                  {option.label}
-                </MenuItem>
-              );
-            })}
-          </Select>
+                    {option.label}
+                  </MenuItem>
+                );
+              })}
+            </Select>
 
-          {(!!error || helperText) && (
-            <FormHelperText error={!!error}>{error ? error?.message : helperText}</FormHelperText>
-          )}
-        </FormControl>
-      )}
+            {(!!error || helperText) && (
+              <FormHelperText error={!!error}>
+                {typeof error?.message === 'string' ? error.message : helperText}
+              </FormHelperText>
+            )}
+          </FormControl>
+        );
+      }}
     />
   );
 }
@@ -213,4 +225,4 @@ CustomRHFMultiSelect.propTypes = {
   placeholder: PropTypes.string,
 }; 
 
-export default CustomRHFMultiSelect; 
+export default CustomRHFMultiSelect;

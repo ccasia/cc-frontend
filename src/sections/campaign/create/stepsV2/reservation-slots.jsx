@@ -50,22 +50,42 @@ const ReservationSlotsV2 = () => {
   const campaignStartDate = watch('campaignStartDate');
   const campaignEndDate = watch('campaignEndDate');
   const savedRules = watch('availabilityRules') || [];
+  const restoredDraft = watch('reservationDraft');
+  const hasRestoredSlots = useRef(Boolean(restoredDraft?.generatedSlots?.length));
+  const initialMonth = restoredDraft?.currentMonth || campaignStartDate;
 
-  const [currentMonth, setCurrentMonth] = useState(
-    campaignStartDate ? new Date(campaignStartDate) : new Date()
+  const [currentMonth, setCurrentMonth] = useState(() =>
+    initialMonth ? new Date(initialMonth) : new Date()
   );
 
   // Multi-Range State
-  const [selectedDates, setSelectedDates] = useState([]);
-  const [selectionStart, setSelectionStart] = useState(null);
+  const [selectedDates, setSelectedDates] = useState(
+    () => restoredDraft?.selectedDates?.map((date) => new Date(date)) || []
+  );
+  const [selectionStart, setSelectionStart] = useState(() =>
+    restoredDraft?.selectionStart ? new Date(restoredDraft.selectionStart) : null
+  );
 
-  const [startTime, setStartTime] = useState(new Date().setHours(9, 0, 0, 0));
-  const [endTime, setEndTime] = useState(new Date().setHours(17, 0, 0, 0));
-  const [allDay, setAllDay] = useState(false);
-  const [intervalsChecked, setIntervalsChecked] = useState(true);
-  const [interval, setInterval] = useState(1);
-  const [showIntervalDropdown, setShowIntervalDropdown] = useState(false);
-  const [generatedSlots, setGeneratedSlots] = useState([]);
+  const [startTime, setStartTime] = useState(
+    restoredDraft?.startTime || new Date().setHours(9, 0, 0, 0)
+  );
+  const [endTime, setEndTime] = useState(
+    restoredDraft?.endTime || new Date().setHours(17, 0, 0, 0)
+  );
+  const [allDay, setAllDay] = useState(Boolean(restoredDraft?.allDay));
+  const [intervalsChecked, setIntervalsChecked] = useState(restoredDraft?.intervalsChecked ?? true);
+  const [interval, setInterval] = useState(restoredDraft?.interval || 1);
+  const [showIntervalDropdown, setShowIntervalDropdown] = useState(
+    Boolean(restoredDraft?.showIntervalDropdown)
+  );
+  const [generatedSlots, setGeneratedSlots] = useState(
+    () =>
+      restoredDraft?.generatedSlots?.map((slot) => ({
+        ...slot,
+        start: new Date(slot.start),
+        end: new Date(slot.end),
+      })) || []
+  );
 
   const intervalOptions = [0.5, 1, 1.5, 2, 3, 4];
 
@@ -75,9 +95,48 @@ const ReservationSlotsV2 = () => {
   );
 
   useEffect(() => {
+    if (hasRestoredSlots.current) {
+      hasRestoredSlots.current = false;
+      return;
+    }
     generateGrid();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startTime, endTime, interval, intervalsChecked]);
+
+  useEffect(() => {
+    setValue(
+      'reservationDraft',
+      {
+        currentMonth: currentMonth.toISOString(),
+        selectedDates: selectedDates.map((date) => date.toISOString()),
+        selectionStart: selectionStart?.toISOString() || null,
+        startTime,
+        endTime,
+        allDay,
+        intervalsChecked,
+        interval,
+        showIntervalDropdown,
+        generatedSlots: generatedSlots.map((slot) => ({
+          ...slot,
+          start: new Date(slot.start).toISOString(),
+          end: new Date(slot.end).toISOString(),
+        })),
+      },
+      { shouldDirty: true }
+    );
+  }, [
+    allDay,
+    currentMonth,
+    endTime,
+    generatedSlots,
+    interval,
+    intervalsChecked,
+    selectedDates,
+    selectionStart,
+    setValue,
+    showIntervalDropdown,
+    startTime,
+  ]);
 
   const campaignInterval = useMemo(() => {
     if (!campaignStartDate || !campaignEndDate) return null;
