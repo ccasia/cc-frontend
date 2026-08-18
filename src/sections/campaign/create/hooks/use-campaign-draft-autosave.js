@@ -107,7 +107,9 @@ const restoreArrays = (values, defaults) => {
         .filter((item) => item && typeof item === 'object' && typeof item.name === 'string');
     } else if (field === 'locations') {
       restored[field] = rawItems
-        .map((item) => (typeof item === 'string' ? { name: item, pic: '', contactNumber: '' } : item))
+        .map((item) =>
+          typeof item === 'string' ? { name: item, pic: '', contactNumber: '' } : item
+        )
         .filter((item) => item && typeof item === 'object' && typeof item.name === 'string');
     } else {
       restored[field] = rawItems.filter(
@@ -261,12 +263,15 @@ export default function useCampaignDraftAutosave({
       try {
         const draft = await ensureDraft();
         const durableSnapshot = await makeFilesDurable(snapshot);
-        const response = await axiosInstance.put(endpoints.campaignCreationDrafts.update(draft.id), {
-          revision: draftRef.current.revision,
-          payload: serializeCampaignDraftValues(durableSnapshot.values),
-          activeStep: durableSnapshot.activeStep,
-          showAdditionalDetails: durableSnapshot.showAdditionalDetails,
-        });
+        const response = await axiosInstance.put(
+          endpoints.campaignCreationDrafts.update(draft.id),
+          {
+            revision: draftRef.current.revision,
+            payload: serializeCampaignDraftValues(durableSnapshot.values),
+            activeStep: durableSnapshot.activeStep,
+            showAdditionalDetails: durableSnapshot.showAdditionalDetails,
+          }
+        );
         draftRef.current = response.data.draft;
         const savedAt = new Date(response.data.draft.updatedAt || Date.now());
         if (mountedRef.current) {
@@ -371,7 +376,9 @@ export default function useCampaignDraftAutosave({
       setStatus(newest ? 'saved' : 'idle');
 
       if (latestRef.current && getTime(latestRef.current) > getTime(backendSnapshot)) {
-        backendWriteRef.current = backendWriteRef.current.then(() => putSnapshot(latestRef.current));
+        backendWriteRef.current = backendWriteRef.current.then(() =>
+          putSnapshot(latestRef.current)
+        );
       }
     };
 
@@ -445,7 +452,10 @@ export default function useCampaignDraftAutosave({
         ? axiosInstance.delete(endpoints.campaignCreationDrafts.delete(draftId)).catch(() => {})
         : Promise.resolve(),
     ]);
-    if (mountedRef.current) setStatus('idle');
+    if (mountedRef.current) {
+      setLastSavedAt(null);
+      setStatus('idle');
+    }
   }, [userId]);
 
   return { status, lastSavedAt, flush, clearDraft };
