@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -20,13 +21,13 @@ import NewClientsDialog from './components/new-clients-dialog';
 import DashboardSkeleton from './components/dashboard-skeleton';
 import InvoiceStatusDialog from './components/invoice-status-dialog';
 import ActivePackagesDrawer from './components/active-packages-drawer';
-import PeriodFilter, { getPeriodLabel, getPresetRange } from './components/period-filter';
 import CampaignBreakdownDrawer from './components/campaign-breakdown-drawer';
 import ClientUtilisationSection from './components/client-utilisation-section';
+import PeriodFilter, { getPeriodLabel, getPresetRange } from './components/period-filter';
 
 // ----------------------------------------------------------------------
 
-export default function FinanceDashboardView() {
+export default function FinanceDashboardView({ hideGreeting = false }) {
   const settings = useSettingsContext();
   const { user } = useAuthContext();
 
@@ -54,25 +55,27 @@ export default function FinanceDashboardView() {
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         alignItems={{ xs: 'flex-start', md: 'flex-end' }}
-        justifyContent="space-between"
+        justifyContent={hideGreeting ? 'flex-end' : 'space-between'}
         spacing={2}
         sx={{ mb: 4 }}
       >
-        <Box>
-          <Typography
-            sx={{
-              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-              fontWeight: 400,
-              fontSize: { xs: 36, md: 46 },
-              lineHeight: 1.15,
-            }}
-          >
-            Hi, {firstName}.
-          </Typography>
-          <Typography variant="body1" sx={{ color: '#637381', mt: 1 }}>
-            Review invoices and monitor client credits.
-          </Typography>
-        </Box>
+        {!hideGreeting && (
+          <Box>
+            <Typography
+              sx={{
+                fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                fontWeight: 400,
+                fontSize: { xs: 36, md: 46 },
+                lineHeight: 1.15,
+              }}
+            >
+              Hi, {firstName}.
+            </Typography>
+            <Typography variant="body1" sx={{ color: '#637381', mt: 1 }}>
+              Review invoices and monitor client credits.
+            </Typography>
+          </Box>
+        )}
 
         <PeriodFilter
           value={filter.preset}
@@ -207,3 +210,7 @@ export default function FinanceDashboardView() {
     </Container>
   );
 }
+
+FinanceDashboardView.propTypes = {
+  hideGreeting: PropTypes.bool,
+};
