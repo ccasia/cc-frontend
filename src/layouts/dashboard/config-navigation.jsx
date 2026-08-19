@@ -144,7 +144,7 @@ export function useNavData() {
             icon: ICONS.admin,
           },
           {
-            roles: ['superadmin', 'CSM', 'sales_and_marketing'],
+            roles: ['superadmin', 'CSM', 'CSL', 'sales_and_marketing'],
             title: 'Creator',
             path: paths.dashboard.creator.list,
             icon: ICONS.creator,
