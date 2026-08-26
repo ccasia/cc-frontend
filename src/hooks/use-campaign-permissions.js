@@ -31,8 +31,13 @@ export const useCampaignPermissions = (campaign, user) => {
         isManagingAdmin: false,
       };
     }
+
     if (adminRoleName === 'Finance' && adminMode === 'advanced') {
       return { isViewOnly: true, isManagingAdmin: false };
+    }
+
+    if (adminRoleName === 'CSL') {
+      return { isViewOnly: true, isManagingAdmin: true };
     }
 
     const isCSM =
