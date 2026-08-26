@@ -769,6 +769,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   // click, long after the assignment effect below has run.
   const clearDraftRef = useRef(null);
   const clearDraft = useCallback((savedJson) => clearDraftRef.current?.(savedJson), []);
+  const discardStaleDraftRef = useRef(null);
+  const discardStaleDraft = useCallback((staleDraft) => discardStaleDraftRef.current?.(staleDraft), []);
   const getDraftStateRef = useRef(null);
   const getDraftState = useCallback(() => getDraftStateRef.current?.(), []);
   const applyConflictCopy = useCallback((content) => {
@@ -791,7 +793,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     setPcrRevision,
     loadedDraftRevision,
     loadError,
-    draftConflict,
     draftConflictPayload,
     clearDraftConflict,
     restoredRemoteDraft,
@@ -827,16 +828,15 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     setSectionEditStates,
     resetHistory,
     onDraftConflict: setAutosaveConflict,
+    onStaleDraft: discardStaleDraft,
   });
 
   const {
     lastAutosavedAt,
     clearDraft: clearAutosaveDraft,
     getDraftState: getAutosaveDraftState,
-    conflictDraft: activeAutosaveConflict,
     isAutosaveBlocked,
-    recoverConflict,
-    discardConflict,
+    discardStaleDraft: clearStaleAutosaveDraft,
   } = usePcrAutosave({
     campaignId: campaign?.id,
     userId,
@@ -866,8 +866,9 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
   useEffect(() => {
     clearDraftRef.current = clearAutosaveDraft;
+    discardStaleDraftRef.current = clearStaleAutosaveDraft;
     getDraftStateRef.current = getAutosaveDraftState;
-  }, [clearAutosaveDraft, getAutosaveDraftState]);
+  }, [clearAutosaveDraft, clearStaleAutosaveDraft, getAutosaveDraftState]);
 
   // Global paste event listener to strip formatting from all pasted content
   useEffect(() => {
@@ -1025,8 +1026,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   const { data: mostCommentsCreatorData } = useGetCreatorById(!isCommentsManual ? mostCommentsUserId : null);
   const { data: mostLikesCreatorData } = useGetCreatorById(!isLikesManual ? mostLikesUserId : null);
   const { data: mostSharesCreatorData } = useGetCreatorById(!isSharesManual ? mostSharesUserId : null);
-  const activeConflict = activeAutosaveConflict || draftConflictPayload || autosaveConflict;
-
   return (
     <>
       {/* Print-specific CSS */}
@@ -1148,26 +1147,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
           <Button size="small" onClick={retryLoad} sx={{ ml: 1 }}>
             Retry
           </Button>
-        </Alert>
-      )}
-
-      {(draftConflict || activeConflict) && !isClientView && (
-        <Alert severity="warning" className="hide-in-pdf" sx={{ width: '1046px', mx: 'auto', mb: 2 }}>
-          {draftConflict || 'A conflicting PCR draft was kept. Autosave is paused until you recover it as a copy or discard it.'}
-          <Box sx={{ mt: 1 }}>
-            <Button size="small" variant="outlined" onClick={() => {
-              recoverConflict();
-              clearDraftConflict();
-              setAutosaveConflict(null);
-            }}>
-              Recover as copy
-            </Button>
-            <Button size="small" color="inherit" onClick={async () => {
-              await discardConflict();
-            }} sx={{ ml: 1 }}>
-              Discard
-            </Button>
-          </Box>
         </Alert>
       )}
 

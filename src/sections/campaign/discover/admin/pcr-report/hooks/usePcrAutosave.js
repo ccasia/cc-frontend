@@ -468,6 +468,48 @@ export default function usePcrAutosave({
     return true;
   }, [campaignId, editorSessionId, onPcrRevisionUpdate, onRecoverAsCopy, pcrRevision, queueRedisPut, storageKey]);
 
+  const discardStaleDraft = useCallback(async (staleDraft) => {
+    if (!staleDraft || !campaignId || !editorSessionId) return false;
+
+    if (redisTimerRef.current) clearTimeout(redisTimerRef.current);
+    queuedEnvelopeRef.current = null;
+    retryRef.current = false;
+
+    try {
+      if (staleDraft.draftRevision > 0) {
+        await axios.delete(`/api/campaign/${campaignId}/pcr/drafts/${editorSessionId}`, {
+          params: { expectedDraftRevision: staleDraft.draftRevision },
+        });
+      }
+    } catch (error) {
+      // A newer write from this same session wins. Do not delete it or surface
+      // a stale-session warning to the user.
+      if (isConflict(error)) return false;
+    } finally {
+      if (storageKey) removeStorage(storageKey);
+      const currentJson = latestJsonRef.current;
+      conflictDraftRef.current = null;
+      autosaveBlockedRef.current = false;
+      setConflictDraft(null);
+      setIsAutosaveBlocked(false);
+      initialisedRef.current = true;
+      draftRevisionRef.current = staleDraft.draftRevision || 0;
+      basePcrRevisionRef.current = staleDraft.currentPcrRevision || pcrRevision;
+      acceptedDraftRevisionRef.current = draftRevisionRef.current;
+      flushedDraftRevisionRef.current = draftRevisionRef.current;
+      flushedPcrRevisionRef.current = basePcrRevisionRef.current;
+      lastObservedJsonRef.current = currentJson;
+      lastSyncedJsonRef.current = currentJson;
+      lastFlushedJsonRef.current = currentJson;
+      latestEnvelopeRef.current = null;
+      setLastAutosavedAt(null);
+      onPcrRevisionUpdate?.(basePcrRevisionRef.current);
+      onDiscardConflict?.();
+    }
+
+    return true;
+  }, [campaignId, editorSessionId, onDiscardConflict, onPcrRevisionUpdate, pcrRevision, storageKey]);
+
   const discardConflict = useCallback(async () => {
     const conflict = conflictDraftRef.current;
     if (!conflict || !campaignId || !editorSessionId) return false;
@@ -568,6 +610,7 @@ export default function usePcrAutosave({
     conflictDraft,
     isAutosaveBlocked,
     recoverConflict,
+    discardStaleDraft,
     discardConflict,
     getDraftState,
     clearDraft,

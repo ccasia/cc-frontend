@@ -99,6 +99,7 @@ export default function usePcrData({
   setSectionEditStates,
   resetHistory,
   onDraftConflict,
+  onStaleDraft,
 }) {
   const queryClient = useQueryClient();
   const [isLoadingPCR, setIsLoadingPCR] = useState(true);
@@ -217,7 +218,6 @@ export default function usePcrData({
         .sort((a, b) => b.draftRevision - a.draftRevision)[0];
 
       if (conflictedDraft && !localIsUsable && !remoteIsUsable) {
-        setDraftConflict('A saved PCR draft belongs to an older report revision. It was not restored.');
         const conflict = {
           campaignId: campaign.id,
           content: conflictedDraft.content,
@@ -226,8 +226,9 @@ export default function usePcrData({
           basePcrRevision: conflictedDraft.basePcrRevision,
           currentPcrRevision: revision,
         };
-        setDraftConflictPayload(conflict);
-        onDraftConflict?.(conflict);
+        // Never restore an older revision. Discard only this session's stale
+        // local/remote draft and reset autosave without showing a conflict UI.
+        onStaleDraft?.(conflict);
       }
 
       const draft = chooseDraft(localIsUsable ? localDraft : null, remoteIsUsable ? remoteDraft : null);
@@ -262,7 +263,7 @@ export default function usePcrData({
     campaign?.isPCRReady,
     editorSessionId,
     isClientView,
-    onDraftConflict,
+    onStaleDraft,
     resetEditor,
     setIsEditMode,
     setEditableContent,
