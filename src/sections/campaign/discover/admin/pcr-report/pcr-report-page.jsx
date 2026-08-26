@@ -6,10 +6,12 @@ import PropTypes from 'prop-types';
 import { CSS } from '@dnd-kit/utilities';
 import { enqueueSnackbar } from 'notistack';
 import EmojiPicker from 'emoji-picker-react';
-import { useRef, useMemo, useState, useEffect } from 'react';
+import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import { useSensor, DndContext, useSensors, closestCenter, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
 import { arrayMove, useSortable, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
+import { alpha } from '@mui/material/styles';
 import SendIcon from '@mui/icons-material/Send';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
@@ -20,6 +22,7 @@ import { Box, Grid, Link, Alert, Button, Avatar, Dialog, Popover, TextField, Typ
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import { usePostEngagementSnapshots } from 'src/hooks/use-post-engagement-snapshots';
+import { useAuthContext } from 'src/auth/hooks';
 
 import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
 import {
@@ -29,11 +32,14 @@ import {
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
 
+import { HEADER } from 'src/layouts/config-layout';
+
 import Iconify from 'src/components/iconify';
 
 import usePcrData from './hooks/usePcrData';
 import usePcrExport from './hooks/usePcrExport';
 import usePcrHistory from './hooks/usePcrHistory';
+import usePcrAutosave, { getPcrEditorSessionId } from './hooks/usePcrAutosave';
 import PersonaCardEdit from './charts/StrategiesCardEdit';
 import TopEngagementCard from './charts/TopEngagementCard';
 import PersonaCardDisplay from './charts/StrategiesDisplay';
@@ -43,12 +49,19 @@ import TopCreatorViews48HChart from './charts/TopCreatorViews48HChart';
 import CreatorStrategyChartEdit from './charts/CreatorStrategyChartEdit';
 import PlatformInteractionsChart from './charts/PlatformInteractionsChart';
 import CreatorStrategyChartDisplay from './charts/CreatorStrategyChartDisplay';
+import {
+  DEFAULT_SECTION_ORDER,
+  DEFAULT_EDITABLE_CONTENT,
+  DEFAULT_SECTION_VISIBILITY,
+} from './constants';
 
 const getImprovedInsightBgColor = (index) => {
   if (index === 0) return '#1340FFD9';
   if (index === 1) return '#1340FFBF';
   return '#1340FFA6';
 };
+
+const MotionBox = m(Box);
 
 const getWorkedWellInsightBgColor = (index) => {
   if (index === 0) return 'linear-gradient(0deg, #8A5AFE, #8A5AFE)';
@@ -408,6 +421,7 @@ const getTierForShortlisted = (shortlisted, campaign) => {
 };
 
 const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdate }) => {
+  const { user } = useAuthContext();
   // Helper function to format campaign period (matching campaign detail view format)
   const formatCampaignPeriod = () => {
     const startDate = campaign?.startDate || campaign?.campaignBrief?.startDate;
@@ -427,6 +441,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
+
+  // Bumped once when an autosave draft is restored. It feeds the `key` of every
+  // FormattedTextField, forcing a remount so the restored text actually paints:
+  // that component is an uncontrolled contentEditable that seeds innerHTML only
+  // on its first render (see the isInitialized latch above).
+  const [hydrationVersion, setHydrationVersion] = useState(0);
+  const bumpHydrationVersion = useCallback(() => setHydrationVersion((v) => v + 1), []);
 
   // When client view, always show read-only (no editing)
   const effectiveEditMode = isClientView ? false : isEditMode;
@@ -444,25 +466,9 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   });
 
   // Section visibility states (which sections are shown)
-  const [sectionVisibility, setSectionVisibility] = useState({
-    engagement: true,
-    platformBreakdown: true,
-    views: true,
-    audienceSentiment: true,
-    creatorTiers: true,
-    strategies: true,
-    recommendations: true,
-  });
+  const [sectionVisibility, setSectionVisibility] = useState(DEFAULT_SECTION_VISIBILITY);
 
-  const [sectionOrder, setSectionOrder] = useState([
-    'engagement',
-    'platformBreakdown',
-    'views',
-    'audienceSentiment',
-    'creatorTiers',
-    'strategies',
-    'recommendations',
-  ]);
+  const [sectionOrder, setSectionOrder] = useState(DEFAULT_SECTION_ORDER);
 
   // DnD sensors
   const sensors = useSensors(
@@ -509,58 +515,78 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     }
   ]);
 
-  const [editableContent, setEditableContent] = useState({
-    campaignDescription: '',
-    engagementDescription: '',
-    platformBreakdownDescription: '',
-    viewsDescription: '',
-    audienceSentimentDescription: '',
-    noteworthyCreatorsDescription: '',
-    bestPerformingPersonasDescription: '',
-    positiveComments: [],
-    neutralComments: [],
-    comicTitle: '',
-    comicEmoji: '',
-    comicContentStyle: '',
-    comicWhyWork: '',
-    educatorTitle: '',
-    educatorEmoji: '',
-    educatorContentStyle: '',
-    educatorWhyWork: '',
-    creatorStrategyCount: '',
-    educatorCreatorCount: '',
-    thirdTitle: '',
-    thirdEmoji: '',
-    thirdContentStyle: '',
-    thirdWhyWork: '',
-    thirdCreatorCount: '',
-    fourthTitle: '',
-    fourthEmoji: '',
-    fourthContentStyle: '',
-    fourthWhyWork: '',
-    fourthCreatorCount: '',
-    fifthTitle: '',
-    fifthEmoji: '',
-    fifthContentStyle: '',
-    fifthWhyWork: '',
-    fifthCreatorCount: '',
-    personaCards: [],
-    improvedInsights: [],
-    workedWellInsights: [],
-    nextStepsInsights: [],
-    creatorTiersDescription: '',
-  });
+  const [editableContent, setEditableContent] = useState(DEFAULT_EDITABLE_CONTENT);
 
   // Emoji picker state
   const [emojiPickerAnchor, setEmojiPickerAnchor] = useState(null);
   const [emojiPickerType, setEmojiPickerType] = useState(null);
 
   const reportRef = useRef(null);
+  const toolbarSentinelRef = useRef(null);
   const creatorTiersEditorRef = useRef(null);
+  const [isToolbarFloating, setIsToolbarFloating] = useState(false);
+  const [floatingToolbarBounds, setFloatingToolbarBounds] = useState(null);
+  const [autosaveConflict, setAutosaveConflict] = useState(null);
+
+  const updateFloatingToolbarBounds = useCallback(() => {
+    const sentinel = toolbarSentinelRef.current;
+    const scrollContainer = sentinel?.closest('main');
+    const appBar = scrollContainer?.parentElement?.querySelector('.MuiAppBar-root');
+
+    if (!scrollContainer) return;
+
+    const mainRect = scrollContainer.getBoundingClientRect();
+    const appBarRect = appBar?.getBoundingClientRect();
+    setFloatingToolbarBounds({
+      left: mainRect.left,
+      width: mainRect.width,
+      top: appBarRect?.bottom || HEADER.H_MOBILE,
+    });
+  }, []);
+
+  // Main is the dashboard scroll container. Observe a sentinel in that
+  // container instead of window scroll so the compact toolbar starts only
+  // after the original toolbar passes beneath the global AppBar.
+  useEffect(() => {
+    const sentinel = toolbarSentinelRef.current;
+    const scrollContainer = sentinel?.closest('main');
+
+    if (!sentinel || !scrollContainer || typeof IntersectionObserver === 'undefined') return undefined;
+
+    updateFloatingToolbarBounds();
+    const headerOffset = window.matchMedia('(min-width: 1200px)').matches
+      ? HEADER.H_DESKTOP
+      : HEADER.H_MOBILE;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsToolbarFloating(!entry.isIntersecting),
+      {
+        root: scrollContainer,
+        rootMargin: `-${headerOffset}px 0px 0px 0px`,
+        threshold: 0,
+      }
+    );
+
+    observer.observe(sentinel);
+    const resizeObserver = new ResizeObserver(updateFloatingToolbarBounds);
+    resizeObserver.observe(scrollContainer);
+    if (scrollContainer.parentElement) resizeObserver.observe(scrollContainer.parentElement);
+    window.addEventListener('resize', updateFloatingToolbarBounds);
+
+    return () => {
+      observer.disconnect();
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateFloatingToolbarBounds);
+    };
+  }, [updateFloatingToolbarBounds]);
 
   const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
   const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
   const campaignId = campaign?.id;
+  const userId = user?.id;
+  const editorSessionId = useMemo(
+    () => getPcrEditorSessionId(userId, campaignId),
+    [campaignId, userId]
+  );
 
   // Fetch manual creator entries
   const { data: manualEntriesData, mutate: mutateManualEntries } = useSWR(
@@ -664,12 +690,12 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     });
 
     approvedAgreements.forEach((sub) => {
-      const userId = sub.userId ||
+      const agreementUserId = sub.userId ||
         sub.creatorId ||
         (typeof sub.user === 'string' ? sub.user : sub.user?.id);
 
-      if (userId) {
-        uniqueCreatorIds.add(userId);
+      if (agreementUserId) {
+        uniqueCreatorIds.add(agreementUserId);
       }
     });
 
@@ -738,23 +764,60 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     setIsPreviewCached,
   });
 
+  // usePcrData needs clearDraft and usePcrAutosave needs isLoadingPCR, so the two
+  // hooks depend on each other. A ref breaks the cycle; Save only fires on a
+  // click, long after the assignment effect below has run.
+  const clearDraftRef = useRef(null);
+  const clearDraft = useCallback((savedJson) => clearDraftRef.current?.(savedJson), []);
+  const getDraftStateRef = useRef(null);
+  const getDraftState = useCallback(() => getDraftStateRef.current?.(), []);
+  const applyConflictCopy = useCallback((content) => {
+    setEditableContent({ ...DEFAULT_EDITABLE_CONTENT, ...content });
+    setSectionOrder(content.sectionOrder || DEFAULT_SECTION_ORDER);
+    setSectionVisibility({ ...DEFAULT_SECTION_VISIBILITY, ...(content.sectionVisibility || {}) });
+    setShowEducatorCard(content.showEducatorCard ?? Boolean(content.educatorTitle || content.educatorContentStyle));
+    setShowThirdCard(content.showThirdCard ?? Boolean(content.thirdTitle || content.thirdContentStyle));
+    setShowFourthCard(content.showFourthCard ?? Boolean(content.fourthTitle || content.fourthContentStyle));
+    setShowFifthCard(content.showFifthCard ?? Boolean(content.fifthTitle || content.fifthContentStyle));
+    bumpHydrationVersion();
+  }, [bumpHydrationVersion, setEditableContent, setSectionOrder, setSectionVisibility, setShowEducatorCard, setShowThirdCard, setShowFourthCard, setShowFifthCard]);
+
   const {
     isLoadingPCR,
     isSaving,
     setIsSaving,
     isPCRReady,
+    pcrRevision,
+    setPcrRevision,
+    loadedDraftRevision,
+    loadError,
+    draftConflict,
+    draftConflictPayload,
+    clearDraftConflict,
+    restoredRemoteDraft,
+    retryLoad,
     handleSavePCR,
     handleRefreshInsights,
     handleMarkAsReady,
     handleMarkAsUnready,
   } = usePcrData({
     campaign,
+    userId,
+    editorSessionId,
     onCampaignUpdate,
+    isClientView,
+    bumpHydrationVersion,
+    clearDraft,
+    getDraftState,
     editableContent,
     setEditableContent,
     sectionOrder,
     setSectionOrder,
     sectionVisibility,
+    showEducatorCard,
+    showThirdCard,
+    showFourthCard,
+    showFifthCard,
     setSectionVisibility,
     setShowEducatorCard,
     setShowThirdCard,
@@ -763,7 +826,48 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     setIsEditMode,
     setSectionEditStates,
     resetHistory,
+    onDraftConflict: setAutosaveConflict,
   });
+
+  const {
+    lastAutosavedAt,
+    clearDraft: clearAutosaveDraft,
+    getDraftState: getAutosaveDraftState,
+    conflictDraft: activeAutosaveConflict,
+    isAutosaveBlocked,
+    recoverConflict,
+    discardConflict,
+  } = usePcrAutosave({
+    campaignId: campaign?.id,
+    userId,
+    editorSessionId,
+    isClientView,
+    isLoadingPCR,
+    isLoadError: Boolean(loadError),
+    pcrRevision,
+    initialDraftRevision: loadedDraftRevision,
+    restoredRemoteDraft,
+    editableContent,
+    sectionOrder,
+    sectionVisibility,
+    showEducatorCard,
+    showThirdCard,
+    showFourthCard,
+    showFifthCard,
+    onPcrRevisionUpdate: setPcrRevision,
+    onDraftConflict: setAutosaveConflict,
+    initialConflict: draftConflictPayload || autosaveConflict,
+    onRecoverAsCopy: applyConflictCopy,
+    onDiscardConflict: () => {
+      clearDraftConflict();
+      setAutosaveConflict(null);
+    },
+  });
+
+  useEffect(() => {
+    clearDraftRef.current = clearAutosaveDraft;
+    getDraftStateRef.current = getAutosaveDraftState;
+  }, [clearAutosaveDraft, getAutosaveDraftState]);
 
   // Global paste event listener to strip formatting from all pasted content
   useEffect(() => {
@@ -921,6 +1025,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   const { data: mostCommentsCreatorData } = useGetCreatorById(!isCommentsManual ? mostCommentsUserId : null);
   const { data: mostLikesCreatorData } = useGetCreatorById(!isLikesManual ? mostLikesUserId : null);
   const { data: mostSharesCreatorData } = useGetCreatorById(!isSharesManual ? mostSharesUserId : null);
+  const activeConflict = activeAutosaveConflict || draftConflictPayload || autosaveConflict;
 
   return (
     <>
@@ -1037,6 +1142,35 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         </Alert>
       )}
 
+      {loadError && !isLoadingPCR && (
+        <Alert severity="error" className="hide-in-pdf" sx={{ width: '1046px', mx: 'auto', mb: 2 }}>
+          PCR report could not load. Editing, saving, and autosave are disabled.
+          <Button size="small" onClick={retryLoad} sx={{ ml: 1 }}>
+            Retry
+          </Button>
+        </Alert>
+      )}
+
+      {(draftConflict || activeConflict) && !isClientView && (
+        <Alert severity="warning" className="hide-in-pdf" sx={{ width: '1046px', mx: 'auto', mb: 2 }}>
+          {draftConflict || 'A conflicting PCR draft was kept. Autosave is paused until you recover it as a copy or discard it.'}
+          <Box sx={{ mt: 1 }}>
+            <Button size="small" variant="outlined" onClick={() => {
+              recoverConflict();
+              clearDraftConflict();
+              setAutosaveConflict(null);
+            }}>
+              Recover as copy
+            </Button>
+            <Button size="small" color="inherit" onClick={async () => {
+              await discardConflict();
+            }} sx={{ ml: 1 }}>
+              Discard
+            </Button>
+          </Box>
+        </Alert>
+      )}
+
       <Box
         id="pcr-report-main"
         sx={{
@@ -1135,13 +1269,65 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
               padding: '16px',
               minHeight: 'calc(100% - 32px)',
               opacity: isLoadingPCR ? 0.5 : 1,
-              pointerEvents: isLoadingPCR ? 'none' : 'auto',
+              pointerEvents: isLoadingPCR || loadError ? 'none' : 'auto',
             }}
           >
             {/* Header with Back Button */}
-            <Box className="hide-in-pdf" sx={{ mb: 2 }}>
+            <Box
+              className="hide-in-pdf"
+              sx={{
+                mb: 2,
+                // Reserve the toolbar's normal space while its fixed state is active.
+                minHeight: { xs: 120, lg: 68 },
+              }}
+            >
+              <Box ref={toolbarSentinelRef} className="hide-in-pdf" sx={{ height: '1px' }} />
               {/* Back Button and Undo/Redo/Save Row */}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <AnimatePresence initial={false} mode="wait">
+                <MotionBox
+                  key={isToolbarFloating ? 'pcr-toolbar-floating' : 'pcr-toolbar-inline'}
+                  initial={{
+                    opacity: shouldReduceMotion ? 1 : 0,
+                    y: shouldReduceMotion ? 0 : -6,
+                    x: 0,
+                  }}
+                  animate={{ opacity: 1, x: 0, y: 0 }}
+                  exit={{ opacity: shouldReduceMotion ? 1 : 0, y: shouldReduceMotion ? 0 : -4 }}
+                  transition={{ duration: shouldReduceMotion ? 0 : 0.16, ease: 'easeOut' }}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: { xs: 'wrap', lg: 'nowrap' },
+                  rowGap: 1,
+                  mb: 2,
+                  position: isToolbarFloating ? 'fixed' : 'relative',
+                  top: isToolbarFloating
+                    ? floatingToolbarBounds?.top || { xs: HEADER.H_MOBILE, lg: HEADER.H_DESKTOP }
+                    : 'auto',
+                  // Keep the banner in the AppBar's stacking layer, not above it.
+                  // Its measured top is the AppBar's actual bottom edge.
+                  zIndex: isToolbarFloating ? (theme) => theme.zIndex.appBar : 'auto',
+                  left: isToolbarFloating ? floatingToolbarBounds?.left || 0 : 'auto',
+                  width: isToolbarFloating
+                    ? floatingToolbarBounds?.width || { xs: 'calc(100vw - 16px)', lg: '100%' }
+                    : 'auto',
+                  maxWidth: isToolbarFloating ? '100vw' : 'none',
+                  mx: isToolbarFloating ? 0 : 'auto',
+                  px: isToolbarFloating ? { xs: 1, sm: 2 } : 0,
+                  py: isToolbarFloating ? 0.75 : 0,
+                  // Match the dashboard Header's bgBlur(theme.palette.background.paper)
+                  // values exactly: alpha 0.8 with a 6px backdrop blur.
+                  backgroundColor: isToolbarFloating
+                    ? (theme) => alpha(theme.palette.background.paper, 0.8)
+                    : 'transparent',
+                  backdropFilter: isToolbarFloating ? 'blur(6px)' : 'none',
+                  WebkitBackdropFilter: isToolbarFloating ? 'blur(6px)' : 'none',
+                  borderBottom: isToolbarFloating ? 1 : 0,
+                  borderBottomColor: isToolbarFloating ? (theme) => theme.palette.divider : 'transparent',
+                  boxShadow: 'none',
+                }}
+                >
                 <Button
                   onClick={onBack}
                   sx={{
@@ -1174,7 +1360,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                 </Button>
 
                 {!isClientView && (
-                  <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      gap: 2,
+                      flexWrap: { xs: 'wrap', lg: 'nowrap' },
+                      justifyContent: { xs: 'flex-end', lg: 'flex-start' },
+                    }}
+                  >
                     {effectiveEditMode ? (
                       <>
                         <Button
@@ -1309,9 +1502,22 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         >
                           Redo
                         </Button>
+                        {lastAutosavedAt && (
+                          <Typography
+                            sx={{
+                              alignSelf: 'center',
+                              fontSize: '12px',
+                              color: '#9CA3AF',
+                              fontFamily: 'Inter Display, sans-serif',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Autosaved {format(lastAutosavedAt, 'HH:mm')}
+                          </Typography>
+                        )}
                         <Button
                           onClick={handleSavePCR}
-                          disabled={isSaving}
+                          disabled={isSaving || Boolean(loadError) || !pcrRevision || isAutosaveBlocked}
                           sx={{
                             height: '44px',
                             borderRadius: '8px',
@@ -1413,6 +1619,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                               transform: 'translateY(1px)',
                             }
                           }}
+                          disabled={Boolean(loadError) || isLoadingPCR || !pcrRevision}
                           onClick={() => setIsEditMode(true)}
                         >
                           Edit Report
@@ -1446,7 +1653,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                     )}
                   </Box>
                 )}
-              </Box>
+                </MotionBox>
+              </AnimatePresence>
 
               {/* Add Section Buttons - Only show in edit mode */}
               {effectiveEditMode && (
@@ -1663,6 +1871,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                           </Typography>
                         </Box>
                         <FormattedTextField
+                          key={`pcr-ftf-campaignDescription-${hydrationVersion}`}
                           value={editableContent.campaignDescription}
                           onChange={(e) => setEditableContent({ ...editableContent, campaignDescription: e.target.value })}
                           placeholder="type here"
@@ -2020,10 +2229,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                       onClick={async () => {
                                         try {
                                           setIsSaving(true);
-                                          const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
-                                            content: editableContent,
-                                          });
-                                          if (response.data.success) {
+                                          const response = await handleSavePCR();
+                                          if (response?.data?.success) {
                                             setSectionEditStates({ ...sectionEditStates, engagement: true });
                                             enqueueSnackbar('Engagement section saved successfully', { variant: 'success' });
                                           }
@@ -2136,6 +2343,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         </Typography>
                                       </Box>
                                       <FormattedTextField
+                                        key={`pcr-ftf-engagementDescription-${hydrationVersion}`}
                                         value={editableContent.engagementDescription}
                                         onChange={(e) => setEditableContent({ ...editableContent, engagementDescription: e.target.value })}
                                         placeholder="type here"
@@ -2274,10 +2482,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                       onClick={async () => {
                                         try {
                                           setIsSaving(true);
-                                          const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
-                                            content: editableContent,
-                                          });
-                                          if (response.data.success) {
+                                          const response = await handleSavePCR();
+                                          if (response?.data?.success) {
                                             setSectionEditStates({ ...sectionEditStates, platformBreakdown: true });
                                             enqueueSnackbar('Platform Breakdown section saved successfully', { variant: 'success' });
                                           }
@@ -2391,6 +2597,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         </Typography>
                                       </Box>
                                       <FormattedTextField
+                                        key={`pcr-ftf-platformBreakdownDescription-${hydrationVersion}`}
                                         value={editableContent.platformBreakdownDescription || ''}
                                         onChange={(e) => setEditableContent({ ...editableContent, platformBreakdownDescription: e.target.value })}
                                         placeholder="type here"
@@ -2870,10 +3077,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                       onClick={async () => {
                                         try {
                                           setIsSaving(true);
-                                          const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
-                                            content: editableContent,
-                                          });
-                                          if (response.data.success) {
+                                          const response = await handleSavePCR();
+                                          if (response?.data?.success) {
                                             setSectionEditStates({ ...sectionEditStates, views: true });
                                             enqueueSnackbar('Views section saved successfully', { variant: 'success' });
                                           }
@@ -2986,6 +3191,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         </Typography>
                                       </Box>
                                       <FormattedTextField
+                                        key={`pcr-ftf-viewsDescription-${hydrationVersion}`}
                                         value={editableContent.viewsDescription || ''}
                                         onChange={(e) => setEditableContent({ ...editableContent, viewsDescription: e.target.value })}
                                         placeholder="type here"
@@ -3114,10 +3320,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                       onClick={async () => {
                                         try {
                                           setIsSaving(true);
-                                          const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
-                                            content: editableContent,
-                                          });
-                                          if (response.data.success) {
+                                          const response = await handleSavePCR();
+                                          if (response?.data?.success) {
                                             setSectionEditStates({ ...sectionEditStates, audienceSentiment: true });
                                             enqueueSnackbar('Audience Sentiment section saved successfully', { variant: 'success' });
                                           }
@@ -3230,6 +3434,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         </Typography>
                                       </Box>
                                       <FormattedTextField
+                                        key={`pcr-ftf-audienceSentimentDescription-${hydrationVersion}`}
                                         value={editableContent.audienceSentimentDescription}
                                         onChange={(e) => setEditableContent({ ...editableContent, audienceSentimentDescription: e.target.value })}
                                         placeholder="type here"
@@ -3803,10 +4008,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                       onClick={async () => {
                                         try {
                                           setIsSaving(true);
-                                          const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
-                                            content: editableContent,
-                                          });
-                                          if (response.data.success) {
+                                          const response = await handleSavePCR();
+                                          if (response?.data?.success) {
                                             setSectionEditStates({ ...sectionEditStates, creatorTiers: true });
                                             enqueueSnackbar('Creator Tiers section saved successfully', { variant: 'success' });
                                           }
@@ -4342,10 +4545,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                       onClick={async () => {
                                         try {
                                           setIsSaving(true);
-                                          const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
-                                            content: editableContent,
-                                          });
-                                          if (response.data.success) {
+                                          const response = await handleSavePCR();
+                                          if (response?.data?.success) {
                                             setSectionEditStates({ ...sectionEditStates, strategies: true });
                                             enqueueSnackbar('Strategies Utilised section saved successfully', { variant: 'success' });
                                           }
@@ -4461,6 +4662,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         </Typography>
                                       </Box>
                                       <FormattedTextField
+                                        key={`pcr-ftf-bestPerformingPersonasDescription-${hydrationVersion}`}
                                         value={editableContent.bestPerformingPersonasDescription}
                                         onChange={(e) => setEditableContent({ ...editableContent, bestPerformingPersonasDescription: e.target.value })}
                                         placeholder="type here"
@@ -4846,10 +5048,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                       onClick={async () => {
                                         try {
                                           setIsSaving(true);
-                                          const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
-                                            content: editableContent,
-                                          });
-                                          if (response.data.success) {
+                                          const response = await handleSavePCR();
+                                          if (response?.data?.success) {
                                             setSectionEditStates({ ...sectionEditStates, recommendations: true });
                                             enqueueSnackbar('Recommendations section saved successfully', { variant: 'success' });
                                           }
