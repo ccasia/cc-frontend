@@ -37,7 +37,7 @@ export const useCampaignPermissions = (campaign, user) => {
     }
 
     if (adminRoleName === 'CSL') {
-      return { isViewOnly: true, isManagingAdmin: true };
+      return { isViewOnly: false, isManagingAdmin: true };
     }
 
     const isCSM =
