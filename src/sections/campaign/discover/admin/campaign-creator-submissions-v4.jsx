@@ -5,7 +5,6 @@ import { useSearchParams } from 'react-router-dom';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { useTheme } from '@mui/material/styles';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import {
   Box,
   Chip,
@@ -45,7 +44,6 @@ import V4PhotoSubmission from './submissions/v4/photo-submission';
 import V4RawFootageSubmission from './submissions/v4/raw-footage-submission';
 import MobileCreatorSubmissions from './submissions/v4/mobile/mobile-creator-submissions';
 import useV4SubmissionListSocket from './submissions/v4/shared/use-v4-submission-list-socket';
-import { alpha } from '@mui/system';
 
 // ----------------------------------------------------------------------
 
@@ -460,7 +458,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
       const key = `video-${videoSubmission.id}`;
       const isExpanded = expandedSubmission === key;
 
-      const compressing = compressionProgress.find((c) => c.submissionId === videoSubmission.id);
+      // const compressing = compressionProgress.find((c) => c.submissionId === videoSubmission.id);
       // const isCompressing = videoSubmission?.video[0]?.uploadSession?.status === 'COMPRESSING';
 
       pills.push(
@@ -598,7 +596,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
             </Box>
           </Box>
 
-          {compressing && (
+          {/* {compressing && (
             <Box
               sx={{
                 display: 'inline-flex',
@@ -661,7 +659,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
                 />
               </Box>
             </Box>
-          )}
+          )} */}
         </Stack>
       );
     });
