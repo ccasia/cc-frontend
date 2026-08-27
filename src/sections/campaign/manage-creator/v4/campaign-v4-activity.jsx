@@ -34,6 +34,7 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useUploadingStatus } from 'src/hooks/zustands/useUploadingStatus';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
@@ -1169,6 +1170,8 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
 
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
+  const uploadingStatus = useUploadingStatus((state) => state.statusInfo);
+
   // Socket integration for real-time updates
   const { socket } = useSocketContext();
   const { user } = useAuthContext();
@@ -1565,16 +1568,9 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
         <Typography
           component="span"
           sx={{
-            // color: '#1340FF',
-            // textDecoration: 'underline',
-            // cursor: 'pointer',
-            // fontFamily: 'inherit',
             '&:hover': {
               opacity: 0.8,
             },
-          }}
-          onClick={() => {
-            // Add navigation logic here if needed
           }}
         >
           Campaign Details
@@ -2013,6 +2009,8 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
             const status = getSubmissionStatus(video);
             const statusInfo = getSubmissionStatusInfo(status);
 
+            const uploadStatus = uploadingStatus?.find((i) => i?.submissionId === video.id)?.status;
+
             return (
               <Card
                 key={video.id}
@@ -2088,12 +2086,15 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
                         {status}
                       </Typography>
                     </Box>
+                    <Typography>{uploadStatus}</Typography>
                   </Stack>
+
                   <Iconify
                     icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
                     width={20}
                   />
                 </Box>
+
                 {/* Collapsible Content */}
                 <Collapse in={isExpanded}>
                   <Divider />
@@ -2107,6 +2108,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
                           [video.id]: isUploading,
                         }));
                       }}
+                      mutate={mutate}
                       onUpdate={async () => {
                         // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
                         await mutate(
@@ -2141,6 +2143,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
               </Card>
             );
           })}
+
           {/* Photo Submissions */}
           {grouped?.photos?.map((photo, index) => {
             const isExpanded = expandedSections[photo.id];
@@ -2284,7 +2287,9 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
               </Card>
             );
           })}
+
           {/* Raw Footage Submissions */}
+
           {grouped?.rawFootage?.map((rawFootage, index) => {
             const isExpanded = expandedSections[rawFootage.id];
             const isNew = isNewSubmission(rawFootage);
