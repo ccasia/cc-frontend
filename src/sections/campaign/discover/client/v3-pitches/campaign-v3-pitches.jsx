@@ -155,7 +155,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
       params.delete('creator');
       navigate({ search: params.toString() }, { replace: true });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [addCreatorOpen, setAddCreatorOpen] = useState(false);
@@ -2297,7 +2297,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                             }}
                             placeholder={row.hasMediaKit ? '—' : 'Enter follower count'}
                             fullWidth
-                            disabled={row.hasMediaKit}
+                            disabled={row.hasMediaKit && row.followerCount > 0}
                             InputProps={{ readOnly: row.hasMediaKit }}
                             helperText={row.hasMediaKit ? 'From media kit' : undefined}
                             FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
