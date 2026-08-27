@@ -3,8 +3,10 @@ import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { FixedSizeList } from 'react-window';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useMemo, useState, useEffect } from 'react';
+
+import { produce } from 'immer';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -1782,42 +1784,74 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   };
 
   // Update creator selection for a specific row
+  // const handleCreatorRowChange = (rowId, selectedCreator) => {
+  //   setCreatorRows((rows) =>
+  //     rows.map((row) => {
+  //       if (row.id === rowId) {
+  //         if (selectedCreator === null) {
+  //           return {
+  //             ...row,
+  //             creator: null,
+  //             followerCount: '',
+  //             hasMediaKit: false,
+  //             selectedPlatform: '',
+  //             adminComments: '',
+  //           };
+  //         }
+  //         const selectedPlatform = resolveInitialPlatformForCreator(
+  //           selectedCreator,
+  //           row.selectedPlatform
+  //         );
+  //         const hasMediaKit =
+  //           selectedCreator && selectedPlatform
+  //             ? hasMediaKitForPlatform(selectedCreator, selectedPlatform)
+  //             : false;
+  //         const followerCount =
+  //           selectedCreator && selectedPlatform
+  //             ? getPlatformFollowerCount(selectedCreator, selectedPlatform) || ''
+  //             : '';
+
+  //         return {
+  //           ...row,
+  //           creator: selectedCreator,
+  //           followerCount,
+  //           hasMediaKit,
+  //           selectedPlatform,
+  //           adminComments: row.adminComments,
+  //         };
+  //       }
+  //       return row;
+  //     })
+  //   );
+  // };
+
   const handleCreatorRowChange = (rowId, selectedCreator) => {
-    setCreatorRows((rows) =>
-      rows.map((row) => {
-        if (row.id === rowId) {
-          if (selectedCreator === null) {
-            return {
-              ...row,
-              creator: null,
-              followerCount: '',
-              hasMediaKit: false,
-              selectedPlatform: '',
-              adminComments: '',
-            };
-          }
+    setCreatorRows(
+      produce((draft) => {
+        const existing = draft.find((item) => item.id === rowId);
+
+        if (existing) {
           const selectedPlatform = resolveInitialPlatformForCreator(
             selectedCreator,
-            row.selectedPlatform
+            existing.selectedPlatform
           );
+
           const hasMediaKit =
             selectedCreator && selectedPlatform
               ? hasMediaKitForPlatform(selectedCreator, selectedPlatform)
               : false;
+
           const followerCount =
             selectedCreator && selectedPlatform
               ? getPlatformFollowerCount(selectedCreator, selectedPlatform) || ''
               : '';
-          return {
-            ...row,
-            creator: selectedCreator,
-            followerCount,
-            hasMediaKit,
-            selectedPlatform,
-            adminComments: row.adminComments,
-          };
+
+          existing.creator = selectedCreator;
+          existing.followerCount = followerCount;
+          existing.hasMediaKit = hasMediaKit;
+          existing.selectedPlatform = selectedPlatform;
+          existing.hasFollowers = followerCount > 0;
         }
-        return row;
       })
     );
   };
@@ -1859,7 +1893,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   const handleFollowerCountChange = (rowId, value) => {
     setCreatorRows((rows) =>
       rows.map((row) => {
-        if (row.id === rowId && !row.hasMediaKit) {
+        if (row.id === rowId) {
           return { ...row, followerCount: value };
         }
         return row;
@@ -2284,35 +2318,32 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                           </Typography>
                           <TextField
                             value={
-                              row.hasMediaKit && parseInt(row.followerCount, 10) > 0
+                              row.hasMediaKit && row.hasFollowers
                                 ? formatFollowerCountDisplay(row.followerCount)
                                 : row.followerCount === '' || row.followerCount === undefined
                                   ? ''
                                   : String(row.followerCount)
                             }
                             onChange={(e) => {
-                              if (row.hasMediaKit && parseInt(row.followerCount, 10) > 0) return;
+                              if (row.hasMediaKit && row.hasFollowers) return;
+
                               const val = e.target.value.replace(/[^0-9]/g, '');
                               handleFollowerCountChange(row.id, val);
                             }}
                             placeholder={
-                              row.hasMediaKit && parseInt(row.followerCount, 10) > 0
-                                ? '—'
-                                : 'Enter follower count'
+                              row.hasMediaKit && row.hasFollowers ? '—' : 'Enter follower count'
                             }
                             fullWidth
-                            disabled={row.hasMediaKit && parseInt(row.followerCount, 10) > 0}
+                            disabled={row.hasMediaKit && row.hasFollowers}
                             InputProps={{
-                              readOnly: row.hasMediaKit && parseInt(row.followerCount, 10) > 0,
+                              readOnly: row.hasMediaKit && row.hasFollowers,
                             }}
                             helperText={
-                              row.hasMediaKit && parseInt(row.followerCount, 10) > 0
-                                ? 'From media kit'
-                                : undefined
+                              row.hasMediaKit && row.hasFollowers ? 'From media kit' : undefined
                             }
                             FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
                             inputProps={
-                              row.hasMediaKit && parseInt(row.followerCount, 10) > 0
+                              row.hasMediaKit && row.hasFollowers
                                 ? undefined
                                 : {
                                     inputMode: 'numeric',

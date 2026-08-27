@@ -70,6 +70,7 @@
     "html2canvas": "^1.4.1",
     "i18next": "^23.11.4",
     "i18next-browser-languagedetector": "^8.0.0",
+    "immer": "^11.1.18",
     "jspdf": "^3.0.1",
     "libphonenumber-js": "^1.11.14",
     "lodash": "^4.17.21",
