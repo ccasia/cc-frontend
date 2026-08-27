@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
@@ -25,8 +24,6 @@ import useGetPackages from 'src/hooks/use-get-packges';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
-
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
@@ -38,7 +35,16 @@ import PackageTableRow from '../package-table-row';
 
 // ----------------------------------------------------------------------
 
-const SortableHeader = ({ column, label, align, isFirst, isLast, sortColumn, sortDirection, onSort }) => {
+const SortableHeader = ({
+  column,
+  label,
+  align,
+  isFirst,
+  isLast,
+  sortColumn,
+  sortDirection,
+  onSort,
+}) => {
   const getBorderRadius = () => {
     if (isFirst) return '10px 0 0 10px';
     if (isLast) return '0 10px 10px 0';
@@ -209,7 +215,8 @@ const Packages = () => {
           comparison = (a?.validityPeriod || 0) - (b?.validityPeriod || 0);
           break;
         case 'createdAt':
-          comparison = new Date(a?.createdAt || 0).getTime() - new Date(b?.createdAt || 0).getTime();
+          comparison =
+            new Date(a?.createdAt || 0).getTime() - new Date(b?.createdAt || 0).getTime();
           break;
         default:
           comparison = 0;
@@ -357,12 +364,51 @@ const Packages = () => {
           <Table size="medium" sx={{ minWidth: 960, width: '100%' }}>
             <TableHead>
               <TableRow>
-                <SortableHeader column="name" label="Name" isFirst sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="priceMYR" label="Price in MYR" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="priceSGD" label="Price in SGD" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="credits" label="UGC Credits" align="center" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="validityPeriod" label="Validity Period" align="center" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="createdAt" label="Created At" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
+                <SortableHeader
+                  column="name"
+                  label="Name"
+                  isFirst
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="priceMYR"
+                  label="Price in MYR"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="priceSGD"
+                  label="Price in SGD"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="credits"
+                  label="UGC Credits"
+                  align="center"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="validityPeriod"
+                  label="Validity Period"
+                  align="center"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="createdAt"
+                  label="Created At"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
                 <TableCell
                   sx={{
                     py: 1,
@@ -397,7 +443,11 @@ const Packages = () => {
       {(!filteredData || filteredData.length === 0) && (
         <EmptyContent
           title="No packages found"
-          description={searchQuery ? 'Try adjusting your search query.' : 'Create your first package to get started.'}
+          description={
+            searchQuery
+              ? 'Try adjusting your search query.'
+              : 'Create your first package to get started.'
+          }
           sx={{ py: 10 }}
         />
       )}
