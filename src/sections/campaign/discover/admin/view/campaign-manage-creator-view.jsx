@@ -627,9 +627,9 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                                         ? '#FFC702'
                                         : status === 'SENT_TO_ADMIN'
                                           ? '#F6C000'
-                                        : status === 'IN_PROGRESS'
-                                          ? '#8A5AFE'
-                                          : '#8E8E93',
+                                          : status === 'IN_PROGRESS'
+                                            ? '#8A5AFE'
+                                            : '#8E8E93',
                               border: `1px solid ${
                                 status === 'APPROVED'
                                   ? '#1ABF66'
@@ -641,9 +641,9 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                                         ? '#FFC702'
                                         : status === 'SENT_TO_ADMIN'
                                           ? '#F6C000'
-                                        : status === 'IN_PROGRESS'
-                                          ? '#8A5AFE'
-                                          : '#8E8E93'
+                                          : status === 'IN_PROGRESS'
+                                            ? '#8A5AFE'
+                                            : '#8E8E93'
                               }`,
                               borderBottom: `3px solid ${
                                 status === 'APPROVED'
@@ -656,16 +656,18 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                                         ? '#FFC702'
                                         : status === 'SENT_TO_ADMIN'
                                           ? '#F6C000'
-                                        : status === 'IN_PROGRESS'
-                                          ? '#8A5AFE'
-                                          : '#8E8E93'
+                                          : status === 'IN_PROGRESS'
+                                            ? '#8A5AFE'
+                                            : '#8E8E93'
                               }`,
                               fontWeight: 600,
                             }}
                           >
-                            {status === 'NOT_STARTED' ? 'NOT STARTED' : 
-                             status === 'SENT_TO_ADMIN' ? 'CLIENT FEEDBACK' : 
-                             status.replace(/_/g, ' ')}
+                            {status === 'NOT_STARTED'
+                              ? 'NOT STARTED'
+                              : status === 'SENT_TO_ADMIN'
+                                ? 'CLIENT FEEDBACK'
+                                : status.replace(/_/g, ' ')}
                           </Typography>
                         </Box>
                       </Box>
