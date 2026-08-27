@@ -2284,29 +2284,35 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                           </Typography>
                           <TextField
                             value={
-                              row.hasMediaKit && row.followerCount > 0
+                              row.hasMediaKit && parseInt(row.followerCount, 10) > 0
                                 ? formatFollowerCountDisplay(row.followerCount)
                                 : row.followerCount === '' || row.followerCount === undefined
                                   ? ''
                                   : String(row.followerCount)
                             }
                             onChange={(e) => {
-                              if (row.hasMediaKit && row.followerCount > 0) return;
+                              if (row.hasMediaKit && parseInt(row.followerCount, 10) > 0) return;
                               const val = e.target.value.replace(/[^0-9]/g, '');
                               handleFollowerCountChange(row.id, val);
                             }}
-                            placeholder={row.hasMediaKit ? '—' : 'Enter follower count'}
+                            placeholder={
+                              row.hasMediaKit && parseInt(row.followerCount, 10) > 0
+                                ? '—'
+                                : 'Enter follower count'
+                            }
                             fullWidth
-                            disabled={row.hasMediaKit && row.followerCount > 0}
-                            InputProps={{ readOnly: row.hasMediaKit && row.followerCount > 0 }}
+                            disabled={row.hasMediaKit && parseInt(row.followerCount, 10) > 0}
+                            InputProps={{
+                              readOnly: row.hasMediaKit && parseInt(row.followerCount, 10) > 0,
+                            }}
                             helperText={
-                              row.hasMediaKit && row.followerCount > 0
+                              row.hasMediaKit && parseInt(row.followerCount, 10) > 0
                                 ? 'From media kit'
                                 : undefined
                             }
                             FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
                             inputProps={
-                              row.hasMediaKit && row.followerCount > 0
+                              row.hasMediaKit && parseInt(row.followerCount, 10) > 0
                                 ? undefined
                                 : {
                                     inputMode: 'numeric',
