@@ -205,23 +205,17 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
   const theme = useTheme();
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  // Treat client_demo as a (view-only) client so the demo renders the client
-  // submission view rather than the admin view. Actions are gated by isDisabled
-  // (the demo passes isDisabled/isDemo down from campaign-detail-view).
+
   const isClient = userRole.toLowerCase() === 'client' || userRole.toLowerCase() === 'client_demo';
-  // The demo/showcase role can re-rate freely; everyone else rates once.
+
   const isDemo = userRole.toLowerCase() === 'client_demo';
 
-  // Each side owns its own rating; the button/dialog surface differs by role.
   const ownRating = isClient ? creator.clientRating || 0 : creator.adminRating || 0;
   const counterpartRating = isClient ? creator.adminRating || 0 : creator.clientRating || 0;
   const finalRating =
     ownRating > 0 && counterpartRating > 0 ? (ownRating + counterpartRating) / 2 : 0;
   const [rating, setRating] = useState(finalRating || ownRating || 0);
 
-  // Each side may only rate once. Once this side has rated, the dialog opens
-  // read-only (view the score + breakdown, no editing/re-submit). The demo is
-  // exempt so the showcase can be re-rated.
   const hasRated = isClient ? Boolean(creator.clientRatedAt) : Boolean(creator.adminRatedAt);
   const isReadOnly = hasRated && !isDemo;
 
@@ -274,8 +268,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
       });
       setRating(counterpartRating > 0 ? (selectedStars + counterpartRating) / 2 : selectedStars);
       setRateDialogOpen(false);
-      // Re-fetch the campaign so creator.clientRating/clientRatedAt (and the
-      // read-only gate) reflect the new rating instead of the stale prop.
+
       await onRated?.();
       enqueueSnackbar('Rating submitted successfully', { variant: 'success' });
     } catch (error) {
@@ -456,7 +449,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
           return formatStatus(status);
       }
     };
-
+    console.log(grouped.videos);
     // Video submission pills
     grouped.videos?.forEach((videoSubmission, index) => {
       // removed unused submissionCounter
@@ -518,10 +511,12 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
                     color: '#000',
                     fontSize: { xs: '10px', sm: '12px' },
                     fontWeight: 'medium',
-                    boxShadow: '0px 4px 4px 0px #00000040',
+                    boxShadow: 1,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    border: 1,
+                    borderColor: theme.palette.grey[300],
                   },
                 },
               }}
@@ -566,6 +561,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
                   }}
                 />
               )}
+
               <Typography
                 fontWeight="SemiBold"
                 fontSize={{ xs: 8, sm: 12 }}
@@ -581,6 +577,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
               </Typography>
             </Box>
           </Box>
+
           <Box display="flex" alignItems="center" flexShrink={0}>
             <Iconify
               icon={isExpanded ? 'mingcute:up-line' : 'mingcute:down-line'}
@@ -972,6 +969,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
                 {creatorDisplay.name || 'Unknown Creator'}
               </Typography>
             </Tooltip>
+
             {displayProducts && (
               <Box sx={{ display: 'inline-flex', gap: 0.5, alignItems: 'start' }}>
                 <Iconify
@@ -1038,6 +1036,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
             mx: 1.5,
           }}
         />
+
         <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, pr: 1.5 }}>
           {rating > 0 ? (
             <Button

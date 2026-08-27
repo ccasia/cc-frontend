@@ -1,5 +1,7 @@
-import { produce } from 'immer';
 import { create } from 'zustand';
+import { produce, enableArrayMethods } from 'immer';
+
+enableArrayMethods();
 
 export const useUploadingStatus = create(() => ({
   statusInfo: [],

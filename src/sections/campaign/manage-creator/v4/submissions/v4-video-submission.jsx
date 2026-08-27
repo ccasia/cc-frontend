@@ -1,21 +1,12 @@
 import { toast } from 'sonner';
-import { produce } from 'immer';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { produce, enableArrayMethods } from 'immer';
+import { useMutation } from '@tanstack/react-query';
+import React, { useRef, useMemo, useState, useCallback } from 'react';
 
-import {
-  Box,
-  Stack,
-  Button,
-  Divider,
-  Tooltip,
-  TextField,
-  Typography,
-  IconButton,
-} from '@mui/material';
+import { Box, Stack, Divider, Tooltip, TextField, Typography, IconButton } from '@mui/material';
 
 import socket from 'src/hooks/socket';
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -39,7 +30,8 @@ import {
   SubmissionActionButton,
   getSubmissionStatusFlags,
 } from './shared';
-import { setStatus } from 'src/hooks/zustands/useUploadingStatus';
+
+enableArrayMethods();
 
 // Helper to parse timestamp string to seconds
 const parseSecondsFromTimestamp = (timeStr) => {
@@ -102,7 +94,6 @@ const V4VideoSubmission = ({
   onUploadStateChange,
   creator,
   mutate,
-  uploadingStatus,
 }) => {
   // State for modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -111,7 +102,6 @@ const V4VideoSubmission = ({
   const [commentHighlightCutoffMs, setCommentHighlightCutoffMs] = useState(null);
   const [progress, setProgress] = useState(null);
   const [uploadId, setUploadId] = useState(null);
-  const [compressionProgress, setCompressionProgress] = useState([]);
 
   const isEditingFileName = useBoolean();
   const [fileName, setFileName] = useState('');
@@ -405,12 +395,30 @@ const V4VideoSubmission = ({
 
       // ---- 5. Finalise ---------------------------------------------
       await axiosInstance.patch(`/api/submission/${submission.id}/caption`, { caption });
-      await axiosInstance.post(`/api/upload-sessions/${session.id}/complete`);
+      const res = await axiosInstance.post(`/api/upload-sessions/${session.id}/complete`);
 
-      return session; // ← no TDZ crash
+      return { session, video: res.data?.video }; // ← no TDZ crash
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      console.log(data);
       setProgress(0);
+      setUploadId(null);
+      setSelectedFiles([]);
+      setIsReuploadMode(false);
+      setFileName(null);
+
+      await mutate(
+        produce((draft) => {
+          if (!draft?.grouped) return;
+          const v = draft.grouped.videos.find((a) => a.id === data?.video?.submissionId);
+
+          if (v) {
+            v.status = 'PENDING_REVIEW';
+            v.video = [data?.video];
+          }
+        }),
+        { revalidate: false }
+      );
       toast.success('Done');
     },
     onError: (error) => {
@@ -421,83 +429,96 @@ const V4VideoSubmission = ({
 
   const cancelUpload = () => abortRef.current?.abort();
 
-  useEffect(() => {
-    if (!socket) return;
+  // useEffect(() => {
+  //   if (!socket) return;
 
-    const handleProgress = (data) => {
-      const { submissionId, progress: compressProgress } = data;
+  //   const handleProgress = (data) => {
+  //     const { submissionId, progress: compressProgress } = data;
 
-      setCompressionProgress((prev) => {
-        if (!prev.some((i) => i.submissionId === submissionId)) {
-          return [...prev, { submissionId, progress: compressProgress }];
-        }
+  //     setCompressionProgress((prev) => {
+  //       if (!prev.some((i) => i.submissionId === submissionId)) {
+  //         return [...prev, { submissionId, progress: compressProgress }];
+  //       }
 
-        return prev.map((item) =>
-          item.submissionId === submissionId ? { ...item, progress: compressProgress } : item
-        );
-      });
-    };
+  //       return prev.map((item) =>
+  //         item.submissionId === submissionId ? { ...item, progress: compressProgress } : item
+  //       );
+  //     });
+  //   };
 
-    const handleDone = async (data) => {
-      setCompressionProgress(
-        produce((draft) => {
-          const job = draft.find((a) => a.submissionId === data?.submissionId);
+  //   const handleDone = async (data) => {
+  //     setCompressionProgress(
+  //       produce((draft) => {
+  //         const index = draft.findIndex((a) => a.submissionId === data?.submissionId);
+  //         if (index !== -1) {
+  //           draft.splice(index, 1);
+  //         }
+  //       })
+  //     );
 
-          if (!job) return draft;
+  // setUploadId(null);
+  // setSelectedFiles([]);
+  // setIsReuploadMode(false);
+  // setFileName(null);
 
-          return draft.filter((item) => item.submissionId !== data.submissionId);
-        })
-      );
+  // await mutate(
+  //   produce((draft) => {
+  //     if (!draft?.grouped) return;
+  //     const v = draft.grouped.videos.find((a) => a.id === data?.submissionId);
 
-      setUploadId(null);
-      setSelectedFiles([]);
-      setIsReuploadMode(false);
-      setFileName(null);
+  //     if (v) {
+  //       v.status = 'PENDING_REVIEW';
+  //       v.video = [data.video];
+  //     }
+  //   }),
+  //   { revalidate: false }
+  // );
+  //   };
 
-      await mutate(
-        produce((draft) => {
-          if (!draft?.grouped) return;
-          const v = draft.grouped.videos.find((a) => a.id === data?.submissionId);
+  //   socket.on('compression:progress', handleProgress);
+  //   socket.on('status', handleDone);
 
-          if (v) {
-            v.status = 'PENDING_REVIEW';
-            v.video = [data.video];
-          }
-        }),
-        { revalidate: false }
-      );
-    };
+  //   // eslint-disable-next-line consistent-return
+  //   return () => {
+  //     socket.off('compression:progress', handleProgress);
+  //     socket.off('status', handleDone);
+  //   };
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [onUpdate, setSelectedFiles, mutate]);
 
-    socket.on('compression:progress', handleProgress);
-    socket.on('status', handleDone);
+  // const { data } = useQuery({
+  //   queryFn: async () => {
+  //     const res = await axiosInstance.get('/api/upload-sessions/', {
+  //       params: {
+  //         status: 'COMPRESSING',
+  //         submissionId: submission.id,
+  //       },
+  //     });
 
-    // eslint-disable-next-line consistent-return
-    return () => {
-      socket.off('compression:progress', handleProgress);
-      socket.off('status', handleDone);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onUpdate, setSelectedFiles, mutate]);
+  //     return res.data.uploadSessions[0] || null;
+  //   },
+  //   queryKey: ['upload-session', submission?.id],
+  // });
 
-  const { data } = useQuery({
-    queryFn: async () => {
-      const res = await axiosInstance.get('/api/upload-sessions/', {
-        params: {
-          status: 'COMPRESSING',
-          submissionId: submission.id,
-        },
-      });
+  // useEffect(() => {
+  //   if (!socket || !data) return;
 
-      return res.data.uploadSessions[0] || null;
-    },
-    queryKey: ['upload-session', submission?.id],
-  });
+  //   setStatus({ sessionId: data.id, status: data.status, submissionId: data.submissionId });
 
-  useEffect(() => {
-    if (!socket || !data) return;
+  //   setCompressionProgress(
+  //     produce((draft) => {
+  //       const existing = draft.find((i) => i.submissionId === data.submissionId);
 
-    setStatus({ sessionId: data?.id, status: data?.status, submissionId: data?.submissionId });
-  }, [data, uploadingStatus]);
+  //       if (existing) {
+  //         existing.progress = data.progress ?? existing.progress;
+  //       } else {
+  //         draft.push({ submissionId: data.submissionId, progress: data.progress ?? 0 });
+  //       }
+  //     })
+  //   );
+
+  //   socket.emit('join:upload', data.id);
+  // }, [data]);
 
   const ext = selectedFiles[0]?.name?.split('.').at(-1);
   const textWidth = Math.max((Number(fileName?.length) + (ext?.length ?? 0)) * 10, 35);
@@ -704,19 +725,9 @@ const V4VideoSubmission = ({
               isDisabled={mutation.isPending || uploadId || isDisabled}
               isReuploadButton={isReuploadButton}
               isSubmitButton={isSubmitButton}
-              uploading={
-                mutation.isPending ||
-                uploadId ||
-                uploading ||
-                compressionProgress.find((i) => i.submissionId === submission.id)
-              }
+              uploading={mutation.isPending || uploadId || uploading}
               postingLoading={postingLoading}
-              uploadProgress={
-                progress ||
-                uploadProgress ||
-                compressionProgress.find((i) => i.submissionId === submission.id)?.progress ||
-                0
-              }
+              uploadProgress={progress || uploadProgress || 0}
               onReupload={handleReupload}
               // onSubmit={onSubmit}
               onSubmit={() => {
@@ -734,11 +745,6 @@ const V4VideoSubmission = ({
                 '@media (min-width: 1201px)': { mt: 0 },
               }}
             />
-            {/* {mutation.isPending && (
-              <Button variant="outlined" onClick={cancelUpload} color="error">
-                Cancel Upload
-              </Button>
-            )} */}
           </Stack>
         </Box>
       </Box>

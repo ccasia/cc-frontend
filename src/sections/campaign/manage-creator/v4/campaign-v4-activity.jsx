@@ -1541,7 +1541,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
     );
   }
 
-  const { grouped, progress, total, completed } = submissionsData;
+  const { grouped } = submissionsData;
 
   const showPendingAgreementCard = !isAgreementApproved && overviewData?.agreementStatus;
   const showLogisticsCard = isDelivery;
@@ -1568,6 +1568,8 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
         <Typography
           component="span"
           sx={{
+            cursor: 'pointer',
+            textDecoration: 'underline',
             '&:hover': {
               opacity: 0.8,
             },
@@ -2004,7 +2006,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
           {/* Video Submissions */}
           {grouped?.videos?.map((video, index) => {
             const isExpanded = expandedSections[video.id];
-            const isNew = isNewSubmission(video);
+            // const isNew = isNewSubmission(video);
             const title = getSubmissionTitle(video, index);
             const status = getSubmissionStatus(video);
             const statusInfo = getSubmissionStatusInfo(status);
