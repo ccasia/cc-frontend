@@ -432,29 +432,29 @@ const V4VideoSubmission = ({
   // useEffect(() => {
   //   if (!socket) return;
 
-  //   const handleProgress = (data) => {
-  //     const { submissionId, progress: compressProgress } = data;
+    // const handleProgress = (data) => {
+    //   const { submissionId, progress: compressProgress } = data;
 
-  //     setCompressionProgress((prev) => {
-  //       if (!prev.some((i) => i.submissionId === submissionId)) {
-  //         return [...prev, { submissionId, progress: compressProgress }];
-  //       }
+    //   setCompressionProgress((prev) => {
+    //     if (!prev.some((i) => i.submissionId === submissionId)) {
+    //       return [...prev, { submissionId, progress: compressProgress }];
+    //     }
 
-  //       return prev.map((item) =>
-  //         item.submissionId === submissionId ? { ...item, progress: compressProgress } : item
-  //       );
-  //     });
-  //   };
+    //     return prev.map((item) =>
+    //       item.submissionId === submissionId ? { ...item, progress: compressProgress } : item
+    //     );
+    //   });
+    // };
 
-  //   const handleDone = async (data) => {
-  //     setCompressionProgress(
-  //       produce((draft) => {
-  //         const index = draft.findIndex((a) => a.submissionId === data?.submissionId);
-  //         if (index !== -1) {
-  //           draft.splice(index, 1);
-  //         }
-  //       })
-  //     );
+    // const handleDone = async (data) => {
+    //   setCompressionProgress(
+    //     produce((draft) => {
+    //       const index = draft.findIndex((a) => a.submissionId === data?.submissionId);
+    //       if (index !== -1) {
+    //         draft.splice(index, 1);
+    //       }
+    //     })
+    //   );
 
   // setUploadId(null);
   // setSelectedFiles([]);
@@ -505,17 +505,17 @@ const V4VideoSubmission = ({
 
   //   setStatus({ sessionId: data.id, status: data.status, submissionId: data.submissionId });
 
-  //   setCompressionProgress(
-  //     produce((draft) => {
-  //       const existing = draft.find((i) => i.submissionId === data.submissionId);
+    // setCompressionProgress(
+    //   produce((draft) => {
+    //     const existing = draft.find((i) => i.submissionId === data.submissionId);
 
-  //       if (existing) {
-  //         existing.progress = data.progress ?? existing.progress;
-  //       } else {
-  //         draft.push({ submissionId: data.submissionId, progress: data.progress ?? 0 });
-  //       }
-  //     })
-  //   );
+    //     if (existing) {
+    //       existing.progress = data.progress ?? existing.progress;
+    //     } else {
+    //       draft.push({ submissionId: data.submissionId, progress: data.progress ?? 0 });
+    //     }
+    //   })
+    // );
 
   //   socket.emit('join:upload', data.id);
   // }, [data]);

@@ -1,9 +1,11 @@
+import { produce } from 'immer';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useSearchParams } from 'react-router-dom';
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { useTheme } from '@mui/material/styles';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import {
   Box,
   Chip,
@@ -25,6 +27,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import socket from 'src/hooks/socket';
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
 
 import { getUserDisplay } from 'src/utils/user-display';
@@ -32,7 +35,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { getStatusColor } from 'src/contants/statusColors';
-import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import StarRating from 'src/components/star-rating';
@@ -43,6 +45,7 @@ import V4PhotoSubmission from './submissions/v4/photo-submission';
 import V4RawFootageSubmission from './submissions/v4/raw-footage-submission';
 import MobileCreatorSubmissions from './submissions/v4/mobile/mobile-creator-submissions';
 import useV4SubmissionListSocket from './submissions/v4/shared/use-v4-submission-list-socket';
+import { alpha } from '@mui/system';
 
 // ----------------------------------------------------------------------
 
@@ -192,7 +195,7 @@ function CreatorAccordionWithSubmissions({
 function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, autoExpand = false }) {
   const { user } = useAuthContext();
   const creatorDisplay = getUserDisplay(creator?.user);
-  const { socket } = useSocketContext();
+  // const { socket } = useSocketContext();
   const [expandedSubmission, setExpandedSubmission] = useState(null);
   const [renderedSubmission, setRenderedSubmission] = useState(null);
   const [rateDialogOpen, setRateDialogOpen] = useState(false);
@@ -201,6 +204,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
   const [selectedTags, setSelectedTags] = useState([]);
   const [ratingNote, setRatingNote] = useState('');
   const [submittingRating, setSubmittingRating] = useState(false);
+  const [compressionProgress, setCompressionProgress] = useState([]);
 
   const theme = useTheme();
 
@@ -449,146 +453,216 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
           return formatStatus(status);
       }
     };
-    console.log(grouped.videos);
+
     // Video submission pills
     grouped.videos?.forEach((videoSubmission, index) => {
       // removed unused submissionCounter
       const key = `video-${videoSubmission.id}`;
       const isExpanded = expandedSubmission === key;
 
+      const compressing = compressionProgress.find((c) => c.submissionId === videoSubmission.id);
+      // const isCompressing = videoSubmission?.video[0]?.uploadSession?.status === 'COMPRESSING';
+
       pills.push(
-        <Box
-          key={key}
-          onClick={() => handleSubmissionToggle('video', videoSubmission.id)}
-          display="flex"
-          flexDirection="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{
-            cursor: 'pointer',
-            gap: { xs: 0.2, sm: 0.4, md: 0.5 },
-            width: { xs: 140, sm: 210 },
-            minWidth: { xs: 120, sm: 140 },
-            borderTopRightRadius: 10,
-            borderTopLeftRadius: 10,
-            '&:hover': {
-              bgcolor: isExpanded ? 'background.neutral' : 'rgba(231, 231, 231, 0.8)',
-            },
-          }}
-          bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
-          py={{ xs: 1.2, sm: 1.5 }}
-          pr={{ xs: 0.3, sm: 0.5 }}
-          pl={{ xs: 0.5, sm: 0.8 }}
-        >
+        <Stack>
           <Box
+            key={key}
+            onClick={() => handleSubmissionToggle('video', videoSubmission.id)}
             display="flex"
+            flexDirection="row"
             alignItems="center"
-            justifyContent="center"
-            gap={{ xs: 0.2, sm: 0.3 }}
+            justifyContent="space-between"
+            sx={{
+              cursor: 'pointer',
+              gap: { xs: 0.2, sm: 0.4, md: 0.5 },
+              width: { xs: 140, sm: 210 },
+              minWidth: { xs: 120, sm: 140 },
+              borderTopRightRadius: 10,
+              borderTopLeftRadius: 10,
+              '&:hover': {
+                bgcolor: isExpanded ? 'background.neutral' : 'rgba(231, 231, 231, 0.8)',
+              },
+            }}
+            bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
+            py={{ xs: 1.2, sm: 1.5 }}
+            pr={{ xs: 0.3, sm: 0.5 }}
+            pl={{ xs: 0.5, sm: 0.8 }}
           >
-            <Tooltip
-              title="Video"
-              placement="top"
-              PopperProps={{
-                modifiers: [
-                  {
-                    name: 'offset',
-                    options: {
-                      offset: [0, -7],
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              gap={{ xs: 0.2, sm: 0.3 }}
+            >
+              <Tooltip
+                title="Video"
+                placement="top"
+                PopperProps={{
+                  modifiers: [
+                    {
+                      name: 'offset',
+                      options: {
+                        offset: [0, -7],
+                      },
+                    },
+                  ],
+                }}
+                componentsProps={{
+                  tooltip: {
+                    sx: {
+                      width: { xs: 80, sm: 95 },
+                      height: { xs: 28, sm: 34 },
+                      opacity: 1,
+                      borderRadius: '10px',
+                      padding: { xs: '6px', sm: '10px' },
+                      bgcolor: '#FCFCFC',
+                      color: '#000',
+                      fontSize: { xs: '10px', sm: '12px' },
+                      fontWeight: 'medium',
+                      boxShadow: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: 1,
+                      borderColor: theme.palette.grey[300],
                     },
                   },
-                ],
-              }}
-              componentsProps={{
-                tooltip: {
-                  sx: {
-                    width: { xs: 80, sm: 95 },
-                    height: { xs: 28, sm: 34 },
-                    opacity: 1,
-                    borderRadius: '10px',
-                    padding: { xs: '6px', sm: '10px' },
-                    bgcolor: '#FCFCFC',
-                    color: '#000',
-                    fontSize: { xs: '10px', sm: '12px' },
-                    fontWeight: 'medium',
-                    boxShadow: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: 1,
-                    borderColor: theme.palette.grey[300],
-                  },
-                },
-              }}
-            >
-              <Box
-                component="img"
-                src="/assets/icons/components/ugc_vid.png"
-                sx={{
-                  width: { xs: 22, sm: 25, md: 27 },
-                  height: { xs: 22, sm: 25, md: 27 },
-                  filter: isExpanded
-                    ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)'
-                    : 'none',
-                  cursor: 'pointer',
                 }}
-              />
-            </Tooltip>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: { xs: 0.3, sm: 0.5, md: 0.8, lg: 1 },
-                px: { xs: 0.6, sm: 0.8, md: 1.0, lg: 1.3 },
-                py: { xs: 0.3, sm: 0.4, md: 0.5, lg: 0.6 },
-                border: '1px solid',
-                borderColor: getClientStatusColor(videoSubmission.status, 'video'),
-                borderRadius: 0.8,
-                boxShadow: `0px -2px 0px 0px ${getClientStatusColor(videoSubmission.status, 'video')} inset`,
-                bgcolor: '#fff',
-                color: getClientStatusColor(videoSubmission.status, 'video'),
-                minWidth: 0,
-                flexShrink: 1,
-              }}
-            >
-              {videoSubmission.status === 'IN_PROGRESS' && (
-                <CircularProgress
-                  size={12}
-                  thickness={5}
+              >
+                <Box
+                  component="img"
+                  src="/assets/icons/components/ugc_vid.png"
                   sx={{
-                    color: getClientStatusColor(videoSubmission.status, 'video'),
-                    display: 'flex',
+                    width: { xs: 22, sm: 25, md: 27 },
+                    height: { xs: 22, sm: 25, md: 27 },
+                    filter: isExpanded
+                      ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)'
+                      : 'none',
+                    cursor: 'pointer',
                   }}
                 />
-              )}
-
-              <Typography
-                fontWeight="SemiBold"
-                fontSize={{ xs: 8, sm: 12 }}
-                color={getClientStatusColor(videoSubmission.status, 'video')}
-                noWrap
+              </Tooltip>
+              <Box
                 sx={{
-                  maxWidth: { xs: 60, sm: 210 },
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: { xs: 0.3, sm: 0.5, md: 0.8, lg: 1 },
+                  px: { xs: 0.6, sm: 0.8, md: 1.0, lg: 1.3 },
+                  py: { xs: 0.3, sm: 0.4, md: 0.5, lg: 0.6 },
+                  border: '1px solid',
+                  borderColor: getClientStatusColor(videoSubmission.status, 'video'),
+                  borderRadius: 0.8,
+                  boxShadow: `0px -2px 0px 0px ${getClientStatusColor(videoSubmission.status, 'video')} inset`,
+                  bgcolor: '#fff',
+                  color: getClientStatusColor(videoSubmission.status, 'video'),
+                  minWidth: 0,
+                  flexShrink: 1,
                 }}
-                textOverflow="ellipsis"
-                overflow="hidden"
               >
-                {getClientStatusLabel(videoSubmission.status, 'video')}
-              </Typography>
+                {videoSubmission.status === 'IN_PROGRESS' && (
+                  <CircularProgress
+                    size={12}
+                    thickness={5}
+                    sx={{
+                      color: getClientStatusColor(videoSubmission.status, 'video'),
+                      display: 'flex',
+                    }}
+                  />
+                )}
+
+                <Typography
+                  fontWeight="SemiBold"
+                  fontSize={{ xs: 8, sm: 12 }}
+                  color={getClientStatusColor(videoSubmission.status, 'video')}
+                  noWrap
+                  sx={{
+                    maxWidth: { xs: 60, sm: 210 },
+                  }}
+                  textOverflow="ellipsis"
+                  overflow="hidden"
+                >
+                  {getClientStatusLabel(videoSubmission.status, 'video')}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box display="flex" alignItems="center" flexShrink={0}>
+              <Iconify
+                icon={isExpanded ? 'mingcute:up-line' : 'mingcute:down-line'}
+                sx={{
+                  width: { xs: 20, sm: 22, md: 24, lg: 26 },
+                  height: { xs: 20, sm: 22, md: 24, lg: 26 },
+                }}
+                color={isExpanded ? '#1340FF' : '#8E8E93'}
+              />
             </Box>
           </Box>
 
-          <Box display="flex" alignItems="center" flexShrink={0}>
-            <Iconify
-              icon={isExpanded ? 'mingcute:up-line' : 'mingcute:down-line'}
+          {compressing && (
+            <Box
               sx={{
-                width: { xs: 20, sm: 22, md: 24, lg: 26 },
-                height: { xs: 20, sm: 22, md: 24, lg: 26 },
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 1,
+                bgcolor: 'action.hover',
+                border: '0.5px solid',
+                borderColor: 'divider',
+                borderRadius: 999,
+                pl: 1.25,
+                pr: 1.5,
+                py: 0.75,
+                width: 180,
               }}
-              color={isExpanded ? '#1340FF' : '#8E8E93'}
-            />
-          </Box>
-        </Box>
+            >
+              <Box sx={{ position: 'relative', width: 8, height: 8, flexShrink: 0 }}>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: '50%',
+                    bgcolor: 'info.main',
+                    animation: 'pulseRing 1.6s cubic-bezier(0.4,0,0.6,1) infinite',
+                    '@keyframes pulseRing': {
+                      '0%': { transform: 'scale(1)', opacity: 0.6 },
+                      '100%': { transform: 'scale(2.5)', opacity: 0 },
+                    },
+                  }}
+                />
+                <Box
+                  sx={{ position: 'absolute', inset: 0, borderRadius: '50%', bgcolor: 'info.main' }}
+                />
+              </Box>
+
+              <Typography variant="caption" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+                Optimizing{compressing?.progress != null ? ` · ${compressing.progress}%` : '…'}
+              </Typography>
+
+              <Box
+                sx={{
+                  width: 40,
+                  height: 4,
+                  borderRadius: 1,
+                  bgcolor: 'divider',
+                  overflow: 'hidden',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: `${compressing?.progress ?? 0}%`,
+                    height: '100%',
+                    bgcolor: 'info.main',
+                    transition: 'width 0.3s ease',
+                    animation: 'barPulse 1.6s ease-in-out infinite',
+                    '@keyframes barPulse': {
+                      '0%, 100%': { opacity: 1 },
+                      '50%': { opacity: 0.5 },
+                    },
+                  }}
+                />
+              </Box>
+            </Box>
+          )}
+        </Stack>
       );
     });
 
@@ -857,6 +931,8 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
 
     if (type === 'video') {
       const submission = grouped.videos?.find((v) => v.id === id);
+      const compressing = compressionProgress.find((c) => c.submissionId === submission.id);
+
       if (submission) {
         return (
           <V4VideoSubmission
@@ -867,6 +943,7 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
             onUpdate={handleSubmissionUpdate}
             expanded
             isDisabled={isDisabled}
+            compressing={compressing}
           />
         );
       }
@@ -908,6 +985,44 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
 
     return null;
   };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleProgress = (data) => {
+      const { submissionId, progress: compressProgress } = data;
+
+      setCompressionProgress((prev) => {
+        if (!prev.some((i) => i.submissionId === submissionId)) {
+          return [...prev, { submissionId, progress: compressProgress }];
+        }
+
+        return prev.map((item) =>
+          item.submissionId === submissionId ? { ...item, progress: compressProgress } : item
+        );
+      });
+    };
+
+    const handleDone = async (data) => {
+      setCompressionProgress(
+        produce((draft) => {
+          const index = draft.findIndex((a) => a.submissionId === data?.submissionId);
+          if (index !== -1) {
+            draft.splice(index, 1);
+          }
+        })
+      );
+    };
+
+    socket.on('compression:progress', handleProgress);
+    socket.on('status', handleDone);
+
+    // eslint-disable-next-line consistent-return
+    return () => {
+      socket.off('compression:progress', handleProgress);
+      socket.off('status', handleDone);
+    };
+  }, []);
 
   return (
     <Box
