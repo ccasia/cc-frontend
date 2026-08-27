@@ -2284,25 +2284,29 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                           </Typography>
                           <TextField
                             value={
-                              row.hasMediaKit
+                              row.hasMediaKit && row.followerCount > 0
                                 ? formatFollowerCountDisplay(row.followerCount)
                                 : row.followerCount === '' || row.followerCount === undefined
                                   ? ''
                                   : String(row.followerCount)
                             }
                             onChange={(e) => {
-                              if (row.hasMediaKit) return;
+                              if (row.hasMediaKit && row.followerCount > 0) return;
                               const val = e.target.value.replace(/[^0-9]/g, '');
                               handleFollowerCountChange(row.id, val);
                             }}
                             placeholder={row.hasMediaKit ? '—' : 'Enter follower count'}
                             fullWidth
                             disabled={row.hasMediaKit && row.followerCount > 0}
-                            InputProps={{ readOnly: row.hasMediaKit }}
-                            helperText={row.hasMediaKit ? 'From media kit' : undefined}
+                            InputProps={{ readOnly: row.hasMediaKit && row.followerCount > 0 }}
+                            helperText={
+                              row.hasMediaKit && row.followerCount > 0
+                                ? 'From media kit'
+                                : undefined
+                            }
                             FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
                             inputProps={
-                              row.hasMediaKit
+                              row.hasMediaKit && row.followerCount > 0
                                 ? undefined
                                 : {
                                     inputMode: 'numeric',
