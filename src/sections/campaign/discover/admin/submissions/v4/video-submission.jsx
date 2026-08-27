@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useRef, useMemo, useState, useCallback } from 'react';
 
+import { alpha } from '@mui/system';
 import {
   Box,
   Card,
@@ -33,14 +34,18 @@ import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submis
 import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
 
 import FeedbackLogs from './shared/feedback-logs';
-import FeedbackSection from './shared/feedback-section';
 import FeedbackActions from './shared/feedback-actions';
 import PostingLinkSection from './shared/posting-link-section';
-import useCaptionOverflow from './shared/use-caption-overflow';
 import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
 
-export default function V4VideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
+export default function V4VideoSubmission({
+  submission,
+  campaign,
+  onUpdate,
+  isDisabled = false,
+  compressing,
+}) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const { showNpsModal } = useNps();
@@ -52,18 +57,28 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
+
     const clientAllowedStatuses = ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'APPROVED'];
+
     const clientVideo = isClient
       ? ((submission.video || []).find((v) => clientAllowedStatuses.includes(v.status)) ?? null)
       : video;
-    const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
+
+    const pendingReview = submission.status === 'PENDING_REVIEW';
+    const isClientFeedback = submission.status === 'CLIENT_FEEDBACK';
     const hasPostingLink = Boolean(submission.content);
-    const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
+
     const clientVisible =
       !isClient ||
-      ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'CLIENT_APPROVED', 'APPROVED', 'REJECTED', 'APPROVE_LINK','POSTED'].includes(
-        submission.status
-      );
+      [
+        'SENT_TO_CLIENT',
+        'CLIENT_FEEDBACK',
+        'CLIENT_APPROVED',
+        'APPROVED',
+        'REJECTED',
+        'APPROVE_LINK',
+        'POSTED',
+      ].includes(submission.status);
 
     return {
       video,
@@ -96,17 +111,13 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
   const [volume, setVolume] = useState(1);
   const videoRef = useRef(null);
   const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0, aspectRatio: 1 });
-  const [videoModalOpen, setVideoModalOpen] = useState(false);
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const captionMeasureRef = useRef(null);
+
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
   const [videoSubmissionModalOpen, setVideoSubmissionModalOpen] = useState(false);
   const [adminReviewModalOpen, setAdminReviewModalOpen] = useState(false);
   const [localFeedbackDeadline, setLocalFeedbackDeadline] = useState(null);
   const [localFeedbackSentByName, setLocalFeedbackSentByName] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-
-  const captionOverflows = useCaptionOverflow(captionMeasureRef, submission.caption);
 
   const handleApprove = useCallback(async () => {
     try {
@@ -124,7 +135,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
         if (response.data?.feedbackDeadline) {
           setLocalFeedbackDeadline(response.data.feedbackDeadline);
-          if (response.data?.feedbackSentByName) setLocalFeedbackSentByName(response.data.feedbackSentByName);
+          if (response.data?.feedbackSentByName)
+            setLocalFeedbackSentByName(response.data.feedbackSentByName);
         }
 
         enqueueSnackbar('Video approved successfully', { variant: 'success' });
@@ -206,7 +218,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
         if (response.data?.feedbackDeadline) {
           setLocalFeedbackDeadline(response.data.feedbackDeadline);
-          if (response.data?.feedbackSentByName) setLocalFeedbackSentByName(response.data.feedbackSentByName);
+          if (response.data?.feedbackSentByName)
+            setLocalFeedbackSentByName(response.data.feedbackSentByName);
         }
 
         enqueueSnackbar('Changes requested successfully', { variant: 'success' });
@@ -310,7 +323,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
         if (response.data?.feedbackDeadline) {
           setLocalFeedbackDeadline(response.data.feedbackDeadline);
-          if (response.data?.feedbackSentByName) setLocalFeedbackSentByName(response.data.feedbackSentByName);
+          if (response.data?.feedbackSentByName)
+            setLocalFeedbackSentByName(response.data.feedbackSentByName);
         }
 
         if (shouldRefresh) {
@@ -603,6 +617,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           }
                           return null;
                         })()}
+
                         {!isClient &&
                           [
                             'PENDING_REVIEW',
@@ -745,6 +760,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                           </button> */}
                         </Box>
                       )}
+
                       {!isClient && (
                         <FeedbackActions
                           submission={submission}
@@ -783,6 +799,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                       borderRadius: 1,
                       overflow: 'hidden',
                       bgcolor: 'background.paper',
+                      position: 'relative',
+                      pointerEvents: compressing ? 'none' : 'auto',
                     }}
                   >
                     <Box
@@ -827,6 +845,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                         >
                           <track kind="captions" />
                         </video>
+
                         <Box
                           sx={{
                             position: 'absolute',
@@ -1122,6 +1141,91 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
                         />
                       </Box>
                     </Box>
+
+                    {compressing && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          inset: 1,
+                          bgcolor: (theme) => alpha(theme.palette.grey[900], 0.75),
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 2,
+                          px: 4,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'baseline',
+                            gap: 0.5,
+                          }}
+                        >
+                          <Typography
+                            variant="h2"
+                            sx={{ color: 'common.white', fontWeight: 500, lineHeight: 1 }}
+                          >
+                            {Number(compressing?.progress ?? 0)}
+                          </Typography>
+                          <Typography variant="h5" sx={{ color: '#e8543a', fontWeight: 500 }}>
+                            %
+                          </Typography>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            gap: 0.5,
+                            width: '100%',
+                            maxWidth: 280,
+                          }}
+                        >
+                          {Array.from({ length: 30 }).map((_, i) => {
+                            const filled =
+                              i < Math.round((30 * Number(compressing?.progress ?? 0)) / 100);
+                            return (
+                              <Box
+                                key={i}
+                                sx={{
+                                  height: 8,
+                                  flex: 1,
+                                  borderRadius: 0.5,
+                                  bgcolor: filled ? '#e8543a' : 'rgba(255,255,255,0.15)',
+                                  transition: 'background-color 0.4s ease',
+                                }}
+                              />
+                            );
+                          })}
+                        </Box>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: 'rgba(255,255,255,0.6)',
+                            fontWeight: 800,
+                            letterSpacing: 0.3,
+                          }}
+                        >
+                          Compressing
+                        </Typography>
+                      </Box>
+                    )}
+                    {/* {compressing && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          display: 'flex',
+                          inset: 1,
+                          bgcolor: (theme) => alpha(theme.palette.grey[900], 0.5),
+                          background: `linear-gradient(to right, #CCCCCC50 ${100 - Number(compressing?.progress)}%, transparent 0%)`,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Typography variant="h2">{100 - Number(compressing?.progress)}</Typography>
+                      </Box>
+                    )} */}
                   </Box>
                 ) : (
                   <Box
@@ -1176,6 +1280,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
         rightSideContent={({
           currentTime: modalCurrentTime,
           onSeekTo,
+          onPause,
+          onPlay,
           videoId: modalVideoId,
           videoPage,
           setVideoPage,
@@ -1204,6 +1310,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
               isDemo={isDemoCampaign}
               currentVideoTime={videoControls.formatTime(modalCurrentTime || 0)}
               onSeek={onSeekTo}
+              onPause={onPause}
+              onPlay={onPlay}
               onSendToAdmin={handleSendAndRefresh}
               isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
               isPastVideo={isPastVideo}
@@ -1226,6 +1334,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
           currentTime: modalCurrentTime,
           duration: modalDuration,
           onSeek,
+          onPause,
+          onPlay,
           videoId: modalVideoId,
           videoPage,
           setVideoPage,
@@ -1237,6 +1347,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
             currentTime={modalCurrentTime}
             duration={modalDuration}
             onSeek={onSeek}
+            onPause={onPause}
+            onPlay={onPlay}
             submission={modalSubmission || submission}
             campaign={campaign}
             videoId={modalVideoId || video?.id}
@@ -1295,4 +1407,5 @@ V4VideoSubmission.propTypes = {
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
   isDisabled: PropTypes.bool,
+  compressing: PropTypes.object,
 };

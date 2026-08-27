@@ -2245,7 +2245,7 @@ const CampaignFirstDraft = ({
                     <Box sx={{ width: '100%' }}>
                       {/* Large preview area */}
                       <Box sx={{ mb: 3 }}>
-                        {(campaign?.campaignCredits && deliverables?.videos?.length > 0
+                        {(campaign?.campaignCredits != null && deliverables?.videos?.length > 0
                           ? deliverables.videos
                           : [{ url: submission?.content }]
                         ).map(
@@ -2285,7 +2285,7 @@ const CampaignFirstDraft = ({
                       </Box>
 
                       {/* Thumbnails */}
-                      {(campaign?.campaignCredits && deliverables?.videos?.length > 0
+                      {(campaign?.campaignCredits != null && deliverables?.videos?.length > 0
                         ? deliverables.videos
                         : [{ url: submission?.content }]
                       ).length > 1 && (
@@ -2297,7 +2297,7 @@ const CampaignFirstDraft = ({
                             justifyContent: { xs: 'center', sm: 'flex-start' },
                           }}
                         >
-                          {(campaign?.campaignCredits && deliverables?.videos?.length > 0
+                          {(campaign?.campaignCredits != null && deliverables?.videos?.length > 0
                             ? deliverables.videos
                             : [{ url: submission?.content }]
                           ).map((videoItem, index) => (

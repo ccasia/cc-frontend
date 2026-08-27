@@ -478,7 +478,8 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
   const getTierDataForItem = (item) => {
     if (!campaign?.isCreditTier) return null;
 
-    // First try: creditTier from shortlisted record
+    // Only ever show the tier agreed for THIS campaign. The creator's live tier tracks their
+    // media kit and drifts as they grow, so falling back to it would misreport what we pay.
     const shortlisted = item?.user?.shortlisted?.[0] || item?.shortlistedCreator;
     if (shortlisted?.creditTier) {
       return {
@@ -487,16 +488,6 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
       };
     }
 
-    // Second try: creditTier from creator record (current tier)
-    const creatorTier = item?.user?.creator?.creditTier;
-    if (creatorTier) {
-      return {
-        name: creatorTier.name || 'Unknown Tier',
-        creditsPerVideo: creatorTier.creditsPerVideo ?? 1,
-      };
-    }
-
-    // Third try: look in campaign.shortlisted for this user
     const campaignShortlisted = campaign?.shortlisted?.find((s) => s.userId === item?.user?.id);
     if (campaignShortlisted?.creditTier) {
       return {
@@ -617,11 +608,19 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     }
 
     // Also include shortlisted creators who may not have a pitch record
-    // This handles backwards compatibility for creators shortlisted before the pitch system
+    // This handles backwards compatibility for creators shortlisted before the pitch system.
+    // V4 caveat: a ShortListedCreator row can exist BEFORE client approval (e.g. after admin
+    // uses Link Creator on a SENT_TO_CLIENT pitch). Only include shortlist entries that have
+    // no matching pitch — otherwise the pitch's approval gate is the source of truth.
+    const allPitchUserIds = new Set(
+      (Array.isArray(campaign?.pitch) ? campaign.pitch : [])
+        .map((pitchItem) => pitchItem?.userId)
+        .filter(Boolean)
+    );
     const shortlistedUserIds = new Set();
     if (Array.isArray(campaign?.shortlisted)) {
       campaign.shortlisted.forEach((shortlistedItem) => {
-        if (shortlistedItem?.userId) {
+        if (shortlistedItem?.userId && !allPitchUserIds.has(shortlistedItem.userId)) {
           shortlistedUserIds.add(shortlistedItem.userId);
         }
       });
@@ -657,7 +656,11 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
       );
     } else if (selectedFilter === 'sentToCreator') {
       // Sent to creator but not yet submitted
-      result = pitchApprovedAgreements.filter((item) => item.isSent && !['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(item?.submission?.status));
+      result = pitchApprovedAgreements.filter(
+        (item) =>
+          item.isSent &&
+          !['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(item?.submission?.status)
+      );
     } else if (selectedFilter === 'rejected') {
       // Rejected agreements
       result = pitchApprovedAgreements.filter((item) => item?.submission?.status === 'REJECTED');
@@ -915,7 +918,13 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
           justifyContent="flex-start"
           sx={{ mb: 1 }}
         >
-          <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ width: '100%'}} alignSelf="start" spacing={2} mb={0.5}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            sx={{ width: '100%' }}
+            alignSelf="start"
+            spacing={2}
+            mb={0.5}
+          >
             <TextField
               placeholder="Search creators..."
               value={searchQuery}
@@ -952,11 +961,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Iconify
-                      icon="eva:search-fill"
-                      width={18}
-                      sx={{ color: '#637381' }}
-                    />
+                    <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
                   </InputAdornment>
                 ),
               }}
@@ -1420,7 +1425,9 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                                 <Stack direction="row" alignItems="center" spacing={0.5}>
                                   <Iconify
                                     icon={
-                                      tierPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'
+                                      tierPlatform === 'tiktok'
+                                        ? 'ic:baseline-tiktok'
+                                        : 'mdi:instagram'
                                     }
                                     width={15}
                                     sx={{

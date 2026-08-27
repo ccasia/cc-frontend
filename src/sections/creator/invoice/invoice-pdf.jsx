@@ -239,7 +239,7 @@ const InvoicePDF = ({ data }) => {
                       <Text style={styles.tableItem}>{data.campaign.name}</Text>
 
                       {(() => {
-                        if (data?.campaign?.campaignCredits) {
+                        if (data?.campaign?.campaignCredits != null) {
                           return (
                             <View style={{ display: 'flex', flexDirection: 'column', width: '20%' }}>
                               {(() => {
@@ -270,7 +270,7 @@ const InvoicePDF = ({ data }) => {
                         return <Text style={styles.tableItem}>Video</Text>;
                       })()}
 
-                      {data?.campaign?.campaignCredits ? (
+                      {data?.campaign?.campaignCredits != null ? (
                         <View style={{ display: 'flex', flexDirection: 'column', width: '20%' }}>
                           {data?.deliverables?.length ? (
                             data?.deliverables?.map((item, index) => (

@@ -56,7 +56,7 @@ import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-vie
 
 import CampaignFAQ from '../campaign-faq';
 import CampaignOverview from '../campaign-overview';
-import CampaignAnalytics from '../campaign-analytics';
+import CampaignAnalysis from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
@@ -201,7 +201,7 @@ const CampaignDetailView = ({
 
   const isCampaignHasSpreadSheet = campaign?.spreadSheetURL;
 
-  const { data: campaignAgreements } = useGetAgreements(campaign?.id);
+  const { data: campaignAgreements } = useGetAgreements(isDemo ? null : campaign?.id);
 
   const agreementSubmissions = useMemo(
     () => campaign?.submission?.filter((s) => s.submissionType?.type === 'AGREEMENT_FORM'),
@@ -239,7 +239,10 @@ const CampaignDetailView = ({
   };
 
   const [currentTab, setCurrentTab] = useState(
-    forcedTab || searchParams.get('tab') || localStorage.getItem('campaigndetail') || 'campaign-content'
+    forcedTab ||
+      searchParams.get('tab') ||
+      localStorage.getItem('campaigndetail') ||
+      'campaign-content'
   );
 
   // Check if user is client (demo sessions render the read-only client view)
@@ -325,7 +328,7 @@ const CampaignDetailView = ({
     return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
   }, [isClient, getClientAllowedTabs]);
 
-  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(id);
+  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(isDemo ? null : id);
 
   const tabsContainerRef = useRef(null);
 
@@ -366,9 +369,15 @@ const CampaignDetailView = ({
         .map((pitch) => pitch.userId)
     );
 
-    // Get shortlisted user IDs (for backwards compatibility)
+    // Get shortlisted user IDs (for backwards compatibility) — only those without a pitch.
+    // V4 caveat: a ShortListedCreator row can exist BEFORE client approval (e.g. after admin
+    // uses Link Creator on a SENT_TO_CLIENT pitch); the pitch's approval gate is the source
+    // of truth when both exist.
+    const allPitchUserIds = new Set((pitches || []).map((pitch) => pitch?.userId).filter(Boolean));
     const shortlistedUserIds = new Set(
-      (shortlisted || []).filter((s) => s?.userId).map((s) => s.userId)
+      (shortlisted || [])
+        .filter((s) => s?.userId && !allPitchUserIds.has(s.userId))
+        .map((s) => s.userId)
     );
 
     // Combine both sets for total agreements
@@ -474,10 +483,7 @@ const CampaignDetailView = ({
                       value: 'logistics',
                     }
                   : null,
-                // {
-                //   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                //   value: 'logistics',
-                // },
+
                 { label: 'FAQ', value: 'faq' },
               ]
             : // Admin/other user tabs
@@ -524,14 +530,7 @@ const CampaignDetailView = ({
                       value: 'logistics',
                     }
                   : null,
-                // {
-                //   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                //   value: 'logistics',
-                // },
-                // {
-                //   label: `Logistics (${campaign?.logistic?.length || 0})`,
-                //   value: 'logistics',
-                // },
+
                 { label: 'FAQ', value: 'faq' },
               ]
           )
@@ -714,11 +713,16 @@ const CampaignDetailView = ({
         );
       case 'analytics':
         return (
-          <CampaignAnalytics
+          <CampaignAnalysis
             campaign={campaign}
             campaignMutate={campaignMutate}
             isDisabled={isDisabled}
           />
+          // <CampaignAnalytics
+          //   campaign={campaign}
+          //   campaignMutate={campaignMutate}
+          //   isDisabled={isDisabled}
+          // />
         );
       case 'faq':
         return <CampaignFAQ />;

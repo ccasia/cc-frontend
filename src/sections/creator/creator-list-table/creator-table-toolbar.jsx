@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import { useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import Popover from '@mui/material/Popover';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';

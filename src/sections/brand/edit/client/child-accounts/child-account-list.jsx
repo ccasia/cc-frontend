@@ -36,7 +36,7 @@ import Scrollbar from 'src/components/scrollbar';
 
 const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPicActivated }) => {
   const router = useRouter();
-  const { initialize } = useAuthContext();
+  const { user, initialize } = useAuthContext();
 
   const [childAccounts, setChildAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -652,30 +652,32 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
           />
           Resend Invitation
         </MenuItem>
-        <MenuItem
-          onClick={() => {
-            impersonateClient(selectedAccount.email);
-          }}
-          sx={{
-            py: 1.25,
-            px: 2,
-            fontSize: 14,
-            '&:hover': { bgcolor: '#F5F5F5' },
-          }}
-        >
-          {isLoading ? (
-            <Iconify
-              icon="line-md:loading-loop"
-              sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
-            />
-          ) : (
-            <Iconify
-              icon="boxicons:user-filled"
-              sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
-            />
-          )}
-          Impersonate
-        </MenuItem>
+        {user?.role === 'superadmin' && (
+          <MenuItem
+            onClick={() => {
+              impersonateClient(selectedAccount.email);
+            }}
+            sx={{
+              py: 1.25,
+              px: 2,
+              fontSize: 14,
+              '&:hover': { bgcolor: '#F5F5F5' },
+            }}
+          >
+            {isLoading ? (
+              <Iconify
+                icon="line-md:loading-loop"
+                sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
+              />
+            ) : (
+              <Iconify
+                icon="boxicons:user-filled"
+                sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }}
+              />
+            )}
+            Impersonate
+          </MenuItem>
+        )}
         <Divider sx={{ my: 0.5 }} />
         <MenuItem
           onClick={() => {

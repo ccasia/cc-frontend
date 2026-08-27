@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useCallback } from 'react';
 
-import { Avatar, Box, Button, Stack, TextField, Typography } from '@mui/material';
+import { Box, Stack, Avatar, Button, TextField, Typography } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
 
@@ -12,12 +12,11 @@ import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
-
-import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
-import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
+import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
 
 import AdminFeedbackPanel from 'src/sections/campaign/manage-creator/v4/submissions/admin-feedback-modal';
-import ConfirmDialogClient from 'src/components/custom-dialog/confirm-dialog-client';
+import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submissions/client-feedback-modal';
+import VideoSubmissionModal from 'src/sections/campaign/manage-creator/v4/submissions/VideoSubmissionModal';
 
 import FeedbackLogs from '../shared/feedback-logs';
 import FeedbackSection from '../shared/feedback-section';
@@ -489,6 +488,8 @@ export default function MobileVideoSubmission({
         rightSideContent={({
           currentTime: modalCurrentTime,
           onSeekTo,
+          onPause,
+          onPlay,
           videoId: modalVideoId,
           videoPage,
           setVideoPage,
@@ -521,7 +522,9 @@ export default function MobileVideoSubmission({
               submissionId={submission.id}
               videoId={modalVideoId || clientVideo?.id || video?.id}
               currentVideoTime={formatModalTime(modalCurrentTime)}
-              onSeekTo={onSeekTo}
+              onSeek={onSeekTo}
+              onPause={onPause}
+              onPlay={onPlay}
               onSendToAdmin={handleSendAndRefresh}
               isLocked={!['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status)}
               isPastVideo={isPastVideo}
@@ -546,6 +549,8 @@ export default function MobileVideoSubmission({
           currentTime: modalCurrentTime,
           duration: modalDuration,
           onSeek,
+          onPause,
+          onPlay,
           videoId: modalVideoId,
           videoPage,
           setVideoPage,
@@ -557,6 +562,8 @@ export default function MobileVideoSubmission({
             currentTime={modalCurrentTime}
             duration={modalDuration}
             onSeek={onSeek}
+            onPause={onPause}
+            onPlay={onPlay}
             submission={modalSubmission || submission}
             campaign={campaign}
             videoId={modalVideoId || video?.id}

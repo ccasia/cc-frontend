@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
@@ -21,6 +22,8 @@ import {
 import { paths } from 'src/routes/paths';
 
 import useGetPackages from 'src/hooks/use-get-packges';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 

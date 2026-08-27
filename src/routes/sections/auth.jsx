@@ -7,8 +7,6 @@ import CompactLayout from 'src/layouts/compact';
 import AuthModernLayout from 'src/layouts/auth/creator';
 
 import { SplashScreen } from 'src/components/loading-screen';
-import CodeInput from 'src/sections/auth-demo/auth-code/code-input';
-import AuthCodeLayout from 'src/sections/auth-demo/auth-code/auth-code-layout';
 
 // ----------------------------------------------------------------------
 
@@ -27,7 +25,9 @@ const VerifyClassicPage = lazy(() => import('src/pages/auth-demo/classic/verify'
 const NewPasswordClassicPage = lazy(() => import('src/pages/auth-demo/classic/new-password'));
 
 const NewLoginPage = lazy(() => import('src/pages/auth-demo/new-login'));
+
 const NewRegisterPage = lazy(() => import('src/pages/auth-demo/new-register'));
+
 const ClientRegisterPage = lazy(() => import('src/pages/auth-demo/client-register'));
 const ForgotPasswordClassicPage = lazy(() => import('src/pages/auth-demo/forget-password'));
 
@@ -99,17 +99,10 @@ const authCreator = {
         <GuestGuard>
           <AuthModernLayout title="Cult Creative">
             <Outlet />
-            {/* <NewRegisterPage /> */}
+            <NewRegisterPage />
           </AuthModernLayout>
         </GuestGuard>
       ),
-      children: [
-        { index: true, element: <NewRegisterPage /> },
-        {
-          path: 'code',
-          element: <AuthCodeLayout />,
-        },
-      ],
     },
     {
       path: 'adminForm',

@@ -240,8 +240,9 @@ const VideoSubmissionModal = ({
     videos = clipped;
   } else {
     // Client/Creator path: keep DESC, filter for clients.
-    const visibleVideos =
-      isClient ? allVideos.filter((v) => CLIENT_ALLOWED_STATUSES.includes(v.status)) : allVideos;
+    const visibleVideos = isClient
+      ? allVideos.filter((v) => CLIENT_ALLOWED_STATUSES.includes(v.status))
+      : allVideos;
     videos =
       visibleVideos.length <= MAX_VIDEO_PAGES
         ? visibleVideos
@@ -261,7 +262,8 @@ const VideoSubmissionModal = ({
 
   const captionText = effectiveSubmission.caption || '';
 
-  const creatorInfo = creator?.user || creator || effectiveSubmission.user || effectiveSubmission.creator || {};
+  const creatorInfo =
+    creator?.user || creator || effectiveSubmission.user || effectiveSubmission.creator || {};
   const creatorName =
     creatorInfo.name || creatorInfo.firstName || effectiveSubmission.creatorName || 'Creator';
   const creatorPhoto =
@@ -311,8 +313,7 @@ const VideoSubmissionModal = ({
     'CLIENT_FEEDBACK',
     'CHANGES_REQUIRED',
   ];
-  const isProcessing =
-    isClientDemo && clientDemoProcessingStatuses.includes(submissionStatus);
+  const isProcessing = isClientDemo && clientDemoProcessingStatuses.includes(submissionStatus);
 
   const getModalStatusColor = (status) => {
     if (isCreator) {
@@ -340,8 +341,8 @@ const VideoSubmissionModal = ({
           return getStatusColor('APPROVED');
         case 'PENDING_REVIEW':
         case 'CHANGES_REQUIRED':
-        case 'CLIENT_FEEDBACK':
         case 'REJECTED':
+        case 'CLIENT_FEEDBACK':
           return getStatusColor('IN_PROGRESS');
         default:
           return getStatusColor(status);
@@ -399,10 +400,11 @@ const VideoSubmissionModal = ({
           return 'APPROVED';
         case 'POSTED':
           return 'POSTED';
-        case 'CLIENT_FEEDBACK':
         case 'CHANGES_REQUIRED':
         case 'REJECTED':
           return 'IN PROGRESS';
+        case 'CLIENT_FEEDBACK':
+          return 'IN REVIEW';
         default:
           return status?.replace(/_/g, ' ') || 'Unknown';
       }
@@ -608,6 +610,7 @@ const VideoSubmissionModal = ({
                 gap: { xs: 1.5, md: 2.5 },
                 minWidth: 0,
                 minHeight: 0,
+                overflow: 'auto',
               }}
             >
               {/* Caption Section */}
@@ -893,7 +896,8 @@ const VideoSubmissionModal = ({
                         playsInline
                         onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)}
                         onLoadedMetadata={(e) => {
-                          if (Number.isFinite(e.target.duration)) setModalDuration(e.target.duration);
+                          if (Number.isFinite(e.target.duration))
+                            setModalDuration(e.target.duration);
                         }}
                         style={{
                           width: '100%',
@@ -909,9 +913,16 @@ const VideoSubmissionModal = ({
                   return (
                     <Typography
                       sx={{
-                        color: 'white',
-                        fontFamily:
-                          'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        zIndex: 10,
+                        color: '#F4F4F4',
+                        bgcolor: '#1C1C1C',
+                        borderRadius: '8px',
+                        borderBottom: '2px solid #000',
+                        overflow: 'hidden',
+                        '&:hover': { bgcolor: '#2C2C2C' },
                       }}
                     >
                       No video available
@@ -953,6 +964,8 @@ const VideoSubmissionModal = ({
                       setModalCurrentTime(seconds);
                     }
                   },
+                  onPause: () => modalVideoRef.current?.pause(),
+                  onPlay: () => modalVideoRef.current?.play(),
                 });
               }
               if (React.isValidElement(rightSideContent)) {

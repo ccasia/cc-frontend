@@ -201,6 +201,11 @@ const CATEGORY_META = {
   'Logistics Resolved':  { color: '#22C55E', bg: '#E8FAF0', icon: 'solar:check-circle-bold' },
   Login:              { color: '#00B8D9', bg: '#E6F9FD', icon: 'solar:login-2-bold' },
   Analytics:          { color: '#00B8D9', bg: '#E6F9FD', icon: 'solar:chart-bold' },
+  Impersonation:           { color: '#8E33FF', bg: '#F3E8FF', icon: 'mdi:incognito' },
+  'Impersonation Started': { color: '#22C55E', bg: '#E8FAF0', icon: 'mdi:incognito' },
+  'Impersonation Ended':   { color: '#FF5630', bg: '#FFEEEB', icon: 'mdi:incognito' },
+  Company:            { color: '#1340FF', bg: '#EBF0FF', icon: 'solar:buildings-2-bold' },
+  Brand:              { color: '#8E33FF', bg: '#F3E8FF', icon: 'solar:tag-bold' },
   Activity:           { color: '#8E8E93', bg: '#F4F4F5', icon: 'solar:info-circle-bold' },
 };
 
@@ -272,23 +277,24 @@ export function formatLogMessage(msg, performer) {
   m = msg.match(/(.+?)'?s? pitch has been rejected/i);
   if (m) return `${qn(m[1])}'s pitch has been ${a('rejected')} by ${p}`;
 
-  // Profile approved/rejected (client)
-  m = msg.match(/(.+?)'?s? profile has been approved by approver (.+)$/i);
-  if (m) return `${qn(m[1])}'s profile has been ${a('approved')} by ${qn(m[2])}`;
-  m = msg.match(/(.+?)'?s? profile has been rejected by approver (.+)$/i);
-  if (m) return `${qn(m[1])}'s profile has been ${a('rejected')} by ${qn(m[2])}`;
+  // Profile approved/rejected (client) — approver may include "<email>"
+  m = msg.match(/(.+?)'?s? profile has been approved by approver (.+?)(?: <([^>]+)>)?$/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('approved')} by ${qn(m[2])}${m[3] ? ` (${m[3]})` : ''}`;
+  m = msg.match(/(.+?)'?s? profile has been rejected by approver (.+?)(?: <([^>]+)>)?$/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('rejected')} by ${qn(m[2])}${m[3] ? ` (${m[3]})` : ''}`;
   m = msg.match(/(.+?)'?s? profile has been approved/i);
   if (m) return `${qn(m[1])}'s profile has been ${a('approved')} by ${p}`;
   m = msg.match(/(.+?)'?s? profile has been rejected/i);
   if (m) return `${qn(m[1])}'s profile has been ${a('rejected')} by ${p}`;
 
-  // Shortlist sent to external approver
-  m = msg.match(/sent creator shortlist for approval to approver (.+?) \((\d+) creators?\)/i);
-  if (m) return `${p} sent creator shortlist for approval to ${qn(m[1])} (${m[2]} creators)`;
+  // Shortlist sent to external approver — approver may include "<email>"
+  m = msg.match(/sent creator shortlist for approval to approver (.+?)(?: <([^>]+)>)? \((\d+) creators?\)/i);
+  if (m)
+    return `${p} sent ${m[3]} creator${m[3] === '1' ? '' : 's'} for approval to ${qn(m[1])}${m[2] ? ` (${m[2]})` : ''}`;
 
-  // Maybe
-  m = msg.match(/[Cc]hose maybe for (.+?) by approver (.+)$/i);
-  if (m) return `${qn(m[1])} has been marked as ${a('maybe')} by ${qn(m[2])}`;
+  // Maybe — approver may include "<email>"
+  m = msg.match(/[Cc]hose maybe for (.+?) by approver (.+?)(?: <([^>]+)>)?$/i);
+  if (m) return `${qn(m[1])} has been marked as ${a('maybe')} by ${qn(m[2])}${m[3] ? ` (${m[3]})` : ''}`;
   m = msg.match(/[Cc]hose maybe for (.+)$/i);
   if (m) return `${qn(m[1])} has been marked as ${a('maybe')} by ${p}`;
 
@@ -518,23 +524,24 @@ export function formatLogSummary(msg, performer) {
   m = msg.match(/(.+?)'?s? pitch has been rejected/i);
   if (m) return `${qn(m[1])}'s pitch has been ${a('rejected')}`;
 
-  // Profile approved/rejected
-  m = msg.match(/(.+?)'?s? profile has been approved by approver (.+)$/i);
-  if (m) return `${qn(m[1])}'s profile has been ${a('approved')} by ${qn(m[2])}`;
-  m = msg.match(/(.+?)'?s? profile has been rejected by approver (.+)$/i);
-  if (m) return `${qn(m[1])}'s profile has been ${a('rejected')} by ${qn(m[2])}`;
+  // Profile approved/rejected — approver may include "<email>"
+  m = msg.match(/(.+?)'?s? profile has been approved by approver (.+?)(?: <([^>]+)>)?$/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('approved')} by ${qn(m[2])}${m[3] ? ` (${m[3]})` : ''}`;
+  m = msg.match(/(.+?)'?s? profile has been rejected by approver (.+?)(?: <([^>]+)>)?$/i);
+  if (m) return `${qn(m[1])}'s profile has been ${a('rejected')} by ${qn(m[2])}${m[3] ? ` (${m[3]})` : ''}`;
   m = msg.match(/(.+?)'?s? profile has been approved/i);
   if (m) return `${qn(m[1])}'s profile has been ${a('approved')}`;
   m = msg.match(/(.+?)'?s? profile has been rejected/i);
   if (m) return `${qn(m[1])}'s profile has been ${a('rejected')}`;
 
-  // Shortlist sent to external approver
-  m = msg.match(/sent creator shortlist for approval to approver (.+?) \((\d+) creators?\)/i);
-  if (m) return `Creator shortlist sent for approval to ${qn(m[1])} (${m[2]} creators)`;
+  // Shortlist sent to external approver — approver may include "<email>"
+  m = msg.match(/sent creator shortlist for approval to approver (.+?)(?: <([^>]+)>)? \((\d+) creators?\)/i);
+  if (m)
+    return `${m[3]} creator${m[3] === '1' ? '' : 's'} sent for approval to ${qn(m[1])}${m[2] ? ` (${m[2]})` : ''}`;
 
-  // Maybe
-  m = msg.match(/[Cc]hose maybe for (.+?) by approver (.+)$/i);
-  if (m) return `${qn(m[1])} has been marked as ${a('maybe')} by ${qn(m[2])}`;
+  // Maybe — approver may include "<email>"
+  m = msg.match(/[Cc]hose maybe for (.+?) by approver (.+?)(?: <([^>]+)>)?$/i);
+  if (m) return `${qn(m[1])} has been marked as ${a('maybe')} by ${qn(m[2])}${m[3] ? ` (${m[3]})` : ''}`;
   m = msg.match(/[Cc]hose maybe for (.+)$/i);
   if (m) return `${qn(m[1])} has been marked as ${a('maybe')}`;
 

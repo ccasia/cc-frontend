@@ -133,7 +133,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
   const [, setError] = useState();
   const approveCreditModal = useBoolean();
   const { mutate } = useGetCampaignById(campaign?.id);
-  
+
   // Ref to track if credits have been synced for this campaign
   const creditsSyncedRef = useRef(false);
   const lastCampaignIdRef = useRef(null);
@@ -169,21 +169,21 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
 
   // Sync credits on mount - runs once per campaign
   const syncCredits = useCallback(async () => {
-    if (!campaign?.id || !campaign?.campaignCredits) return;
-    
+    if (!campaign?.id || campaign?.campaignCredits == null) return;
+
     // Only sync if this is a new campaign or hasn't been synced yet
     if (creditsSyncedRef.current && lastCampaignIdRef.current === campaign.id) {
       return;
     }
-    
+
     try {
       const response = await axiosInstance.post(`/api/campaign/syncCredits/${campaign.id}`);
       console.log('Credits synced:', response.data);
-      
+
       // Mark as synced for this campaign
       creditsSyncedRef.current = true;
       lastCampaignIdRef.current = campaign.id;
-      
+
       // Refresh campaign data to get updated credits
       if (mutate) {
         mutate();
@@ -199,7 +199,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
     if (campaign?.id !== lastCampaignIdRef.current) {
       creditsSyncedRef.current = false;
     }
-    
+
     syncCredits();
   }, [syncCredits, campaign?.id]);
 
@@ -240,17 +240,17 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
 
   const handleCreditFieldChange = (field, value) => {
     const numValue = Number(value) || 0;
-    
+
     setEditCredits((prev) => {
       const newCredits = { ...prev, [field]: numValue };
-      
+
       // Auto-calculate creditsPending if campaignCredits or creditsUtilized changes
       if (field === 'campaignCredits' || field === 'creditsUtilized') {
         const campaignCreds = field === 'campaignCredits' ? numValue : prev.campaignCredits;
         const utilizedCreds = field === 'creditsUtilized' ? numValue : prev.creditsUtilized;
         newCredits.creditsPending = Math.max(0, campaignCreds - utilizedCreds);
       }
-      
+
       return newCredits;
     });
 
@@ -259,7 +259,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
     if (numValue < 0) {
       fieldError = 'Value cannot be negative';
     }
-    
+
     setCreditErrors((prev) => ({ ...prev, [field]: fieldError }));
   };
 
@@ -270,7 +270,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
       toast.error('Please fix validation errors before saving');
       return;
     }
-    
+
     approveCreditModal.onTrue();
   };
 
@@ -384,8 +384,9 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                     CREATOR PITCHES
                   </Typography>
                   <Typography variant="h4">
-                    {localCampaign?.pitch?.filter((pitch) => pitch.type === 'text' || pitch.type === 'video')
-                      ?.length || 0}
+                    {localCampaign?.pitch?.filter(
+                      (pitch) => pitch.type === 'text' || pitch.type === 'video'
+                    )?.length || 0}
                   </Typography>
                 </Stack>
               </Stack>
@@ -447,8 +448,11 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                     PENDING AGREEMENTS
                   </Typography>
                   <Typography variant="h4">
-                    {(localCampaign?.creatorAgreement?.filter((a) => !a.isSent)?.length || 0) ||
-                    (localCampaign?.pitch?.filter((p) => p.status === 'AGREEMENT_PENDING')?.length || 0)}
+                    {localCampaign?.creatorAgreement?.filter((a) => !a.isSent)?.length ||
+                      0 ||
+                      localCampaign?.pitch?.filter((p) => p.status === 'AGREEMENT_PENDING')
+                        ?.length ||
+                      0}
                   </Typography>
                 </Stack>
               </Stack>
@@ -520,22 +524,26 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                       >
                         CREDITS TRACKING
                       </Typography>
-                      {campaign?.campaignCredits && latestPackageItem && !isEditingCredit && (user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) && (
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          // color="primary"
-                          onClick={handleEditCredit}
-                          disabled={propIsDisabled}
-                        >
-                          Edit Credits
-                        </Button>
-                      )}
+                      {campaign?.campaignCredits != null &&
+                        latestPackageItem &&
+                        !isEditingCredit &&
+                        (user?.role === 'superadmin' ||
+                          ['god', 'advanced'].includes(user?.admin?.mode)) && (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            // color="primary"
+                            onClick={handleEditCredit}
+                            disabled={propIsDisabled}
+                          >
+                            Edit Credits
+                          </Button>
+                        )}
                     </Stack>
                   </Box>
 
                   <Stack spacing={[1]}>
-                    {campaign?.campaignCredits && latestPackageItem ? (
+                    {campaign?.campaignCredits != null && latestPackageItem ? (
                       <Stack spacing={1.5} color="text.secondary">
                         {/* Campaign Credits Row */}
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -548,10 +556,14 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                           {isEditingCredit ? (
                             <TextField
                               size="small"
-                              value={editCredits.campaignCredits === 0 ? '' : editCredits.campaignCredits}
+                              value={
+                                editCredits.campaignCredits === 0 ? '' : editCredits.campaignCredits
+                              }
                               type="number"
                               inputProps={{ min: 0 }}
-                              onChange={(e) => handleCreditFieldChange('campaignCredits', e.target.value)}
+                              onChange={(e) =>
+                                handleCreditFieldChange('campaignCredits', e.target.value)
+                              }
                               onKeyDown={(e) => {
                                 if (['e', 'E', '+', '-'].includes(e.key)) {
                                   e.preventDefault();
@@ -566,21 +578,30 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                             />
                           ) : (
                             <Typography
-                              sx={{ 
-                                mt: 1, 
-                                fontSize: '16px', 
-                                fontWeight: 600, 
+                              sx={{
+                                mt: 1,
+                                fontSize: '16px',
+                                fontWeight: 600,
                                 color: '#636366',
-                                cursor: (user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) ? 'pointer' : 'default'
+                                cursor:
+                                  user?.role === 'superadmin' ||
+                                  ['god', 'advanced'].includes(user?.admin?.mode)
+                                    ? 'pointer'
+                                    : 'default',
                               }}
-                              onClick={(user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) ? handleEditCredit : undefined}
+                              onClick={
+                                user?.role === 'superadmin' ||
+                                ['god', 'advanced'].includes(user?.admin?.mode)
+                                  ? handleEditCredit
+                                  : undefined
+                              }
                             >
                               {campaign?.campaignCredits ?? 0} UGC Credits
                             </Typography>
                           )}
                         </Stack>
                         <Divider />
-                        
+
                         {/* Credits Utilized Row */}
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
                           <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
@@ -589,10 +610,14 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                           {isEditingCredit ? (
                             <TextField
                               size="small"
-                              value={editCredits.creditsUtilized === 0 ? '' : editCredits.creditsUtilized}
+                              value={
+                                editCredits.creditsUtilized === 0 ? '' : editCredits.creditsUtilized
+                              }
                               type="number"
                               inputProps={{ min: 0 }}
-                              onChange={(e) => handleCreditFieldChange('creditsUtilized', e.target.value)}
+                              onChange={(e) =>
+                                handleCreditFieldChange('creditsUtilized', e.target.value)
+                              }
                               onKeyDown={(e) => {
                                 if (['e', 'E', '+', '-'].includes(e.key)) {
                                   e.preventDefault();
@@ -603,27 +628,38 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                               helperText={creditErrors.creditsUtilized}
                             />
                           ) : (
-                            <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
+                            <Typography
+                              sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                            >
                               {campaign?.creditsUtilized ?? 0} UGC Credits
                             </Typography>
                           )}
                         </Stack>
                         <Divider />
-                        
+
                         {/* Credits Pending Row */}
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
                           <Typography
-                            sx={{ mb: isEditingCredit ? 0 : -1, fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                            sx={{
+                              mb: isEditingCredit ? 0 : -1,
+                              fontSize: '16px',
+                              fontWeight: 600,
+                              color: '#636366',
+                            }}
                           >
                             Credits Pending
                           </Typography>
                           {isEditingCredit ? (
                             <TextField
                               size="small"
-                              value={editCredits.creditsPending === 0 ? '' : editCredits.creditsPending}
+                              value={
+                                editCredits.creditsPending === 0 ? '' : editCredits.creditsPending
+                              }
                               type="number"
                               inputProps={{ min: 0 }}
-                              onChange={(e) => handleCreditFieldChange('creditsPending', e.target.value)}
+                              onChange={(e) =>
+                                handleCreditFieldChange('creditsPending', e.target.value)
+                              }
                               onKeyDown={(e) => {
                                 if (['e', 'E', '+', '-'].includes(e.key)) {
                                   e.preventDefault();
@@ -660,7 +696,12 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
 
                         {/* Edit Action Buttons */}
                         {isEditingCredit && (
-                          <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 1 }}>
+                          <Stack
+                            direction="row"
+                            justifyContent="flex-end"
+                            spacing={1}
+                            sx={{ mt: 1 }}
+                          >
                             <IconButton
                               size="small"
                               color="error"
@@ -724,15 +765,18 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                         }}
                       >
                         (
-                        {localCampaign?.pitch?.filter((pitch) => pitch.type === 'text' || pitch.type === 'video')
-                          ?.length || 0}
+                        {localCampaign?.pitch?.filter(
+                          (pitch) => pitch.type === 'text' || pitch.type === 'video'
+                        )?.length || 0}
                         )
                       </Typography>
                     </Stack>
                   </Box>
 
                   <Stack spacing={[1]}>
-                    {localCampaign?.pitch?.length > 0 ? (
+                    {localCampaign?.pitch?.filter(
+                      (pitch) => pitch.type === 'text' || pitch.type === 'video'
+                    )?.length ? (
                       localCampaign?.pitch
                         ?.filter((pitch) => pitch.type === 'text' || pitch.type === 'video')
                         ?.map((pitch, index) => (
@@ -745,13 +789,17 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                               pt: 2,
                               pb:
                                 index !==
-                                localCampaign.pitch.filter((p) => p.type === 'text' || p.type === 'video').length -
+                                localCampaign.pitch.filter(
+                                  (p) => p.type === 'text' || p.type === 'video'
+                                ).length -
                                   1
                                   ? 2
                                   : 1,
                               borderBottom:
                                 index !==
-                                localCampaign.pitch.filter((p) => p.type === 'text' || p.type === 'video').length -
+                                localCampaign.pitch.filter(
+                                  (p) => p.type === 'text' || p.type === 'video'
+                                ).length -
                                   1
                                   ? '1px solid #e7e7e7'
                                   : 'none',
@@ -1019,19 +1067,25 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
           </Typography>
           <Stack spacing={1.5}>
             <Stack direction="row" justifyContent="space-between">
-              <Typography variant="body2" fontWeight={600}>Campaign Credits:</Typography>
+              <Typography variant="body2" fontWeight={600}>
+                Campaign Credits:
+              </Typography>
               <Typography variant="body2">
                 {campaign?.campaignCredits ?? 0} → {editCredits.campaignCredits ?? 0}
               </Typography>
             </Stack>
             <Stack direction="row" justifyContent="space-between">
-              <Typography variant="body2" fontWeight={600}>Credits Utilized:</Typography>
+              <Typography variant="body2" fontWeight={600}>
+                Credits Utilized:
+              </Typography>
               <Typography variant="body2">
                 {campaign?.creditsUtilized ?? 0} → {editCredits.creditsUtilized ?? 0}
               </Typography>
             </Stack>
             <Stack direction="row" justifyContent="space-between">
-              <Typography variant="body2" fontWeight={600}>Credits Pending:</Typography>
+              <Typography variant="body2" fontWeight={600}>
+                Credits Pending:
+              </Typography>
               <Typography variant="body2">
                 {campaign?.creditsPending ?? 0} → {editCredits.creditsPending ?? 0}
               </Typography>

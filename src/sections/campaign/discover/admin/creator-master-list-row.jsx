@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
 
-import { Box, Link, Stack, Avatar, Button, Tooltip, TableRow, TableCell, Typography } from '@mui/material';
+import {
+  Box,
+  Link,
+  Stack,
+  Avatar,
+  Button,
+  Tooltip,
+  TableRow,
+  TableCell,
+  Typography,
+} from '@mui/material';
 
 import { getUserDisplay } from 'src/utils/user-display';
 import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
@@ -16,7 +26,16 @@ import Iconify from 'src/components/iconify';
  * CreatorMasterListRow component renders a single creator row in the master list table
  * Displays creator insights sourced directly from pitch payloads
  */
-const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isCreditTier, isSelected, onToggleSelect }) => {
+const CreatorMasterListRow = ({
+  pitch,
+  getStatusInfo,
+  onViewPitch,
+  campaign,
+  isCreditTier,
+  isSelected,
+  onToggleSelect,
+  logistics,
+}) => {
   const theme = useTheme();
   const rowUser = getUserDisplay(pitch.user);
   // Profile link is stored on Creator model
@@ -27,12 +46,29 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
   const tiktokProfileLink = pitch.user?.creator?.tiktokProfileLink;
   const profileUsername = extractUsernameFromProfileLink(profileLink);
 
+  const displayProducts = useMemo(() => {
+    if (!pitch?.user.id || !logistics?.length) return '';
+
+    const info = logistics.find((a) => a.creatorId === pitch?.user.id);
+
+    const items = info?.deliveryDetails?.items ?? [];
+
+    return items
+      .map(({ product, quantity }) =>
+        quantity > 1 ? `${product.productName} (${quantity})` : product.productName
+      )
+      .join(', ');
+  }, [logistics, pitch?.user.id]);
+
   // Extract usernames from profile links
-  const instagramUsername = instagramStats?.username || extractUsernameFromProfileLink(instagramProfileLink);
+  const instagramUsername =
+    instagramStats?.username || extractUsernameFromProfileLink(instagramProfileLink);
+
   const tiktokUsername = tiktokStats?.username || extractUsernameFromProfileLink(tiktokProfileLink);
 
   // Check if we have platform-specific links
-  const hasPlatformLinks = instagramProfileLink || tiktokProfileLink || instagramUsername || tiktokUsername;
+  const hasPlatformLinks =
+    instagramProfileLink || tiktokProfileLink || instagramUsername || tiktokUsername;
 
   // Determine what to display for username, engagement rate and follower count
   const getDisplayData = () => {
@@ -40,12 +76,14 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
     const tkStats = pitch?.user?.creator?.tiktokUser || null;
 
     const pickValue = (...values) => {
-      const foundValue = values.find(value => value === 0 || (value !== undefined && value !== null && value !== ''));
+      const foundValue = values.find(
+        (value) => value === 0 || (value !== undefined && value !== null && value !== '')
+      );
       return foundValue !== undefined ? foundValue : null;
     };
 
     const pickString = (...values) => {
-      const foundValue = values.find(value => typeof value === 'string' && value.trim());
+      const foundValue = values.find((value) => typeof value === 'string' && value.trim());
       return foundValue ? foundValue.trim() : null;
     };
 
@@ -74,13 +112,17 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
         bestAccount.stats?.username,
         igStats?.username,
         tkStats?.username,
-        profileUsername,
+        profileUsername
       );
 
       return {
         username: usernameFromStats || profileUsername || '-',
         engagementRate: pickValue(bestAccount.engagement, pitch?.engagementRate),
-        followerCount: pickValue(bestAccount.followers, pitch?.followerCount, pitch?.user?.creator?.manualFollowerCount),
+        followerCount: pickValue(
+          bestAccount.followers,
+          pitch?.followerCount,
+          pitch?.user?.creator?.manualFollowerCount
+        ),
       };
     }
 
@@ -101,6 +143,14 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
       return {
         name: creatorTier.name,
         creditsPerVideo: creatorTier.creditsPerVideo,
+      };
+    }
+    // Fallback: shortlist snapshot tier (e.g., when a guest creator was linked to a platform
+    // creator whose own Creator.creditTier hasn't been computed)
+    if (pitch?._creditTier) {
+      return {
+        name: pitch._creditTier.name,
+        creditsPerVideo: pitch._creditPerVideo || pitch._creditTier.creditsPerVideo,
       };
     }
     return null;
@@ -149,12 +199,7 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
             }}
           >
             {isSelected && (
-              <Iconify
-                icon="eva:checkmark-fill"
-                width={13}
-                height={13}
-                sx={{ color: '#1340FF' }}
-              />
+              <Iconify icon="eva:checkmark-fill" width={13} height={13} sx={{ color: '#1340FF' }} />
             )}
           </Box>
         </TableCell>
@@ -258,7 +303,11 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
             {/* TikTok row */}
             {(tiktokUsername || tiktokProfileLink) && (
               <Stack direction="row" alignItems="center" spacing={0.5}>
-                <Iconify icon="ic:baseline-tiktok" width={16} sx={{ color: '#000000', flexShrink: 0 }} />
+                <Iconify
+                  icon="ic:baseline-tiktok"
+                  width={16}
+                  sx={{ color: '#000000', flexShrink: 0 }}
+                />
                 <Link
                   onClick={(e) => e.stopPropagation()}
                   href={createSocialProfileUrl(tiktokUsername, 'tiktok') || tiktokProfileLink}
@@ -282,10 +331,18 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
             {profileLink ? (
               <Stack direction="row" alignItems="center" spacing={0.5}>
                 {profileLink?.includes('instagram.com') && (
-                  <Iconify icon="mdi:instagram" width={16} sx={{ color: '#E4405F', flexShrink: 0 }} />
+                  <Iconify
+                    icon="mdi:instagram"
+                    width={16}
+                    sx={{ color: '#E4405F', flexShrink: 0 }}
+                  />
                 )}
                 {profileLink?.includes('tiktok.com') && (
-                  <Iconify icon="ic:baseline-tiktok" width={16} sx={{ color: '#000000', flexShrink: 0 }} />
+                  <Iconify
+                    icon="ic:baseline-tiktok"
+                    width={16}
+                    sx={{ color: '#000000', flexShrink: 0 }}
+                  />
                 )}
                 <Link
                   href={profileLink}
@@ -431,6 +488,7 @@ CreatorMasterListRow.propTypes = {
   isCreditTier: PropTypes.bool,
   isSelected: PropTypes.bool,
   onToggleSelect: PropTypes.func,
+  logistics: PropTypes.array,
 };
 
 export default CreatorMasterListRow;

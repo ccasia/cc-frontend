@@ -112,7 +112,11 @@ const getStatusInfo = (pitch) => {
   );
 };
 
-const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApprovalEntries = [] }) => {
+const CampaignCreatorMasterListClient = ({
+  campaign,
+  campaignMutate,
+  fallbackApprovalEntries = [],
+}) => {
   const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
   const { socket } = useSocketContext();
@@ -136,7 +140,11 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
   const getSelectionBlockedMessage = (pitch) => {
     const normalized = getStatusInfo(pitch).normalizedStatus;
 
-    if (normalized === 'APPROVED' || normalized === 'AGREEMENT_PENDING' || normalized === 'AGREEMENT_SUBMITTED') {
+    if (
+      normalized === 'APPROVED' ||
+      normalized === 'AGREEMENT_PENDING' ||
+      normalized === 'AGREEMENT_SUBMITTED'
+    ) {
       return 'This creator is already approved.';
     }
     if (normalized === 'AWAITING_APPROVAL') {
@@ -203,7 +211,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
     );
   }, [user, campaign]);
 
-  const approverPitchIds = isApproverClient ? (campaign?.approverPitchIds || []) : null;
+  const approverPitchIds = isApproverClient ? campaign?.approverPitchIds || [] : null;
 
   // Mobile-specific state
   const [expandedSections, setExpandedSections] = useState({
@@ -215,6 +223,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
 
   // Fetch V3 pitches for client-created campaigns OR admin-created v4 campaigns
   const fetchV3Pitches = campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4';
+
   const {
     pitches: v3Pitches,
     isLoading: v3PitchesLoading,
@@ -243,47 +252,53 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
   const creators = useMemo(() => {
     if (!campaign) return [];
 
-    if (campaign.submissionVersion === 'v4' && v3Pitches) {
-      const creatorsFromV3 = (
-        v3Pitches
-          .map((pitch) => {
-            const demoStatus = isDemoCampaign ? demoPitchStatuses[pitch.id] : null;
+    // Build lookup of shortlist tier snapshots keyed by userId. Used as a fallback
+    // for tier display when the creator's own Creator.creditTier is null (e.g. after
+    // admin uses Link Creator on a guest -> platform creator without a media kit).
+    const shortlistByUserId = new Map();
+    (campaign.shortlisted || []).forEach((sc) => {
+      if (sc?.userId) shortlistByUserId.set(sc.userId, sc);
+    });
 
-            return {
-              id: pitch.id,
-              pitchId: pitch.id,
-              user: {
-                id: pitch.userId || pitch.user?.id,
-                name: getUserDisplay(pitch.user).name,
-                email: getUserDisplay(pitch.user).email,
-                ig_username: pitch.user?.creator?.instagramUser?.username,
-                tiktok_username: pitch.user?.creator?.tiktokUser?.username,
-                photoURL: pitch.user?.photoURL,
-                status: pitch.user?.status || 'active',
-                creator: pitch.user?.creator,
-                engagementRate: pitch.user?.instagramUser?.engagement_rate,
-                followerCount: pitch.user?.instagramUser?.followers_count,
-                profileLink: pitch.user?.creator?.profileLink,
-              },
-              status: demoStatus || pitch.displayStatus || pitch.status || 'undecided',
-              displayStatus: demoStatus || pitch.displayStatus || pitch.status || 'undecided',
-              createdAt: pitch.createdAt || new Date().toISOString(),
-              type: pitch.type || 'text',
-              content: pitch.content || pitch.user?.creator?.about || 'No content available',
-              adminComments: pitch.adminComments,
-              rejectionReason: pitch.rejectionReason,
-              customRejectionText: pitch.customRejectionText,
-              clientVisibleApprovalNote: pitch.clientVisibleApprovalNote,
-              followerCount: pitch.followerCount,
-              engagementRate: pitch.engagementRate,
-              isShortlisted: false,
-              outreachStatus: pitch.outreachStatus,
-              selectedPlatform: pitch.selectedPlatform,
-            };
-          })
-          .filter((creator) => !!creator.user && !!creator.user.id)
-          .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT')
-      );
+    if (campaign.submissionVersion === 'v4' && v3Pitches) {
+      const creatorsFromV3 = v3Pitches
+        .map((pitch) => {
+          const demoStatus = isDemoCampaign ? demoPitchStatuses[pitch.id] : null;
+
+          return {
+            id: pitch.id,
+            pitchId: pitch.id,
+            user: {
+              id: pitch.userId || pitch.user?.id,
+              name: getUserDisplay(pitch.user).name,
+              email: getUserDisplay(pitch.user).email,
+              ig_username: pitch.user?.creator?.instagramUser?.username,
+              tiktok_username: pitch.user?.creator?.tiktokUser?.username,
+              photoURL: pitch.user?.photoURL,
+              status: pitch.user?.status || 'active',
+              creator: pitch.user?.creator,
+              engagementRate: pitch.user?.instagramUser?.engagement_rate,
+              followerCount: pitch.user?.instagramUser?.followers_count,
+              profileLink: pitch.user?.creator?.profileLink,
+            },
+            status: demoStatus || pitch.displayStatus || pitch.status || 'undecided',
+            displayStatus: demoStatus || pitch.displayStatus || pitch.status || 'undecided',
+            createdAt: pitch.createdAt || new Date().toISOString(),
+            type: pitch.type || 'text',
+            content: pitch.content || pitch.user?.creator?.about || 'No content available',
+            adminComments: pitch.adminComments,
+            rejectionReason: pitch.rejectionReason,
+            customRejectionText: pitch.customRejectionText,
+            clientVisibleApprovalNote: pitch.clientVisibleApprovalNote,
+            followerCount: pitch.followerCount,
+            engagementRate: pitch.engagementRate,
+            isShortlisted: false,
+            outreachStatus: pitch.outreachStatus,
+            selectedPlatform: pitch.selectedPlatform,
+          };
+        })
+        .filter((creator) => !!creator.user && !!creator.user.id)
+        .filter((creator) => creator.status !== 'draft' && creator.status !== 'DRAFT');
 
       if (creatorsFromV3.length > 0) return creatorsFromV3;
     }
@@ -310,8 +325,10 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
             type: 'text',
             content: item.user?.creator?.about || 'No content available',
             isShortlisted: true,
-            outreachStatus: item.outreachStatus,
-            selectedPlatform: item.selectedPlatform,
+            _creditTier: item.creditTier ?? null,
+            _creditPerVideo: item?.creditPerVideo ?? null,
+            outreachStatus: item?.outreachStatus,
+            selectedPlatform: item?.selectedPlatform,
           }))
           .filter((creator) => creator.user && creator.user.creator)
       : [];
@@ -326,31 +343,35 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
               pitch.status !== 'draft' &&
               pitch.status !== 'DRAFT'
           )
-          .map((pitch) => ({
-            id: pitch.id,
-            pitchId: pitch.id,
-            user: {
-              id: pitch.userId || pitch.user?.id,
-              name: pitch.user?.name,
-              ig_username: pitch.user?.creator?.instagramUser?.username,
-              tiktok_username: pitch.user?.creator?.tiktokUser?.username,
-              photoURL: pitch.user?.photoURL,
-              status: pitch.user?.status || 'active',
-              creator: pitch.user?.creator,
-              engagementRate: pitch.user?.instagramUser?.engagement_rate,
-              followerCount: pitch.user?.instagramUser?.followers_count,
-              profileLink: pitch.user?.creator?.profileLink,
-            },
-            status: pitch.status || 'undecided',
-            createdAt: pitch.createdAt || new Date().toISOString(),
-            type: pitch.type || 'text',
-            content: pitch.content || pitch.user?.creator?.about || 'No content available',
-            clientVisibleApprovalNote: pitch.clientVisibleApprovalNote,
-            isShortlisted: false,
-            isV3: false,
-            outreachStatus: pitch.outreachStatus,
-            selectedPlatform: pitch.selectedPlatform,
-          }))
+          .map((pitch) => {
+            const sc = shortlistByUserId.get(pitch.userId || pitch.user?.id);
+            return {
+              pitchId: pitch.id,
+              user: {
+                id: pitch.userId || pitch.user?.id,
+                name: pitch.user?.name,
+                ig_username: pitch.user?.creator?.instagramUser?.username,
+                tiktok_username: pitch.user?.creator?.tiktokUser?.username,
+                photoURL: pitch.user?.photoURL,
+                status: pitch.user?.status || 'active',
+                creator: pitch.user?.creator,
+                engagementRate: pitch.user?.instagramUser?.engagement_rate,
+                followerCount: pitch.user?.instagramUser?.followers_count,
+                profileLink: pitch.user?.creator?.profileLink,
+              },
+              status: pitch.status || 'undecided',
+              createdAt: pitch.createdAt || new Date().toISOString(),
+              type: pitch.type || 'text',
+              content: pitch.content || pitch.user?.creator?.about || 'No content available',
+              isShortlisted: false,
+              // pitchId: pitch.id,
+              isV3: false,
+              outreachStatus: pitch.outreachStatus,
+              _creditTier: sc?.creditTier ?? null,
+              _creditPerVideo: sc?.creditPerVideo ?? null,
+              selectedPlatform: pitch.selectedPlatform,
+            };
+          })
           .filter((creator) => creator.user && creator.user.creator)
       : [];
 
@@ -385,7 +406,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
               followerCount: pitch?.user?.instagramUser?.followers_count,
               profileLink: pitch?.user?.creator?.profileLink,
             },
-            status: statusMap[entry?.status] || pitch?.displayStatus || pitch?.status || 'PENDING_REVIEW',
+            status:
+              statusMap[entry?.status] || pitch?.displayStatus || pitch?.status || 'PENDING_REVIEW',
             displayStatus:
               statusMap[entry?.status] || pitch?.displayStatus || pitch?.status || 'PENDING_REVIEW',
             createdAt: pitch?.createdAt || new Date().toISOString(),
@@ -426,8 +448,6 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
   const handleToggleSort = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
-
-  console.log('List of creators: ', creators);
 
   const filteredCreators = useMemo(() => {
     let filtered = creators;
@@ -629,6 +649,13 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
     return count.toString();
   };
 
+  const pendingCreators = filteredCreators.filter(
+    (p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW'
+  );
+
+  const allPendingSelected =
+    pendingCreators.length > 0 && pendingCreators.every((p) => selectedPitchIds.includes(p.id));
+
   // Mobile View
   if (!mdUp) {
     return (
@@ -694,6 +721,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
                   onToggle={toggleSection}
                   onViewPitch={handleViewPitch}
                   formatFollowerCount={formatFollowerCount}
+                  logistics={campaign?.logistics ?? []}
                 />
               )}
               {approvedPitchCount > 0 && (
@@ -707,6 +735,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
                   onToggle={toggleSection}
                   onViewPitch={handleViewPitch}
                   formatFollowerCount={formatFollowerCount}
+                  logistics={campaign?.logistics ?? []}
                 />
               )}
               {maybeCount > 0 && (
@@ -733,6 +762,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
                   onToggle={toggleSection}
                   onViewPitch={handleViewPitch}
                   formatFollowerCount={formatFollowerCount}
+                  logistics={campaign?.logistics ?? []}
                 />
               )}
               {activeCount === 0 && (
@@ -752,6 +782,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
               onToggle={toggleSection}
               onViewPitch={handleViewPitch}
               formatFollowerCount={formatFollowerCount}
+              logistics={campaign?.logistics ?? []}
             />
           ) : selectedFilter === 'approved_pitch' ? (
             <MobileSection
@@ -764,6 +795,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
               onToggle={toggleSection}
               onViewPitch={handleViewPitch}
               formatFollowerCount={formatFollowerCount}
+              logistics={campaign?.logistics ?? []}
             />
           ) : selectedFilter === 'maybe' ? (
             <MobileSection
@@ -788,6 +820,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
               onToggle={toggleSection}
               onViewPitch={handleViewPitch}
               formatFollowerCount={formatFollowerCount}
+              logistics={campaign?.logistics ?? []}
             />
           )}
         </Box>
@@ -1076,7 +1109,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
               },
             }}
           >
-            Send List for Approval{selectedPitchIds.length > 0 ? ` (${selectedPitchIds.length})` : ''}
+            Send List for Approval
+            {selectedPitchIds.length > 0 ? ` (${selectedPitchIds.length})` : ''}
           </Button>
 
           <TextField
@@ -1169,27 +1203,10 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
                       <Box
                         component="span"
                         sx={{
-                          ...(function () {
-                            const pending = filteredCreators.filter(
-                              (p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW'
-                            );
-                            const allPendingSelected =
-                              pending.length > 0 && pending.every((p) => selectedPitchIds.includes(p.id));
-                            return { allPendingSelected };
-                          })(),
                           width: 18,
                           height: 18,
                           borderRadius: 0,
-                          border: `2px solid ${
-                            (function () {
-                              const pending = filteredCreators.filter(
-                                (p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW'
-                              );
-                              return pending.length > 0 && pending.every((p) => selectedPitchIds.includes(p.id));
-                            })()
-                              ? '#1340FF'
-                              : '#7B7B7B'
-                          }`,
+                          border: `2px solid ${allPendingSelected ? '#1340FF' : '#7B7B7B'}`,
                           bgcolor: 'transparent',
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -1200,12 +1217,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
                           verticalAlign: 'middle',
                         }}
                       >
-                        {(function () {
-                          const pending = filteredCreators.filter(
-                            (p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW'
-                          );
-                          return pending.length > 0 && pending.every((p) => selectedPitchIds.includes(p.id));
-                        })() && (
+                        {allPendingSelected && (
                           <Iconify
                             icon="eva:checkmark-fill"
                             width={13}
@@ -1351,6 +1363,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
                       isSelected={selectedPitchIds.includes(pitch.id)}
                       onToggleSelect={handleTogglePitchSelect}
                       approverPitchIds={approverPitchIds}
+                      logistics={campaign?.logistics ?? []}
                     />
                   ))
                 )}
@@ -1412,7 +1425,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate, fallbackApp
   );
 };
 
-const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
+const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount, logistics }) => {
   const creatorProfile = pitch?.user?.creator || {};
   const instagramStats = creatorProfile.instagramUser || {};
   const tiktokStats = creatorProfile.tiktokUser || {};
@@ -1454,6 +1467,20 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
   const followerCount = bestAccount.followers || pitch?.followerCount;
   const engagementRate = bestAccount.engagement || pitch?.engagementRate;
 
+  const displayProducts = useMemo(() => {
+    if (!pitch?.user.id || !logistics?.length) return '';
+
+    const info = logistics.find((a) => a.creatorId === pitch?.user.id);
+
+    const items = info?.deliveryDetails?.items ?? [];
+
+    return items
+      .map(({ product, quantity }) =>
+        quantity > 1 ? `${product.productName} (${quantity})` : product.productName
+      )
+      .join(', ');
+  }, [logistics, pitch?.user.id]);
+
   return (
     <Card
       onClick={() => onViewPitch(pitch)}
@@ -1473,16 +1500,33 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
               sx={{ width: 35, height: 35 }}
             />
 
-            <Typography
-              variant="subtitle2"
-              fontWeight="bold"
-              lineHeight={1.4}
-              sx={{ color: '#221f20' }}
-              flex={3}
-              alignSelf="center"
-            >
-              {pitch?.user?.name || 'Unknown Creator'}
-            </Typography>
+            <Stack>
+              <Typography
+                variant="subtitle2"
+                fontWeight="bold"
+                lineHeight={1.4}
+                sx={{ color: '#221f20' }}
+                flex={3}
+              >
+                {pitch?.user?.name || 'Unknown Creator'}
+              </Typography>
+
+              {displayProducts && (
+                <Box sx={{ display: 'inline-flex', gap: 0.5, alignItems: 'start' }}>
+                  <Iconify
+                    icon="solar:box-bold"
+                    color="rgba(19, 64, 255, 1)"
+                    width={16}
+                    sx={{ fontWeight: 700 }}
+                  />
+                  <Typography
+                    sx={{ color: 'rgba(19, 64, 255, 1)', fontSize: '12px', fontWeight: 700 }}
+                  >
+                    {displayProducts}
+                  </Typography>
+                </Box>
+              )}
+            </Stack>
 
             <Button
               onClick={() => onViewPitch(pitch)}
@@ -1567,6 +1611,7 @@ const MobileSection = ({
   onToggle,
   onViewPitch,
   formatFollowerCount,
+  logistics,
 }) => (
   <Box sx={{ mb: 2 }}>
     <Button
@@ -1617,6 +1662,7 @@ const MobileSection = ({
               pitch={sectionPitch}
               onViewPitch={onViewPitch}
               formatFollowerCount={formatFollowerCount}
+              logistics={logistics}
             />
           ))
         )}
@@ -1637,6 +1683,7 @@ CampaignCreatorMasterListClient.propTypes = {
 const pitchPropType = PropTypes.shape({
   id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   user: PropTypes.shape({
+    id: PropTypes.string,
     name: PropTypes.string,
     username: PropTypes.string,
     photoURL: PropTypes.string,
@@ -1652,6 +1699,7 @@ MobileCreatorCard.propTypes = {
   pitch: pitchPropType.isRequired,
   onViewPitch: PropTypes.func.isRequired,
   formatFollowerCount: PropTypes.func.isRequired,
+  logistics: PropTypes.array,
 };
 
 MobileSection.propTypes = {
@@ -1664,4 +1712,5 @@ MobileSection.propTypes = {
   onToggle: PropTypes.func.isRequired,
   onViewPitch: PropTypes.func.isRequired,
   formatFollowerCount: PropTypes.func.isRequired,
+  logistics: PropTypes.array,
 };

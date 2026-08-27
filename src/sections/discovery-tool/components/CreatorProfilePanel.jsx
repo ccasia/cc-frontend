@@ -8,6 +8,7 @@ import { formatNumber } from 'src/utils/socialMetricsCalculator';
 import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
+import StarRating from 'src/components/star-rating';
 
 import BookmarkButton from './BookmarkButton';
 import {
@@ -19,7 +20,6 @@ import {
   formatEngagementRate,
   resolveCreatorRating,
 } from './creator-helpers';
-import StarRating from 'src/components/star-rating';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 

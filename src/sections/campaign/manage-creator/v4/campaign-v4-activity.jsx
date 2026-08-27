@@ -14,7 +14,6 @@ import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Card,
-  Chip,
   Stack,
   Paper,
   Button,
@@ -35,6 +34,7 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useUploadingStatus } from 'src/hooks/zustands/useUploadingStatus';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
@@ -799,7 +799,11 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
         PaperProps={{ sx: { borderRadius: 3, bgcolor: '#f4f4f4' } }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 1.5, px: 1.5 }}>
-          <IconButton onClick={() => setPaymentGateOpen(false)} size="small" sx={{ color: '#8e8e93' }}>
+          <IconButton
+            onClick={() => setPaymentGateOpen(false)}
+            size="small"
+            sx={{ color: '#8e8e93' }}
+          >
             <Iconify icon="hugeicons:cancel-01" width={20} />
           </IconButton>
         </Box>
@@ -1165,6 +1169,8 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
   const isFirstUpdateRef = React.useRef(true); // Track if this is the first update
 
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
+
+  const uploadingStatus = useUploadingStatus((state) => state.statusInfo);
 
   // Socket integration for real-time updates
   const { socket } = useSocketContext();
@@ -1535,9 +1541,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
     );
   }
 
-  const { grouped, progress, total, completed } = submissionsData;
-
-  console.log(submissionsData);
+  const { grouped } = submissionsData;
 
   const showPendingAgreementCard = !isAgreementApproved && overviewData?.agreementStatus;
   const showLogisticsCard = isDelivery;
@@ -1564,16 +1568,11 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
         <Typography
           component="span"
           sx={{
-            // color: '#1340FF',
-            // textDecoration: 'underline',
-            // cursor: 'pointer',
-            // fontFamily: 'inherit',
+            cursor: 'pointer',
+            textDecoration: 'underline',
             '&:hover': {
               opacity: 0.8,
             },
-          }}
-          onClick={() => {
-            // Add navigation logic here if needed
           }}
         >
           Campaign Details
@@ -1589,7 +1588,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: 2,
             border: 'none',
-            mb: 2,
+            mb: 1,
           }}
         >
           <Stack
@@ -2000,16 +1999,19 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
           </Collapse>
         </Card>
       )}
+
       {/* Collapsible Submission Cards */}
       {canShowSubmissions && (
         <Stack spacing={2} sx={{ px: 1, pb: 1, mx: -1 }}>
           {/* Video Submissions */}
           {grouped?.videos?.map((video, index) => {
             const isExpanded = expandedSections[video.id];
-            const isNew = isNewSubmission(video);
+            // const isNew = isNewSubmission(video);
             const title = getSubmissionTitle(video, index);
             const status = getSubmissionStatus(video);
             const statusInfo = getSubmissionStatusInfo(status);
+
+            const uploadStatus = uploadingStatus?.find((i) => i?.submissionId === video.id)?.status;
 
             return (
               <Card
@@ -2086,12 +2088,15 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
                         {status}
                       </Typography>
                     </Box>
+                    <Typography>{uploadStatus}</Typography>
                   </Stack>
+
                   <Iconify
                     icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
                     width={20}
                   />
                 </Box>
+
                 {/* Collapsible Content */}
                 <Collapse in={isExpanded}>
                   <Divider />
@@ -2105,6 +2110,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
                           [video.id]: isUploading,
                         }));
                       }}
+                      mutate={mutate}
                       onUpdate={async () => {
                         // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
                         await mutate(
@@ -2139,6 +2145,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
               </Card>
             );
           })}
+
           {/* Photo Submissions */}
           {grouped?.photos?.map((photo, index) => {
             const isExpanded = expandedSections[photo.id];
@@ -2282,7 +2289,9 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
               </Card>
             );
           })}
+
           {/* Raw Footage Submissions */}
+
           {grouped?.rawFootage?.map((rawFootage, index) => {
             const isExpanded = expandedSections[rawFootage.id];
             const isNew = isNewSubmission(rawFootage);

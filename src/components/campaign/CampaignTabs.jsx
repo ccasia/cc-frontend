@@ -2,7 +2,7 @@ import axios from 'axios';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { m, AnimatePresence } from 'framer-motion';
+import { m, useScroll, AnimatePresence, useMotionValueEvent } from 'framer-motion';
 
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -10,6 +10,8 @@ import { Box, Stack, Button, IconButton, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+
+import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 // ----------------------------------------------------------------------
 
@@ -19,7 +21,6 @@ export default function CampaignTabs({ filter = 'active' }) {
   const [filteredTabs, setFilteredTabs] = useState([]);
   const router = useRouter();
   const location = useLocation();
-  // const pageSizing = localStorage.getItem('pageSizing');
 
   const fetchCampaignData = async (campaignId) => {
     try {
@@ -80,7 +81,7 @@ export default function CampaignTabs({ filter = 'active' }) {
     // If filter is empty or "all", show only active campaign tabs
     if (!filter || filter.toLowerCase() === 'all') {
       if (window.campaignTabsStatus) {
-        const filtered = tabs.filter(tab => {
+        const filtered = tabs.filter((tab) => {
           const status = window.campaignTabsStatus[tab.id]?.status?.toLowerCase() || '';
           return status === 'active';
         });
@@ -91,7 +92,7 @@ export default function CampaignTabs({ filter = 'active' }) {
       }
       return;
     }
-    
+
     // If we don't have campaignStatus data in the tabs, we show all tabs
     if (window.campaignTabsStatus) {
       const filtered = tabs.filter((tab) => {
@@ -177,35 +178,35 @@ export default function CampaignTabs({ filter = 'active' }) {
             transition={{ duration: 0.2, ease: 'easeOut' }}
           >
             <Box sx={{ mb: 2, width: '100%', overflow: 'hidden' }}>
-              <Stack 
-                direction="row" 
-                spacing={0} 
+              <Stack
+                direction="row"
+                spacing={0}
                 alignItems="center"
-                sx={{ 
+                sx={{
                   width: '100%',
                   overflowX: 'auto',
                   overflowY: 'hidden',
                   pb: 1,
                   scrollbarWidth: 'thin',
                   scrollbarColor: '#e0e0e0 transparent',
-                  '&::-webkit-scrollbar': { 
+                  '&::-webkit-scrollbar': {
                     height: '6px',
-                    display: 'block'
+                    display: 'block',
                   },
                   '&::-webkit-scrollbar-track': {
-                    backgroundColor: 'transparent'
+                    backgroundColor: 'transparent',
                   },
-                  '&::-webkit-scrollbar-thumb': { 
-                    backgroundColor: '#e0e0e0', 
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: '#e0e0e0',
                     borderRadius: '4px',
                     '&:hover': {
-                      backgroundColor: '#bdbdbd'
-                    }
+                      backgroundColor: '#bdbdbd',
+                    },
                   },
                   // Smooth scrolling
                   scrollBehavior: 'smooth',
                   // Hide scrollbar on mobile but keep functionality
-                  WebkitOverflowScrolling: 'touch'
+                  WebkitOverflowScrolling: 'touch',
                 }}
               >
                 <AnimatePresence mode="popLayout">
@@ -218,25 +219,27 @@ export default function CampaignTabs({ filter = 'active' }) {
                       transition={{ duration: 0.2, ease: 'easeOut' }}
                       style={{ display: 'inline-flex' }}
                     >
-                      <Typography 
-                        variant="caption" 
+                      <Typography
+                        variant="caption"
                         onClick={() => router.push(paths.dashboard.campaign.root)}
-                        sx={{ 
-                          color: '#1340FF', 
+                        sx={{
+                          color: '#1340FF',
                           fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                          fontWeight: 600, 
-                          flexShrink: 0, 
-                          display: 'flex', 
+                          fontWeight: 600,
+                          flexShrink: 0,
+                          display: 'flex',
                           alignItems: 'center',
                           cursor: 'pointer',
                           whiteSpace: 'nowrap',
                           '&:hover': {
-                            textDecoration: 'underline'
-                          }
+                            textDecoration: 'underline',
+                          },
                         }}
                       >
                         {getCampaignTypeText()}
-                        <ArrowForwardIosIcon sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' }, mx: { xs: 0.5, sm: 1 } }} />
+                        <ArrowForwardIosIcon
+                          sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' }, mx: { xs: 0.5, sm: 1 } }}
+                        />
                       </Typography>
                     </m.div>
                   )}
@@ -293,7 +296,7 @@ export default function CampaignTabs({ filter = 'active' }) {
                               size="small"
                               onClick={(e) => handleCloseTab(e, tab.id)}
                               onMouseOver={(e) => e.stopPropagation()}
-                              sx={{ 
+                              sx={{
                                 p: 0,
                                 height: '20px',
                                 width: '20px',
@@ -305,7 +308,7 @@ export default function CampaignTabs({ filter = 'active' }) {
                                 '&:hover': {
                                   backgroundColor: 'rgba(0, 0, 0, 0.04)',
                                   color: '#FF3B30',
-                                }
+                                },
                               }}
                             >
                               <CloseIcon fontSize="small" sx={{ fontSize: '16px' }} />
@@ -321,7 +324,7 @@ export default function CampaignTabs({ filter = 'active' }) {
                               maxWidth: '100%',
                             }}
                           >
-                            {tab.name}
+                            {tab.name}asdas
                           </Box>
                         </Button>
                       </m.div>

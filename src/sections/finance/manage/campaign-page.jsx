@@ -3,15 +3,15 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import {
+  Box,
   Stack,
   Dialog,
+  Button,
   Container,
   Typography,
-  DialogContent,
   IconButton,
+  DialogContent,
   DialogActions,
-  Button,
-  Box,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';

@@ -2,6 +2,7 @@
 import { mutate } from 'swr';
 import isEqual from 'lodash/isEqual';
 import { Toaster } from 'react-hot-toast';
+import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
@@ -16,8 +17,6 @@ import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
 import { TableRow, TableBody, TableCell, LinearProgress } from '@mui/material';
-
-import { useSearchParams } from 'react-router-dom';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -392,7 +391,8 @@ function CreatorTableView() {
           ]}
           action={
             <Stack direction="row" spacing={1.5}>
-              {admin?.role === 'superadmin' && (
+              {(admin?.role === 'superadmin' ||
+                admin?.admin?.role?.slug === 'sales_and_marketing') && (
                 <>
                   <Button
                     variant="outlined"
@@ -491,7 +491,12 @@ function CreatorTableView() {
               const getTabCount = () => {
                 if (tab.value === 'all') return tableData?.length ?? 0;
                 if (tab.value === 'unmarked') {
-                  return tableData?.filter((user) => !user?.mediaKitMandatory).length ?? 0;
+                  return (
+                    tableData?.filter(
+                      (user) =>
+                        !user?.mediaKitMandatory && user?.status?.toLowerCase() !== 'guest'
+                    ).length ?? 0
+                  );
                 }
                 if (tab.value === 'marked') {
                   return tableData?.filter((user) => user?.mediaKitMandatory).length ?? 0;
@@ -700,7 +705,9 @@ function applyFilter({ inputData, comparator, filters, ageRange }) {
 
   if (status !== 'all') {
     if (status === 'unmarked') {
-      inputData = inputData.filter((user) => !user?.mediaKitMandatory);
+      inputData = inputData.filter(
+        (user) => !user?.mediaKitMandatory && user?.status?.toLowerCase() !== 'guest'
+      );
     } else if (status === 'marked') {
       inputData = inputData.filter((user) => user?.mediaKitMandatory);
     } else if (status === 'connected') {

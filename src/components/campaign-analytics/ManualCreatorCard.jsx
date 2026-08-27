@@ -63,7 +63,14 @@ const inlineEditFieldStyle = {
   },
 };
 
-const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled = false }) => {
+const ManualCreatorCard = ({
+  index,
+  entry,
+  campaignId,
+  onUpdate,
+  onDelete,
+  isDisabled = false,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editValues, setEditValues] = useState({
@@ -162,7 +169,28 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
 
   return (
     <Grid item xs={12}>
-      <Box borderRadius={1} border="2px solid #F5F5F5">
+      <Box borderRadius={1} border="2px solid #F5F5F5" position="relative">
+        <Typography
+          sx={{
+            position: 'absolute',
+            left: -30,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            bgcolor: 'black',
+            p: 1,
+            color: 'white',
+            borderRadius: 10,
+            width: 20,
+            height: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          fontWeight="bold"
+          variant="caption"
+        >
+          {index + 1}
+        </Typography>
         <Box sx={{ py: 0.5 }}>
           <Box
             px={2}
@@ -537,7 +565,12 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
               </AnimatePresence>
             </Box>
 
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, minWidth: 0 }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ flexShrink: 0, minWidth: 0 }}
+            >
               <AnimatePresence>
                 {!isEditing && (
                   <Box
@@ -732,7 +765,11 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
                               justifyContent: 'center',
                             }}
                           >
-                            <Iconify icon="mdi:pencil-outline" width={18} sx={{ color: '#221f20' }} />
+                            <Iconify
+                              icon="mdi:pencil-outline"
+                              width={18}
+                              sx={{ color: '#221f20' }}
+                            />
                           </m.div>
                         )}
                       </AnimatePresence>
@@ -1021,7 +1058,11 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled =
                             justifyContent: 'center',
                           }}
                         >
-                          <Iconify icon="mdi:trash-can-outline" width={18} sx={{ color: '#EF4444' }} />
+                          <Iconify
+                            icon="mdi:trash-can-outline"
+                            width={18}
+                            sx={{ color: '#EF4444' }}
+                          />
                         </m.div>
                       )}
                     </AnimatePresence>

@@ -1,11 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import {
-  Box,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Alert, CircularProgress } from '@mui/material';
 
 import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
@@ -78,4 +74,4 @@ CampaignV3PitchesWrapper.propTypes = {
   campaign: PropTypes.object.isRequired,
   campaignMutate: PropTypes.func,
   isDisabled: PropTypes.bool,
-}; 
+};

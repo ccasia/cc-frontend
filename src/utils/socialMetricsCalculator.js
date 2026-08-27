@@ -1,6 +1,6 @@
 export const getMetricValue = (insight, metricName) => {
   if (!insight || !Array.isArray(insight)) return 0;
-  const metric = insight.find(item => item.name === metricName);
+  const metric = insight.find((item) => item.name === metricName);
   return metric ? metric.value : 0;
 };
 
@@ -43,7 +43,7 @@ export const calculateEngagementRate = (insight) => {
   const comments = getMetricValue(insight, 'comments');
   const shares = getMetricValue(insight, 'shares');
   const saved = getMetricValue(insight, 'saved');
-  
+
   if (views === 0) return 0;
   return (((likes + comments + shares + (saved || 0)) / views) * 100).toFixed(2);
 };
@@ -54,23 +54,23 @@ export const calculateEngagementRate = (insight) => {
  * @returns {Object} Transformed entry in insights data format
  */
 export const transformManualEntryToInsight = (entry) => ({
-    submissionId: null, // Manual entries don't have submissionId
-    platform: entry.platform,
-    user: { 
-      name: entry.creatorName, 
-      username: entry.creatorUsername 
-    },
-    postUrl: entry.postUrl || '',
-    insight: [
-      { name: 'views', value: entry.views },
-      { name: 'likes', value: entry.likes },
-      { name: 'comments', value: entry.comments || 0 },
-      { name: 'shares', value: entry.shares },
-      { name: 'saved', value: entry.saved || 0 },
-      { name: 'reach', value: 0 }, // Manual entries don't have reach
-    ],
-    createdAt: entry.createdAt,
-  });
+  submissionId: null, // Manual entries don't have submissionId
+  platform: entry.platform,
+  user: {
+    name: entry.creatorName,
+    username: entry.creatorUsername,
+  },
+  postUrl: entry.postUrl || '',
+  insight: [
+    { name: 'views', value: entry.views },
+    { name: 'likes', value: entry.likes },
+    { name: 'comments', value: entry.comments || 0 },
+    { name: 'shares', value: entry.shares },
+    { name: 'saved', value: entry.saved || 0 },
+    { name: 'reach', value: 0 }, // Manual entries don't have reach
+  ],
+  createdAt: entry.createdAt,
+});
 
 /**
  * Calculate summary statistics from insights data and optional manual entries
@@ -81,52 +81,55 @@ export const transformManualEntryToInsight = (entry) => ({
 export const calculateSummaryStats = (insightsData, manualEntries = []) => {
   // Transform manual entries to insights format
   const transformedManualEntries = manualEntries.map(transformManualEntryToInsight);
-  
+
   // Combine insights and manual entries
   const allData = [...insightsData, ...transformedManualEntries];
-  
+
   if (allData.length === 0) return null;
 
-  const totalViews = allData.reduce((sum, item) => 
-    sum + getMetricValue(item.insight, 'views'), 0);
-  const totalLikes = allData.reduce((sum, item) => 
-    sum + getMetricValue(item.insight, 'likes'), 0);
-  const totalComments = allData.reduce((sum, item) => 
-    sum + getMetricValue(item.insight, 'comments'), 0);
-  const totalShares = allData.reduce((sum, item) => 
-    sum + getMetricValue(item.insight, 'shares'), 0);
-  const totalSaved = allData.reduce((sum, item) => 
-    sum + getMetricValue(item.insight, 'saved'), 0);
-  const totalReach = allData.reduce((sum, item) => 
-    sum + getMetricValue(item.insight, 'reach'), 0);
-  const totalInteractions = allData.reduce((sum, item) => 
-    sum + getMetricValue(item.insight, 'total_interactions'), 0);
+  const totalViews = allData.reduce((sum, item) => sum + getMetricValue(item.insight, 'views'), 0);
+  const totalLikes = allData.reduce((sum, item) => sum + getMetricValue(item.insight, 'likes'), 0);
+  const totalComments = allData.reduce(
+    (sum, item) => sum + getMetricValue(item.insight, 'comments'),
+    0
+  );
+  const totalShares = allData.reduce(
+    (sum, item) => sum + getMetricValue(item.insight, 'shares'),
+    0
+  );
+  const totalSaved = allData.reduce((sum, item) => sum + getMetricValue(item.insight, 'saved'), 0);
+  const totalReach = allData.reduce((sum, item) => sum + getMetricValue(item.insight, 'reach'), 0);
+  const totalInteractions = allData.reduce(
+    (sum, item) => sum + getMetricValue(item.insight, 'total_interactions'),
+    0
+  );
 
   // Calculate average engagement rate
   // For Instagram: (likes + comments + shares + saved) / views
   // For TikTok: (likes + comments + shares) / views
-  const avgEngagementRate = allData.length > 0
-    ? allData.reduce((sum, item) => {
-        const views = getMetricValue(item.insight, 'views');
-        const likes = getMetricValue(item.insight, 'likes');
-        const comments = getMetricValue(item.insight, 'comments');
-        const shares = getMetricValue(item.insight, 'shares');
-        const saved = getMetricValue(item.insight, 'saved');
-        const {platform} = item;
+  const avgEngagementRate =
+    allData.length > 0
+      ? allData.reduce((sum, item) => {
+          const views = getMetricValue(item.insight, 'views');
+          const likes = getMetricValue(item.insight, 'likes');
+          const comments = getMetricValue(item.insight, 'comments');
+          const shares = getMetricValue(item.insight, 'shares');
+          const saved = getMetricValue(item.insight, 'saved');
+          const { platform } = item;
 
-        let engagementRate = 0;
-        if (views > 0) {
-          if (platform === 'Instagram') {
-            // Instagram: (likes + comments + shares + saved) / views
-            engagementRate = ((likes + comments + shares + saved) / views) * 100;
-          } else {
-            // TikTok or other: (likes + comments + shares) / views
-            engagementRate = ((likes + comments + shares) / views) * 100;
+          let engagementRate = 0;
+          if (views > 0) {
+            if (platform === 'Instagram') {
+              // Instagram: (likes + comments + shares + saved) / views
+              engagementRate = ((likes + comments + shares + saved) / views) * 100;
+            } else {
+              // TikTok or other: (likes + comments + shares) / views
+              engagementRate = ((likes + comments + shares) / views) * 100;
+            }
           }
-        }
-        return sum + engagementRate;
-      }, 0) / allData.length
-    : 0;
+          return sum + engagementRate;
+        }, 0) / allData.length
+      : 0;
 
   return {
     totalPosts: allData.length,

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 import { Box, Stack, Avatar, Collapse, Typography } from '@mui/material';
 
@@ -28,7 +28,7 @@ function MobileSubmissionRow({
   onUpdate,
   isClient,
   campaignType,
-  isDisabled = false
+  isDisabled = false,
 }) {
   // Status color
   const getClientStatusColor = (submissionStatus, submissionType = null) => {
@@ -55,10 +55,9 @@ function MobileSubmissionRow({
       case 'APPROVE_LINK':
         return getStatusColor('APPROVED');
       case 'PENDING_REVIEW':
-        return getStatusColor('IN_PROGRESS');
       case 'CHANGES_REQUIRED':
-      case 'CLIENT_FEEDBACK':
       case 'REJECTED':
+      case 'CLIENT_FEEDBACK':
         return getStatusColor('IN_PROGRESS');
       default:
         return getStatusColor(submissionStatus);
@@ -108,7 +107,7 @@ function MobileSubmissionRow({
       case 'POSTED':
         return 'POSTED';
       case 'CLIENT_FEEDBACK':
-        return 'IN PROGRESS';
+        return 'IN REVIEW';
       case 'CHANGES_REQUIRED':
       case 'REJECTED':
         return 'IN PROGRESS';
@@ -172,11 +171,7 @@ function MobileSubmissionRow({
           },
         }}
       >
-        <Typography 
-          variant="body1" 
-          fontWeight={700}
-          sx={{ color: 'text.primary' }}
-        >
+        <Typography variant="body1" fontWeight={700} sx={{ color: 'text.primary' }}>
           {label}
         </Typography>
 
@@ -194,12 +189,7 @@ function MobileSubmissionRow({
               bgcolor: '#fff',
             }}
           >
-            <Typography
-              fontSize={12}
-              fontWeight="bold"
-              color={statusColor}
-              noWrap
-            >
+            <Typography fontSize={12} fontWeight="bold" color={statusColor} noWrap>
               {statusLabel}
             </Typography>
           </Box>
@@ -213,9 +203,7 @@ function MobileSubmissionRow({
       </Box>
 
       <Collapse in={isExpanded}>
-        <Box sx={{ bgcolor: '#FAFAFA' }}>
-          {renderSubmissionContent()}
-        </Box>
+        <Box sx={{ bgcolor: '#FAFAFA' }}>{renderSubmissionContent()}</Box>
       </Collapse>
     </Box>
   );
@@ -238,7 +226,14 @@ MobileSubmissionRow.propTypes = {
 
 // ----------------------------------------------------------------------
 
-function MobileCreatorRow({ creator, campaign, isExpanded, onToggle, isDisabled = false }) {
+function MobileCreatorRow({
+  creator,
+  campaign,
+  isExpanded,
+  onToggle,
+  isDisabled = false,
+  displayProducts,
+}) {
   const { user } = useAuthContext();
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
@@ -246,11 +241,10 @@ function MobileCreatorRow({ creator, campaign, isExpanded, onToggle, isDisabled 
 
   const [expandedSubmission, setExpandedSubmission] = useState(null);
 
-  const {
-    grouped,
-    submissionsLoading,
-    submissionsMutate,
-  } = useGetV4Submissions(campaign?.id, creator?.userId);
+  const { grouped, submissionsLoading, submissionsMutate } = useGetV4Submissions(
+    campaign?.id,
+    creator?.userId
+  );
 
   const handleSubmissionToggle = useCallback(
     async (submissionType, submissionId) => {
@@ -272,8 +266,9 @@ function MobileCreatorRow({ creator, campaign, isExpanded, onToggle, isDisabled 
 
   const hasSubmissions =
     (grouped.videos?.length || 0) +
-    (grouped.photos?.length || 0) +
-    (grouped.rawFootage?.length || 0) > 0;
+      (grouped.photos?.length || 0) +
+      (grouped.rawFootage?.length || 0) >
+    0;
 
   return (
     <Box>
@@ -302,9 +297,26 @@ function MobileCreatorRow({ creator, campaign, isExpanded, onToggle, isDisabled 
           >
             {creator.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
-          <Typography variant="subtitle1" fontWeight={500}>
-            {creator.user?.name || 'Unknown Creator'}
-          </Typography>
+          <Stack>
+            <Typography variant="subtitle1" fontWeight={500}>
+              {creator.user?.name || 'Unknown Creator'}
+            </Typography>
+            {displayProducts && (
+              <Box sx={{ display: 'inline-flex', gap: 0.5, alignItems: 'start' }}>
+                <Iconify
+                  icon="solar:box-bold"
+                  color="rgba(19, 64, 255, 1)"
+                  width={16}
+                  sx={{ fontWeight: 700 }}
+                />
+                <Typography
+                  sx={{ color: 'rgba(19, 64, 255, 1)', fontSize: '12px', fontWeight: 700 }}
+                >
+                  {displayProducts}
+                </Typography>
+              </Box>
+            )}
+          </Stack>
         </Box>
 
         <Iconify
@@ -345,73 +357,73 @@ function MobileCreatorRow({ creator, campaign, isExpanded, onToggle, isDisabled 
             }
             return (
               <Stack spacing={0} sx={{ border: '1px solid #E7E7E7' }}>
-              {/* Video Submissions */}
-              {grouped.videos?.map((videoSubmission) => {
-                const key = `video-${videoSubmission.id}`;
-                return (
-                  <MobileSubmissionRow
-                    key={key}
-                    type="video"
-                    label="Video"
-                    icon="/assets/icons/components/ugc_vid.png"
-                    status={videoSubmission.status}
-                    isExpanded={expandedSubmission === key}
-                    onToggle={() => handleSubmissionToggle('video', videoSubmission.id)}
-                    submission={videoSubmission}
-                    campaign={campaign}
-                    onUpdate={submissionsMutate}
-                    isClient={isClient}
-                    campaignType={campaignType}
-                    isDisabled={isDisabled}
-                  />
-                );
-              })}
+                {/* Video Submissions */}
+                {grouped.videos?.map((videoSubmission) => {
+                  const key = `video-${videoSubmission.id}`;
+                  return (
+                    <MobileSubmissionRow
+                      key={key}
+                      type="video"
+                      label="Video"
+                      icon="/assets/icons/components/ugc_vid.png"
+                      status={videoSubmission.status}
+                      isExpanded={expandedSubmission === key}
+                      onToggle={() => handleSubmissionToggle('video', videoSubmission.id)}
+                      submission={videoSubmission}
+                      campaign={campaign}
+                      onUpdate={submissionsMutate}
+                      isClient={isClient}
+                      campaignType={campaignType}
+                      isDisabled={isDisabled}
+                    />
+                  );
+                })}
 
-              {/* Photo Submissions */}
-              {grouped.photos?.map((photoSubmission) => {
-                const key = `photo-${photoSubmission.id}`;
-                return (
-                  <MobileSubmissionRow
-                    key={key}
-                    type="photo"
-                    label="Photos"
-                    icon="/assets/icons/components/photo.png"
-                    status={photoSubmission.status}
-                    isExpanded={expandedSubmission === key}
-                    onToggle={() => handleSubmissionToggle('photo', photoSubmission.id)}
-                    submission={photoSubmission}
-                    campaign={campaign}
-                    onUpdate={submissionsMutate}
-                    isClient={isClient}
-                    campaignType={campaignType}
-                    isDisabled={isDisabled}
-                  />
-                );
-              })}
+                {/* Photo Submissions */}
+                {grouped.photos?.map((photoSubmission) => {
+                  const key = `photo-${photoSubmission.id}`;
+                  return (
+                    <MobileSubmissionRow
+                      key={key}
+                      type="photo"
+                      label="Photos"
+                      icon="/assets/icons/components/photo.png"
+                      status={photoSubmission.status}
+                      isExpanded={expandedSubmission === key}
+                      onToggle={() => handleSubmissionToggle('photo', photoSubmission.id)}
+                      submission={photoSubmission}
+                      campaign={campaign}
+                      onUpdate={submissionsMutate}
+                      isClient={isClient}
+                      campaignType={campaignType}
+                      isDisabled={isDisabled}
+                    />
+                  );
+                })}
 
-              {/* Raw Footage Submissions */}
-              {grouped.rawFootage?.map((rawFootageSubmission) => {
-                const key = `rawFootage-${rawFootageSubmission.id}`;
-                return (
-                  <MobileSubmissionRow
-                    key={key}
-                    type="rawFootage"
-                    label="Raw Footages"
-                    icon="/assets/icons/components/raw_footage.png"
-                    status={rawFootageSubmission.status}
-                    isExpanded={expandedSubmission === key}
-                    onToggle={() => handleSubmissionToggle('rawFootage', rawFootageSubmission.id)}
-                    submission={rawFootageSubmission}
-                    campaign={campaign}
-                    onUpdate={submissionsMutate}
-                    isClient={isClient}
-                    campaignType={campaignType}
-                    isDisabled={isDisabled}
-                  />
-                );
-              })}
-            </Stack>
-          );
+                {/* Raw Footage Submissions */}
+                {grouped.rawFootage?.map((rawFootageSubmission) => {
+                  const key = `rawFootage-${rawFootageSubmission.id}`;
+                  return (
+                    <MobileSubmissionRow
+                      key={key}
+                      type="rawFootage"
+                      label="Raw Footages"
+                      icon="/assets/icons/components/raw_footage.png"
+                      status={rawFootageSubmission.status}
+                      isExpanded={expandedSubmission === key}
+                      onToggle={() => handleSubmissionToggle('rawFootage', rawFootageSubmission.id)}
+                      submission={rawFootageSubmission}
+                      campaign={campaign}
+                      onUpdate={submissionsMutate}
+                      isClient={isClient}
+                      campaignType={campaignType}
+                      isDisabled={isDisabled}
+                    />
+                  );
+                })}
+              </Stack>
+            );
           })()}
         </Box>
       </Collapse>
@@ -425,12 +437,37 @@ MobileCreatorRow.propTypes = {
   isExpanded: PropTypes.bool.isRequired,
   onToggle: PropTypes.func.isRequired,
   isDisabled: PropTypes.bool,
+  displayProducts: PropTypes.object,
 };
 
 // ----------------------------------------------------------------------
 
-function MobileCreatorRowWithSubmissions({ creator, campaign, isExpanded, onToggle, isDisabled = false }) {
+function MobileCreatorRowWithSubmissions({
+  creator,
+  campaign,
+  isExpanded,
+  onToggle,
+  isDisabled = false,
+}) {
   const { submissions, submissionsLoading } = useGetV4Submissions(campaign?.id, creator?.userId);
+
+  const displayProducts = useMemo(() => {
+    if (!creator || !campaign?.logistics?.length) return '';
+
+    const { logistics } = campaign;
+
+    const info = logistics.find((a) => a.creatorId === creator.user.id);
+
+    const items = info?.deliveryDetails?.items ?? [];
+
+    return items
+      .map(({ product, quantity }) =>
+        quantity > 1 ? `${product.productName} (${quantity})` : product.productName
+      )
+      .join(', ');
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaign.logistics, creator.id]);
 
   // Don't render if loading or if no submissions exist
   if (submissionsLoading || submissions.length === 0) {
@@ -444,6 +481,7 @@ function MobileCreatorRowWithSubmissions({ creator, campaign, isExpanded, onTogg
       isExpanded={isExpanded}
       onToggle={onToggle}
       isDisabled={isDisabled}
+      displayProducts={displayProducts}
     />
   );
 }
@@ -458,7 +496,12 @@ MobileCreatorRowWithSubmissions.propTypes = {
 
 // ----------------------------------------------------------------------
 
-export default function MobileCreatorSubmissions({ campaign, creators, searchTerm, isDisabled = false }) {
+export default function MobileCreatorSubmissions({
+  campaign,
+  creators,
+  searchTerm,
+  isDisabled = false,
+}) {
   const [expandedCreator, setExpandedCreator] = useState(null);
 
   const handleCreatorToggle = useCallback((creatorId) => {

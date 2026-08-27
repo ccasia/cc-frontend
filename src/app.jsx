@@ -14,6 +14,7 @@ import { MotionLazy } from 'src/components/animate/motion-lazy';
 import { SettingsDrawer, SettingsProvider } from 'src/components/settings';
 
 import { AuthProvider } from 'src/auth/context/jwt';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LocalizationProvider } from './locales';
 import { SnackbarProvider } from './components/snackbar';
 import { UnreadMessageCountProvider } from './context/UnreadMessageCountContext';
@@ -21,10 +22,11 @@ import SocketProvider from './socket/context/socket';
 import PopupProvider from './components/popup/popup-provider';
 import NpsProvider from './components/nps-feedback/nps-provider';
 import 'core-js/stable';
-// import CreatorOnBoardingForm from './components/CreatorOnBoardingForm';
 
 // ----------------------------------------------------------------------
-// Test
+
+const queryClient = new QueryClient();
+
 export default function App() {
   const charAt = `
 
@@ -41,38 +43,40 @@ export default function App() {
   useScrollToTop();
 
   return (
-    <AuthProvider>
-      <LocalizationProvider>
-        <SettingsProvider
-          defaultSettings={{
-            themeMode: 'light', // 'light' | 'dark'
-            themeDirection: 'ltr', //  'rtl' | 'ltr'
-            themeContrast: 'default', // 'default' | 'bold'
-            themeLayout: 'vertical', // 'vertical' | 'horizontal' | 'mini'
-            themeColorPresets: 'default', // 'default' | 'cyan' | 'purple' | 'blue' | 'orange' | 'red'
-            themeStretch: false,
-          }}
-        >
-          <ThemeProvider>
-            <SnackbarProvider>
-              <MotionLazy>
-                <SocketProvider>
-                  <PopupProvider>
-                    <NpsProvider>
-                      <UnreadMessageCountProvider>
-                        {/* <CreatorOnBoardingForm /> */}
-                        <SettingsDrawer />
-                        <ProgressBar />
-                        <Router />
-                      </UnreadMessageCountProvider>
-                    </NpsProvider>
-                  </PopupProvider>
-                </SocketProvider>
-              </MotionLazy>
-            </SnackbarProvider>
-          </ThemeProvider>
-        </SettingsProvider>
-      </LocalizationProvider>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <LocalizationProvider>
+          <SettingsProvider
+            defaultSettings={{
+              themeMode: 'light', // 'light' | 'dark'
+              themeDirection: 'ltr', //  'rtl' | 'ltr'
+              themeContrast: 'default', // 'default' | 'bold'
+              themeLayout: 'vertical', // 'vertical' | 'horizontal' | 'mini'
+              themeColorPresets: 'default', // 'default' | 'cyan' | 'purple' | 'blue' | 'orange' | 'red'
+              themeStretch: false,
+            }}
+          >
+            <ThemeProvider>
+              <SnackbarProvider>
+                <MotionLazy>
+                  <SocketProvider>
+                    <PopupProvider>
+                      <NpsProvider>
+                        <UnreadMessageCountProvider>
+                          {/* <CreatorOnBoardingForm /> */}
+                          <SettingsDrawer />
+                          <ProgressBar />
+                          <Router />
+                        </UnreadMessageCountProvider>
+                      </NpsProvider>
+                    </PopupProvider>
+                  </SocketProvider>
+                </MotionLazy>
+              </SnackbarProvider>
+            </ThemeProvider>
+          </SettingsProvider>
+        </LocalizationProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

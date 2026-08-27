@@ -42,6 +42,7 @@ const ApprovalSetupModal = ({
   const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [comments, setComments] = useState({});
 
   const validate = () => {
     let valid = true;
@@ -74,6 +75,10 @@ const ApprovalSetupModal = ({
         approverName: approverName.trim(),
         approverEmail: approverEmail.trim(),
         pitchIds: selectedPitches.map((p) => p.id),
+        csComments: selectedPitches.reduce((acc, p) => {
+          acc[p.id] = comments[p.id] ?? p.adminComments ?? '';
+          return acc;
+        }, {}),
       });
       onSuccess(res.data.link);
     } catch (err) {
@@ -89,8 +94,13 @@ const ApprovalSetupModal = ({
       setApproverEmail('');
       setNameError('');
       setEmailError('');
+      setComments({});
       onClose();
     }
+  };
+
+  const handleCommentChange = (pitchId, value) => {
+    setComments((prev) => ({ ...prev, [pitchId]: value }));
   };
 
   const handleViewPitch = (pitch) => {
@@ -305,6 +315,7 @@ const ApprovalSetupModal = ({
                         const guestUsername = guestRawLink
                           ? extractUsernameFromProfileLink(guestRawLink)
                           : null;
+                        // eslint-disable-next-line no-nested-ternary
                         const guestHref = guestRawLink
                           ? guestRawLink.startsWith('http')
                             ? guestRawLink
@@ -314,9 +325,8 @@ const ApprovalSetupModal = ({
 
                         return (
                         <TableRow
-                          key={pitch.id}
                           sx={{
-                            '& td': { borderBottom: '1px solid', borderColor: '#EAEAEA' },
+                            '& td': { borderBottom: 'none', borderColor: '#EAEAEA' },
                             bgcolor: 'transparent',
                           }}
                         >

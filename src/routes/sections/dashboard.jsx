@@ -52,8 +52,8 @@ const PostingLinkSuperadminView = lazy(
 const AdminEditCampaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
 );
-const DraftCampaignList = lazy(() => import('src/pages/dashboard/campaign/draftList'));
-const DraftCampaignDetail = lazy(() => import('src/pages/dashboard/campaign/draftDetail'));
+// const DraftCampaignList = lazy(() => import('src/pages/dashboard/campaign/draftList'));
+// const DraftCampaignDetail = lazy(() => import('src/pages/dashboard/campaign/draftDetail'));
 const CampaignBriefList = lazy(() => import('src/pages/dashboard/campaign/briefList'));
 const CampaignBriefDetail = lazy(() => import('src/pages/dashboard/campaign/briefDetail'));
 const CampaignPitchDetail = lazy(
@@ -102,8 +102,8 @@ const DiscoveryTool = lazy(() => import('src/pages/dashboard/discovery-tool/disc
 
 // Client Demo Campaigns
 const DemoCampaigns = lazy(() => import('src/pages/dashboard/demo-campaigns/demo-campaigns'));
-const DemoCampaignDetails = lazy(() =>
-  import('src/pages/dashboard/demo-campaigns/demo-campaign-details')
+const DemoCampaignDetails = lazy(
+  () => import('src/pages/dashboard/demo-campaigns/demo-campaign-details')
 );
 
 // Roles
@@ -123,8 +123,8 @@ const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 // Credit Tier
 const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tier'));
 // Videos of the Month
-const VideoOfTheMonth = lazy(() =>
-  import('src/pages/dashboard/video-of-the-month/video-of-the-month')
+const VideoOfTheMonth = lazy(
+  () => import('src/pages/dashboard/video-of-the-month/video-of-the-month')
 );
 // Find Cipta — one-time treasure hunt event (superadmin only)
 const FindCipta = lazy(() => import('src/pages/dashboard/treasure-hunts/find-cipta'));
@@ -145,12 +145,6 @@ const FaqPage = lazy(() => import('src/pages/faq'));
 
 // Report AI Configuration Page
 const ReportAiConfiguration = lazy(() => import('src/pages/dashboard/report-ai-configuration'));
-
-// Whatsapp Dashboard Page
-const WhatsappDashboardPage = lazy(() => import('src/pages/dashboard/whatsapp-page'));
-
-// BD Dashboard Page
-const BDInviteLinkPage = lazy(() => import('src/pages/dashboard/bd/invite-link'));
 
 // ----------------------------------------------------------------------
 
@@ -270,7 +264,7 @@ export const dashboardRoutes = [
         children: [
           {
             element: (
-              <RoleBasedGuard roles={['superadmin', 'god', 'client_demo']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'god', 'client_demo', 'admin']} hasContent>
                 <DiscoveryTool />
               </RoleBasedGuard>
             ),
@@ -535,7 +529,18 @@ export const dashboardRoutes = [
               {
                 index: true,
                 element: (
-                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing', 'CSM', 'CSL']}>
+                  <RoleBasedGuard
+                    hasContent
+                    roles={[
+                      'superadmin',
+                      'BD',
+                      'god',
+                      'admin',
+                      'sales_and_marketing',
+                      'CSM',
+                      'CSL',
+                    ]}
+                  >
                     <CampaignBriefList />
                   </RoleBasedGuard>
                 ),
@@ -543,7 +548,18 @@ export const dashboardRoutes = [
               {
                 path: ':id',
                 element: (
-                  <RoleBasedGuard hasContent roles={['superadmin', 'BD', 'god', 'admin', 'sales_and_marketing', 'CSM', 'CSL']}>
+                  <RoleBasedGuard
+                    hasContent
+                    roles={[
+                      'superadmin',
+                      'BD',
+                      'god',
+                      'admin',
+                      'sales_and_marketing',
+                      'CSM',
+                      'CSL',
+                    ]}
+                  >
                     <CampaignBriefDetail />
                   </RoleBasedGuard>
                 ),
@@ -770,22 +786,6 @@ export const dashboardRoutes = [
       {
         path: 'report-ai',
         element: <ReportAiConfiguration />,
-      },
-      {
-        path: 'whatsapp',
-        element: (
-          <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
-            <WhatsappDashboardPage />
-          </RoleBasedGuard>
-        ),
-      },
-      {
-        path: 'bd/invite-link',
-        element: (
-          <RoleBasedGuard roles={['superadmin', 'god', 'BD', 'bd', 'sales_and_marketing']} hasContent>
-            <BDInviteLinkPage />,
-          </RoleBasedGuard>
-        ),
       },
     ],
   },

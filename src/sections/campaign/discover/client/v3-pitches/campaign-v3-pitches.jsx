@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { FixedSizeList } from 'react-window';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
@@ -180,13 +180,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
       adminRole === 'sales_and_marketing' &&
       !campaignAdmins.some((a) => a.adminId === user?.id)
     );
-
-    // if (
-    //   userRole === 'admin' &&
-    //   adminRole === 'sales_and_marketing' &&
-    //   !campaignAdmins.some((a) => a.adminId === user?.id)
-    // )
-    //   return false;
   }, [
     campaign?.campaignAdmin,
     user?.admin?.role?.name,
@@ -216,17 +209,17 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   // Before the new system, creators could be shortlisted without having a pitch record
   // We need to display them as "APPROVED" rows to avoid missing data
   const mergedPitchesAndShortlisted = useMemo(() => {
-    const shortlistedByUserId = new Map(
-      (shortlistedCreators || [])
-        .filter((sc) => sc?.userId)
-        .map((sc) => [sc.userId, sc])
-    );
+    const shortlistByUserId = new Map();
+    (shortlistedCreators || []).forEach((sc) => {
+      if (sc.userId) shortlistByUserId.set(sc.userId, sc);
+    });
+
     const pitchUserIds = new Set((pitches || []).map((p) => p.userId));
 
     // Enrich regular pitches with shortlisted snapshot values so tier/platform follow
     // last-minute agreement edits (selectedPlatform/creditTier/creditPerVideo).
     const pitchesWithShortlistedSnapshot = (pitches || []).map((pitch) => {
-      const shortlisted = shortlistedByUserId.get(pitch.userId);
+      const shortlisted = shortlistByUserId.get(pitch.userId);
       if (!shortlisted) return pitch;
 
       return {
@@ -368,7 +361,15 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         );
       }
 
-      return isApproved || isPending || sentToClient || isMaybe || isRejected || withdrawn || isAwaitingApproval;
+      return (
+        isApproved ||
+        isPending ||
+        sentToClient ||
+        isMaybe ||
+        isRejected ||
+        withdrawn ||
+        isAwaitingApproval
+      );
     });
 
     if (selectedFilter === 'PENDING_REVIEW') {
@@ -468,8 +469,13 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
             if (pitch._creditTier) {
               return pitch._creditPerVideo || pitch._creditTier?.creditsPerVideo || 0;
             }
-            // For regular pitches, use creator's current tier
-            return pitch.user?.creator?.creditTier?.creditsPerVideo || 0;
+            // For regular pitches, prefer creator's current tier; fall back to shortlist snapshot
+            return (
+              pitch.user?.creator?.creditTier?.creditsPerVideo ||
+              pitch._creditPerVideo ||
+              pitch._creditTier?.creditsPerVideo ||
+              0
+            );
           };
           const tierA = getTierCredits(a);
           const tierB = getTierCredits(b);
@@ -684,6 +690,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
       onUpdate();
     }
   };
+
+  const logistics = useMemo(() => campaign.logistics ?? [], [campaign]);
 
   return (
     <Box sx={{ width: '100%', overflowX: 'auto' }}>
@@ -1419,6 +1427,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                     onRemoved={handleRemoveCreator}
                     onOutreachUpdate={handleOutreachUpdate}
                     isDisabled={isDisabled}
+                    logistics={logistics}
                   />
                 );
               })}
@@ -1492,7 +1501,7 @@ export function AddCreatorModal({ open, onClose, onSelect, campaign }) {
   // For credit tier campaigns: credits = ugcVideos * creditPerVideo (stored on shortlisted creator)
   // For regular campaigns: credits = ugcVideos * 1
   const creditsRemaining = (() => {
-    if (!campaign?.campaignCredits) return null;
+    if (campaign?.campaignCredits == null) return null;
 
     const isCreditTier = campaign?.isCreditTier === true;
 
@@ -1873,7 +1882,9 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   // Get valid creators from rows
   const getValidCreatorsFromRows = () =>
     creatorRows.filter((row) => row.creator !== null).map((row) => row.creator);
-  const hasMissingPlatformSelection = creatorRows.some((row) => row.creator && !row.selectedPlatform);
+  const hasMissingPlatformSelection = creatorRows.some(
+    (row) => row.creator && !row.selectedPlatform
+  );
   const hasMissingFollowerCount = creatorRows.some(
     (row) => row.creator && (!row.followerCount || Number(row.followerCount) <= 0)
   );
@@ -3027,7 +3038,10 @@ export function ViewNonPlatformCreatorsModal({
                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
                   Platform
                 </Typography>
-                <Typography variant="body2" sx={{ color: 'text.primary', textTransform: 'capitalize' }}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: 'text.primary', textTransform: 'capitalize' }}
+                >
                   {creator?.selectedPlatform || '—'}
                 </Typography>
               </Box>

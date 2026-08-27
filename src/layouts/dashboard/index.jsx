@@ -3,8 +3,8 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import { yupResolver } from '@hookform/resolvers/yup';
 import { useState, useEffect } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
@@ -190,15 +190,6 @@ export default function DashboardLayout({ children }) {
       const hasTiktokLink = user.creator?.tiktokProfileLink;
       const hasMediaKit = user.creator?.instagramUser || user.creator?.tiktokUser;
       const isExcluded = EXCLUDED_USER_IDS.includes(user.id);
-
-      console.log('Social Links Modal Check:', {
-        userId: user.id,
-        hasInstagramLink,
-        hasTiktokLink,
-        hasMediaKit,
-        isExcluded,
-        shouldShow: !isExcluded && !hasMediaKit && !hasInstagramLink && !hasTiktokLink,
-      });
 
       // Show social links modal if:
       // 1. User is a creator
@@ -473,12 +464,7 @@ export default function DashboardLayout({ children }) {
               </FormField>
 
               <FormField label="Attachments (upload up to 5 screenshots or images)" required>
-                <RHFUpload
-                  key={submitCount}
-                  name="attachments"
-                  type="file"
-                  multiple
-                />
+                <RHFUpload key={submitCount} name="attachments" type="file" multiple />
               </FormField>
             </Stack>
           </Box>
@@ -662,7 +648,9 @@ export default function DashboardLayout({ children }) {
 
         <CampaignInvitationModal
           open={inviteApprovalPopup.open}
-          onClose={() => setInviteApprovalPopup({ open: false, campaignId: null, campaignName: '' })}
+          onClose={() =>
+            setInviteApprovalPopup({ open: false, campaignId: null, campaignName: '' })
+          }
           onGoToCampaign={handleGoToInvitedCampaign}
           campaignName={inviteApprovalPopup.campaignName}
         />

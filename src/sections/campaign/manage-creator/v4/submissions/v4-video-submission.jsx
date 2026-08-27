@@ -1,11 +1,22 @@
+import { toast } from 'sonner';
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import React, { useMemo, useState, useCallback } from 'react';
+import { produce, enableArrayMethods } from 'immer';
+import { useMutation } from '@tanstack/react-query';
+import React, { useRef, useMemo, useState, useCallback } from 'react';
 
-import { Box } from '@mui/material';
+import { Box, Stack, Divider, Tooltip, TextField, Typography, IconButton } from '@mui/material';
 
-import CustomV4Upload from 'src/components/upload/custom-v4-upload';
+import socket from 'src/hooks/socket';
+import { useBoolean } from 'src/hooks/use-boolean';
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
+import useResumableUpload from 'src/hooks/submissions/use-resumable-upload';
+
+import axiosInstance from 'src/utils/axios';
+
+import Iconify from 'src/components/iconify';
+import CustomV4Upload from 'src/components/upload/custom-v4-upload';
 
 import VideoSubmissionModal from './VideoSubmissionModal';
 import { CreatorFeedbackModal } from './feeedback-component';
@@ -19,6 +30,8 @@ import {
   SubmissionActionButton,
   getSubmissionStatusFlags,
 } from './shared';
+
+enableArrayMethods();
 
 // Helper to parse timestamp string to seconds
 const parseSecondsFromTimestamp = (timeStr) => {
@@ -41,12 +54,57 @@ const readFeedbackViewedCutoffMs = (submissionId) => {
   }
 };
 
-const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange, creator }) => {
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
+};
+
+const formatFileName = (fileName, { maxLength = 100, unique = false, fallback = 'file' } = {}) => {
+  const lastDot = fileName.lastIndexOf('.');
+  const hasExt = lastDot > 0;
+
+  const rawBase = hasExt ? fileName.slice(0, lastDot) : fileName;
+  const rawExt = hasExt ? fileName.slice(lastDot + 1) : '';
+
+  const clean = (value) =>
+    value
+      .normalize('NFKD') // split accents: "é" -> "e" + mark
+      .replace(/[\u0300-\u036f]/g, '') // remove the accent marks
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-') // anything not letter/number -> dash
+      .replace(/^-+|-+$/g, ''); // trim dashes at both ends
+
+  let base = clean(rawBase).slice(0, maxLength).replace(/-+$/, '') || fallback;
+  const ext = clean(rawExt);
+
+  if (unique) base = `${base}-${Date.now()}`;
+
+  return ext ? `${base}.${ext}` : base;
+};
+
+const getFileExt = (fileName) => fileName.split('.').at(-1);
+
+const V4VideoSubmission = ({
+  submission,
+  onUpdate,
+  campaign,
+  onUploadStateChange,
+  creator,
+  mutate,
+}) => {
   // State for modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showNewCommentBorders, setShowNewCommentBorders] = useState(false);
   /** Snapshot of last "viewed" time (ms) before opening modal; null = never viewed */
   const [commentHighlightCutoffMs, setCommentHighlightCutoffMs] = useState(null);
+  const [progress, setProgress] = useState(null);
+  const [uploadId, setUploadId] = useState(null);
+
+  const isEditingFileName = useBoolean();
+  const [fileName, setFileName] = useState('');
 
   const submittedVideo = useMemo(() => {
     const hasSubmittedVideos = submission.video && submission.video.length > 0;
@@ -59,32 +117,33 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
     try {
       const storageKey = `feedback_viewed_${submission.id}`;
       const lastViewedTimestamp = localStorage.getItem(storageKey);
-      
+
       const allFeedback = submission?.feedback || [];
-      const legacyFeedbackTime = allFeedback.length > 0
-        ? Math.max(...allFeedback.map(f => new Date(f.createdAt || 0).getTime()))
-        : 0;
+      const legacyFeedbackTime =
+        allFeedback.length > 0
+          ? Math.max(...allFeedback.map((f) => new Date(f.createdAt || 0).getTime()))
+          : 0;
 
       const allComments = comments || [];
-      const commentTimes = allComments.flatMap(comment => {
+      const commentTimes = allComments.flatMap((comment) => {
         const times = [new Date(comment.createdAt || 0).getTime()];
         if (comment.replies && comment.replies.length > 0) {
-          times.push(...comment.replies.map(r => new Date(r.createdAt || 0).getTime()));
+          times.push(...comment.replies.map((r) => new Date(r.createdAt || 0).getTime()));
         }
         return times;
       });
       const latestCommentTime = commentTimes.length > 0 ? Math.max(...commentTimes) : 0;
 
       const latestFeedbackTime = Math.max(legacyFeedbackTime, latestCommentTime);
-      
+
       if (!lastViewedTimestamp && latestFeedbackTime > 0) {
         return true;
       }
-      
+
       if (lastViewedTimestamp && latestFeedbackTime > parseInt(lastViewedTimestamp, 10)) {
         return true;
       }
-      
+
       return false;
     } catch (error) {
       console.error('Error checking new feedback:', error);
@@ -98,10 +157,13 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
     uploadProgress,
     selectedFiles,
     isReuploadMode,
+
     hasSubmitted,
     caption,
     postingLinks,
     postingLoading,
+    setIsReuploadMode,
+    setSelectedFiles,
     handlePostingLinkChange,
     handleAddPostingLink,
     handleRemovePostingLink,
@@ -227,7 +289,9 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
   const handleVideoClick = useCallback(() => {
     // Only open modal if there's a submitted video (not in reupload mode or selecting new files)
     if (submittedVideo && !isReuploadMode && selectedFiles.length === 0) {
-      setCommentHighlightCutoffMs(hasNewFeedback ? readFeedbackViewedCutoffMs(submission.id) : null);
+      setCommentHighlightCutoffMs(
+        hasNewFeedback ? readFeedbackViewedCutoffMs(submission.id) : null
+      );
       setShowNewCommentBorders(hasNewFeedback);
       setIsModalOpen(true);
     }
@@ -246,6 +310,218 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
     () => relevantFeedback && relevantFeedback.length > 0 && submittedVideo,
     [relevantFeedback, submittedVideo]
   );
+
+  const abortRef = useRef(null);
+
+  const { createSession, isSameFile, probeSession, uploadFrom } = useResumableUpload();
+
+  const mutation = useMutation({
+    mutationKey: ['submission', submission.id],
+    mutationFn: async () => {
+      const file = selectedFiles[0];
+      if (!file) throw new Error('No file selected');
+
+      abortRef.current = new AbortController();
+      const { signal } = abortRef.current;
+      const onProgress = (sent) => setProgress(Math.round((sent / file.size) * 100));
+
+      setProgress(0);
+
+      // ---- 1. Try to reuse an existing session --------------------
+      let session = null;
+      let startAt = 0;
+
+      const { data: existing } = await axiosInstance.get('/api/upload-sessions/', {
+        params: { submissionId: submission.id },
+      });
+
+      const ext = getFileExt(file?.name);
+
+      const newFileName = fileName
+        ? formatFileName(`${fileName}.${ext}`)
+        : formatFileName(file.name);
+
+      const renamedFile = new File([file], existing?.fileName ?? newFileName ?? file.name, {
+        type: file.type,
+        lastModified: file.lastModified,
+      });
+
+      const candidate = (existing?.uploadSessions ?? []).find(
+        (s) => s.gcsSessionUri && isSameFile(renamedFile, s)
+      );
+
+      if (candidate) {
+        const probe = await probeSession(candidate.gcsSessionUri, file.size);
+
+        if (probe.state === 'complete') {
+          // Upload finished last time; only /complete never fired
+          session = { id: candidate.id, uri: candidate.gcsSessionUri };
+          startAt = file.size;
+        } else if (probe.state === 'partial') {
+          session = { id: candidate.id, uri: candidate.gcsSessionUri };
+          startAt = probe.offset;
+        } else {
+          // Expired on Google's side — bin the row and start over
+          await axiosInstance.delete(`/api/upload-sessions/${candidate.id}`);
+        }
+      }
+
+      // ---- 2. Otherwise create a fresh one -------------------------
+      if (!session) {
+        session = await createSession(renamedFile, {
+          campaignId: campaign.id,
+          submissionId: submission.id,
+        });
+      }
+
+      // ---- 3. Join the room BEFORE finishing -----------------------
+      setUploadId(session.id);
+      socket.emit('join:upload', session.id);
+
+      // ---- 4. Upload ------------------------------------------------
+      if (startAt < file.size) {
+        try {
+          await uploadFrom({ uri: session.uri, file, startAt, onProgress, signal });
+        } catch (err) {
+          if (err.message === 'SESSION_GONE') {
+            await axiosInstance.delete(`/api/upload-sessions/${session.id}`);
+            throw new Error('Upload session expired. Please try again.');
+          }
+          throw err;
+        }
+      } else {
+        onProgress(file.size);
+      }
+
+      // ---- 5. Finalise ---------------------------------------------
+      await axiosInstance.patch(`/api/submission/${submission.id}/caption`, { caption });
+      const res = await axiosInstance.post(`/api/upload-sessions/${session.id}/complete`);
+
+      return { session, video: res.data?.video }; // ← no TDZ crash
+    },
+    onSuccess: async (data) => {
+      console.log(data);
+      setProgress(0);
+      setUploadId(null);
+      setSelectedFiles([]);
+      setIsReuploadMode(false);
+      setFileName(null);
+
+      await mutate(
+        produce((draft) => {
+          if (!draft?.grouped) return;
+          const v = draft.grouped.videos.find((a) => a.id === data?.video?.submissionId);
+
+          if (v) {
+            v.status = 'PENDING_REVIEW';
+            v.video = [data?.video];
+          }
+        }),
+        { revalidate: false }
+      );
+      toast.success('Done');
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error(error.message);
+    },
+  });
+
+  const cancelUpload = () => abortRef.current?.abort();
+
+  // useEffect(() => {
+  //   if (!socket) return;
+
+    // const handleProgress = (data) => {
+    //   const { submissionId, progress: compressProgress } = data;
+
+    //   setCompressionProgress((prev) => {
+    //     if (!prev.some((i) => i.submissionId === submissionId)) {
+    //       return [...prev, { submissionId, progress: compressProgress }];
+    //     }
+
+    //     return prev.map((item) =>
+    //       item.submissionId === submissionId ? { ...item, progress: compressProgress } : item
+    //     );
+    //   });
+    // };
+
+    // const handleDone = async (data) => {
+    //   setCompressionProgress(
+    //     produce((draft) => {
+    //       const index = draft.findIndex((a) => a.submissionId === data?.submissionId);
+    //       if (index !== -1) {
+    //         draft.splice(index, 1);
+    //       }
+    //     })
+    //   );
+
+  // setUploadId(null);
+  // setSelectedFiles([]);
+  // setIsReuploadMode(false);
+  // setFileName(null);
+
+  // await mutate(
+  //   produce((draft) => {
+  //     if (!draft?.grouped) return;
+  //     const v = draft.grouped.videos.find((a) => a.id === data?.submissionId);
+
+  //     if (v) {
+  //       v.status = 'PENDING_REVIEW';
+  //       v.video = [data.video];
+  //     }
+  //   }),
+  //   { revalidate: false }
+  // );
+  //   };
+
+  //   socket.on('compression:progress', handleProgress);
+  //   socket.on('status', handleDone);
+
+  //   // eslint-disable-next-line consistent-return
+  //   return () => {
+  //     socket.off('compression:progress', handleProgress);
+  //     socket.off('status', handleDone);
+  //   };
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [onUpdate, setSelectedFiles, mutate]);
+
+  // const { data } = useQuery({
+  //   queryFn: async () => {
+  //     const res = await axiosInstance.get('/api/upload-sessions/', {
+  //       params: {
+  //         status: 'COMPRESSING',
+  //         submissionId: submission.id,
+  //       },
+  //     });
+
+  //     return res.data.uploadSessions[0] || null;
+  //   },
+  //   queryKey: ['upload-session', submission?.id],
+  // });
+
+  // useEffect(() => {
+  //   if (!socket || !data) return;
+
+  //   setStatus({ sessionId: data.id, status: data.status, submissionId: data.submissionId });
+
+    // setCompressionProgress(
+    //   produce((draft) => {
+    //     const existing = draft.find((i) => i.submissionId === data.submissionId);
+
+    //     if (existing) {
+    //       existing.progress = data.progress ?? existing.progress;
+    //     } else {
+    //       draft.push({ submissionId: data.submissionId, progress: data.progress ?? 0 });
+    //     }
+    //   })
+    // );
+
+  //   socket.emit('join:upload', data.id);
+  // }, [data]);
+
+  const ext = selectedFiles[0]?.name?.split('.').at(-1);
+  const textWidth = Math.max((Number(fileName?.length) + (ext?.length ?? 0)) * 10, 35);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
@@ -277,7 +553,9 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
         >
           <CustomV4Upload
             files={selectedFiles}
-            onFilesChange={handleFilesChange}
+            onFilesChange={(files) => {
+              handleFilesChange(files);
+            }}
             disabled={uploading}
             submissionId={submission.id}
             submittedVideo={videoToShow}
@@ -310,7 +588,8 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
             onCaptionChange={handleCaptionChange}
             isCaptionEditable={isCaptionEditable}
             hasPostingLink={
-              requiresPostingLink && (isApproved || isApproveLink || isPosted || isPostingLinkRejected)
+              requiresPostingLink &&
+              (isApproved || isApproveLink || isPosted || isPostingLinkRejected)
             }
             postingLinks={isPostingLinkEditable ? postingLinks : submission.videos || []}
             onPostingLinkChange={handlePostingLinkChange}
@@ -323,16 +602,137 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
             postingLoading={postingLoading}
           />
 
-          <Box sx={{ mt: 'auto', width: '100%' }}>
+          {!!selectedFiles.length && (
+            <m.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                transition: {
+                  type: 'spring',
+                  stiffness: 500,
+                  damping: 30,
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  border: 1,
+                  p: 1.5,
+                  borderRadius: 1,
+                  borderColor: (theme) => theme.palette.grey[400],
+                  boxShadow: 5,
+                }}
+              >
+                {/* <Typography>{JSON.stringify(selectedFiles[0].text(), null, 2)}</Typography> */}
+                <Stack direction="row" alignItems="center" gap={1}>
+                  <Iconify icon="material-symbols:info-outline" />
+                  <Typography variant="subtitle2" sx={{ letterSpacing: 0.4, fontWeight: 500 }}>
+                    File Information
+                  </Typography>
+                </Stack>
+                <Divider sx={{ mx: -1.5, my: 1.5 }} />
+                <Stack gap={1.2}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography style={{ fontSize: 14 }}>File name</Typography>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      gap={0.5}
+                      flex={1 / 2}
+                      justifyContent="end"
+                      textOverflow="clip"
+                      overflow="auto"
+                      minWidth={0}
+                    >
+                      {isEditingFileName.value ? (
+                        <Tooltip title="Cancel">
+                          <IconButton
+                            onClick={() => {
+                              setFileName('');
+                              isEditingFileName.onFalse();
+                            }}
+                          >
+                            <Iconify icon="proicons:cancel" />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title="Edit file name">
+                          <IconButton onClick={isEditingFileName.onTrue}>
+                            <Iconify icon="material-symbols:edit-outline" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+
+                      {isEditingFileName.value ? (
+                        <TextField
+                          value={fileName}
+                          onChange={(e) => {
+                            setFileName(e.target.value);
+                          }}
+                          variant="standard"
+                          sx={{
+                            width: `${textWidth}px`,
+                            transition: 'width 120ms ease',
+                            '& .MuiInput-underline:before': {
+                              borderBottom: 'none',
+                            },
+                            '& .MuiInput-underline:after': {
+                              borderBottom: 'none',
+                            },
+                            '& .MuiInput-underline:hover:not(.Mui-disabled):before': {
+                              borderBottom: 'none',
+                            },
+                            '& .MuiInput-input': {
+                              fontWeight: 800,
+                              textAlign: 'end',
+                              bgcolor: 'redas',
+                            },
+                          }}
+                          autoFocus
+                          InputProps={{
+                            endAdornment: (
+                              <Typography variant="subtitle2">{`.${ext?.toUpperCase()}`}</Typography>
+                            ),
+                          }}
+                        />
+                      ) : (
+                        <Typography variant="subtitle2" style={{ fontSize: 14 }}>
+                          {selectedFiles[0]?.name}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography style={{ fontSize: 14 }}>File type</Typography>
+                    <Typography variant="subtitle2" style={{ fontSize: 14 }}>
+                      {selectedFiles[0]?.type}
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography style={{ fontSize: 14 }}>File size</Typography>
+                    <Typography variant="subtitle2" style={{ fontSize: 14 }}>
+                      {formatFileSize(selectedFiles[0]?.size)}
+                    </Typography>
+                  </Stack>
+                </Stack>
+              </Box>
+            </m.div>
+          )}
+
+          <Stack sx={{ mt: 'auto', width: '100%' }} direction="row" gap={2}>
             <SubmissionActionButton
-              isDisabled={isDisabled}
+              isDisabled={mutation.isPending || uploadId || isDisabled}
               isReuploadButton={isReuploadButton}
               isSubmitButton={isSubmitButton}
-              uploading={uploading}
+              uploading={mutation.isPending || uploadId || uploading}
               postingLoading={postingLoading}
-              uploadProgress={uploadProgress}
+              uploadProgress={progress || uploadProgress || 0}
               onReupload={handleReupload}
-              onSubmit={onSubmit}
+              // onSubmit={onSubmit}
+              onSubmit={() => {
+                mutation.mutate();
+              }}
               onPostingLinkSubmit={handleSubmitPostingLink}
               isPostingLinkEditable={isPostingLinkEditable}
               reuploadText="Reupload Draft"
@@ -345,7 +745,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
                 '@media (min-width: 1201px)': { mt: 0 },
               }}
             />
-          </Box>
+          </Stack>
         </Box>
       </Box>
 
@@ -398,6 +798,7 @@ V4VideoSubmission.propTypes = {
   campaign: PropTypes.object,
   onUploadStateChange: PropTypes.func,
   creator: PropTypes.object,
+  mutate: PropTypes.func,
 };
 
 // Memoize component with custom comparison to prevent unnecessary re-renders

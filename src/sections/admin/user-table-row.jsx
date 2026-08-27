@@ -176,6 +176,7 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
         open={openLogs}
         logs={logs}
         adminName={name}
+        adminPhotoURL={photoURL}
         onClose={() => setOpenLogs(false)}
       />
     </>

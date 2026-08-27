@@ -4,9 +4,9 @@ import { format, getTime, formatDistanceToNow } from 'date-fns';
 
 export function fDate(date, newFormat) {
   const fm = newFormat || 'dd MMM yyyy';
-  
+
   if (!date) return '';
-  
+
   // Handle Date objects directly
   if (date instanceof Date) {
     return format(date, fm);
@@ -43,7 +43,7 @@ export function fToNow(date) {
   const distance = formatDistanceToNow(new Date(date), {
     includeSeconds: true,
   });
-  
+
   return `${distance} ago`;
 }
 
@@ -72,7 +72,7 @@ export function formatDateTime(dateString) {
     year: '2-digit',
     hour: 'numeric',
     minute: '2-digit',
-    hour12: true
+    hour12: true,
   });
   return formatted.replace(/,\s*/, ', ').replace(/\s+(AM|PM)/, '$1');
-};
+}

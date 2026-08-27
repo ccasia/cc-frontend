@@ -1,11 +1,5 @@
-import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-
-import { useSubmissionComments } from 'src/hooks/use-submission-comments';
-
-import { campaignHasClient } from 'src/utils/campaign-flow';
-
-import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { useState, useEffect } from 'react';
 
 import {
   Box,
@@ -20,6 +14,12 @@ import {
   Typography,
   FormControl,
 } from '@mui/material';
+
+import { useSubmissionComments } from 'src/hooks/use-submission-comments';
+
+import { campaignHasClient } from 'src/utils/campaign-flow';
+
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import TypographyMotion from 'src/components/animate/motion-typography';
 import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
@@ -174,7 +174,6 @@ export default function FeedbackActions({
                 {loading ? 'Processing...' : 'Request a Change'}
               </Button>
             )}
-
             {legacyShowChangeRequestForm && (
               <Box
                 display="flex"
@@ -210,7 +209,6 @@ export default function FeedbackActions({
                 </Button>
               </Box>
             )}
-
             {legacyShowApproveButton && (
               <Button
                 variant="contained"
@@ -856,22 +854,6 @@ export default function FeedbackActions({
           );
         })()}
 
-        {/* <TextField
-          multiline
-          rows={3}
-          fullWidth
-          placeholder="Insert optional comments here"
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-          sx={{
-            mt: 1,
-            '& .MuiOutlinedInput-root': {
-              bgcolor: 'background.paper',
-            },
-          }}
-          size="large"
-        /> */}
-
         <VideoSubmissionModal
           open={reviewModalOpen}
           onClose={() => setReviewModalOpen(false)}
@@ -882,6 +864,8 @@ export default function FeedbackActions({
             currentTime,
             duration,
             onSeek,
+            onPause,
+            onPlay,
             videoId,
             videoPage,
             setVideoPage,
@@ -892,6 +876,8 @@ export default function FeedbackActions({
               currentTime={currentTime}
               duration={duration}
               onSeek={onSeek}
+              onPause={onPause}
+              onPlay={onPlay}
               submission={submission}
               campaign={campaign}
               videoId={videoId || submission.video?.[0]?.id}

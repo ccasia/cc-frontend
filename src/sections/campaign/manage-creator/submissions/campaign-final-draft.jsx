@@ -992,7 +992,7 @@ const CampaignFinalDraft = ({
                 (previousSubmission?.status === 'CHANGES_REQUIRED' && feedbacksTesting && feedbacksTesting.length > 0)) && 
         !(submission?.status === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && (
           <>
-            {campaign?.campaignCredits ? (
+            {campaign?.campaignCredits != null ? (
               <Stack spacing={2}>
                 <Box>
                                                               {/* Show feedback when available, or when previous submission has changes required */}
@@ -2235,7 +2235,7 @@ const CampaignFinalDraft = ({
                   <Box sx={{ width: '100%' }}>
                     {/* Large preview area */}
                     <Box sx={{ mb: 3 }}>
-                      {(campaign?.campaignCredits && deliverables?.videos?.length > 0
+                      {(campaign?.campaignCredits != null && deliverables?.videos?.length > 0
                         ? deliverables.videos
                         : [{ url: submission?.content }]
                       ).map(
@@ -2275,7 +2275,7 @@ const CampaignFinalDraft = ({
                     </Box>
 
                     {/* Thumbnails */}
-                    {(campaign?.campaignCredits && deliverables?.videos?.length > 0
+                    {(campaign?.campaignCredits != null && deliverables?.videos?.length > 0
                       ? deliverables.videos
                       : [{ url: submission?.content }]
                     ).length > 1 && (
@@ -2287,7 +2287,7 @@ const CampaignFinalDraft = ({
                           justifyContent: { xs: 'center', sm: 'flex-start' },
                         }}
                       >
-                        {(campaign?.campaignCredits && deliverables?.videos?.length > 0
+                        {(campaign?.campaignCredits != null && deliverables?.videos?.length > 0
                           ? deliverables.videos
                           : [{ url: submission?.content }]
                         ).map((videoItem, index) => (

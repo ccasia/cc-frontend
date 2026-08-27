@@ -63,7 +63,7 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
 
   // Unified credit calculation - credits only count when agreements are sent
   const v4UsedCredits = useMemo(() => {
-    if (!campaign?.campaignCredits) return null;
+    if (campaign?.campaignCredits == null) return null;
     if (!agreements || !campaign?.shortlisted) return 0;
     
     // Get userIds of Platform Creators whose agreements have been sent
@@ -92,7 +92,7 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
   // Watch the form values to calculate real-time credits left
   const watchedCreators = watch('shortlistedCreators');
   const realTimeCreditsLeft = useMemo(() => {
-    if (!campaign?.campaignCredits) return null;
+    if (campaign?.campaignCredits == null) return null;
     
     // Unified calculation: only count credits from sent agreements
     const alreadyUtilized = v4UsedCredits ?? 0;

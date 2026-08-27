@@ -49,8 +49,12 @@ export default function PostingLinkSection({
   const [newPostedLink, setNewPostedLink] = useState('');
   const [addLinkLoading, setAddLinkLoading] = useState(false);
 
-  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  const isSuperAdmin = userRole.toLowerCase() === 'superadmin';
+  const adminRoleName = (user?.admin?.role?.name || '').trim().toLowerCase();
+  const canApproveAdminAddedPostingLink =
+    user?.role === 'superadmin' ||
+    ['god', 'advanced'].includes(user?.admin?.mode) ||
+    adminRoleName === 'csl' ||
+    adminRoleName.includes('cs lead');
 
   const handlePostingLinkChange = useCallback((index, value) => {
     setPostingLinks((prev) => prev.map((link, i) => (i === index ? value : link)));
@@ -227,13 +231,7 @@ export default function PostingLinkSection({
           </Button>
         )}
         {action === 'request_revision' && (
-          <Box
-            display="flex"
-            flexDirection="row"
-            width="100%"
-            gap={1}
-            justifyContent="flex-end"
-          >
+          <Box display="flex" flexDirection="row" width="100%" gap={1} justifyContent="flex-end">
             <Button
               variant="contained"
               color="secondary"
@@ -365,7 +363,6 @@ export default function PostingLinkSection({
             )}
           </Box>
         )}
-
         {isPosted && (
           <Box
             sx={{
@@ -486,16 +483,18 @@ export default function PostingLinkSection({
             ))}
           </Stack>
         )}
-
-        {/* Posting link submitted by creator */}
-        {!isClient && !postingLinkAddedByAdmin && !isPosted && submission.content && renderActionButtons()}
-
+        {/* Posting link submitted by creator */} {/* To be review */}
+        {!isClient &&
+          !postingLinkAddedByAdmin &&
+          !isPosted &&
+          submission.content &&
+          renderActionButtons()}
         {/* Posting link to be approved by superadmin */}
         {!isClient &&
           postingLinkAddedByAdmin &&
           !isPosted &&
           submission.content &&
-          isSuperAdmin &&
+          canApproveAdminAddedPostingLink &&
           renderActionButtons()}
         {/* No posting link yet — admin can enter one (or two) */}
         {!isClient && !submission.content && (
@@ -556,7 +555,6 @@ export default function PostingLinkSection({
             </Box>
           </Box>
         )}
-
         <ConfirmDialogV2
           open={confirmDialogOpen}
           onClose={() => setConfirmDialogOpen(false)}

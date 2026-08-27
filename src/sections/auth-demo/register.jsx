@@ -7,7 +7,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 
 import Link from '@mui/material/Link';
 import { LoadingButton } from '@mui/lab';
-import { Box, Stack, colors, Divider, Typography, IconButton, InputAdornment } from '@mui/material';
+import { Box, Stack, Divider, Typography, IconButton, InputAdornment } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -24,9 +24,6 @@ import FormProvider from 'src/components/hook-form/form-provider';
 
 import CreatorForm from 'src/sections/creator/form/creatorForm';
 
-import PhoneNumberInput from './register-phone';
-
-const LinkMotion = m(Link);
 const StackMotion = m(Stack);
 
 const socialLogins = [
@@ -60,7 +57,6 @@ const Register = () => {
 
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [formData, setFormData] = useState(null);
-  const [isPhoneOption, setIsPhoneOption] = useState(false);
 
   const handleOpenTerms = () => {
     window.open('https://cultcreativeasia.com/my/terms-and-conditions', '_blank');
@@ -364,23 +360,6 @@ const Register = () => {
           Join Now
         </LoadingButton>
 
-        <LinkMotion
-          variant="caption"
-          sx={{
-            color: colors.grey[600],
-            cursor: 'pointer',
-            textDecorationColor: colors.grey[600],
-            alignSelf: 'end',
-          }}
-          underline="always"
-          whileHover={{ scale: 1.1 }}
-          onClick={() => {
-            setIsPhoneOption(true);
-          }}
-        >
-          Continue with phone number
-        </LinkMotion>
-
         <Divider textAlign="center" sx={{ color: 'text.secondary', fontSize: 14 }}>
           More login options
         </Divider>
@@ -484,13 +463,7 @@ const Register = () => {
         {renderHead}
 
         <Box sx={{ mt: 0, textAlign: 'center' }}>
-          <AnimatePresence mode="wait">
-            {isPhoneOption ? (
-              <PhoneNumberInput onBack={() => setIsPhoneOption(false)} />
-            ) : (
-              renderForm
-            )}
-          </AnimatePresence>
+          <AnimatePresence mode="wait">{renderForm}</AnimatePresence>
           {renderTerms}
         </Box>
       </Box>

@@ -1190,19 +1190,48 @@ export default function CampaignLogDetailContent({ log, allLogs, campaign, photo
         </DetailCard>
       </Box>
 
-      {/* ── Creator Journey (collapsible dropdown) ── */}
-      {journey.length > 1 && (
+      {/* ── Creators sent for approval (replaces the Timeline for approval sends) ── */}
+      {log.metadata?.creatorNames?.length > 0 ? (
         <Box sx={{ mx: 2, mb: 1 }}>
-          <DetailCard icon="solar:history-bold" iconColor="#1340FF" headerBg="#EBF0FF" label="Timeline">
-            <JourneyDropdown
-              creatorName={creatorName}
-              creatorPhoto={creatorPhoto}
-              journey={journey}
-              selectedId={log.id}
-              photoMap={photoMap}
-            />
+          <DetailCard
+            icon="solar:users-group-rounded-bold"
+            iconColor="#8E33FF"
+            headerBg="#F3E8FF"
+            label={`Creators Sent (${log.metadata.creatorNames.length})`}
+          >
+            <Stack spacing={1}>
+              {log.metadata.creatorNames.map((name, idx) => (
+                <Box key={`${name}-${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Avatar
+                    src={photoMap?.get(name)}
+                    alt={name}
+                    sx={{ width: 22, height: 22, fontSize: 10, fontWeight: 700 }}
+                  >
+                    {name?.charAt(0)?.toUpperCase()}
+                  </Avatar>
+                  <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#221F20' }}>
+                    {name}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
           </DetailCard>
         </Box>
+      ) : (
+        /* ── Creator Journey (collapsible dropdown) ── */
+        journey.length > 1 && (
+          <Box sx={{ mx: 2, mb: 1 }}>
+            <DetailCard icon="solar:history-bold" iconColor="#1340FF" headerBg="#EBF0FF" label="Timeline">
+              <JourneyDropdown
+                creatorName={creatorName}
+                creatorPhoto={creatorPhoto}
+                journey={journey}
+                selectedId={log.id}
+                photoMap={photoMap}
+              />
+            </DetailCard>
+          </Box>
+        )
       )}
 
       {/* ── Detail cards ── */}

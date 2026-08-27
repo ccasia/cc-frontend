@@ -166,7 +166,7 @@ export function useNavData() {
             icon: ICONS.clients,
           },
           {
-            roles: ['superadmin', 'god', 'sales_and_marketing'],
+            roles: ['superadmin', 'CSM', 'god', 'sales_and_marketing'],
             title: 'Creator Discovery Tool',
             path: paths.dashboard.discoveryTool.root,
             icon: <Iconify icon="material-symbols:feature-search-outline" width={25} />,
@@ -225,12 +225,12 @@ export function useNavData() {
             path: paths.dashboard.reportAi.root,
             icon: <Iconify icon="mingcute:ai-line" width={25} />,
           },
-          {
-            roles: ['superadmin', 'god'],
-            title: 'Whatsapp Business Account',
-            path: paths.dashboard.whatsapp.root,
-            icon: <Iconify icon="ic:baseline-whatsapp" width={25} />,
-          },
+          // {
+          //   roles: ['superadmin', 'god'],
+          //   title: 'Whatsapp Business Account',
+          //   path: paths.dashboard.whatsapp.root,
+          //   icon: <Iconify icon="ic:baseline-whatsapp" width={25} />,
+          // },
         ],
       },
 

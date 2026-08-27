@@ -6,8 +6,8 @@ import { useForm } from 'react-hook-form';
 import { pdf } from '@react-pdf/renderer';
 import { enqueueSnackbar } from 'notistack';
 import { SyncLoader } from 'react-spinners';
-import React, { useMemo, useEffect, useState } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -23,15 +23,15 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 import useGetCreditTiers from 'src/hooks/use-get-credit-tiers';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
 
 import Iconify from 'src/components/iconify';
-import { useSettingsContext } from 'src/components/settings';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFCheckbox, RHFTextField } from 'src/components/hook-form';
 
@@ -89,23 +89,42 @@ const CampaignAgreementEdit = ({
   campaignMutate,
   agreementsMutate,
 }) => {
-  const settings = useSettingsContext();
   const loading = useBoolean();
+
+  const { user } = useAuthContext();
+
+  const isSuperAdmin = user?.role === 'superadmin';
+
   const { data: agreements } = useGetAgreements(campaign?.id);
+
   const { data: creditTierList } = useGetCreditTiers();
 
   const isGuestCreator = agreement?.user?.creator?.isGuest === true;
   const requiresUGCCredits = !isGuestCreator;
-  const [selectedPlatform, setSelectedPlatform] = useState(
-    agreement?.shortlistedCreator?.selectedPlatform || 'instagram'
-  );
 
-  // Get credit tier data for display (only for credit tier campaigns)
+  const shortlistedRecord = agreement?.user?.shortlisted?.[0] || agreement?.shortlistedCreator;
+  const pitchRecord = campaign?.pitch?.find((p) => p.userId === agreement?.user?.id);
+
+  const isSeedingCampaign = useMemo(() => campaign.campaignType === 'seedingCampaign', [campaign]);
+
+  const toFollowerCount = (value) => {
+    const parsed = parseInt(String(value ?? '').replace(/[^0-9]/g, ''), 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  };
+
+  const agreedPlatform =
+    shortlistedRecord?.selectedPlatform || pitchRecord?.selectedPlatform || 'instagram';
+
+  const getSnapshotFollowerCount = (record, platform) =>
+    (record?.selectedPlatform || 'instagram') === platform
+      ? toFollowerCount(record?.followerCount)
+      : 0;
+
+  const [selectedPlatform, setSelectedPlatform] = useState(agreedPlatform);
+
   const getTierData = () => {
-    // Try multiple sources for tier data
-    const shortlisted = agreement?.user?.shortlisted?.[0] || agreement?.shortlistedCreator;
+    const shortlisted = shortlistedRecord;
 
-    // First try: creditTier from shortlisted record
     if (shortlisted?.creditTier) {
       return {
         name: shortlisted.creditTier?.name || 'Unknown Tier',
@@ -113,23 +132,16 @@ const CampaignAgreementEdit = ({
       };
     }
 
-    // Second try: creditTier from creator record (current tier)
-    const creatorTier = agreement?.user?.creator?.creditTier;
-    if (creatorTier) {
-      return {
-        name: creatorTier.name || 'Unknown Tier',
-        creditsPerVideo: creatorTier.creditsPerVideo ?? 1,
-      };
-    }
-
-    // Third try: look in campaign.shortlisted for this user
     const campaignShortlisted = campaign?.shortlisted?.find(
       (s) => s.userId === agreement?.user?.id
     );
     if (campaignShortlisted?.creditTier) {
       return {
         name: campaignShortlisted.creditTier?.name || 'Unknown Tier',
-        creditsPerVideo: campaignShortlisted.creditPerVideo ?? campaignShortlisted.creditTier?.creditsPerVideo ?? 1,
+        creditsPerVideo:
+          campaignShortlisted.creditPerVideo ??
+          campaignShortlisted.creditTier?.creditsPerVideo ??
+          1,
       };
     }
 
@@ -157,29 +169,31 @@ const CampaignAgreementEdit = ({
   );
 
   const getFollowerCountByPlatform = (platform) => {
+    const agreedFollowerCount =
+      getSnapshotFollowerCount(shortlistedRecord, platform) ||
+      getSnapshotFollowerCount(pitchRecord, platform);
+    if (agreedFollowerCount > 0) return agreedFollowerCount;
+
     const creatorData = agreement?.user?.creator;
     if (!creatorData) return 0;
 
-    const hasInstagramConnected = !!creatorData.instagramUser;
-    const hasTiktokConnected = !!creatorData.tiktokUser;
-    const manualInstagramFollowers = creatorData.manualInstagramFollowerCount || 0;
-    const manualTiktokFollowers = creatorData.manualTiktokFollowerCount || 0;
-    const instagramFollowers = creatorData.instagramUser?.followers_count || 0;
-    const tiktokFollowers = creatorData.tiktokUser?.follower_count || 0;
-
     if (platform === 'tiktok') {
-      // If TikTok is connected, always trust media-kit value.
-      if (hasTiktokConnected) return tiktokFollowers;
-      return manualTiktokFollowers || 0;
+      return creatorData.tiktokUser?.follower_count || creatorData.manualTiktokFollowerCount || 0;
     }
 
-    // If Instagram is connected, always trust media-kit value.
-    if (hasInstagramConnected) return instagramFollowers;
-    return manualInstagramFollowers || 0;
+    return (
+      creatorData.instagramUser?.followers_count || creatorData.manualInstagramFollowerCount || 0
+    );
+  };
+
+  const getMediaKitFollowerCount = (platform) => {
+    const creatorData = agreement?.user?.creator;
+    if (platform === 'tiktok') return creatorData?.tiktokUser?.follower_count || 0;
+    return creatorData?.instagramUser?.followers_count || 0;
   };
 
   const methods = useForm({
-    resolver: yupResolver(schema),
+    resolver: !isSeedingCampaign && yupResolver(schema),
     defaultValues: {
       paymentAmount: parseInt(agreement?.shortlistedCreator?.amount, 10) || '',
       currency: agreement?.shortlistedCreator?.currency || 'MYR',
@@ -201,12 +215,17 @@ const CampaignAgreementEdit = ({
   const ugcCreditsValue = watch('ugcCredits');
   const paymentAmountValue = watch('paymentAmount');
   const platformFollowerValue = watch('platformFollowerCount');
-  const originalPlatform = agreement?.shortlistedCreator?.selectedPlatform || 'instagram';
+  const originalPlatform = agreedPlatform;
   const hasPlatformChanged = selectedPlatform !== originalPlatform;
   const selectedPlatformFollower = getFollowerCountByPlatform(selectedPlatform);
-  const requiresPlatformFollowerInput = selectedPlatformFollower <= 0;
-  const effectiveFollowerCountForTier = requiresPlatformFollowerInput
-    ? Number(platformFollowerValue || 0)
+  const mediaKitFollower = getMediaKitFollowerCount(selectedPlatform);
+  // Overwriting a count we already hold is a superadmin call. Supplying one for a platform we
+  // know nothing about is not an override — there is nothing to overwrite, and without it a
+  // tier campaign cannot be priced at all, which leaves the admin with no way to send.
+  const canEditFollowerCount = isSuperAdmin || selectedPlatformFollower <= 0;
+  const platformLabel = selectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram';
+  const effectiveFollowerCountForTier = canEditFollowerCount
+    ? Number(platformFollowerValue || 0) || Number(selectedPlatformFollower || 0)
     : Number(selectedPlatformFollower || 0);
   const liveTierData = useMemo(() => {
     if (!campaign?.isCreditTier || !Array.isArray(creditTierList)) return null;
@@ -221,14 +240,22 @@ const CampaignAgreementEdit = ({
     if (!matched.length) return null;
     return matched.sort((a, b) => (b?.minFollowers || 0) - (a?.minFollowers || 0))[0];
   }, [campaign?.isCreditTier, creditTierList, effectiveFollowerCountForTier]);
-  const previewTierSource = hasPlatformChanged ? liveTierData : (liveTierData || tierData);
-  const displayTierData =
-    campaign?.isCreditTier && previewTierSource
-      ? {
-          name: previewTierSource?.name || 'Unknown Tier',
-          creditsPerVideo: previewTierSource?.creditsPerVideo || 1,
-        }
-      : null;
+  // Only fall back to stored tierData when there is genuinely no follower count (0/unknown).
+  // If we have a count but it doesn't match any tier, show null so the "no match" warning appears.
+  let previewTierSource = tierData || null;
+  if (hasPlatformChanged || effectiveFollowerCountForTier > 0) {
+    previewTierSource = liveTierData;
+  }
+  const displayTierData = useMemo(
+    () =>
+      campaign?.isCreditTier && previewTierSource
+        ? {
+            name: previewTierSource?.name || 'Unknown Tier',
+            creditsPerVideo: previewTierSource?.creditsPerVideo || 1,
+          }
+        : null,
+    [campaign?.isCreditTier, previewTierSource]
+  );
 
   useEffect(() => {
     const currentCredits =
@@ -245,9 +272,12 @@ const CampaignAgreementEdit = ({
 
     setValue('paymentAmount', agreement?.shortlistedCreator?.amount);
     setValue('ugcCredits', currentCredits);
-    setSelectedPlatform(agreement?.shortlistedCreator?.selectedPlatform || 'instagram');
-    setValue('platformFollowerCount', '');
-  }, [setValue, isDefault, agreement]);
+    setSelectedPlatform(agreedPlatform);
+    // Show the count the tier will actually be priced from. Superadmins can correct it;
+    // other admin roles can review the trusted value without overriding it.
+    setValue('platformFollowerCount', String(getFollowerCountByPlatform(agreedPlatform) || ''));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setValue, isDefault, agreement, agreedPlatform]);
 
   // Removed unused handler: inline send flow is handled in onSubmit
 
@@ -263,7 +293,7 @@ const CampaignAgreementEdit = ({
   // Calculate used credits by OTHER creators (excluding current creator)
   // For credit tier campaigns, multiply ugcVideos by creditPerVideo
   const usedCreditsByOthers = React.useMemo(() => {
-    if (!campaign?.campaignCredits) return null;
+    if (campaign?.campaignCredits == null) return null;
     if (!agreements || !campaign?.shortlisted) return 0;
 
     const sentAgreementUserIds = new Set(
@@ -281,8 +311,8 @@ const CampaignAgreementEdit = ({
       ) {
         // For credit tier campaigns, use creditPerVideo multiplier
         const videos = creator.ugcVideos || 0;
-        const creditsPerVideo = campaign?.isCreditTier ? (creator.creditPerVideo || 1) : 1;
-        return acc + (videos * creditsPerVideo);
+        const creditsPerVideo = campaign?.isCreditTier ? creator.creditPerVideo || 1 : 1;
+        return acc + videos * creditsPerVideo;
       }
       return acc;
     }, 0);
@@ -290,7 +320,7 @@ const CampaignAgreementEdit = ({
 
   // Max credits user can enter = total - usedByOthers
   const maxCreditsAllowed = useMemo(() => {
-    if (!campaign?.campaignCredits) return null;
+    if (campaign?.campaignCredits == null) return null;
     if (usedCreditsByOthers === null) return null;
 
     return Math.max(0, Number(campaign.campaignCredits) - usedCreditsByOthers);
@@ -300,20 +330,20 @@ const CampaignAgreementEdit = ({
   const creatorCost = useMemo(() => {
     if (!requiresUGCCredits) return 0;
     const videos = Number(ugcCreditsValue) || 0;
-    return campaign?.isCreditTier
-      ? (displayTierData?.creditsPerVideo || 1) * videos
-      : videos;
+    return campaign?.isCreditTier ? (displayTierData?.creditsPerVideo || 1) * videos : videos;
   }, [campaign?.isCreditTier, ugcCreditsValue, displayTierData, requiresUGCCredits]);
 
   // Calculate remaining credits in real-time as user types
   const realTimeCreditsLeft = useMemo(() => {
-    if (!campaign?.campaignCredits) return null; // Unlimited campaign
+    if (campaign?.campaignCredits == null) return null; // Unlimited campaign (no budget tracking)
     if (maxCreditsAllowed === null) return null;
     return maxCreditsAllowed - creatorCost;
   }, [campaign?.campaignCredits, maxCreditsAllowed, creatorCost]);
 
   // Determine if form is invalid for button state
   const isFormInvalid = useMemo(() => {
+    if (isSeedingCampaign) return false;
+
     // Payment must be filled
     if (!paymentAmountValue || paymentAmountValue === '') return true;
 
@@ -321,11 +351,12 @@ const CampaignAgreementEdit = ({
     if (requiresUGCCredits && (!ugcCreditsValue || ugcCreditsValue === '')) return true;
 
     // For campaigns with credit limits, check if exceeded
-    if (campaign?.campaignCredits && requiresUGCCredits) {
+    if (campaign?.campaignCredits != null && requiresUGCCredits) {
       if (realTimeCreditsLeft !== null && realTimeCreditsLeft < 0) return true;
     }
 
-    if (requiresPlatformFollowerInput && (!platformFollowerValue || Number(platformFollowerValue) <= 0)) {
+    // A tier campaign cannot price the agreement without a follower count from somewhere.
+    if (campaign?.isCreditTier && effectiveFollowerCountForTier <= 0) {
       return true;
     }
 
@@ -335,13 +366,13 @@ const CampaignAgreementEdit = ({
 
     return false;
   }, [
+    isSeedingCampaign,
     paymentAmountValue,
     requiresUGCCredits,
     ugcCreditsValue,
     campaign?.campaignCredits,
     realTimeCreditsLeft,
-    requiresPlatformFollowerInput,
-    platformFollowerValue,
+    effectiveFollowerCountForTier,
     campaign?.isCreditTier,
     displayTierData,
   ]);
@@ -349,13 +380,14 @@ const CampaignAgreementEdit = ({
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
     const creditsToAssign = requiresUGCCredits ? Number(ugcCreditsValue) : null;
-    const parsedPlatformFollower = data.platformFollowerCount
-      ? parseInt(data.platformFollowerCount, 10)
+    // Only a superadmin may submit a follower override. Other roles send the selected platform
+    // and let the backend resolve the trusted count used for pricing and snapshots.
+    const parsedPlatformFollower = canEditFollowerCount
+      ? effectiveFollowerCountForTier || undefined
       : undefined;
 
     try {
-      // Validate credits against max allowed
-      if (campaign?.campaignCredits && requiresUGCCredits) {
+      if (campaign?.campaignCredits != null && requiresUGCCredits && !isSeedingCampaign) {
         if (!Number.isFinite(creditsToAssign) || creditsToAssign <= 0) {
           loading.onFalse();
           enqueueSnackbar('UGC credits must be a positive number.', { variant: 'error' });
@@ -371,23 +403,22 @@ const CampaignAgreementEdit = ({
           return;
         }
       }
-      console.log('Generating PDF with values:', {
-        currency: data.currency,
-        amount: data.paymentAmount,
-        formattedPayment: `${CURRENCY_PREFIXES[data.currency]?.prefix}${data.paymentAmount}`,
-      });
 
       const blob = await pdf(
         <AgreementTemplate
           DATE={dayjs().format('LL')}
           IC_NUMBER={agreement?.user?.paymentForm?.icNumber}
-          FREELANCER_FULL_NAME={agreement?.user?.name}
+          FREELANCER_FULL_NAME={
+            agreement?.user?.paymentForm?.bankAccountName || agreement?.user?.name || 'N/A'
+          }
           ADDRESS={agreement?.user?.creator?.address}
           ccEmail="hello@cultcreative.com"
           ccPhoneNumber="+60162678757"
           effectiveDate={dayjs().add(4, 'day').format('LL')}
           creatorPayment={`${CURRENCY_PREFIXES[data.currency]?.prefix}${data.paymentAmount}`}
-          CREATOR_NAME={agreement?.user?.name}
+          CREATOR_NAME={
+            agreement?.user?.paymentForm?.bankAccountName || agreement?.user?.name || 'N/A'
+          }
           CREATOR_ACCOUNT_NUMBER={agreement?.user?.paymentForm?.bankAccountNumber}
           CREATOR_BANK_ACCOUNT_NAME={
             agreement?.user?.paymentForm?.bankAccountName || agreement?.user?.name || 'N/A'
@@ -400,11 +431,9 @@ const CampaignAgreementEdit = ({
           ADMIN_NAME={extractAgremmentsInfo?.adminName ?? 'Default'}
           SIGNATURE={extractAgremmentsInfo?.signURL ?? 'Default'}
           isForSurfShark={campaign?.isForSurfShark}
+          isSeedingCampaign={isSeedingCampaign}
         />
       ).toBlob();
-
-      const formData = new FormData();
-      formData.append('agreementForm', blob);
 
       const requestData = {
         paymentAmount: data.paymentAmount,
@@ -415,13 +444,13 @@ const CampaignAgreementEdit = ({
         isNew: agreement?.isNew || false,
         credits: creditsToAssign, // Include credits for V4 submission updates
         selectedPlatform,
-        followerCount:
-          !Number.isNaN(parsedPlatformFollower) && parsedPlatformFollower
-            ? parsedPlatformFollower
-            : undefined,
+        ...(!Number.isNaN(parsedPlatformFollower) && parsedPlatformFollower
+          ? { followerCount: parsedPlatformFollower }
+          : {}),
       };
 
-      console.log('Sending data to backend:', requestData);
+      const formData = new FormData();
+      formData.append('agreementForm', blob);
       formData.append('data', JSON.stringify(requestData));
 
       const res = await axiosInstance.patch(endpoints.campaign.updateAmountAgreement, formData, {
@@ -433,15 +462,15 @@ const CampaignAgreementEdit = ({
       const agreementIdToSend = res?.data?.agreement?.id || agreement?.id;
 
       const sendAgreementPayload = {
-        ...agreement,
+        user: agreement?.user,
+        campaignId: agreement?.campaignId,
         id: agreementIdToSend,
         isNew: agreement?.isNew || false,
         credits: creditsToAssign,
         selectedPlatform,
-        followerCount:
-          !Number.isNaN(parsedPlatformFollower) && parsedPlatformFollower
-            ? parsedPlatformFollower
-            : undefined,
+        ...(!Number.isNaN(parsedPlatformFollower) && parsedPlatformFollower
+          ? { followerCount: parsedPlatformFollower }
+          : {}),
       };
 
       await axiosInstance.patch(endpoints.campaign.sendAgreement, sendAgreementPayload);
@@ -457,36 +486,6 @@ const CampaignAgreementEdit = ({
       }
 
       await mutate(endpoints.campaign.getCampaignById(agreement?.campaignId));
-
-      // await mutate(
-      //   endpoints.campaign.creatorAgreement(agreement.campaignId),
-      //   (currentData) => {
-      //     if (currentData) {
-      //       return currentData.map((item) =>
-      //         item.id === agreement.id
-      //           ? {
-      //               ...item,
-      //               amount: data.paymentAmount,
-      //               currency: data.currency,
-      //               agreementUrl: res.data.agreement?.agreementUrl || item.agreementUrl,
-      //               user: {
-      //                 ...item.user,
-      //                 shortlisted: [
-      //                   {
-      //                     ...item.user.shortlisted[0],
-      //                     amount: data.paymentAmount,
-      //                     currency: data.currency,
-      //                   },
-      //                 ],
-      //               },
-      //             }
-      //           : item
-      //       );
-      //     }
-      //     return currentData;
-      //   },
-      //   { revalidate: true }
-      // );
 
       enqueueSnackbar(res?.data?.message);
       dialog.onFalse();
@@ -513,13 +512,17 @@ const CampaignAgreementEdit = ({
                   color: '#835cf5',
                 }}
               />
-              <Typography variant="h6">{campaign?.isCreditTier ? 'Assign Video Amount and Set Agreement' : 'Assign Credits and Set Agreement'}</Typography>
+              <Typography variant="h6">
+                {campaign?.isCreditTier
+                  ? 'Assign Video Amount and Set Agreement'
+                  : 'Assign Credits and Set Agreement'}
+              </Typography>
             </Stack>
 
             <Box sx={{ borderBottom: '1px solid #e7e7e7' }} />
 
             {/* Show Insufficient Credits warning when no credits available for this creator */}
-            {campaign?.campaignCredits && maxCreditsAllowed === 0 && (
+            {campaign?.campaignCredits != null && maxCreditsAllowed === 0 && (
               <Box
                 sx={{
                   p: 2,
@@ -591,7 +594,9 @@ const CampaignAgreementEdit = ({
                         }}
                       >
                         <Iconify
-                          icon={selectedPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
+                          icon={
+                            selectedPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'
+                          }
                           width={14}
                           sx={{
                             color: selectedPlatform === 'tiktok' ? '#000000' : '#E4405F',
@@ -624,184 +629,195 @@ const CampaignAgreementEdit = ({
         <DialogContent>
           <Stack sx={{ mt: 2 }} spacing={2}>
             <Stack spacing={1}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: 'repeat(1,1fr)', sm: '0.8fr 1.2fr' },
-                  gap: 2,
-                }}
-              >
-                <RHFSelect
-                  name="currency"
-                  label="Currency"
-                  disabled={isDefault}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 1,
-                    },
-                  }}
-                >
-                  <MenuItem disabled sx={{ fontStyle: 'italic' }}>
-                    Select currency
-                  </MenuItem>
-                  {['SGD', 'MYR', 'AUD', 'JPY', 'IDR', 'USD'].map((curr) => (
-                    <MenuItem key={curr} value={curr}>
-                      {curr}
-                    </MenuItem>
-                  ))}
-                </RHFSelect>
-
-                <RHFTextField
-                  name="paymentAmount"
-                  type="text"
-                  label="Payment Amount"
-                  InputLabelProps={{ shrink: true }}
-                  disabled={isDefault}
-                  InputProps={{
-                    startAdornment: (
-                      <Typography sx={{ color: 'text.secondary', mr: 0.5 }}>
-                        {CURRENCY_PREFIXES[selectedCurrency]?.prefix || ''}
-                      </Typography>
-                    ),
-                  }}
-                  onChange={(e) => {
-                    const rawValue = e.target.value.replace(/[^\d.]/g, '');
-                    if (rawValue === '' || !Number.isNaN(rawValue)) {
-                      setValue('paymentAmount', rawValue);
-                    }
-                  }}
-                  value={watch('paymentAmount') ? formatAmount(watch('paymentAmount')) : ''}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 1,
-                    },
-                  }}
-                />
-
-              </Box>
-
-              {/* UGC Credits / Video Amount Section */}
-              {requiresUGCCredits && (
-                <Stack spacing={1} sx={{ mt: 1 }}>
-                  <RHFTextField
-                    name="ugcCredits"
-                    type="number"
-                    label={campaign?.isCreditTier ? "Video Amount" : "UGC Credits"}
-                    InputLabelProps={{ shrink: true }}
-                    inputProps={{
-                      min: 1,
-                      ...(maxCreditsAllowed !== null && { max: maxCreditsAllowed }),
-                    }}
-                    disabled={maxCreditsAllowed === 0}
-                    onChange={(e) => {
-                      const {value} = e.target;
-                      if (value === '') {
-                        setValue('ugcCredits', '');
-                        return;
-                      }
-                      if (maxCreditsAllowed !== null && Number(value) > maxCreditsAllowed) {
-                        setValue('ugcCredits', String(maxCreditsAllowed));
-                      } else {
-                        setValue('ugcCredits', value);
-                      }
-                    }}
-                    value={ugcCreditsValue}
+              {!isSeedingCampaign && (
+                <>
+                  <Box
                     sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 1,
-                      },
+                      display: 'grid',
+                      gridTemplateColumns: { xs: 'repeat(1,1fr)', sm: '0.8fr 1.2fr' },
+                      gap: 2,
                     }}
-                  />
+                  >
+                    <RHFSelect
+                      name="currency"
+                      label="Currency"
+                      disabled={isDefault}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1,
+                        },
+                      }}
+                    >
+                      <MenuItem disabled sx={{ fontStyle: 'italic' }}>
+                        Select currency
+                      </MenuItem>
+                      {['SGD', 'MYR', 'AUD', 'JPY', 'IDR', 'USD'].map((curr) => (
+                        <MenuItem key={curr} value={curr}>
+                          {curr}
+                        </MenuItem>
+                      ))}
+                    </RHFSelect>
 
-                  {/* Credit Summary */}
-                  {campaign?.campaignCredits && (() => {
-                    const isExceeded = realTimeCreditsLeft !== null && realTimeCreditsLeft < 0;
-                    const isUsingAll = realTimeCreditsLeft === 0 && creatorCost > 0;
+                    <RHFTextField
+                      name="paymentAmount"
+                      type="text"
+                      label="Payment Amount"
+                      InputLabelProps={{ shrink: true }}
+                      disabled={isDefault}
+                      InputProps={{
+                        startAdornment: (
+                          <Typography sx={{ color: 'text.secondary', mr: 0.5 }}>
+                            {CURRENCY_PREFIXES[selectedCurrency]?.prefix || ''}
+                          </Typography>
+                        ),
+                      }}
+                      onChange={(e) => {
+                        const rawValue = e.target.value.replace(/[^\d.]/g, '');
+                        if (rawValue === '' || !Number.isNaN(rawValue)) {
+                          setValue('paymentAmount', rawValue);
+                        }
+                      }}
+                      value={watch('paymentAmount') ? formatAmount(watch('paymentAmount')) : ''}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1,
+                        },
+                      }}
+                    />
+                  </Box>
 
-                    const getBgColor = () => {
-                      if (isExceeded) return '#FFF1F0';
-                      if (isUsingAll) return '#FFF8E5';
-                      return '#F8F9FA';
-                    };
-
-                    const getBorderColor = () => {
-                      if (isExceeded) return '#FFCCC7';
-                      if (isUsingAll) return '#FFE58F';
-                      return '#E8EAED';
-                    };
-
-                    const getRemainingColor = () => {
-                      if (isExceeded) return '#CF1322';
-                      if (isUsingAll) return '#D46B08';
-                      return '#5F6368';
-                    };
-
-                    return (
-                      <Box
-                        sx={{
-                          px: 1.5,
-                          py: 1.25,
-                          borderRadius: 1.5,
-                          bgcolor: getBgColor(),
-                          border: '1px solid',
-                          borderColor: getBorderColor(),
+                  {/* UGC Credits / Video Amount Section */}
+                  {requiresUGCCredits && (
+                    <Stack spacing={1} sx={{ mt: 1 }}>
+                      <RHFTextField
+                        name="ugcCredits"
+                        type="number"
+                        label={campaign?.isCreditTier ? 'Video Amount' : 'UGC Credits'}
+                        InputLabelProps={{ shrink: true }}
+                        inputProps={{
+                          min: 1,
+                          ...(maxCreditsAllowed !== null && { max: maxCreditsAllowed }),
                         }}
-                      >
-                        <Stack spacing={0.75}>
-                          <Stack direction="row" justifyContent="space-between" alignItems="center">
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: isExceeded ? '#CF1322' : '#5F6368',
-                                fontWeight: 500,
-                              }}
-                            >
-                              Cost: {creatorCost} credit{creatorCost !== 1 ? 's' : ''}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                fontWeight: 600,
-                                color: getRemainingColor(),
-                              }}
-                            >
-                              {Math.max(0, realTimeCreditsLeft ?? 0)} credits remaining
-                            </Typography>
-                          </Stack>
+                        disabled={maxCreditsAllowed === 0}
+                        onChange={(e) => {
+                          const { value } = e.target;
+                          if (value === '') {
+                            setValue('ugcCredits', '');
+                            return;
+                          }
+                          if (maxCreditsAllowed !== null && Number(value) > maxCreditsAllowed) {
+                            setValue('ugcCredits', String(maxCreditsAllowed));
+                          } else {
+                            setValue('ugcCredits', value);
+                          }
+                        }}
+                        value={ugcCreditsValue}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 1,
+                          },
+                        }}
+                      />
 
-                          {/* Error message when credits exceeded */}
-                          {isExceeded && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: '#CF1322',
-                                lineHeight: 1.5,
-                                fontSize: '0.7rem',
-                              }}
-                            >
-                              Creator cost exceeds the remaining credits. Please reduce the {campaign?.isCreditTier ? 'video amount' : 'credits'} or increase the campaign budget.
-                            </Typography>
-                          )}
+                      {/* Credit Summary */}
+                      {campaign?.campaignCredits !== null &&
+                        (() => {
+                          const isExceeded =
+                            realTimeCreditsLeft !== null && realTimeCreditsLeft < 0;
+                          const isUsingAll = realTimeCreditsLeft === 0 && creatorCost > 0;
 
-                          {/* Warning message when using all remaining */}
-                          {isUsingAll && (
-                            <Typography
-                              variant="caption"
+                          const getBgColor = () => {
+                            if (isExceeded) return '#FFF1F0';
+                            if (isUsingAll) return '#FFF8E5';
+                            return '#F8F9FA';
+                          };
+
+                          const getBorderColor = () => {
+                            if (isExceeded) return '#FFCCC7';
+                            if (isUsingAll) return '#FFE58F';
+                            return '#E8EAED';
+                          };
+
+                          const getRemainingColor = () => {
+                            if (isExceeded) return '#CF1322';
+                            if (isUsingAll) return '#D46B08';
+                            return '#5F6368';
+                          };
+
+                          return (
+                            <Box
                               sx={{
-                                color: '#D46B08',
-                                lineHeight: 1.5,
-                                fontSize: '0.7rem',
+                                px: 1.5,
+                                py: 1.25,
+                                borderRadius: 1.5,
+                                bgcolor: getBgColor(),
+                                border: '1px solid',
+                                borderColor: getBorderColor(),
                               }}
                             >
-                              This will use all remaining campaign credits
-                            </Typography>
-                          )}
-                        </Stack>
-                      </Box>
-                    );
-                  })()}
-                </Stack>
+                              <Stack spacing={0.75}>
+                                <Stack
+                                  direction="row"
+                                  justifyContent="space-between"
+                                  alignItems="center"
+                                >
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      color: isExceeded ? '#CF1322' : '#5F6368',
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    Cost: {creatorCost} credit{creatorCost !== 1 ? 's' : ''}
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: getRemainingColor(),
+                                    }}
+                                  >
+                                    {Math.max(0, realTimeCreditsLeft ?? 0)} credits remaining
+                                  </Typography>
+                                </Stack>
+
+                                {/* Error message when credits exceeded */}
+                                {isExceeded && (
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      color: '#CF1322',
+                                      lineHeight: 1.5,
+                                      fontSize: '0.7rem',
+                                    }}
+                                  >
+                                    Creator cost exceeds the remaining credits. Please reduce the{' '}
+                                    {campaign?.isCreditTier ? 'video amount' : 'credits'} or
+                                    increase the campaign budget.
+                                  </Typography>
+                                )}
+
+                                {/* Warning message when using all remaining */}
+                                {isUsingAll && (
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      color: '#D46B08',
+                                      lineHeight: 1.5,
+                                      fontSize: '0.7rem',
+                                    }}
+                                  >
+                                    This will use all remaining campaign credits
+                                  </Typography>
+                                )}
+                              </Stack>
+                            </Box>
+                          );
+                        })()}
+                    </Stack>
+                  )}
+                </>
               )}
 
               <Box
@@ -831,7 +847,10 @@ const CampaignAgreementEdit = ({
                         variant={selectedPlatform === platform.value ? 'contained' : 'outlined'}
                         onClick={() => {
                           setSelectedPlatform(platform.value);
-                          setValue('platformFollowerCount', '');
+                          setValue(
+                            'platformFollowerCount',
+                            String(getFollowerCountByPlatform(platform.value) || '')
+                          );
                         }}
                         sx={{
                           height: 44,
@@ -843,7 +862,8 @@ const CampaignAgreementEdit = ({
                           bgcolor: selectedPlatform === platform.value ? '#203ff5' : '#fff',
                           '&:hover': {
                             bgcolor: selectedPlatform === platform.value ? '#1933cc' : '#f5f7fa',
-                            borderColor: selectedPlatform === platform.value ? '#1933cc' : '#C7CBD1',
+                            borderColor:
+                              selectedPlatform === platform.value ? '#1933cc' : '#C7CBD1',
                           },
                         }}
                       >
@@ -855,46 +875,71 @@ const CampaignAgreementEdit = ({
                     ))}
                   </Box>
 
-                  {requiresPlatformFollowerInput ? (
-                    <RHFTextField
-                      name="platformFollowerCount"
-                      type="text"
-                      label={`Follower Count (${selectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram'})`}
-                      value={platformFollowerValue || ''}
-                      onChange={(e) => {
-                        const sanitized = e.target.value.replace(/[^0-9]/g, '');
-                        setValue('platformFollowerCount', sanitized);
-                      }}
-                      InputLabelProps={{ shrink: true }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                          bgcolor: '#fff',
-                          minHeight: 48,
-                        },
-                      }}
-                    />
-                  ) : (
+                  <RHFTextField
+                    name="platformFollowerCount"
+                    type="text"
+                    label={`Follower Count (${platformLabel})`}
+                    placeholder={
+                      selectedPlatformFollower ? selectedPlatformFollower.toLocaleString() : ''
+                    }
+                    value={platformFollowerValue || ''}
+                    disabled={!canEditFollowerCount}
+                    onChange={(e) => {
+                      const sanitized = e.target.value.replace(/[^0-9]/g, '');
+                      setValue('platformFollowerCount', sanitized);
+                    }}
+                    InputLabelProps={{ shrink: true }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1,
+                        bgcolor: '#fff',
+                        minHeight: 48,
+                      },
+                    }}
+                  />
+                  {mediaKitFollower > 0 && effectiveFollowerCountForTier !== mediaKitFollower && (
                     <Typography variant="caption" sx={{ color: '#637381', px: 0.25 }}>
-                      Current follower count: {selectedPlatformFollower.toLocaleString()}
+                      Their {platformLabel} media kit says{' '}
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        {mediaKitFollower.toLocaleString()}
+                      </Box>{' '}
+                      followers. This agreement is priced on{' '}
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        {effectiveFollowerCountForTier.toLocaleString()}
+                      </Box>{' '}
+                      followers.
                     </Typography>
                   )}
-                  {campaign?.isCreditTier && !displayTierData && (
+                  {!canEditFollowerCount && (
+                    <Typography variant="caption" sx={{ color: '#637381', px: 0.25 }}>
+                      Using the {platformLabel} follower count already on record for this creator.
+                    </Typography>
+                  )}
+                  {campaign?.isCreditTier && effectiveFollowerCountForTier <= 0 && (
                     <Typography variant="caption" sx={{ color: 'error.main', px: 0.25 }}>
-                      No credit tier matches the selected platform follower count.
+                      Enter a {platformLabel} follower count to price this agreement.
                     </Typography>
                   )}
+                  {campaign?.isCreditTier &&
+                    effectiveFollowerCountForTier > 0 &&
+                    !displayTierData && (
+                      <Typography variant="caption" sx={{ color: 'error.main', px: 0.25 }}>
+                        No credit tier matches the selected platform follower count.
+                      </Typography>
+                    )}
                 </Stack>
               </Box>
 
-              <RHFCheckbox
-                name="default"
-                label="Default"
-                sx={{
-                  color: '#636366',
-                  ml: -1,
-                }}
-              />
+              {!isSeedingCampaign && (
+                <RHFCheckbox
+                  name="default"
+                  label="Default"
+                  sx={{
+                    color: '#636366',
+                    ml: -1,
+                  }}
+                />
+              )}
             </Stack>
           </Stack>
         </DialogContent>
@@ -930,9 +975,7 @@ const CampaignAgreementEdit = ({
             type="submit"
             loading={loading.value}
             disabled={loading.value || isFormInvalid}
-            loadingIndicator={
-              <SyncLoader color="white" size={5} />
-            }
+            loadingIndicator={<SyncLoader color="white" size={5} />}
             sx={{
               bgcolor: '#1340FF',
               border: '1.5px solid #1340FF',

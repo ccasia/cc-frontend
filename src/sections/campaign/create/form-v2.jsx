@@ -427,7 +427,7 @@ function CreateCampaignFormV2({
     // client attachment (client campaign), not the version.
     submissionVersion: 'v4',
 
-    isV4Submission: false,
+    isV4Submission: true,
     isCreditTier: false,
   };
 

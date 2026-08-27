@@ -168,7 +168,7 @@ export default function InvoiceNewEditForm({ id, creators, onClose, mutateInvoic
 
   const defaultValues = useMemo(
     () => ({
-      invoiceNumber: invoice?.invoiceNumber || `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+      invoiceNumber: invoice?.invoiceNumber || '',
       createDate: invoice?.createdAt ? new Date(invoice.createdAt) : new Date(),
       dueDate: invoice?.dueDate ? new Date(invoice.dueDate) : null,
       status: invoice?.status || 'draft',

@@ -1,5 +1,6 @@
 import useSWR from 'swr';
-import axios from 'axios';
+
+import axiosInstance from 'src/utils/axios';
 
 import { DEMO_CAMPAIGN_ID, getDemoTopCreatorsTrend } from 'src/_mock/_demo-campaign';
 
@@ -28,7 +29,7 @@ export const useGetTopCreatorsTrend = (
   const { data, error, isLoading, mutate } = useSWR(
     url,
     async (apiUrl) => {
-      const response = await axios.get(apiUrl);
+      const response = await axiosInstance.get(apiUrl);
       return response.data.data;
     },
     {
