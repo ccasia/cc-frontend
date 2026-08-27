@@ -19,8 +19,10 @@ export const setSelectedPlatform = (platform) =>
 
 export const setReportState = (reportState) => useAnalyticsStore.setState(() => ({ reportState }));
 
-export const setShowReportPage = () =>
-  useAnalyticsStore.setState((state) => ({ showReportPage: !state.showReportPage }));
+export const setShowReportPage = (value) =>
+  useAnalyticsStore.setState((state) => ({
+    showReportPage: typeof value === 'boolean' ? value : !state.showReportPage,
+  }));
 
 export const setShowAddCreatorForm = () =>
   useAnalyticsStore.setState((state) => ({ showAddCreatorForm: !state.showAddCreatorForm }));
