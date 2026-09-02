@@ -15,20 +15,19 @@ function NavSectionMini({ data, slotProps, ...other }) {
     <Stack
       component="nav"
       id="nav-section-mini"
-      spacing={`${slotProps?.gap || 4}px`}
       sx={{
-        width: '100%',
+        width: 1,
         alignItems: 'center',
         ...other.sx,
       }}
       {...other}
     >
-      <Divider
+      {/* <Divider
         sx={{
           mb: 1,
           mt: 1,
         }}
-      />
+      /> */}
       {data.map((group, index) => (
         <Group key={group.subheader || index} items={group.items} slotProps={slotProps} />
       ))}
@@ -83,12 +82,13 @@ function Group({ items, slotProps }) {
       {visibleItems.map((list) => (
         <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />
       ))}
-      {/* <Divider
+      <Divider
         sx={{
           mb: 2,
           mt: 1,
+          width: '80%',
         }}
-      /> */}
+      />
     </>
   );
 }

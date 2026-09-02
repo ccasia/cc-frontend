@@ -61,7 +61,7 @@ export default function NavList({ data, depth, slotProps }) {
         //
         active={active}
         className={active ? 'active' : ''}
-        sx={depth === 1 ? slotProps?.rootItem : slotProps?.subItem}
+        sx={{ mb: 0.5, ...(depth === 1 ? slotProps?.rootItem : slotProps?.subItem) }}
         onClick={() => {
           // Only close drawer if no children (i.e., it's a leaf node)
           if (!data.children && slotProps?.onItemClick) {
