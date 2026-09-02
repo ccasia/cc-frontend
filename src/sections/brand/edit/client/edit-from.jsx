@@ -70,7 +70,7 @@ const CompanyEditForm = ({ company, fieldsArray, methods }) => {
         />
         <RHFTextField name="companyAddress" label="Company address" />
         <RHFTextField name="companyWebsite" label="Company website" />
-        <RHFTextField name="companyAbout" label="Company about" />
+        <RHFTextField name="companyAbout" label="Company about" multiline />
         <RHFTextField name="companyRegistrationNumber" label="Company registration number" />
         <RHFSelect name="type" label="Client type">
           <MenuItem disabled>Select an option</MenuItem>

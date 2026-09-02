@@ -25,8 +25,8 @@ const icon = (name) => (
     sx={{
       width: name === 'ic_overview' ? 20 : 24,
       height: name === 'ic_overview' ? 20 : 24,
-      position: name === 'ic_overview' ? 'relative' : 'static',
-      top: name === 'ic_overview' ? '2px' : 0,
+      // position: name === 'ic_overview' ? 'relative' : 'static',
+      // top: name === 'ic_overview' ? '2px' : 0,
     }}
   />
   // OR
@@ -77,23 +77,18 @@ const ICONS = {
 
 export function useNavData() {
   const { user } = useAuthContext();
-  // const [play] = useSound(sound, {
-  //   interrupt: true,
-  // });
 
   const { socket } = useSocketContext();
   const unreadMessageCount = useUnreadMessageCount();
 
   useEffect(() => {
     socket?.on('messageCount', (data) => {
-      //  play();
       enqueueSnackbar(`${data.count + 1} new messages from ${data.name}.`, {
         anchorOrigin: {
           vertical: 'top',
           horizontal: 'left',
         },
       });
-      // setUnreadMessageCount(data.count);
     });
 
     return () => {
@@ -259,7 +254,7 @@ export function useNavData() {
               </span>
             ),
             path: paths.dashboard.overview.root,
-            icon: ICONS.overview,
+            icon: <Iconify icon="hugeicons:dashboard-square-01" width={25} />,
           },
         ],
       },
@@ -409,7 +404,14 @@ export function useNavData() {
       return [];
     },
 
-    [adminNavigations, creatorNavigations, user, financeNavigations, csLeadNavigations, clientDemoNavigations]
+    [
+      adminNavigations,
+      creatorNavigations,
+      user,
+      financeNavigations,
+      csLeadNavigations,
+      clientDemoNavigations,
+    ]
   );
 
   const data = useMemo(() => {

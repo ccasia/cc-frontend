@@ -1,3 +1,4 @@
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { forwardRef } from 'react';
 
@@ -16,6 +17,8 @@ import Label from 'src/components/label';
 import Iconify from '../../iconify';
 
 // ----------------------------------------------------------------------
+
+const MotionBox = m(Box);
 
 const NavItem = forwardRef(
   (
@@ -68,7 +71,15 @@ const NavItem = forwardRef(
         )}
 
         {title && (
-          <Box component="span" sx={{ flex: '1 1 auto', minWidth: 0 }}>
+          <MotionBox
+            initial={{ x: -10, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{
+              duration: 0.1,
+              ease: 'easeInOut',
+            }}
+            sx={{ flex: '1 1 auto', minWidth: 0 }}
+          >
             <Box component="span" className="label">
               {title}
             </Box>
@@ -80,7 +91,7 @@ const NavItem = forwardRef(
                 </Box>
               </Tooltip>
             )}
-          </Box>
+          </MotionBox>
         )}
 
         {info && (
@@ -211,8 +222,8 @@ const StyledNavItem = styled(ListItemButton, {
 
   const baseStyles = {
     item: {
-      marginBottom: 4,
-      borderRadius: 12,
+      // marginBottom: 4,
+      borderRadius: 6,
       color: theme.palette.text.secondary,
       padding: theme.spacing(0.5, 1, 0.5, 1.5),
     },
@@ -255,7 +266,7 @@ const StyledNavItem = styled(ListItemButton, {
     ...(!subItem && {
       ...baseStyles.item,
       position: 'relative',
-      minHeight: 44,
+      minHeight: 46,
       '& .icon': {
         ...baseStyles.icon,
       },
@@ -274,22 +285,10 @@ const StyledNavItem = styled(ListItemButton, {
       '& .arrow': {
         ...baseStyles.arrow,
       },
-
       ...(active && {
         fontWeight: 900,
         color: 'rgba(19, 64, 255, 1)',
         background: alpha('rgba(19, 64, 255, 1)', 0.08),
-        // '::before': {
-        //   content: '""',
-        //   width: 8,
-        //   height: 20,
-        //   backgroundColor: 'blue',
-        //   position: 'absolute',
-        //   left: -20,
-        //   top: '50%',
-        //   transform: 'translateY(-50%)',
-        //   borderRadius: 10,
-        // },
         '&:hover': {
           backgroundColor: alpha('#203ff5', 0.2),
         },

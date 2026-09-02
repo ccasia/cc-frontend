@@ -473,12 +473,7 @@ export default function DashboardLayout({ children }) {
               </FormField>
 
               <FormField label="Attachments (upload up to 5 screenshots or images)" required>
-                <RHFUpload
-                  key={submitCount}
-                  name="attachments"
-                  type="file"
-                  multiple
-                />
+                <RHFUpload key={submitCount} name="attachments" type="file" multiple />
               </FormField>
             </Stack>
           </Box>
@@ -662,7 +657,9 @@ export default function DashboardLayout({ children }) {
 
         <CampaignInvitationModal
           open={inviteApprovalPopup.open}
-          onClose={() => setInviteApprovalPopup({ open: false, campaignId: null, campaignName: '' })}
+          onClose={() =>
+            setInviteApprovalPopup({ open: false, campaignId: null, campaignName: '' })
+          }
           onGoToCampaign={handleGoToInvitedCampaign}
           campaignName={inviteApprovalPopup.campaignName}
         />
