@@ -85,6 +85,7 @@ const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow, 
     photos,
     ads,
     campaignBrief,
+    subscription,
   } = row;
 
   // Safely access campaignBrief properties
@@ -141,7 +142,7 @@ const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow, 
           </Typography>
           {campaignBudget != null && (
             <Typography variant="caption" color="text.secondary" display="block">
-              {formatCurrencyAmount(campaignBudget, 'MYR')}
+              {formatCurrencyAmount(campaignBudget, subscription?.currency ?? 'MYR')}
             </Typography>
           )}
         </TableCell>
@@ -162,7 +163,12 @@ const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow, 
             ].map(
               (deliverable) =>
                 deliverable.value && (
-                  <Label key={deliverable.label} variant="soft" color="default" sx={{ fontSize: 11 }}>
+                  <Label
+                    key={deliverable.label}
+                    variant="soft"
+                    color="default"
+                    sx={{ fontSize: 11 }}
+                  >
                     {deliverable.label}
                   </Label>
                 )

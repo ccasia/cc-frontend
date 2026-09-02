@@ -79,8 +79,6 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
     formState: { errors },
   } = methods;
 
-  console.log(errors);
-
   const { name, icNumber, campaignType, isNdaRequired } = watch();
 
   const processPdf = async () => {
