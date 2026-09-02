@@ -683,12 +683,23 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                           <>
                             <Divider />
                             {/* Campaign Budget Row (v4 only, computed) */}
-                            <Stack direction="row" justifyContent="space-between" alignItems="center">
-                              <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
+                            <Stack
+                              direction="row"
+                              justifyContent="space-between"
+                              alignItems="center"
+                            >
+                              <Typography
+                                sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                              >
                                 Campaign Budget
                               </Typography>
-                              <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
-                                {formatCurrencyAmount(campaignBudget, 'MYR')}
+                              <Typography
+                                sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                              >
+                                {formatCurrencyAmount(
+                                  campaignBudget,
+                                  campaign?.subscription?.currency ?? 'MYR'
+                                )}
                               </Typography>
                             </Stack>
                           </>
