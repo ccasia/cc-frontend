@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import { m } from 'framer-motion';
 import useSWRInfinite from 'swr/infinite';
 import { enqueueSnackbar } from 'notistack';
@@ -40,10 +41,6 @@ import CreatorForm from 'src/sections/creator/form/creatorForm';
 import CampaignLists from '../campaign-list';
 import MediaKitPopup from '../media-kit-popup';
 
-// ----------------------------------------------------------------------
-
-// ----------------------------------------------------------------------
-// Check
 export default function CampaignListView() {
   const settings = useSettingsContext();
 
@@ -118,35 +115,8 @@ export default function CampaignListView() {
 
   const { user } = useAuthContext();
   const dialog = useBoolean(!user?.creator?.isOnBoardingFormCompleted);
-  const backdrop = useBoolean(!user?.creator?.isFormCompleted);
 
   const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
-
-  const targetUserIds = useMemo(
-    () => [
-      'cm8gvqtcv01hwph01uof2u9xu',
-      'cm49lve6i00patrd2ax5fj67h',
-      'cm4132k9p00wb54qgcrs71v0t',
-      'cmauqo8oy03ioky0157sbr2jg',
-      'cm8jxuuvy0272ph01nr0h7din',
-      'cm5b5p0zu00r2ylfpo241kqki',
-      'cmewrex4p054ipx01u5xqkqhj',
-      'cm7oe0q15005bms010ujmjb3r',
-      'cm44lei3t00si132zq87a5lan',
-      'cm9kzqz1u00ziqe01q2tsdptg',
-      'cmfb25m4r003vqn01zoe9atng',
-      'cmj9pz1n40a3hs40154b31l90',
-      'cm8mh5ic5032sph011r87rw4e',
-      'cm40womsf001k54qg4epuacmu',
-      'cm4utxiyv02mu9wevfkpyt8qj',
-      'cmfwczmov0t5rqp01aq687n4a',
-      'cmj7kdxxi05sqs401pro45vik',
-      'cmj21yl0102ghpc01xmy9zkwa',
-      'cm3pyp3vm006qm9m8qm1ep02d',
-      'cm4ey6g9401w4trd2ip0zf1et',
-    ],
-    []
-  );
 
   const load = useBoolean();
   const [upload, setUpload] = useState([]);
@@ -159,14 +129,6 @@ export default function CampaignListView() {
 
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // const [page, setPage] = useState(1);
-  // const MAX_ITEM = 9;
-
-  // const onOpenCreatorForm = () => {
-  //   backdrop.onTrue();
-  //   dialog.onTrue();
-  // };
-
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.pageYOffset > 300);
@@ -176,9 +138,7 @@ export default function CampaignListView() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Check if the media kit popup should be shown when the component mounts
   useEffect(() => {
-    // Only proceed if user is logged in
     if (!user) return;
 
     const popupShownInSession = sessionStorage.getItem('mediaKitPopupShown');
@@ -307,15 +267,6 @@ export default function CampaignListView() {
   const filteredData = useMemo(() => {
     const campaigns = data ? data?.flatMap((item) => item?.data?.campaigns) : [];
 
-    // Log pagination metadata for each page
-    data?.forEach((page, index) => {
-      console.log(`🔍 Campaign discover - Page ${index + 1} metadata:`, {
-        campaignsInPage: page?.data?.campaigns?.length || 0,
-        hasNextPage: page?.metaData?.hasNextPage,
-        lastCursor: page?.metaData?.lastCursor,
-      });
-    });
-
     const activeCampaigns = campaigns?.filter(
       (campaign) => campaign?.status === 'ACTIVE' && !campaign?.isForMobile
     );
@@ -337,9 +288,8 @@ export default function CampaignListView() {
       if (!mainRef?.current) return; // Early return if ref not available
 
       const scrollContainer = mainRef.current;
-      const bottom =
-        scrollContainer.scrollHeight <=
-        scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
+      const { scrollHeight, scrollTop, clientHeight } = scrollContainer;
+      const bottom = scrollHeight <= scrollTop + clientHeight + 1;
 
       if (
         bottom &&
@@ -349,11 +299,6 @@ export default function CampaignListView() {
         data[data.length - 1]?.metaData?.hasNextPage &&
         data[data.length - 1]?.metaData?.lastCursor
       ) {
-        console.log('🔍 Campaign infinite scroll - Loading next page (desktop):', {
-          currentPages: data.length,
-          hasNextPage: data[data.length - 1]?.metaData?.hasNextPage,
-          lastCursor: data[data.length - 1]?.metaData?.lastCursor,
-        });
         setSize(size + 1);
       }
     } else {
@@ -403,34 +348,6 @@ export default function CampaignListView() {
     };
   }, [handleScroll, mainRef, lgUp]);
 
-  // const sortCampaigns = (campaigns) => {
-  //   if (!campaigns) return [];
-
-  //   switch (sortBy) {
-  //     case 'Highest':
-  //       return [...campaigns].sort((a, b) => (b.percentageMatch || 0) - (a.percentageMatch || 0));
-  //     case 'Lowest':
-  //       return [...campaigns].sort((a, b) => (a.percentageMatch || 0) - (b.percentageMatch || 0));
-  //     default:
-  //       return campaigns;
-  //   }
-  // };
-
-  // const sortedCampaigns = useMemo(() => {
-  //   const dataToSort = search.query ? search.results : filteredData;
-  //   return sortCampaigns(dataToSort, sortBy);
-  // }, [search.query, search.results, filteredData, sortBy]);
-
-  // const paginatedCampaigns = useMemo(() => {
-  //   const indexOfLastItem = page * MAX_ITEM;
-  //   const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
-  //   return filteredData?.slice(indexOfFirstItem, indexOfLastItem);
-  // }, [filteredData, page]);
-
-  // useEffect(() => {
-  //   setPage(1); // Reset to first page when search query changes
-  // }, [search.query]);
-
   return (
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
@@ -451,7 +368,7 @@ export default function CampaignListView() {
       </Typography>
       <Typography
         variant="body1"
-        sx={{ fontFamily: theme.typography.fontFamily, color: '#636366', mb: 3 }}
+        sx={{ fontFamily: 'Inter Tight, sans-serif', color: '#636366', mb: 3 }}
       >
         Here are the top campaigns that fit your profile!
       </Typography>
@@ -874,27 +791,8 @@ export default function CampaignListView() {
         </Box>
       </Box>
 
-      {isLoading && (
-        <Box
-          sx={{
-            position: 'relative',
-            top: 200,
-            textAlign: 'center',
-          }}
-        >
-          <CircularProgress
-            thickness={7}
-            size={25}
-            sx={{
-              color: theme.palette.common.black,
-              strokeLinecap: 'round',
-            }}
-          />
-        </Box>
-      )}
-
-      {!isLoading &&
-        (filteredData?.length > 0 ? (
+      {!isLoading ? (
+        filteredData?.length > 0 ? (
           <Box>
             <CampaignLists
               campaigns={filteredData}
@@ -918,7 +816,25 @@ export default function CampaignListView() {
           <EmptyContent
             title={`No campaigns available in ${filter === 'saved' ? 'Saved' : 'For You'}`}
           />
-        ))}
+        )
+      ) : (
+        <Box
+          sx={{
+            position: 'relative',
+            top: 200,
+            textAlign: 'center',
+          }}
+        >
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
+      )}
 
       {upload.length > 0 && renderUploadProgress}
 
