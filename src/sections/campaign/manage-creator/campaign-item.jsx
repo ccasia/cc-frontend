@@ -25,114 +25,8 @@ import CampaignModal from './campaign-modal';
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, user, autoOpen = false }) {
-  // const [open, setOpen] = useState(false);
-  // const [upload, setUpload] = useState([]);
-  // const [, setLoading] = useState(false);
-  // const dialog = useBoolean();
-  // const text = useBoolean();
-  // const video = useBoolean();
-
-  // const { socket } = useSocketContext();
-  // const router = useRouter();
   const theme = useTheme();
   const router = useRouter();
-
-  // const [bookMark, setBookMark] = useState(
-  //   campaign?.bookMarkCampaign?.some((item) => item.userId === user?.id) || false
-  // );
-
-  // useEffect(() => {
-  //   const handlePitchLoading = (data) => {
-  //     setLoading(true);
-
-  //     if (upload.find((item) => item.campaignId === data.campaignId)) {
-  //       setUpload((prev) =>
-  //         prev.map((item) =>
-  //           item.campaignId === data.campaignId
-  //             ? {
-  //                 campaignId: data.campaignId,
-  //                 loading: true,
-  //                 progress: Math.floor(data.progress),
-  //               }
-  //             : item
-  //         )
-  //       );
-  //     } else {
-  //       setUpload((item) => [
-  //         ...item,
-  //         { loading: true, campaignId: data.campaignId, progress: Math.floor(data.progress) },
-  //       ]);
-  //     }
-  //   };
-
-  // const handlePitchSuccess = (data) => {
-  //   mutate(endpoints.campaign.getAllActiveCampaign);
-  //   enqueueSnackbar(data.name);
-  //   setUpload((prevItems) => prevItems.filter((item) => item.campaignId !== data.campaignId));
-  //   setLoading(false);
-  // };
-
-  //   socket?.on('pitch-loading', handlePitchLoading);
-  //   socket?.on('pitch-uploaded', handlePitchSuccess);
-
-  //   return () => {
-  //     socket?.off('pitch-loading', handlePitchLoading);
-  //     socket?.off('pitch-uploaded', handlePitchSuccess);
-  //   };
-  // }, [socket, upload]);
-
-  // const saveCampaign = async (campaignId) => {
-  //   try {
-  //     const res = await axiosInstance.post(endpoints.campaign.creator.saveCampaign, {
-  //       campaignId,
-  //       userId: user?.id,
-  //     });
-  //     mutate(endpoints.campaign.getMatchedCampaign);
-  //     // mutate(endpoints.campaign.creator.getSavedCampaigns);
-  //     setBookMark(true);
-  //     enqueueSnackbar(res?.data?.message);
-  //   } catch (error) {
-  //     enqueueSnackbar('Error', {
-  //       variant: 'error',
-  //     });
-  //   }
-  // };
-
-  // const unSaveCampaign = async (saveCampaignId) => {
-  //   try {
-  //     const res = await axiosInstance.delete(
-  //       endpoints.campaign.creator.unsaveCampaign(saveCampaignId)
-  //     );
-  //     mutate(endpoints.campaign.getMatchedCampaign);
-  //     setBookMark(false);
-  //     enqueueSnackbar(res?.data?.message);
-  //   } catch (error) {
-  //     enqueueSnackbar('Error', {
-  //       variant: 'error',
-  //     });
-  //   }
-  // };
-
-  // const pitch = useMemo(
-  //   () => campaign?.pitch?.filter((elem) => elem.userId.includes(user?.id))[0],
-  //   [campaign, user]
-  // );
-
-  // const pitch = useMemo(
-  //   () => campaign?.pitch?.find((elem) => elem.userId === user?.id),
-  //   [campaign, user]
-  // );
-
-  // const shortlisted = useMemo(
-  //   () => campaign?.shortlisted?.filter((elem) => elem.userId.includes(user?.id))[0],
-  //   [campaign, user]
-  // );
-
-  // const campaignIds = useMemo(() => user?.pitch?.map((item) => item.campaignId), [user]) || [];
-
-  // const handleClose = () => {
-  //   setOpen(false);
-  // };
 
   const campaignInfo = useBoolean();
 
@@ -251,7 +145,10 @@ export default function CampaignItem({ campaign, user, autoOpen = false }) {
           </Typography>
         </Box>
 
-        {campaign?.pitch && (campaign?.pitch?.status === 'PENDING_REVIEW' || campaign?.pitch?.status === 'SENT_TO_CLIENT' || campaign?.pitch?.status === 'undecided') ? (
+        {campaign?.pitch &&
+        (campaign?.pitch?.status === 'PENDING_REVIEW' ||
+          campaign?.pitch?.status === 'SENT_TO_CLIENT' ||
+          campaign?.pitch?.status === 'undecided') ? (
           <Chip
             icon={<Iconify icon="mdi:clock" sx={{ width: 20, height: 20, mt: -0.2, ml: -0.5 }} />}
             label="PENDING APPROVAL"
@@ -352,11 +249,7 @@ export default function CampaignItem({ campaign, user, autoOpen = false }) {
         {renderCampaignInfo}
       </Card>
 
-      <CampaignModal
-        open={campaignInfo.value}
-        handleClose={handleModalClose}
-        campaign={campaign}
-      />
+      <CampaignModal open={campaignInfo.value} handleClose={handleModalClose} campaign={campaign} />
     </>
   );
 }

@@ -12,7 +12,6 @@ import {
   Stack,
   Button,
   Dialog,
-  Divider,
   IconButton,
   Typography,
   DialogTitle,
@@ -32,8 +31,9 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import CampaignInvitationModal from 'src/layouts/common/campaign-invitation';
 
 import Iconify from 'src/components/iconify';
+import BugReportForm from 'src/components/bug-report-form';
 import SocialLinksModal from 'src/components/social-links-modal';
-import FormProvider, { RHFUpload, RHFTextField } from 'src/components/hook-form';
+import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 import Main from './main';
 import Header from './header';
@@ -91,24 +91,6 @@ const FormField = ({ label, children, required: isRequired = false, ...others })
   </Stack>
 );
 
-const inputSx = {
-  '& .MuiInputBase-root': {
-    borderRadius: '8px',
-    backgroundColor: '#FFFFFF',
-    border: '1px solid #E5E5EA',
-    '&:hover': { backgroundColor: '#FFFFFF', borderColor: '#E5E5EA' },
-    '&.Mui-focused': { backgroundColor: '#FFFFFF', borderColor: '#1340FF' },
-  },
-  '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-  '& .MuiInputBase-input': {
-    padding: '12px 14px',
-    fontFamily: 'Inter Display, sans-serif',
-    fontSize: '14px',
-    color: '#231F20',
-    '&::placeholder': { color: '#C7C7CC', opacity: 1 },
-  },
-};
-
 export default function DashboardLayout({ children }) {
   const { user } = useAuthContext();
   const router = useRouter();
@@ -121,41 +103,7 @@ export default function DashboardLayout({ children }) {
     campaignName: '',
   });
 
-  const bugFormDialog = useBoolean();
   const kwspFormDialog = useBoolean();
-
-  const [submitCount, setSubmitCount] = useState(0);
-
-  const schema = yup.object().shape({
-    stepsToReproduce: yup.string().required('Steps to reproduce is required'),
-    attachments: yup
-      .array()
-      .of(yup.mixed())
-      .required('Please provide at least one attachment')
-      .min(1, 'Please provide at least one attachment')
-      .max(5, 'Maximum 5 attachments allowed'),
-    campaignName: yup.string().required('Campaign name is required'),
-  });
-
-  const methods = useForm({
-    resolver: yupResolver(schema),
-    defaultValues: {
-      stepsToReproduce: '',
-      attachments: [],
-      campaignName: '',
-    },
-  });
-
-  const {
-    handleSubmit,
-    reset,
-    watch,
-    formState: { isSubmitting },
-  } = methods;
-
-  const watchedFields = watch(['stepsToReproduce', 'campaignName', 'attachments']);
-  const isFormFilled =
-    !!watchedFields[0]?.trim() && !!watchedFields[1]?.trim() && !!watchedFields[2]?.length;
 
   const kwspSchema = yup.object().shape({
     fullName: yup.string().required('Full name is required'),
@@ -258,35 +206,6 @@ export default function DashboardLayout({ children }) {
     />
   );
 
-  const onSubmit = handleSubmit(async (data) => {
-    const formData = new FormData();
-    const { attachments, ...rest } = data;
-
-    if (attachments?.length) {
-      attachments.forEach((file) => {
-        formData.append('attachments', file);
-      });
-    }
-
-    formData.append('data', JSON.stringify(rest));
-
-    try {
-      const res = await axiosInstance.post(endpoints.bug.create, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      reset();
-      setSubmitCount((c) => c + 1);
-      enqueueSnackbar(res?.data?.message);
-    } catch (error) {
-      enqueueSnackbar(error?.message, {
-        variant: 'error',
-      });
-    }
-  });
-
   const onKwspSubmit = handleKwspSubmit(async (data) => {
     try {
       await axiosInstance.post('/api/kwsp/submit', {
@@ -307,42 +226,6 @@ export default function DashboardLayout({ children }) {
       });
     }
   });
-
-  const feedbackButton = (
-    <Box
-      component="div"
-      sx={{
-        position: 'fixed',
-        transform: 'rotate(-90deg)',
-        transformOrigin: 'bottom right',
-        top: { xs: 140, sm: 150, md: 160 },
-        right: { xs: 8, sm: 12, md: 15 },
-        zIndex: 1099,
-      }}
-    >
-      <Button
-        variant="contained"
-        color="info"
-        startIcon={<Iconify icon="solar:bug-line-duotone" width={20} />}
-        onClick={bugFormDialog.onTrue}
-        sx={{
-          border: 1,
-          borderBottomRightRadius: 0,
-          borderBottomLeftRadius: 0,
-          opacity: 0.5,
-          transition: 'all linear .2s',
-          py: { xs: 0.5, sm: 0.75, md: 1 },
-          px: { xs: 1, sm: 1.5, md: 2 },
-          fontSize: { xs: '11px', sm: '12px', md: '14px' },
-          '&:hover': {
-            opacity: 1,
-          },
-        }}
-      >
-        Report a bug
-      </Button>
-    </Box>
-  );
 
   const kwspButton = false && (
     <Box
@@ -374,138 +257,6 @@ export default function DashboardLayout({ children }) {
         Earn RM100 with KWSP i-Saraan!
       </Button>
     </Box>
-  );
-
-  const feedbackForm = (
-    <Dialog
-      open={bugFormDialog.value}
-      maxWidth={false}
-      PaperProps={{
-        sx: {
-          width: '860px',
-          maxWidth: '95vw',
-          maxHeight: '90vh',
-          borderRadius: '16px',
-          padding: '24px',
-          gap: '24px',
-          backgroundColor: '#F4F4F4',
-          boxShadow: '0px 1px 2px 0px rgba(0, 0, 0, 0.15)',
-        },
-      }}
-    >
-      <FormProvider methods={methods} onSubmit={onSubmit}>
-        <Stack sx={{ height: '100%', maxHeight: 'calc(90vh - 48px)' }}>
-          {/* Header — fixed top */}
-          <Stack spacing={1} sx={{ pb: 2 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-              <Stack spacing={1}>
-                <Typography
-                  sx={{
-                    fontFamily: 'Instrument Serif, serif',
-                    fontWeight: 400,
-                    fontSize: '36px',
-                    lineHeight: '40px',
-                    color: '#231F20',
-                  }}
-                >
-                  🐞 Report a Bug
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 400,
-                    fontSize: '14px',
-                    lineHeight: '20px',
-                    color: '#8E8E93',
-                  }}
-                >
-                  Help us improve by describing what went wrong.
-                </Typography>
-              </Stack>
-              <IconButton
-                onClick={bugFormDialog.onFalse}
-                sx={{ mt: -0.5, mr: -1, color: '#8E8E93', '&:hover': { color: '#231F20' } }}
-              >
-                <Iconify icon="charm:cross" width={18} />
-              </IconButton>
-            </Stack>
-            <Divider sx={{ borderColor: '#E5E5EA' }} />
-          </Stack>
-
-          {/* Form Fields */}
-          <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
-            <Stack spacing={2.5}>
-              <FormField label="Describe the issue" required>
-                <RHFTextField
-                  name="stepsToReproduce"
-                  placeholder="What happened? Please describe the issue in detail."
-                  multiline
-                  rows={6}
-                  sx={{
-                    ...inputSx,
-                    '& .MuiInputBase-root': {
-                      ...inputSx['& .MuiInputBase-root'],
-                      height: 'auto',
-                      alignItems: 'flex-start',
-                    },
-                    '& .MuiInputBase-inputMultiline': {
-                      padding: '0px',
-                    },
-                  }}
-                />
-              </FormField>
-
-              <FormField label="Campaign Name" required>
-                <RHFTextField
-                  name="campaignName"
-                  placeholder="Which campaign is this related to?"
-                  sx={inputSx}
-                />
-              </FormField>
-
-              <FormField label="Attachments (upload up to 5 screenshots or images)" required>
-                <RHFUpload key={submitCount} name="attachments" type="file" multiple />
-              </FormField>
-            </Stack>
-          </Box>
-
-          {/* Submit — fixed bottom */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2, mt: 2 }}>
-            <LoadingButton
-              variant="contained"
-              type="submit"
-              loading={isSubmitting}
-              sx={{
-                backgroundColor: '#1340FF',
-                color: '#FFFFFF',
-                fontFamily: 'Inter Display, sans-serif',
-                fontWeight: 550,
-                fontSize: '14px',
-                lineHeight: '20px',
-                textTransform: 'none',
-                borderRadius: '8px',
-                px: 3,
-                pt: 1.25,
-                pb: 1.6,
-                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                '&:hover': {
-                  backgroundColor: '#0F35CC',
-                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                },
-                ...(!isFormFilled && {
-                  background:
-                    'linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), #3A3A3C',
-                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
-                  pointerEvents: 'none',
-                }),
-              }}
-            >
-              Submit Report
-            </LoadingButton>
-          </Box>
-        </Stack>
-      </FormProvider>
-    </Dialog>
   );
 
   const kwspForm = (
@@ -639,12 +390,13 @@ export default function DashboardLayout({ children }) {
           }}
           isOnline={isOnline}
         />
+
         <Main>{children}</Main>
 
-        {feedbackButton}
         {kwspButton}
-        {feedbackForm}
         {kwspForm}
+
+        <BugReportForm />
 
         <CampaignInvitationModal
           open={inviteApprovalPopup.open}
