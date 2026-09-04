@@ -377,7 +377,7 @@ export const endpoints = {
   },
   campaignCreationDrafts: {
     root: '/api/campaign-creation-drafts',
-    active: '/api/campaign-creation-drafts/active',
+    detail: (id) => `/api/campaign-creation-drafts/${id}`,
     update: (id) => `/api/campaign-creation-drafts/${id}`,
     delete: (id) => `/api/campaign-creation-drafts/${id}`,
     files: (id) => `/api/campaign-creation-drafts/${id}/files`,

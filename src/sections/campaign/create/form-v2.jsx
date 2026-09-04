@@ -19,6 +19,9 @@ import {
   Stack,
   Avatar,
   Dialog,
+  Divider,
+  Tooltip,
+  ButtonBase,
   IconButton,
   Typography,
   DialogTitle,
@@ -29,6 +32,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCompany from 'src/hooks/use-get-company';
+import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 
@@ -122,6 +126,327 @@ const getDraftFileUrls = (value) =>
     .filter((item) => item?.draftFile === true && typeof item.url === 'string')
     .map((item) => item.url);
 
+const formatDraftUpdatedAt = (value) => {
+  if (!value) return 'Recently updated';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Recently updated';
+  return date.toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+};
+
+function DraftPicker({ open, drafts, currentDraftId, onClose, onSelect, onDelete }) {
+  // Deleting a draft is not undoable, so the row asks first instead of a
+  // second dialog stacking on top of this one.
+  const [pendingDelete, setPendingDelete] = useState(null);
+
+  useEffect(() => {
+    if (!open) setPendingDelete(null);
+  }, [open]);
+
+  // Newest first -- the draft you were last in is almost always the one you want.
+  const sortedDrafts = [...drafts].sort(
+    (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
+  );
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      aria-labelledby="saved-drafts-title"
+      aria-describedby="saved-drafts-description"
+      PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}
+    >
+      <DialogTitle
+        id="saved-drafts-title"
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 2,
+          px: { xs: 2.5, sm: 3.5 },
+          pt: { xs: 2.5, sm: 3.5 },
+          pb: 1.5,
+        }}
+      >
+        <Box sx={{ minWidth: 0 }}>
+          <Stack direction="row" alignItems="center" spacing={1.25}>
+            <Typography
+              sx={{
+                color: '#221F20',
+                fontFamily: 'Instrument Serif, serif',
+                fontSize: { xs: '2rem', sm: '2.3rem' },
+                lineHeight: 1.05,
+              }}
+            >
+              Open saved draft
+            </Typography>
+            {sortedDrafts.length > 0 && (
+              <Box
+                component="span"
+                sx={{
+                  mt: 0.5,
+                  px: 1,
+                  py: 0.25,
+                  borderRadius: 1,
+                  bgcolor: '#F0F0F3',
+                  color: '#636366',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {sortedDrafts.length}
+              </Box>
+            )}
+          </Stack>
+          <Typography
+            id="saved-drafts-description"
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 1, maxWidth: 390 }}
+          >
+            Choose a saved campaign to continue where you left off. Your current work is saved
+            first.
+          </Typography>
+        </Box>
+        <IconButton aria-label="Close saved drafts" onClick={onClose} sx={{ mt: -0.75, mr: -1 }}>
+          <Iconify icon="material-symbols:close" width={22} />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent
+        dividers
+        sx={{ px: { xs: 2.5, sm: 3.5 }, py: 2.5, maxHeight: { xs: '55vh', sm: 420 } }}
+      >
+        {sortedDrafts.length === 0 ? (
+          <Box
+            sx={{
+              px: 2,
+              py: { xs: 4, sm: 5 },
+              textAlign: 'center',
+              border: '1px dashed #D9D9DE',
+              borderRadius: 2,
+              bgcolor: '#FAFAFB',
+            }}
+          >
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                display: 'grid',
+                placeItems: 'center',
+                mx: 'auto',
+                mb: 1.5,
+                borderRadius: '50%',
+                bgcolor: '#F0F0F3',
+                color: '#636366',
+              }}
+            >
+              <Iconify icon="solar:folder-with-files-bold" width={24} />
+            </Box>
+            <Typography variant="subtitle1" fontWeight={700}>
+              No saved drafts yet
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Your saved campaigns will appear here.
+            </Typography>
+          </Box>
+        ) : (
+          <Stack component="ul" role="list" spacing={1.25} sx={{ m: 0, p: 0, listStyle: 'none' }}>
+            {sortedDrafts.map((draft) => {
+              const name = draft.payload?.campaignName?.trim() || 'Untitled draft';
+              const isCurrent = Boolean(currentDraftId) && draft.id === currentDraftId;
+              const isConfirming = pendingDelete === draft.id;
+
+              return (
+                <Box component="li" key={draft.id}>
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      borderRadius: 2,
+                      border: '1px solid',
+                      borderColor: isConfirming ? '#FFC2B3' : isCurrent ? '#1340FF' : '#E6E6EA',
+                      bgcolor: isConfirming ? '#FFF6F4' : '#fff',
+                      transition: 'border-color 160ms ease, background-color 160ms ease',
+                      '&:hover': {
+                        borderColor: isConfirming ? '#FFC2B3' : isCurrent ? '#1340FF' : '#BDBDC5',
+                      },
+                    }}
+                  >
+                    {isConfirming ? (
+                      <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        alignItems={{ xs: 'stretch', sm: 'center' }}
+                        justifyContent="space-between"
+                        spacing={1}
+                        sx={{ p: 1.5, pl: 2 }}
+                      >
+                        <Typography variant="body2" sx={{ minWidth: 0 }}>
+                          Delete <b>{name}</b>? This cannot be undone.
+                        </Typography>
+                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                          <Button
+                            size="small"
+                            onClick={() => setPendingDelete(null)}
+                            sx={{ textTransform: 'none', fontWeight: 600, color: '#3A3A3C' }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            onClick={() => {
+                              onDelete(draft.id);
+                              setPendingDelete(null);
+                            }}
+                            sx={{
+                              textTransform: 'none',
+                              fontWeight: 600,
+                              bgcolor: '#FF5630',
+                              '&:hover': { bgcolor: '#E0421F' },
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </Stack>
+                      </Stack>
+                    ) : (
+                      <>
+                        <ButtonBase
+                          onClick={() => onSelect(draft.id)}
+                          disabled={isCurrent}
+                          sx={{
+                            width: '100%',
+                            gap: 1.5,
+                            p: 1.5,
+                            pr: 6,
+                            borderRadius: 2,
+                            justifyContent: 'flex-start',
+                            textAlign: 'left',
+                            '&.Mui-disabled': { opacity: 1 },
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              flexShrink: 0,
+                              display: 'grid',
+                              placeItems: 'center',
+                              borderRadius: 1.5,
+                              bgcolor: isCurrent ? '#EAEEFF' : '#F5F5F7',
+                              color: isCurrent ? '#1340FF' : '#636366',
+                            }}
+                          >
+                            <Iconify icon="solar:document-text-bold" width={20} />
+                          </Box>
+
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Stack direction="row" alignItems="center" spacing={0.75}>
+                              <Typography fontWeight={700} noWrap sx={{ minWidth: 0 }}>
+                                {name}
+                              </Typography>
+                              {isCurrent && (
+                                <Box
+                                  component="span"
+                                  sx={{
+                                    px: 0.75,
+                                    py: 0.125,
+                                    borderRadius: 0.75,
+                                    bgcolor: '#EAEEFF',
+                                    color: '#1340FF',
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    whiteSpace: 'nowrap',
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  Open now
+                                </Box>
+                              )}
+                            </Stack>
+                            <Typography variant="caption" color="text.secondary" noWrap>
+                              Last updated {formatDraftUpdatedAt(draft.updatedAt)}
+                            </Typography>
+                          </Box>
+
+                          {!isCurrent && (
+                            <Iconify
+                              icon="eva:arrow-ios-forward-fill"
+                              width={20}
+                              sx={{ color: '#A0A0A8', flexShrink: 0 }}
+                            />
+                          )}
+                        </ButtonBase>
+
+                        {!isCurrent && (
+                          <Tooltip title="Delete draft" arrow>
+                            <IconButton
+                              aria-label={`Delete ${name}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setPendingDelete(draft.id);
+                              }}
+                              size="small"
+                              sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                right: 8,
+                                transform: 'translateY(-50%)',
+                                color: '#A0A0A8',
+                                '&:hover': { color: '#FF5630', bgcolor: '#FFF0EC' },
+                              }}
+                            >
+                              <Iconify icon="solar:trash-bin-trash-bold" width={18} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </>
+                    )}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Stack>
+        )}
+      </DialogContent>
+
+      <DialogActions sx={{ px: { xs: 2.5, sm: 3.5 }, py: 2 }}>
+        <Button
+          onClick={onClose}
+          variant="outlined"
+          sx={{
+            height: 40,
+            textTransform: 'none',
+            fontWeight: 600,
+            color: '#3A3A3C',
+            borderColor: '#E7E7E7',
+            boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
+          }}
+        >
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+DraftPicker.propTypes = {
+  open: PropTypes.bool.isRequired,
+  drafts: PropTypes.arrayOf(PropTypes.object).isRequired,
+  currentDraftId: PropTypes.string,
+  onClose: PropTypes.func.isRequired,
+  onSelect: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
+
 function CreateCampaignFormV2({
   onClose,
   mutate: mutateCampaignList,
@@ -154,6 +479,7 @@ function CreateCampaignFormV2({
   const [brandState, setBrandState] = useState('');
   const [hasCreditError, setHasCreditError] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
+  const [draftPickerOpen, setDraftPickerOpen] = useState(false);
 
   const handleOpenConfirm = () => setConfirmOpen(true);
   const handleCloseConfirm = () => setConfirmOpen(false);
@@ -449,7 +775,14 @@ function CreateCampaignFormV2({
     status: draftSaveStatus,
     lastSavedAt,
     flush: flushDraft,
-    clearDraft,
+    freezeAndFlush,
+    resumeAutosave,
+    discardDraft,
+    clearLocalDraft,
+    drafts,
+    draftId,
+    loadDraft,
+    deleteDraft,
   } = useCampaignDraftAutosave({
     enabled: !isActivateMode,
     userId: user?.id,
@@ -472,19 +805,43 @@ function CreateCampaignFormV2({
       setCloseDraftOpen(true);
       return;
     }
-    await flushDraft();
-    onClose();
+    try {
+      await flushDraft();
+      onClose();
+    } catch (error) {
+      enqueueSnackbar('Draft could not be saved. Please try again.', { variant: 'error' });
+    }
   };
 
   const handleKeepEditing = () => setCloseDraftOpen(false);
 
   // The dialog drives its own saving / saved phases and calls back when it is
   // finished, so these only do the work -- not the closing.
-  const handleSaveAsDraft = () => flushDraft();
+  const handleSaveAsDraft = async () => {
+    try {
+      await flushDraft();
+    } catch (error) {
+      enqueueSnackbar('Draft could not be saved. Please try again.', { variant: 'error' });
+      throw error;
+    }
+  };
+  const handleSaveButton = () => handleSaveAsDraft().catch(() => {});
 
   const handleDiscardDraft = async () => {
-    await clearDraft();
+    await discardDraft();
     reset();
+    setActiveStep(0);
+    setShowAdditionalDetails(false);
+  };
+
+  const handleOpenSavedDraft = async (id) => {
+    try {
+      await flushDraft();
+      await loadDraft(id);
+      setDraftPickerOpen(false);
+    } catch (error) {
+      enqueueSnackbar('Save the current draft before switching.', { variant: 'error' });
+    }
   };
 
   const handleDraftDialogDone = () => {
@@ -799,6 +1156,18 @@ function CreateCampaignFormV2({
   }, []);
 
   const onSubmit = handleSubmit(async (data, stage) => {
+    let draftSource = null;
+    if (!isActivateMode) {
+      try {
+        draftSource = await freezeAndFlush();
+      } catch (error) {
+        resumeAutosave();
+        enqueueSnackbar('Draft could not be saved. Campaign was not created.', {
+          variant: 'error',
+        });
+        return;
+      }
+    }
     const formData = new FormData();
 
     const startDateVal = data.campaignStartDate ? dayjs(data.campaignStartDate) : dayjs();
@@ -912,6 +1281,8 @@ function CreateCampaignFormV2({
     // Build campaign data object
     const campaignData = {
       ...data,
+      creationDraftId: isActivateMode ? undefined : draftSource?.id,
+      creationDraftRevision: isActivateMode ? undefined : draftSource?.revision,
       rawFootage: data.deliverables.includes('RAW_FOOTAGES'),
       photos: data.deliverables.includes('PHOTOS'),
       ads: data.deliverables.includes('ADS'),
@@ -1042,9 +1413,8 @@ function CreateCampaignFormV2({
       enqueueSnackbar(res?.data?.message, {
         variant: 'success',
       });
-      if (!isActivateMode) {
-        await clearDraft();
-      }
+      if (!isActivateMode && draftSource?.id) await clearLocalDraft(draftSource.id);
+      if (!isActivateMode) resumeAutosave();
       reset();
       if (mutateCampaignList) {
         mutateCampaignList();
@@ -1058,6 +1428,7 @@ function CreateCampaignFormV2({
       localStorage.setItem('adminActiveStep', 0);
       onClose();
     } catch (error) {
+      if (!isActivateMode) resumeAutosave();
       console.error('API Error:', error);
       let errorMessage = 'Error creating campaign. Contact our admin';
 
@@ -1266,6 +1637,28 @@ function CreateCampaignFormV2({
 
   const campaignStartDate = watch('campaignStartDate');
 
+  // The draft buttons collapse to icons on narrower screens so the step
+  // indicator keeps the true centre of the header.
+  const showDraftLabels = useResponsive('up', 'xl');
+
+  // Same shape as the Back button, so every header control reads as one set.
+  const draftActionSx = {
+    height: 45,
+    minWidth: showDraftLabels ? 'auto' : 45,
+    ...(showDraftLabels ? {} : { px: 0 }),
+    bgcolor: 'white',
+    border: '1px solid #E7E7E7',
+    color: '#3A3A3C',
+    '&:hover': {
+      bgcolor: '#F8F8F8',
+      border: '1px solid #E7E7E7',
+    },
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+    boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
+    '& .MuiButton-startIcon': { mr: showDraftLabels ? 0.75 : 0, ml: 0 },
+  };
+
   return (
     <Box>
       <FormProvider methods={methods} onSubmit={methods.handleSubmit(onSubmit)}>
@@ -1276,27 +1669,84 @@ function CreateCampaignFormV2({
             display: 'grid',
             gridTemplateColumns: '1fr auto 1fr',
             columnGap: { xs: 1, md: 2 },
-            alignItems: 'start',
+            rowGap: 1,
+            alignItems: 'center',
           }}
         >
-          <IconButton
-            sx={{
-              border: 1,
-              borderRadius: 1,
-              boxShadow: '0px -1.5px 0px 0px #E7E7E7 inset',
-              borderColor: '#E7E7E7',
-              height: 45,
-              width: 45,
-              padding: 1,
-              flexShrink: 0,
-              justifySelf: 'start',
-            }}
-            size="large"
-            disabled={isLoading}
-            onClick={handleClose}
+          {/* Left cluster -- everything that acts on "this draft" lives together:
+              close, save, open, and the autosave status. */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ justifySelf: 'start', minWidth: 0, flexWrap: 'wrap', rowGap: 1 }}
           >
-            <Iconify icon="material-symbols:close" width={20} color="#231F20" />
-          </IconButton>
+            <IconButton
+              sx={{
+                border: 1,
+                borderRadius: 1,
+                boxShadow: '0px -1.5px 0px 0px #E7E7E7 inset',
+                borderColor: '#E7E7E7',
+                height: 45,
+                width: 45,
+                padding: 1,
+                flexShrink: 0,
+              }}
+              size="large"
+              disabled={isLoading}
+              onClick={handleClose}
+            >
+              <Iconify icon="material-symbols:close" width={20} color="#231F20" />
+            </IconButton>
+
+            {!isActivateMode && (
+              <>
+                <Divider
+                  orientation="vertical"
+                  flexItem
+                  sx={{
+                    my: 0.75,
+                    borderColor: '#E7E7E7',
+                    display: { xs: 'none', sm: 'block' },
+                  }}
+                />
+
+                <Tooltip title={showDraftLabels ? '' : 'Save draft'} arrow>
+                  <Button
+                    type="button"
+                    color="inherit"
+                    aria-label="Save draft"
+                    onClick={handleSaveButton}
+                    startIcon={<Iconify icon="solar:diskette-bold" width={18} />}
+                    sx={draftActionSx}
+                  >
+                    {showDraftLabels && 'Save draft'}
+                  </Button>
+                </Tooltip>
+
+                <Tooltip title={showDraftLabels ? '' : 'Open saved draft'} arrow>
+                  <Button
+                    type="button"
+                    color="inherit"
+                    aria-label="Open saved draft"
+                    onClick={() => setDraftPickerOpen(true)}
+                    startIcon={<Iconify icon="solar:folder-with-files-bold" width={18} />}
+                    sx={draftActionSx}
+                  >
+                    {showDraftLabels && 'Open saved draft'}
+                  </Button>
+                </Tooltip>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', pl: 0.5, minWidth: 0 }}>
+                  <DraftSaveIndicator
+                    status={draftSaveStatus}
+                    lastSavedAt={lastSavedAt}
+                    onRetry={handleSaveButton}
+                  />
+                </Box>
+              </>
+            )}
+          </Stack>
 
           {/* Step Indicator - Clickable navigation.
               In flow (not absolute) so the header never overlaps the nav buttons. */}
@@ -1470,40 +1920,64 @@ function CreateCampaignFormV2({
             </Stack>
           </Box>
 
-          {/* Navigation buttons, with the autosave status tucked underneath */}
-          <Stack alignItems="flex-end" spacing={1.5} sx={{ justifySelf: 'end', pr: 0.25 }}>
-            <Stack
-              direction="row"
-              justifyContent="space-between"
+          {/* Step navigation -- right column of the same header row, so the
+              header never grows a second row of controls. */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="flex-end"
+            sx={{
+              justifySelf: 'end',
+              minWidth: 0,
+              flexWrap: 'wrap',
+              gap: 1,
+            }}
+          >
+            <Button
+              color="inherit"
+              disabled={activeStep === 0}
+              onClick={handleBack}
               sx={{
-                display: { xs: 'none', md: 'flex' },
+                height: 45,
+                bgcolor: 'white',
+                border: '1px solid #E7E7E7',
+                color: '#3A3A3C',
+                '&:hover': {
+                  bgcolor: '#F8F8F8',
+                  border: '1px solid #E7E7E7',
+                },
+                fontWeight: 600,
+                boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
               }}
             >
+              Back
+            </Button>
+
+            {/* Steps 0-6: Show Next button */}
+            {activeStep >= 0 && activeStep <= 6 && (
               <Button
-                color="inherit"
-                disabled={activeStep === 0}
-                onClick={handleBack}
+                variant="contained"
+                onClick={handleNext}
+                disabled={!isStepValid() || isLoading}
                 sx={{
-                  mr: 1,
                   height: 45,
-                  bgcolor: 'white',
-                  border: '1px solid #E7E7E7',
-                  color: '#3A3A3C',
+                  bgcolor: '#3A3A3C',
                   '&:hover': {
-                    bgcolor: '#F8F8F8',
-                    border: '1px solid #E7E7E7',
+                    bgcolor: '#47474a',
                   },
+                  boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
                   fontWeight: 600,
-                  boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
                 }}
               >
-                Back
+                Next
               </Button>
+            )}
 
-              <Box sx={{ flexGrow: 1 }} />
+            {/* Step 7 (Next Steps): No navigation buttons - handled by component */}
 
-              {/* Steps 0-6: Show Next button */}
-              {activeStep >= 0 && activeStep <= 6 && (
+            {/* Step 8: Show Next and Confirm Campaign buttons */}
+            {activeStep === 8 && (
+              <Stack direction="row" spacing={1}>
                 <Button
                   variant="contained"
                   onClick={handleNext}
@@ -1520,49 +1994,6 @@ function CreateCampaignFormV2({
                 >
                   Next
                 </Button>
-              )}
-
-              {/* Step 7 (Next Steps): No navigation buttons - handled by component */}
-
-              {/* Step 8: Show Next and Confirm Campaign buttons */}
-              {activeStep === 8 && (
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    variant="contained"
-                    onClick={handleNext}
-                    disabled={!isStepValid() || isLoading}
-                    sx={{
-                      height: 45,
-                      bgcolor: '#3A3A3C',
-                      '&:hover': {
-                        bgcolor: '#47474a',
-                      },
-                      boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                      fontWeight: 600,
-                    }}
-                  >
-                    Next
-                  </Button>
-                  <LoadingButton
-                    variant="contained"
-                    onClick={handleOpenConfirm}
-                    disabled={isLoading || !isStepValid()}
-                    sx={{
-                      bgcolor: '#1340FF',
-                      '&:hover': {
-                        bgcolor: '#0030e0',
-                      },
-                      boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {isLoading ? confirmLoadingLabel : confirmLabel}
-                  </LoadingButton>
-                </Stack>
-              )}
-
-              {/* Step 9: Show only Confirm Campaign button (last step) */}
-              {activeStep === 9 && (
                 <LoadingButton
                   variant="contained"
                   onClick={handleOpenConfirm}
@@ -1576,17 +2007,28 @@ function CreateCampaignFormV2({
                     fontWeight: 600,
                   }}
                 >
-                  {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
+                  {isLoading ? confirmLoadingLabel : confirmLabel}
                 </LoadingButton>
-              )}
-            </Stack>
+              </Stack>
+            )}
 
-            {!isActivateMode && (
-              <DraftSaveIndicator
-                status={draftSaveStatus}
-                lastSavedAt={lastSavedAt}
-                onRetry={flushDraft}
-              />
+            {/* Step 9: Show only Confirm Campaign button (last step) */}
+            {activeStep === 9 && (
+              <LoadingButton
+                variant="contained"
+                onClick={handleOpenConfirm}
+                disabled={isLoading || !isStepValid()}
+                sx={{
+                  bgcolor: '#1340FF',
+                  '&:hover': {
+                    bgcolor: '#0030e0',
+                  },
+                  boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                  fontWeight: 600,
+                }}
+              >
+                {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
+              </LoadingButton>
             )}
           </Stack>
 
@@ -1598,6 +2040,15 @@ function CreateCampaignFormV2({
             onSaveDraft={handleSaveAsDraft}
             onDiscard={handleDiscardDraft}
             onDone={handleDraftDialogDone}
+          />
+
+          <DraftPicker
+            open={draftPickerOpen}
+            drafts={drafts}
+            currentDraftId={draftId}
+            onClose={() => setDraftPickerOpen(false)}
+            onSelect={handleOpenSavedDraft}
+            onDelete={deleteDraft}
           />
 
           {/* Confirmation Dialog */}
