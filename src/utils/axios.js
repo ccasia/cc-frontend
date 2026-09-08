@@ -368,7 +368,9 @@ export const endpoints = {
     allcreatorAgreement: '/api/campaign/getCreatorAgreements',
     updateAmountAgreement: `/api/campaign/updateAmountAgreement`,
     sendAgreement: `/api/campaign/sendAgreement`,
+    sendAdditionalAgreement: `/api/campaign/sendAdditionalAgreement`,
     resendAgreement: `/api/campaign/resendAgreement`,
+    changeCredits: `/api/campaign/changeCredits`,
     agreementTemplate: (id) => `/api/campaign/template/${id}`,
     linkNewAgreement: `/api/campaign/linkNewAgreement`,
     exportActiveCompleted: '/api/campaign/export/active-completed',
@@ -418,6 +420,7 @@ export const endpoints = {
         submitContent: '/api/creator/submissions/v4/submit-content',
         updatePostingLink: '/api/creator/submissions/v4/posting-link',
         deleteComment: (commentId) => `/api/creator/submissions/v4/comments/${commentId}`,
+        markViewed: (submissionId) => `/api/creator/submissions/v4/${submissionId}/mark-viewed`,
       },
     },
     admin: {

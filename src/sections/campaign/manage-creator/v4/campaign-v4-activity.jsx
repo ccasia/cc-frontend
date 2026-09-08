@@ -36,7 +36,7 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useUploadingStatus } from 'src/hooks/zustands/useUploadingStatus';
 
-import { fetcher, endpoints } from 'src/utils/axios';
+import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { regions } from 'src/assets/data/regions';
@@ -888,6 +888,144 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
   );
 };
 
+// Small "NEW" badge, styled to match the existing status-chip pattern used throughout
+// this file (e.g. the Agreement/video status chips) but in the house accent orange so it
+// reads as distinct from a status.
+const NewBadge = () => (
+  <Typography
+    variant="caption"
+    sx={{
+      px: 1.5,
+      py: 0.5,
+      fontWeight: 600,
+      border: '1px solid',
+      borderBottom: '3px solid',
+      borderRadius: 0.8,
+      bgcolor: 'white',
+      whiteSpace: 'nowrap',
+      color: '#FF3500',
+      borderColor: '#FF3500',
+      fontSize: '0.75rem',
+    }}
+  >
+    NEW
+  </Typography>
+);
+
+// Renders one round's signed/template agreement PDF preview + download button. Kept as its
+// own component (own `numPages` state) so multiple approved rounds can be expanded at once
+// without their page counts colliding.
+const ApprovedAgreementPreview = ({ url, onDownload, isSmallScreen, downloadLabel }) => {
+  const [numPages, setNumPages] = useState(null);
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: 2,
+        mt: 1,
+      }}
+    >
+      <Box sx={{ flex: 1 }}>
+        <Box
+          sx={{
+            width: '100%',
+            height: { xs: '250px', sm: '300px' },
+            borderRadius: 1,
+            border: '1px solid',
+            borderColor: 'divider',
+            overflow: 'auto',
+            bgcolor: 'background.neutral',
+            '& .react-pdf__Document': {
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            },
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(0,0,0,0.2)',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: 'rgba(0,0,0,0.1)',
+            },
+          }}
+        >
+          <Document
+            file={url}
+            onLoadSuccess={({ numPages: pages }) => setNumPages(pages)}
+            onLoadError={(err) => console.error('Error loading PDF:', err)}
+          >
+            {Array.from(new Array(numPages), (el, index) => (
+              <Box
+                key={index}
+                sx={{
+                  p: 1,
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  '&:not(:last-child)': {
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                  },
+                }}
+              >
+                <Page
+                  key={`page-${index + 1}`}
+                  pageNumber={index + 1}
+                  scale={isSmallScreen ? 0.3 : 0.4}
+                  renderAnnotationLayer={false}
+                  renderTextLayer={false}
+                />
+              </Box>
+            ))}
+          </Document>
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: { xs: 'center', md: 'flex-start' },
+        }}
+      >
+        <Button
+          variant="contained"
+          startIcon={<Iconify icon="material-symbols:download" width={20} />}
+          onClick={onDownload}
+          sx={{
+            bgcolor: '#203ff5',
+            color: 'white',
+            borderBottom: 3,
+            borderBottomColor: '#112286',
+            borderRadius: 1.5,
+            px: 2.5,
+            py: 1.2,
+            '&:hover': {
+              bgcolor: '#203ff5',
+              opacity: 0.9,
+            },
+          }}
+        >
+          {downloadLabel}
+        </Button>
+      </Box>
+    </Box>
+  );
+};
+
+ApprovedAgreementPreview.propTypes = {
+  url: PropTypes.string,
+  onDownload: PropTypes.func,
+  isSmallScreen: PropTypes.bool,
+  downloadLabel: PropTypes.string,
+};
+
 const LogisticsForm = ({ user, campaignId, onUpdate }) => {
   const LogisticsSchema = Yup.object().shape({
     country: Yup.string().required('Country is required'),
@@ -1163,7 +1301,6 @@ const LogisticsForm = ({ user, campaignId, onUpdate }) => {
 
 const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoading = false }) => {
   const [expandedSections, setExpandedSections] = useState({});
-  const [numPages, setNumPages] = useState(null);
   const [uploadingSubmissions, setUploadingSubmissions] = useState({}); // Track which submissions are uploading
   const updateTimerRef = React.useRef(null); // Store timer for debouncing updates
   const isFirstUpdateRef = React.useRef(true); // Track if this is the first update
@@ -1220,33 +1357,57 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
     }
   );
 
-  // Get signed agreement URL if available (for approved agreement display)
-  const signedAgreementUrl = useMemo(() => {
-    const signedContent = submissionsData?.grouped?.agreement?.content;
-    if (signedContent) {
-      return signedContent.replace(
-        'https://storage.googleapis.com/cult-prod/',
-        `${window.location.origin}/api/agreement/agreement-template/`
-      );
-    }
-    return null;
-  }, [submissionsData?.grouped?.agreement?.content]);
+  // Get the signed PDF url for one agreement round (each round has its own signed content).
+  const getSignedAgreementUrl = (agreementSubmission) => {
+    const signedContent = agreementSubmission?.content;
+    if (!signedContent) return null;
+    return signedContent.replace(
+      'https://storage.googleapis.com/cult-prod/',
+      `${window.location.origin}/api/agreement/agreement-template/`
+    );
+  };
 
-  // Handle section expand/collapse
-  const handleToggleSection = (submissionId) => {
+  // Clears the "NEW" badge server-side; best-effort, doesn't block the UI.
+  const markSubmissionViewed = async (submissionId) => {
+    try {
+      await axiosInstance.patch(endpoints.submission.creator.v4.markViewed(submissionId));
+    } catch (err) {
+      console.error('Failed to mark submission as viewed:', err);
+    }
+  };
+
+  const handleToggleSection = (submissionOrId) => {
+    const submission = typeof submissionOrId === 'object' ? submissionOrId : null;
+    const submissionId = submission?.id ?? submissionOrId;
+
     setExpandedSections((prev) => ({
       ...prev,
       [submissionId]: !prev[submissionId],
     }));
-  };
 
-  // PDF-related functions for approved agreement display
-  const onDocumentLoadSuccess = ({ numPages: pages }) => {
-    setNumPages(pages);
-  };
-
-  const onDocumentLoadError = (err) => {
-    console.error('Error loading PDF:', err);
+    if (submission?.id && !submission.viewedAt) {
+      markSubmissionViewed(submission.id);
+      const markSeen = (list) =>
+        list?.map((s) =>
+          s.id === submission.id ? { ...s, viewedAt: new Date().toISOString() } : s
+        );
+      mutate(
+        (current) => {
+          if (!current?.grouped) return current;
+          return {
+            ...current,
+            grouped: {
+              ...current.grouped,
+              agreements: markSeen(current.grouped.agreements),
+              videos: markSeen(current.grouped.videos),
+              photos: markSeen(current.grouped.photos),
+              rawFootage: markSeen(current.grouped.rawFootage),
+            },
+          };
+        },
+        { revalidate: false }
+      );
+    }
   };
 
   const handleDownload = async (url) => {
@@ -1392,15 +1553,6 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
     };
   }, [socket, campaign?.id, submissionsData, user?.id, mutate, mutateOverview]);
 
-  // Helper function to determine if submission is "new" (not submitted yet)
-  const isNewSubmission = (submission) => {
-    const hasContent =
-      submission.video?.length > 0 ||
-      submission.photos?.length > 0 ||
-      submission.rawFootages?.length > 0;
-    return !hasContent && submission.status === 'IN_PROGRESS';
-  };
-
   // Helper function to get submission status
   const getSubmissionStatus = (submission) => {
     // Check if this submission is currently uploading
@@ -1541,12 +1693,408 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
     );
   }
 
-  const { grouped } = submissionsData;
+  const { grouped, progress, total, completed } = submissionsData;
 
-  const showPendingAgreementCard = !isAgreementApproved && overviewData?.agreementStatus;
+  // One entry per agreement round (oldest first) — "Agreement", "Agreement 2", ...
+  const agreementSubmissions =
+    grouped?.agreements ?? (grouped?.agreement ? [grouped.agreement] : []);
   const showLogisticsCard = isDelivery;
   const canShowSubmissions =
     isAgreementApproved && (!isDelivery || (isLogisticsCompleted && !logisticLoading));
+
+  const renderVideoCard = (video, index) => {
+    if (video.isRoundApproved === false) return null;
+
+    const isExpanded = expandedSections[video.id];
+    const isNew = !video.viewedAt;
+    const title = getSubmissionTitle(video, index);
+    const status = getSubmissionStatus(video);
+    const statusInfo = getSubmissionStatusInfo(status);
+
+    const uploadStatus = uploadingStatus?.find((i) => i?.submissionId === video.id)?.status;
+
+    return (
+      <Card
+        key={video.id}
+        sx={{
+          overflow: 'visible',
+          bgcolor: '#F5F5F5',
+          boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+          borderRadius: 2,
+          border: 'none',
+        }}
+      >
+        {/* Header */}
+        <Box
+          sx={{
+            p: 2,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            '&:hover': {
+              bgcolor: 'transparent',
+            },
+          }}
+          onClick={() => handleToggleSection(video)}
+        >
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontFamily:
+                  'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                fontWeight: 500,
+                color: 'black',
+              }}
+            >
+              {title}
+            </Typography>
+
+            {isNew && <NewBadge />}
+
+            {/* Status Badge with Loading Indicator */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 1.5,
+                py: 0.5,
+                fontWeight: 600,
+                border: '1px solid',
+                borderBottom: '3px solid',
+                borderRadius: 0.8,
+                bgcolor: 'white',
+                whiteSpace: 'nowrap',
+                color: statusInfo.color,
+                borderColor: statusInfo.color,
+                transition: 'all 0.3s ease-in-out', // Smooth color transitions
+              }}
+            >
+              {status === 'UPLOADING...' && (
+                <CircularProgress size={12} thickness={4} sx={{ color: statusInfo.color }} />
+              )}
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  color: 'inherit',
+                }}
+              >
+                {status}
+              </Typography>
+            </Box>
+            <Typography>{uploadStatus}</Typography>
+          </Stack>
+
+          <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} width={20} />
+        </Box>
+
+        {/* Collapsible Content */}
+        <Collapse in={isExpanded}>
+          <Divider />
+          <Box sx={{ p: 3 }}>
+            <V4VideoSubmission
+              submission={video}
+              campaign={campaign}
+              onUploadStateChange={(isUploading) => {
+                setUploadingSubmissions((prev) => ({
+                  ...prev,
+                  [video.id]: isUploading,
+                }));
+              }}
+              mutate={mutate}
+              onUpdate={async () => {
+                // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
+                await mutate(
+                  (currentData) => {
+                    if (!currentData?.grouped) return currentData;
+                    return {
+                      ...currentData,
+                      grouped: {
+                        ...currentData.grouped,
+                        videos: currentData.grouped.videos.map((v) =>
+                          v.id === video.id
+                            ? {
+                                ...v,
+                                status: 'PENDING_REVIEW',
+                                // Keep video data to prevent UI flickering
+                                video: v.video,
+                                caption: v.caption,
+                              }
+                            : v
+                        ),
+                      },
+                    };
+                  },
+                  { revalidate: false }
+                );
+
+                setExpandedSections((prev) => ({ ...prev, [video.id]: false }));
+              }}
+            />
+          </Box>
+        </Collapse>
+      </Card>
+    );
+  };
+
+  const renderPhotoCard = (photo, index) => {
+    const isExpanded = expandedSections[photo.id];
+    const isNew = !photo.viewedAt;
+    const title = getSubmissionTitle(photo, index);
+    const status = getSubmissionStatus(photo);
+    const statusInfo = getSubmissionStatusInfo(status);
+
+    return (
+      <Card
+        key={photo.id}
+        sx={{
+          overflow: 'visible',
+          bgcolor: '#F5F5F5',
+          boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+          borderRadius: 2,
+          border: 'none',
+        }}
+      >
+        {/* Header */}
+        <Box
+          sx={{
+            p: 2,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            '&:hover': {
+              bgcolor: 'transparent',
+            },
+          }}
+          onClick={() => handleToggleSection(photo)}
+        >
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontFamily:
+                  'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                fontWeight: 500,
+                color: 'black',
+              }}
+            >
+              {title}
+            </Typography>
+
+            {isNew && <NewBadge />}
+
+            {/* Status Badge with Loading Indicator */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 1.5,
+                py: 0.5,
+                fontWeight: 600,
+                border: '1px solid',
+                borderBottom: '3px solid',
+                borderRadius: 0.8,
+                bgcolor: 'white',
+                whiteSpace: 'nowrap',
+                color: statusInfo.color,
+                borderColor: statusInfo.color,
+                transition: 'all 0.3s ease-in-out', // Smooth color transitions
+              }}
+            >
+              {status === 'UPLOADING...' && (
+                <CircularProgress size={12} thickness={4} sx={{ color: statusInfo.color }} />
+              )}
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  color: 'inherit',
+                }}
+              >
+                {status}
+              </Typography>
+            </Box>
+          </Stack>
+          <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} width={20} />
+        </Box>
+
+        {/* Collapsible Content */}
+        <Collapse in={isExpanded}>
+          <Divider />
+          <Box sx={{ p: 3 }}>
+            <V4PhotoSubmission
+              submission={photo}
+              campaign={campaign}
+              onUpdate={async () => {
+                await mutate(
+                  (currentData) => {
+                    if (!currentData?.grouped) return currentData;
+
+                    return {
+                      ...currentData,
+                      grouped: {
+                        ...currentData.grouped,
+                        photos: currentData.grouped.photos.map((p) =>
+                          p.id === photo.id
+                            ? {
+                                ...p,
+                                status: 'PENDING_REVIEW',
+                                // Update individual photo statuses to PENDING
+                                photos: p.photos?.map((photoItem) => ({
+                                  ...photoItem,
+                                  status: 'PENDING',
+                                })),
+                              }
+                            : p
+                        ),
+                      },
+                    };
+                  },
+                  { revalidate: false }
+                );
+                setExpandedSections((prev) => ({ ...prev, [photo.id]: false }));
+              }}
+            />
+          </Box>
+        </Collapse>
+      </Card>
+    );
+  };
+
+  const renderRawFootageCard = (rawFootage, index) => {
+    const isExpanded = expandedSections[rawFootage.id];
+    const isNew = !rawFootage.viewedAt;
+    const title = getSubmissionTitle(rawFootage, index);
+    const status = getSubmissionStatus(rawFootage);
+    const statusInfo = getSubmissionStatusInfo(status);
+
+    return (
+      <Card
+        key={rawFootage.id}
+        sx={{
+          overflow: 'visible',
+          bgcolor: '#F5F5F5',
+          boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+          borderRadius: 2,
+          border: 'none',
+        }}
+      >
+        {/* Header */}
+        <Box
+          sx={{
+            p: 2,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            '&:hover': {
+              bgcolor: 'transparent',
+            },
+          }}
+          onClick={() => handleToggleSection(rawFootage)}
+        >
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontFamily:
+                  'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                fontWeight: 500,
+                color: 'black',
+              }}
+            >
+              {title}
+            </Typography>
+
+            {isNew && <NewBadge />}
+
+            {/* Status Badge with Loading Indicator */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 1.5,
+                py: 0.5,
+                fontWeight: 600,
+                border: '1px solid',
+                borderBottom: '3px solid',
+                borderRadius: 0.8,
+                bgcolor: 'white',
+                whiteSpace: 'nowrap',
+                color: statusInfo.color,
+                borderColor: statusInfo.color,
+                transition: 'all 0.3s ease-in-out', // Smooth color transitions
+              }}
+            >
+              {status === 'UPLOADING...' && (
+                <CircularProgress size={12} thickness={4} sx={{ color: statusInfo.color }} />
+              )}
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  color: 'inherit',
+                }}
+              >
+                {status}
+              </Typography>
+            </Box>
+          </Stack>
+          <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} width={20} />
+        </Box>
+
+        {/* Collapsible Content */}
+        <Collapse in={isExpanded}>
+          <Divider />
+          <Box sx={{ p: 3 }}>
+            <V4RawFootageSubmission
+              submission={rawFootage}
+              onUpdate={async () => {
+                await mutate(
+                  (currentData) => {
+                    if (!currentData?.grouped) return currentData;
+
+                    const updated = {
+                      ...currentData,
+                      grouped: {
+                        ...currentData.grouped,
+                        rawFootage: currentData.grouped.rawFootage.map((rf) =>
+                          rf.id === rawFootage.id
+                            ? {
+                                ...rf,
+                                status: 'PENDING_REVIEW',
+                                // Update individual raw footage statuses to PENDING
+                                rawFootages: rf.rawFootages?.map((footage) => ({
+                                  ...footage,
+                                  status: 'PENDING',
+                                })),
+                              }
+                            : rf
+                        ),
+                      },
+                    };
+
+                    return updated;
+                  },
+                  { revalidate: false }
+                );
+                setExpandedSections((prev) => ({ ...prev, [rawFootage.id]: false }));
+              }}
+            />
+          </Box>
+        </Collapse>
+      </Card>
+    );
+  };
 
   return (
     <Box>
@@ -1579,269 +2127,161 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
         </Typography>{' '}
         page.
       </Typography>
-      {/* Pending Agreement Submission Card */}
-      {showPendingAgreementCard && (
-        <Card
-          sx={{
-            overflow: 'visible',
-            bgcolor: '#F5F5F5',
-            boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-            borderRadius: 2,
-            border: 'none',
-            mb: 1,
-          }}
-        >
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            sx={{ p: 2, cursor: 'pointer' }}
-            onClick={() => setExpandedSections((prev) => ({ ...prev, agreement: !prev.agreement }))}
-          >
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontFamily:
-                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                  fontWeight: 500,
-                  color: 'black',
-                }}
-              >
-                Agreement
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  px: 1.5,
-                  py: 0.5,
-                  fontWeight: 600,
-                  border: '1px solid',
-                  borderBottom: '3px solid',
-                  borderRadius: 0.8,
-                  bgcolor: 'white',
-                  whiteSpace: 'nowrap',
-                  color: overviewData.agreementStatus === 'PENDING_REVIEW' ? '#8B5CF6' : '#FFC702',
-                  borderColor:
-                    overviewData.agreementStatus === 'PENDING_REVIEW' ? '#8B5CF6' : '#FFC702',
-                  fontSize: '0.75rem',
-                }}
-              >
-                {overviewData.agreementStatus === 'IN_PROGRESS'
-                  ? 'PENDING AGREEMENT'
-                  : overviewData.agreementStatus === 'PENDING_REVIEW'
-                    ? 'IN REVIEW'
-                    : overviewData.agreementStatus?.replace('_', ' ').toUpperCase() ||
-                      'NOT STARTED'}
-              </Typography>
-            </Stack>
-            <Iconify
-              icon={expandedSections.agreement ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-              width={20}
-            />
-          </Stack>
+      {/* Agreement Rounds — one card per round ("Agreement", "Agreement 2", ...); a round
+          only appears once CS has actually sent it. */}
+      {agreementSubmissions.map((agreementSubmission, index) => {
+        const isApproved =
+          agreementSubmission.status === 'APPROVED' ||
+          agreementSubmission.status === 'CLIENT_APPROVED';
+        const isExpanded = !!expandedSections[agreementSubmission.id];
+        const isNew = !agreementSubmission.viewedAt;
+        const label = index === 0 ? 'Agreement' : `Agreement ${index + 1}`;
+        const roundSignedUrl = getSignedAgreementUrl(agreementSubmission);
 
-          <Collapse in={expandedSections.agreement}>
-            <Box sx={{ p: 2, pt: 0 }}>
-              <AgreementSubmission
-                campaign={campaign}
-                agreementSubmission={submissionsData?.grouped?.agreement}
-                onUpdate={async () => {
-                  await Promise.all([mutate(), mutateOverview()]);
-                  setExpandedSections((prev) => ({ ...prev, agreement: false }));
-                }}
-              />
-            </Box>
-          </Collapse>
-        </Card>
-      )}
-      {/* Approved Agreement Display */}
-      {isAgreementApproved && (
-        <Card
-          sx={{
-            overflow: 'visible',
-            bgcolor: '#F5F5F5',
-            boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-            borderRadius: 2,
-            border: 'none',
-            mb: 2,
-          }}
-        >
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            sx={{ p: 2, cursor: 'pointer' }}
-            onClick={() =>
-              setExpandedSections((prev) => ({
-                ...prev,
-                approvedAgreement: !prev.approvedAgreement,
-              }))
-            }
-          >
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontFamily:
-                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                  fontWeight: 500,
-                  color: 'black',
-                }}
-              >
-                Agreement
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  px: 1.5,
-                  py: 0.5,
-                  fontWeight: 600,
-                  border: '1px solid',
-                  borderBottom: '3px solid',
-                  borderRadius: 0.8,
-                  bgcolor: 'white',
-                  whiteSpace: 'nowrap',
-                  color: '#00AB55',
-                  borderColor: '#00AB55',
-                  fontSize: '0.75rem',
-                }}
-              >
-                APPROVED
-              </Typography>
-            </Stack>
-            <Iconify
-              icon={
-                expandedSections.approvedAgreement ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'
-              }
-              width={20}
-            />
-          </Stack>
+        // Keep each round's own videos directly under its agreement card — a creator who
+        // signs round 2 should see "Agreement 2" / "Video 3" appended at the bottom, with
+        // round 1's already-posted videos staying put at the top rather than getting
+        // reshuffled underneath every agreement card. Photos and raw footage aren't tied to
+        // a specific round (one submission per campaign), so they stay grouped with round 1.
+        const round = index + 1;
+        const roundVideos = (grouped?.videos || []).filter((video) => (video.round || 1) === round);
+        const roundPhotos = index === 0 ? grouped?.photos || [] : [];
+        const roundRawFootage = index === 0 ? grouped?.rawFootage || [] : [];
 
-          <Collapse in={expandedSections.approvedAgreement}>
-            <Box sx={{ p: 2, pt: 0 }}>
-              <Stack spacing={2}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: '#221f20',
-                    fontFamily:
-                      'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    fontWeight: 500,
-                  }}
-                >
-                  ✅ Your agreement has been approved!{' '}
-                  {signedAgreementUrl ? 'Below is your signed agreement.' : ''} You can now proceed
-                  with the campaign submissions.
-                </Typography>
-
-                {/* Agreement PDF Preview */}
-                {(signedAgreementUrl || agreementUrl) && (
-                  <Box
+        return (
+          <React.Fragment key={agreementSubmission.id}>
+            <Card
+              sx={{
+                overflow: 'visible',
+                bgcolor: '#F5F5F5',
+                boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+                borderRadius: 2,
+                border: 'none',
+                mb: index === agreementSubmissions.length - 1 ? 2 : 1,
+              }}
+            >
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ p: 2, cursor: 'pointer' }}
+                onClick={() => handleToggleSection(agreementSubmission)}
+              >
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography
+                    variant="h6"
                     sx={{
-                      display: 'flex',
-                      flexDirection: { xs: 'column', md: 'row' },
-                      gap: 2,
-                      mt: 1,
+                      fontFamily:
+                        'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: 500,
+                      color: 'black',
                     }}
                   >
-                    {/* PDF Preview */}
-                    <Box sx={{ flex: 1 }}>
-                      <Box
-                        sx={{
-                          width: '100%',
-                          height: { xs: '250px', sm: '300px' },
-                          borderRadius: 1,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          overflow: 'auto',
-                          bgcolor: 'background.neutral',
-                          '& .react-pdf__Document': {
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                          },
-                          '&::-webkit-scrollbar': {
-                            width: '8px',
-                          },
-                          '&::-webkit-scrollbar-thumb': {
-                            backgroundColor: 'rgba(0,0,0,0.2)',
-                            borderRadius: '4px',
-                          },
-                          '&::-webkit-scrollbar-track': {
-                            backgroundColor: 'rgba(0,0,0,0.1)',
-                          },
-                        }}
-                      >
-                        <Document
-                          file={signedAgreementUrl || agreementUrl}
-                          onLoadSuccess={onDocumentLoadSuccess}
-                          onLoadError={onDocumentLoadError}
-                        >
-                          {Array.from(new Array(numPages), (el, index) => (
-                            <Box
-                              key={index}
-                              sx={{
-                                p: 1,
-                                width: '100%',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                '&:not(:last-child)': {
-                                  borderBottom: '1px solid',
-                                  borderColor: 'divider',
-                                },
-                              }}
-                            >
-                              <Page
-                                key={`page-${index + 1}`}
-                                pageNumber={index + 1}
-                                scale={isSmallScreen ? 0.3 : 0.4}
-                                renderAnnotationLayer={false}
-                                renderTextLayer={false}
-                              />
-                            </Box>
-                          ))}
-                        </Document>
-                      </Box>
-                    </Box>
+                    {label}
+                  </Typography>
 
-                    {/* Download Button */}
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: { xs: 'center', md: 'flex-start' },
-                      }}
-                    >
-                      <Button
-                        variant="contained"
-                        startIcon={<Iconify icon="material-symbols:download" width={20} />}
-                        onClick={() => handleDownload(signedAgreementUrl || agreementUrl)}
+                  {isNew && <NewBadge />}
+
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      px: 1.5,
+                      py: 0.5,
+                      fontWeight: 600,
+                      border: '1px solid',
+                      borderBottom: '3px solid',
+                      borderRadius: 0.8,
+                      bgcolor: 'white',
+                      whiteSpace: 'nowrap',
+                      color: isApproved
+                        ? '#00AB55'
+                        : agreementSubmission.status === 'PENDING_REVIEW'
+                          ? '#8B5CF6'
+                          : '#FFC702',
+                      borderColor: isApproved
+                        ? '#00AB55'
+                        : agreementSubmission.status === 'PENDING_REVIEW'
+                          ? '#8B5CF6'
+                          : '#FFC702',
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    {isApproved
+                      ? 'APPROVED'
+                      : agreementSubmission.status === 'IN_PROGRESS'
+                        ? 'PENDING AGREEMENT'
+                        : agreementSubmission.status === 'PENDING_REVIEW'
+                          ? 'IN REVIEW'
+                          : agreementSubmission.status?.replace('_', ' ').toUpperCase() ||
+                            'NOT STARTED'}
+                  </Typography>
+                </Stack>
+                <Iconify
+                  icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                  width={20}
+                />
+              </Stack>
+
+              <Collapse in={isExpanded}>
+                <Box sx={{ p: 2, pt: 0 }}>
+                  {isApproved ? (
+                    <Stack spacing={2}>
+                      <Typography
+                        variant="body2"
                         sx={{
-                          bgcolor: '#203ff5',
-                          color: 'white',
-                          borderBottom: 3,
-                          borderBottomColor: '#112286',
-                          borderRadius: 1.5,
-                          px: 2.5,
-                          py: 1.2,
-                          '&:hover': {
-                            bgcolor: '#203ff5',
-                            opacity: 0.9,
-                          },
+                          color: '#221f20',
+                          fontFamily:
+                            'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontWeight: 500,
                         }}
                       >
-                        {signedAgreementUrl ? 'Download Signed Agreement' : 'Download Agreement'}
-                      </Button>
-                    </Box>
-                  </Box>
-                )}
+                        ✅ Your agreement has been approved!{' '}
+                        {roundSignedUrl ? 'Below is your signed agreement.' : ''} You can now
+                        proceed with the campaign submissions.
+                      </Typography>
+
+                      {(roundSignedUrl || agreementUrl) && (
+                        <ApprovedAgreementPreview
+                          url={roundSignedUrl || agreementUrl}
+                          onDownload={() => handleDownload(roundSignedUrl || agreementUrl)}
+                          isSmallScreen={isSmallScreen}
+                          downloadLabel={
+                            roundSignedUrl ? 'Download Signed Agreement' : 'Download Agreement'
+                          }
+                        />
+                      )}
+                    </Stack>
+                  ) : (
+                    <AgreementSubmission
+                      campaign={campaign}
+                      agreementSubmission={agreementSubmission}
+                      onUpdate={async () => {
+                        await Promise.all([mutate(), mutateOverview()]);
+                        setExpandedSections((prev) => ({
+                          ...prev,
+                          [agreementSubmission.id]: false,
+                        }));
+                      }}
+                    />
+                  )}
+                </Box>
+              </Collapse>
+            </Card>
+
+            {canShowSubmissions &&
+            (roundVideos.length || roundPhotos.length || roundRawFootage.length) ? (
+              <Stack
+                spacing={2}
+                sx={{ px: 1, pb: 1, mx: -1, mb: index === agreementSubmissions.length - 1 ? 0 : 1 }}
+              >
+                {roundVideos.map(renderVideoCard)}
+                {roundPhotos.map(renderPhotoCard)}
+                {roundRawFootage.map(renderRawFootageCard)}
               </Stack>
-            </Box>
-          </Collapse>
-        </Card>
-      )}
+            ) : null}
+          </React.Fragment>
+        );
+      })}
 
       {/* Logistics Information Card — shown for delivery campaigns in parallel with agreement */}
       {showLogisticsCard && (
@@ -1998,445 +2438,6 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
             )}
           </Collapse>
         </Card>
-      )}
-
-      {/* Collapsible Submission Cards */}
-      {canShowSubmissions && (
-        <Stack spacing={2} sx={{ px: 1, pb: 1, mx: -1 }}>
-          {/* Video Submissions */}
-          {grouped?.videos?.map((video, index) => {
-            const isExpanded = expandedSections[video.id];
-            // const isNew = isNewSubmission(video);
-            const title = getSubmissionTitle(video, index);
-            const status = getSubmissionStatus(video);
-            const statusInfo = getSubmissionStatusInfo(status);
-
-            const uploadStatus = uploadingStatus?.find((i) => i?.submissionId === video.id)?.status;
-
-            return (
-              <Card
-                key={video.id}
-                sx={{
-                  overflow: 'visible',
-                  bgcolor: '#F5F5F5',
-                  boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-                  borderRadius: 2,
-                  border: 'none',
-                }}
-              >
-                {/* Header */}
-                <Box
-                  sx={{
-                    p: 2,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    '&:hover': {
-                      bgcolor: 'transparent',
-                    },
-                  }}
-                  onClick={() => handleToggleSection(video.id)}
-                >
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontFamily:
-                          'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                        fontWeight: 500,
-                        color: 'black',
-                      }}
-                    >
-                      {title}
-                    </Typography>
-
-                    {/* Status Badge with Loading Indicator */}
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        px: 1.5,
-                        py: 0.5,
-                        fontWeight: 600,
-                        border: '1px solid',
-                        borderBottom: '3px solid',
-                        borderRadius: 0.8,
-                        bgcolor: 'white',
-                        whiteSpace: 'nowrap',
-                        color: statusInfo.color,
-                        borderColor: statusInfo.color,
-                        transition: 'all 0.3s ease-in-out', // Smooth color transitions
-                      }}
-                    >
-                      {status === 'UPLOADING...' && (
-                        <CircularProgress
-                          size={12}
-                          thickness={4}
-                          sx={{ color: statusInfo.color }}
-                        />
-                      )}
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: '0.75rem',
-                          color: 'inherit',
-                        }}
-                      >
-                        {status}
-                      </Typography>
-                    </Box>
-                    <Typography>{uploadStatus}</Typography>
-                  </Stack>
-
-                  <Iconify
-                    icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-                    width={20}
-                  />
-                </Box>
-
-                {/* Collapsible Content */}
-                <Collapse in={isExpanded}>
-                  <Divider />
-                  <Box sx={{ p: 3 }}>
-                    <V4VideoSubmission
-                      submission={video}
-                      campaign={campaign}
-                      onUploadStateChange={(isUploading) => {
-                        setUploadingSubmissions((prev) => ({
-                          ...prev,
-                          [video.id]: isUploading,
-                        }));
-                      }}
-                      mutate={mutate}
-                      onUpdate={async () => {
-                        // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
-                        await mutate(
-                          (currentData) => {
-                            if (!currentData?.grouped) return currentData;
-                            return {
-                              ...currentData,
-                              grouped: {
-                                ...currentData.grouped,
-                                videos: currentData.grouped.videos.map((v) =>
-                                  v.id === video.id
-                                    ? {
-                                        ...v,
-                                        status: 'PENDING_REVIEW',
-                                        // Keep video data to prevent UI flickering
-                                        video: v.video,
-                                        caption: v.caption,
-                                      }
-                                    : v
-                                ),
-                              },
-                            };
-                          },
-                          { revalidate: false }
-                        );
-
-                        setExpandedSections((prev) => ({ ...prev, [video.id]: false }));
-                      }}
-                    />
-                  </Box>
-                </Collapse>
-              </Card>
-            );
-          })}
-
-          {/* Photo Submissions */}
-          {grouped?.photos?.map((photo, index) => {
-            const isExpanded = expandedSections[photo.id];
-            const isNew = isNewSubmission(photo);
-            const title = getSubmissionTitle(photo, index);
-            const status = getSubmissionStatus(photo);
-            const statusInfo = getSubmissionStatusInfo(status);
-
-            return (
-              <Card
-                key={photo.id}
-                sx={{
-                  overflow: 'visible',
-                  bgcolor: '#F5F5F5',
-                  boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-                  borderRadius: 2,
-                  border: 'none',
-                }}
-              >
-                {/* Header */}
-                <Box
-                  sx={{
-                    p: 2,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    '&:hover': {
-                      bgcolor: 'transparent',
-                    },
-                  }}
-                  onClick={() => handleToggleSection(photo.id)}
-                >
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontFamily:
-                          'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                        fontWeight: 500,
-                        color: 'black',
-                      }}
-                    >
-                      {title}
-                    </Typography>
-
-                    {/* Status Badge with Loading Indicator */}
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        px: 1.5,
-                        py: 0.5,
-                        fontWeight: 600,
-                        border: '1px solid',
-                        borderBottom: '3px solid',
-                        borderRadius: 0.8,
-                        bgcolor: 'white',
-                        whiteSpace: 'nowrap',
-                        color: statusInfo.color,
-                        borderColor: statusInfo.color,
-                        transition: 'all 0.3s ease-in-out', // Smooth color transitions
-                      }}
-                    >
-                      {status === 'UPLOADING...' && (
-                        <CircularProgress
-                          size={12}
-                          thickness={4}
-                          sx={{ color: statusInfo.color }}
-                        />
-                      )}
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: '0.75rem',
-                          color: 'inherit',
-                        }}
-                      >
-                        {status}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                  <Iconify
-                    icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-                    width={20}
-                  />
-                </Box>
-
-                {/* Collapsible Content */}
-                <Collapse in={isExpanded}>
-                  <Divider />
-                  <Box sx={{ p: 3 }}>
-                    <V4PhotoSubmission
-                      submission={photo}
-                      campaign={campaign}
-                      onUpdate={async () => {
-                        await mutate(
-                          (currentData) => {
-                            console.log(
-                              '[Photo Submission] Before update - status:',
-                              currentData?.grouped?.photos?.find((p) => p.id === photo.id)?.status
-                            );
-
-                            if (!currentData?.grouped) return currentData;
-
-                            const updated = {
-                              ...currentData,
-                              grouped: {
-                                ...currentData.grouped,
-                                photos: currentData.grouped.photos.map((p) =>
-                                  p.id === photo.id
-                                    ? {
-                                        ...p,
-                                        status: 'PENDING_REVIEW',
-                                        // Update individual photo statuses to PENDING
-                                        photos: p.photos?.map((photoItem) => ({
-                                          ...photoItem,
-                                          status: 'PENDING',
-                                        })),
-                                      }
-                                    : p
-                                ),
-                              },
-                            };
-
-                            console.log(
-                              '[Photo Submission] After update - status:',
-                              updated.grouped.photos.find((p) => p.id === photo.id)?.status
-                            );
-                            return updated;
-                          },
-                          { revalidate: false }
-                        );
-                        setExpandedSections((prev) => ({ ...prev, [photo.id]: false }));
-                      }}
-                    />
-                  </Box>
-                </Collapse>
-              </Card>
-            );
-          })}
-
-          {/* Raw Footage Submissions */}
-
-          {grouped?.rawFootage?.map((rawFootage, index) => {
-            const isExpanded = expandedSections[rawFootage.id];
-            const isNew = isNewSubmission(rawFootage);
-            const title = getSubmissionTitle(rawFootage, index);
-            const status = getSubmissionStatus(rawFootage);
-            const statusInfo = getSubmissionStatusInfo(status);
-
-            return (
-              <Card
-                key={rawFootage.id}
-                sx={{
-                  overflow: 'visible',
-                  bgcolor: '#F5F5F5',
-                  boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-                  borderRadius: 2,
-                  border: 'none',
-                }}
-              >
-                {/* Header */}
-                <Box
-                  sx={{
-                    p: 2,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    '&:hover': {
-                      bgcolor: 'transparent',
-                    },
-                  }}
-                  onClick={() => handleToggleSection(rawFootage.id)}
-                >
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontFamily:
-                          'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                        fontWeight: 500,
-                        color: 'black',
-                      }}
-                    >
-                      {title}
-                    </Typography>
-
-                    {/* Status Badge with Loading Indicator */}
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        px: 1.5,
-                        py: 0.5,
-                        fontWeight: 600,
-                        border: '1px solid',
-                        borderBottom: '3px solid',
-                        borderRadius: 0.8,
-                        bgcolor: 'white',
-                        whiteSpace: 'nowrap',
-                        color: statusInfo.color,
-                        borderColor: statusInfo.color,
-                        transition: 'all 0.3s ease-in-out', // Smooth color transitions
-                      }}
-                    >
-                      {status === 'UPLOADING...' && (
-                        <CircularProgress
-                          size={12}
-                          thickness={4}
-                          sx={{ color: statusInfo.color }}
-                        />
-                      )}
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: '0.75rem',
-                          color: 'inherit',
-                        }}
-                      >
-                        {status}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                  <Iconify
-                    icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-                    width={20}
-                  />
-                </Box>
-
-                {/* Collapsible Content */}
-                <Collapse in={isExpanded}>
-                  <Divider />
-                  <Box sx={{ p: 3 }}>
-                    <V4RawFootageSubmission
-                      submission={rawFootage}
-                      onUpdate={async () => {
-                        await mutate(
-                          (currentData) => {
-                            console.log(
-                              '[Raw Footage] Before update - status:',
-                              currentData?.grouped?.rawFootage?.find(
-                                (rf) => rf.id === rawFootage.id
-                              )?.status
-                            );
-
-                            if (!currentData?.grouped) return currentData;
-
-                            const updated = {
-                              ...currentData,
-                              grouped: {
-                                ...currentData.grouped,
-                                rawFootage: currentData.grouped.rawFootage.map((rf) =>
-                                  rf.id === rawFootage.id
-                                    ? {
-                                        ...rf,
-                                        status: 'PENDING_REVIEW',
-                                        // Update individual raw footage statuses to PENDING
-                                        rawFootages: rf.rawFootages?.map((footage) => ({
-                                          ...footage,
-                                          status: 'PENDING',
-                                        })),
-                                      }
-                                    : rf
-                                ),
-                              },
-                            };
-
-                            console.log(
-                              '[Raw Footage] After update - status:',
-                              updated.grouped.rawFootage.find((rf) => rf.id === rawFootage.id)
-                                ?.status
-                            );
-                            return updated;
-                          },
-                          { revalidate: false }
-                        );
-                        setExpandedSections((prev) => ({ ...prev, [rawFootage.id]: false }));
-                      }}
-                    />
-                  </Box>
-                </Collapse>
-              </Card>
-            );
-          })}
-        </Stack>
       )}
     </Box>
   );
