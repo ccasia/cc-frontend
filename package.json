@@ -18,7 +18,9 @@
     "re:build-npm": "npm run rm:all && npm install && npm run build",
     "dev:host": "vite --host",
     "lintFix": "npx eslint . --ext",
-    "format": "npx eslint --fix"
+    "format": "npx eslint --fix",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -130,6 +132,9 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.2.1",
+    "@testing-library/user-event": "^14.5.2",
     "@types/react": "^18.2.43",
     "@vitejs/plugin-basic-ssl": "^1.2.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
@@ -144,11 +149,13 @@
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-unused-imports": "^3.0.0",
+    "jsdom": "^30.0.1",
     "prettier": "^3.1.0",
     "terser": "^5.14.2",
     "typescript": "^5.3.3",
     "vite": "^5.0.7",
-    "vite-plugin-checker": "^0.6.2"
+    "vite-plugin-checker": "^0.6.2",
+    "vitest": "^1.6.0"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
