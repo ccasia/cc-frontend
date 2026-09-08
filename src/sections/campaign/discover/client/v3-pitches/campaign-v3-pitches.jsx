@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { FixedSizeList } from 'react-window';
 import { m, AnimatePresence } from 'framer-motion';
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -54,10 +54,139 @@ import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import usePitchSocket from './use-pitch-socket';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
+import useGuestExtraction from './guest-extraction/use-guest-extraction';
+import CreatorFieldLoading from './guest-extraction/creator-field-loading';
+import { ACTIONS, ROW_STATUS, fieldProvenanceOf } from './guest-extraction/creator-row-machine';
+import useGuestMetricsDecision from './guest-extraction/use-guest-metrics-decision';
+import AutomaticCreatorScrapeDialog from './guest-extraction/automatic-creator-scrape-dialog';
+import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
+
+/**
+ * Every input in the Add Platform Creators row, at the handoff's 46px.
+ *
+ * These TextFields are MUI *medium* size, whose input carries 16.5px of
+ * vertical padding and measures 53px on its own. `minHeight` is only a floor,
+ * so it never brought them down — the height has to be fixed on the root and
+ * the padding removed from the input itself.
+ */
+/**
+ * Field label with an italic provenance suffix, e.g. "Follower Count (media kit)".
+ *
+ * Same shape the non-platform modal uses for "(extracted)", so a value the
+ * admin did not type says where it came from, in the same visual language.
+ */
+function FieldLabel({ text, provenance, hint }) {
+  const label = (
+    <Typography
+      sx={{
+        mb: hint ? 0 : '4px',
+        display: 'block',
+        color: '#636366',
+        fontSize: '12px !important',
+        lineHeight: '16px',
+        fontWeight: 500,
+      }}
+    >
+      {text}
+      {provenance ? (
+        <Box component="span" sx={{ fontStyle: 'italic', fontWeight: 400 }}>
+          {` (${provenance})`}
+        </Box>
+      ) : null}
+    </Typography>
+  );
+
+  if (!hint) return label;
+
+  return (
+    <Stack direction="row" alignItems="center" spacing={0.25} sx={{ mb: '4px', height: '16px' }}>
+      {label}
+      {hint}
+    </Stack>
+  );
+}
+
+FieldLabel.propTypes = {
+  text: PropTypes.string.isRequired,
+  /** Where the value came from. Omitted when the admin typed it. */
+  provenance: PropTypes.string,
+  /** Optional control beside the label, e.g. the engagement-rate breakdown. */
+  hint: PropTypes.node,
+};
+
+const FIELD_HEIGHT = 52;
+
+/**
+ * Shared box metrics for the three modal action buttons.
+ *
+ * They used to set height, radius and border width separately, and drifted:
+ * 1.5px borders on two of them against 1px on the third, and no radius at all
+ * on "Send to Client". Only colour belongs to the individual button now, so
+ * they cannot end up different sizes again.
+ */
+const ACTION_BUTTON_SX = {
+  height: 44,
+  minHeight: 44,
+  // Full width once they stack, so a narrow dialog gets three readable
+  // buttons instead of one row running off the edge.
+  width: { xs: '100%', sm: 'auto' },
+  boxSizing: 'border-box',
+  borderRadius: 1.15,
+  borderStyle: 'solid',
+  borderWidth: '1.5px',
+  borderBottomWidth: '3px',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
+  fontSize: '0.875rem',
+  fontWeight: 600,
+  px: 3,
+  textTransform: 'none',
+};
+
+/**
+ * The selected-creator chip, sized off the field it sits in.
+ *
+ * The handoff draws a 28px chip inside a 46px field. Keeping the same 18px of
+ * breathing room means the chip grows whenever the field does, instead of
+ * rattling around inside it.
+ */
+const CHIP_HEIGHT = FIELD_HEIGHT - 18;
+
+const FIELD_SX = {
+  '& .MuiOutlinedInput-root': {
+    bgcolor: '#fff',
+    height: FIELD_HEIGHT,
+    minHeight: FIELD_HEIGHT,
+    borderRadius: 1,
+  },
+  '& .MuiOutlinedInput-input': {
+    height: '100%',
+    boxSizing: 'border-box',
+    paddingTop: 0,
+    paddingBottom: 0,
+  },
+};
+
+/** Statuses where a paid run is in flight and the metric fields are filling. */
+const SCRAPE_FETCHING = ['QUEUED', 'RUNNING', 'POLLING'];
+
+/**
+ * What the Profile Link field says under itself.
+ *
+ * Nothing while the fetch runs: the Engagement Rate and Follower Count fields
+ * show their own loading state, so a "Fetching…" line here would say it twice
+ * and shift the row. Only outcomes it alone can report are listed.
+ */
+const SCRAPE_HINTS = {
+  VALIDATING: 'Checking the link…',
+  INSUFFICIENT_DATA: 'Not enough public posts. Enter the numbers by hand.',
+  FAILED: 'Could not fetch. Enter the numbers by hand.',
+};
 
 const PLATFORM_OPTIONS = [
-  { value: 'instagram', label: 'Instagram', icon: 'ri:instagram-fill' },
-  { value: 'tiktok', label: 'TikTok', icon: 'ic:baseline-tiktok' },
+  // Outline, not fill, and Instagram's own brand magenta from the handoff.
+  { value: 'instagram', label: 'Instagram', icon: 'ri:instagram-line', color: '#C13584' },
+  { value: 'tiktok', label: 'TikTok', icon: 'ic:baseline-tiktok', color: '#000000' },
 ];
 
 const getPlatformFollowerCount = (creator, selectedPlatform) => {
@@ -80,6 +209,23 @@ const getPlatformFollowerCount = (creator, selectedPlatform) => {
   }
 
   return 0;
+};
+
+/**
+ * The engagement rate a connected account reports, as a percentage string.
+ *
+ * Mirrors getPlatformFollowerCount. Null means nothing is connected for this
+ * platform, which is not the same as a measured zero.
+ */
+const getPlatformEngagementRate = (creator, selectedPlatform) => {
+  if (!creator) return null;
+  const rate =
+    selectedPlatform === 'tiktok'
+      ? creator?.creator?.tiktokUser?.engagement_rate
+      : creator?.creator?.instagramUser?.engagement_rate;
+  if (rate == null) return null;
+  // "5.40" reads as false precision next to the handoff's "5.4".
+  return String(Number(Number(rate).toFixed(2)));
 };
 
 const hasMediaKitForPlatform = (creator, selectedPlatform) => {
@@ -155,11 +301,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
       params.delete('creator');
       navigate({ search: params.toString() }, { replace: true });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [addCreatorOpen, setAddCreatorOpen] = useState(false);
   const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
+  const { enabled: guestMetricsEnabled } = useGuestMetricsDecision();
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
   const [outreachStatusFilter, setOutreachStatusFilter] = useState([]);
   const [outreachFilterAnchorEl, setOutreachFilterAnchorEl] = useState(null);
@@ -1448,19 +1595,35 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         onClose={() => setPlatformCreatorOpen(false)}
         campaign={campaign}
         pitches={pitches}
+        // Same flag as the guest flow, and not optional: the extraction
+        // endpoints answer 404 when it is off.
+        scrapeEnabled={guestMetricsEnabled}
         onUpdated={() => {
           onUpdate?.();
         }}
       />
 
-      <NonPlatformCreatorFormDialog
-        open={nonPlatformOpen}
-        onClose={() => setNonPlatformOpen(false)}
-        campaignId={campaign?.id}
-        onUpdated={() => {
-          onUpdate?.();
-        }}
-      />
+      {/* One server-side decision picks the flow. When it is off, or while it
+          is still loading, the existing manual form is what admins get. */}
+      {guestMetricsEnabled ? (
+        <AutomaticCreatorScrapeDialog
+          open={nonPlatformOpen}
+          onClose={() => setNonPlatformOpen(false)}
+          campaignId={campaign?.id}
+          onUpdated={() => {
+            onUpdate?.();
+          }}
+        />
+      ) : (
+        <NonPlatformCreatorFormDialog
+          open={nonPlatformOpen}
+          onClose={() => setNonPlatformOpen(false)}
+          campaignId={campaign?.id}
+          onUpdated={() => {
+            onUpdate?.();
+          }}
+        />
+      )}
 
       {/* Empty state */}
       {(!filteredPitches || filteredPitches.length === 0) && (
@@ -1717,7 +1880,14 @@ const ListboxComponent = React.forwardRef((props, ref) => {
   );
 });
 
-export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdated }) {
+export function PlatformCreatorModal({
+  open,
+  onClose,
+  campaign,
+  pitches,
+  onUpdated,
+  scrapeEnabled,
+}) {
   const { data, isLoading } = useGetAllCreators();
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
@@ -1726,17 +1896,64 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   // clients (and no-client campaigns) get the single default action
   const showShortlistActionChoice =
     user?.role !== 'client' && campaign?.submissionVersion === 'v4' && campaignHasClient(campaign);
-  const [creatorRows, setCreatorRows] = useState([
-    {
-      id: 1,
-      creator: null,
-      followerCount: '',
-      adminComments: '',
-      hasMediaKit: false,
-      selectedPlatform: '',
-    },
-  ]);
+  /**
+   * Rows live in the shared creator-row machine, the same one the guest modal
+   * uses. It brings link debounce, the Apify fetch, polling, cancel, session
+   * recovery and reset-on-open, so none of that is written twice.
+   */
+  const skipDraftRow = useCallback(
+    (row) => hasMediaKitForPlatform(row.creator, row.platform),
+    []
+  );
+
+  const {
+    state: rowState,
+    dispatch,
+    removeRow,
+    setLink,
+    clearPersistedDraft,
+  } = useGuestExtraction({
+    campaignId: campaign?.id,
+    enabled: open,
+    kind: 'platform',
+    skipDraftRow,
+  });
+
+  /**
+   * The row shape this modal renders.
+   *
+   * `platform` is the machine's field; this modal has always called it
+   * `selectedPlatform`. `hasMediaKit` is now derived rather than stored, so it
+   * can no longer fall out of step with the creator and platform it describes.
+   */
+  const creatorRows = useMemo(
+    () =>
+      rowState.rows.map((row) => ({
+        ...row,
+        selectedPlatform: row.platform ?? '',
+        hasMediaKit: hasMediaKitForPlatform(row.creator, row.platform),
+        /**
+         * Whether this row still needs the platform dropdown.
+         *
+         * A creator with nothing connected has to supply a profile link, and
+         * the link names its own platform, so the dropdown would only be a
+         * second way to say the same thing. A creator who has connected
+         * something keeps the dropdown, because they have no link to read and
+         * may be shortlisted on either platform.
+         *
+         * Keyed on whether the creator has *any* connected account, not on the
+         * current platform. Keying it on the current platform would make the
+         * dropdown vanish the moment an admin switched to the platform they had
+         * not connected, trapping them there.
+         */
+        needsPlatformChoice: !scrapeEnabled || getConnectedPlatformValues(row.creator).length > 0,
+      })),
+    [rowState.rows, scrapeEnabled]
+  );
+
   const [submitting, setSubmitting] = useState(false);
+  const [breakdownRowId, setBreakdownRowId] = useState(null);
+  const breakdownRow = creatorRows.find((row) => row.id === breakdownRowId);
 
   const shortlistedCreators = campaign?.shortlisted || [];
   const shortlistedIds = new Set(shortlistedCreators.map((c) => c.userId));
@@ -1757,126 +1974,94 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
       .filter((item) => !selectedInOtherRows.includes(item.id));
   };
 
-  // Add a new creator row (max 3)
-  const handleAddCreatorRow = () => {
-    if (creatorRows.length < 3) {
-      setCreatorRows([
-        ...creatorRows,
-        {
-          id: Date.now(),
-          creator: null,
-          followerCount: '',
-          adminComments: '',
-          hasMediaKit: false,
-          selectedPlatform: '',
-        },
-      ]);
-    }
-  };
+  // Add a new creator row. The machine caps this at MAX_ROWS, which is 3.
+  const handleAddCreatorRow = () => dispatch({ type: ACTIONS.ADD_ROW });
 
-  // Remove the last creator row (min 1)
+  // Remove the last creator row (min 1). `removeRow` also cancels any fetch
+  // that row had running and forgets its session-storage entry.
   const handleRemoveCreatorRow = () => {
     if (creatorRows.length > 1) {
-      setCreatorRows(creatorRows.slice(0, -1));
+      removeRow(creatorRows[creatorRows.length - 1].id);
     }
   };
 
-  // Update creator selection for a specific row
+  /**
+   * Pick the creator for a row.
+   *
+   * The follower count and platform are derived from the pick, exactly as
+   * before. Each derived value is dispatched on its own; the machine holds one
+   * field per action, so the modal keeps the domain rules and the machine keeps
+   * the storage.
+   */
   const handleCreatorRowChange = (rowId, selectedCreator) => {
-    setCreatorRows((rows) =>
-      rows.map((row) => {
-        if (row.id === rowId) {
-          if (selectedCreator === null) {
-            return {
-              ...row,
-              creator: null,
-              followerCount: '',
-              hasMediaKit: false,
-              selectedPlatform: '',
-              adminComments: '',
-            };
-          }
-          const selectedPlatform = resolveInitialPlatformForCreator(
-            selectedCreator,
-            row.selectedPlatform
-          );
-          const hasMediaKit =
-            selectedCreator && selectedPlatform
-              ? hasMediaKitForPlatform(selectedCreator, selectedPlatform)
-              : false;
-          const followerCount =
-            selectedCreator && selectedPlatform
-              ? getPlatformFollowerCount(selectedCreator, selectedPlatform) || ''
-              : '';
-          return {
-            ...row,
-            creator: selectedCreator,
-            followerCount,
-            hasMediaKit,
-            selectedPlatform,
-            adminComments: row.adminComments,
-          };
-        }
-        return row;
-      })
+    const row = creatorRows.find((r) => r.id === rowId);
+    if (!row) return;
+
+    if (selectedCreator === null) {
+      dispatch({ type: ACTIONS.SET_CREATOR, rowId, creator: null });
+      dispatch({ type: ACTIONS.SET_PLATFORM, rowId, platform: null });
+      dispatch({ type: ACTIONS.EDIT_FIELD, rowId, field: 'followerCount', value: '' });
+      dispatch({ type: ACTIONS.SET_COMMENTS, rowId, value: '' });
+      return;
+    }
+
+    const selectedPlatform = resolveInitialPlatformForCreator(
+      selectedCreator,
+      row.selectedPlatform
     );
+    const followerCount =
+      selectedCreator && selectedPlatform
+        ? getPlatformFollowerCount(selectedCreator, selectedPlatform) || ''
+        : '';
+
+    dispatch({ type: ACTIONS.SET_CREATOR, rowId, creator: selectedCreator });
+    dispatch({ type: ACTIONS.SET_PLATFORM, rowId, platform: selectedPlatform || null });
+    dispatch({ type: ACTIONS.EDIT_FIELD, rowId, field: 'followerCount', value: followerCount });
   };
 
+  /**
+   * Change the platform on a row.
+   *
+   * The subtle rule, unchanged: a follower count that came from the previous
+   * platform's media kit is stale on the new one and is cleared. A number the
+   * admin typed is not stale and is kept.
+   */
   const handlePlatformChange = (rowId, platform) => {
-    setCreatorRows((rows) =>
-      rows.map((row) => {
-        if (row.id !== rowId) return row;
-        const hasMediaKit = hasMediaKitForPlatform(row.creator, platform);
-        const resolvedFollowerCount = getPlatformFollowerCount(row.creator, platform);
-        const previousPlatform = row.selectedPlatform;
-        const previousResolvedFollowerCount =
-          row.creator && previousPlatform
-            ? getPlatformFollowerCount(row.creator, previousPlatform)
-            : 0;
-        const isUsingPreviousPlatformStoredValue =
-          previousResolvedFollowerCount > 0 &&
-          Number(row.followerCount || 0) === Number(previousResolvedFollowerCount);
-        const nextFollowerCount = row.creator
-          ? hasMediaKit
-            ? resolvedFollowerCount || ''
-            : resolvedFollowerCount > 0
-              ? resolvedFollowerCount
-              : isUsingPreviousPlatformStoredValue
-                ? ''
-                : row.followerCount
-          : '';
-        return {
-          ...row,
-          selectedPlatform: platform,
-          hasMediaKit,
-          followerCount: nextFollowerCount,
-        };
-      })
-    );
+    const row = creatorRows.find((r) => r.id === rowId);
+    if (!row) return;
+
+    const hasMediaKit = hasMediaKitForPlatform(row.creator, platform);
+    const resolvedFollowerCount = getPlatformFollowerCount(row.creator, platform);
+    const previousPlatform = row.selectedPlatform;
+    const previousResolvedFollowerCount =
+      row.creator && previousPlatform ? getPlatformFollowerCount(row.creator, previousPlatform) : 0;
+    const isUsingPreviousPlatformStoredValue =
+      previousResolvedFollowerCount > 0 &&
+      Number(row.followerCount || 0) === Number(previousResolvedFollowerCount);
+    const nextFollowerCount = row.creator
+      ? hasMediaKit
+        ? resolvedFollowerCount || ''
+        : resolvedFollowerCount > 0
+          ? resolvedFollowerCount
+          : isUsingPreviousPlatformStoredValue
+            ? ''
+            : row.followerCount
+      : '';
+
+    dispatch({ type: ACTIONS.SET_PLATFORM, rowId, platform: platform || null });
+    dispatch({ type: ACTIONS.EDIT_FIELD, rowId, field: 'followerCount', value: nextFollowerCount });
   };
 
   // Update follower count for a specific row (only for manual entry)
   const handleFollowerCountChange = (rowId, value) => {
-    setCreatorRows((rows) =>
-      rows.map((row) => {
-        if (row.id === rowId && !row.hasMediaKit) {
-          return { ...row, followerCount: value };
-        }
-        return row;
-      })
-    );
+    const row = creatorRows.find((r) => r.id === rowId);
+    if (!row || row.hasMediaKit) return;
+    dispatch({ type: ACTIONS.EDIT_FIELD, rowId, field: 'followerCount', value });
   };
 
   // Update admin comments for a specific row
   const handleAdminCommentsChange = (rowId, value) => {
-    setCreatorRows((rows) =>
-      rows.map((row) => {
-        if (row.id === rowId) {
-          return { ...row, adminComments: value };
-        }
-        return row;
-      })
-    );
+    dispatch({ type: ACTIONS.SET_COMMENTS, rowId, value });
   };
 
   // Get valid creators from rows
@@ -1889,22 +2074,16 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
     (row) => row.creator && (!row.followerCount || Number(row.followerCount) <= 0)
   );
 
-  const resetState = () => {
-    setCreatorRows([
-      {
-        id: 1,
-        creator: null,
-        followerCount: '',
-        adminComments: '',
-        hasMediaKit: false,
-        selectedPlatform: '',
-      },
-    ]);
+  // Do not RESET the machine here. A reset while `open` is still true would
+  // persist an empty draft and wipe the scrape the close is meant to keep.
+  // The hook hydrates or resets on the next open.
+  const resetLocalState = () => {
     setSubmitting(false);
+    setBreakdownRowId(null);
   };
 
   const handleCloseAll = () => {
-    resetState();
+    resetLocalState();
     onClose?.();
   };
 
@@ -1932,9 +2111,14 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
 
     const missingPlatformRow = validRows.find((row) => !row.selectedPlatform);
     if (missingPlatformRow) {
-      enqueueSnackbar('Please select Instagram or TikTok for each creator.', {
-        variant: 'error',
-      });
+      // The dropdown is hidden for a creator with nothing connected, so telling
+      // them to pick from it would be pointing at something not on screen.
+      enqueueSnackbar(
+        missingPlatformRow.needsPlatformChoice
+          ? 'Please select Instagram or TikTok for each creator.'
+          : 'Please add a profile link for each creator, so the platform can be read from it.',
+        { variant: 'error' }
+      );
       return;
     }
 
@@ -1963,6 +2147,19 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
             followerCount: !Number.isNaN(parsedFollowerCount) ? parsedFollowerCount : undefined,
             selectedPlatform: row.selectedPlatform,
             adminComments: row.adminComments?.trim() || undefined,
+            // Only a scraped row carries these. The server verifies the receipt
+            // before it trusts the rate, and ignores the row entirely without
+            // a link, which is what every pre-scrape row looks like.
+            ...(row.profileLink?.trim()
+              ? {
+                  profileLink: row.profileLink.trim(),
+                  engagementRate: row.engagementRate || undefined,
+                  completionReceipt: row.completionReceipt || undefined,
+                  extractionId: row.extractionId || undefined,
+                  fallbackReason: row.fallbackReason || undefined,
+                  fallbackConfirmed: row.fallbackConfirmed || undefined,
+                }
+              : {}),
           };
         }),
       });
@@ -1975,6 +2172,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
       );
 
       onUpdated?.();
+      clearPersistedDraft();
       handleCloseAll();
     } catch (error) {
       console.error('Error shortlisting creators:', error);
@@ -1996,27 +2194,56 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: 2,
+            borderRadius: '20px',
             bgcolor: '#F4F4F4',
-            width: { xs: '95%', sm: '90%', md: '900px', lg: '1000px' },
-            maxWidth: { xs: '95%', sm: '90%', md: '900px', lg: '1000px' },
+            boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.15)',
+            width: { xs: '95%', sm: '90%', md: '917px' },
+            maxWidth: { xs: '95%', sm: '90%', md: '917px' },
           },
         }}
       >
         <DialogTitle
           sx={{
-            fontFamily: 'Instrument Serif',
-            fontSize: '40px !important',
-            fontWeight: 400,
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             pb: 2,
-            lineHeight: 1.2,
           }}
         >
-          Add Platform Creators
-          <IconButton onClick={handleCloseAll} size="small">
+          <Box>
+            <Typography
+              component="span"
+              sx={{
+                display: 'block',
+                fontFamily: 'Instrument Serif',
+                fontSize: '36px !important',
+                fontWeight: 400,
+                lineHeight: '40px',
+                color: '#231F20',
+              }}
+            >
+              Add Platform Creators
+            </Typography>
+            {/* Only true while scraping is on; without it there is no link to
+                extract anything from. */}
+            {scrapeEnabled && (
+              <Typography
+                component="span"
+                sx={{
+                  display: 'block',
+                  mt: '4px',
+                  fontSize: '14px !important',
+                  fontWeight: 400,
+                  lineHeight: '18px',
+                  color: '#231F20',
+                }}
+              >
+                Placing the Profile Link will auto-extract the remaining information. This can be
+                edited.
+              </Typography>
+            )}
+          </Box>
+          <IconButton onClick={handleCloseAll} size="small" sx={{ color: '#636366' }}>
             <Iconify icon="mdi:close" width={24} />
           </IconButton>
         </DialogTitle>
@@ -2062,19 +2289,20 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                   >
                     {/* Single Row: Creator Autocomplete + Conditional Follower Count + CS Comments */}
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                      {/* Creator Autocomplete */}
-                      <Box flex={1} sx={{ minWidth: { xs: '100%', md: 'auto' } }}>
-                        <Typography
-                          sx={{
-                            mb: 0.5,
-                            display: 'block',
-                            color: '#636366',
-                            fontSize: '14px !important',
-                            fontWeight: 600,
-                          }}
-                        >
-                          Select Creators to add
-                        </Typography>
+                      {/* Creator Autocomplete.
+                          Every other field in the row is hidden until a creator
+                          is picked, so before that this is the only thing there
+                          and it stretches. Once picked, it settles to the 210px
+                          the handoff gives it and the rest of the row appears
+                          beside it. */}
+                      <Box
+                        sx={{
+                          flexShrink: 0,
+                          flexGrow: row.creator ? 0 : 1,
+                          width: row.creator ? { xs: '100%', md: 210 } : '100%',
+                        }}
+                      >
+                        <FieldLabel text="Select Creators to add" />
                         <Autocomplete
                           ListboxComponent={ListboxComponent}
                           disableListWrap
@@ -2117,13 +2345,36 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                               {...params}
                               placeholder={row.creator ? '' : 'Search creator...'}
                               sx={{
-                                '& .MuiOutlinedInput-root': {
+                                /**
+                                 * Match the 46px of every other field in the row.
+                                 *
+                                 * Autocomplete adds its own padding through
+                                 * `.MuiAutocomplete-inputRoot`, which out-weighs
+                                 * a plain `.MuiOutlinedInput-root` rule, so the
+                                 * selected-creator chip pushed this to 54 and
+                                 * left the field standing taller than the rest.
+                                 * Both selectors are set, and the padding is
+                                 * zeroed rather than only the height capped.
+                                 */
+                                // `&&&` on purpose. Autocomplete sets its own
+                                // vertical padding at
+                                // `.MuiAutocomplete-root .MuiOutlinedInput-root.MuiInputBase-sizeSmall`,
+                                // which is three classes. A normal `& .MuiOutlinedInput-root`
+                                // rule is two and silently loses, which is why
+                                // the height was set but never took.
+                                '&&& .MuiOutlinedInput-root': {
                                   bgcolor: '#fff',
-                                  minHeight: 48,
+                                  height: FIELD_HEIGHT,
+                                  minHeight: FIELD_HEIGHT,
+                                  paddingTop: 0,
+                                  paddingBottom: 0,
+                                  flexWrap: 'nowrap',
                                   borderRadius: 1,
                                 },
-                                '& .MuiOutlinedInput-input': {
+                                '&&& .MuiOutlinedInput-input': {
                                   display: row.creator ? 'none' : 'block',
+                                  paddingTop: 0,
+                                  paddingBottom: 0,
                                 },
                               }}
                               InputProps={{
@@ -2133,26 +2384,30 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                                     sx={{
                                       display: 'inline-flex',
                                       alignItems: 'center',
+                                      height: CHIP_HEIGHT,
+                                      flexShrink: 0,
                                       bgcolor: '#fff',
                                       color: '#231F20',
-                                      border: '1px solid #E7E7E7',
-                                      borderBottom: '3px solid #E7E7E7',
-                                      borderRadius: 1,
-                                      pl: 0.75,
-                                      pr: 0.75,
-                                      py: 0.5,
+                                      border: '1px solid #EBEBEB',
+                                      // The handoff draws the bottom edge as an
+                                      // inset shadow, so it adds no height.
+                                      boxShadow: 'inset 0px -3px 0px #E7E7E7',
+                                      borderRadius: '6px',
+                                      pl: '8px',
+                                      pr: '6px',
                                       fontWeight: 500,
-                                      fontSize: '0.875rem',
-                                      gap: 0.75,
-                                      maxWidth: 210,
+                                      fontSize: '13px',
+                                      lineHeight: '18px',
+                                      gap: '6px',
+                                      maxWidth: 170,
                                     }}
                                   >
                                     <Avatar
                                       src={row.creator?.photoURL}
                                       sx={{
-                                        width: 24,
-                                        height: 24,
-                                        fontSize: '0.75rem',
+                                        width: CHIP_HEIGHT - 12,
+                                        height: CHIP_HEIGHT - 12,
+                                        fontSize: '0.6875rem',
                                         bgcolor: '#e0e0e0',
                                         flexShrink: 0,
                                       }}
@@ -2214,24 +2469,75 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                         />
                       </Box>
 
+                      {/* Profile Link. Present only when scraping is on, and
+                          inert for a creator who already has a connected
+                          account: their numbers come from the media kit. */}
+                      {scrapeEnabled && row.creator && !row.hasMediaKit && (
+                        <Box sx={{ flexShrink: 0, width: { xs: '100%', md: 210 } }}>
+                          <FieldLabel text="Profile Link" />
+                          <TextField
+                            value={row.profileLink}
+                            onChange={(e) => setLink(row.id, e.target.value)}
+                            placeholder="Profile Link"
+                            error={Boolean(row.linkError)}
+                            helperText={row.linkError || SCRAPE_HINTS[row.status] || undefined}
+                            fullWidth
+                            size="small"
+                            InputProps={{
+                              startAdornment: row.platform ? (
+                                <InputAdornment position="start">
+                                  <Iconify
+                                    icon={
+                                      row.platform === 'tiktok'
+                                        ? 'ic:baseline-tiktok'
+                                        : 'ri:instagram-line'
+                                    }
+                                    width={16}
+                                    sx={{
+                                      color: row.platform === 'tiktok' ? '#000000' : '#C13584',
+                                    }}
+                                  />
+                                </InputAdornment>
+                              ) : null,
+                            }}
+                            sx={{
+                              ...FIELD_SX,
+                              // Blue reads as a link, matching the non-platform
+                              // modal. A rejected link drops back to body
+                              // colour, so it does not look like something that
+                              // worked.
+                              '& .MuiOutlinedInput-input': {
+                                ...FIELD_SX['& .MuiOutlinedInput-input'],
+                                color: row.linkError ? '#231F20' : '#1340FF',
+                              },
+                              '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
+                            }}
+                          />
+                        </Box>
+                      )}
+
+                      {/* The handoff's vertical rule. Identity sits to its
+                          left — the creator, and the profile link when there is
+                          one — and everything measured about them to its right,
+                          starting with Platform. */}
                       {row.creator && (
                         <Box
                           sx={{
+                            display: { xs: 'none', md: 'block' },
+                            alignSelf: 'stretch',
+                            borderRight: '1px solid #D3D3D3',
+                          }}
+                        />
+                      )}
+
+                      {row.creator && row.needsPlatformChoice && (
+                        <Box
+                          sx={{
+                            flex: { xs: '1 1 100%', md: '1 1 192px' },
                             minWidth: { xs: '100%', md: 138 },
-                            maxWidth: { xs: '100%', md: 180 },
                           }}
                         >
-                          <Typography
-                            sx={{
-                              mb: 0.5,
-                              display: 'block',
-                              color: '#636366',
-                              fontSize: '14px !important',
-                              fontWeight: 600,
-                            }}
-                          >
-                            Platform
-                          </Typography>
+                          <FieldLabel text="Platform" />
                           <TextField
                             select
                             fullWidth
@@ -2239,13 +2545,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                             onChange={(e) => handlePlatformChange(row.id, e.target.value)}
                             disabled={!row.creator}
                             placeholder="Select"
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                bgcolor: '#fff',
-                                minHeight: 48,
-                                borderRadius: 1,
-                              },
-                            }}
+                            sx={FIELD_SX}
                           >
                             <MenuItem value="" disabled>
                               Select
@@ -2253,7 +2553,11 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                             {getPlatformSelectOptions().map((platform) => (
                               <MenuItem key={platform.value} value={platform.value}>
                                 <Stack direction="row" spacing={1} alignItems="center">
-                                  <Iconify icon={platform.icon} width={16} />
+                                  <Iconify
+                                    icon={platform.icon}
+                                    width={16}
+                                    sx={{ color: platform.color }}
+                                  />
                                   <span>{platform.label}</span>
                                 </Stack>
                               </MenuItem>
@@ -2262,93 +2566,150 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                         </Box>
                       )}
 
+                      {/* Engagement Rate. Filled by the scrape, editable after,
+                          and hidden for a connected creator whose rate already
+                          comes from their media kit. */}
+                      {scrapeEnabled && row.creator && (
+                        <Box
+                          sx={{
+                            flex: { xs: '1 1 100%', md: '1 1 192px' },
+                            minWidth: { xs: '100%', md: 140 },
+                          }}
+                        >
+                          <FieldLabel
+                            text="Engagement Rate"
+                            provenance={
+                              row.hasMediaKit
+                                ? 'media kit'
+                                : fieldProvenanceOf(row, 'engagementRate')
+                            }
+                            hint={
+                              !row.hasMediaKit && row.status === ROW_STATUS.READY ? (
+                                <Tooltip title="How this rate was worked out" arrow describeChild>
+                                  <IconButton
+                                    aria-label="How this engagement rate was worked out"
+                                    onClick={() => setBreakdownRowId(row.id)}
+                                    size="small"
+                                    sx={{
+                                      p: 0,
+                                      color: '#8E8E93',
+                                      '&:hover': { color: '#1340FF', bgcolor: 'transparent' },
+                                    }}
+                                  >
+                                    <Iconify icon="eva:info-outline" width={14} />
+                                  </IconButton>
+                                </Tooltip>
+                              ) : null
+                            }
+                          />
+                          {SCRAPE_FETCHING.includes(row.status) ? (
+                            <CreatorFieldLoading
+                              label="Fetching engagement rate"
+                              showSpinner
+                              height={FIELD_HEIGHT}
+                            />
+                          ) : (
+                            <TextField
+                              value={
+                                row.hasMediaKit
+                                  ? (getPlatformEngagementRate(row.creator, row.platform) ?? '')
+                                  : (row.engagementRate ?? '')
+                              }
+                              onChange={(e) => {
+                                // A connected account owns its own rate.
+                                if (row.hasMediaKit) return;
+                                dispatch({
+                                  type: ACTIONS.EDIT_FIELD,
+                                  rowId: row.id,
+                                  field: 'engagementRate',
+                                  // A percentage, so digits and one dot only.
+                                  value: e.target.value.replace(/[^0-9.]/g, ''),
+                                });
+                              }}
+                              placeholder={row.hasMediaKit ? '—' : 'Engagement Rate'}
+                              disabled={row.hasMediaKit}
+                              fullWidth
+                              size="small"
+                              InputProps={{
+                                readOnly: row.hasMediaKit,
+                                endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                              }}
+                              inputProps={{ inputMode: 'decimal' }}
+                              sx={FIELD_SX}
+                            />
+                          )}
+                        </Box>
+                      )}
+
                       {/* Follower count: manual entry without media kit; read-only from media kit when connected */}
                       {row.creator && (
                         <Box
                           sx={{
-                            minWidth: { xs: '100%', md: 160 },
-                            maxWidth: { xs: '100%', md: 220 },
-                            flexShrink: 0,
+                            flex: { xs: '1 1 100%', md: '1 1 192px' },
+                            minWidth: { xs: '100%', md: 140 },
                           }}
                         >
-                          <Typography
-                            sx={{
-                              mb: 0.5,
-                              display: 'block',
-                              color: '#636366',
-                              fontSize: '14px !important',
-                              fontWeight: 600,
-                            }}
-                          >
-                            Follower Count
-                          </Typography>
-                          <TextField
-                            value={
+                          <FieldLabel
+                            text="Follower Count"
+                            provenance={
                               row.hasMediaKit
-                                ? formatFollowerCountDisplay(row.followerCount)
-                                : row.followerCount === '' || row.followerCount === undefined
-                                  ? ''
-                                  : String(row.followerCount)
+                                ? 'media kit'
+                                : fieldProvenanceOf(row, 'followerCount')
                             }
-                            onChange={(e) => {
-                              if (row.hasMediaKit) return;
-                              const val = e.target.value.replace(/[^0-9]/g, '');
-                              handleFollowerCountChange(row.id, val);
-                            }}
-                            placeholder={row.hasMediaKit ? '—' : 'Enter follower count'}
-                            fullWidth
-                            disabled={row.hasMediaKit}
-                            InputProps={{ readOnly: row.hasMediaKit }}
-                            helperText={row.hasMediaKit ? 'From media kit' : undefined}
-                            FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
-                            inputProps={
-                              row.hasMediaKit
-                                ? undefined
-                                : {
-                                    inputMode: 'numeric',
-                                    pattern: '[0-9]*',
-                                  }
-                            }
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                bgcolor: '#fff',
-                                minHeight: 48,
-                                borderRadius: 1,
-                              },
-                            }}
                           />
+                          {SCRAPE_FETCHING.includes(row.status) ? (
+                            <CreatorFieldLoading
+                              label="Fetching follower count"
+                              showSpinner
+                              height={FIELD_HEIGHT}
+                            />
+                          ) : (
+                            <TextField
+                              /* Grouped on both paths. 80,141,485 is readable at
+                                 a glance; 80141485 has to be counted. The state
+                                 keeps plain digits — onChange strips the
+                                 separators straight back out — so nothing
+                                 downstream ever sees a comma. */
+                              value={formatFollowerCountDisplay(row.followerCount)}
+                              onChange={(e) => {
+                                if (row.hasMediaKit) return;
+                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                handleFollowerCountChange(row.id, val);
+                              }}
+                              placeholder={row.hasMediaKit ? '—' : 'Enter follower count'}
+                              fullWidth
+                              disabled={row.hasMediaKit}
+                              InputProps={{ readOnly: row.hasMediaKit }}
+                              FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
+                              inputProps={
+                                row.hasMediaKit
+                                  ? undefined
+                                  : {
+                                      inputMode: 'numeric',
+                                      pattern: '[0-9]*',
+                                    }
+                              }
+                              sx={FIELD_SX}
+                            />
+                          )}
                         </Box>
                       )}
-
-                      {/* CS Comments (Optional) */}
-                      <Box sx={{ flex: { xs: 1, md: 1.2 }, minWidth: { xs: '100%', md: 'auto' } }}>
-                        <Typography
-                          sx={{
-                            mb: 0.5,
-                            display: 'block',
-                            color: '#636366',
-                            fontSize: '14px !important',
-                            fontWeight: 600,
-                          }}
-                        >
-                          CS Comments (Optional)
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          placeholder="Input comments about the creator that your clients might find helpful"
-                          value={row.adminComments}
-                          onChange={(e) => handleAdminCommentsChange(row.id, e.target.value)}
-                          disabled={!row.creator}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              bgcolor: '#fff',
-                              minHeight: 48,
-                              borderRadius: 1,
-                            },
-                          }}
-                        />
-                      </Box>
                     </Stack>
+
+                    {/* CS Comments sits on its own full-width row, per the
+                        handoff. Inline it was the sixth field and got squeezed
+                        off the edge. */}
+                    <Box sx={{ mt: 2 }}>
+                      <FieldLabel text="CS Comments (Optional)" />
+                      <TextField
+                        fullWidth
+                        placeholder="Input comments about the creator that your clients might find helpful"
+                        value={row.adminComments}
+                        onChange={(e) => handleAdminCommentsChange(row.id, e.target.value)}
+                        disabled={!row.creator}
+                        sx={FIELD_SX}
+                      />
+                    </Box>
                   </Box>
                 ))}
               </AnimatePresence>
@@ -2358,6 +2719,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                 <Tooltip title="Remove row" arrow>
                   <span>
                     <IconButton
+                      aria-label="Remove row"
                       onClick={handleRemoveCreatorRow}
                       disabled={creatorRows.length <= 1}
                       sx={{
@@ -2378,6 +2740,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                 <Tooltip title="Add row" arrow>
                   <span>
                     <IconButton
+                      aria-label="Add row"
                       onClick={handleAddCreatorRow}
                       disabled={creatorRows.length >= 3}
                       sx={{
@@ -2400,24 +2763,37 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
           )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3 }}>
+        {/* A plain Stack, not DialogActions.
+            DialogActions carries its own margin-left spacing whose selector
+            out-weighs an sx override, which indented every stacked button but
+            the first. Rather than keep fighting it, this owns the layout
+            outright: `gap` spaces on both axes, and `flex: 1` when stacked
+            makes the three buttons exactly equal. */}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          justifyContent="flex-end"
+          spacing={1}
+          sx={{
+            px: 3,
+            pt: 3,
+            pb: 3,
+            flexWrap: 'nowrap',
+            '& > *': { flex: { xs: 1, sm: 'none' } },
+          }}
+        >
           <Button
             onClick={handleCloseAll}
             sx={{
+              ...ACTION_BUTTON_SX,
               bgcolor: '#FFFFFF',
-              border: '1.5px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
-              borderRadius: 1.15,
+              borderColor: '#e7e7e7',
+              borderBottomColor: '#e7e7e7',
               color: '#1340FF',
-              height: 44,
-              px: 2.5,
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              textTransform: 'none',
               '&:hover': {
                 bgcolor: 'rgba(19, 64, 255, 0.08)',
-                border: '1.5px solid #1340FF',
-                borderBottom: '3px solid #1340FF',
+                borderColor: '#1340FF',
+                borderBottomColor: '#1340FF',
                 color: '#1340FF',
               },
             }}
@@ -2436,26 +2812,21 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
               loading={submitting}
               loadingIndicator={<CircularProgress size={20} sx={{ color: '#1ABF66' }} />}
               sx={{
+                ...ACTION_BUTTON_SX,
                 bgcolor: '#FFFFFF',
-                border: '1.5px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1.15,
-                height: 44,
+                borderColor: '#e7e7e7',
+                borderBottomColor: '#e7e7e7',
                 color: '#1ABF66',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                px: 3,
-                textTransform: 'none',
                 '&:hover': {
                   bgcolor: 'rgba(26, 191, 102, 0.08)',
-                  border: '1.5px solid #1ABF66',
-                  borderBottom: '3px solid #1ABF66',
+                  borderColor: '#1ABF66',
+                  borderBottomColor: '#1ABF66',
                 },
                 '&:disabled:not(.MuiLoadingButton-loading)': {
                   bgcolor: '#e7e7e7',
                   color: '#999999',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #d1d1d1',
+                  borderColor: '#e7e7e7',
+                  borderBottomColor: '#d1d1d1',
                 },
               }}
             >
@@ -2473,39 +2844,47 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
             loading={submitting}
             loadingIndicator={<CircularProgress size={20} sx={{ color: '#fff' }} />}
             sx={{
+              ...ACTION_BUTTON_SX,
               bgcolor: '#203ff5',
-              border: '1px solid #203ff5',
-              borderBottom: '3px solid #1933cc',
-              height: 44,
+              borderColor: '#203ff5',
+              borderBottomColor: '#1933cc',
               minWidth: 120,
               color: '#ffffff',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              px: 3,
-              textTransform: 'none',
               '&:hover': { bgcolor: '#1933cc', opacity: 0.9 },
               '&.MuiLoadingButton-loading': {
                 bgcolor: '#203ff5',
-                border: '1px solid #203ff5',
-                borderBottom: '3px solid #1933cc',
+                borderColor: '#203ff5',
+                borderBottomColor: '#1933cc',
               },
               '&:disabled:not(.MuiLoadingButton-loading)': {
                 bgcolor: '#e7e7e7',
                 color: '#999999',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #d1d1d1',
+                borderColor: '#e7e7e7',
+                borderBottomColor: '#d1d1d1',
               },
             }}
           >
             {showShortlistActionChoice ? 'Send to Client' : 'Add Creators'}
           </LoadingButton>
-        </DialogActions>
+        </Stack>
       </Dialog>
+
+      <EngagementBreakdownDialog
+        open={Boolean(breakdownRow)}
+        onClose={() => setBreakdownRowId(null)}
+        posts={breakdownRow?.selectedPosts}
+        formulaVersion={breakdownRow?.formulaVersion}
+        engagementRate={breakdownRow?.engagementRate}
+        followerCount={Number(breakdownRow?.followerCount) || null}
+        creatorName={breakdownRow?.creator?.name || breakdownRow?.name || undefined}
+      />
     </>
   );
 }
 
 PlatformCreatorModal.propTypes = {
+  /** Turns the Profile Link and Engagement Rate fields on. */
+  scrapeEnabled: PropTypes.bool,
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   campaign: PropTypes.object,
@@ -2768,7 +3147,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
                     {getPlatformSelectOptions().map((platform) => (
                       <MenuItem key={platform.value} value={platform.value}>
                         <Stack direction="row" spacing={1} alignItems="center">
-                          <Iconify icon={platform.icon} width={16} />
+                          <Iconify icon={platform.icon} width={16} sx={{ color: platform.color }} />
                           <span>{platform.label}</span>
                         </Stack>
                       </MenuItem>

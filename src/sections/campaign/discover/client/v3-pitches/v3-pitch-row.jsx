@@ -195,7 +195,12 @@ const PitchRow = ({
       engagementRate: resolveMetric(
         instagramStats?.engagement_rate,
         tiktokStats?.engagement_rate,
-        pitch.engagementRate
+        pitch.engagementRate,
+        // Scraped for a creator with no connected account. The pitch value
+        // above already covers this campaign; these two carry the rate into
+        // every other campaign the creator appears in.
+        pitch.user?.creator?.manualInstagramEngagementRate,
+        pitch.user?.creator?.manualTiktokEngagementRate
       ),
       followerCount: resolveMetric(
         instagramStats?.followers_count,
@@ -312,25 +317,27 @@ const PitchRow = ({
                   </Stack>
                 )}
               </Stack>
-            ) : profileUsername && (
-              <Stack direction="row" alignItems="center" spacing={0.3}>
-                {profileLink?.includes('instagram.com') && (
-                  <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
-                )}
-                {profileLink?.includes('tiktok.com') && (
-                  <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
-                )}
-                <Link
-                  href={profileLink?.startsWith('http') ? profileLink : `https://${profileLink}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  underline="hover"
-                  sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {profileUsername}
-                </Link>
-              </Stack>
+            ) : (
+              profileUsername && (
+                <Stack direction="row" alignItems="center" spacing={0.3}>
+                  {profileLink?.includes('instagram.com') && (
+                    <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
+                  )}
+                  {profileLink?.includes('tiktok.com') && (
+                    <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
+                  )}
+                  <Link
+                    href={profileLink?.startsWith('http') ? profileLink : `https://${profileLink}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    underline="hover"
+                    sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {profileUsername}
+                  </Link>
+                </Stack>
+              )
             )}
           </Stack>
         </Stack>
