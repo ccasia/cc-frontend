@@ -2545,6 +2545,11 @@ export function PlatformCreatorModal({
                             onChange={(e) => handlePlatformChange(row.id, e.target.value)}
                             disabled={!row.creator}
                             placeholder="Select"
+                            // `FieldLabel` above is decorative, so the control
+                            // itself carries no name. Without this the creator
+                            // Autocomplete and this select are both an unnamed
+                            // `combobox`, to a screen reader and to a test.
+                            SelectProps={{ inputProps: { 'aria-label': 'Platform' } }}
                             sx={FIELD_SX}
                           >
                             <MenuItem value="" disabled>
