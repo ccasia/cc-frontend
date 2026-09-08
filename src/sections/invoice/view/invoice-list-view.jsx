@@ -36,6 +36,7 @@ import { fDate, fTime, isAfter, isBetween } from 'src/utils/format-time';
 
 import { _invoices } from 'src/_mock';
 import { useAuthContext } from 'src/auth/hooks';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
@@ -99,7 +100,11 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
   const [filters, setFilters] = useState(defaultFilters);
 
   // OPTIMIZED: Use invoice stats hook for tab counts
-  const { stats: invoiceStats, isLoading: statsLoading } = useGetInvoiceStats(campId);
+  const {
+    stats: invoiceStats,
+    isLoading: statsLoading,
+    mutate: mutateInvoiceStats,
+  } = useGetInvoiceStats(campId);
 
   // OPTIMIZED: Use optimized hook with pagination and filtering
   const {
@@ -116,6 +121,25 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
     startDate: filters.startDate ? filters.startDate.toISOString() : undefined,
     endDate: filters.endDate ? filters.endDate.toISOString() : undefined,
   });
+
+  const { socket } = useSocketContext();
+  useEffect(() => {
+    if (!socket || !campId) return undefined;
+
+    const handleInvoiceGenerated = (payload) => {
+      if (payload.campaignId !== campId) return;
+      mutateInvoices();
+      mutateInvoiceStats();
+    };
+
+    socket.emit('join-campaign', campId);
+    socket.on('v4:invoice:generated', handleInvoiceGenerated);
+
+    return () => {
+      socket.off('v4:invoice:generated', handleInvoiceGenerated);
+      socket.emit('leave-campaign', campId);
+    };
+  }, [socket, campId, mutateInvoices, mutateInvoiceStats]);
 
   // Use optimized data if available, otherwise fallback to prop
   const [tableData, setTableData] = useState(() => {

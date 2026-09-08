@@ -40,6 +40,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -328,7 +329,34 @@ const CampaignDetailView = ({
     return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
   }, [isClient, getClientAllowedTabs]);
 
-  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(isDemo ? null : id);
+  const { campaigns: campaignInvoices, mutate: mutateCampaignInvoices } = useGetInvoicesByCampId(
+    isDemo ? null : id
+  );
+
+  const { socket: invoiceSocket } = useSocketContext();
+  useEffect(() => {
+    if (!invoiceSocket || !id || isDemo) return undefined;
+
+    const handleInvoiceGenerated = (payload) => {
+      if (payload.campaignId !== id) return;
+      mutateCampaignInvoices();
+    };
+
+    const handleCreditsUpdated = (payload) => {
+      if (payload.campaignId !== id) return;
+      campaignMutate();
+    };
+
+    invoiceSocket.emit('join-campaign', id);
+    invoiceSocket.on('v4:invoice:generated', handleInvoiceGenerated);
+    invoiceSocket.on('campaign:credits:updated', handleCreditsUpdated);
+
+    return () => {
+      invoiceSocket.off('v4:invoice:generated', handleInvoiceGenerated);
+      invoiceSocket.off('campaign:credits:updated', handleCreditsUpdated);
+      invoiceSocket.emit('leave-campaign', id);
+    };
+  }, [invoiceSocket, id, isDemo, mutateCampaignInvoices, campaignMutate]);
 
   const tabsContainerRef = useRef(null);
 

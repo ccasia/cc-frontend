@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { useNavigate, useLocation } from 'react-router';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
@@ -17,6 +18,7 @@ import {
   Select,
   Tooltip,
   Divider,
+  Checkbox,
   TableRow,
   MenuItem,
   TableCell,
@@ -40,18 +42,62 @@ import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 
-import { useNavigate, useLocation } from 'react-router';
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
+import { useTable } from 'src/components/table';
 import EmptyContent from 'src/components/empty-content';
 import { RHFTextField } from 'src/components/hook-form';
+import ScrollTabs from 'src/components/table/scroll-tabs';
 import SortableHeader from 'src/components/table/sortable-header';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 import CampaignAgreementEdit from './campaign-agreement-edit';
+import SendBulkAgreementModal from './send-bulk-agreement-modal';
+import SendAdditionalAgreementModal from './send-additional-agreement-modal';
+
+const ROUND_LABELS = {
+  1: 'First Agreement',
+  2: 'Second Agreement',
+  3: 'Third Agreement',
+  4: 'Fourth Agreement',
+  5: 'Fifth Agreement',
+  6: 'Sixth Agreement',
+  7: 'Seventh Agreement',
+  8: 'Eighth Agreement',
+  9: 'Ninth Agreement',
+  10: 'Tenth Agreement',
+};
+
+const getRoundLabel = (round) => ROUND_LABELS[round] || `Agreement ${round}`;
+
+// Custom checkbox look: white square with a blue border + blue check when checked, plain
+// grey-outlined square when empty — square corners (no radius) — used for both the header
+// "select all" and the per-row "select for additional agreement" checkboxes.
+const checkboxIconSx = {
+  width: 16,
+  height: 16,
+  borderRadius: 0,
+  border: '1.5px solid #D9D9D9',
+  bgcolor: '#fff',
+};
+const uncheckedCheckboxIcon = <Box component="span" sx={checkboxIconSx} />;
+const checkedCheckboxIcon = (
+  <Box
+    component="span"
+    sx={{
+      ...checkboxIconSx,
+      border: '1.5px solid #1340FF',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <Iconify icon="eva:checkmark-fill" width={11} sx={{ color: '#1340FF' }} />
+  </Box>
+);
 
 const CURRENCY_PREFIXES = {
   SGD: { prefix: '$', label: 'SGD' },
@@ -432,12 +478,16 @@ AgreementDialog.propTypes = {
   isDisabled: PropTypes.bool,
 };
 
-const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) => {
+const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabled = false }) => {
   const { data, isLoading, mutate: mutateAgreements } = useGetAgreements(campaign?.id);
   const { socket } = useSocketContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [activeRound, setActiveRound] = useState(1);
+  const table = useTable();
+  const sendAdditionalDialog = useBoolean();
+  const sendBulkDialog = useBoolean();
   const [searchQuery, setSearchQuery] = useState(
     () => new URLSearchParams(location.search).get('creator') || ''
   );
@@ -575,9 +625,15 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     if (!data || !submissions || loadingSubmissions) return data;
 
     return data.map((agreement) => {
-      const agreementSubmission = submissions.find(
+      const round = agreement.round || 1;
+      // AGREEMENT_FORM submissions are one per round (contentOrder = round) — match on both
+      // so a creator's later round doesn't inherit an earlier round's status.
+      const roundMatches = submissions.filter(
         (sub) => sub.userId === agreement.userId && sub.submissionType?.type === 'AGREEMENT_FORM'
       );
+      const agreementSubmission =
+        roundMatches.find((sub) => (sub.contentOrder || 1) === round) ||
+        (roundMatches.length === 1 ? roundMatches[0] : undefined);
 
       return {
         ...agreement,
@@ -641,35 +697,68 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     [pitchApprovedAgreements]
   );
 
+  // Rounds are independent per creator (not a campaign-wide batch) — a round tab only shows
+  // up if at least one creator actually has a row for it.
+  const roundsAvailable = useMemo(() => {
+    const rounds = new Set();
+    (pitchApprovedAgreements || []).forEach((item) => rounds.add(item.round || 1));
+    return [...rounds].sort((a, b) => a - b);
+  }, [pitchApprovedAgreements]);
+
+  const roundCounts = useMemo(() => {
+    const counts = {};
+    (pitchApprovedAgreements || []).forEach((item) => {
+      const round = item.round || 1;
+      counts[round] = (counts[round] || 0) + 1;
+    });
+    return counts;
+  }, [pitchApprovedAgreements]);
+
+  useEffect(() => {
+    if (roundsAvailable.length && !roundsAvailable.includes(activeRound)) {
+      setActiveRound(roundsAvailable[0]);
+    }
+  }, [roundsAvailable, activeRound]);
+
+  useEffect(() => {
+    table.setSelected([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRound]);
+
+  const roundScopedAgreements = useMemo(
+    () => (pitchApprovedAgreements || []).filter((item) => (item.round || 1) === activeRound),
+    [pitchApprovedAgreements, activeRound]
+  );
+
   const filteredData = useMemo(() => {
-    if (!pitchApprovedAgreements) return [];
+    if (!roundScopedAgreements) return [];
 
     let result = [];
 
     if (selectedFilter === 'pendingAgreement') {
       // Not sent yet
-      result = pitchApprovedAgreements.filter((item) => !item.isSent);
+      result = roundScopedAgreements.filter((item) => !item.isSent);
     } else if (selectedFilter === 'pendingApproval') {
       // Sent and waiting for creator to submit (PENDING_REVIEW)
-      result = pitchApprovedAgreements.filter(
+      result = roundScopedAgreements.filter(
         (item) => item?.submission?.status === 'PENDING_REVIEW'
       );
     } else if (selectedFilter === 'sentToCreator') {
       // Sent to creator but not yet submitted
-      result = pitchApprovedAgreements.filter(
+      result = roundScopedAgreements.filter(
         (item) =>
           item.isSent &&
           !['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(item?.submission?.status)
       );
     } else if (selectedFilter === 'rejected') {
       // Rejected agreements
-      result = pitchApprovedAgreements.filter((item) => item?.submission?.status === 'REJECTED');
+      result = roundScopedAgreements.filter((item) => item?.submission?.status === 'REJECTED');
     } else if (selectedFilter === 'approved') {
       // Approved agreements
-      result = pitchApprovedAgreements.filter((item) => item?.submission?.status === 'APPROVED');
+      result = roundScopedAgreements.filter((item) => item?.submission?.status === 'APPROVED');
     } else {
       // All
-      result = pitchApprovedAgreements;
+      result = roundScopedAgreements;
     }
 
     // Search functionality
@@ -718,7 +807,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [selectedFilter, sortColumn, sortDirection, pitchApprovedAgreements, searchQuery]);
+  }, [selectedFilter, sortColumn, sortDirection, roundScopedAgreements, searchQuery]);
 
   const footerTotals = useMemo(() => {
     const totalCreators = filteredData.length;
@@ -876,7 +965,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
 
   // Calculate filter counts
   const filterCounts = useMemo(() => {
-    if (!pitchApprovedAgreements) {
+    if (!roundScopedAgreements) {
       return {
         all: 0,
         pendingAgreement: 0,
@@ -888,22 +977,51 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     }
 
     return {
-      all: pitchApprovedAgreements.length,
-      pendingAgreement: pitchApprovedAgreements.filter((item) => !item.isSent).length,
-      pendingApproval: pitchApprovedAgreements.filter(
+      all: roundScopedAgreements.length,
+      pendingAgreement: roundScopedAgreements.filter((item) => !item.isSent).length,
+      pendingApproval: roundScopedAgreements.filter(
         (item) => item?.submission?.status === 'PENDING_REVIEW'
       ).length,
-      sentToCreator: pitchApprovedAgreements.filter(
+      sentToCreator: roundScopedAgreements.filter(
         (item) =>
           item.isSent &&
           !['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(item?.submission?.status)
       ).length,
-      rejected: pitchApprovedAgreements.filter((item) => item?.submission?.status === 'REJECTED')
+      rejected: roundScopedAgreements.filter((item) => item?.submission?.status === 'REJECTED')
         .length,
-      approved: pitchApprovedAgreements.filter((item) => item?.submission?.status === 'APPROVED')
+      approved: roundScopedAgreements.filter((item) => item?.submission?.status === 'APPROVED')
         .length,
     };
-  }, [pitchApprovedAgreements]);
+  }, [roundScopedAgreements]);
+
+  // Eligible for an additional agreement: this round has already been sent to the creator.
+  const eligibleForAdditionalIds = useMemo(
+    () => new Set(filteredData.filter((item) => item.isSent).map((item) => item.userId)),
+    [filteredData]
+  );
+
+  // Eligible for a bulk (first) agreement: this round hasn't been sent yet.
+  const eligibleForBulkIds = useMemo(
+    () => new Set(filteredData.filter((item) => !item.isSent).map((item) => item.userId)),
+    [filteredData]
+  );
+
+  // The two send actions are mutually exclusive per selection — once a creator from one group
+  // is checked, rows from the other group are disabled until the selection is cleared.
+  const selectionCategory = useMemo(() => {
+    if (table.selected.length === 0) return null;
+    return eligibleForAdditionalIds.has(table.selected[0]) ? 'additional' : 'bulk';
+  }, [table.selected, eligibleForAdditionalIds]);
+
+  const selectedCreatorRows = useMemo(
+    () => filteredData.filter((item) => table.selected.includes(item.userId) && eligibleForAdditionalIds.has(item.userId)),
+    [filteredData, table.selected, eligibleForAdditionalIds]
+  );
+
+  const selectedBulkCreatorRows = useMemo(
+    () => filteredData.filter((item) => table.selected.includes(item.userId) && eligibleForBulkIds.has(item.userId)),
+    [filteredData, table.selected, eligibleForBulkIds]
+  );
 
   if (isLoading || loadingSubmissions) {
     return <div>Loading...</div>; // A loading message while the data is being fetched
@@ -912,6 +1030,25 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
   return (
     <Box>
       <Stack direction="column" spacing={2}>
+        {roundsAvailable.length > 1 && (
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
+            spacing={1.5}
+          >
+            <ScrollTabs
+              tabs={roundsAvailable.map((round) => ({
+                value: round,
+                label: getRoundLabel(round),
+                count: roundCounts[round] || 0,
+              }))}
+              value={activeRound}
+              onChange={setActiveRound}
+            />
+          </Stack>
+        )}
+
         <Stack
           direction="column"
           spacing={{ xs: 1, sm: 1.5 }}
@@ -921,10 +1058,13 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             sx={{ width: '100%' }}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
             alignSelf="start"
             spacing={2}
             mb={0.5}
           >
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
             <TextField
               placeholder="Search creators..."
               value={searchQuery}
@@ -1033,6 +1173,150 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
             >
               Alphabetical
             </Button>
+            </Stack>
+
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ flexShrink: 0 }}>
+              {table.selected.length > 0 && (
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    {table.selected.length} Creator{table.selected.length !== 1 ? 's' : ''} Selected
+                  </Typography>
+                  <Typography
+                    component="button"
+                    type="button"
+                    onClick={() => table.setSelected([])}
+                    sx={{
+                      border: 'none',
+                      bgcolor: 'transparent',
+                      cursor: 'pointer',
+                      p: 0,
+                      color: '#1340FF',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    Clear
+                  </Typography>
+                </Stack>
+              )}
+              <Button
+                variant="contained"
+                disabled={isDisabled || selectedBulkCreatorRows.length === 0}
+                onClick={sendBulkDialog.onTrue}
+                sx={{
+                  minWidth: '38px',
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '8px',
+                  pt: '8px',
+                  pr: '12px',
+                  pb: '11px',
+                  pl: '12px',
+                  gap: '4px',
+                  bgcolor: '#FFFFFF',
+                  color: '#1340FF',
+                  border: '1px solid #E7E7E7',
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  justifyContent: 'flex-start',
+                  transition: 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
+                  '&:hover:not(.Mui-disabled)': {
+                    bgcolor: '#F5F7FF',
+                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                    width: '175px',
+                    '& .send-bulk-label': { opacity: 1, maxWidth: '160px' },
+                  },
+                  '&.Mui-disabled': {
+                    opacity: 1,
+                    color: '#B0B0B1',
+                    border: '1px solid #EDEDED',
+                    boxShadow: 'none',
+                  },
+                }}
+              >
+                <Box
+                  component="img"
+                  src="/assets/icons/overview/group2People.svg"
+                  alt=""
+                  sx={{ width: 16, height: 16, flexShrink: 0 }}
+                />
+                <Box
+                  component="span"
+                  className="send-bulk-label"
+                  sx={{
+                    display: 'inline-block',
+                    opacity: 0,
+                    maxWidth: 0,
+                    overflow: 'hidden',
+                    transition: 'opacity 0.25s ease 0.05s, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
+                >
+                  Send Bulk Agreement
+                </Box>
+              </Button>
+              <Button
+                variant="contained"
+                disabled={isDisabled || selectedCreatorRows.length === 0}
+                onClick={sendAdditionalDialog.onTrue}
+                sx={{
+                  minWidth: '38px',
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '8px',
+                  px: '11px',
+                  gap: '8px',
+                  bgcolor: '#221f20',
+                  color: '#fff',
+                  border: '1.5px solid #221f20',
+                  borderBottom: '3px solid #000',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  justifyContent: 'flex-start',
+                  transition: 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
+                  '&:hover:not(.Mui-disabled)': {
+                    bgcolor: '#000',
+                    width: '210px',
+                    '& .send-additional-label': { opacity: 1, maxWidth: '200px' },
+                  },
+                  '&.Mui-disabled': {
+                    opacity: 1,
+                    border: 'none',
+                    color: '#fff',
+                    background:
+                      'linear-gradient(0deg, #B0B0B1, #B0B0B1), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                    boxShadow: '0px -3px 0px 0px #0000001A inset',
+                  },
+                }}
+              >
+                <Box
+                  component="img"
+                  src="/assets/additional-ag.svg"
+                  alt=""
+                  sx={{ width: 14, height: 18, flexShrink: 0 }}
+                />
+                <Box
+                  component="span"
+                  className="send-additional-label"
+                  sx={{
+                    display: 'inline-block',
+                    opacity: 0,
+                    maxWidth: 0,
+                    overflow: 'hidden',
+                    transition: 'opacity 0.25s ease 0.05s, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
+                >
+                  Send Additional Agreement
+                </Box>
+              </Button>
+            </Stack>
           </Stack>
 
           {lgUp ? (
@@ -1269,6 +1553,31 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
               <TableHead>
                 <TableRow>
                   <TableCell
+                    padding="checkbox"
+                    sx={{ borderRadius: '10px 0 0 10px', bgcolor: '#f5f5f5', pl: 1.5 }}
+                  >
+                    <Checkbox
+                      icon={uncheckedCheckboxIcon}
+                      checkedIcon={checkedCheckboxIcon}
+                      indeterminateIcon={checkedCheckboxIcon}
+                      indeterminate={
+                        table.selected.length > 0 &&
+                        table.selected.length < eligibleForAdditionalIds.size
+                      }
+                      checked={
+                        eligibleForAdditionalIds.size > 0 &&
+                        table.selected.length === eligibleForAdditionalIds.size
+                      }
+                      // "Select all" only ever bulk-checks additional-agreement-eligible
+                      // creators — a bulk (first) agreement send must be ticked one by one.
+                      disabled={isDisabled || selectionCategory === 'bulk' || eligibleForAdditionalIds.size === 0}
+                      onChange={(e) =>
+                        table.onSelectAllRows(e.target.checked, [...eligibleForAdditionalIds])
+                      }
+                      sx={{ p: 0.5 }}
+                    />
+                  </TableCell>
+                  <TableCell
                     sx={{
                       py: { xs: 0.5, sm: 1 },
                       px: { xs: 1, sm: 2 },
@@ -1276,7 +1585,6 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                       fontWeight: 600,
                       width: { xs: '25%', sm: 220 },
                       minWidth: { xs: 120, sm: 220 },
-                      borderRadius: '10px 0 0 10px',
                       bgcolor: '#f5f5f5',
                       whiteSpace: 'nowrap',
                     }}
@@ -1370,9 +1678,31 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                   );
 
                   const isPendingReview = item?.submission?.status === 'PENDING_REVIEW';
+                  const isEligibleForAdditional = eligibleForAdditionalIds.has(item.userId);
+                  const rowCategory = isEligibleForAdditional ? 'additional' : 'bulk';
+                  const isCategoryLocked = selectionCategory && selectionCategory !== rowCategory;
+                  const checkboxTooltip = isCategoryLocked
+                    ? `Clear your current selection to pick a creator for ${
+                        selectionCategory === 'bulk' ? 'a bulk' : 'an additional'
+                      } agreement`
+                    : '';
 
                   return (
                     <TableRow key={item.id}>
+                      <TableCell padding="checkbox" sx={{ pl: 1.5 }}>
+                        <Tooltip title={checkboxTooltip}>
+                          <span>
+                            <Checkbox
+                              icon={uncheckedCheckboxIcon}
+                              checkedIcon={checkedCheckboxIcon}
+                              checked={table.selected.includes(item.userId)}
+                              disabled={isDisabled || isCategoryLocked}
+                              onChange={() => table.onSelectRow(item.userId)}
+                              sx={{ p: 0 }}
+                            />
+                          </span>
+                        </Tooltip>
+                      </TableCell>
                       <TableCell>
                         <Stack direction="row" alignItems="center" spacing={{ xs: 1 }}>
                           <Avatar
@@ -1993,6 +2323,32 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
         campaign={campaign}
       />
 
+      <SendAdditionalAgreementModal
+        open={sendAdditionalDialog.value}
+        onClose={sendAdditionalDialog.onFalse}
+        campaign={campaign}
+        creators={selectedCreatorRows}
+        campaignMutate={campaignMutate}
+        onSent={async () => {
+          table.setSelected([]);
+          await mutateAgreements();
+          if (campaignMutate) await campaignMutate();
+        }}
+      />
+
+      <SendBulkAgreementModal
+        open={sendBulkDialog.value}
+        onClose={sendBulkDialog.onFalse}
+        campaign={campaign}
+        creators={selectedBulkCreatorRows}
+        campaignMutate={campaignMutate}
+        onSent={async (succeededUserIds) => {
+          table.setSelected((prev) => prev.filter((id) => !succeededUserIds.includes(id)));
+          await mutateAgreements();
+          if (campaignMutate) await campaignMutate();
+        }}
+      />
+
       {/* Summary bar: portalled to layout wrapper, absolute-positioned at bottom */}
       {mainRef?.current?.parentElement &&
         createPortal(
@@ -2067,6 +2423,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
 
 CampaignAgreements.propTypes = {
   campaign: PropTypes.any,
+  campaignMutate: PropTypes.func,
   isDisabled: PropTypes.bool,
 };
 
