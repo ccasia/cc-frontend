@@ -604,7 +604,9 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
     fetchSubmissions();
   }, [fetchSubmissions]);
 
-  // Real-time updates when creator submits agreement
+  // Real-time updates when creator submits agreement, or another admin sends a new round —
+  // without this, a freshly-sent round 2 briefly shows round 1's cached submission status
+  // (e.g. APPROVED) until a manual refresh, since it has no submission of its own yet.
   useEffect(() => {
     if (!socket) return undefined;
 
@@ -613,12 +615,20 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       fetchSubmissions(); // Refresh submissions data (status for approve/reject buttons)
     };
 
+    const handleAgreementUpdated = (payload) => {
+      if (payload?.campaignId !== campaign?.id) return;
+      mutateAgreements();
+      fetchSubmissions();
+    };
+
     socket.on('agreementReady', handleAgreementReady);
+    socket.on('campaign:agreement:updated', handleAgreementUpdated);
 
     return () => {
       socket.off('agreementReady', handleAgreementReady);
+      socket.off('campaign:agreement:updated', handleAgreementUpdated);
     };
-  }, [socket, mutateAgreements, fetchSubmissions]);
+  }, [socket, campaign?.id, mutateAgreements, fetchSubmissions]);
 
   // Combine the agreements data with submission status
   const combinedData = useMemo(() => {
@@ -1200,122 +1210,142 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                   </Typography>
                 </Stack>
               )}
-              <Button
-                variant="contained"
-                disabled={isDisabled || selectedBulkCreatorRows.length === 0}
-                onClick={sendBulkDialog.onTrue}
-                sx={{
-                  minWidth: '38px',
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '8px',
-                  pt: '8px',
-                  pr: '12px',
-                  pb: '11px',
-                  pl: '12px',
-                  gap: '4px',
-                  bgcolor: '#FFFFFF',
-                  color: '#1340FF',
-                  border: '1px solid #E7E7E7',
-                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  justifyContent: 'flex-start',
-                  transition: 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
-                  '&:hover:not(.Mui-disabled)': {
-                    bgcolor: '#F5F7FF',
-                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                    width: '175px',
-                    '& .send-bulk-label': { opacity: 1, maxWidth: '160px' },
-                  },
-                  '&.Mui-disabled': {
-                    opacity: 1,
-                    color: '#B0B0B1',
-                    border: '1px solid #EDEDED',
-                    boxShadow: 'none',
-                  },
-                }}
+              <Tooltip
+                title={
+                  !isDisabled && selectedBulkCreatorRows.length === 0
+                    ? 'Tick one or more pending creators to send a bulk agreement'
+                    : ''
+                }
               >
-                <Box
-                  component="img"
-                  src="/assets/icons/overview/group2People.svg"
-                  alt=""
-                  sx={{ width: 16, height: 16, flexShrink: 0 }}
-                />
-                <Box
-                  component="span"
-                  className="send-bulk-label"
-                  sx={{
-                    display: 'inline-block',
-                    opacity: 0,
-                    maxWidth: 0,
-                    overflow: 'hidden',
-                    transition: 'opacity 0.25s ease 0.05s, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-                  }}
-                >
-                  Send Bulk Agreement
-                </Box>
-              </Button>
-              <Button
-                variant="contained"
-                disabled={isDisabled || selectedCreatorRows.length === 0}
-                onClick={sendAdditionalDialog.onTrue}
-                sx={{
-                  minWidth: '38px',
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '8px',
-                  px: '11px',
-                  gap: '8px',
-                  bgcolor: '#221f20',
-                  color: '#fff',
-                  border: '1.5px solid #221f20',
-                  borderBottom: '3px solid #000',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  justifyContent: 'flex-start',
-                  transition: 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
-                  '&:hover:not(.Mui-disabled)': {
-                    bgcolor: '#000',
-                    width: '210px',
-                    '& .send-additional-label': { opacity: 1, maxWidth: '200px' },
-                  },
-                  '&.Mui-disabled': {
-                    opacity: 1,
-                    border: 'none',
-                    color: '#fff',
-                    background:
-                      'linear-gradient(0deg, #B0B0B1, #B0B0B1), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
-                    boxShadow: '0px -3px 0px 0px #0000001A inset',
-                  },
-                }}
+                <span>
+                  <Button
+                    variant="contained"
+                    disabled={isDisabled || selectedBulkCreatorRows.length === 0}
+                    onClick={sendBulkDialog.onTrue}
+                    sx={{
+                      minWidth: '38px',
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '8px',
+                      pt: '8px',
+                      pr: '12px',
+                      pb: '11px',
+                      pl: '12px',
+                      gap: '4px',
+                      bgcolor: '#FFFFFF',
+                      color: '#1340FF',
+                      border: '1px solid #E7E7E7',
+                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      justifyContent: 'flex-start',
+                      transition: 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
+                      '&:hover:not(.Mui-disabled)': {
+                        bgcolor: '#F5F7FF',
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        width: '175px',
+                        '& .send-bulk-label': { opacity: 1, maxWidth: '160px' },
+                      },
+                      '&.Mui-disabled': {
+                        opacity: 1,
+                        color: '#B0B0B1',
+                        border: '1px solid #EDEDED',
+                        boxShadow: 'none',
+                      },
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src="/assets/icons/overview/group2People.svg"
+                      alt=""
+                      sx={{ width: 16, height: 16, flexShrink: 0 }}
+                    />
+                    <Box
+                      component="span"
+                      className="send-bulk-label"
+                      sx={{
+                        display: 'inline-block',
+                        opacity: 0,
+                        maxWidth: 0,
+                        overflow: 'hidden',
+                        transition: 'opacity 0.25s ease 0.05s, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                      }}
+                    >
+                      Send Bulk Agreement
+                    </Box>
+                  </Button>
+                </span>
+              </Tooltip>
+              <Tooltip
+                title={
+                  !isDisabled && selectedCreatorRows.length === 0
+                    ? 'Tick one or more creators who already have an agreement to send an additional round'
+                    : ''
+                }
               >
-                <Box
-                  component="img"
-                  src="/assets/additional-ag.svg"
-                  alt=""
-                  sx={{ width: 14, height: 18, flexShrink: 0 }}
-                />
-                <Box
-                  component="span"
-                  className="send-additional-label"
-                  sx={{
-                    display: 'inline-block',
-                    opacity: 0,
-                    maxWidth: 0,
-                    overflow: 'hidden',
-                    transition: 'opacity 0.25s ease 0.05s, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-                  }}
-                >
-                  Send Additional Agreement
-                </Box>
-              </Button>
+                <span>
+                  <Button
+                    variant="contained"
+                    disabled={isDisabled || selectedCreatorRows.length === 0}
+                    onClick={sendAdditionalDialog.onTrue}
+                    sx={{
+                      minWidth: '38px',
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '8px',
+                      px: '11px',
+                      gap: '8px',
+                      bgcolor: '#221f20',
+                      color: '#fff',
+                      border: '1.5px solid #221f20',
+                      borderBottom: '3px solid #000',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      justifyContent: 'flex-start',
+                      transition: 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
+                      '&:hover:not(.Mui-disabled)': {
+                        bgcolor: '#000',
+                        width: '210px',
+                        '& .send-additional-label': { opacity: 1, maxWidth: '200px' },
+                      },
+                      '&.Mui-disabled': {
+                        opacity: 1,
+                        border: 'none',
+                        color: '#fff',
+                        background:
+                          'linear-gradient(0deg, #B0B0B1, #B0B0B1), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                        boxShadow: '0px -3px 0px 0px #0000001A inset',
+                      },
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src="/assets/additional-ag.svg"
+                      alt=""
+                      sx={{ width: 14, height: 18, flexShrink: 0 }}
+                    />
+                    <Box
+                      component="span"
+                      className="send-additional-label"
+                      sx={{
+                        display: 'inline-block',
+                        opacity: 0,
+                        maxWidth: 0,
+                        overflow: 'hidden',
+                        transition: 'opacity 0.25s ease 0.05s, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                      }}
+                    >
+                      Send Additional Agreement
+                    </Box>
+                  </Button>
+                </span>
+              </Tooltip>
             </Stack>
           </Stack>
 
@@ -2331,7 +2361,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
         campaignMutate={campaignMutate}
         onSent={async () => {
           table.setSelected([]);
-          await mutateAgreements();
+          await Promise.all([mutateAgreements(), fetchSubmissions()]);
           if (campaignMutate) await campaignMutate();
         }}
       />
@@ -2344,7 +2374,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
         campaignMutate={campaignMutate}
         onSent={async (succeededUserIds) => {
           table.setSelected((prev) => prev.filter((id) => !succeededUserIds.includes(id)));
-          await mutateAgreements();
+          await Promise.all([mutateAgreements(), fetchSubmissions()]);
           if (campaignMutate) await campaignMutate();
         }}
       />
