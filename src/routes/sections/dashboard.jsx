@@ -124,7 +124,7 @@ const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tier'));
 // Videos of the Month
 const VideoOfTheMonth = lazy(
-  () => import('src/pages/dashboard/video-of-the-month/video-of-the-month')
+  () => import('src/modules/video-of-the-month/pages/video-of-the-month')
 );
 // Find Cipta — one-time treasure hunt event (superadmin only)
 const FindCipta = lazy(() => import('src/pages/dashboard/treasure-hunts/find-cipta'));

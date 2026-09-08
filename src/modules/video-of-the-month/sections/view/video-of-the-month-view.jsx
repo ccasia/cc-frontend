@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+/* eslint-disable no-nested-ternary */
 import { enqueueSnackbar } from 'notistack';
+import { useState, useCallback } from 'react';
 
 import {
   Box,
@@ -22,9 +23,9 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { useDebounce } from 'src/hooks/use-debounce';
-
 import { paths } from 'src/routes/paths';
+
+import { useDebounce } from 'src/hooks/use-debounce';
 
 import {
   featureVideo,
@@ -32,7 +33,7 @@ import {
   updateFeaturedVideo,
   useGetVideosOfTheMonth,
   useSearchFeaturableSubmissions,
-} from 'src/api/video-of-the-month';
+} from 'src/modules/video-of-the-month/api/video-of-the-month';
 
 import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
@@ -57,8 +58,7 @@ export default function VideoOfTheMonthView() {
   const [activePreviewId, setActivePreviewId] = useState(null);
 
   const { videos, isLoading, mutate } = useGetVideosOfTheMonth();
-  const { submissions, isLoading: isSearching } =
-    useSearchFeaturableSubmissions(debouncedSearch);
+  const { submissions, isLoading: isSearching } = useSearchFeaturableSubmissions(debouncedSearch);
 
   // Submission ids already featured — so the picker can disable them.
   const featuredSubmissionIds = new Set(videos.map((v) => v.submission?.id));
@@ -114,10 +114,7 @@ export default function VideoOfTheMonthView() {
     <Container maxWidth="lg">
       <CustomBreadcrumbs
         heading="Videos of the Month"
-        links={[
-          { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Videos of the Month' },
-        ]}
+        links={[{ name: 'Dashboard', href: paths.dashboard.root }, { name: 'Videos of the Month' }]}
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
@@ -153,9 +150,7 @@ export default function VideoOfTheMonthView() {
                       const busy = pendingId === video.id;
                       const featuredVideos = video.submission?.video ?? [];
                       const featuredVideoUrl =
-                        featuredVideos[video.videoIndex]?.url ??
-                        featuredVideos[0]?.url ??
-                        null;
+                        featuredVideos[video.videoIndex]?.url ?? featuredVideos[0]?.url ?? null;
                       return (
                         <TableRow key={video.id} hover>
                           <TableCell>
@@ -163,9 +158,7 @@ export default function VideoOfTheMonthView() {
                               url={featuredVideoUrl}
                               playing={activePreviewId === video.id}
                               onToggle={() =>
-                                setActivePreviewId((cur) =>
-                                  cur === video.id ? null : video.id
-                                )
+                                setActivePreviewId((cur) => (cur === video.id ? null : video.id))
                               }
                             />
                           </TableCell>
@@ -243,8 +236,7 @@ export default function VideoOfTheMonthView() {
                     {submissions.map((submission) => {
                       const { campaign, creator } = submissionLabel(submission);
                       const already =
-                        !!submission.videoOfTheMonth ||
-                        featuredSubmissionIds.has(submission.id);
+                        !!submission.videoOfTheMonth || featuredSubmissionIds.has(submission.id);
                       const busy = pendingId === submission.id;
                       // Latest video is what gets featured (backend orders desc).
                       const latestVideoUrl = submission.video?.[0]?.url ?? null;
@@ -263,18 +255,14 @@ export default function VideoOfTheMonthView() {
                           </TableCell>
                           <TableCell>{campaign}</TableCell>
                           <TableCell>{creator}</TableCell>
-                          <TableCell align="center">
-                            {submission.video?.length ?? 0}
-                          </TableCell>
+                          <TableCell align="center">{submission.video?.length ?? 0}</TableCell>
                           <TableCell align="right">
                             <Button
                               size="small"
                               variant="outlined"
                               disabled={already || busy}
                               startIcon={
-                                <Iconify
-                                  icon={already ? 'eva:checkmark-fill' : 'eva:plus-fill'}
-                                />
+                                <Iconify icon={already ? 'eva:checkmark-fill' : 'eva:plus-fill'} />
                               }
                               onClick={() => handleFeature(submission)}
                             >

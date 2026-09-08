@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 
-import VideoOfTheMonthView from 'src/sections/video-of-the-month/view/video-of-the-month-view';
+import VideoOfTheMonthView from 'src/modules/video-of-the-month/sections/view/video-of-the-month-view';
 
 export default function Page() {
   return (
