@@ -96,6 +96,14 @@ const pickCreator = async (user, name) => {
 
 const followerField = () => screen.getByPlaceholderText(/follower count/i);
 
+/**
+ * The platform select, by its accessible name.
+ *
+ * The creator Autocomplete is also a `combobox`, so an unqualified
+ * `getByRole('combobox')` is ambiguous once a creator is chosen.
+ */
+const platformSelect = () => screen.getByRole('combobox', { name: 'Platform' });
+
 beforeEach(() => {
   vi.clearAllMocks();
   window.sessionStorage.clear();
@@ -150,7 +158,7 @@ describe('switching platform on a half-connected creator', () => {
     await pickCreator(user, 'Connected Creator');
     await waitFor(() => expect(screen.getByDisplayValue('128,400')).toBeInTheDocument());
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(platformSelect());
     await user.click(await screen.findByRole('option', { name: /TikTok/i }));
 
     // 128,400 belonged to Instagram. TikTok has no media kit, so the field
@@ -167,7 +175,7 @@ describe('switching platform on a half-connected creator', () => {
     await waitFor(() => expect(followerField()).toBeInTheDocument());
     await user.type(followerField(), '4321');
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(platformSelect());
     await user.click(await screen.findByRole('option', { name: /TikTok/i }));
 
     // Neither platform is connected, so the typed value is not stale.
@@ -215,7 +223,7 @@ describe('choosing a creator with nothing connected', () => {
 
     // Once a creator is chosen the Autocomplete collapses, so the only
     // combobox left in the row is the platform select.
-    await user.click(screen.getByRole('combobox'));
+    await user.click(platformSelect());
     await user.click(await screen.findByRole('option', { name: /Instagram/i }));
 
     await waitFor(() => expect(submit).toBeEnabled());
@@ -434,7 +442,7 @@ describe('the platform dropdown only appears when it is needed', () => {
     await pickCreator(user, 'Connected Creator');
     await waitFor(() => expect(platformLabel()).toBeInTheDocument());
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(platformSelect());
     await user.click(await screen.findByRole('option', { name: /TikTok/i }));
 
     expect(platformLabel()).toBeInTheDocument();
