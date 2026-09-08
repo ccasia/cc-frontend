@@ -20,8 +20,9 @@ import {
 
 import { paths } from 'src/routes/paths';
 
-import useGetCreditTiers from 'src/hooks/use-get-credit-tiers';
 import useCheckPermission from 'src/hooks/use-check-permission';
+
+import useGetCreditTiers from 'src/modules/credit-tier/hooks/use-get-credit-tiers';
 
 import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';

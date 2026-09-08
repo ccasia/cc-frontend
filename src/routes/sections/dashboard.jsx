@@ -121,7 +121,7 @@ const InvoiceDetail = lazy(() => import('src/pages/dashboard/creator/invoice-det
 const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 
 // Credit Tier
-const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tier'));
+const CreditTier = lazy(() => import('src/modules/credit-tier/pages/credit-tier'));
 // Videos of the Month
 const VideoOfTheMonth = lazy(
   () => import('src/pages/dashboard/video-of-the-month/video-of-the-month')
