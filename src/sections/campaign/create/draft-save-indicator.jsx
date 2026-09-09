@@ -17,6 +17,7 @@ const STATUS_CONFIG = {
   saved: { color: '#22C55E', glyph: 'check' },
   local: { color: '#FFAB00', glyph: 'check' },
   conflict: { color: '#FF5630', glyph: 'bang' },
+  error: { color: '#FF5630', glyph: 'bang' },
 };
 
 const CHECK_PATH = 'M7.6 12.3l2.9 2.9 5.9-6.4';
@@ -76,7 +77,7 @@ export default function DraftSaveIndicator({ status, lastSavedAt, onRetry }) {
 
   const { color, glyph } = config;
   const isBusy = glyph === null;
-  const isConflict = status === 'conflict';
+  const isConflict = status === 'conflict' || status === 'error';
 
   const label = {
     restoring: 'Restoring draft...',
@@ -84,6 +85,7 @@ export default function DraftSaveIndicator({ status, lastSavedAt, onRetry }) {
     saved: relativeTime ? `Saved ${relativeTime}` : 'Saved',
     local: relativeTime ? `Saved on this device ${relativeTime}` : 'Saved on this device',
     conflict: 'Could not save',
+    error: 'Could not save',
   }[status];
 
   const tooltip = {
@@ -92,6 +94,7 @@ export default function DraftSaveIndicator({ status, lastSavedAt, onRetry }) {
     saved: 'Your draft is saved. You can close this and come back later.',
     local: 'Saved in this browser only. It is not on the server yet.',
     conflict: 'This draft changed somewhere else. Retry to save your version.',
+    error: 'The draft could not be saved. Try again.',
   }[status];
 
   return (

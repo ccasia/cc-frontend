@@ -123,47 +123,80 @@ const queueIndexedDbWrite = (userId, snapshot) => {
 
 export const serializeCampaignDraftValues = (values) => toJsonSafe(values);
 
-export const saveCampaignDraftSnapshot = (userId, snapshot) => {
-  if (!userId || typeof window === 'undefined') return Promise.resolve();
+export const saveCampaignDraftSnapshot = (userId, draftId, snapshot) => {
+  if (!userId || !draftId || typeof window === 'undefined') return Promise.resolve();
+
+  const key = `${userId}:${draftId}`;
 
   try {
     localStorage.setItem(
-      `${STORAGE_PREFIX}${userId}`,
+      `${STORAGE_PREFIX}${key}`,
       JSON.stringify(toJsonSafe(snapshot, new WeakSet(), true))
     );
   } catch (error) {
     // IndexedDB can still preserve the draft when localStorage is unavailable or full.
   }
 
-  return queueIndexedDbWrite(userId, snapshot);
+  return queueIndexedDbWrite(key, snapshot);
 };
 
-export const loadCampaignDraftSnapshots = async (userId) => {
-  if (!userId || typeof window === 'undefined') return { local: null, indexedDb: null };
+export const loadCampaignDraftSnapshots = async (userId, draftId) => {
+  if (!userId || !draftId || typeof window === 'undefined') return { local: null, indexedDb: null };
+
+  const key = `${userId}:${draftId}`;
 
   let local = null;
   try {
-    const value = localStorage.getItem(`${STORAGE_PREFIX}${userId}`);
+    const value = localStorage.getItem(`${STORAGE_PREFIX}${key}`);
     local = value ? JSON.parse(value) : null;
   } catch (error) {
     local = null;
   }
 
-  const indexedDb = await runIndexedDb('readonly', (store) => store.get(String(userId))).catch(
+  const indexedDb = await runIndexedDb('readonly', (store) => store.get(key)).catch(
     () => null
   );
 
-  return { local: local ? hydrateFiles(local, indexedDb) : null, indexedDb };
+  // Keep the old user-only snapshot readable for drafts created before ID-scoped backups.
+  let legacyLocal = null;
+  try {
+    const value = localStorage.getItem(`${STORAGE_PREFIX}${userId}`);
+    legacyLocal = value ? JSON.parse(value) : null;
+  } catch (error) {
+    legacyLocal = null;
+  }
+  const legacyIndexedDb = await runIndexedDb('readonly', (store) => store.get(String(userId))).catch(
+    () => null
+  );
+
+  return {
+    local: local ? hydrateFiles(local, indexedDb) : null,
+    indexedDb,
+    legacyLocal: legacyLocal ? hydrateFiles(legacyLocal, legacyIndexedDb) : null,
+    legacyIndexedDb,
+  };
 };
 
-export const clearCampaignDraftSnapshots = async (userId) => {
-  if (!userId || typeof window === 'undefined') return;
+export const clearCampaignDraftSnapshots = async (userId, draftId) => {
+  if (!userId || !draftId || typeof window === 'undefined') return;
+
+  const key = `${userId}:${draftId}`;
 
   try {
-    localStorage.removeItem(`${STORAGE_PREFIX}${userId}`);
+    localStorage.removeItem(`${STORAGE_PREFIX}${key}`);
   } catch (error) {
     // Continue so IndexedDB is cleared when localStorage is unavailable.
   }
 
+  await runIndexedDb('readwrite', (store) => store.delete(key)).catch(() => {});
+};
+
+export const clearLegacyCampaignDraftSnapshot = async (userId) => {
+  if (!userId || typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(`${STORAGE_PREFIX}${userId}`);
+  } catch (error) {
+    // Continue so IndexedDB is still cleared.
+  }
   await runIndexedDb('readwrite', (store) => store.delete(String(userId))).catch(() => {});
 };
