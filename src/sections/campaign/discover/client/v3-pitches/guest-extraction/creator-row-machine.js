@@ -34,7 +34,7 @@ export const METRIC_SOURCE = {
   UNAVAILABLE: 'unavailable',
 };
 
-/** Work is running. The row cannot be submitted and cannot be re-fetched. */
+/** Work is running. The row cannot be re-fetched. Submit is allowed once an extractionId exists. */
 export const ACTIVE_STATUSES = [
   ROW_STATUS.VALIDATING,
   ROW_STATUS.QUEUED,
@@ -242,13 +242,24 @@ export function duplicateRowIds(rows) {
  * The eligibility rule. The server applies the same one.
  *
  * A READY row with an edited value keeps its receipt and takes the audit
- * override path. It stays eligible.
+ * override path. It stays eligible. An in-flight scrape is eligible once
+ * paid work has an extractionId, so the admin can add the creator without
+ * waiting for Apify.
  */
 export function canSubmitRow(row, { duplicateIds = [] } = {}) {
   if (duplicateIds.includes(row.id)) return false;
   if (row.linkError) return false;
 
   if (row.status === ROW_STATUS.READY && hasValidReceipt(row)) return true;
+
+  if (
+    isRowActive(row) &&
+    typeof row.extractionId === 'string' &&
+    row.extractionId.length > 0 &&
+    Boolean(row.canonicalProfileKey)
+  ) {
+    return true;
+  }
 
   return (
     isAllowedFallbackReason(row.fallbackReason) &&

@@ -304,6 +304,32 @@ describe('extraction lifecycle', () => {
   );
 });
 
+describe('an in-flight scrape can be submitted', () => {
+  it('is eligible once an extractionId exists', () => {
+    const { state, rowId } = validated();
+    const next = run(
+      state,
+      { type: ACTIONS.FETCH_REQUESTED, rowId, extractionId: 'ext-1' },
+      { type: ACTIONS.EXTRACTION_POLLING, rowId }
+    );
+    expect(canSubmitRow(only(next))).toBe(true);
+  });
+
+  it('is not eligible while the link is still validating', () => {
+    const { state } = validated();
+    expect(only(state).status).toBe(ROW_STATUS.IDLE);
+    expect(canSubmitRow(only(state))).toBe(false);
+
+    const validating = run(state, {
+      type: ACTIONS.SET_LINK,
+      rowId: only(state).id,
+      value: 'https://www.instagram.com/other/',
+    });
+    expect(only(validating).status).toBe(ROW_STATUS.VALIDATING);
+    expect(canSubmitRow(only(validating))).toBe(false);
+  });
+});
+
 describe('cancellation', () => {
   it('cancels an active row without making it eligible', () => {
     const { state, rowId } = validated();

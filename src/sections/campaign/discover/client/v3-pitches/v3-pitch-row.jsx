@@ -1,7 +1,8 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 
 import {
   Box,
@@ -17,28 +18,219 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
+
 import { useResponsive } from 'src/hooks/use-responsive';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 import {
   formatNumber,
   createSocialProfileUrl,
   extractUsernameFromProfileLink,
 } from 'src/utils/media-kit-utils';
-import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 
 import { OUTREACH_STATUS_OPTIONS, getOutreachStatusConfig } from 'src/contants/outreach';
 
 import Iconify from 'src/components/iconify';
 
 import V3PitchActions from './v3-pitch-actions';
+import DiaTextReveal from './dia-text-reveal';
+import useJustFinished from './use-just-finished';
+import CreatorFieldLoading from './guest-extraction/creator-field-loading';
 
 const TYPE_LABELS = {
   video: 'Pitch (Video)',
   text: 'Pitch (Letter)',
   shortlisted: 'Shortlisted',
 };
+
+// Design tokens for the tall master-list row. Each value carries its own inline
+// label, so the table renders without a header.
+//
+// Every size lives here. The block heights below are derived from LABEL_HEIGHT
+// and CHIP_ROW_HEIGHT, so changing a size cannot break the field alignment.
+const LABEL_SIZE = 11;
+const LABEL_HEIGHT = 15;
+const VALUE_SIZE = 15;
+const VALUE_HEIGHT = 20;
+const SMALL_SIZE = 13;
+const SMALL_HEIGHT = 18;
+const NAME_SIZE = 18;
+const NAME_HEIGHT = 22;
+
+const LABEL_SX = {
+  fontSize: LABEL_SIZE,
+  fontWeight: 600,
+  lineHeight: `${LABEL_HEIGHT}px`,
+  color: '#636366',
+  textTransform: 'uppercase',
+  letterSpacing: 0.5,
+  whiteSpace: 'nowrap',
+};
+
+const VALUE_BASE = { fontSize: VALUE_SIZE, lineHeight: `${VALUE_HEIGHT}px` };
+const VALUE_SX = { ...VALUE_BASE, fontWeight: 600, color: '#231F20' };
+const VALUE_REVEAL_STYLE = {
+  fontSize: VALUE_SIZE,
+  fontWeight: 600,
+  lineHeight: `${VALUE_HEIGHT}px`,
+};
+const VALUE_PLAIN_SX = { ...VALUE_BASE, fontWeight: 400, color: '#231F20' };
+const VALUE_MUTED_SX = { ...VALUE_BASE, fontWeight: 400, color: '#8E8E93' };
+const VALUE_PLAIN_REVEAL_STYLE = {
+  fontSize: VALUE_SIZE,
+  fontWeight: 400,
+  lineHeight: `${VALUE_HEIGHT}px`,
+};
+
+const NAME_SX = {
+  fontSize: NAME_SIZE,
+  fontWeight: 400,
+  lineHeight: `${NAME_HEIGHT}px`,
+  color: '#231F20',
+};
+const NAME_LINK_SX = {
+  ...NAME_SX,
+  display: 'block',
+  '&:hover': { color: '#1340FF' },
+};
+const NAME_REVEAL_STYLE = {
+  fontSize: NAME_SIZE,
+  fontWeight: 400,
+  lineHeight: `${NAME_HEIGHT}px`,
+};
+const HANDLE_SX = { fontSize: SMALL_SIZE, lineHeight: `${SMALL_HEIGHT}px`, color: '#636366' };
+const PRODUCT_SX = {
+  fontSize: SMALL_SIZE,
+  fontWeight: 500,
+  lineHeight: `${SMALL_HEIGHT}px`,
+  color: '#1340FF',
+};
+
+const CELL_SX = {
+  py: 2.5,
+  px: { xs: 1, sm: 2 },
+  borderBottom: '1px solid #EBEBEB',
+  // Every cell is centred, so a cell with fewer fields sits in the middle of
+  // the row rather than riding the top.
+  verticalAlign: 'middle',
+};
+
+// Proportional column widths, so the fields sit in the same place on every row
+// instead of shifting with whatever text each creator happens to have.
+const COLUMN_WIDTHS = {
+  creator: '26%',
+  outreach: '14%',
+  engagement: '15%',
+  followers: '19%',
+  status: '16%',
+  actions: 128,
+};
+
+const PLATFORM_ICONS = {
+  instagram: { icon: 'ri:instagram-line', color: '#C13584' },
+  tiktok: { icon: 'ic:baseline-tiktok', color: '#000000' },
+};
+
+const getPlatformIcon = (platform) =>
+  platform === 'tiktok' ? PLATFORM_ICONS.tiktok : PLATFORM_ICONS.instagram;
+
+// "5.40" reads as false precision next to the handoff's "5.4".
+const formatEngagementRate = (rate) =>
+  rate == null || rate === '' ? null : `${Number(Number(rate).toFixed(2))}%`;
+
+const FieldLabel = ({ children }) => <Typography sx={LABEL_SX}>{children}</Typography>;
+
+FieldLabel.propTypes = { children: PropTypes.node };
+
+// One labelled field: a 14px label row, a 2px gap, then the value.
+//
+// Only the FIRST field in each cell reserves chip height, because that is the
+// row a status chip lands on. The second field sizes to its text. Every cell
+// therefore ends up the same height, which is what lines the fields up — and
+// a cell holding just one field (Outreach) is shorter, so `verticalAlign:
+// middle` centres it the way the design does.
+// Chip text, plus its 6px vertical padding and 1px top border.
+const CHIP_ROW_HEIGHT = SMALL_HEIGHT + 12 + 2;
+
+const FieldBlock = ({ label, minHeight, children }) => (
+  <Stack spacing={0.25} sx={{ alignItems: 'flex-start', width: '100%' }}>
+    {label ? (
+      <FieldLabel>{label}</FieldLabel>
+    ) : (
+      <Box sx={{ height: LABEL_HEIGHT, flexShrink: 0 }} />
+    )}
+    <Box sx={{ display: 'flex', alignItems: 'center', minHeight }}>{children}</Box>
+  </Stack>
+);
+
+FieldBlock.propTypes = {
+  label: PropTypes.string,
+  minHeight: PropTypes.number,
+  children: PropTypes.node,
+};
+
+const EmptyValue = () => <Typography sx={VALUE_PLAIN_SX}>—</Typography>;
+
+/** Followers / ER after a scrape. Sweep only when loading just ended. */
+function ScrapeMetricValue({
+  text,
+  reveal,
+  textColor = '#231F20',
+  style = VALUE_REVEAL_STYLE,
+  sx = VALUE_SX,
+}) {
+  if (reveal) {
+    return (
+      <DiaTextReveal
+        text={text}
+        textColor={textColor}
+        duration={1.5}
+        delay={0.05}
+        style={style}
+      />
+    );
+  }
+  return <Typography sx={sx}>{text}</Typography>;
+}
+
+ScrapeMetricValue.propTypes = {
+  text: PropTypes.string.isRequired,
+  reveal: PropTypes.bool,
+  textColor: PropTypes.string,
+  style: PropTypes.object,
+  sx: PropTypes.object,
+};
+
+const PlatformIcon = ({ platform, size = 16 }) => {
+  const { icon, color } = getPlatformIcon(platform);
+  return <Iconify icon={icon} width={size} sx={{ color, flexShrink: 0 }} />;
+};
+
+PlatformIcon.propTypes = { platform: PropTypes.string, size: PropTypes.number };
+
+// Chip shared by Outreach Status and Creator Status.
+const chipSx = (color) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 0.5,
+  px: 1,
+  py: 0.75,
+  borderRadius: '6px',
+  bgcolor: '#FFFFFF',
+  fontSize: SMALL_SIZE,
+  fontWeight: 600,
+  lineHeight: `${SMALL_HEIGHT}px`,
+  textTransform: 'uppercase',
+  whiteSpace: 'nowrap',
+  color,
+  border: `1px solid ${color}`,
+  boxShadow: `inset 0px -3px 0px ${color}`,
+});
 
 const PitchTypeCell = React.memo(
   ({ type, isGuestCreator, isInvitedCreator, acceptedInviteByCreator }) => {
@@ -53,13 +245,14 @@ const PitchTypeCell = React.memo(
       subtitle = '(Discovery Tool)';
     }
 
+    // One line, so this field keeps the same height as every other one.
     return (
-      <Stack>
-        <Typography fontSize={13.5} noWrap>
+      <Stack direction="row" alignItems="center" spacing={0.5}>
+        <Typography sx={VALUE_PLAIN_SX} noWrap>
           {label}
         </Typography>
         {subtitle && (
-          <Typography fontSize={13.5} noWrap>
+          <Typography sx={VALUE_MUTED_SX} noWrap>
             {subtitle}
           </Typography>
         )}
@@ -120,7 +313,6 @@ const PitchRow = ({
   isGuestCreator,
   isInvitedCreator,
   campaign,
-  isCreditTier,
   onViewPitch,
   onRemoved,
   onOutreachUpdate,
@@ -128,9 +320,20 @@ const PitchRow = ({
   logistics,
 }) => {
   const smUp = useResponsive('up', 'sm');
+  const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
+  const creatorProfileId = pitch.userId || pitch.user?.id || pitch.user?.creator?.userId;
+  // Same roles as the creator profile route guard.
+  const canOpenCreatorProfile =
+    Boolean(creatorProfileId) &&
+    (user?.role === 'admin' ||
+      user?.role === 'superadmin' ||
+      user?.admin?.role?.name === 'sales_and_marketing' ||
+      user?.admin?.role?.slug === 'sales_and_marketing');
 
   const acceptedInviteByCreator = pitch?.acceptedInviteByCreatorId !== null;
+  const metricsPending = Boolean(pitch.pendingExtractionId);
+  const revealScrapeMetrics = useJustFinished(metricsPending);
 
   // Outreach status dropdown state
   const [outreachAnchorEl, setOutreachAnchorEl] = useState(null);
@@ -188,26 +391,39 @@ const PitchRow = ({
   // Check if we have any social usernames to display
   const hasSocialUsernames = instagramUsername || tiktokUsername;
 
+  // Platform the row falls back to when a metric carries no platform of its own.
+  const fallbackPlatform = resolveTierPlatformForDisplay(pitch, campaign);
+
+  // Each metric reports which platform it came from, so the icon beside the
+  // number always matches its source. The resolution order is unchanged.
   const getDisplayData = () => {
-    const resolveMetric = (...args) => args.find((val) => val != null) ?? null;
+    const resolve = (...candidates) =>
+      candidates.find(({ value }) => value != null) ?? { value: null, platform: null };
+
+    const engagement = resolve(
+      { value: instagramStats?.engagement_rate, platform: 'instagram' },
+      { value: tiktokStats?.engagement_rate, platform: 'tiktok' },
+      { value: pitch.engagementRate, platform: fallbackPlatform },
+      // Scraped for a creator with no connected account. The pitch value
+      // above already covers this campaign; these two carry the rate into
+      // every other campaign the creator appears in.
+      { value: pitch.user?.creator?.manualInstagramEngagementRate, platform: 'instagram' },
+      { value: pitch.user?.creator?.manualTiktokEngagementRate, platform: 'tiktok' }
+    );
+
+    const followers = resolve(
+      { value: instagramStats?.followers_count, platform: 'instagram' },
+      { value: tiktokStats?.follower_count, platform: 'tiktok' },
+      { value: pitch.followerCount, platform: fallbackPlatform },
+      // Fallback for manually entered count
+      { value: pitch.user?.creator?.manualFollowerCount, platform: fallbackPlatform }
+    );
 
     return {
-      engagementRate: resolveMetric(
-        instagramStats?.engagement_rate,
-        tiktokStats?.engagement_rate,
-        pitch.engagementRate,
-        // Scraped for a creator with no connected account. The pitch value
-        // above already covers this campaign; these two carry the rate into
-        // every other campaign the creator appears in.
-        pitch.user?.creator?.manualInstagramEngagementRate,
-        pitch.user?.creator?.manualTiktokEngagementRate
-      ),
-      followerCount: resolveMetric(
-        instagramStats?.followers_count,
-        tiktokStats?.follower_count,
-        pitch.followerCount,
-        pitch.user?.creator?.manualFollowerCount // Fallback for manually entered count
-      ),
+      engagementRate: engagement.value,
+      engagementPlatform: engagement.platform,
+      followerCount: followers.value,
+      followerPlatform: followers.platform,
     };
   };
 
@@ -228,18 +444,14 @@ const PitchRow = ({
         creditsPerVideo: creatorTier.creditsPerVideo,
       };
     }
-    // Fallback: shortlist snapshot tier (e.g., when a guest creator was linked to a platform creator
-    // whose own Creator.creditTier hasn't been computed)
-    if (pitch._creditTier) {
-      return {
-        name: pitch._creditTier.name,
-        creditsPerVideo: pitch._creditPerVideo || pitch._creditTier.creditsPerVideo,
-      };
-    }
     return null;
   };
 
   const displayData = getDisplayData();
+  const engagementRateText = formatEngagementRate(displayData.engagementRate);
+  const tierData = getTierData();
+  const credits = tierData?.creditsPerVideo;
+  const creditsText = credits == null ? null : `${credits} Credit${credits === 1 ? '' : 's'}`;
 
   const displayProducts = useMemo(() => {
     if (!pitch?.userId || !logistics?.length) return '';
@@ -254,37 +466,72 @@ const PitchRow = ({
       .join(', ');
   }, [logistics, pitch?.userId]);
 
+  const socialLinkSx = { ...HANDLE_SX, '&:hover': { color: '#1877F2' } };
+
   return (
-    <TableRow hover onClick={() => onViewPitch(pitch)} sx={{ cursor: 'pointer' }}>
-      <TableCell
-        sx={{
-          py: { xs: 0.5, sm: 1 },
-          px: { xs: 1, sm: 2 },
-        }}
-      >
-        <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1 }}>
+    <TableRow
+      hover
+      onClick={() => onViewPitch(pitch)}
+      sx={{
+        cursor: 'pointer',
+        '&:first-of-type td': { borderTop: '1px solid #EBEBEB' },
+      }}
+    >
+      {/* Creator */}
+      <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.creator }}>
+        <Stack direction="row" alignItems="center" spacing={2}>
           <Avatar
             src={pitch.user?.photoURL}
             alt={pitch.user?.name}
             sx={{
-              width: { xs: 32, sm: 40 },
-              height: { xs: 32, sm: 40 },
-              border: '2px solid',
-              borderColor: 'background.paper',
-              boxShadow: (theme) => theme.customShadows.z8,
+              width: 36,
+              height: 36,
+              flexShrink: 0,
+              bgcolor: '#D4D4D4',
+              border: '1px solid #EBEBEB',
             }}
           >
             {pitch.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
-          <Stack spacing={0}>
-            <Typography variant="body2" fontSize={13.5}>
-              {pitch.user?.name}
-            </Typography>
+          <Stack spacing={0.5}>
+            {canOpenCreatorProfile ? (
+              <Link
+                component={RouterLink}
+                to={paths.dashboard.creator.profile(creatorProfileId)}
+                underline="hover"
+                color="inherit"
+                sx={NAME_LINK_SX}
+                onClick={(event) => event.stopPropagation()}
+              >
+                {revealScrapeMetrics && pitch.user?.name ? (
+                  <DiaTextReveal
+                    text={pitch.user.name}
+                    textColor="#231F20"
+                    duration={1.5}
+                    delay={0.05}
+                    style={NAME_REVEAL_STYLE}
+                  />
+                ) : (
+                  pitch.user?.name
+                )}
+              </Link>
+            ) : revealScrapeMetrics && pitch.user?.name ? (
+              <DiaTextReveal
+                text={pitch.user.name}
+                textColor="#231F20"
+                duration={1.5}
+                delay={0.05}
+                style={NAME_REVEAL_STYLE}
+              />
+            ) : (
+              <Typography sx={NAME_SX}>{pitch.user?.name}</Typography>
+            )}
 
             {hasSocialUsernames ? (
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.25 }}>
+              /* One handle per line: Instagram first, TikTok under it. */
+              <Stack spacing={0.25} alignItems="flex-start">
                 {instagramUsername && (
-                  <Stack direction="row" alignItems="center" spacing={0.3}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
                     <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
                     <Link
                       href={
@@ -294,7 +541,7 @@ const PitchRow = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       underline="hover"
-                      sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
+                      sx={socialLinkSx}
                       onClick={(e) => e.stopPropagation()}
                     >
                       {instagramUsername}
@@ -302,14 +549,14 @@ const PitchRow = ({
                   </Stack>
                 )}
                 {tiktokUsername && (
-                  <Stack direction="row" alignItems="center" spacing={0.3}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
                     <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
                     <Link
                       href={createSocialProfileUrl(tiktokUsername, 'tiktok') || tiktokProfileLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       underline="hover"
-                      sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
+                      sx={socialLinkSx}
                       onClick={(e) => e.stopPropagation()}
                     >
                       {tiktokUsername}
@@ -319,7 +566,7 @@ const PitchRow = ({
               </Stack>
             ) : (
               profileUsername && (
-                <Stack direction="row" alignItems="center" spacing={0.3}>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
                   {profileLink?.includes('instagram.com') && (
                     <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
                   )}
@@ -331,7 +578,7 @@ const PitchRow = ({
                     target="_blank"
                     rel="noopener noreferrer"
                     underline="hover"
-                    sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
+                    sx={socialLinkSx}
                     onClick={(e) => e.stopPropagation()}
                   >
                     {profileUsername}
@@ -339,100 +586,99 @@ const PitchRow = ({
                 </Stack>
               )
             )}
+
+            {displayProducts && (
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Iconify
+                  icon="material-symbols:inventory-2-outline-rounded"
+                  width={14}
+                  sx={{ color: '#1340FF', flexShrink: 0 }}
+                />
+                <Typography sx={PRODUCT_SX}>{displayProducts}</Typography>
+              </Stack>
+            )}
           </Stack>
         </Stack>
       </TableCell>
-      {/* Outreach Status Cell */}
-      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
-        {(() => {
-          const outreachConfig = getOutreachStatusConfig(pitch.outreachStatus);
-          const isSynthetic = pitch._isShortlistedOnly;
 
-          // For synthetic shortlisted rows (no real pitch record), show "Not Set" non-clickable
-          if (isSynthetic) {
-            return (
-              <Typography fontSize={13.5} sx={{ color: '#8E8E93' }}>
-                —
-              </Typography>
-            );
-          }
+      {/* Outreach Status */}
+      <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.outreach }}>
+        <FieldBlock label="Outreach status" minHeight={CHIP_ROW_HEIGHT}>
+          {(() => {
+            const outreachConfig = getOutreachStatusConfig(pitch.outreachStatus);
+            const isSynthetic = pitch._isShortlistedOnly;
 
-          // No status set - show placeholder
-          if (!outreachConfig) {
+            // For synthetic shortlisted rows (no real pitch record), show "—" non-clickable
+            if (isSynthetic) {
+              return <EmptyValue />;
+            }
+
+            // No status set - show placeholder
+            if (!outreachConfig) {
+              return (
+                <Box
+                  onClick={handleOutreachClick}
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    alignSelf: 'flex-start',
+                    gap: 0.5,
+                    px: 1,
+                    py: 0.75,
+                    fontSize: SMALL_SIZE,
+                    fontWeight: 600,
+                    lineHeight: `${SMALL_HEIGHT}px`,
+                    color: '#8E8E93',
+                    border: '1px dashed #D0D0D0',
+                    borderRadius: '6px',
+                    bgcolor: 'white',
+                    whiteSpace: 'nowrap',
+                    cursor: isDisabled ? 'default' : 'pointer',
+                    opacity: isDisabled ? 0.6 : 1,
+                    '&:hover': !isDisabled && {
+                      borderColor: '#8E8E93',
+                      bgcolor: '#FAFAFA',
+                    },
+                  }}
+                >
+                  {outreachLoading ? (
+                    <CircularProgress size={12} sx={{ color: '#8E8E93' }} />
+                  ) : (
+                    <>
+                      Not Set
+                      {!isDisabled && <Iconify icon="eva:chevron-down-fill" width={16} />}
+                    </>
+                  )}
+                </Box>
+              );
+            }
+
+            // Status is set - show colored chip
             return (
               <Box
                 onClick={handleOutreachClick}
                 sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  py: 0.5,
-                  px: 1,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: '#8E8E93',
-                  border: '1px dashed #D0D0D0',
-                  borderRadius: 0.8,
-                  bgcolor: 'white',
-                  whiteSpace: 'nowrap',
+                  ...chipSx(outreachConfig.color),
+                  alignSelf: 'flex-start',
                   cursor: isDisabled ? 'default' : 'pointer',
                   opacity: isDisabled ? 0.6 : 1,
                   '&:hover': !isDisabled && {
-                    borderColor: '#8E8E93',
-                    bgcolor: '#FAFAFA',
+                    opacity: 0.85,
                   },
                 }}
               >
                 {outreachLoading ? (
-                  <CircularProgress size={12} sx={{ color: '#8E8E93' }} />
+                  <CircularProgress size={12} sx={{ color: outreachConfig.color }} />
                 ) : (
                   <>
-                    Not Set
-                    {!isDisabled && <Iconify icon="eva:chevron-down-fill" width={14} />}
+                    {outreachConfig.label}
+                    {!isDisabled && <Iconify icon="eva:chevron-down-fill" width={16} />}
                   </>
                 )}
               </Box>
             );
-          }
-
-          // Status is set - show colored chip
-          return (
-            <Box
-              onClick={handleOutreachClick}
-              sx={{
-                textTransform: 'uppercase',
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.5,
-                py: 0.5,
-                px: 1,
-                fontSize: 12,
-                border: '1px solid',
-                borderBottom: '3px solid',
-                borderRadius: 0.8,
-                bgcolor: 'white',
-                whiteSpace: 'nowrap',
-                color: outreachConfig.color,
-                borderColor: outreachConfig.color,
-                cursor: isDisabled ? 'default' : 'pointer',
-                opacity: isDisabled ? 0.6 : 1,
-                '&:hover': !isDisabled && {
-                  opacity: 0.85,
-                },
-              }}
-            >
-              {outreachLoading ? (
-                <CircularProgress size={12} sx={{ color: outreachConfig.color }} />
-              ) : (
-                <>
-                  {outreachConfig.label}
-                  {!isDisabled && <Iconify icon="eva:chevron-down-fill" width={14} />}
-                </>
-              )}
-            </Box>
-          );
-        })()}
+          })()}
+        </FieldBlock>
 
         {/* Outreach Status Popover */}
         <Popover
@@ -468,26 +714,15 @@ const PitchRow = ({
                 handleOutreachSelect(option.value);
               }}
               sx={{
-                textTransform: 'uppercase',
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
+                ...chipSx(option.color),
                 justifyContent: 'space-between',
                 py: 0.75,
                 px: 1.5,
-                fontSize: 13,
-                border: '1px solid',
-                borderBottom: '3px solid',
-                borderRadius: 0.8,
-                bgcolor: 'white',
-                whiteSpace: 'nowrap',
-                color: option.color,
-                borderColor: option.color,
+                fontSize: SMALL_SIZE + 1,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
-                boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
                 ...(pitch.outreachStatus === option.value && {
-                  boxShadow: `0px 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 2px ${option.color}20`,
+                  outline: `2px solid ${option.color}20`,
                 }),
                 '&:hover': {
                   bgcolor: '#F5F5F5',
@@ -504,137 +739,156 @@ const PitchRow = ({
           ))}
         </Popover>
       </TableCell>
-      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
-        {displayData.followerCount ? (
-          <Tooltip
-            title={displayData.followerCount.toLocaleString()}
-            arrow
-            placement="top"
-            componentsProps={{
-              tooltip: {
-                sx: {
-                  bgcolor: '#221f20',
-                  fontSize: '0.75rem',
-                  '& .MuiTooltip-arrow': {
-                    color: '#221f20',
-                  },
-                },
-              },
-            }}
-          >
-            <Typography
-              variant="body2"
-              fontSize={13.5}
-              sx={{ cursor: 'help', display: 'inline-block' }}
-            >
-              {formatNumber(displayData.followerCount)}
-            </Typography>
-          </Tooltip>
-        ) : (
-          <Typography variant="body2" fontSize={13.5}>
-            -
-          </Typography>
-        )}
-      </TableCell>
-      {isCreditTier && (
-        <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
-          {(() => {
-            const tierData = getTierData();
-            if (!tierData) {
-              return <Typography fontSize={13.5}>-</Typography>;
-            }
-            const tierPlatform = resolveTierPlatformForDisplay(pitch, campaign);
-            return (
-              <Stack alignItems="start">
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Iconify
-                    icon={tierPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
-                    width={15}
-                    sx={{
-                      color: tierPlatform === 'tiktok' ? '#000000' : '#E4405F',
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Typography fontSize={13.5} whiteSpace="nowrap">
-                    {tierData.name}
-                  </Typography>
-                </Stack>
-                <Typography
-                  variant="body2"
-                  fontSize={13.5}
-                  sx={{
-                    color: '#8e8e93',
-                    display: 'block',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {tierData.creditsPerVideo} credit{tierData.creditsPerVideo !== 1 ? 's' : ''}
-                </Typography>
+
+      {/* Engagement Rate + Tier */}
+      <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.engagement }}>
+        <Stack spacing={1.5}>
+          <FieldBlock label="Engagement rate" minHeight={CHIP_ROW_HEIGHT}>
+            {metricsPending ? (
+              <Box sx={{ width: 120 }}>
+                <CreatorFieldLoading
+                  label="Fetching engagement rate"
+                  showSpinner
+                  height={CHIP_ROW_HEIGHT}
+                />
+              </Box>
+            ) : engagementRateText ? (
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <PlatformIcon platform={displayData.engagementPlatform} />
+                <ScrapeMetricValue text={engagementRateText} reveal={revealScrapeMetrics} />
               </Stack>
-            );
-          })()}
-        </TableCell>
-      )}
-      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
-        <Stack alignItems="start">
-          <Typography fontSize={13.5} whiteSpace="nowrap">
-            {fDate(pitch.createdAt)}
-          </Typography>
-          <Typography
-            variant="body2"
-            fontSize={13.5}
-            sx={{
-              color: '#8e8e93',
-              display: 'block',
-            }}
-          >
-            {dayjs(pitch.createdAt).format('LT')}
-          </Typography>
+            ) : (
+              <EmptyValue />
+            )}
+          </FieldBlock>
+
+          {/* Tier name and its credit amount both show on every campaign. */}
+          <FieldBlock label="Tier">
+            {tierData ? (
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <PlatformIcon platform={fallbackPlatform} />
+                <ScrapeMetricValue
+                  text={tierData.name}
+                  reveal={revealScrapeMetrics}
+                  style={VALUE_PLAIN_REVEAL_STYLE}
+                  sx={VALUE_PLAIN_SX}
+                />
+                {creditsText && (
+                  <ScrapeMetricValue
+                    text={creditsText}
+                    reveal={revealScrapeMetrics}
+                    textColor="#8E8E93"
+                    style={VALUE_PLAIN_REVEAL_STYLE}
+                    sx={VALUE_MUTED_SX}
+                  />
+                )}
+              </Stack>
+            ) : (
+              <EmptyValue />
+            )}
+          </FieldBlock>
         </Stack>
       </TableCell>
-      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
-        <PitchTypeCell
-          type={pitch.type}
-          isGuestCreator={isGuestCreator}
-          isInvitedCreator={isInvitedCreator}
-          acceptedInviteByCreator={acceptedInviteByCreator}
-        />
+
+      {/* Followers + Type */}
+      <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.followers }}>
+        <Stack spacing={1.5}>
+          <FieldBlock label="Followers" minHeight={CHIP_ROW_HEIGHT}>
+            {metricsPending ? (
+              <Box sx={{ width: 120 }}>
+                <CreatorFieldLoading
+                  label="Fetching follower count"
+                  showSpinner
+                  height={CHIP_ROW_HEIGHT}
+                />
+              </Box>
+            ) : displayData.followerCount ? (
+              <Tooltip
+                title={Number(displayData.followerCount).toLocaleString()}
+                arrow
+                placement="top"
+                componentsProps={{
+                  tooltip: {
+                    sx: {
+                      bgcolor: '#221f20',
+                      fontSize: '0.75rem',
+                      '& .MuiTooltip-arrow': {
+                        color: '#221f20',
+                      },
+                    },
+                  },
+                }}
+              >
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={1}
+                  sx={{ cursor: 'help', alignSelf: 'flex-start' }}
+                >
+                  <PlatformIcon platform={displayData.followerPlatform} />
+                  <ScrapeMetricValue
+                    text={formatNumber(displayData.followerCount)}
+                    reveal={revealScrapeMetrics}
+                  />
+                </Stack>
+              </Tooltip>
+            ) : (
+              <EmptyValue />
+            )}
+          </FieldBlock>
+
+          <FieldBlock label="Type">
+            <PitchTypeCell
+              type={pitch.type}
+              isGuestCreator={isGuestCreator}
+              isInvitedCreator={isInvitedCreator}
+              acceptedInviteByCreator={acceptedInviteByCreator}
+            />
+          </FieldBlock>
+        </Stack>
       </TableCell>
-      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
-        <Box
-          sx={{
-            textTransform: 'uppercase',
-            fontWeight: 700,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.5,
-            py: 0.5,
-            px: 1,
-            fontSize: 12,
-            border: '1px solid',
-            borderBottom: '3px solid',
-            borderRadius: 0.8,
-            bgcolor: 'white',
-            whiteSpace: 'nowrap',
-            color: statusInfo.color,
-            borderColor: statusInfo.borderColor,
-            cursor: 'default',
-          }}
-        >
-          {getStatusText(displayStatus, pitch, campaign)}
-          {pitch?.adminComments && displayStatus === 'SENT_TO_CLIENT_WITH_COMMENTS' && (
-            <Tooltip title="CS Comments provided" arrow>
-              <Box
-                component="img"
-                src="/assets/icons/components/ic-comments.svg"
-                alt="Comments"
-                sx={{ width: 16, height: 16, flexShrink: 0 }}
-              />
-            </Tooltip>
-          )}
-        </Box>
+
+      {/* Creator Status + Date */}
+      <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.status }}>
+        <Stack spacing={1.5}>
+          <FieldBlock label="Creator status" minHeight={CHIP_ROW_HEIGHT}>
+            <Box
+              sx={{
+                ...chipSx(statusInfo.color),
+                borderColor: statusInfo.borderColor,
+                alignSelf: 'flex-start',
+              }}
+            >
+              {getStatusText(displayStatus, pitch, campaign)}
+              {pitch?.adminComments && displayStatus === 'SENT_TO_CLIENT_WITH_COMMENTS' && (
+                <Tooltip title="CS Comments provided" arrow>
+                  <Box
+                    component="img"
+                    src="/assets/icons/components/ic-comments.svg"
+                    alt="Comments"
+                    sx={{ width: 16, height: 16, flexShrink: 0 }}
+                  />
+                </Tooltip>
+              )}
+            </Box>
+          </FieldBlock>
+
+          {/* No label of its own, but it still sits on the value row. */}
+          <FieldBlock>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Typography sx={VALUE_PLAIN_SX} noWrap>
+                {fDate(pitch.createdAt)}
+              </Typography>
+              <Typography sx={VALUE_MUTED_SX} noWrap>
+                {dayjs(pitch.createdAt).format('LT')}
+              </Typography>
+            </Stack>
+          </FieldBlock>
+        </Stack>
       </TableCell>
-      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
+
+      {/* Actions */}
+      <TableCell align="right" sx={{ ...CELL_SX, width: COLUMN_WIDTHS.actions }}>
         {smUp ? (
           <V3PitchActions
             pitch={pitch}
@@ -665,7 +919,6 @@ PitchRow.propTypes = {
   isGuestCreator: PropTypes.bool,
   isInvitedCreator: PropTypes.bool,
   campaign: PropTypes.object,
-  isCreditTier: PropTypes.bool,
   onViewPitch: PropTypes.func.isRequired,
   onRemoved: PropTypes.func,
   onOutreachUpdate: PropTypes.func,
