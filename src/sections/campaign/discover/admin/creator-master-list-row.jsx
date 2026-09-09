@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { useTheme } from '@emotion/react';
+import React, { useMemo } from 'react';
 
 import {
   Box,
@@ -14,29 +14,71 @@ import {
   Typography,
 } from '@mui/material';
 
+import { fDate } from 'src/utils/format-time';
 import { getUserDisplay } from 'src/utils/user-display';
 import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
-import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+import {
+  formatNumber,
+  createSocialProfileUrl,
+  extractUsernameFromProfileLink,
+} from 'src/utils/media-kit-utils';
 
 import { getOutreachStatusConfig } from 'src/contants/outreach';
 
 import Iconify from 'src/components/iconify';
 
+import {
+  chipSx,
+  CELL_SX,
+  INDEX_SX,
+  HANDLE_SX,
+  ICON_SIZE,
+  EmptyValue,
+  FieldBlock,
+  PRODUCT_SX,
+  AVATAR_SIZE,
+  NAME_LINK_SX,
+  emptyChipSx,
+  PlatformIcon,
+  VALUE_MUTED_SX,
+  VALUE_PLAIN_SX,
+  VIEW_BUTTON_SX,
+  CHIP_ROW_HEIGHT,
+  CONTROL_ICON_SIZE,
+  formatEngagementRate,
+} from '../master-list-row-kit';
+
+// Proportional column widths, so the fields sit in the same place on every row
+// instead of shifting with whatever text each creator happens to have.
+const COLUMN_WIDTHS = {
+  checkbox: 32,
+  index: 36,
+  creator: '25%',
+  outreach: '13%',
+  engagement: '15%',
+  followers: '12%',
+  status: '18%',
+  actions: 96,
+};
+
 /**
- * CreatorMasterListRow component renders a single creator row in the master list table
- * Displays creator insights sourced directly from pitch payloads
+ * CreatorMasterListRow renders one creator in the client-facing master list.
+ *
+ * Same tall row design as the admin Pitch tab, minus what a client must not
+ * have: no outreach dropdown (the PATCH is admin-only), no Withdraw or Remove,
+ * and no internal pipeline "Type". The selection checkbox is the one thing this
+ * row has that the admin row does not — it drives Send List for Approval.
  */
 const CreatorMasterListRow = ({
   pitch,
+  number,
   getStatusInfo,
   onViewPitch,
   campaign,
-  isCreditTier,
   isSelected,
   onToggleSelect,
   logistics,
 }) => {
-  const theme = useTheme();
   const rowUser = getUserDisplay(pitch.user);
   // Profile link is stored on Creator model
   const instagramStats = pitch?.user?.creator?.instagramUser || null;
@@ -70,6 +112,9 @@ const CreatorMasterListRow = ({
   const hasPlatformLinks =
     instagramProfileLink || tiktokProfileLink || instagramUsername || tiktokUsername;
 
+  // Platform the row falls back to when a metric carries no platform of its own.
+  const fallbackPlatform = resolveTierPlatformForDisplay(pitch, campaign);
+
   // Determine what to display for username, engagement rate and follower count
   const getDisplayData = () => {
     const igStats = pitch?.user?.creator?.instagramUser || null;
@@ -94,15 +139,25 @@ const CreatorMasterListRow = ({
       const tkFollowers = tkStats?.follower_count || 0;
       const tkEngagement = tkStats?.engagement_rate || 0;
 
+      const ig = {
+        stats: igStats,
+        followers: igFollowers,
+        engagement: igEngagement,
+        platform: 'instagram',
+      };
+      const tk = {
+        stats: tkStats,
+        followers: tkFollowers,
+        engagement: tkEngagement,
+        platform: 'tiktok',
+      };
+
       // If only one account exists, use it
-      if (!tkFollowers) return { stats: igStats, followers: igFollowers, engagement: igEngagement };
-      if (!igFollowers) return { stats: tkStats, followers: tkFollowers, engagement: tkEngagement };
+      if (!tkFollowers) return ig;
+      if (!igFollowers) return tk;
 
       // If both exist, compare follower count first, then engagement rate
-      if (igFollowers >= tkFollowers) {
-        return { stats: igStats, followers: igFollowers, engagement: igEngagement };
-      }
-      return { stats: tkStats, followers: tkFollowers, engagement: tkEngagement };
+      return igFollowers >= tkFollowers ? ig : tk;
     };
 
     // P1: Prioritize connected social media stats delivered with the pitch payload
@@ -117,6 +172,7 @@ const CreatorMasterListRow = ({
 
       return {
         username: usernameFromStats || profileUsername || '-',
+        platform: bestAccount.platform,
         engagementRate: pickValue(bestAccount.engagement, pitch?.engagementRate),
         followerCount: pickValue(
           bestAccount.followers,
@@ -128,14 +184,16 @@ const CreatorMasterListRow = ({
 
     return {
       username: profileUsername || '-',
+      platform: fallbackPlatform,
       engagementRate: pitch?.engagementRate ?? null,
       followerCount: pitch?.followerCount ?? pitch?.user?.creator?.manualFollowerCount ?? null,
     };
   };
 
   const displayData = getDisplayData();
+  const engagementRateText = formatEngagementRate(displayData.engagementRate);
 
-  // Get tier data for credit tier campaigns
+  // Get tier data: the creator's current tier, else the shortlist snapshot.
   const getTierData = () => {
     // First check creator's current tier
     const creatorTier = pitch?.user?.creator?.creditTier;
@@ -156,10 +214,13 @@ const CreatorMasterListRow = ({
     return null;
   };
 
-  const tierData = isCreditTier ? getTierData() : null;
-  const tierPlatform = isCreditTier ? resolveTierPlatformForDisplay(pitch, campaign) : 'instagram';
+  const tierData = getTierData();
+  const credits = tierData?.creditsPerVideo;
+  const creditsText = credits == null ? null : `${credits} Credit${credits === 1 ? '' : 's'}`;
 
   const statusInfo = getStatusInfo(pitch);
+  const outreachConfig = getOutreachStatusConfig(pitch.outreachStatus);
+  const socialLinkSx = { ...HANDLE_SX, '&:hover': { color: '#1877F2' } };
 
   return (
     <TableRow
@@ -170,15 +231,17 @@ const CreatorMasterListRow = ({
         onViewPitch(pitch);
       }}
       sx={{
+        cursor: 'pointer',
         bgcolor: 'transparent',
-        '& td': {
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-        },
+        '&:first-of-type td': { borderTop: '1px solid #EBEBEB' },
       }}
     >
+      {/* Selection — client-only, drives Send List for Approval */}
       {onToggleSelect && (
-        <TableCell data-checkbox-cell="true" sx={{ width: 32, pr: 0 }}>
+        <TableCell
+          data-checkbox-cell="true"
+          sx={{ ...CELL_SX, width: COLUMN_WIDTHS.checkbox, px: 1, pr: 0 }}
+        >
           <Box
             onClick={(e) => {
               e.stopPropagation();
@@ -204,275 +267,242 @@ const CreatorMasterListRow = ({
           </Box>
         </TableCell>
       )}
-      <TableCell>
-        <Stack direction="row" alignItems="center" spacing={2}>
+
+      {/* Row number */}
+      <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.index, px: 1, textAlign: 'center' }}>
+        <Typography sx={INDEX_SX}>{number}</Typography>
+      </TableCell>
+
+      {/* Creator */}
+      <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.creator }}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
           <Avatar
             src={pitch.user?.photoURL}
             alt={rowUser.name}
             sx={{
-              width: 40,
-              height: 40,
-              border: '2px solid',
-              borderColor: 'background.paper',
-              boxShadow: theme.customShadows.z8,
+              width: AVATAR_SIZE,
+              height: AVATAR_SIZE,
+              flexShrink: 0,
+              bgcolor: '#D4D4D4',
+              border: '1px solid #EBEBEB',
             }}
           >
             {rowUser.name?.charAt(0).toUpperCase()}
           </Avatar>
-          <Typography variant="body2">{rowUser.name}</Typography>
-        </Stack>
-      </TableCell>
-      <TableCell>
-        {(() => {
-          const outreachConfig = getOutreachStatusConfig(pitch.outreachStatus);
+          <Stack spacing={0.5}>
+            <Typography sx={NAME_LINK_SX}>{rowUser.name}</Typography>
 
-          if (!outreachConfig) {
-            // Not Set - dashed style
-            return (
-              <Box
-                sx={{
-                  textTransform: 'uppercase',
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  py: 0.5,
-                  px: 1,
-                  fontSize: 12,
-                  color: '#8E8E93',
-                  border: '1px dashed #D0D0D0',
-                  borderRadius: 0.8,
-                  bgcolor: 'white',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Not Set
-              </Box>
-            );
-          }
-
-          // Status is set - colored chip
-          return (
-            <Box
-              sx={{
-                textTransform: 'uppercase',
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-                py: 0.5,
-                px: 1,
-                fontSize: 12,
-                border: '1px solid',
-                borderBottom: '3px solid',
-                borderRadius: 0.8,
-                bgcolor: 'white',
-                whiteSpace: 'nowrap',
-                color: outreachConfig.color,
-                borderColor: outreachConfig.color,
-              }}
-            >
-              {outreachConfig.label}
-            </Box>
-          );
-        })()}
-      </TableCell>
-      <TableCell>
-        {hasPlatformLinks ? (
-          <Stack spacing={2} direction="row">
-            {/* Instagram row */}
-            {(instagramUsername || instagramProfileLink) && (
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                <Iconify icon="mdi:instagram" width={16} sx={{ color: '#E4405F', flexShrink: 0 }} />
-                <Link
-                  onClick={(e) => e.stopPropagation()}
-                  href={
-                    createSocialProfileUrl(instagramUsername, 'instagram') || instagramProfileLink
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  underline="hover"
-                  sx={{
-                    color: 'primary.main',
-                    fontWeight: 500,
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  {instagramUsername || extractUsernameFromProfileLink(instagramProfileLink) || '-'}
-                </Link>
-              </Stack>
-            )}
-            {/* TikTok row */}
-            {(tiktokUsername || tiktokProfileLink) && (
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                <Iconify
-                  icon="ic:baseline-tiktok"
-                  width={16}
-                  sx={{ color: '#000000', flexShrink: 0 }}
-                />
-                <Link
-                  onClick={(e) => e.stopPropagation()}
-                  href={createSocialProfileUrl(tiktokUsername, 'tiktok') || tiktokProfileLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  underline="hover"
-                  sx={{
-                    color: 'primary.main',
-                    fontWeight: 500,
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  {tiktokUsername || extractUsernameFromProfileLink(tiktokProfileLink) || '-'}
-                </Link>
-              </Stack>
-            )}
-          </Stack>
-        ) : (
-          // Fallback to generic profileLink
-          <>
-            {profileLink ? (
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                {profileLink?.includes('instagram.com') && (
-                  <Iconify
-                    icon="mdi:instagram"
-                    width={16}
-                    sx={{ color: '#E4405F', flexShrink: 0 }}
-                  />
+            {hasPlatformLinks ? (
+              /* One handle per line: Instagram first, TikTok under it. */
+              <Stack spacing={0.25} alignItems="flex-start">
+                {(instagramUsername || instagramProfileLink) && (
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="mdi:instagram" width={ICON_SIZE} sx={{ color: '#636366' }} />
+                    <Link
+                      href={
+                        createSocialProfileUrl(instagramUsername, 'instagram') ||
+                        instagramProfileLink
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      underline="hover"
+                      sx={socialLinkSx}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {instagramUsername ||
+                        extractUsernameFromProfileLink(instagramProfileLink) ||
+                        '-'}
+                    </Link>
+                  </Stack>
                 )}
-                {profileLink?.includes('tiktok.com') && (
-                  <Iconify
-                    icon="ic:baseline-tiktok"
-                    width={16}
-                    sx={{ color: '#000000', flexShrink: 0 }}
-                  />
+                {(tiktokUsername || tiktokProfileLink) && (
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify
+                      icon="ic:baseline-tiktok"
+                      width={ICON_SIZE}
+                      sx={{ color: '#636366' }}
+                    />
+                    <Link
+                      href={createSocialProfileUrl(tiktokUsername, 'tiktok') || tiktokProfileLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      underline="hover"
+                      sx={socialLinkSx}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {tiktokUsername || extractUsernameFromProfileLink(tiktokProfileLink) || '-'}
+                    </Link>
+                  </Stack>
                 )}
-                <Link
-                  href={profileLink}
-                  onClick={(e) => e.stopPropagation()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  underline="hover"
-                  sx={{
-                    color: 'primary.main',
-                    fontWeight: 500,
-                    fontSize: '0.875rem',
-                  }}
-                >
-                  {displayData.username}
-                </Link>
               </Stack>
             ) : (
-              <Typography variant="body2">{displayData.username}</Typography>
+              profileLink && (
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  {profileLink?.includes('instagram.com') && (
+                    <Iconify icon="mdi:instagram" width={ICON_SIZE} sx={{ color: '#636366' }} />
+                  )}
+                  {profileLink?.includes('tiktok.com') && (
+                    <Iconify
+                      icon="ic:baseline-tiktok"
+                      width={ICON_SIZE}
+                      sx={{ color: '#636366' }}
+                    />
+                  )}
+                  <Link
+                    href={profileLink?.startsWith('http') ? profileLink : `https://${profileLink}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    underline="hover"
+                    sx={socialLinkSx}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {displayData.username}
+                  </Link>
+                </Stack>
+              )
             )}
-          </>
-        )}
-      </TableCell>
-      {/* <TableCell>
-        <Typography variant="body2">
-          {displayData.engagementRate ? `${displayData.engagementRate}%` : '-'}
-        </Typography>
-      </TableCell> */}
-      <TableCell>
-        <Typography variant="body2">
-          {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
-        </Typography>
-      </TableCell>
-      {isCreditTier && (
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          <Stack direction="row" alignItems="center" spacing={0.5} flexWrap="nowrap">
-            {tierData?.name && (
-              <Iconify
-                icon={tierPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
-                width={15}
-                sx={{
-                  color: tierPlatform === 'tiktok' ? '#000000' : '#E4405F',
-                  flexShrink: 0,
-                }}
-              />
+
+            {displayProducts && (
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Iconify
+                  icon="material-symbols:inventory-2-outline-rounded"
+                  width={ICON_SIZE}
+                  sx={{ color: '#1340FF', flexShrink: 0 }}
+                />
+                <Typography sx={PRODUCT_SX}>{displayProducts}</Typography>
+              </Stack>
             )}
-            <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
-              {tierData?.name || '-'}
-            </Typography>
           </Stack>
-        </TableCell>
-      )}
-      {isCreditTier && (
-        <TableCell>
-          <Typography variant="body2">
-            {tierData?.creditsPerVideo ? `${tierData.creditsPerVideo}` : '-'}
-          </Typography>
-        </TableCell>
-      )}
-      <TableCell>
-        <Box
-          sx={{
-            textTransform: 'uppercase',
-            fontWeight: 700,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.25,
-            px: 1.2,
-            py: 0.5,
-            fontSize: '0.75rem',
-            border: '1px solid',
-            borderBottom: '3px solid',
-            borderRadius: 0.8,
-            bgcolor: 'white',
-            whiteSpace: 'nowrap',
-            color: statusInfo.color,
-            borderColor: statusInfo.color,
-          }}
-        >
-          {statusInfo.label}
-          {statusInfo.normalizedStatus === 'SENT_TO_CLIENT' &&
-            pitch.adminComments?.trim().length > 0 && (
-              <Tooltip title="CS Comments provided" arrow>
-                <Box sx={{ display: 'inline-flex', mb: 0.15 }}>
-                  <Iconify icon="cuida:long-text-outline" width={18} height={18} />
-                </Box>
-              </Tooltip>
-            )}
-          {(statusInfo.normalizedStatus === 'APPROVED' ||
-            statusInfo.normalizedStatus === 'REJECTED') &&
-            pitch.clientVisibleApprovalNote?.trim() && (
-              <Tooltip title="Note from approver" arrow>
-                <Box sx={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
-                  <Iconify
-                    icon="cuida:long-text-outline"
-                    width={18}
-                    height={18}
-                    sx={{ color: statusInfo.color }}
-                  />
-                </Box>
-              </Tooltip>
-            )}
-        </Box>
+        </Stack>
       </TableCell>
-      <TableCell>
-        <Button
-          onClick={() => onViewPitch(pitch)}
-          sx={{
-            bgcolor: '#FFFFFF',
-            border: '1.5px solid #e7e7e7',
-            borderBottom: '3px solid #e7e7e7',
-            borderRadius: 1,
-            color: '#1340FF',
-            height: 36,
-            px: 2,
-            py: 1.5,
-            fontWeight: 600,
-            fontSize: '0.85rem',
-            textTransform: 'none',
-            whiteSpace: 'nowrap',
-            minWidth: '90px',
-            display: 'flex',
-            alignItems: 'center',
-            '&:hover': {
-              bgcolor: 'rgba(19, 64, 255, 0.08)',
-              border: '1.5px solid #1340FF',
-              borderBottom: '3px solid #1340FF',
-              color: '#1340FF',
-            },
-          }}
-        >
+
+      {/* Outreach Status — read-only here: the PATCH is admin-only */}
+      <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.outreach }}>
+        <FieldBlock label="Outreach status" minHeight={CHIP_ROW_HEIGHT}>
+          {outreachConfig ? (
+            <Box sx={{ ...chipSx(outreachConfig.color), alignSelf: 'flex-start' }}>
+              {outreachConfig.label}
+            </Box>
+          ) : (
+            <Box sx={{ ...emptyChipSx, alignSelf: 'flex-start' }}>Not Set</Box>
+          )}
+        </FieldBlock>
+      </TableCell>
+
+      {/* Engagement Rate + Tier */}
+      <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.engagement }}>
+        <Stack spacing={0.5}>
+          <FieldBlock label="Engagement rate" minHeight={CHIP_ROW_HEIGHT}>
+            {engagementRateText ? (
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <PlatformIcon platform={displayData.platform} />
+                <Typography sx={VALUE_PLAIN_SX}>{engagementRateText}</Typography>
+              </Stack>
+            ) : (
+              <EmptyValue />
+            )}
+          </FieldBlock>
+
+          {/* Tier name and its credit amount both show on every campaign. */}
+          <FieldBlock label="Tier">
+            {tierData ? (
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <PlatformIcon platform={fallbackPlatform} />
+                <Typography sx={VALUE_PLAIN_SX}>{tierData.name}</Typography>
+                {creditsText && <Typography sx={VALUE_MUTED_SX}>{creditsText}</Typography>}
+              </Stack>
+            ) : (
+              <EmptyValue />
+            )}
+          </FieldBlock>
+        </Stack>
+      </TableCell>
+
+      {/* Followers */}
+      <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.followers }}>
+        <FieldBlock label="Followers" minHeight={CHIP_ROW_HEIGHT}>
+          {displayData.followerCount ? (
+            <Tooltip
+              title={Number(displayData.followerCount).toLocaleString()}
+              arrow
+              placement="top"
+              componentsProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: '#221f20',
+                    fontSize: '0.75rem',
+                    '& .MuiTooltip-arrow': {
+                      color: '#221f20',
+                    },
+                  },
+                },
+              }}
+            >
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{ cursor: 'help' }}
+              >
+                <PlatformIcon platform={displayData.platform} />
+                <Typography sx={VALUE_PLAIN_SX}>
+                  {formatNumber(displayData.followerCount)}
+                </Typography>
+              </Stack>
+            </Tooltip>
+          ) : (
+            <EmptyValue />
+          )}
+        </FieldBlock>
+      </TableCell>
+
+      {/* Creator Status + Date */}
+      <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.status }}>
+        <Stack spacing={0.5}>
+          <FieldBlock label="Creator status" minHeight={CHIP_ROW_HEIGHT}>
+            <Box sx={{ ...chipSx(statusInfo.color), alignSelf: 'flex-start' }}>
+              {statusInfo.label}
+              {statusInfo.normalizedStatus === 'SENT_TO_CLIENT' &&
+                pitch.adminComments?.trim().length > 0 && (
+                  <Tooltip title="CS Comments provided" arrow>
+                    <Box sx={{ display: 'inline-flex', flexShrink: 0 }}>
+                      <Iconify icon="cuida:long-text-outline" width={CONTROL_ICON_SIZE} />
+                    </Box>
+                  </Tooltip>
+                )}
+              {(statusInfo.normalizedStatus === 'APPROVED' ||
+                statusInfo.normalizedStatus === 'REJECTED') &&
+                pitch.clientVisibleApprovalNote?.trim() && (
+                  <Tooltip title="Note from approver" arrow>
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                      <Iconify
+                        icon="cuida:long-text-outline"
+                        width={CONTROL_ICON_SIZE}
+                        sx={{ color: statusInfo.color }}
+                      />
+                    </Box>
+                  </Tooltip>
+                )}
+            </Box>
+          </FieldBlock>
+
+          {/* No label of its own, but it still sits on the value row. */}
+          <FieldBlock>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Typography sx={VALUE_PLAIN_SX} noWrap>
+                {fDate(pitch.createdAt)}
+              </Typography>
+              <Typography sx={VALUE_MUTED_SX} noWrap>
+                {dayjs(pitch.createdAt).format('LT')}
+              </Typography>
+            </Stack>
+          </FieldBlock>
+        </Stack>
+      </TableCell>
+
+      {/* Actions — View only. Withdraw and Remove are admin-side. */}
+      <TableCell align="right" sx={{ ...CELL_SX, width: COLUMN_WIDTHS.actions }}>
+        <Button onClick={() => onViewPitch(pitch)} sx={VIEW_BUTTON_SX}>
           View
         </Button>
       </TableCell>
@@ -482,10 +512,10 @@ const CreatorMasterListRow = ({
 
 CreatorMasterListRow.propTypes = {
   pitch: PropTypes.object.isRequired,
+  number: PropTypes.number,
   getStatusInfo: PropTypes.func.isRequired,
   onViewPitch: PropTypes.func.isRequired,
   campaign: PropTypes.object,
-  isCreditTier: PropTypes.bool,
   isSelected: PropTypes.bool,
   onToggleSelect: PropTypes.func,
   logistics: PropTypes.array,

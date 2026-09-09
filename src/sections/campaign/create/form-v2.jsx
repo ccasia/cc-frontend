@@ -19,9 +19,6 @@ import {
   Stack,
   Avatar,
   Dialog,
-  Divider,
-  Tooltip,
-  ButtonBase,
   IconButton,
   Typography,
   DialogTitle,
@@ -32,7 +29,6 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCompany from 'src/hooks/use-get-company';
-import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 
@@ -48,6 +44,14 @@ import CloseDraftDialog from './close-draft-dialog';
 import DraftSaveIndicator from './draft-save-indicator';
 import { diffUserContent } from './utils/has-user-content';
 import useCampaignDraftAutosave from './hooks/use-campaign-draft-autosave';
+import {
+  isInBackSection,
+  isInFrontSection,
+  backSectionLabels,
+  frontSectionLabels,
+  getBackSectionIndicatorIndex,
+  getFrontSectionIndicatorIndex,
+} from './utils/campaign-steps';
 import {
   NextSteps,
   LogisticRemarks,
@@ -85,10 +89,6 @@ const additionalSteps = [
 const getSteps = (showAdditionalDetails) =>
   showAdditionalDetails ? [...baseSteps, ...additionalSteps] : baseSteps;
 
-const backSectionLabels = ['General', 'Objective', 'Audience', 'Logistics', 'Finalise'];
-
-const frontSectionLabels = ['Additional 1', 'Additional 2'];
-
 const backSectionIndicatorToStepMap = {
   0: 0, // General
   1: 1, // Objective
@@ -103,349 +103,10 @@ const frontSectionIndicatorToStepMap = {
   1: 9, // Additional Details 2
 };
 
-// Determine if we're in back section (steps 0-7) or front section (steps 8-9)
-const isInFrontSection = (activeStep) => activeStep >= 8;
-const isInBackSection = (activeStep) => activeStep <= 7;
-
-// Get which indicator is active in back section
-const getBackSectionIndicatorIndex = (internalStep) => {
-  if (internalStep >= 7) return 5; // Next Steps
-  if (internalStep >= 6) return 4; // Finalise
-  if (internalStep >= 3) return 3; // Logistics (includes sub-steps 3, 4, 5)
-  return internalStep; // 0, 1, 2 map directly
-};
-
-// Get which indicator is active in front section (0 for Details 1, 1 for Details 2)
-const getFrontSectionIndicatorIndex = (internalStep) => {
-  if (internalStep >= 9) return 1; // Additional Details 2
-  return 0; // Additional Details 1
-};
-
 const getDraftFileUrls = (value) =>
   (Array.isArray(value) ? value : [value])
     .filter((item) => item?.draftFile === true && typeof item.url === 'string')
     .map((item) => item.url);
-
-const formatDraftUpdatedAt = (value) => {
-  if (!value) return 'Recently updated';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Recently updated';
-  return date.toLocaleString([], {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-};
-
-function DraftPicker({ open, drafts, currentDraftId, onClose, onSelect, onDelete }) {
-  // Deleting a draft is not undoable, so the row asks first instead of a
-  // second dialog stacking on top of this one.
-  const [pendingDelete, setPendingDelete] = useState(null);
-
-  useEffect(() => {
-    if (!open) setPendingDelete(null);
-  }, [open]);
-
-  // Newest first -- the draft you were last in is almost always the one you want.
-  const sortedDrafts = [...drafts].sort(
-    (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
-  );
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      aria-labelledby="saved-drafts-title"
-      aria-describedby="saved-drafts-description"
-      PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}
-    >
-      <DialogTitle
-        id="saved-drafts-title"
-        sx={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 2,
-          px: { xs: 2.5, sm: 3.5 },
-          pt: { xs: 2.5, sm: 3.5 },
-          pb: 1.5,
-        }}
-      >
-        <Box sx={{ minWidth: 0 }}>
-          <Stack direction="row" alignItems="center" spacing={1.25}>
-            <Typography
-              sx={{
-                color: '#221F20',
-                fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '2rem', sm: '2.3rem' },
-                lineHeight: 1.05,
-              }}
-            >
-              Open saved draft
-            </Typography>
-            {sortedDrafts.length > 0 && (
-              <Box
-                component="span"
-                sx={{
-                  mt: 0.5,
-                  px: 1,
-                  py: 0.25,
-                  borderRadius: 1,
-                  bgcolor: '#F0F0F3',
-                  color: '#636366',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {sortedDrafts.length}
-              </Box>
-            )}
-          </Stack>
-          <Typography
-            id="saved-drafts-description"
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 1, maxWidth: 390 }}
-          >
-            Choose a saved campaign to continue where you left off. Your current work is saved
-            first.
-          </Typography>
-        </Box>
-        <IconButton aria-label="Close saved drafts" onClick={onClose} sx={{ mt: -0.75, mr: -1 }}>
-          <Iconify icon="material-symbols:close" width={22} />
-        </IconButton>
-      </DialogTitle>
-
-      <DialogContent
-        dividers
-        sx={{ px: { xs: 2.5, sm: 3.5 }, py: 2.5, maxHeight: { xs: '55vh', sm: 420 } }}
-      >
-        {sortedDrafts.length === 0 ? (
-          <Box
-            sx={{
-              px: 2,
-              py: { xs: 4, sm: 5 },
-              textAlign: 'center',
-              border: '1px dashed #D9D9DE',
-              borderRadius: 2,
-              bgcolor: '#FAFAFB',
-            }}
-          >
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                display: 'grid',
-                placeItems: 'center',
-                mx: 'auto',
-                mb: 1.5,
-                borderRadius: '50%',
-                bgcolor: '#F0F0F3',
-                color: '#636366',
-              }}
-            >
-              <Iconify icon="solar:folder-with-files-bold" width={24} />
-            </Box>
-            <Typography variant="subtitle1" fontWeight={700}>
-              No saved drafts yet
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Your saved campaigns will appear here.
-            </Typography>
-          </Box>
-        ) : (
-          <Stack component="ul" role="list" spacing={1.25} sx={{ m: 0, p: 0, listStyle: 'none' }}>
-            {sortedDrafts.map((draft) => {
-              const name = draft.payload?.campaignName?.trim() || 'Untitled draft';
-              const isCurrent = Boolean(currentDraftId) && draft.id === currentDraftId;
-              const isConfirming = pendingDelete === draft.id;
-
-              return (
-                <Box component="li" key={draft.id}>
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      borderRadius: 2,
-                      border: '1px solid',
-                      borderColor: isConfirming ? '#FFC2B3' : isCurrent ? '#1340FF' : '#E6E6EA',
-                      bgcolor: isConfirming ? '#FFF6F4' : '#fff',
-                      transition: 'border-color 160ms ease, background-color 160ms ease',
-                      '&:hover': {
-                        borderColor: isConfirming ? '#FFC2B3' : isCurrent ? '#1340FF' : '#BDBDC5',
-                      },
-                    }}
-                  >
-                    {isConfirming ? (
-                      <Stack
-                        direction={{ xs: 'column', sm: 'row' }}
-                        alignItems={{ xs: 'stretch', sm: 'center' }}
-                        justifyContent="space-between"
-                        spacing={1}
-                        sx={{ p: 1.5, pl: 2 }}
-                      >
-                        <Typography variant="body2" sx={{ minWidth: 0 }}>
-                          Delete <b>{name}</b>? This cannot be undone.
-                        </Typography>
-                        <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <Button
-                            size="small"
-                            onClick={() => setPendingDelete(null)}
-                            sx={{ textTransform: 'none', fontWeight: 600, color: '#3A3A3C' }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            size="small"
-                            variant="contained"
-                            onClick={() => {
-                              onDelete(draft.id);
-                              setPendingDelete(null);
-                            }}
-                            sx={{
-                              textTransform: 'none',
-                              fontWeight: 600,
-                              bgcolor: '#FF5630',
-                              '&:hover': { bgcolor: '#E0421F' },
-                            }}
-                          >
-                            Delete
-                          </Button>
-                        </Stack>
-                      </Stack>
-                    ) : (
-                      <>
-                        <ButtonBase
-                          onClick={() => onSelect(draft.id)}
-                          disabled={isCurrent}
-                          sx={{
-                            width: '100%',
-                            gap: 1.5,
-                            p: 1.5,
-                            pr: 6,
-                            borderRadius: 2,
-                            justifyContent: 'flex-start',
-                            textAlign: 'left',
-                            '&.Mui-disabled': { opacity: 1 },
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              flexShrink: 0,
-                              display: 'grid',
-                              placeItems: 'center',
-                              borderRadius: 1.5,
-                              bgcolor: isCurrent ? '#EAEEFF' : '#F5F5F7',
-                              color: isCurrent ? '#1340FF' : '#636366',
-                            }}
-                          >
-                            <Iconify icon="solar:document-text-bold" width={20} />
-                          </Box>
-
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Stack direction="row" alignItems="center" spacing={0.75}>
-                              <Typography fontWeight={700} noWrap sx={{ minWidth: 0 }}>
-                                {name}
-                              </Typography>
-                              {isCurrent && (
-                                <Box
-                                  component="span"
-                                  sx={{
-                                    px: 0.75,
-                                    py: 0.125,
-                                    borderRadius: 0.75,
-                                    bgcolor: '#EAEEFF',
-                                    color: '#1340FF',
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    whiteSpace: 'nowrap',
-                                    flexShrink: 0,
-                                  }}
-                                >
-                                  Open now
-                                </Box>
-                              )}
-                            </Stack>
-                            <Typography variant="caption" color="text.secondary" noWrap>
-                              Last updated {formatDraftUpdatedAt(draft.updatedAt)}
-                            </Typography>
-                          </Box>
-
-                          {!isCurrent && (
-                            <Iconify
-                              icon="eva:arrow-ios-forward-fill"
-                              width={20}
-                              sx={{ color: '#A0A0A8', flexShrink: 0 }}
-                            />
-                          )}
-                        </ButtonBase>
-
-                        {!isCurrent && (
-                          <Tooltip title="Delete draft" arrow>
-                            <IconButton
-                              aria-label={`Delete ${name}`}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setPendingDelete(draft.id);
-                              }}
-                              size="small"
-                              sx={{
-                                position: 'absolute',
-                                top: '50%',
-                                right: 8,
-                                transform: 'translateY(-50%)',
-                                color: '#A0A0A8',
-                                '&:hover': { color: '#FF5630', bgcolor: '#FFF0EC' },
-                              }}
-                            >
-                              <Iconify icon="solar:trash-bin-trash-bold" width={18} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </>
-                    )}
-                  </Box>
-                </Box>
-              );
-            })}
-          </Stack>
-        )}
-      </DialogContent>
-
-      <DialogActions sx={{ px: { xs: 2.5, sm: 3.5 }, py: 2 }}>
-        <Button
-          onClick={onClose}
-          variant="outlined"
-          sx={{
-            height: 40,
-            textTransform: 'none',
-            fontWeight: 600,
-            color: '#3A3A3C',
-            borderColor: '#E7E7E7',
-            boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
-          }}
-        >
-          Close
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
-DraftPicker.propTypes = {
-  open: PropTypes.bool.isRequired,
-  drafts: PropTypes.arrayOf(PropTypes.object).isRequired,
-  currentDraftId: PropTypes.string,
-  onClose: PropTypes.func.isRequired,
-  onSelect: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
-};
 
 function CreateCampaignFormV2({
   onClose,
@@ -453,6 +114,7 @@ function CreateCampaignFormV2({
   mode = 'create',
   campaignId,
   onSuccess,
+  initialDraftId,
 }) {
   const isActivateMode = mode === 'activate';
   const confirmLabel = isActivateMode ? 'Confirm Activation' : 'Confirm Campaign';
@@ -479,7 +141,6 @@ function CreateCampaignFormV2({
   const [brandState, setBrandState] = useState('');
   const [hasCreditError, setHasCreditError] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
-  const [draftPickerOpen, setDraftPickerOpen] = useState(false);
 
   const handleOpenConfirm = () => setConfirmOpen(true);
   const handleCloseConfirm = () => setConfirmOpen(false);
@@ -779,10 +440,7 @@ function CreateCampaignFormV2({
     resumeAutosave,
     discardDraft,
     clearLocalDraft,
-    drafts,
-    draftId,
     loadDraft,
-    deleteDraft,
   } = useCampaignDraftAutosave({
     enabled: !isActivateMode,
     userId: user?.id,
@@ -834,15 +492,17 @@ function CreateCampaignFormV2({
     setShowAdditionalDetails(false);
   };
 
-  const handleOpenSavedDraft = async (id) => {
-    try {
-      await flushDraft();
-      await loadDraft(id);
-      setDraftPickerOpen(false);
-    } catch (error) {
-      enqueueSnackbar('Save the current draft before switching.', { variant: 'error' });
-    }
-  };
+  // The draft picker lives on the discover page now, so the chosen draft arrives
+  // as a prop. The dialog is keyed on it, so this only ever runs once per mount.
+  const initialDraftLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (isActivateMode || !initialDraftId || !user?.id || initialDraftLoadedRef.current) return;
+    initialDraftLoadedRef.current = true;
+    loadDraft(initialDraftId).catch(() =>
+      enqueueSnackbar('Draft could not be opened. Please try again.', { variant: 'error' })
+    );
+  }, [initialDraftId, isActivateMode, loadDraft, user?.id]);
 
   const handleDraftDialogDone = () => {
     setCloseDraftOpen(false);
@@ -1637,28 +1297,6 @@ function CreateCampaignFormV2({
 
   const campaignStartDate = watch('campaignStartDate');
 
-  // The draft buttons collapse to icons on narrower screens so the step
-  // indicator keeps the true centre of the header.
-  const showDraftLabels = useResponsive('up', 'xl');
-
-  // Same shape as the Back button, so every header control reads as one set.
-  const draftActionSx = {
-    height: 45,
-    minWidth: showDraftLabels ? 'auto' : 45,
-    ...(showDraftLabels ? {} : { px: 0 }),
-    bgcolor: 'white',
-    border: '1px solid #E7E7E7',
-    color: '#3A3A3C',
-    '&:hover': {
-      bgcolor: '#F8F8F8',
-      border: '1px solid #E7E7E7',
-    },
-    fontWeight: 600,
-    whiteSpace: 'nowrap',
-    boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
-    '& .MuiButton-startIcon': { mr: showDraftLabels ? 0.75 : 0, ml: 0 },
-  };
-
   return (
     <Box>
       <FormProvider methods={methods} onSubmit={methods.handleSubmit(onSubmit)}>
@@ -1673,8 +1311,8 @@ function CreateCampaignFormV2({
             alignItems: 'center',
           }}
         >
-          {/* Left cluster -- everything that acts on "this draft" lives together:
-              close, save, open, and the autosave status. */}
+          {/* Left cluster -- closing the dialog and the autosave status. Opening a
+              saved draft now happens from the discover header, before this opens. */}
           <Stack
             direction="row"
             alignItems="center"
@@ -1700,51 +1338,13 @@ function CreateCampaignFormV2({
             </IconButton>
 
             {!isActivateMode && (
-              <>
-                <Divider
-                  orientation="vertical"
-                  flexItem
-                  sx={{
-                    my: 0.75,
-                    borderColor: '#E7E7E7',
-                    display: { xs: 'none', sm: 'block' },
-                  }}
+              <Box sx={{ display: 'flex', alignItems: 'center', pl: 0.5, minWidth: 0 }}>
+                <DraftSaveIndicator
+                  status={draftSaveStatus}
+                  lastSavedAt={lastSavedAt}
+                  onRetry={handleSaveButton}
                 />
-
-                <Tooltip title={showDraftLabels ? '' : 'Save draft'} arrow>
-                  <Button
-                    type="button"
-                    color="inherit"
-                    aria-label="Save draft"
-                    onClick={handleSaveButton}
-                    startIcon={<Iconify icon="solar:diskette-bold" width={18} />}
-                    sx={draftActionSx}
-                  >
-                    {showDraftLabels && 'Save draft'}
-                  </Button>
-                </Tooltip>
-
-                <Tooltip title={showDraftLabels ? '' : 'Open saved draft'} arrow>
-                  <Button
-                    type="button"
-                    color="inherit"
-                    aria-label="Open saved draft"
-                    onClick={() => setDraftPickerOpen(true)}
-                    startIcon={<Iconify icon="solar:folder-with-files-bold" width={18} />}
-                    sx={draftActionSx}
-                  >
-                    {showDraftLabels && 'Open saved draft'}
-                  </Button>
-                </Tooltip>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', pl: 0.5, minWidth: 0 }}>
-                  <DraftSaveIndicator
-                    status={draftSaveStatus}
-                    lastSavedAt={lastSavedAt}
-                    onRetry={handleSaveButton}
-                  />
-                </Box>
-              </>
+              </Box>
             )}
           </Stack>
 
@@ -2035,20 +1635,10 @@ function CreateCampaignFormV2({
           {/* Close-with-unsaved-draft confirmation */}
           <CloseDraftDialog
             open={closeDraftOpen}
-            campaignName={watch('campaignName')}
             onKeepEditing={handleKeepEditing}
             onSaveDraft={handleSaveAsDraft}
             onDiscard={handleDiscardDraft}
             onDone={handleDraftDialogDone}
-          />
-
-          <DraftPicker
-            open={draftPickerOpen}
-            drafts={drafts}
-            currentDraftId={draftId}
-            onClose={() => setDraftPickerOpen(false)}
-            onSelect={handleOpenSavedDraft}
-            onDelete={deleteDraft}
           />
 
           {/* Confirmation Dialog */}
@@ -2434,4 +2024,5 @@ CreateCampaignFormV2.propTypes = {
   mode: PropTypes.oneOf(['create', 'activate']),
   campaignId: PropTypes.string,
   onSuccess: PropTypes.func,
+  initialDraftId: PropTypes.string,
 };

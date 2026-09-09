@@ -6,10 +6,12 @@ import { m, useScroll, AnimatePresence, useMotionValueEvent } from 'framer-motio
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
+  Menu,
   Stack,
   Button,
   Dialog,
   Avatar,
+  MenuItem,
   Container,
   InputBase,
   TextField,
@@ -19,26 +21,32 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useGetCampaignDrafts from 'src/hooks/use-get-campaign-drafts';
 // Removed useGetAdminsForSuperadmin - using direct SWR call to /api/user/alladmins for CSM access
 // import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
+import useSWR from 'swr';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 import { fetcher } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+import NotepadIcon from 'src/assets/icons/notepad-icon';
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CampaignTabs from 'src/components/campaign/CampaignTabs';
+import { SECONDARY_ACTION_SX } from 'src/components/campaign/action-button-styles';
 
 import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 
 import CampaignItem from '../campaign-item';
-import useSWR from 'swr';
 
 const CampaignView = () => {
   const settings = useSettingsContext();
@@ -61,6 +69,8 @@ const CampaignView = () => {
   );
 
   const create = useBoolean();
+
+  const router = useRouter();
 
   const [filter, setFilter] = useState('active');
   const [showAllCampaigns, setShowAllCampaigns] = useState(false);
@@ -115,6 +125,17 @@ const CampaignView = () => {
   );
 
   const isSuperAdmin = useMemo(() => user?.admin?.mode === 'god', [user]);
+
+  // Only the header count is needed here -- the drafts page owns the list. The
+  // endpoint is superadmin-only, so skip the fetch for everyone else instead of
+  // letting SWR sit on a 403.
+  const { drafts, mutate: mutateDrafts } = useGetCampaignDrafts(isSuperAdmin, user?.id);
+
+  // The count goes stale after autosave, create, or discard.
+  const handleCloseCreate = () => {
+    create.onFalse();
+    mutateDrafts();
+  };
 
   // Check if user is a CSM-style admin (not advanced mode). CSL shares this view.
   const isCSM = useMemo(
@@ -250,6 +271,39 @@ const CampaignView = () => {
     if (scrollTop) {
       localStorage.removeItem('scrollTop');
     }
+  };
+
+  // On phones the tab row wraps onto two lines, so the same filters collapse
+  // into a dropdown. One list drives it, so the two never fall out of step.
+  const [filterMenuAnchor, setFilterMenuAnchor] = useState(null);
+
+  const filterOptions = useMemo(
+    () => [
+      { value: 'active', label: 'Active', count: activeCount },
+      ...(isSuperAdmin || isCSM
+        ? [{ value: 'pending', label: 'Pending', count: pendingCount }]
+        : []),
+      { value: 'completed', label: 'Completed', count: completedCount },
+      { value: 'paused', label: 'Paused', count: pausedCount },
+      ...(isCSM ? [{ value: 'all', label: 'All', count: allCampaignsCount }] : []),
+    ],
+    [activeCount, pendingCount, completedCount, pausedCount, allCampaignsCount, isSuperAdmin, isCSM]
+  );
+
+  const activeFilterValue = showAllCampaigns ? 'all' : filter;
+  const activeFilterOption =
+    filterOptions.find((option) => option.value === activeFilterValue) || filterOptions[0];
+
+  const handleSelectFilter = (value) => {
+    setFilterMenuAnchor(null);
+    if (value === 'all') {
+      setFilter('');
+      setShowAllCampaigns(true);
+      return;
+    }
+    handleChangeTab(value);
+    setShowAllCampaigns(false);
+    setSelectedAdmin(null);
   };
 
   useEffect(() => {
@@ -429,10 +483,12 @@ const CampaignView = () => {
             },
           }}
         >
+          {/* Tab row -- phones get the dropdown below instead. */}
           <Stack
             direction="row"
             spacing={0.5}
             sx={{
+              display: { xs: 'none', sm: 'flex' },
               width: { xs: '100%', sm: 'auto' },
               flexWrap: 'wrap',
             }}
@@ -700,7 +756,145 @@ const CampaignView = () => {
             )}
           </Stack>
 
-          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+          {/* Phone controls: the tab row collapses to a dropdown, with Drafts
+              beside it since the header cluster only shows from sm up. */}
+          <Box
+            sx={{
+              display: { xs: 'flex', sm: 'none' },
+              alignItems: 'center',
+              gap: 1,
+              width: '100%',
+              pb: 1.5,
+            }}
+          >
+            <Button
+              onClick={(event) => setFilterMenuAnchor(event.currentTarget)}
+              endIcon={<Iconify icon="eva:chevron-down-fill" width={20} />}
+              aria-haspopup="listbox"
+              aria-expanded={Boolean(filterMenuAnchor)}
+              sx={{
+                ...SECONDARY_ACTION_SX,
+                flex: 1,
+                minWidth: 0,
+                justifyContent: 'space-between',
+                px: 1.5,
+                fontSize: 14,
+                '& .MuiButton-endIcon': { ml: 0.5, flexShrink: 0 },
+              }}
+            >
+              <Box component="span" sx={{ minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                {activeFilterOption.label} ({activeFilterOption.count})
+              </Box>
+            </Button>
+
+            {isSuperAdmin && (
+              <Button
+                onClick={() => router.push(paths.dashboard.campaign.drafts)}
+                startIcon={<NotepadIcon size={20} />}
+                sx={{
+                  ...SECONDARY_ACTION_SX,
+                  flexShrink: 0,
+                  px: 1.5,
+                  gap: '4px',
+                  fontSize: 14,
+                  whiteSpace: 'nowrap',
+                  '& .MuiButton-startIcon': { m: 0 },
+                }}
+              >
+                Drafts ({drafts.length})
+              </Button>
+            )}
+
+            <Menu
+              anchorEl={filterMenuAnchor}
+              open={Boolean(filterMenuAnchor)}
+              onClose={() => setFilterMenuAnchor(null)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+              slotProps={{
+                paper: {
+                  sx: {
+                    mt: 0.5,
+                    width: filterMenuAnchor?.offsetWidth,
+                    borderRadius: '8px',
+                    border: '1px solid #E8E8E8',
+                  },
+                },
+              }}
+            >
+              {filterOptions.map((option) => (
+                <MenuItem
+                  key={option.value}
+                  selected={option.value === activeFilterValue}
+                  onClick={() => handleSelectFilter(option.value)}
+                  sx={{
+                    fontFamily: 'InterDisplay',
+                    fontWeight: option.value === activeFilterValue ? 600 : 500,
+                    fontSize: 14,
+                    color: option.value === activeFilterValue ? '#231F20' : '#636366',
+                  }}
+                >
+                  {option.label} ({option.count})
+                </MenuItem>
+              ))}
+            </Menu>
+          </Box>
+
+          {/* Positioned as one cluster so Drafts sits flush to the left of
+              New Campaign instead of each button anchoring itself. */}
+          <Box
+            sx={{
+              display: { xs: 'none', sm: 'flex' },
+              alignItems: 'center',
+              gap: 1.25,
+              position: 'absolute',
+              right: 0,
+              top: -3,
+            }}
+          >
+            {isSuperAdmin && (
+              <Button
+                onClick={() => router.push(paths.dashboard.campaign.drafts)}
+                startIcon={<NotepadIcon size={24} />}
+                sx={{
+                  boxSizing: 'border-box',
+                  minWidth: 126,
+                  height: 44,
+                  padding: '10px 12px 13px',
+                  gap: '6px',
+                  bgcolor: '#FFFFFF',
+                  border: '1px solid #E8E8E8',
+                  borderRadius: '8px',
+                  boxShadow: 'inset 0px -3px 0px #E7E7E7',
+                  color: '#231F20',
+                  fontFamily: 'InterDisplay',
+                  fontWeight: 600,
+                  fontSize: 16,
+                  lineHeight: '20px',
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  transition:
+                    'transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 140ms ease-out, border-color 140ms ease-out, box-shadow 140ms ease-out',
+                  '& .MuiButton-startIcon': { m: 0 },
+                  // The inset bottom edge reads as a raised key, so hover deepens
+                  // it and press sinks the button onto it.
+                  '&:hover': {
+                    bgcolor: '#F8F8F8',
+                    border: '1px solid #D6D6D6',
+                    boxShadow: 'inset 0px -3px 0px #DEDEDE',
+                  },
+                  '&:active': {
+                    bgcolor: '#F0F0F0',
+                    border: '1px solid #D6D6D6',
+                    boxShadow: 'inset 0px -1px 0px #DEDEDE',
+                    transform: 'translateY(2px)',
+                  },
+                }}
+              >
+                Drafts ({drafts.length})
+              </Button>
+            )}
+
             <Button
               onClick={create.onTrue}
               startIcon={<Iconify icon="eva:plus-fill" width={20} height={20} />}
@@ -712,9 +906,6 @@ const CampaignView = () => {
                 borderRadius: '8px',
                 px: 2.5,
                 py: 1,
-                position: 'absolute',
-                right: 0,
-                top: -3,
                 fontSize: '0.9rem',
                 cursor: isDisabled ? 'not-allowed' : 'pointer',
                 '&:hover': {
@@ -1017,7 +1208,7 @@ const CampaignView = () => {
         scroll="paper"
         open={create.value}
       >
-        <CreateCampaignFormV2 onClose={create.onFalse} mutate={mutate} />
+        <CreateCampaignFormV2 onClose={handleCloseCreate} mutate={mutate} />
       </Dialog>
     </Container>
   );

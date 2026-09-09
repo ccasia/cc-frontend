@@ -37,6 +37,7 @@ const CreateCampaign = lazy(() => import('src/pages/dashboard/campaign/createCam
 const CampaignSetting = lazy(() => import('src/pages/dashboard/campaign/setting'));
 const CampaignDetails = lazy(() => import('src/pages/dashboard/campaign/details'));
 const ViewCampaign = lazy(() => import('src/pages/dashboard/campaign/campaign-view'));
+const CampaignDrafts = lazy(() => import('src/pages/dashboard/campaign/campaign-drafts'));
 const AdminCampaignDetail = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-details')
 );
@@ -499,6 +500,14 @@ export const dashboardRoutes = [
             element: (
               <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'Client', 'client']}>
                 <CreateCampaign />
+              </RoleBasedGuard>
+            ),
+          },
+          {
+            path: 'drafts',
+            element: (
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
+                <CampaignDrafts />
               </RoleBasedGuard>
             ),
           },

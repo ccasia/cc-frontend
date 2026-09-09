@@ -7,22 +7,7 @@ import { Box, Stack, Button, Dialog, Typography, DialogContent } from '@mui/mate
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-// Shared shape for the row's action buttons: 8px radius with an inset bottom edge.
-const ACTION_BUTTON_SX = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  minWidth: 96,
-  height: 40,
-  boxSizing: 'border-box',
-  padding: '8px 14px 11px',
-  borderRadius: '8px',
-  fontSize: 15,
-  fontWeight: 600,
-  lineHeight: '20px',
-  textTransform: 'none',
-  whiteSpace: 'nowrap',
-};
+import { ACTION_BUTTON_SX, VIEW_BUTTON_SX } from '../../master-list-row-kit';
 
 // Statuses that indicate the creator has been approved (for showing Withdraw vs Remove)
 const APPROVED_STATUSES = ['APPROVED', 'approved', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'];
@@ -130,22 +115,10 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
 
   return (
     <>
-      <Stack direction="column" spacing={1} alignItems="flex-end">
+      <Stack direction="column" spacing={0.75} alignItems="flex-end">
         <Button
           onClick={() => onViewPitch(pitch)}
-          sx={{
-            ...ACTION_BUTTON_SX,
-            bgcolor: '#FFFFFF',
-            border: '1px solid #E8E8E8',
-            boxShadow: 'inset 0px -3px 0px #E7E7E7',
-            color: '#1340FF',
-            '&:hover': {
-              bgcolor: 'rgba(19, 64, 255, 0.08)',
-              border: '1px solid #1340FF',
-              boxShadow: 'inset 0px -3px 0px #1340FF',
-              color: '#1340FF',
-            },
-          }}
+          sx={VIEW_BUTTON_SX}
         >
           View
         </Button>

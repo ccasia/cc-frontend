@@ -1395,7 +1395,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
             }}
           >
             <TableBody>
-              {filteredPitches?.map((pitch) => {
+              {filteredPitches?.map((pitch, index) => {
                 const displayStatus = pitch.displayStatus || pitch.status;
                 const statusInfo = getStatusInfo(displayStatus, pitch);
                 const isGuestCreator = pitch.user?.creator?.isGuest;
@@ -1404,6 +1404,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                 return (
                   <PitchRow
                     key={pitch.id}
+                    number={index + 1}
                     pitch={pitch}
                     displayStatus={displayStatus}
                     statusInfo={statusInfo}

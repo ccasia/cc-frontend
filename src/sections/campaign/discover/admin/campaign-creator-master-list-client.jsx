@@ -203,16 +203,6 @@ const CampaignCreatorMasterListClient = ({
     setSelectedPitchIds((prev) => prev.filter((id) => id !== pitchId));
   };
 
-  // Detect approver role: user is a client + their campaign role is 'approver'
-  const isApproverClient = useMemo(() => {
-    if (user?.role !== 'client' || !campaign?.campaignClients) return false;
-    return campaign.campaignClients.some(
-      (cc) => cc.client?.user?.id === user?.id && cc.role === 'approver'
-    );
-  }, [user, campaign]);
-
-  const approverPitchIds = isApproverClient ? campaign?.approverPitchIds || [] : null;
-
   // Mobile-specific state
   const [expandedSections, setExpandedSections] = useState({
     pending: true,
@@ -656,6 +646,18 @@ const CampaignCreatorMasterListClient = ({
   const allPendingSelected =
     pendingCreators.length > 0 && pendingCreators.every((p) => selectedPitchIds.includes(p.id));
 
+  const somePendingSelected =
+    pendingCreators.some((p) => selectedPitchIds.includes(p.id)) && !allPendingSelected;
+
+  // Header checkbox selects every pending creator in the current filter.
+  const handleSelectAllPending = () => {
+    if (pendingCreators.length === 0) {
+      enqueueSnackbar('No pending creators to select.', { variant: 'info' });
+      return;
+    }
+    handleToggleSelectAll(pendingCreators.map((p) => p.id));
+  };
+
   // Mobile View
   if (!mdUp) {
     return (
@@ -846,69 +848,6 @@ const CampaignCreatorMasterListClient = ({
   // Desktop View
   return (
     <>
-      <Button
-        onClick={handleToggleSort}
-        endIcon={
-          <Stack direction="row" alignItems="center" spacing={0.5}>
-            {sortDirection === 'asc' ? (
-              <Stack direction="column" alignItems="center" spacing={0}>
-                <Typography
-                  variant="caption"
-                  sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                >
-                  A
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                >
-                  Z
-                </Typography>
-              </Stack>
-            ) : (
-              <Stack direction="column" alignItems="center" spacing={0}>
-                <Typography
-                  variant="caption"
-                  sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                >
-                  Z
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                >
-                  A
-                </Typography>
-              </Stack>
-            )}
-            <Iconify
-              icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'}
-              width={12}
-            />
-          </Stack>
-        }
-        sx={{
-          px: 1.5,
-          py: 0.75,
-          mb: 2,
-          height: '42px',
-          color: '#637381',
-          fontWeight: 600,
-          fontSize: '0.875rem',
-          backgroundColor: 'transparent',
-          border: 'none',
-          borderRadius: 1,
-          textTransform: 'none',
-          whiteSpace: 'nowrap',
-          boxShadow: 'none',
-          '&:hover': {
-            backgroundColor: 'transparent',
-            color: '#221f20',
-          },
-        }}
-      >
-        Alphabetical
-      </Button>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         alignItems={{ xs: 'stretch', md: 'center' }}
@@ -919,8 +858,73 @@ const CampaignCreatorMasterListClient = ({
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={1}
-          sx={{ width: { xs: '100%', md: 'auto' } }}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          sx={{ width: { xs: '100%', md: 'auto' }, flexWrap: 'wrap' }}
         >
+          <Button
+            onClick={handleToggleSort}
+            endIcon={
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                {sortDirection === 'asc' ? (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                  </Stack>
+                )}
+                <Iconify
+                  icon={
+                    sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
+                  }
+                  width={12}
+                />
+              </Stack>
+            }
+            sx={{
+              px: 1.5,
+              py: 0.75,
+              height: '42px',
+              color: '#637381',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderRadius: 1,
+              textTransform: 'none',
+              whiteSpace: 'nowrap',
+              boxShadow: 'none',
+              '&:hover': {
+                backgroundColor: 'transparent',
+                color: '#221f20',
+              },
+            }}
+          >
+            Alphabetical
+          </Button>
           <Button
             fullWidth={!mdUp}
             onClick={() => setSelectedFilter('all')}
@@ -1114,32 +1118,46 @@ const CampaignCreatorMasterListClient = ({
           </Button>
 
           <TextField
-            placeholder="Search by Creator Name or Username"
+            placeholder="Search creators..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             fullWidth={!mdUp}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Iconify icon="material-symbols:search" />
+                  <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
                 </InputAdornment>
               ),
-              sx: {
-                height: '42px',
-                '& input': {
-                  py: 3,
-                  height: '42px',
-                },
-              },
             }}
             sx={{
-              width: { xs: '100%', md: 260 },
+              width: { xs: '100%', md: 300 },
               flex: { sm: '0 0 auto' },
+              flexShrink: 0,
               '& .MuiOutlinedInput-root': {
-                height: '42px',
-                border: '1px solid #e7e7e7',
+                bgcolor: '#FFFFFF',
+                border: '1.5px solid #e7e7e7',
                 borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
+                borderRadius: 1.15,
+                height: 44,
+                fontSize: '0.85rem',
+                '& fieldset': {
+                  border: 'none',
+                },
+                '&.Mui-focused': {
+                  border: '1.5px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                },
+              },
+              '& .MuiOutlinedInput-input': {
+                py: 1.25,
+                px: 0,
+                color: '#637381',
+                fontWeight: 600,
+                '&::placeholder': {
+                  color: '#637381',
+                  opacity: 1,
+                  fontWeight: 400,
+                },
               },
             }}
           />
@@ -1156,7 +1174,7 @@ const CampaignCreatorMasterListClient = ({
         <Scrollbar>
           <TableContainer
             sx={{
-              minWidth: 800,
+              minWidth: 980,
               position: 'relative',
               bgcolor: 'transparent',
               borderBottom: '1px solid',
@@ -1164,205 +1182,88 @@ const CampaignCreatorMasterListClient = ({
             }}
           >
             <Table>
-              <TableHead
-                sx={{
-                  position: 'relative',
-                  zIndex: 2,
-                  '& .MuiTableCell-head': { position: 'relative', zIndex: 2 },
-                }}
-              >
+              <TableHead>
                 <TableRow>
-                  {/*
-                    Selection is restricted to PENDING_REVIEW rows only.
-                    Header checkbox selects/deselects only pending rows in the current filtered view.
-                  */}
                   <TableCell
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (filteredCreators.length === 0) return;
-                      const pendingIds = filteredCreators
-                        .filter((p) => getStatusInfo(p).normalizedStatus === 'PENDING_REVIEW')
-                        .map((p) => p.id);
-                      if (pendingIds.length === 0) {
-                        enqueueSnackbar('No pending creators to select.', { variant: 'info' });
-                        return;
-                      }
-                      handleToggleSelectAll(pendingIds);
-                    }}
                     sx={{
-                      py: 1,
                       width: 32,
+                      px: 1,
                       pr: 0,
+                      py: 1,
+                      bgcolor: '#f5f5f5',
+                      borderBottom: '1px solid #EBEBEB',
                       borderRadius: '10px 0 0 10px',
-                      bgcolor: '#f5f5f5',
-                      cursor: filteredCreators.length > 0 ? 'pointer' : 'default',
-                      verticalAlign: 'middle',
                     }}
                   >
-                    {filteredCreators.length > 0 && (
-                      <Box
-                        component="span"
-                        sx={{
-                          width: 18,
-                          height: 18,
-                          borderRadius: 0,
-                          border: `2px solid ${allPendingSelected ? '#1340FF' : '#7B7B7B'}`,
-                          bgcolor: 'transparent',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          transition: 'all 0.15s ease',
-                          pointerEvents: 'none',
-                          verticalAlign: 'middle',
-                        }}
-                      >
-                        {allPendingSelected && (
-                          <Iconify
-                            icon="eva:checkmark-fill"
-                            width={13}
-                            height={13}
-                            sx={{ color: '#1340FF' }}
-                          />
-                        )}
-                      </Box>
-                    )}
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 300,
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Creator
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 140,
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Outreach Status
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 350,
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Username
-                  </TableCell>
-                  {/* <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 120,
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Engagement Rate
-                  </TableCell> */}
-                  <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 100,
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Follower Count
-                  </TableCell>
-                  {campaign?.isCreditTier && (
-                    <TableCell
+                    <Box
+                      onClick={handleSelectAllPending}
+                      title="Select all pending"
                       sx={{
-                        py: 1,
-                        color: '#221f20',
-                        fontWeight: 600,
-                        width: 100,
-                        bgcolor: '#f5f5f5',
-                        whiteSpace: 'nowrap',
+                        width: 18,
+                        height: 18,
+                        borderRadius: 0,
+                        border: `2px solid ${
+                          allPendingSelected || somePendingSelected ? '#1340FF' : '#7B7B7B'
+                        }`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        transition: 'all 0.15s ease',
                       }}
                     >
-                      Tier
-                    </TableCell>
-                  )}
-                  {campaign?.isCreditTier && (
-                    <TableCell
-                      sx={{
-                        py: 1,
-                        color: '#221f20',
-                        fontWeight: 600,
-                        width: 80,
-                        bgcolor: '#f5f5f5',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Credits
-                    </TableCell>
-                  )}
-                  <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 100,
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Status
+                      {allPendingSelected && (
+                        <Iconify
+                          icon="eva:checkmark-fill"
+                          width={13}
+                          height={13}
+                          sx={{ color: '#1340FF' }}
+                        />
+                      )}
+                      {somePendingSelected && (
+                        <Box sx={{ width: 8, height: 2, bgcolor: '#1340FF' }} />
+                      )}
+                    </Box>
                   </TableCell>
                   <TableCell
                     sx={{
+                      width: 36,
+                      px: 1,
                       py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 80,
+                      bgcolor: '#f5f5f5',
+                      borderBottom: '1px solid #EBEBEB',
+                    }}
+                  />
+                  <TableCell
+                    colSpan={6}
+                    sx={{
+                      py: 1,
+                      bgcolor: '#f5f5f5',
+                      borderBottom: '1px solid #EBEBEB',
                       borderRadius: '0 10px 10px 0',
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
                     }}
-                  >
-                    {/* Actions */}
-                  </TableCell>
+                  />
                 </TableRow>
               </TableHead>
-
               <TableBody>
                 {filteredCreators.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={8} align="center">
                       <EmptyContent sx={{ py: 10 }} title="No creators found" filled />
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredCreators.map((pitch) => (
+                  filteredCreators.map((pitch, index) => (
                     <CreatorMasterListRow
                       key={pitch.id}
+                      number={index + 1}
                       pitch={pitch}
                       getStatusInfo={getStatusInfo}
                       onViewPitch={handleViewPitch}
                       campaign={campaign}
-                      isCreditTier={campaign?.isCreditTier}
                       isSelected={selectedPitchIds.includes(pitch.id)}
                       onToggleSelect={handleTogglePitchSelect}
-                      approverPitchIds={approverPitchIds}
                       logistics={campaign?.logistics ?? []}
                     />
                   ))
