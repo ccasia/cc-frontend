@@ -51,6 +51,10 @@ const fieldSx = {
   },
 };
 
+const blockArrowKeys = (e) => {
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+};
+
 // One row per selected creator inside the "Send Additional Agreement" modal: identity,
 // platform toggle, tier readout, video count, payment amount, and a product-seeding switch
 // (visual only for now). `rowState` is controlled by the parent:
@@ -142,6 +146,7 @@ export default function AgreementCreatorCostRow({ creatorRow, campaign, creditTi
             placeholder="0"
             inputProps={{ min: 0 }}
             onChange={(e) => onChange({ ...rowState, videoCount: e.target.value })}
+            onKeyDown={blockArrowKeys}
             sx={fieldSx}
           />
         </Stack>
@@ -155,6 +160,7 @@ export default function AgreementCreatorCostRow({ creatorRow, campaign, creditTi
             placeholder="RM"
             inputProps={{ min: 0 }}
             onChange={(e) => onChange({ ...rowState, amount: e.target.value })}
+            onKeyDown={blockArrowKeys}
             sx={fieldSx}
           />
         </Stack>
