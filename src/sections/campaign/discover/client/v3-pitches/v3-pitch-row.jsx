@@ -37,6 +37,34 @@ import { OUTREACH_STATUS_OPTIONS, getOutreachStatusConfig } from 'src/contants/o
 
 import Iconify from 'src/components/iconify';
 
+import {
+  chipSx,
+  CELL_SX,
+  SMALL_SIZE,
+  emptyChipSx,
+  INDEX_SX,
+  NAME_SX,
+  VALUE_SX,
+  HANDLE_SX,
+  ICON_SIZE,
+  NAME_SIZE,
+  EmptyValue,
+  FieldBlock,
+  PRODUCT_SX,
+  VALUE_SIZE,
+  AVATAR_SIZE,
+  NAME_HEIGHT,
+  PlatformIcon,
+  SPINNER_SIZE,
+  NAME_LINK_SX,
+  VALUE_HEIGHT,
+  VALUE_MUTED_SX,
+  VALUE_PLAIN_SX,
+  CHIP_ROW_HEIGHT,
+  CONTROL_ICON_SIZE,
+  formatEngagementRate,
+} from '../../master-list-row-kit';
+
 import V3PitchActions from './v3-pitch-actions';
 import DiaTextReveal from './dia-text-reveal';
 import useJustFinished from './use-just-finished';
@@ -48,133 +76,35 @@ const TYPE_LABELS = {
   shortlisted: 'Shortlisted',
 };
 
-// Design tokens for the tall master-list row. Each value carries its own inline
-// label, so the table renders without a header.
-//
-// Every size lives here. The block heights below are derived from LABEL_HEIGHT
-// and CHIP_ROW_HEIGHT, so changing a size cannot break the field alignment.
-const LABEL_SIZE = 11;
-const LABEL_HEIGHT = 15;
-const VALUE_SIZE = 15;
-const VALUE_HEIGHT = 20;
-const SMALL_SIZE = 13;
-const SMALL_HEIGHT = 18;
-const NAME_SIZE = 18;
-const NAME_HEIGHT = 22;
-
-const LABEL_SX = {
-  fontSize: LABEL_SIZE,
-  fontWeight: 600,
-  lineHeight: `${LABEL_HEIGHT}px`,
-  color: '#636366',
-  textTransform: 'uppercase',
-  letterSpacing: 0.5,
-  whiteSpace: 'nowrap',
-};
-
-const VALUE_BASE = { fontSize: VALUE_SIZE, lineHeight: `${VALUE_HEIGHT}px` };
-const VALUE_SX = { ...VALUE_BASE, fontWeight: 600, color: '#231F20' };
+// Reveal styles for the scrape animation. Admin-only: the client list has no
+// scrape flow, so these stay here rather than in the shared kit.
 const VALUE_REVEAL_STYLE = {
   fontSize: VALUE_SIZE,
   fontWeight: 600,
   lineHeight: `${VALUE_HEIGHT}px`,
 };
-const VALUE_PLAIN_SX = { ...VALUE_BASE, fontWeight: 400, color: '#231F20' };
-const VALUE_MUTED_SX = { ...VALUE_BASE, fontWeight: 400, color: '#8E8E93' };
 const VALUE_PLAIN_REVEAL_STYLE = {
   fontSize: VALUE_SIZE,
   fontWeight: 400,
   lineHeight: `${VALUE_HEIGHT}px`,
-};
-
-const NAME_SX = {
-  fontSize: NAME_SIZE,
-  fontWeight: 400,
-  lineHeight: `${NAME_HEIGHT}px`,
-  color: '#231F20',
-};
-const NAME_LINK_SX = {
-  ...NAME_SX,
-  display: 'block',
-  '&:hover': { color: '#1340FF' },
 };
 const NAME_REVEAL_STYLE = {
   fontSize: NAME_SIZE,
   fontWeight: 400,
   lineHeight: `${NAME_HEIGHT}px`,
 };
-const HANDLE_SX = { fontSize: SMALL_SIZE, lineHeight: `${SMALL_HEIGHT}px`, color: '#636366' };
-const PRODUCT_SX = {
-  fontSize: SMALL_SIZE,
-  fontWeight: 500,
-  lineHeight: `${SMALL_HEIGHT}px`,
-  color: '#1340FF',
-};
-
-const CELL_SX = {
-  py: 2.5,
-  px: { xs: 1, sm: 2 },
-  borderBottom: '1px solid #EBEBEB',
-  // Every cell is centred, so a cell with fewer fields sits in the middle of
-  // the row rather than riding the top.
-  verticalAlign: 'middle',
-};
 
 // Proportional column widths, so the fields sit in the same place on every row
 // instead of shifting with whatever text each creator happens to have.
 const COLUMN_WIDTHS = {
-  creator: '26%',
+  index: 40,
+  creator: '24%',
   outreach: '14%',
   engagement: '15%',
   followers: '19%',
   status: '16%',
-  actions: 128,
+  actions: 108,
 };
-
-const PLATFORM_ICONS = {
-  instagram: { icon: 'ri:instagram-line', color: '#C13584' },
-  tiktok: { icon: 'ic:baseline-tiktok', color: '#000000' },
-};
-
-const getPlatformIcon = (platform) =>
-  platform === 'tiktok' ? PLATFORM_ICONS.tiktok : PLATFORM_ICONS.instagram;
-
-// "5.40" reads as false precision next to the handoff's "5.4".
-const formatEngagementRate = (rate) =>
-  rate == null || rate === '' ? null : `${Number(Number(rate).toFixed(2))}%`;
-
-const FieldLabel = ({ children }) => <Typography sx={LABEL_SX}>{children}</Typography>;
-
-FieldLabel.propTypes = { children: PropTypes.node };
-
-// One labelled field: a 14px label row, a 2px gap, then the value.
-//
-// Only the FIRST field in each cell reserves chip height, because that is the
-// row a status chip lands on. The second field sizes to its text. Every cell
-// therefore ends up the same height, which is what lines the fields up — and
-// a cell holding just one field (Outreach) is shorter, so `verticalAlign:
-// middle` centres it the way the design does.
-// Chip text, plus its 6px vertical padding and 1px top border.
-const CHIP_ROW_HEIGHT = SMALL_HEIGHT + 12 + 2;
-
-const FieldBlock = ({ label, minHeight, children }) => (
-  <Stack spacing={0.25} sx={{ alignItems: 'flex-start', width: '100%' }}>
-    {label ? (
-      <FieldLabel>{label}</FieldLabel>
-    ) : (
-      <Box sx={{ height: LABEL_HEIGHT, flexShrink: 0 }} />
-    )}
-    <Box sx={{ display: 'flex', alignItems: 'center', minHeight }}>{children}</Box>
-  </Stack>
-);
-
-FieldBlock.propTypes = {
-  label: PropTypes.string,
-  minHeight: PropTypes.number,
-  children: PropTypes.node,
-};
-
-const EmptyValue = () => <Typography sx={VALUE_PLAIN_SX}>—</Typography>;
 
 /** Followers / ER after a scrape. Sweep only when loading just ended. */
 function ScrapeMetricValue({
@@ -205,32 +135,6 @@ ScrapeMetricValue.propTypes = {
   style: PropTypes.object,
   sx: PropTypes.object,
 };
-
-const PlatformIcon = ({ platform, size = 16 }) => {
-  const { icon, color } = getPlatformIcon(platform);
-  return <Iconify icon={icon} width={size} sx={{ color, flexShrink: 0 }} />;
-};
-
-PlatformIcon.propTypes = { platform: PropTypes.string, size: PropTypes.number };
-
-// Chip shared by Outreach Status and Creator Status.
-const chipSx = (color) => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 0.5,
-  px: 1,
-  py: 0.75,
-  borderRadius: '6px',
-  bgcolor: '#FFFFFF',
-  fontSize: SMALL_SIZE,
-  fontWeight: 600,
-  lineHeight: `${SMALL_HEIGHT}px`,
-  textTransform: 'uppercase',
-  whiteSpace: 'nowrap',
-  color,
-  border: `1px solid ${color}`,
-  boxShadow: `inset 0px -3px 0px ${color}`,
-});
 
 const PitchTypeCell = React.memo(
   ({ type, isGuestCreator, isInvitedCreator, acceptedInviteByCreator }) => {
@@ -308,6 +212,7 @@ const getStatusText = (status, pitch, campaign) => {
 
 const PitchRow = ({
   pitch,
+  number,
   displayStatus,
   statusInfo,
   isGuestCreator,
@@ -477,15 +382,20 @@ const PitchRow = ({
         '&:first-of-type td': { borderTop: '1px solid #EBEBEB' },
       }}
     >
+      {/* Row number */}
+      <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.index, px: 1, textAlign: 'center' }}>
+        <Typography sx={INDEX_SX}>{number}</Typography>
+      </TableCell>
+
       {/* Creator */}
       <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.creator }}>
-        <Stack direction="row" alignItems="center" spacing={2}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
           <Avatar
             src={pitch.user?.photoURL}
             alt={pitch.user?.name}
             sx={{
-              width: 36,
-              height: 36,
+              width: AVATAR_SIZE,
+              height: AVATAR_SIZE,
               flexShrink: 0,
               bgcolor: '#D4D4D4',
               border: '1px solid #EBEBEB',
@@ -532,7 +442,7 @@ const PitchRow = ({
               <Stack spacing={0.25} alignItems="flex-start">
                 {instagramUsername && (
                   <Stack direction="row" alignItems="center" spacing={0.5}>
-                    <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
+                    <Iconify icon="mdi:instagram" width={ICON_SIZE} sx={{ color: '#636366' }} />
                     <Link
                       href={
                         createSocialProfileUrl(instagramUsername, 'instagram') ||
@@ -550,7 +460,11 @@ const PitchRow = ({
                 )}
                 {tiktokUsername && (
                   <Stack direction="row" alignItems="center" spacing={0.5}>
-                    <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
+                    <Iconify
+                      icon="ic:baseline-tiktok"
+                      width={ICON_SIZE}
+                      sx={{ color: '#636366' }}
+                    />
                     <Link
                       href={createSocialProfileUrl(tiktokUsername, 'tiktok') || tiktokProfileLink}
                       target="_blank"
@@ -568,10 +482,14 @@ const PitchRow = ({
               profileUsername && (
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   {profileLink?.includes('instagram.com') && (
-                    <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
+                    <Iconify icon="mdi:instagram" width={ICON_SIZE} sx={{ color: '#636366' }} />
                   )}
                   {profileLink?.includes('tiktok.com') && (
-                    <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
+                    <Iconify
+                      icon="ic:baseline-tiktok"
+                      width={ICON_SIZE}
+                      sx={{ color: '#636366' }}
+                    />
                   )}
                   <Link
                     href={profileLink?.startsWith('http') ? profileLink : `https://${profileLink}`}
@@ -591,7 +509,7 @@ const PitchRow = ({
               <Stack direction="row" alignItems="center" spacing={0.5}>
                 <Iconify
                   icon="material-symbols:inventory-2-outline-rounded"
-                  width={14}
+                  width={ICON_SIZE}
                   sx={{ color: '#1340FF', flexShrink: 0 }}
                 />
                 <Typography sx={PRODUCT_SX}>{displayProducts}</Typography>
@@ -619,20 +537,8 @@ const PitchRow = ({
                 <Box
                   onClick={handleOutreachClick}
                   sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
+                    ...emptyChipSx,
                     alignSelf: 'flex-start',
-                    gap: 0.5,
-                    px: 1,
-                    py: 0.75,
-                    fontSize: SMALL_SIZE,
-                    fontWeight: 600,
-                    lineHeight: `${SMALL_HEIGHT}px`,
-                    color: '#8E8E93',
-                    border: '1px dashed #D0D0D0',
-                    borderRadius: '6px',
-                    bgcolor: 'white',
-                    whiteSpace: 'nowrap',
                     cursor: isDisabled ? 'default' : 'pointer',
                     opacity: isDisabled ? 0.6 : 1,
                     '&:hover': !isDisabled && {
@@ -642,11 +548,13 @@ const PitchRow = ({
                   }}
                 >
                   {outreachLoading ? (
-                    <CircularProgress size={12} sx={{ color: '#8E8E93' }} />
+                    <CircularProgress size={SPINNER_SIZE} sx={{ color: '#8E8E93' }} />
                   ) : (
                     <>
                       Not Set
-                      {!isDisabled && <Iconify icon="eva:chevron-down-fill" width={16} />}
+                      {!isDisabled && (
+                        <Iconify icon="eva:chevron-down-fill" width={CONTROL_ICON_SIZE} />
+                      )}
                     </>
                   )}
                 </Box>
@@ -668,11 +576,13 @@ const PitchRow = ({
                 }}
               >
                 {outreachLoading ? (
-                  <CircularProgress size={12} sx={{ color: outreachConfig.color }} />
+                  <CircularProgress size={SPINNER_SIZE} sx={{ color: outreachConfig.color }} />
                 ) : (
                   <>
                     {outreachConfig.label}
-                    {!isDisabled && <Iconify icon="eva:chevron-down-fill" width={16} />}
+                    {!isDisabled && (
+                      <Iconify icon="eva:chevron-down-fill" width={CONTROL_ICON_SIZE} />
+                    )}
                   </>
                 )}
               </Box>
@@ -716,7 +626,6 @@ const PitchRow = ({
               sx={{
                 ...chipSx(option.color),
                 justifyContent: 'space-between',
-                py: 0.75,
                 px: 1.5,
                 fontSize: SMALL_SIZE + 1,
                 cursor: 'pointer',
@@ -733,7 +642,11 @@ const PitchRow = ({
                 {option.label}
               </Box>
               {pitch.outreachStatus === option.value && (
-                <Iconify icon="eva:checkmark-fill" width={16} sx={{ ml: 1, flexShrink: 0 }} />
+                <Iconify
+                  icon="eva:checkmark-fill"
+                  width={CONTROL_ICON_SIZE}
+                  sx={{ ml: 1, flexShrink: 0 }}
+                />
               )}
             </Box>
           ))}
@@ -742,7 +655,7 @@ const PitchRow = ({
 
       {/* Engagement Rate + Tier */}
       <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.engagement }}>
-        <Stack spacing={1.5}>
+        <Stack spacing={0.5}>
           <FieldBlock label="Engagement rate" minHeight={CHIP_ROW_HEIGHT}>
             {metricsPending ? (
               <Box sx={{ width: 120 }}>
@@ -792,7 +705,7 @@ const PitchRow = ({
 
       {/* Followers + Type */}
       <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.followers }}>
-        <Stack spacing={1.5}>
+        <Stack spacing={0.5}>
           <FieldBlock label="Followers" minHeight={CHIP_ROW_HEIGHT}>
             {metricsPending ? (
               <Box sx={{ width: 120 }}>
@@ -823,7 +736,7 @@ const PitchRow = ({
                   direction="row"
                   alignItems="center"
                   spacing={1}
-                  sx={{ cursor: 'help', alignSelf: 'flex-start' }}
+                  sx={{ cursor: 'help' }}
                 >
                   <PlatformIcon platform={displayData.followerPlatform} />
                   <ScrapeMetricValue
@@ -850,7 +763,7 @@ const PitchRow = ({
 
       {/* Creator Status + Date */}
       <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.status }}>
-        <Stack spacing={1.5}>
+        <Stack spacing={0.5}>
           <FieldBlock label="Creator status" minHeight={CHIP_ROW_HEIGHT}>
             <Box
               sx={{
@@ -866,7 +779,7 @@ const PitchRow = ({
                     component="img"
                     src="/assets/icons/components/ic-comments.svg"
                     alt="Comments"
-                    sx={{ width: 16, height: 16, flexShrink: 0 }}
+                    sx={{ width: CONTROL_ICON_SIZE, height: CONTROL_ICON_SIZE, flexShrink: 0 }}
                   />
                 </Tooltip>
               )}
@@ -914,6 +827,7 @@ const PitchRow = ({
 
 PitchRow.propTypes = {
   pitch: PropTypes.object.isRequired,
+  number: PropTypes.number,
   displayStatus: PropTypes.string.isRequired,
   statusInfo: PropTypes.object.isRequired,
   isGuestCreator: PropTypes.bool,

@@ -1,50 +1,54 @@
 import PropTypes from 'prop-types';
 import { m, useReducedMotion } from 'framer-motion';
-import { useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useLayoutEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import { alpha } from '@mui/material/styles';
 import { Box, Stack, Button, Dialog, Typography, DialogContent } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
+import {
+  TEXT_ACTION_SX,
+  DIALOG_PAPER_SX,
+  PRIMARY_ACTION_SX,
+  SECONDARY_ACTION_SX,
+} from 'src/components/campaign/action-button-styles';
 
-const BODY_FONT = 'Inter Display, Inter, sans-serif';
-const EASE_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
+const BODY_FONT = 'InterDisplay';
 const EASE = [0.16, 1, 0.3, 1];
 
 // How long the success state stays up before the form closes behind it.
-// Long enough to actually read the draft summary, not long enough to nag.
+// Long enough to read the confirmation, not long enough to nag.
 const SAVED_DWELL = 1800;
 
 // Grace period before a discard actually runs. Long enough to change your mind.
 const DISCARD_DELAY = 10000;
 
 const GREEN = '#22C55E';
-const RED = '#FF5630';
+const RED = '#D4321C';
 const BLUE = '#1340FF';
 
-const PRESSABLE = {
-  textTransform: 'none',
-  borderRadius: 1,
-  fontFamily: BODY_FONT,
-  fontWeight: 600,
-  transition: `transform 160ms ${EASE_OUT}`,
-  '&:active': { transform: 'scale(0.98)' },
-};
+// The box resizes over the full beat; the text swaps inside that window so the
+// two never look like separate events.
+const HEIGHT_T = { duration: 0.42, ease: EASE };
+const FADE_OUT_T = { duration: 0.16, ease: 'easeOut' };
+const FADE_IN_T = { duration: 0.26, ease: EASE, delay: 0.12 };
 
 const TITLE_SX = {
-  color: '#221f20',
   fontFamily: 'Instrument Serif, serif',
-  fontWeight: 550,
-  fontSize: { xs: '2rem', sm: '2.3rem' },
-  lineHeight: 1.05,
+  fontWeight: 400,
+  fontSize: 36,
+  lineHeight: '40px',
+  textAlign: 'center',
+  color: '#231F20',
 };
 
 const BODY_SX = {
   fontFamily: BODY_FONT,
-  fontSize: '16px',
-  lineHeight: '22px',
+  fontWeight: 400,
+  fontSize: 16,
+  lineHeight: '20px',
   textAlign: 'center',
+  color: '#636366',
 };
 
 /**
@@ -54,18 +58,10 @@ const BODY_SX = {
  * vanishing -- a form that just disappears leaves the admin guessing whether
  * the draft landed, and a discard that fires instantly leaves no way back.
  */
-export default function CloseDraftDialog({
-  open,
-  campaignName,
-  onKeepEditing,
-  onSaveDraft,
-  onDiscard,
-  onDone,
-}) {
+export default function CloseDraftDialog({ open, onKeepEditing, onSaveDraft, onDiscard, onDone }) {
   // ask | saving | saved | discardPending | discarding
   const [phase, setPhase] = useState('ask');
   const [secondsLeft, setSecondsLeft] = useState(DISCARD_DELAY / 1000);
-  const [savedAt, setSavedAt] = useState(null);
   const reduceMotion = useReducedMotion();
 
   const isSaved = phase === 'saved';
@@ -73,6 +69,10 @@ export default function CloseDraftDialog({
   const isDiscarding = phase === 'discarding';
   const showDiscard = isPending || isDiscarding;
   const busy = phase === 'saving' || isDiscarding;
+
+  let activePanel = 'ask';
+  if (isSaved) activePanel = 'saved';
+  else if (showDiscard) activePanel = 'discard';
 
   // Every open starts from the question again.
   useEffect(() => {
@@ -114,54 +114,94 @@ export default function CloseDraftDialog({
     setPhase('saving');
     try {
       await onSaveDraft();
-      setSavedAt(new Date());
       setPhase('saved');
     } catch (error) {
       setPhase('ask');
     }
   };
 
-  // Both panels stay mounted and cross-fade in place. Swapping them with
-  // AnimatePresence would fade one out before the other starts, and would
-  // resize the Paper as the buttons leave -- this keeps the box still.
-  const fade = (visible, lift) => {
-    if (reduceMotion) return { opacity: visible ? 1 : 0 };
-    return {
-      opacity: visible ? 1 : 0,
-      y: visible ? 0 : lift,
-      filter: visible ? 'blur(0px)' : 'blur(4px)',
-    };
-  };
+  // Every panel stays mounted so they can cross-fade through each other. The
+  // active one is left in normal flow, which means the box has a correct
+  // natural height even before the first measurement -- the inactive ones are
+  // lifted out of flow so they cannot pad it out.
+  const askRef = useRef(null);
+  const savedRef = useRef(null);
+  const discardRef = useRef(null);
+  const [heights, setHeights] = useState({});
 
-  const CROSSFADE = { duration: 0.32, ease: EASE };
+  useLayoutEffect(() => {
+    if (!open) return undefined;
+
+    // Refs sit on plain divs, so there is no component in between that could
+    // swallow them.
+    const nodes = { ask: askRef.current, saved: savedRef.current, discard: discardRef.current };
+
+    const measure = () => {
+      const measured = {};
+      Object.entries(nodes).forEach(([key, node]) => {
+        const height = node?.offsetHeight;
+        if (height) measured[key] = height;
+      });
+      setHeights((current) => {
+        const changed = Object.entries(measured).some(([key, h]) => current[key] !== h);
+        return changed ? { ...current, ...measured } : current;
+      });
+    };
+
+    measure();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(measure);
+    Object.values(nodes).forEach((node) => node && observer.observe(node));
+    return () => observer.disconnect();
+  }, [open]);
 
   let accent = BLUE;
   if (isSaved) accent = GREEN;
   else if (showDiscard) accent = RED;
 
   const glyphs = [
-    { key: 'draft', glyph: '\u{1F4DD}', on: !isSaved && !showDiscard },
+    { key: 'draft', glyph: '\u{1F4DD}', on: activePanel === 'ask' },
     { key: 'done', glyph: '✅', on: isSaved },
     { key: 'bin', glyph: '\u{1F5D1}️', on: showDiscard },
   ];
 
-  const dismissable = phase === 'ask';
+  // Opacity and a few pixels of travel only. Animating `filter: blur()` is what
+  // made this stutter -- it forces a full repaint every frame.
+  const panelProps = (key) => {
+    const on = activePanel === key;
+    let transition = on ? FADE_IN_T : FADE_OUT_T;
+    if (reduceMotion) transition = { duration: 0 };
+    return {
+      component: m.div,
+      'aria-hidden': !on,
+      initial: false,
+      animate: reduceMotion ? { opacity: on ? 1 : 0 } : { opacity: on ? 1 : 0, y: on ? 0 : 6 },
+      transition,
+      sx: {
+        width: '100%',
+        // Only the active panel holds space; the rest float above it.
+        ...(on ? {} : { position: 'absolute', top: 0, left: 0, right: 0 }),
+        pointerEvents: on ? 'auto' : 'none',
+      },
+    };
+  };
+
+  const targetHeight = heights[activePanel];
 
   return (
     <Dialog
       open={open}
-      onClose={dismissable ? onKeepEditing : undefined}
-      maxWidth="xs"
-      fullWidth
+      onClose={phase === 'ask' ? onKeepEditing : undefined}
       aria-labelledby="close-draft-title"
-      PaperProps={{ sx: { borderRadius: 3, textAlign: 'center', overflow: 'hidden' } }}
+      PaperProps={{ sx: DIALOG_PAPER_SX }}
     >
-      <DialogContent sx={{ px: 4, pt: 4, pb: 3 }}>
-        <Stack spacing={2} alignItems="center">
+      <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+        <Stack spacing={2} alignItems="center" sx={{ width: '100%' }}>
           {/* One circle throughout: it recolours and swaps its glyph rather than
               being replaced, so the dialog reads as a single object changing state. */}
           <Box
             component={m.div}
+            initial={false}
             animate={{
               backgroundColor: accent,
               scale: (isSaved || isPending) && !reduceMotion ? [1, 1.12, 1] : 1,
@@ -169,13 +209,15 @@ export default function CloseDraftDialog({
             transition={{ duration: 0.45, ease: EASE }}
             sx={{
               position: 'relative',
-              width: 72,
-              height: 72,
-              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '2rem',
+              width: 80,
+              height: 80,
+              borderRadius: '500px',
+              fontFamily: 'Instrument Serif, serif',
+              fontSize: 36,
+              lineHeight: '40px',
               flexShrink: 0,
             }}
           >
@@ -185,12 +227,13 @@ export default function CloseDraftDialog({
                 key={key}
                 component={m.span}
                 aria-hidden={!on}
+                initial={false}
                 animate={
                   reduceMotion
                     ? { opacity: on ? 1 : 0 }
                     : { opacity: on ? 1 : 0, scale: on ? 1 : 0.7 }
                 }
-                transition={CROSSFADE}
+                transition={on ? FADE_IN_T : FADE_OUT_T}
                 sx={{ position: 'absolute', lineHeight: 1 }}
               >
                 {glyph}
@@ -198,289 +241,157 @@ export default function CloseDraftDialog({
             ))}
           </Box>
 
-          {/* The question panel stays in flow, so it sets the height the box
-              keeps in every state. The others are overlaid on top of it. */}
-          <Box sx={{ position: 'relative', width: 1 }}>
-            <Stack
-              component={m.div}
-              aria-hidden={isSaved || showDiscard}
-              animate={fade(!isSaved && !showDiscard, -8)}
-              transition={CROSSFADE}
-              spacing={2}
-              alignItems="center"
-              sx={{ width: 1, pointerEvents: isSaved || showDiscard ? 'none' : 'auto' }}
-            >
-              <Typography id="close-draft-title" sx={TITLE_SX}>
-                Save your progress?
-              </Typography>
+          <Box
+            component={m.div}
+            initial={false}
+            animate={targetHeight ? { height: targetHeight } : {}}
+            transition={reduceMotion ? { duration: 0 } : HEIGHT_T}
+            sx={{ position: 'relative', width: '100%', overflow: 'hidden' }}
+          >
+            {/* Question */}
+            <Box {...panelProps('ask')}>
+              <div ref={askRef}>
+                <Stack spacing={3}>
+                  <Stack spacing={0.5}>
+                    <Typography id="close-draft-title" component="h2" sx={TITLE_SX}>
+                      Save your progress?
+                    </Typography>
 
-              <Typography color="text.secondary" sx={BODY_SX}>
-                {campaignName ? (
-                  <>
-                    <Box component="span" sx={{ color: '#221f20', fontWeight: 600 }}>
-                      {campaignName}
-                    </Box>{' '}
-                    is not published yet. Keep it as a draft and finish it any time.
-                  </>
-                ) : (
-                  'This campaign is not published yet. Keep it as a draft and finish it any time.'
-                )}
-              </Typography>
+                    <Typography sx={BODY_SX}>
+                      This campaign is not published yet. Save it as a draft and complete it
+                      anytime.
+                    </Typography>
+                  </Stack>
 
-              <Stack spacing={1} sx={{ width: 1, pt: 1 }}>
-                <LoadingButton
-                  fullWidth
-                  autoFocus
-                  variant="contained"
-                  onClick={handleSave}
-                  loading={phase === 'saving'}
-                  disabled={busy || isSaved || showDiscard}
-                  sx={{
-                    ...PRESSABLE,
-                    bgcolor: '#1a1a1a',
-                    color: 'white',
-                    fontSize: '16px',
-                    height: 48,
-                    borderBottom: '3px solid #000',
-                    '&:hover': { bgcolor: '#000' },
-                  }}
-                >
-                  Save as draft
-                </LoadingButton>
+                  <Stack spacing={1}>
+                    <LoadingButton
+                      fullWidth
+                      autoFocus
+                      onClick={handleSave}
+                      loading={phase === 'saving'}
+                      disabled={busy}
+                      sx={PRIMARY_ACTION_SX}
+                    >
+                      Save as Draft
+                    </LoadingButton>
 
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={onKeepEditing}
-                  disabled={busy || isSaved || showDiscard}
-                  sx={{
-                    ...PRESSABLE,
-                    fontSize: '16px',
-                    height: 44,
-                    color: '#221f20',
-                    borderColor: '#e7e7e7',
-                    borderBottom: '3px solid #e7e7e7',
-                    '&:hover': { borderColor: '#b0b0b0', bgcolor: 'transparent' },
-                  }}
-                >
-                  Keep editing
-                </Button>
-              </Stack>
+                    <Button
+                      fullWidth
+                      onClick={onKeepEditing}
+                      disabled={busy}
+                      sx={SECONDARY_ACTION_SX}
+                    >
+                      Keep Editing
+                    </Button>
 
-              <Button
-                onClick={() => setPhase('discardPending')}
-                disabled={busy || isSaved || showDiscard}
-                sx={{
-                  ...PRESSABLE,
-                  fontSize: '14px',
-                  color: '#8E8E93',
-                  textDecorationColor: 'currentColor',
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                    color: RED,
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                Discard this campaign
-              </Button>
-            </Stack>
+                    <Button
+                      fullWidth
+                      onClick={() => setPhase('discardPending')}
+                      disabled={busy}
+                      sx={{ ...TEXT_ACTION_SX, '&:hover': { bgcolor: 'transparent', color: RED } }}
+                    >
+                      Discard this Campaign
+                    </Button>
+                  </Stack>
+                </Stack>
+              </div>
+            </Box>
 
             {/* Saved confirmation */}
-            <Stack
-              component={m.div}
-              aria-hidden={!isSaved}
-              animate={fade(isSaved, 8)}
-              transition={CROSSFADE}
-              alignItems="center"
-              justifyContent="center"
-              spacing={2.5}
-              sx={{ position: 'absolute', inset: 0, px: 1, pointerEvents: 'none' }}
-            >
-              <Stack spacing={1.5} alignItems="center">
-                <Typography
-                  component={m.p}
-                  animate={fade(isSaved, 10)}
-                  transition={{ ...CROSSFADE, delay: isSaved ? 0.06 : 0 }}
-                  sx={TITLE_SX}
-                >
-                  Campaign Saved as Draft
-                </Typography>
-
-                <Typography
-                  component={m.p}
-                  color="text.secondary"
-                  animate={fade(isSaved, 10)}
-                  transition={{ ...CROSSFADE, delay: isSaved ? 0.12 : 0 }}
-                  sx={BODY_SX}
-                >
-                  Pick it up any time from your campaigns list.
-                </Typography>
-              </Stack>
-
-              {/* Names what was stored and where to find it again. Kept flat --
-                  the green circle above already carries the status colour. */}
-              <Stack
-                component={m.div}
-                animate={fade(isSaved, 12)}
-                transition={{ ...CROSSFADE, delay: isSaved ? 0.18 : 0 }}
-                spacing={1.25}
-                sx={{
-                  width: 1,
-                  px: 1.75,
-                  py: 1.5,
-                  borderRadius: 1.5,
-                  border: '1px solid #E7E7E7',
-                  textAlign: 'left',
-                }}
-              >
-                <Stack direction="row" alignItems="center" spacing={1.25}>
-                  <Iconify
-                    icon="solar:document-bold"
-                    width={20}
-                    sx={{ color: '#637381', flexShrink: 0 }}
-                  />
-
-                  <Typography
-                    noWrap
-                    sx={{
-                      flexGrow: 1,
-                      minWidth: 0,
-                      fontFamily: BODY_FONT,
-                      fontWeight: 600,
-                      fontSize: 14,
-                      color: '#221f20',
-                    }}
-                  >
-                    {campaignName || 'Untitled campaign'}
+            <Box {...panelProps('saved')}>
+              <div ref={savedRef}>
+                <Stack spacing={0.5}>
+                  <Typography component="h2" sx={TITLE_SX}>
+                    Campaign Saved as Draft
                   </Typography>
 
-                  <Stack direction="row" alignItems="center" spacing={0.625} sx={{ flexShrink: 0 }}>
-                    <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: GREEN }} />
+                  <Typography sx={BODY_SX}>
+                    Pick it up any time from your campaigns list.
+                  </Typography>
+                </Stack>
+              </div>
+            </Box>
+
+            {/* Discard grace period -- runs itself out unless cancelled */}
+            <Box {...panelProps('discard')}>
+              <div ref={discardRef}>
+                <Stack spacing={3}>
+                  <Stack spacing={0.5}>
+                    <Typography component="h2" sx={TITLE_SX}>
+                      Discarding Campaign
+                    </Typography>
+
+                    <Typography sx={BODY_SX}>
+                      Everything you filled in will be deleted. This cannot be undone.
+                    </Typography>
+                  </Stack>
+
+                  <Stack spacing={1.5} alignItems="center">
                     <Typography
                       sx={{
                         fontFamily: BODY_FONT,
                         fontWeight: 600,
-                        fontSize: 12,
-                        color: '#118D57',
+                        fontSize: 14,
+                        lineHeight: '18px',
+                        color: RED,
                       }}
                     >
-                      Draft
+                      {isDiscarding
+                        ? 'Discarding…'
+                        : `Discarding in ${secondsLeft} second${secondsLeft === 1 ? '' : 's'}`}
                     </Typography>
+
+                    <Box
+                      sx={{
+                        width: '100%',
+                        height: 4,
+                        borderRadius: 2,
+                        bgcolor: alpha(RED, 0.16),
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {/* Drains over the grace period, then holds at empty while
+                          the discard runs -- snapping back to full would read as
+                          the countdown restarting. */}
+                      <Box
+                        component={m.div}
+                        initial={false}
+                        animate={{ scaleX: showDiscard ? 0 : 1 }}
+                        transition={{
+                          duration: isPending ? DISCARD_DELAY / 1000 : 0,
+                          ease: 'linear',
+                        }}
+                        sx={{ height: 1, bgcolor: RED, transformOrigin: 'left center' }}
+                      />
+                    </Box>
+                  </Stack>
+
+                  <Stack spacing={1}>
+                    <Button
+                      fullWidth
+                      onClick={() => setPhase('ask')}
+                      disabled={isDiscarding}
+                      sx={PRIMARY_ACTION_SX}
+                    >
+                      Cancel, Keep My Work
+                    </Button>
+
+                    <LoadingButton
+                      fullWidth
+                      onClick={runDiscard}
+                      loading={isDiscarding}
+                      sx={{
+                        ...TEXT_ACTION_SX,
+                        color: RED,
+                        '&:hover': { bgcolor: alpha(RED, 0.08), color: RED },
+                      }}
+                    >
+                      Discard now
+                    </LoadingButton>
                   </Stack>
                 </Stack>
-
-                <Stack direction="row" alignItems="center" spacing={1.5} sx={{ color: '#919EAB' }}>
-                  <Stack direction="row" alignItems="center" spacing={0.5}>
-                    <Iconify icon="solar:clock-circle-outline" width={14} />
-                    <Typography sx={{ fontFamily: BODY_FONT, fontSize: 12 }}>
-                      {savedAt
-                        ? savedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        : 'Just now'}
-                    </Typography>
-                  </Stack>
-
-                  <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
-                    <Iconify icon="solar:folder-outline" width={14} sx={{ flexShrink: 0 }} />
-                    <Typography noWrap sx={{ fontFamily: BODY_FONT, fontSize: 12 }}>
-                      Campaigns / Drafts
-                    </Typography>
-                  </Stack>
-                </Stack>
-              </Stack>
-            </Stack>
-
-            {/* Discard grace period -- runs itself out unless cancelled */}
-            <Stack
-              component={m.div}
-              aria-hidden={!showDiscard}
-              animate={fade(showDiscard, 8)}
-              transition={CROSSFADE}
-              alignItems="center"
-              justifyContent="space-between"
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                px: 1,
-                pointerEvents: showDiscard ? 'auto' : 'none',
-              }}
-            >
-              <Stack spacing={1.5} alignItems="center">
-                <Typography sx={TITLE_SX}>Discarding campaign</Typography>
-
-                <Typography color="text.secondary" sx={BODY_SX}>
-                  Everything you filled in will be deleted. This cannot be undone.
-                </Typography>
-              </Stack>
-
-              <Stack spacing={1.5} alignItems="center" sx={{ width: 1 }}>
-                <Typography
-                  sx={{
-                    fontFamily: BODY_FONT,
-                    fontWeight: 600,
-                    fontSize: 14,
-                    color: RED,
-                  }}
-                >
-                  {isDiscarding
-                    ? 'Discarding...'
-                    : `Discarding in ${secondsLeft} second${secondsLeft === 1 ? '' : 's'}`}
-                </Typography>
-
-                <Box
-                  sx={{
-                    width: 1,
-                    height: 4,
-                    borderRadius: 2,
-                    bgcolor: alpha(RED, 0.16),
-                    overflow: 'hidden',
-                  }}
-                >
-                  <Box
-                    component={m.div}
-                    animate={{ scaleX: isPending ? 0 : 1 }}
-                    transition={{ duration: isPending ? DISCARD_DELAY / 1000 : 0, ease: 'linear' }}
-                    sx={{ height: 1, bgcolor: RED, transformOrigin: 'left center' }}
-                  />
-                </Box>
-
-                <Stack spacing={1} sx={{ width: 1 }}>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    onClick={() => setPhase('ask')}
-                    disabled={isDiscarding}
-                    sx={{
-                      ...PRESSABLE,
-                      bgcolor: '#1a1a1a',
-                      color: 'white',
-                      fontSize: '16px',
-                      height: 48,
-                      borderBottom: '3px solid #000',
-                      '&:hover': { bgcolor: '#000' },
-                    }}
-                  >
-                    Cancel, keep my work
-                  </Button>
-
-                  <LoadingButton
-                    fullWidth
-                    onClick={runDiscard}
-                    loading={isDiscarding}
-                    sx={{
-                      ...PRESSABLE,
-                      fontSize: '14px',
-                      height: 40,
-                      color: RED,
-                      textDecorationColor: 'currentColor',
-                      '&:hover': { bgcolor: alpha(RED, 0.08), textDecoration: 'underline' },
-                    }}
-                  >
-                    Discard now
-                  </LoadingButton>
-                </Stack>
-              </Stack>
-            </Stack>
+              </div>
+            </Box>
           </Box>
         </Stack>
       </DialogContent>
@@ -490,7 +401,6 @@ export default function CloseDraftDialog({
 
 CloseDraftDialog.propTypes = {
   open: PropTypes.bool,
-  campaignName: PropTypes.string,
   onKeepEditing: PropTypes.func,
   onSaveDraft: PropTypes.func,
   onDiscard: PropTypes.func,

@@ -1604,6 +1604,12 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
   const creatorParam = searchParams.get('creator') || '';
   const [searchTerm, setSearchTerm] = useState(creatorParam);
   const [sortDirection, setSortDirection] = useState('asc');
+  const { submissions: campaignSubmissions, submissionsLoading: campaignSubmissionsLoading } =
+    useGetV4Submissions(campaign?.submissionVersion === 'v4' ? campaign?.id : null);
+
+  const hasContentSubmissions = campaignSubmissions.some((submission) =>
+    ['VIDEO', 'PHOTO', 'RAW_FOOTAGE'].includes(submission.submissionType?.type)
+  );
 
   const handleSearchChange = useCallback((event) => {
     setSearchTerm(event.target.value);
@@ -1651,6 +1657,32 @@ export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = fa
           Current campaign version: {campaign?.submissionVersion || 'Not set'}
         </Typography>
       </Box>
+    );
+  }
+
+  if (campaignSubmissionsLoading) {
+    return (
+      <Box
+        sx={{
+          minHeight: { xs: 320, sm: 420 },
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress size={28} />
+      </Box>
+    );
+  }
+
+  if (!hasContentSubmissions) {
+    return (
+      <EmptyContent
+        filled
+        title="No creator submissions yet"
+        description="Creator submissions will appear here once creators are ready to submit content."
+        sx={{ mx: { xs: 1, sm: 0 }, minHeight: { xs: 320, sm: 420 }, py: 8 }}
+      />
     );
   }
 

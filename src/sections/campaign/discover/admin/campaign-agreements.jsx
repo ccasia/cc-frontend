@@ -38,6 +38,8 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
+import { INDEX_SX } from '../master-list-row-kit';
+
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
@@ -1611,6 +1613,14 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                   </TableCell>
                   <TableCell
                     sx={{
+                      width: 40,
+                      minWidth: 40,
+                      px: 1,
+                      bgcolor: '#f5f5f5',
+                    }}
+                  />
+                  <TableCell
+                    sx={{
                       py: { xs: 0.5, sm: 1 },
                       px: { xs: 1, sm: 2 },
                       color: '#221f20',
@@ -1703,7 +1713,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredData.map((item) => {
+                {filteredData.map((item, index) => {
                   const isAmountValid = !Number.isNaN(
                     parseFloat(item?.user?.shortlisted[0]?.amount?.toString()) ||
                       parseFloat(item?.amount?.toString())
@@ -1734,6 +1744,9 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                             />
                           </span>
                         </Tooltip>
+                      </TableCell>
+                      <TableCell sx={{ width: 40, minWidth: 40, px: 1, textAlign: 'center' }}>
+                        <Typography sx={INDEX_SX}>{index + 1}</Typography>
                       </TableCell>
                       <TableCell>
                         <Stack direction="row" alignItems="center" spacing={{ xs: 1 }}>

@@ -605,6 +605,20 @@ const PitchModalMobile = ({
             )}
 
             <Stack spacing={1.5}>
+              <Stack direction="row" alignItems="center">
+                <MetaItem
+                  compact
+                  label="Age"
+                  value={
+                    derivedBirthDate ? String(dayjs().diff(dayjs(derivedBirthDate), 'year')) : '—'
+                  }
+                />
+                <VDivider height={40} compact />
+                <MetaItem compact label="Pronouns" value={derivedPronouns || '—'} />
+                <VDivider height={40} compact />
+                <MetaItem compact label="Tier" value={tierName} />
+              </Stack>
+
               <Stack direction="row" alignItems="center" sx={{ width: 1 }}>
                 <StatTile
                   compact
@@ -626,20 +640,6 @@ const PitchModalMobile = ({
                   value={formatLikes(activeStats.averageLikes)}
                   caption="Average Likes"
                 />
-              </Stack>
-
-              <Stack direction="row" alignItems="center">
-                <MetaItem
-                  compact
-                  label="Age"
-                  value={
-                    derivedBirthDate ? String(dayjs().diff(dayjs(derivedBirthDate), 'year')) : '—'
-                  }
-                />
-                <VDivider height={40} compact />
-                <MetaItem compact label="Pronouns" value={derivedPronouns || '—'} />
-                <VDivider height={40} compact />
-                <MetaItem compact label="Tier" value={tierName} />
               </Stack>
             </Stack>
 

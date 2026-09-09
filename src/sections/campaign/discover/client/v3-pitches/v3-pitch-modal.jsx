@@ -608,6 +608,14 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
                 spacing={2}
                 sx={{ flexShrink: 0, width: { xs: 1, md: 377 } }}
               >
+                <Stack direction="row" alignItems="center" sx={{ height: 40 }}>
+                  <MetaItem compact={mdDown} label="Age" value={ageText} />
+                  <VDivider height={40} compact={mdDown} />
+                  <MetaItem compact={mdDown} label="Pronouns" value={pronounsText} />
+                  <VDivider height={40} compact={mdDown} />
+                  <MetaItem compact={mdDown} label="Tier" value={tierName} />
+                </Stack>
+
                 <Stack direction="row" alignItems="center" sx={{ width: 1, height: 64 }}>
                   <StatTile
                     compact={mdDown}
@@ -629,14 +637,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
                     value={averageLikesText}
                     caption="Average Likes"
                   />
-                </Stack>
-
-                <Stack direction="row" alignItems="center" sx={{ height: 40 }}>
-                  <MetaItem compact={mdDown} label="Age" value={ageText} />
-                  <VDivider height={40} compact={mdDown} />
-                  <MetaItem compact={mdDown} label="Pronouns" value={pronounsText} />
-                  <VDivider height={40} compact={mdDown} />
-                  <MetaItem compact={mdDown} label="Tier" value={tierName} />
                 </Stack>
               </Stack>
             </Stack>
