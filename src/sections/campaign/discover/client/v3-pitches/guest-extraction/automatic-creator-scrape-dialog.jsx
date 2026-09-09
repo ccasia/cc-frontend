@@ -34,7 +34,7 @@ import { ACTIONS, MAX_ROWS, BATCH_SAVE_STATUS } from './creator-row-machine';
 export function buildGuestPayload(rows) {
   return rows.map((row) => ({
     profileLink: row.canonicalProfileUrl ?? row.profileLink,
-    name: row.name.trim(),
+    name: row.name.trim() || (row.canonicalProfileKey ? row.canonicalProfileKey.split(':')[1] : '') || '',
     followerCount: row.followerCount || undefined,
     engagementRate: row.engagementRate || undefined,
     adminComments: row.adminComments?.trim() || undefined,

@@ -9,7 +9,6 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
-  Chip,
   Menu,
   Stack,
   Table,
@@ -19,11 +18,8 @@ import {
   Divider,
   Tooltip,
   MenuItem,
-  TableRow,
   TableBody,
   TextField,
-  TableCell,
-  TableHead,
   Typography,
   IconButton,
   DialogTitle,
@@ -47,7 +43,6 @@ import { OUTREACH_STATUS_OPTIONS } from 'src/contants/outreach';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
-import SortableHeader from 'src/components/table/sortable-header';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchRow from './v3-pitch-row';
@@ -56,10 +51,11 @@ import usePitchSocket from './use-pitch-socket';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
 import useGuestExtraction from './guest-extraction/use-guest-extraction';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
-import { ACTIONS, ROW_STATUS, fieldProvenanceOf } from './guest-extraction/creator-row-machine';
+import { ACTIONS, ROW_STATUS, fieldProvenanceOf, isRowActive } from './guest-extraction/creator-row-machine';
 import useGuestMetricsDecision from './guest-extraction/use-guest-metrics-decision';
 import AutomaticCreatorScrapeDialog from './guest-extraction/automatic-creator-scrape-dialog';
 import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
+import ScrapeTextFieldReveal, { ScrapeRevealGate } from './scrape-text-field-reveal';
 
 /**
  * Every input in the Add Platform Creators row, at the handoff's 46px.
@@ -141,6 +137,102 @@ const ACTION_BUTTON_SX = {
   fontWeight: 600,
   px: 3,
   textTransform: 'none',
+};
+
+const FILTER_PILL_SX = {
+  height: 34,
+  minHeight: 34,
+  padding: '8px 16px',
+  gap: '4px',
+  border: 'none',
+  borderBottom: 'none',
+  borderRadius: '100px',
+  fontFamily: 'Inter Display, Inter, sans-serif',
+  fontWeight: 500,
+  fontSize: 14,
+  lineHeight: '18px',
+  textTransform: 'none',
+  whiteSpace: 'nowrap',
+  minWidth: 'unset',
+  flexShrink: 0,
+  boxShadow: 'none',
+  '& .MuiButton-endIcon': {
+    ml: 0,
+    mr: 0,
+  },
+};
+
+const getFilterPillSx = (isActive) => ({
+  ...FILTER_PILL_SX,
+  bgcolor: isActive ? 'rgba(19, 64, 255, 0.10)' : '#F5F5F5',
+  color: isActive ? '#1340FF' : '#231F20',
+  fontWeight: isActive ? 600 : 500,
+  '&:hover': {
+    bgcolor: isActive ? 'rgba(19, 64, 255, 0.16)' : '#EBEBEB',
+    border: 'none',
+    borderBottom: 'none',
+    boxShadow: 'none',
+  },
+});
+
+function FilterPillEndIcons({ isActive, isOpen, onClear, clearLabel }) {
+  const handleClear = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onClear();
+  };
+
+  return (
+    <Stack direction="row" alignItems="center" spacing={0.25} component="span">
+      {isActive && (
+        <Box
+          component="span"
+          role="button"
+          tabIndex={0}
+          aria-label={clearLabel}
+          onClick={handleClear}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              handleClear(event);
+            }
+          }}
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 18,
+            height: 18,
+            borderRadius: '50%',
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: 'rgba(19, 64, 255, 0.16)',
+            },
+          }}
+        >
+          <Iconify icon="eva:close-fill" width={14} />
+        </Box>
+      )}
+      <Iconify
+        icon="eva:chevron-down-fill"
+        width={20}
+        sx={{
+          transform: isOpen ? 'rotate(180deg)' : 'none',
+          transition: 'transform 0.2s',
+        }}
+      />
+    </Stack>
+  );
+}
+
+FilterPillEndIcons.propTypes = {
+  isActive: PropTypes.bool,
+  isOpen: PropTypes.bool,
+  onClear: PropTypes.func.isRequired,
+  clearLabel: PropTypes.string.isRequired,
 };
 
 /**
@@ -279,8 +371,6 @@ const countPitchesByStatus = (pitches, statusList) =>
     return statusList.includes(status);
   }).length || 0;
 
-// Using SortableHeader component from components/table to avoid defining components during render
-
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisabled = false }) => {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
@@ -310,6 +400,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
   const [outreachStatusFilter, setOutreachStatusFilter] = useState([]);
   const [outreachFilterAnchorEl, setOutreachFilterAnchorEl] = useState(null);
+  const [creatorFilterAnchorEl, setCreatorFilterAnchorEl] = useState(null);
   // Merge prop-based isDisabled with existing Finance role check
 
   const financeDisabled = useMemo(
@@ -429,17 +520,50 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
 
   const withdrawnCount = countPitchesByStatus(mergedPitchesAndShortlisted, ['WITHDRAWN']);
 
-  // Handle column sort click
-  const handleColumnSort = (column) => {
-    if (sortColumn === column) {
-      // Same column - toggle direction
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      // New column - set to asc
-      setSortColumn(column);
-      setSortDirection('asc');
+  const creatorStatusOptions = useMemo(() => {
+    const isV4 = campaign?.submissionVersion === 'v4';
+
+    return [
+      { value: 'all', label: 'All' },
+      { value: 'PENDING_REVIEW', label: `Pending (${pendingReviewCount})` },
+      ...(isV4
+        ? [
+            { value: 'SENT_TO_CLIENT', label: `Sent To Client (${sentToClientCount})` },
+            { value: 'MAYBE', label: `Maybe (${maybeCount})` },
+          ]
+        : []),
+      { value: 'REJECTED', label: `Rejected (${rejectedCount})` },
+      { value: 'APPROVED', label: `Approved (${approvedCount})` },
+      { value: 'WITHDRAWN', label: `Withdrawn (${withdrawnCount})` },
+    ];
+  }, [
+    campaign?.submissionVersion,
+    pendingReviewCount,
+    sentToClientCount,
+    maybeCount,
+    rejectedCount,
+    approvedCount,
+    withdrawnCount,
+  ]);
+
+  const isCreatorFilterActive = selectedFilter !== 'all';
+  const creatorFilterLabel = isCreatorFilterActive
+    ? creatorStatusOptions.find((option) => option.value === selectedFilter)?.label ||
+      'Creator Status'
+    : 'Creator Status';
+
+  const isOutreachFilterActive = outreachStatusFilter.length > 0;
+  const outreachFilterLabel = useMemo(() => {
+    if (outreachStatusFilter.length === 0) return 'Outreach Status';
+    if (outreachStatusFilter.length === 1) {
+      const [value] = outreachStatusFilter;
+      if (value === 'NOT_SET') return 'Not Set';
+      return (
+        OUTREACH_STATUS_OPTIONS.find((option) => option.value === value)?.label || 'Outreach Status'
+      );
     }
-  };
+    return `Outreach Status (${outreachStatusFilter.length})`;
+  }, [outreachStatusFilter]);
 
   // Toggle sort direction (for alphabetical button - legacy)
   const handleToggleSort = () => {
@@ -464,6 +588,25 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
 
   const handleOutreachFilterClear = () => {
     setOutreachStatusFilter([]);
+    setOutreachFilterAnchorEl(null);
+  };
+
+  const handleCreatorFilterClick = (event) => {
+    setCreatorFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleCreatorFilterClose = () => {
+    setCreatorFilterAnchorEl(null);
+  };
+
+  const handleCreatorFilterSelect = (value) => {
+    setSelectedFilter(value);
+    setCreatorFilterAnchorEl(null);
+  };
+
+  const handleCreatorFilterClear = () => {
+    setSelectedFilter('all');
+    setCreatorFilterAnchorEl(null);
   };
 
   // Handler for outreach status update from row
@@ -844,9 +987,11 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
     <Box sx={{ width: '100%', overflowX: 'auto' }}>
       <Stack direction="column" spacing={2}>
         <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          alignItems={{ xs: 'stretch', sm: 'center' }}
+          direction="row"
+          spacing={1.5}
+          alignItems="center"
+          flexWrap="wrap"
+          useFlexGap
           sx={{ width: '100%' }}
         >
           <TextField
@@ -891,47 +1036,88 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
               ),
             }}
           />
-          {/* Outreach Status Filter */}
+          {/* Alphabetical Sort Button */}
           <Button
-            onClick={handleOutreachFilterClick}
-            endIcon={<Iconify icon="eva:chevron-down-fill" width={18} />}
+            onClick={handleToggleSort}
+            endIcon={
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                {sortDirection === 'asc' ? (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                  </Stack>
+                )}
+                <Iconify
+                  icon={
+                    sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
+                  }
+                  width={12}
+                />
+              </Stack>
+            }
             sx={{
-              height: 44,
-              px: 2,
-              bgcolor: outreachStatusFilter.length > 0 ? 'rgba(32, 63, 245, 0.08)' : '#FFFFFF',
-              border: '1.5px solid',
-              borderColor: outreachStatusFilter.length > 0 ? '#1340FF' : '#e7e7e7',
-              borderBottom:
-                outreachStatusFilter.length > 0 ? '3px solid #1340FF' : '3px solid #e7e7e7',
-              borderRadius: 1.15,
-              color: outreachStatusFilter.length > 0 ? '#1340FF' : '#637381',
+              px: 1.5,
+              py: 0.75,
+              height: '42px',
+              color: '#637381',
               fontWeight: 600,
-              fontSize: '0.85rem',
+              fontSize: '0.875rem',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderRadius: 1,
               textTransform: 'none',
               whiteSpace: 'nowrap',
+              boxShadow: 'none',
+              alignSelf: { xs: 'flex-start', sm: 'center' },
               '&:hover': {
-                bgcolor: outreachStatusFilter.length > 0 ? 'rgba(32, 63, 245, 0.08)' : '#F5F5F5',
-                borderColor: outreachStatusFilter.length > 0 ? '#1340FF' : '#e7e7e7',
+                backgroundColor: 'transparent',
+                color: '#221f20',
               },
             }}
           >
-            Outreach
-            {outreachStatusFilter.length > 0 && (
-              <Chip
-                label={outreachStatusFilter.length}
-                size="small"
-                sx={{
-                  ml: 1,
-                  height: 20,
-                  minWidth: 20,
-                  bgcolor: '#1340FF',
-                  color: '#fff',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  '& .MuiChip-label': { px: 0.75 },
-                }}
+            Alphabetical
+          </Button>
+          {/* Outreach Status Filter */}
+          <Button
+            variant="text"
+            disableElevation
+            onClick={handleOutreachFilterClick}
+            endIcon={
+              <FilterPillEndIcons
+                isActive={isOutreachFilterActive}
+                isOpen={Boolean(outreachFilterAnchorEl)}
+                onClear={handleOutreachFilterClear}
+                clearLabel="Clear outreach status filters"
               />
-            )}
+            }
+            sx={getFilterPillSx(isOutreachFilterActive)}
+          >
+            {outreachFilterLabel}
           </Button>
           <Menu
             anchorEl={outreachFilterAnchorEl}
@@ -1055,316 +1241,74 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
               </Typography>
             )}
           </Menu>
-          {/* Alphabetical Sort Button */}
+          {/* Creator Status Filter */}
           <Button
-            onClick={handleToggleSort}
+            variant="text"
+            disableElevation
+            onClick={handleCreatorFilterClick}
             endIcon={
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                {sortDirection === 'asc' ? (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                    >
-                      A
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                    >
-                      Z
-                    </Typography>
-                  </Stack>
-                ) : (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                    >
-                      Z
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                    >
-                      A
-                    </Typography>
-                  </Stack>
-                )}
-                <Iconify
-                  icon={
-                    sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
-                  }
-                  width={12}
-                />
-              </Stack>
+              <FilterPillEndIcons
+                isActive={isCreatorFilterActive}
+                isOpen={Boolean(creatorFilterAnchorEl)}
+                onClear={handleCreatorFilterClear}
+                clearLabel="Clear creator status filters"
+              />
             }
-            sx={{
-              px: 1.5,
-              py: 0.75,
-              height: '42px',
-              color: '#637381',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderRadius: 1,
-              textTransform: 'none',
-              whiteSpace: 'nowrap',
-              boxShadow: 'none',
-              alignSelf: { xs: 'flex-start', sm: 'center' },
-              '&:hover': {
-                backgroundColor: 'transparent',
-                color: '#221f20',
+            sx={getFilterPillSx(isCreatorFilterActive)}
+          >
+            {creatorFilterLabel}
+          </Button>
+          <Menu
+            anchorEl={creatorFilterAnchorEl}
+            open={Boolean(creatorFilterAnchorEl)}
+            onClose={handleCreatorFilterClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            slotProps={{
+              paper: {
+                sx: {
+                  mt: 0.5,
+                  minWidth: 200,
+                  p: 0.5,
+                  bgcolor: 'white',
+                  boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
+                  borderRadius: 1.5,
+                },
               },
             }}
           >
-            Alphabetical
-          </Button>
-        </Stack>
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={2}
-          justifyContent="flex-start"
-          alignItems={{ xs: 'flex-start', md: 'center' }}
-          sx={{ mb: 1 }}
-        >
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1}
-            sx={{ width: { xs: '100%', md: 'auto' } }}
-          >
-            <Button
-              fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('all')}
-              sx={{
-                px: 1.5,
-                py: 2.5,
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                ...(selectedFilter === 'all'
-                  ? {
-                      color: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    }
-                  : {
-                      color: '#637381',
-                      bgcolor: 'transparent',
-                    }),
-                '&:hover': {
-                  bgcolor: selectedFilter === 'all' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                },
-              }}
-            >
-              All
-            </Button>
-
-            <Button
-              fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('PENDING_REVIEW')}
-              sx={{
-                px: 1.5,
-                py: 2.5,
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                ...(selectedFilter === 'PENDING_REVIEW'
-                  ? {
-                      color: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    }
-                  : {
-                      color: '#637381',
-                      bgcolor: 'transparent',
-                    }),
-                '&:hover': {
-                  bgcolor:
-                    selectedFilter === 'PENDING_REVIEW' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                },
-              }}
-            >
-              {`Pending (${pendingReviewCount})`}
-            </Button>
-
-            {/* Sent to Client filter - only show for v4 campaigns where client approval is required */}
-            {campaign?.submissionVersion === 'v4' && (
-              <Button
-                fullWidth={!mdUp}
-                onClick={() => setSelectedFilter('SENT_TO_CLIENT')}
+            {creatorStatusOptions.map((option) => (
+              <MenuItem
+                key={option.value}
+                selected={selectedFilter === option.value}
+                onClick={() => handleCreatorFilterSelect(option.value)}
                 sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
+                  fontFamily: 'Inter Display, Inter, sans-serif',
+                  fontSize: 14,
+                  fontWeight: selectedFilter === option.value ? 600 : 500,
+                  color: '#231F20',
                   borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  ...(selectedFilter === 'SENT_TO_CLIENT'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor:
-                      selectedFilter === 'SENT_TO_CLIENT'
-                        ? 'rgba(32, 63, 245, 0.04)'
-                        : 'transparent',
-                  },
+                  py: 0.75,
                 }}
               >
-                {`Sent To Client (${sentToClientCount})`}
-              </Button>
-            )}
-
-            {/* Maybe filter - only show for v4 campaigns where client can mark as maybe */}
-            {campaign?.submissionVersion === 'v4' && (
-              <Button
-                fullWidth={!mdUp}
-                onClick={() => setSelectedFilter('MAYBE')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  ...(selectedFilter === 'MAYBE'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor: selectedFilter === 'MAYBE' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                  },
-                }}
-              >
-                {`Maybe (${maybeCount})`}
-              </Button>
-            )}
-
-            <Button
-              fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('REJECTED')}
-              sx={{
-                px: 1.5,
-                py: 2.5,
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                ...(selectedFilter === 'REJECTED'
-                  ? {
-                      color: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    }
-                  : {
-                      color: '#637381',
-                      bgcolor: 'transparent',
-                    }),
-                '&:hover': {
-                  bgcolor:
-                    selectedFilter === 'REJECTED' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                },
-              }}
-            >
-              {`Rejected (${rejectedCount})`}
-            </Button>
-
-            <Button
-              fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('APPROVED')}
-              sx={{
-                px: 1.5,
-                py: 2.5,
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                ...(selectedFilter === 'APPROVED'
-                  ? {
-                      color: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    }
-                  : {
-                      color: '#637381',
-                      bgcolor: 'transparent',
-                    }),
-                '&:hover': {
-                  bgcolor:
-                    selectedFilter === 'APPROVED' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                },
-              }}
-            >
-              {`Approved (${approvedCount})`}
-            </Button>
-
-            <Button
-              fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('WITHDRAWN')}
-              sx={{
-                px: 1.5,
-                py: 2.5,
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                ...(selectedFilter === 'WITHDRAWN'
-                  ? {
-                      color: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    }
-                  : {
-                      color: '#637381',
-                      bgcolor: 'transparent',
-                    }),
-                '&:hover': {
-                  bgcolor:
-                    selectedFilter === 'WITHDRAWN' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                },
-              }}
-            >
-              {`Withdrawn (${withdrawnCount})`}
-            </Button>
-          </Stack>
+                {option.label}
+                {selectedFilter === option.value && (
+                  <Iconify
+                    icon="eva:checkmark-fill"
+                    width={16}
+                    sx={{ ml: 'auto', flexShrink: 0 }}
+                  />
+                )}
+              </MenuItem>
+            ))}
+          </Menu>
 
           <Box
             sx={{
               display: 'flex',
               justifyContent: { xs: 'flex-start', md: 'flex-end' },
-              flex: 1,
-              width: { xs: '100%', md: 'auto' },
-              mt: { xs: 1, md: 0 },
+              ml: { xs: 0, sm: 'auto' },
+              flexShrink: 0,
             }}
           >
             {!smUp ? (
@@ -1446,113 +1390,10 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
           <Table
             size={smUp ? 'medium' : 'small'}
             sx={{
-              minWidth: { xs: 800, sm: 'auto' },
+              minWidth: { xs: 900, sm: 'auto' },
               width: '100%',
             }}
           >
-            <TableHead>
-              <TableRow>
-                <TableCell
-                  sx={{
-                    py: { xs: 0.5, sm: 1 },
-                    px: { xs: 1, sm: 2 },
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: '25%',
-                    borderRadius: '10px 0 0 10px',
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  }}
-                >
-                  Creator
-                </TableCell>
-                <TableCell
-                  sx={{
-                    py: { xs: 0.5, sm: 1 },
-                    px: { xs: 1, sm: 2 },
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: { xs: 120, sm: '12%' },
-                    minWidth: { xs: 120, sm: 'auto' },
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  }}
-                >
-                  Outreach Status
-                </TableCell>
-                <SortableHeader
-                  column="followers"
-                  label="Followers"
-                  sortColumn={sortColumn}
-                  sortDirection={sortDirection}
-                  onSort={handleColumnSort}
-                  sx={{
-                    width: { xs: 100, sm: '15%' },
-                    minWidth: { xs: 100, sm: 'auto' },
-                  }}
-                />
-                {campaign?.isCreditTier && (
-                  <SortableHeader
-                    column="tier"
-                    label="Tier"
-                    sortColumn={sortColumn}
-                    sortDirection={sortDirection}
-                    onSort={handleColumnSort}
-                    sx={{
-                      width: { xs: 90, sm: '12%' },
-                      minWidth: { xs: 90, sm: 'auto' },
-                    }}
-                  />
-                )}
-                <SortableHeader
-                  column="date"
-                  label="Date Submitted"
-                  sortColumn={sortColumn}
-                  sortDirection={sortDirection}
-                  onSort={handleColumnSort}
-                  sx={{
-                    width: { xs: 130, sm: '15%' },
-                    minWidth: { xs: 130, sm: 'auto' },
-                  }}
-                />
-                <SortableHeader
-                  column="type"
-                  label="Type"
-                  sortColumn={sortColumn}
-                  sortDirection={sortDirection}
-                  onSort={handleColumnSort}
-                  sx={{
-                    width: { xs: 100, sm: '10%' },
-                    minWidth: { xs: 100, sm: 'auto' },
-                  }}
-                />
-                <SortableHeader
-                  column="status"
-                  label="Status"
-                  sortColumn={sortColumn}
-                  sortDirection={sortDirection}
-                  onSort={handleColumnSort}
-                  sx={{
-                    width: { xs: 120, sm: '10%' },
-                    minWidth: { xs: 120, sm: 'auto' },
-                  }}
-                />
-                <TableCell
-                  sx={{
-                    py: { xs: 0.5, sm: 1 },
-                    px: { xs: 1, sm: 2 },
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: 100,
-                    borderRadius: '0 10px 10px 0',
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                  }}
-                />
-              </TableRow>
-            </TableHead>
             <TableBody>
               {filteredPitches?.map((pitch) => {
                 const displayStatus = pitch.displayStatus || pitch.status;
@@ -1569,7 +1410,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                     isInvitedCreator={isInvitedCreator}
                     isGuestCreator={isGuestCreator}
                     campaign={campaign}
-                    isCreditTier={campaign?.isCreditTier}
                     onViewPitch={handleViewPitch}
                     onRemoved={handleRemoveCreator}
                     onOutreachUpdate={handleOutreachUpdate}
@@ -2070,9 +1910,16 @@ export function PlatformCreatorModal({
   const hasMissingPlatformSelection = creatorRows.some(
     (row) => row.creator && !row.selectedPlatform
   );
-  const hasMissingFollowerCount = creatorRows.some(
-    (row) => row.creator && (!row.followerCount || Number(row.followerCount) <= 0)
-  );
+  const hasMissingFollowerCount = creatorRows.some((row) => {
+    if (!row.creator) return false;
+    if (row.followerCount && Number(row.followerCount) > 0) return false;
+    const scrapeInFlight =
+      scrapeEnabled &&
+      !row.hasMediaKit &&
+      isRowActive(row) &&
+      Boolean(row.extractionId);
+    return !scrapeInFlight;
+  });
 
   // Do not RESET the machine here. A reset while `open` is still true would
   // persist an empty draft and wipe the scrape the close is meant to keep.
@@ -2122,9 +1969,15 @@ export function PlatformCreatorModal({
       return;
     }
 
-    const missingFollowerRow = validRows.find(
-      (row) => !row.followerCount || Number(row.followerCount) <= 0
-    );
+    const missingFollowerRow = validRows.find((row) => {
+      if (row.followerCount && Number(row.followerCount) > 0) return false;
+      const scrapeInFlight =
+        scrapeEnabled &&
+        !row.hasMediaKit &&
+        isRowActive(row) &&
+        Boolean(row.extractionId);
+      return !scrapeInFlight;
+    });
     if (missingFollowerRow) {
       enqueueSnackbar('Please fill in follower count for each creator.', {
         variant: 'error',
@@ -2184,6 +2037,9 @@ export function PlatformCreatorModal({
     }
   };
 
+  const showProfileLinkHint =
+    scrapeEnabled && creatorRows.some((row) => row.creator && !row.hasMediaKit);
+
   return (
     <>
       {/* MAIN SELECT DIALOG */}
@@ -2224,24 +2080,49 @@ export function PlatformCreatorModal({
             >
               Add Platform Creators
             </Typography>
-            {/* Only true while scraping is on; without it there is no link to
-                extract anything from. */}
-            {scrapeEnabled && (
-              <Typography
-                component="span"
-                sx={{
-                  display: 'block',
-                  mt: '4px',
-                  fontSize: '14px !important',
-                  fontWeight: 400,
-                  lineHeight: '18px',
-                  color: '#231F20',
-                }}
-              >
-                Placing the Profile Link will auto-extract the remaining information. This can be
-                edited.
-              </Typography>
-            )}
+            {/* The Profile Link field only appears for a selected creator with
+                no connected media kit, so this hint follows the same rule. */}
+            <AnimatePresence initial={false}>
+              {showProfileLinkHint && (
+                <Box
+                  component={m.div}
+                  key="profile-link-hint"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{
+                    opacity: 1,
+                    height: 'auto',
+                    transition: {
+                      height: { duration: 0.25, ease: 'easeOut' },
+                      opacity: { duration: 0.2, delay: 0.05 },
+                    },
+                  }}
+                  exit={{
+                    opacity: 0,
+                    height: 0,
+                    transition: {
+                      height: { duration: 0.2, ease: 'easeIn' },
+                      opacity: { duration: 0.12 },
+                    },
+                  }}
+                  sx={{ overflow: 'hidden' }}
+                >
+                  <Typography
+                    component="span"
+                    sx={{
+                      display: 'block',
+                      mt: '4px',
+                      fontSize: '14px !important',
+                      fontWeight: 400,
+                      lineHeight: '18px',
+                      color: '#231F20',
+                    }}
+                  >
+                    Placing the Profile Link will auto-extract the remaining information. This can
+                    be edited.
+                  </Typography>
+                </Box>
+              )}
+            </AnimatePresence>
           </Box>
           <IconButton onClick={handleCloseAll} size="small" sx={{ color: '#636366' }}>
             <Iconify icon="mdi:close" width={24} />
@@ -2288,6 +2169,10 @@ export function PlatformCreatorModal({
                     }}
                   >
                     {/* Single Row: Creator Autocomplete + Conditional Follower Count + CS Comments */}
+                    <ScrapeRevealGate
+                      loading={Boolean(scrapeEnabled && SCRAPE_FETCHING.includes(row.status))}
+                    >
+                      {(reveal) => (
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                       {/* Creator Autocomplete.
                           Every other field in the row is hidden until a creator
@@ -2480,7 +2365,9 @@ export function PlatformCreatorModal({
                             onChange={(e) => setLink(row.id, e.target.value)}
                             placeholder="Profile Link"
                             error={Boolean(row.linkError)}
-                            helperText={row.linkError || SCRAPE_HINTS[row.status] || undefined}
+                            helperText={
+                              row.linkError?.message || SCRAPE_HINTS[row.status] || undefined
+                            }
                             fullWidth
                             size="small"
                             InputProps={{
@@ -2614,6 +2501,16 @@ export function PlatformCreatorModal({
                               height={FIELD_HEIGHT}
                             />
                           ) : (
+                            <ScrapeTextFieldReveal
+                              reveal={reveal}
+                              text={
+                                row.hasMediaKit
+                                  ? (getPlatformEngagementRate(row.creator, row.platform) ?? '')
+                                  : (row.engagementRate ?? '')
+                              }
+                              height={FIELD_HEIGHT}
+                              overlayPaddingRight={36}
+                            >
                             <TextField
                               value={
                                 row.hasMediaKit
@@ -2642,6 +2539,7 @@ export function PlatformCreatorModal({
                               inputProps={{ inputMode: 'decimal' }}
                               sx={FIELD_SX}
                             />
+                            </ScrapeTextFieldReveal>
                           )}
                         </Box>
                       )}
@@ -2669,6 +2567,11 @@ export function PlatformCreatorModal({
                               height={FIELD_HEIGHT}
                             />
                           ) : (
+                            <ScrapeTextFieldReveal
+                              reveal={reveal}
+                              text={formatFollowerCountDisplay(row.followerCount)}
+                              height={FIELD_HEIGHT}
+                            >
                             <TextField
                               /* Grouped on both paths. 80,141,485 is readable at
                                  a glance; 80141485 has to be counted. The state
@@ -2696,10 +2599,13 @@ export function PlatformCreatorModal({
                               }
                               sx={FIELD_SX}
                             />
+                            </ScrapeTextFieldReveal>
                           )}
                         </Box>
                       )}
                     </Stack>
+                      )}
+                    </ScrapeRevealGate>
 
                     {/* CS Comments sits on its own full-width row, per the
                         handoff. Inline it was the sixth field and got squeezed

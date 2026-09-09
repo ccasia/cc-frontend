@@ -7,6 +7,23 @@ import { Box, Stack, Button, Dialog, Typography, DialogContent } from '@mui/mate
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+// Shared shape for the row's action buttons: 8px radius with an inset bottom edge.
+const ACTION_BUTTON_SX = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: 96,
+  height: 40,
+  boxSizing: 'border-box',
+  padding: '8px 14px 11px',
+  borderRadius: '8px',
+  fontSize: 15,
+  fontWeight: 600,
+  lineHeight: '20px',
+  textTransform: 'none',
+  whiteSpace: 'nowrap',
+};
+
 // Statuses that indicate the creator has been approved (for showing Withdraw vs Remove)
 const APPROVED_STATUSES = ['APPROVED', 'approved', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'];
 
@@ -113,29 +130,19 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
 
   return (
     <>
-      <Stack direction="row" spacing={1}>
+      <Stack direction="column" spacing={1} alignItems="flex-end">
         <Button
           onClick={() => onViewPitch(pitch)}
           sx={{
+            ...ACTION_BUTTON_SX,
             bgcolor: '#FFFFFF',
-            border: '1.5px solid #e7e7e7',
-            borderBottom: '3px solid #e7e7e7',
-            borderRadius: 1,
+            border: '1px solid #E8E8E8',
+            boxShadow: 'inset 0px -3px 0px #E7E7E7',
             color: '#1340FF',
-            height: 36,
-            px: 2,
-            py: 1.5,
-            fontWeight: 600,
-            fontSize: '0.85rem',
-            textTransform: 'none',
-            whiteSpace: 'nowrap',
-            minWidth: '90px',
-            display: 'flex',
-            alignItems: 'center',
             '&:hover': {
               bgcolor: 'rgba(19, 64, 255, 0.08)',
-              border: '1.5px solid #1340FF',
-              borderBottom: '3px solid #1340FF',
+              border: '1px solid #1340FF',
+              boxShadow: 'inset 0px -3px 0px #1340FF',
               color: '#1340FF',
             },
           }}
@@ -145,40 +152,26 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
         {isApproved ? (
           // Withdraw button for approved creators (red/danger style)
           <Button
-            variant="outlined"
-            size="small"
             onClick={(e) => {
               e.stopPropagation();
               setConfirmDialogOpen(true);
             }}
             disabled={isDisabled}
             sx={{
+              ...ACTION_BUTTON_SX,
               cursor: isDisabled ? 'not-allowed' : 'pointer',
-              px: 2,
-              py: 2,
-              minWidth: '90px',
-              border: '1px solid #d32f2f',
-              borderBottom: '3px solid #b71c1c',
-              borderRadius: 1,
+              border: 'none',
               color: '#fff',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              height: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              textTransform: 'none',
-              bgcolor: '#d32f2f',
-              whiteSpace: 'nowrap',
+              bgcolor: '#D4321C',
+              boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
               '&:hover': {
-                bgcolor: '#b71c1c',
-                border: '1px solid #b71c1c',
-                borderBottom: '3px solid #7f0000',
+                bgcolor: '#B71C1C',
+                boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
               },
               '&.Mui-disabled': {
                 bgcolor: '#bdbdbd',
                 color: '#fff',
-                border: '1px solid #bdbdbd',
-                borderBottom: '3px solid #9e9e9e',
+                boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.25)',
                 cursor: 'not-allowed',
                 pointerEvents: 'auto',
               },
@@ -189,40 +182,26 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
         ) : (
           // Remove button for non-approved creators
           <Button
-            variant="outlined"
-            size="small"
             onClick={(e) => {
               e.stopPropagation();
               setConfirmDialogOpen(true);
             }}
             disabled={isDisabled}
             sx={{
+              ...ACTION_BUTTON_SX,
               cursor: isDisabled ? 'not-allowed' : 'pointer',
-              px: 2,
-              py: 2,
-              minWidth: '90px',
-              border: '1px solid #3A3A3C',
-              borderBottom: '3px solid #00000073',
-              borderRadius: 1,
+              border: 'none',
               color: '#fff',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              height: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              textTransform: 'none',
               bgcolor: '#3A3A3C',
-              whiteSpace: 'nowrap',
+              boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
               '&:hover': {
-                bgcolor: '#3A3A3C',
-                border: '1px solid #3A3A3C',
-                borderBottom: '3px solid #00000073',
+                bgcolor: '#2C2C2C',
+                boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
               },
               '&.Mui-disabled': {
                 bgcolor: '#bdbdbd',
                 color: '#fff',
-                border: '1px solid #bdbdbd',
-                borderBottom: '3px solid #9e9e9e',
+                boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.25)',
                 cursor: 'not-allowed',
                 pointerEvents: 'auto',
               },
@@ -307,7 +286,11 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
               loading={loading}
               onClick={(e) => {
                 e.stopPropagation();
-                if (isApproved) { handleWithdrawCreator(); } else { handleRemoveCreator(); }
+                if (isApproved) {
+                  handleWithdrawCreator();
+                } else {
+                  handleRemoveCreator();
+                }
               }}
               sx={{
                 bgcolor: isApproved ? '#D4321C' : '#3A3A3C',

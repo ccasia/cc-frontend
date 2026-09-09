@@ -311,6 +311,30 @@ describe('scraping a platform creator', () => {
     expect(screen.queryByPlaceholderText(/follower count/i)).toBeNull();
   });
 
+  it('lets the admin add while the scrape is still running', async () => {
+    const user = userEvent.setup();
+    setup(true);
+
+    await pickCreator(user, 'Bare Creator');
+    await waitFor(() => expect(linkField()).toBeInTheDocument());
+    await user.click(linkField());
+    await user.paste(IG);
+    await waitFor(() => expect(screen.getAllByTestId('creator-field-loading')).toHaveLength(2));
+
+    const submit = screen.getByRole('button', { name: /Add Creators/i });
+    await waitFor(() => expect(submit).toBeEnabled());
+    await user.click(submit);
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalled());
+    expect(axios.post.mock.calls[0][1].creators[0]).toMatchObject({
+      id: 'u-bare',
+      profileLink: IG,
+      extractionId: 'ext-1',
+      selectedPlatform: 'instagram',
+    });
+    expect(axios.post.mock.calls[0][1].creators[0].completionReceipt).toBeFalsy();
+  });
+
   it('sends the link and the rate so the server can verify them', async () => {
     const user = userEvent.setup();
     // The fetch lands, so the fields come back filled and editable.
@@ -474,6 +498,19 @@ describe('a connected creator shows their media-kit numbers', () => {
     const rate = await screen.findByPlaceholderText('Engagement Rate');
     expect(rate).toBeEnabled();
     expect(rate).toHaveValue('');
+  });
+});
+
+describe('an invalid profile link', () => {
+  it('shows the error as text under the field', async () => {
+    const user = userEvent.setup();
+    setup(true);
+
+    await pickCreator(user, 'Bare Creator');
+    const linkField = await screen.findByPlaceholderText('Profile Link');
+    await user.type(linkField, 'x');
+
+    expect(await screen.findByText('Use an Instagram or TikTok profile link.')).toBeInTheDocument();
   });
 });
 

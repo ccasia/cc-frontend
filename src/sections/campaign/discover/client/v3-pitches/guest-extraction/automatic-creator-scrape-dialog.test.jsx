@@ -155,6 +155,7 @@ describe('a ready row', () => {
     expect(screen.getByDisplayValue('6.45')).toBeInTheDocument();
     expect(screen.getByText('%')).toBeInTheDocument();
     expect(screen.getAllByText(/\(extracted\)/)).toHaveLength(3);
+    expect(screen.getAllByTestId('dia-text-reveal')).toHaveLength(3);
   });
 
   it('stays saveable after an edit, and says it is an override', async () => {
@@ -183,7 +184,26 @@ describe('a ready row', () => {
 
     await waitFor(() => expect(screen.queryByDisplayValue('Cult Creative')).toBeNull());
     expect(screen.queryByDisplayValue('6.45')).toBeNull();
-    expect(screen.getByRole('button', { name: /^Add Creator$/i })).toBeDisabled();
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Add Creator$/i })).toBeEnabled());
+  });
+
+  it('lets the admin add while the scrape is still running', async () => {
+    const user = userEvent.setup();
+    api.startExtraction.mockResolvedValue({ extractionId: 'ext-1', status: 'QUEUED' });
+    api.getExtraction.mockResolvedValue({ status: 'RUNNING' });
+    setup();
+
+    await fillLink(user);
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Add Creator$/i })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: /^Add Creator$/i }));
+
+    await waitFor(() => expect(api.saveGuestCreators).toHaveBeenCalledTimes(1));
+    expect(api.saveGuestCreators.mock.calls[0][0].guestCreators[0]).toMatchObject({
+      extractionId: 'ext-1',
+      name: 'cultcreative.asia',
+      profileLink: 'https://www.instagram.com/cultcreative.asia',
+    });
+    expect(api.saveGuestCreators.mock.calls[0][0].guestCreators[0].completionReceipt).toBeFalsy();
   });
 
   it('sends reviewed values and the receipt, and no raw actor data', async () => {

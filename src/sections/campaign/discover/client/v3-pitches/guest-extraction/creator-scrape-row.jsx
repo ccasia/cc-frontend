@@ -14,10 +14,12 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 
 import Iconify from 'src/components/iconify';
 
+import useJustFinished from '../use-just-finished';
+import ScrapeTextFieldReveal from '../scrape-text-field-reveal';
 import EngagementBreakdownDialog from './engagement-breakdown-dialog';
 import CreatorFieldLoading from './creator-field-loading';
 import { platformLabel } from './profile-link-validation';
-import { CC, labelSx, inputSx } from './creator-field-tokens';
+import { CC, labelSx, inputSx, FIELD_HEIGHT } from './creator-field-tokens';
 import {
   ACTIONS,
   ROW_STATUS,
@@ -68,6 +70,7 @@ export default function CreatorScrapeRow({ row, isDuplicate, disabled, dispatch,
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   const active = isRowActive(row);
   const loading = [ROW_STATUS.QUEUED, ROW_STATUS.RUNNING, ROW_STATUS.POLLING].includes(row.status);
+  const justFinished = useJustFinished(loading);
   const canFallback = Boolean(row.fallbackReason);
   const platformIcon = PLATFORM_ICON[row.platform];
 
@@ -98,30 +101,37 @@ export default function CreatorScrapeRow({ row, isDuplicate, disabled, dispatch,
         {loading ? (
           <CreatorFieldLoading label={`Fetching ${text.toLowerCase()}`} showSpinner />
         ) : (
-          <TextField
-            fullWidth
-            placeholder={text}
-            value={isFollowers ? formatFollowerCountDisplay(row[field]) : row[field]}
-            onChange={(event) => {
-              let { value } = event.target;
-              if (isFollowers) value = value.replace(/[^0-9]/g, '');
-              // A percentage, so digits and one dot only.
-              if (isRate) value = value.replace(/[^0-9.]/g, '');
-              dispatch({ type: ACTIONS.EDIT_FIELD, rowId: row.id, field, value });
-            }}
-            disabled={disabled || active}
-            sx={inputSx}
-            InputProps={
-              isRate
-                ? { endAdornment: <InputAdornment position="end">%</InputAdornment> }
-                : undefined
-            }
-            inputProps={
-              isFollowers || isRate
-                ? { inputMode: isFollowers ? 'numeric' : 'decimal' }
-                : undefined
-            }
-          />
+          <ScrapeTextFieldReveal
+            reveal={justFinished}
+            text={isFollowers ? formatFollowerCountDisplay(row[field]) : row[field]}
+            height={FIELD_HEIGHT}
+            overlayPaddingRight={isRate ? 36 : 12}
+          >
+            <TextField
+              fullWidth
+              placeholder={text}
+              value={isFollowers ? formatFollowerCountDisplay(row[field]) : row[field]}
+              onChange={(event) => {
+                let { value } = event.target;
+                if (isFollowers) value = value.replace(/[^0-9]/g, '');
+                // A percentage, so digits and one dot only.
+                if (isRate) value = value.replace(/[^0-9.]/g, '');
+                dispatch({ type: ACTIONS.EDIT_FIELD, rowId: row.id, field, value });
+              }}
+              disabled={disabled || active}
+              sx={inputSx}
+              InputProps={
+                isRate
+                  ? { endAdornment: <InputAdornment position="end">%</InputAdornment> }
+                  : undefined
+              }
+              inputProps={
+                isFollowers || isRate
+                  ? { inputMode: isFollowers ? 'numeric' : 'decimal' }
+                  : undefined
+              }
+            />
+          </ScrapeTextFieldReveal>
         )}
       </>
     );
