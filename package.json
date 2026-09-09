@@ -73,7 +73,6 @@
     "immer": "^11.1.18",
     "jspdf": "^3.0.1",
     "libphonenumber-js": "^1.11.14",
-    "lodash": "^4.17.21",
     "mui-one-time-password-input": "^6.0.0",
     "notistack": "^3.0.1",
     "nprogress": "^0.2.0",

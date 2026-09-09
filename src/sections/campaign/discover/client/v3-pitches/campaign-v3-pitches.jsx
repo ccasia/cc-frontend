@@ -1,12 +1,12 @@
 /* eslint-disable no-nested-ternary */
+import { produce } from 'immer';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { FixedSizeList } from 'react-window';
 import { m, AnimatePresence } from 'framer-motion';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 import React, { useMemo, useState, useEffect } from 'react';
-
-import { produce } from 'immer';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -40,11 +40,10 @@ import {
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import axiosInstance from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 import { campaignHasClient } from 'src/utils/campaign-flow';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { useGetAllCreators } from 'src/api/creator';
 import { OUTREACH_STATUS_OPTIONS } from 'src/contants/outreach';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
@@ -56,6 +55,7 @@ import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import usePitchSocket from './use-pitch-socket';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
+import VirtualizedListbox from '../../components/virtual-list-box';
 
 const PLATFORM_OPTIONS = [
   { value: 'instagram', label: 'Instagram', icon: 'ri:instagram-fill' },
@@ -1720,7 +1720,31 @@ const ListboxComponent = React.forwardRef((props, ref) => {
 });
 
 export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdated }) {
-  const { data, isLoading } = useGetAllCreators();
+  const [searchValue, setSearchValue] = useState('');
+
+  const {
+    data: creators,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: ['creators', searchValue],
+    queryFn: async ({ pageParam }) => {
+      const res = await axiosInstance.get(endpoints.creators.getCreators, {
+        params: { cursor: pageParam, limit: 10, search: searchValue ?? null },
+      });
+
+      return res.data;
+    },
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.metaData.hasNextPage ? lastPage.metaData.lastCursor : undefined,
+    enabled: open,
+  });
+
+  const data = useMemo(() => creators?.pages.flatMap((d) => d.data.creators) ?? [], [creators]);
+
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
 
@@ -1728,6 +1752,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   // clients (and no-client campaigns) get the single default action
   const showShortlistActionChoice =
     user?.role !== 'client' && campaign?.submissionVersion === 'v4' && campaignHasClient(campaign);
+
   const [creatorRows, setCreatorRows] = useState([
     {
       id: 1,
@@ -1738,6 +1763,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
       selectedPlatform: '',
     },
   ]);
+
   const [submitting, setSubmitting] = useState(false);
 
   const shortlistedCreators = campaign?.shortlisted || [];
@@ -1782,48 +1808,6 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
       setCreatorRows(creatorRows.slice(0, -1));
     }
   };
-
-  // Update creator selection for a specific row
-  // const handleCreatorRowChange = (rowId, selectedCreator) => {
-  //   setCreatorRows((rows) =>
-  //     rows.map((row) => {
-  //       if (row.id === rowId) {
-  //         if (selectedCreator === null) {
-  //           return {
-  //             ...row,
-  //             creator: null,
-  //             followerCount: '',
-  //             hasMediaKit: false,
-  //             selectedPlatform: '',
-  //             adminComments: '',
-  //           };
-  //         }
-  //         const selectedPlatform = resolveInitialPlatformForCreator(
-  //           selectedCreator,
-  //           row.selectedPlatform
-  //         );
-  //         const hasMediaKit =
-  //           selectedCreator && selectedPlatform
-  //             ? hasMediaKitForPlatform(selectedCreator, selectedPlatform)
-  //             : false;
-  //         const followerCount =
-  //           selectedCreator && selectedPlatform
-  //             ? getPlatformFollowerCount(selectedCreator, selectedPlatform) || ''
-  //             : '';
-
-  //         return {
-  //           ...row,
-  //           creator: selectedCreator,
-  //           followerCount,
-  //           hasMediaKit,
-  //           selectedPlatform,
-  //           adminComments: row.adminComments,
-  //         };
-  //       }
-  //       return row;
-  //     })
-  //   );
-  // };
 
   const handleCreatorRowChange = (rowId, selectedCreator) => {
     setCreatorRows(
@@ -2109,34 +2093,43 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                         >
                           Select Creators to add
                         </Typography>
+
                         <Autocomplete
-                          ListboxComponent={ListboxComponent}
+                          ListboxComponent={VirtualizedListbox}
+                          ListboxProps={{
+                            onFetchNextPage: fetchNextPage,
+                            hasNextPage,
+                            isFetchingNextPage,
+                          }}
                           disableListWrap
+                          open
                           value={row.creator}
                           onChange={(e, val) => handleCreatorRowChange(row.id, val)}
                           options={getFilteredOptions(row.id)}
                           getOptionLabel={(option) => option?.name || ''}
-                          filterOptions={(options, state) => {
-                            if (!state.inputValue) return options;
-                            const query = state.inputValue.toLowerCase();
+                          // filterOptions={(options, state) => {
+                          //   if (!state.inputValue) return options;
+                          //   const query = state.inputValue.toLowerCase();
 
-                            return options
-                              .map((option) => {
-                                const name = (option?.name || '').toLowerCase();
-                                const email = (option?.email || '').toLowerCase();
+                          //   return options
+                          //     .map((option) => {
+                          //       const name = (option?.name || '').toLowerCase();
+                          //       const email = (option?.email || '').toLowerCase();
 
-                                let score = -1;
-                                if (name.startsWith(query)) score = 3;
-                                else if (name.includes(query)) score = 2;
-                                else if (email.startsWith(query)) score = 1;
-                                else if (email.includes(query)) score = 0;
+                          //       let score = -1;
+                          //       if (name.startsWith(query)) score = 3;
+                          //       else if (name.includes(query)) score = 2;
+                          //       else if (email.startsWith(query)) score = 1;
+                          //       else if (email.includes(query)) score = 0;
 
-                                return { option, score, name };
-                              })
-                              .filter((item) => item.score >= 0)
-                              .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
-                              .map((item) => item.option);
-                          }}
+                          //       return { option, score, name };
+                          //     })
+                          //     .filter((item) => item.score >= 0)
+                          //     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+                          //     .map((item) => item.option);
+                          // }}
+                          filterOptions={(x) => x}
+                          loading={isLoading}
                           isOptionEqualToValue={(option, value) => option?.id === value?.id}
                           disableClearable={!!row.creator}
                           popupIcon={
@@ -2146,6 +2139,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                               sx={{ color: '#231F20' }}
                             />
                           }
+                          onInputChange={(_, value) => setSearchValue(value)}
                           renderInput={(params) => (
                             <TextField
                               {...params}
