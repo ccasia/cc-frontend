@@ -411,10 +411,13 @@ const CampaignDetailView = ({
     // Combine both sets for total agreements
     const totalAgreementsUserIds = new Set([...approvedPitchUserIds, ...shortlistedUserIds]);
 
-    // Count total agreements for approved creators
-    const totalAgreements = (agreements || []).filter((a) =>
-      totalAgreementsUserIds.has(a.userId)
-    ).length;
+    const totalAgreements = (agreements || []).filter((a) => {
+      if (!totalAgreementsUserIds.has(a.userId)) return false;
+      const isUnlinkedGuest = a?.user?.creator?.isGuest === true;
+      if (!isUnlinkedGuest) return true;
+      const hasSubmission = (submissions || []).some((s) => s.userId === a.userId);
+      return hasSubmission;
+    }).length;
 
     return `Agreements (${totalAgreements})`;
   };

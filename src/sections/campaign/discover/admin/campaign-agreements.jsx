@@ -699,7 +699,9 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       return [];
     }
 
-    return combinedData.filter((agreement) => approvedCreatorSet.has(agreement.userId));
+    return combinedData.filter(
+      (agreement) => approvedCreatorSet.has(agreement.userId) && !guestNeedsLinkBeforeSend(agreement)
+    );
   }, [combinedData, campaign?.pitch, campaign?.shortlisted]);
 
   const pendingCount = useMemo(
