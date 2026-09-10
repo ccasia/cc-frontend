@@ -34,6 +34,7 @@ import Iconify from 'src/components/iconify';
 import BugReportForm from 'src/components/bug-report-form';
 import SocialLinksModal from 'src/components/social-links-modal';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import PaymentDetailsBanner from 'src/components/payment-details-banner';
 
 import Main from './main';
 import Header from './header';
@@ -391,7 +392,10 @@ export default function DashboardLayout({ children }) {
           isOnline={isOnline}
         />
 
-        <Main>{children}</Main>
+        <Main>
+          <PaymentDetailsBanner />
+          {children}
+        </Main>
 
         {kwspButton}
         {kwspForm}
