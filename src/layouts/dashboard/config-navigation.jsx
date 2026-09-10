@@ -463,7 +463,7 @@ export function useNavData() {
             </span>
           ),
           path: paths.dashboard.user.profile,
-          icon: ICONS.settings,
+          icon: <Iconify icon="solar:settings-outline" width={25} />,
         },
       ],
     });
