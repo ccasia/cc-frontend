@@ -2,9 +2,9 @@
  * Browser copy of the profile link rules.
  *
  * The backend is the authority. `profileUrlNormalizer.ts` in cc-backend
- * re-normalizes every link it receives and derives the platform itself, and it
- * ignores anything the browser sends about platform. This copy exists only so
- * the admin sees the problem while typing, instead of after a request.
+ * re-normalizes every link it receives and derives the platform itself. For a
+ * registered creator, it also checks the optional expected platform. This copy
+ * exists only so the admin sees the problem before a request.
  *
  * If the two ever drift, the server still decides. The worst case is a
  * message that is friendlier or stricter than it needs to be.
@@ -84,7 +84,7 @@ function isValidUsername(platform, username) {
   return /[a-z0-9_]/.test(username);
 }
 
-export function validateProfileLink(input) {
+export function validateProfileLink(input, expectedPlatform) {
   const raw = typeof input === 'string' ? input.trim() : '';
   if (!raw) return reject('EMPTY', 'Enter a profile link.');
 
@@ -119,13 +119,17 @@ export function validateProfileLink(input) {
 
   const [segment] = segments;
   let username;
-  if (platform === 'tiktok') {
-    if (!segment.startsWith('@')) {
-      return reject('NOT_A_PROFILE_URL', 'A TikTok profile link contains @ before the name.');
+  try {
+    if (platform === 'tiktok') {
+      if (!segment.startsWith('@')) {
+        return reject('NOT_A_PROFILE_URL', 'A TikTok profile link contains @ before the name.');
+      }
+      username = decodeURIComponent(segment.slice(1)).toLowerCase();
+    } else {
+      username = decodeURIComponent(segment).toLowerCase();
     }
-    username = decodeURIComponent(segment.slice(1)).toLowerCase();
-  } else {
-    username = decodeURIComponent(segment).toLowerCase();
+  } catch {
+    return reject('MALFORMED_URL', 'This is not a valid link.');
   }
 
   if (RESERVED[platform].has(username)) {
@@ -133,6 +137,11 @@ export function validateProfileLink(input) {
   }
   if (!isValidUsername(platform, username)) {
     return reject('INVALID_USERNAME', 'This profile name is not valid.');
+  }
+
+  if (expectedPlatform && platform !== expectedPlatform) {
+    const expectedLabel = expectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram';
+    return reject('PLATFORM_MISMATCH', `Use a ${expectedLabel} profile link.`);
   }
 
   const path = platform === 'tiktok' ? `@${username}` : username;

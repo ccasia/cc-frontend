@@ -2,12 +2,13 @@
  * Row-to-extraction mapping in session storage.
  *
  * A refresh during a fetch must not lose the work that is already running and
- * already paid for. The mapping holds an extraction ID and the link it belongs
- * to, and nothing else. It never holds a receipt: a receipt is short lived and
- * requester-bound, and it is re-issued when the row is restored.
+ * already paid for. Guest rows need the extraction ID and link. Platform rows
+ * also keep the registered creator and source identity. Receipts stay out of
+ * storage because recovery re-issues them for the current requester.
  */
 
-const KEY = (campaignId) => `cc.guestExtraction.${campaignId}`;
+const KEY = (kind, campaignId) => `cc.extractionSession.${kind}.${campaignId}`;
+const LEGACY_GUEST_KEY = (campaignId) => `cc.guestExtraction.${campaignId}`;
 
 const safeStorage = () => {
   try {
@@ -18,46 +19,121 @@ const safeStorage = () => {
   }
 };
 
-export function readMapping(campaignId) {
-  const store = safeStorage();
-  if (!store) return {};
+const parseMapping = (raw, kind) => {
   try {
-    const raw = store.getItem(KEY(campaignId));
     const parsed = raw ? JSON.parse(raw) : {};
-    return parsed && typeof parsed === 'object' ? parsed : {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+
+    return Object.fromEntries(
+      Object.entries(parsed).flatMap(([rowId, entry]) => {
+        if (
+          !entry ||
+          typeof entry !== 'object' ||
+          typeof entry.extractionId !== 'string' ||
+          typeof entry.profileLink !== 'string'
+        ) {
+          return [];
+        }
+        if (kind !== 'platform') {
+          return [[rowId, { extractionId: entry.extractionId, profileLink: entry.profileLink }]];
+        }
+        if (
+          entry.v !== 2 ||
+          typeof entry.creatorId !== 'string' ||
+          !['instagram', 'tiktok'].includes(entry.selectedPlatform) ||
+          !['stored', 'manual'].includes(entry.sourceMode)
+        ) {
+          return [];
+        }
+        return [
+          [
+            rowId,
+            {
+              v: 2,
+              extractionId: entry.extractionId,
+              profileLink: entry.profileLink,
+              creatorId: entry.creatorId,
+              selectedPlatform: entry.selectedPlatform,
+              sourceMode: entry.sourceMode,
+            },
+          ],
+        ];
+      })
+    );
   } catch {
     return {};
   }
+};
+
+export function readMapping(kind, campaignId) {
+  const store = safeStorage();
+  if (!store) return {};
+
+  const current = store.getItem(KEY(kind, campaignId));
+  if (kind !== 'guest') return parseMapping(current, kind);
+
+  const legacyKey = LEGACY_GUEST_KEY(campaignId);
+  if (current != null) {
+    try {
+      store.removeItem(legacyKey);
+    } catch {
+      // The current mapping remains authoritative.
+    }
+    return parseMapping(current, kind);
+  }
+
+  const legacy = store.getItem(legacyKey);
+  if (legacy == null) return {};
+  const mapping = parseMapping(legacy, kind);
+  try {
+    const serialized = JSON.stringify(mapping);
+    store.setItem(KEY(kind, campaignId), serialized);
+    if (store.getItem(KEY(kind, campaignId)) === serialized) store.removeItem(legacyKey);
+  } catch {
+    // Keep the legacy value so a later read can retry migration.
+  }
+  return mapping;
 }
 
-export function writeMapping(campaignId, mapping) {
+export function writeMapping(kind, campaignId, mapping) {
   const store = safeStorage();
   if (!store) return;
   try {
-    store.setItem(KEY(campaignId), JSON.stringify(mapping));
+    store.setItem(KEY(kind, campaignId), JSON.stringify(parseMapping(JSON.stringify(mapping), kind)));
   } catch {
     // Storage full or unavailable. Recovery is a convenience, not a rule.
   }
 }
 
-export function rememberRow(campaignId, rowId, { extractionId, profileLink }) {
-  const mapping = readMapping(campaignId);
-  mapping[rowId] = { extractionId, profileLink };
-  writeMapping(campaignId, mapping);
+export function rememberRow(kind, campaignId, rowId, entry) {
+  const mapping = readMapping(kind, campaignId);
+  mapping[rowId] =
+    kind === 'platform'
+      ? {
+          v: 2,
+          extractionId: entry.extractionId,
+          profileLink: entry.profileLink,
+          creatorId: entry.creatorId,
+          selectedPlatform: entry.selectedPlatform,
+          sourceMode: entry.sourceMode,
+        }
+      : { extractionId: entry.extractionId, profileLink: entry.profileLink };
+  writeMapping(kind, campaignId, mapping);
 }
 
 /** A link change or a removed row drops the mapping straight away. */
-export function forgetRow(campaignId, rowId) {
-  const mapping = readMapping(campaignId);
+export function forgetRow(kind, campaignId, rowId) {
+  const mapping = readMapping(kind, campaignId);
   delete mapping[rowId];
-  writeMapping(campaignId, mapping);
+  writeMapping(kind, campaignId, mapping);
 }
 
-export function clearMapping(campaignId) {
+export function clearMapping(kind, campaignId) {
   const store = safeStorage();
   if (!store) return;
   try {
-    store.removeItem(KEY(campaignId));
+    store.removeItem(KEY(kind, campaignId));
+    if (kind === 'guest') store.removeItem(LEGACY_GUEST_KEY(campaignId));
   } catch {
     // Nothing to do.
   }
@@ -73,7 +149,13 @@ export function reconcileMapping(mapping, serverExtractions) {
 
   Object.entries(mapping).forEach(([rowId, entry]) => {
     const record = entry && byId.get(entry.extractionId);
-    if (record) kept[rowId] = { ...entry, status: record.status };
+    if (record) {
+      kept[rowId] = {
+        ...entry,
+        status: record.status,
+        serverProfileUrl: record.canonicalProfileUrl,
+      };
+    }
   });
 
   return kept;

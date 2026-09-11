@@ -51,11 +51,11 @@ import usePitchSocket from './use-pitch-socket';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
 import useGuestExtraction from './guest-extraction/use-guest-extraction';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
-import { ACTIONS, ROW_STATUS, fieldProvenanceOf, isRowActive } from './guest-extraction/creator-row-machine';
 import useGuestMetricsDecision from './guest-extraction/use-guest-metrics-decision';
-import AutomaticCreatorScrapeDialog from './guest-extraction/automatic-creator-scrape-dialog';
-import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
 import ScrapeTextFieldReveal, { ScrapeRevealGate } from './scrape-text-field-reveal';
+import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
+import AutomaticCreatorScrapeDialog from './guest-extraction/automatic-creator-scrape-dialog';
+import { ACTIONS, ROW_STATUS, isRowActive, fieldProvenanceOf } from './guest-extraction/creator-row-machine';
 
 /**
  * Every input in the Add Platform Creators row, at the handoff's 46px.
@@ -259,20 +259,48 @@ const FIELD_SX = {
   },
 };
 
-/** Statuses where a paid run is in flight and the metric fields are filling. */
-const SCRAPE_FETCHING = ['QUEUED', 'RUNNING', 'POLLING'];
+const SCRAPE_FETCHING = ['VALIDATING', 'QUEUED', 'RUNNING', 'POLLING'];
 
-/**
- * What the Profile Link field says under itself.
- *
- * Nothing while the fetch runs: the Engagement Rate and Follower Count fields
- * show their own loading state, so a "Fetching…" line here would say it twice
- * and shift the row. Only outcomes it alone can report are listed.
- */
 const SCRAPE_HINTS = {
   VALIDATING: 'Checking the link…',
   INSUFFICIENT_DATA: 'Not enough public posts. Enter the numbers by hand.',
   FAILED: 'Could not fetch. Enter the numbers by hand.',
+};
+
+const getSourceFeedback = (row) =>
+  row.saveError?.message || row.error?.message || SCRAPE_HINTS[row.status] || '';
+
+const normalizeSaveErrorBody = (error) =>
+  error?.response?.data ?? (error && typeof error === 'object' ? error : null);
+
+const getPlatformSaveResult = (rows, body) => {
+  if (!body?.rejected?.length) return null;
+  const normalizeLink = (value) => value?.trim().replace(/\/+$/, '');
+  const acceptedRowIds = [];
+  const rejectedByRowId = {};
+
+  rows.forEach((row) => {
+    const rejected = body.rejected.find(
+      (entry) =>
+        (normalizeLink(entry.profileLink) &&
+          normalizeLink(entry.profileLink) === normalizeLink(row.profileLink)) ||
+        (entry.creatorId ?? entry.id) === row.creator.id
+    );
+    if (!rejected) {
+      acceptedRowIds.push(row.id);
+      return;
+    }
+    rejectedByRowId[row.id] = {
+      code: rejected.code || 'SAVE_REJECTED',
+      message: rejected.message || 'This creator could not be verified.',
+    };
+  });
+
+  return {
+    acceptedRowIds,
+    rejectedByRowId,
+    error: body.rejected[0].message || body.message || 'Some creators could not be verified.',
+  };
 };
 
 const PLATFORM_OPTIONS = [
@@ -324,6 +352,52 @@ const hasMediaKitForPlatform = (creator, selectedPlatform) => {
   if (!creator) return false;
   if (selectedPlatform === 'tiktok') return !!creator?.creator?.tiktokUser;
   return !!creator?.creator?.instagramUser;
+};
+
+const getStoredProfileLink = (creator, platform) => {
+  if (!creator) return '';
+  return (
+    (platform === 'tiktok'
+      ? creator?.creator?.tiktokProfileLink
+      : creator?.creator?.instagramProfileLink) || ''
+  ).trim();
+};
+
+const renderProfileSourceOption = (creator, option) => {
+  const storedLink = getStoredProfileLink(creator, option.value);
+  const connected = hasMediaKitForPlatform(creator, option.value);
+
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
+      <Iconify
+        icon={option.icon}
+        width={18}
+        sx={{ color: option.color, flexShrink: 0 }}
+      />
+      <Box minWidth={0}>
+        <Typography
+          component="span"
+          title={storedLink || undefined}
+          sx={{
+            display: 'inline-block',
+            maxWidth: 'min(360px, calc(100vw - 180px))',
+            fontSize: 14,
+            color: storedLink ? '#1340FF' : 'text.disabled',
+            verticalAlign: 'bottom',
+            whiteSpace: 'normal',
+            overflowWrap: 'anywhere',
+          }}
+        >
+          {storedLink || 'Enter profile link'}
+        </Typography>
+        {connected && (
+          <Typography component="span" sx={{ ml: 0.75, fontSize: 11, color: '#636366' }}>
+            (media kit)
+          </Typography>
+        )}
+      </Box>
+    </Stack>
+  );
 };
 
 const getDefaultPlatformFromMediaKit = (creator) => {
@@ -1743,8 +1817,12 @@ export function PlatformCreatorModal({
    * recovery and reset-on-open, so none of that is written twice.
    */
   const skipDraftRow = useCallback(
-    (row) => hasMediaKitForPlatform(row.creator, row.platform),
+    (row) => hasMediaKitForPlatform(row.creator, row.selectedPlatform),
     []
+  );
+  const resolveCreator = useCallback(
+    (creatorId) => (data || []).find((creator) => creator.id === creatorId) ?? null,
+    [data]
   );
 
   const {
@@ -1752,44 +1830,33 @@ export function PlatformCreatorModal({
     dispatch,
     removeRow,
     setLink,
-    clearPersistedDraft,
+    setCreator,
+    setSource,
+    applySaveResult,
+    completeSuccessfulSave,
   } = useGuestExtraction({
     campaignId: campaign?.id,
     enabled: open,
     kind: 'platform',
     skipDraftRow,
+    resolveCreator,
+    recoveryReady: !isLoading,
   });
 
   /**
    * The row shape this modal renders.
    *
-   * `platform` is the machine's field; this modal has always called it
-   * `selectedPlatform`. `hasMediaKit` is now derived rather than stored, so it
-   * can no longer fall out of step with the creator and platform it describes.
+   * `platform` stays URL-derived. `selectedPlatform` records the admin's source
+   * choice. `hasMediaKit` is derived from that explicit choice.
    */
   const creatorRows = useMemo(
     () =>
       rowState.rows.map((row) => ({
         ...row,
-        selectedPlatform: row.platform ?? '',
-        hasMediaKit: hasMediaKitForPlatform(row.creator, row.platform),
-        /**
-         * Whether this row still needs the platform dropdown.
-         *
-         * A creator with nothing connected has to supply a profile link, and
-         * the link names its own platform, so the dropdown would only be a
-         * second way to say the same thing. A creator who has connected
-         * something keeps the dropdown, because they have no link to read and
-         * may be shortlisted on either platform.
-         *
-         * Keyed on whether the creator has *any* connected account, not on the
-         * current platform. Keying it on the current platform would make the
-         * dropdown vanish the moment an admin switched to the platform they had
-         * not connected, trapping them there.
-         */
-        needsPlatformChoice: !scrapeEnabled || getConnectedPlatformValues(row.creator).length > 0,
+        selectedPlatform: row.selectedPlatform ?? '',
+        hasMediaKit: hasMediaKitForPlatform(row.creator, row.selectedPlatform),
       })),
-    [rowState.rows, scrapeEnabled]
+    [rowState.rows]
   );
 
   const [submitting, setSubmitting] = useState(false);
@@ -1826,39 +1893,62 @@ export function PlatformCreatorModal({
     }
   };
 
-  /**
-   * Pick the creator for a row.
-   *
-   * The follower count and platform are derived from the pick, exactly as
-   * before. Each derived value is dispatched on its own; the machine holds one
-   * field per action, so the modal keeps the domain rules and the machine keeps
-   * the storage.
-   */
   const handleCreatorRowChange = (rowId, selectedCreator) => {
     const row = creatorRows.find((r) => r.id === rowId);
     if (!row) return;
 
     if (selectedCreator === null) {
-      dispatch({ type: ACTIONS.SET_CREATOR, rowId, creator: null });
-      dispatch({ type: ACTIONS.SET_PLATFORM, rowId, platform: null });
-      dispatch({ type: ACTIONS.EDIT_FIELD, rowId, field: 'followerCount', value: '' });
-      dispatch({ type: ACTIONS.SET_COMMENTS, rowId, value: '' });
+      setCreator(rowId, null);
       return;
     }
 
-    const selectedPlatform = resolveInitialPlatformForCreator(
-      selectedCreator,
-      row.selectedPlatform
-    );
+    const selectedPlatform = scrapeEnabled
+      ? getDefaultPlatformFromMediaKit(selectedCreator)
+      : resolveInitialPlatformForCreator(selectedCreator, row.selectedPlatform);
     const followerCount =
       selectedCreator && selectedPlatform
         ? getPlatformFollowerCount(selectedCreator, selectedPlatform) || ''
         : '';
 
-    dispatch({ type: ACTIONS.SET_CREATOR, rowId, creator: selectedCreator });
-    dispatch({ type: ACTIONS.SET_PLATFORM, rowId, platform: selectedPlatform || null });
-    dispatch({ type: ACTIONS.EDIT_FIELD, rowId, field: 'followerCount', value: followerCount });
+    setCreator(rowId, selectedCreator, {
+      selectedPlatform: selectedPlatform || null,
+      sourceMode: scrapeEnabled && selectedPlatform ? 'connected' : null,
+      platform: selectedPlatform || null,
+      followerCount,
+      engagementRate:
+        scrapeEnabled && selectedPlatform
+          ? (getPlatformEngagementRate(selectedCreator, selectedPlatform) ?? '')
+          : '',
+    });
   };
+
+  const handleSourceChange = useCallback(
+    (rowId, platform) => {
+      const row = creatorRows.find((entry) => entry.id === rowId);
+      if (!row?.creator || !platform) return;
+
+      const connected = hasMediaKitForPlatform(row.creator, platform);
+      const storedLink = getStoredProfileLink(row.creator, platform);
+      setSource(rowId, {
+        selectedPlatform: platform,
+        sourceMode: connected ? 'connected' : storedLink ? 'stored' : 'manual',
+        profileLink: connected ? '' : storedLink,
+        platform: connected ? platform : null,
+        followerCount: connected ? getPlatformFollowerCount(row.creator, platform) || '' : '',
+        engagementRate: connected ? (getPlatformEngagementRate(row.creator, platform) ?? '') : '',
+      });
+    },
+    [creatorRows, setSource]
+  );
+
+  useEffect(() => {
+    if (!open || !scrapeEnabled) return;
+    creatorRows.forEach((row) => {
+      if (row.creator && row.selectedPlatform && !row.sourceMode) {
+        handleSourceChange(row.id, row.selectedPlatform);
+      }
+    });
+  }, [creatorRows, handleSourceChange, open, scrapeEnabled]);
 
   /**
    * Change the platform on a row.
@@ -1889,8 +1979,16 @@ export function PlatformCreatorModal({
             : row.followerCount
       : '';
 
-    dispatch({ type: ACTIONS.SET_PLATFORM, rowId, platform: platform || null });
-    dispatch({ type: ACTIONS.EDIT_FIELD, rowId, field: 'followerCount', value: nextFollowerCount });
+    if (!scrapeEnabled) {
+      setSource(rowId, {
+        selectedPlatform: platform || null,
+        sourceMode: null,
+        profileLink: '',
+        platform: platform || null,
+        followerCount: nextFollowerCount,
+        engagementRate: '',
+      });
+    }
   };
 
   // Update follower count for a specific row (only for manual entry)
@@ -1911,6 +2009,13 @@ export function PlatformCreatorModal({
   const hasMissingPlatformSelection = creatorRows.some(
     (row) => row.creator && !row.selectedPlatform
   );
+  const hasPlatformMismatch = creatorRows.some(
+    (row) =>
+      scrapeEnabled &&
+      row.creator &&
+      row.sourceMode !== 'connected' &&
+      row.platform !== row.selectedPlatform
+  );
   const hasMissingFollowerCount = creatorRows.some((row) => {
     if (!row.creator) return false;
     if (row.followerCount && Number(row.followerCount) > 0) return false;
@@ -1921,6 +2026,7 @@ export function PlatformCreatorModal({
       Boolean(row.extractionId);
     return !scrapeInFlight;
   });
+  const hasSaveError = creatorRows.some((row) => row.creator && row.saveError);
 
   // Do not RESET the machine here. A reset while `open` is still true would
   // persist an empty draft and wipe the scrape the close is meant to keep.
@@ -1943,6 +2049,7 @@ export function PlatformCreatorModal({
     // Get valid rows (with creator selected)
     const validRows = creatorRows.filter((row) => row.creator !== null);
     if (!validRows.length || !campaign?.id) return;
+    if (validRows.some((row) => row.saveError)) return;
 
     // Validate follower counts - max 10 billion
     const MAX_FOLLOWER_COUNT = 10_000_000_000;
@@ -1959,14 +2066,21 @@ export function PlatformCreatorModal({
 
     const missingPlatformRow = validRows.find((row) => !row.selectedPlatform);
     if (missingPlatformRow) {
-      // The dropdown is hidden for a creator with nothing connected, so telling
-      // them to pick from it would be pointing at something not on screen.
       enqueueSnackbar(
-        missingPlatformRow.needsPlatformChoice
-          ? 'Please select Instagram or TikTok for each creator.'
-          : 'Please add a profile link for each creator, so the platform can be read from it.',
+        'Please select Instagram or TikTok for each creator.',
         { variant: 'error' }
       );
+      return;
+    }
+
+    const mismatchedPlatformRow = validRows.find(
+      (row) =>
+        scrapeEnabled &&
+        row.sourceMode !== 'connected' &&
+        row.platform !== row.selectedPlatform
+    );
+    if (mismatchedPlatformRow) {
+      enqueueSnackbar('Each profile link must match its selected platform.', { variant: 'error' });
       return;
     }
 
@@ -1989,7 +2103,7 @@ export function PlatformCreatorModal({
     try {
       setSubmitting(true);
 
-      await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
+      const response = await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
         campaignId: campaign.id,
         ...(explicitAction ? { action: explicitAction } : {}),
         creators: validRows.map((row) => {
@@ -2018,6 +2132,14 @@ export function PlatformCreatorModal({
         }),
       });
 
+      const saveResult = getPlatformSaveResult(validRows, response.data);
+      if (saveResult) {
+        applySaveResult(saveResult);
+        enqueueSnackbar(saveResult.error, { variant: 'error' });
+        if (saveResult.acceptedRowIds.length > 0) onUpdated?.();
+        return;
+      }
+
       enqueueSnackbar(
         validRows.length > 1
           ? 'Creators shortlisted successfully.'
@@ -2025,12 +2147,20 @@ export function PlatformCreatorModal({
         { variant: 'success' }
       );
 
+      completeSuccessfulSave();
       onUpdated?.();
-      clearPersistedDraft();
       handleCloseAll();
     } catch (error) {
       console.error('Error shortlisting creators:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Failed to shortlist creators.', {
+      const body = normalizeSaveErrorBody(error);
+      const saveResult = getPlatformSaveResult(validRows, body);
+      if (saveResult) {
+        applySaveResult(saveResult);
+        enqueueSnackbar(saveResult.error, { variant: 'error' });
+        if (saveResult.acceptedRowIds.length > 0) onUpdated?.();
+        return;
+      }
+      enqueueSnackbar(body?.message || 'Failed to shortlist creators.', {
         variant: 'error',
       });
     } finally {
@@ -2355,59 +2485,206 @@ export function PlatformCreatorModal({
                         />
                       </Box>
 
-                      {/* Profile Link. Present only when scraping is on, and
-                          inert for a creator who already has a connected
-                          account: their numbers come from the media kit. */}
-                      {scrapeEnabled && row.creator && !row.hasMediaKit && (
-                        <Box sx={{ flexShrink: 0, width: { xs: '100%', md: 210 } }}>
+                      {scrapeEnabled && row.creator && (
+                        <Box sx={{ flexShrink: 0, width: { xs: '100%', md: 240 } }}>
                           <FieldLabel text="Profile Link" />
-                          <TextField
-                            value={row.profileLink}
-                            onChange={(e) => setLink(row.id, e.target.value)}
-                            placeholder="Profile Link"
-                            error={Boolean(row.linkError)}
-                            helperText={
-                              row.linkError?.message || SCRAPE_HINTS[row.status] || undefined
-                            }
-                            fullWidth
-                            size="small"
-                            InputProps={{
-                              startAdornment: row.platform ? (
-                                <InputAdornment position="start">
-                                  <Iconify
-                                    icon={
-                                      row.platform === 'tiktok'
-                                        ? 'ic:baseline-tiktok'
-                                        : 'ri:instagram-line'
+                          {row.sourceMode === 'manual' ? (
+                            <Autocomplete
+                              freeSolo
+                              disableClearable
+                              forcePopupIcon
+                              options={PLATFORM_OPTIONS}
+                              value={
+                                PLATFORM_OPTIONS.find(
+                                  (option) => option.value === row.selectedPlatform
+                                ) || null
+                              }
+                              inputValue={row.profileLink}
+                              filterOptions={(options) => options}
+                              isOptionEqualToValue={(option, value) => option.value === value.value}
+                              getOptionLabel={(option) =>
+                                typeof option === 'string' ? option : option.label
+                              }
+                              onChange={(_, option) => {
+                                if (option?.value) handleSourceChange(row.id, option.value);
+                              }}
+                              onInputChange={(_, value, reason) => {
+                                if (reason === 'input') setLink(row.id, value);
+                              }}
+                              popupIcon={
+                                <Iconify icon="eva:arrow-ios-downward-fill" width={18} />
+                              }
+                              renderOption={({ key, ...optionProps }, option) => {
+                                const storedLink = getStoredProfileLink(
+                                  row.creator,
+                                  option.value
+                                );
+                                return (
+                                  <Box
+                                    key={key}
+                                    component="li"
+                                    {...optionProps}
+                                    aria-label={`${option.label} ${
+                                      storedLink || 'Enter profile link'
+                                    }`}
+                                  >
+                                    {renderProfileSourceOption(row.creator, option)}
+                                  </Box>
+                                );
+                              }}
+                              renderInput={(params) => {
+                                const selected = PLATFORM_OPTIONS.find(
+                                  (option) => option.value === row.selectedPlatform
+                                );
+                                return (
+                                  <TextField
+                                    {...params}
+                                    placeholder="Enter profile link"
+                                    error={Boolean(row.linkError || row.error || row.saveError)}
+                                    helperText={
+                                      row.linkError?.message || getSourceFeedback(row) || undefined
                                     }
-                                    width={16}
-                                    sx={{
-                                      color: row.platform === 'tiktok' ? '#000000' : '#C13584',
+                                    inputProps={{
+                                      ...params.inputProps,
+                                      'aria-label': `${row.creator.name} ${selected?.label} Profile Link`,
+                                      'aria-invalid': Boolean(
+                                        row.linkError || row.error || row.saveError
+                                      ),
+                                    }}
+                                    InputProps={{
+                                      ...params.InputProps,
+                                      startAdornment: selected ? (
+                                        <InputAdornment position="start">
+                                          <Iconify
+                                            icon={selected.icon}
+                                            width={16}
+                                            sx={{ color: selected.color }}
+                                          />
+                                        </InputAdornment>
+                                      ) : null,
                                     }}
                                   />
-                                </InputAdornment>
-                              ) : null,
-                            }}
-                            sx={{
-                              ...FIELD_SX,
-                              // Blue reads as a link, matching the non-platform
-                              // modal. A rejected link drops back to body
-                              // colour, so it does not look like something that
-                              // worked.
-                              '& .MuiOutlinedInput-input': {
-                                ...FIELD_SX['& .MuiOutlinedInput-input'],
-                                color: row.linkError ? '#231F20' : '#1340FF',
-                              },
-                              '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
-                            }}
-                          />
+                                );
+                              }}
+                              ListboxProps={{ sx: { maxWidth: 'calc(100vw - 32px)' } }}
+                              componentsProps={{
+                                popper: {
+                                  placement: 'bottom-start',
+                                  sx: {
+                                    width: 'min(420px, calc(100vw - 32px)) !important',
+                                  },
+                                },
+                                paper: { sx: { width: '100%' } },
+                              }}
+                              sx={{
+                                '&&& .MuiOutlinedInput-root': {
+                                  bgcolor: '#fff',
+                                  height: FIELD_HEIGHT,
+                                  minHeight: FIELD_HEIGHT,
+                                  py: '0 !important',
+                                  pr: '36px !important',
+                                  borderRadius: 1,
+                                },
+                                '&&& .MuiOutlinedInput-input': {
+                                  py: '0 !important',
+                                  color: row.linkError ? '#231F20' : '#1340FF',
+                                },
+                                '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
+                              }}
+                            />
+                          ) : (
+                            <TextField
+                              select
+                              fullWidth
+                              value={row.selectedPlatform}
+                              onChange={(event) => handleSourceChange(row.id, event.target.value)}
+                              error={Boolean(row.error || row.saveError)}
+                              helperText={getSourceFeedback(row) || undefined}
+                              SelectProps={{
+                                displayEmpty: true,
+                                'aria-invalid': Boolean(row.error || row.saveError),
+                                inputProps: {
+                                  'aria-label': `${row.creator.name} Profile Link source`,
+                                },
+                                SelectDisplayProps: {
+                                  'aria-invalid': Boolean(row.error),
+                                },
+                                renderValue: (value) => {
+                                  const selected = PLATFORM_OPTIONS.find(
+                                    (option) => option.value === value
+                                  );
+                                  if (!selected) return 'Select Profile Link';
+                                  const currentLink =
+                                    row.profileLink ||
+                                    getStoredProfileLink(row.creator, selected.value);
+                                  return (
+                                    <Stack
+                                      direction="row"
+                                      spacing={0.75}
+                                      alignItems="center"
+                                      minWidth={0}
+                                    >
+                                      <Iconify
+                                        icon={selected.icon}
+                                        width={16}
+                                        sx={{ color: selected.color, flexShrink: 0 }}
+                                      />
+                                      <Tooltip title={currentLink || ''} arrow>
+                                        <Typography
+                                          component="span"
+                                          noWrap
+                                          sx={{
+                                            minWidth: 0,
+                                            fontSize: 14,
+                                            color: currentLink ? '#1340FF' : 'text.disabled',
+                                          }}
+                                        >
+                                          {currentLink || 'Enter profile link'}
+                                        </Typography>
+                                      </Tooltip>
+                                    </Stack>
+                                  );
+                                },
+                                MenuProps: {
+                                  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+                                  transformOrigin: { vertical: 'top', horizontal: 'left' },
+                                  PaperProps: {
+                                    sx: {
+                                      width: 'max-content',
+                                      minWidth: 240,
+                                      maxWidth: 'calc(100vw - 32px)',
+                                    },
+                                  },
+                                  MenuListProps: { sx: { maxWidth: 'calc(100vw - 32px)' } },
+                                },
+                              }}
+                              sx={{
+                                ...FIELD_SX,
+                                '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
+                              }}
+                            >
+                              {PLATFORM_OPTIONS.map((option) => {
+                                const storedLink = getStoredProfileLink(
+                                  row.creator,
+                                  option.value
+                                );
+                                return (
+                                  <MenuItem
+                                    key={option.value}
+                                    value={option.value}
+                                    aria-label={`${option.label} ${
+                                      storedLink || 'Enter profile link'
+                                    }`}
+                                  >
+                                    {renderProfileSourceOption(row.creator, option)}
+                                  </MenuItem>
+                                );
+                              })}
+                            </TextField>
+                          )}
                         </Box>
                       )}
 
-                      {/* The handoff's vertical rule. Identity sits to its
-                          left — the creator, and the profile link when there is
-                          one — and everything measured about them to its right,
-                          starting with Platform. */}
                       {row.creator && (
                         <Box
                           sx={{
@@ -2418,7 +2695,7 @@ export function PlatformCreatorModal({
                         />
                       )}
 
-                      {row.creator && row.needsPlatformChoice && (
+                      {row.creator && !scrapeEnabled && (
                         <Box
                           sx={{
                             flex: { xs: '1 1 100%', md: '1 1 192px' },
@@ -2459,10 +2736,7 @@ export function PlatformCreatorModal({
                         </Box>
                       )}
 
-                      {/* Engagement Rate. Filled by the scrape, editable after,
-                          and hidden for a connected creator whose rate already
-                          comes from their media kit. */}
-                      {scrapeEnabled && row.creator && (
+                      {scrapeEnabled && row.creator && row.selectedPlatform && (
                         <Box
                           sx={{
                             flex: { xs: '1 1 100%', md: '1 1 192px' },
@@ -2506,7 +2780,10 @@ export function PlatformCreatorModal({
                               reveal={reveal}
                               text={
                                 row.hasMediaKit
-                                  ? (getPlatformEngagementRate(row.creator, row.platform) ?? '')
+                                  ? (getPlatformEngagementRate(
+                                      row.creator,
+                                      row.selectedPlatform
+                                    ) ?? '')
                                   : (row.engagementRate ?? '')
                               }
                               height={FIELD_HEIGHT}
@@ -2515,7 +2792,10 @@ export function PlatformCreatorModal({
                             <TextField
                               value={
                                 row.hasMediaKit
-                                  ? (getPlatformEngagementRate(row.creator, row.platform) ?? '')
+                                  ? (getPlatformEngagementRate(
+                                      row.creator,
+                                      row.selectedPlatform
+                                    ) ?? '')
                                   : (row.engagementRate ?? '')
                               }
                               onChange={(e) => {
@@ -2546,7 +2826,7 @@ export function PlatformCreatorModal({
                       )}
 
                       {/* Follower count: manual entry without media kit; read-only from media kit when connected */}
-                      {row.creator && (
+                      {row.creator && (!scrapeEnabled || row.selectedPlatform) && (
                         <Box
                           sx={{
                             flex: { xs: '1 1 100%', md: '1 1 192px' },
@@ -2719,7 +2999,9 @@ export function PlatformCreatorModal({
               disabled={
                 getValidCreatorsFromRows().length === 0 ||
                 hasMissingPlatformSelection ||
-                hasMissingFollowerCount
+                hasPlatformMismatch ||
+                hasMissingFollowerCount ||
+                hasSaveError
               }
               loading={submitting}
               loadingIndicator={<CircularProgress size={20} sx={{ color: '#1ABF66' }} />}
@@ -2751,7 +3033,9 @@ export function PlatformCreatorModal({
             disabled={
               getValidCreatorsFromRows().length === 0 ||
               hasMissingPlatformSelection ||
-              hasMissingFollowerCount
+              hasPlatformMismatch ||
+              hasMissingFollowerCount ||
+              hasSaveError
             }
             loading={submitting}
             loadingIndicator={<CircularProgress size={20} sx={{ color: '#fff' }} />}
@@ -2795,7 +3079,6 @@ export function PlatformCreatorModal({
 }
 
 PlatformCreatorModal.propTypes = {
-  /** Turns the Profile Link and Engagement Rate fields on. */
   scrapeEnabled: PropTypes.bool,
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
