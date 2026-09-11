@@ -7,7 +7,6 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetTimelineType } from 'src/hooks/use-get-timelinetype';
 
 import Timeline from 'src/sections/campaign/settings/timeline';
-import AgreementTemplates from 'src/sections/campaign/settings/agreements/agreement-template';
 
 const CampaignSettingsTab = () => {
   const [tab, setTabs] = useState('timeline');
@@ -67,26 +66,10 @@ const CampaignSettingsTab = () => {
             },
           }}
         />
-        <Tab
-          value="templates"
-          label="Agreement Templates"
-          sx={{
-            width: 1,
-            '&.Mui-selected': {
-              borderRadius: 2,
-              fontWeight: 600,
-              zIndex: 100,
-            },
-            '&:not(:last-of-type)': {
-              mr: 0,
-            },
-          }}
-        />
       </Tabs>
 
       <Box sx={{ p: 1, py: 2, width: 1, overflow: 'hidden' }}>
         {tab === 'timeline' && <Timeline timelineType={timelineType} isSmallScreen={isSmallScreen} />}
-        {tab === 'templates' && <AgreementTemplates />}
       </Box>
     </Box>
   );

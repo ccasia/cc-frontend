@@ -1,37 +1,24 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useFormContext } from 'react-hook-form';
-import { Page, pdfjs, Document } from 'react-pdf';
-import React, { memo, lazy, useMemo, useState, useEffect } from 'react';
+import React, { memo, useMemo, useEffect } from 'react';
 
-// Loading spinner
-import CircularProgress from '@mui/material/CircularProgress';
 import {
   Box,
   Chip,
   Stack,
-  Radio,
-  Paper,
-  Alert,
   Avatar,
   Button,
-  Dialog,
   Tooltip,
   MenuItem,
   FormLabel,
   TextField,
   Typography,
-  DialogTitle,
   ListItemText,
-  DialogContent,
-  DialogActions,
   createFilterOptions,
 } from '@mui/material';
 
-import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCompany from 'src/hooks/use-get-company';
-import { useResponsive } from 'src/hooks/use-responsive';
-import { useGetTemplate } from 'src/hooks/use-get-template';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -46,10 +33,9 @@ import {
 
 import CreateBrand from '../brandDialog';
 import { useGetAdmins } from '../hooks/get-am';
+import NdaAgreementField from '../nda-agreement-field';
 import PackageCreateDialog from '../../../packages/package-dialog';
 import CreateCompany from '../../../brand/create/brandForms/FirstForms/create-company';
-
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
 // Campaign type options (matching activate-campaign-dialog.jsx)
 const campaignTypeOptions = [
@@ -95,8 +81,6 @@ FormField.propTypes = {
   action: PropTypes.node,
 };
 
-const PDFEditor = lazy(() => import('../pdf-editor'));
-
 const filter = createFilterOptions();
 
 const getRemainingTime = (invoiceDate) => {
@@ -125,22 +109,9 @@ const FinaliseCampaign = ({
     getValues,
     formState: { errors },
   } = useFormContext();
-  const lgUp = useResponsive('up', 'lg');
 
   // Note: the client-campaign toggle (isV4Submission) no longer drives submissionVersion —
   // all new campaigns are v4; the toggle only controls client attachment.
-
-  // Template dialog state
-  const templateModal = useBoolean();
-  const [pages, setPages] = useState(0);
-
-  // Agreement templates via SWR hook
-  const { data: agreementTemplates = [], mutate: mutateTemplates } = useGetTemplate(user?.id);
-
-  const pdfModal = useBoolean();
-
-  // Use agreementFrom from form state for selection
-  const currentAgreement = watch('agreementFrom');
 
   // Client and brand state
   const client = watch('client');
@@ -166,19 +137,6 @@ const FinaliseCampaign = ({
       onValidationChange(creditError);
     }
   }, [creditError, onValidationChange]);
-
-  // Auto-select first template if none selected and templates exist
-  useEffect(() => {
-    if (agreementTemplates?.template?.length > 0 && (!currentAgreement || !currentAgreement.id)) {
-      setValue('agreementFrom', agreementTemplates.template[0], { shouldValidate: true });
-    }
-  }, [agreementTemplates, currentAgreement, setValue]);
-
-  // Handle template selection
-  const onSelectTemplate = (template) => {
-    setValue('agreementFrom', template, { shouldValidate: true });
-    templateModal.onFalse();
-  };
 
   // Open create company dialog when new client is typed
   useEffect(() => {
@@ -494,198 +452,7 @@ const FinaliseCampaign = ({
         />
       </FormField>
 
-      {/* Agreement Template */}
-      <FormField label="Agreement Template">
-        {agreementTemplates?.template?.length < 1 ? (
-          <Stack spacing={2} alignItems="center">
-            <Alert
-              severity="warning"
-              variant="outlined"
-              sx={{ width: '100%' }}
-              action={
-                <Button color="inherit" size="small" onClick={() => mutateTemplates()}>
-                  Refresh
-                </Button>
-              }
-            >
-              Template Not found
-            </Alert>
-            <Button
-              size="medium"
-              variant="contained"
-              sx={{ width: '100%' }}
-              onClick={pdfModal.onTrue}
-              startIcon={<Iconify icon="icon-park-outline:agreement" width={20} />}
-            >
-              Create new agreement template
-            </Button>
-          </Stack>
-        ) : (
-          <Stack spacing={1}>
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: '#F5F5F5' }}>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Iconify
-                  icon="mdi:file-document-check"
-                  width={32}
-                  height={32}
-                  color="success.main"
-                />
-                <Stack flex={1}>
-                  <Typography variant="subtitle2">
-                    {currentAgreement?.adminName ||
-                      agreementTemplates?.template?.[0]?.adminName ||
-                      'Agreement Template'}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Template selected
-                  </Typography>
-                </Stack>
-                <Button
-                  size="small"
-                  variant="text"
-                  onClick={templateModal.onTrue}
-                  sx={{ color: 'primary.main' }}
-                >
-                  Change
-                </Button>
-              </Stack>
-            </Paper>
-            <Button
-              size="medium"
-              variant="contained"
-              sx={{ width: '100%' }}
-              onClick={pdfModal.onTrue}
-              startIcon={<Iconify icon="icon-park-outline:agreement" width={20} />}
-            >
-              Create new agreement template
-            </Button>
-          </Stack>
-        )}
-      </FormField>
-
-      {/* Template Selection Dialog */}
-      <Dialog open={templateModal.value} fullWidth maxWidth="md" onClose={templateModal.onFalse}>
-        <DialogTitle>
-          <Typography variant="h5" sx={{ fontFamily: 'Instrument Serif', mb: 0.5 }}>
-            Select Agreement Template
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Choose one template to use for this campaign
-          </Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: 'repeat(1, 1fr)',
-                sm: 'repeat(1, 1fr)',
-                md: 'repeat(2, 1fr)',
-              },
-              gap: 2,
-              justifyItems: 'center',
-              alignItems: 'center',
-              py: 2,
-            }}
-          >
-            {agreementTemplates.template?.length > 0 &&
-              agreementTemplates.template.map((t) => {
-                const isSelected = currentAgreement?.id === t?.id;
-                return (
-                  <Box
-                    key={t?.id}
-                    sx={{
-                      border: isSelected ? '3px solid #1340ff' : '1px solid #e0e0e0',
-                      borderRadius: 2,
-                      overflow: 'hidden',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s ease-in-out',
-                      position: 'relative',
-                      height: 400,
-                      width: '100%',
-                      '&:hover': {
-                        transform: 'scale(1.02)',
-                        boxShadow: '0 4px 20px 0 rgba(0,0,0,0.12)',
-                      },
-                    }}
-                    onClick={() => onSelectTemplate(t)}
-                  >
-                    <Radio
-                      checked={isSelected}
-                      onChange={() => onSelectTemplate(t)}
-                      value={t?.id}
-                      name="template-selection"
-                      sx={{
-                        position: 'absolute',
-                        top: 10,
-                        left: 10,
-                        zIndex: 100,
-                      }}
-                    />
-
-                    <Box
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        overflow: 'auto',
-                        scrollbarWidth: 'none',
-                      }}
-                    >
-                      <Document
-                        file={t?.url}
-                        loading={
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              height: 200,
-                            }}
-                          >
-                            <CircularProgress size={24} />
-                            <Typography sx={{ ml: 2 }}>Loading document...</Typography>
-                          </Box>
-                        }
-                        onLoadSuccess={({ numPages }) => {
-                          setPages(numPages);
-                        }}
-                      >
-                        <Stack spacing={1}>
-                          {Array.from({ length: pages }, (_, index) => (
-                            <Page
-                              key={index}
-                              pageIndex={index}
-                              renderTextLayer={false}
-                              pageNumber={index + 1}
-                              scale={1}
-                              width={lgUp ? 400 : 300}
-                            />
-                          ))}
-                        </Stack>
-                      </Document>
-                    </Box>
-                  </Box>
-                );
-              })}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={templateModal.onFalse}>Cancel</Button>
-        </DialogActions>
-      </Dialog>
-
-      <PDFEditor
-        open={pdfModal.value}
-        onClose={() => {
-          pdfModal.onFalse();
-        }}
-        user={user}
-        setAgreementForm={setValue}
-        onTemplateCreated={async (newTemplate) => {
-          await mutateTemplates();
-          if (newTemplate) setValue('agreementFrom', newTemplate, { shouldValidate: true });
-        }}
-      />
+      <NdaAgreementField />
 
       {/* Create Brand Dialog */}
       <CreateBrand

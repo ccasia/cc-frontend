@@ -106,7 +106,7 @@ const CampaignAgreementEdit = ({
   const pitchRecord = campaign?.pitch?.find((p) => p.userId === agreement?.user?.id);
 
   const isSeedingCampaign = useMemo(() => campaign.campaignType === 'seedingCampaign', [campaign]);
-  const isNdaRequired = campaign?.agreementTemplate?.isNdaRequired;
+  const isNdaRequired = !!campaign?.isNdaRequired;
 
   const toFollowerCount = (value) => {
     const parsed = parseInt(String(value ?? '').replace(/[^0-9]/g, ''), 10);
@@ -282,15 +282,6 @@ const CampaignAgreementEdit = ({
 
   // Removed unused handler: inline send flow is handled in onSubmit
 
-  const extractAgremmentsInfo = useMemo(() => {
-    if (campaign?.agreementTemplate) return campaign.agreementTemplate;
-
-    return campaign?.campaignAdmin?.reduce(
-      (foundTemplate, item) => foundTemplate || item?.admin?.user?.agreementTemplate[0] || null,
-      null
-    );
-  }, [campaign]);
-
   // Calculate used credits by OTHER creators (excluding current creator)
   // For credit tier campaigns, multiply ugcVideos by creditPerVideo
   const usedCreditsByOthers = React.useMemo(() => {
@@ -429,9 +420,6 @@ const CampaignAgreementEdit = ({
           AGREEMENT_ENDDATE={dayjs().add(1, 'month').format('LL')}
           NOW_DATE={dayjs().format('LL')}
           VERSION_NUMBER={`V${dayjs().unix()}`}
-          ADMIN_IC_NUMBER={extractAgremmentsInfo?.adminICNumber ?? 'Default'}
-          ADMIN_NAME={extractAgremmentsInfo?.adminName ?? 'Default'}
-          SIGNATURE={extractAgremmentsInfo?.signURL ?? 'Default'}
           isForSurfShark={campaign?.isForSurfShark}
           isSeedingCampaign={isSeedingCampaign}
           isNdaRequired={isNdaRequired}

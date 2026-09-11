@@ -1,7 +1,6 @@
 import { Navigate, useRoutes } from 'react-router-dom';
 
 import { PATH_AFTER_LOGIN } from 'src/config-global';
-import Agreement from "src/pages/dashboard/template/view"
 import ChildAccountSetup from 'src/pages/auth/child-account-setup';
 
 import Verify from 'src/sections/creator/verify';
@@ -45,8 +44,6 @@ export default function Router() {
     { path: '/auth/verify/:token', element: <VerifyConfirmation /> },
     { path: '/auth/child-account-setup/:token', element: <ChildAccountSetup /> },
     { path: '/dashboard/invoice/xeroVerfiy', element: <VerfiyXero /> },
-
-    {path: "/template", element: <Agreement />},
 
     // No match 404
     { path: '*', element: <Navigate to="/404" replace /> },
