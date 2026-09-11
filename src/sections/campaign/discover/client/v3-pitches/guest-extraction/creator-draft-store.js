@@ -8,6 +8,7 @@
 
 import {
   ROW_STATUS,
+  isRowActive,
   hasSafeFollowerCount,
   isAllowedFallbackReason,
 } from './creator-row-machine';
@@ -45,6 +46,18 @@ export function toDraftCreator(creator) {
     creator: account
       ? {
           isFormCompleted: account.isFormCompleted,
+          ...(account.instagramProfileLink !== undefined
+            ? { instagramProfileLink: account.instagramProfileLink ?? null }
+            : {}),
+          ...(account.tiktokProfileLink !== undefined
+            ? { tiktokProfileLink: account.tiktokProfileLink ?? null }
+            : {}),
+          ...(account.manualInstagramFollowerCount !== undefined
+            ? { manualInstagramFollowerCount: account.manualInstagramFollowerCount ?? null }
+            : {}),
+          ...(account.manualTiktokFollowerCount !== undefined
+            ? { manualTiktokFollowerCount: account.manualTiktokFollowerCount ?? null }
+            : {}),
           instagramUser: account.instagramUser
             ? {
                 id: account.instagramUser.id,
@@ -55,7 +68,7 @@ export function toDraftCreator(creator) {
           tiktokUser: account.tiktokUser
             ? {
                 id: account.tiktokUser.id,
-                followers_count: account.tiktokUser.followers_count,
+                follower_count: account.tiktokUser.follower_count,
                 engagement_rate: account.tiktokUser.engagement_rate,
               }
             : null,
@@ -84,6 +97,9 @@ export function toDraftRow(row) {
     canonicalProfileUrl: row.canonicalProfileUrl ?? null,
     canonicalProfileKey: row.canonicalProfileKey ?? null,
     platform: row.platform ?? null,
+    selectedPlatform: row.selectedPlatform ?? null,
+    sourceMode: row.sourceMode ?? null,
+    contextVersion: row.contextVersion ?? 0,
     status: row.status,
     name: row.name ?? '',
     followerCount: row.followerCount ?? '',
@@ -100,13 +116,20 @@ export function toDraftRow(row) {
     fallbackReason: row.fallbackReason ?? null,
     linkError: row.linkError ?? null,
     error: row.error ?? null,
+    saveError: row.saveError ?? null,
   };
 }
 
-export function toDraftRows(rows, skipDraftRow) {
+export function toDraftRows(rows, skipDraftRow, kind = DRAFT_KIND.GUEST) {
   if (!Array.isArray(rows)) return [];
   return rows
-    .filter((row) => isScrapedDraftRow(row) && !skipDraftRow?.(row))
+    .filter(
+      (row) =>
+        (isScrapedDraftRow(row) ||
+          (kind === DRAFT_KIND.PLATFORM && isRowActive(row) && hasText(row.extractionId)) ||
+          Boolean(row.saveError)) &&
+        !skipDraftRow?.(row)
+    )
     .map(toDraftRow);
 }
 
@@ -170,7 +193,7 @@ export function clearDraft(kind, campaignId) {
 
 /** Write scraped rows while the modal is open. No TTL until close. */
 export function persistOpenDraft(kind, campaignId, rows, skipDraftRow) {
-  const draftRows = toDraftRows(rows, skipDraftRow);
+  const draftRows = toDraftRows(rows, skipDraftRow, kind);
   if (draftRows.length === 0) {
     clearDraft(kind, campaignId);
     return;

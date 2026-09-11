@@ -24,10 +24,16 @@ export async function fetchFeatureDecision() {
 }
 
 /** Starts a profile extraction for one row. */
-export async function startExtraction({ campaignId, clientRowId, profileLink, idempotencyKey }) {
+export async function startExtraction({
+  campaignId,
+  clientRowId,
+  profileLink,
+  expectedPlatform,
+  idempotencyKey,
+}) {
   const { data, status } = await axiosInstance.post(
     base(campaignId),
-    { clientRowId, profileLink },
+    { clientRowId, profileLink, ...(expectedPlatform ? { expectedPlatform } : {}) },
     { headers: { 'Idempotency-Key': idempotencyKey } }
   );
   // 200 means a reusable completed result, 202 means queued work.

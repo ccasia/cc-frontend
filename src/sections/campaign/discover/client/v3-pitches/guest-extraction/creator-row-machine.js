@@ -59,6 +59,7 @@ export const ACTIONS = {
   ADD_ROW: 'ADD_ROW',
   SET_CREATOR: 'SET_CREATOR',
   SET_PLATFORM: 'SET_PLATFORM',
+  SET_SOURCE: 'SET_SOURCE',
   REMOVE_ROW: 'REMOVE_ROW',
   SET_LINK: 'SET_LINK',
   VALIDATION_RESULT: 'VALIDATION_RESULT',
@@ -79,6 +80,7 @@ export const ACTIONS = {
   BATCH_SAVE_STARTED: 'BATCH_SAVE_STARTED',
   BATCH_SAVE_SUCCEEDED: 'BATCH_SAVE_SUCCEEDED',
   BATCH_SAVE_FAILED: 'BATCH_SAVE_FAILED',
+  APPLY_SAVE_RESULT: 'APPLY_SAVE_RESULT',
 };
 
 let rowSeq = 0;
@@ -100,6 +102,11 @@ export function createRow(overrides = {}) {
     canonicalProfileUrl: null,
     canonicalProfileKey: null,
     platform: null,
+    /** Explicit platform intent for registered creators. Guest rows leave this null. */
+    selectedPlatform: null,
+    sourceMode: null,
+    /** Rejects async work that belongs to an old creator, source, or link. */
+    contextVersion: 0,
     status: ROW_STATUS.IDLE,
     name: '',
     followerCount: '',
@@ -120,6 +127,7 @@ export function createRow(overrides = {}) {
     linkError: null,
     /** Extraction failure. */
     error: null,
+    saveError: null,
     ...overrides,
   };
 }
@@ -172,6 +180,7 @@ function clearResult(row) {
     fallbackConfirmed: false,
     fallbackReason: null,
     error: null,
+    saveError: null,
   };
 }
 
@@ -249,6 +258,8 @@ export function duplicateRowIds(rows) {
 export function canSubmitRow(row, { duplicateIds = [] } = {}) {
   if (duplicateIds.includes(row.id)) return false;
   if (row.linkError) return false;
+  if (row.saveError) return false;
+  if (row.creator && (!row.selectedPlatform || row.platform !== row.selectedPlatform)) return false;
 
   if (row.status === ROW_STATUS.READY && hasValidReceipt(row)) return true;
 
@@ -278,6 +289,14 @@ export function submittableRows(state) {
 export function canFetchRow(row, { duplicateIds = [] } = {}) {
   if (isRowActive(row)) return false;
   if (row.linkError || !row.canonicalProfileKey) return false;
+  if (
+    row.creator &&
+    (row.sourceMode === 'connected' ||
+      !row.selectedPlatform ||
+      row.platform !== row.selectedPlatform)
+  ) {
+    return false;
+  }
   return !duplicateIds.includes(row.id);
 }
 
@@ -334,6 +353,7 @@ export function creatorRowReducer(state, action) {
         canonicalProfileKey: null,
         platform: null,
         linkError: null,
+        contextVersion: action.contextVersion ?? row.contextVersion + 1,
         status: action.value.trim() ? ROW_STATUS.VALIDATING : ROW_STATUS.IDLE,
       }));
     }
@@ -341,6 +361,7 @@ export function creatorRowReducer(state, action) {
     // Debounced validation only. It never starts paid work.
     case ACTIONS.VALIDATION_RESULT:
       return mapRow(state, action.rowId, (row) => {
+        if (action.contextVersion != null && action.contextVersion !== row.contextVersion) return row;
         if (row.status !== ROW_STATUS.VALIDATING) return row;
         return action.ok
           ? {
@@ -354,6 +375,8 @@ export function creatorRowReducer(state, action) {
           : {
               ...row,
               status: ROW_STATUS.IDLE,
+              sourceMode:
+                row.creator && row.sourceMode === 'stored' ? 'manual' : row.sourceMode,
               canonicalProfileUrl: null,
               canonicalProfileKey: null,
               platform: null,
@@ -365,24 +388,36 @@ export function creatorRowReducer(state, action) {
       });
 
     case ACTIONS.FETCH_REQUESTED:
-      return mapRow(state, action.rowId, (row) => ({
-        ...clearResult(row),
-        status: ROW_STATUS.QUEUED,
-        extractionId: action.extractionId ?? null,
-      }));
+      return mapRow(state, action.rowId, (row) =>
+        action.contextVersion != null && action.contextVersion !== row.contextVersion
+          ? row
+          : {
+              ...clearResult(row),
+              status: ROW_STATUS.QUEUED,
+              extractionId: action.extractionId ?? null,
+            }
+      );
 
     case ACTIONS.EXTRACTION_RUNNING:
       return mapRow(state, action.rowId, (row) =>
-        isRowActive(row) ? { ...row, status: ROW_STATUS.RUNNING } : row
+        isRowActive(row) &&
+        (action.contextVersion == null || action.contextVersion === row.contextVersion)
+          ? { ...row, status: ROW_STATUS.RUNNING }
+          : row
       );
 
     case ACTIONS.EXTRACTION_POLLING:
       return mapRow(state, action.rowId, (row) =>
-        isRowActive(row) ? { ...row, status: ROW_STATUS.POLLING } : row
+        isRowActive(row) &&
+        (action.contextVersion == null || action.contextVersion === row.contextVersion)
+          ? { ...row, status: ROW_STATUS.POLLING }
+          : row
       );
 
     case ACTIONS.EXTRACTION_READY:
       return mapRow(state, action.rowId, (row) => {
+        if (action.contextVersion != null && action.contextVersion !== row.contextVersion) return row;
+        if (!isRowActive(row)) return row;
         const fetched = {
           name: action.name ?? '',
           followerCount: action.followerCount ?? '',
@@ -401,50 +436,110 @@ export function creatorRowReducer(state, action) {
           fallbackReason: null,
           fallbackConfirmed: false,
           error: null,
+          saveError: null,
         };
       });
 
     case ACTIONS.EXTRACTION_INSUFFICIENT:
-      return mapRow(state, action.rowId, (row) => ({
-        ...clearResult(row),
-        status: ROW_STATUS.INSUFFICIENT_DATA,
-        extractionId: row.extractionId,
-        sampleSize: action.validCount ?? null,
-        fallbackReason: 'INSUFFICIENT_DATA',
-      }));
+      return mapRow(state, action.rowId, (row) =>
+        (action.contextVersion != null && action.contextVersion !== row.contextVersion) ||
+        !isRowActive(row)
+          ? row
+          : {
+              ...clearResult(row),
+              status: ROW_STATUS.INSUFFICIENT_DATA,
+              extractionId: row.extractionId,
+              sampleSize: action.validCount ?? null,
+              fallbackReason: 'INSUFFICIENT_DATA',
+            }
+      );
 
     // Only a private profile or a profile that does not exist may fall back.
     // A schema, auth, cost, timeout, or transient failure offers retry instead.
     case ACTIONS.EXTRACTION_FAILED:
-      return mapRow(state, action.rowId, (row) => ({
-        ...clearResult(row),
-        status: ROW_STATUS.FAILED,
-        extractionId: row.extractionId,
-        error: action.error ?? { code: 'UNKNOWN', message: 'The fetch failed.', retryable: true },
-        fallbackReason: isAllowedFallbackReason(action.error?.code) ? action.error.code : null,
-      }));
+      return mapRow(state, action.rowId, (row) =>
+        (action.contextVersion != null && action.contextVersion !== row.contextVersion) ||
+        !isRowActive(row)
+          ? row
+          : {
+              ...clearResult(row),
+              status: ROW_STATUS.FAILED,
+              extractionId: row.extractionId,
+              error: action.error ?? {
+                code: 'UNKNOWN',
+                message: 'The fetch failed.',
+                retryable: true,
+              },
+              fallbackReason: isAllowedFallbackReason(action.error?.code) ? action.error.code : null,
+            }
+      );
 
     // Stopping the wait never makes a row eligible.
     case ACTIONS.EXTRACTION_CANCELLED:
       return mapRow(state, action.rowId, (row) =>
-        isRowActive(row) ? { ...clearResult(row), status: ROW_STATUS.CANCELLED } : row
+        isRowActive(row)
+          ? {
+              ...clearResult(row),
+              contextVersion: action.contextVersion ?? row.contextVersion + 1,
+              status: ROW_STATUS.CANCELLED,
+            }
+          : row
       );
 
     case ACTIONS.MARK_STALE:
-      return mapRow(state, action.rowId, (row) => ({
-        ...clearResult(row),
-        status: ROW_STATUS.STALE,
-      }));
+      return mapRow(state, action.rowId, (row) =>
+        (action.contextVersion != null && action.contextVersion !== row.contextVersion) ||
+        !isRowActive(row)
+          ? row
+          : {
+              ...clearResult(row),
+              status: ROW_STATUS.STALE,
+            }
+      );
 
-    /**
-     * Pick the platform creator for this row.
-     *
-     * The scrape is untouched. Changing the creator does not invalidate a link
-     * that was already fetched, because the link is what was measured, not the
-     * creator; the modal clears the link itself when that is what it wants.
-     */
-    case ACTIONS.SET_CREATOR:
-      return mapRow(state, action.rowId, (row) => ({ ...row, creator: action.creator ?? null }));
+    case ACTIONS.SET_CREATOR: {
+      const previous = state.rows.find((row) => row.id === action.rowId);
+      const staleExtractionIds = previous?.extractionId
+        ? [...state.staleExtractionIds, previous.extractionId]
+        : state.staleExtractionIds;
+      return mapRow({ ...state, staleExtractionIds }, action.rowId, (row) => ({
+        ...clearResult(row),
+        creator: action.creator ?? null,
+        profileLink: action.profileLink ?? '',
+        canonicalProfileUrl: null,
+        canonicalProfileKey: null,
+        platform: action.platform ?? null,
+        selectedPlatform: action.selectedPlatform ?? null,
+        sourceMode: action.sourceMode ?? null,
+        followerCount: action.followerCount ?? '',
+        engagementRate: action.engagementRate ?? '',
+        adminComments: '',
+        linkError: null,
+        contextVersion: action.contextVersion ?? row.contextVersion + 1,
+        status: action.profileLink?.trim() ? ROW_STATUS.VALIDATING : ROW_STATUS.IDLE,
+      }));
+    }
+
+    case ACTIONS.SET_SOURCE: {
+      const previous = state.rows.find((row) => row.id === action.rowId);
+      const staleExtractionIds = previous?.extractionId
+        ? [...state.staleExtractionIds, previous.extractionId]
+        : state.staleExtractionIds;
+      return mapRow({ ...state, staleExtractionIds }, action.rowId, (row) => ({
+        ...clearResult(row),
+        profileLink: action.profileLink ?? '',
+        canonicalProfileUrl: null,
+        canonicalProfileKey: null,
+        platform: action.platform ?? null,
+        selectedPlatform: action.selectedPlatform ?? null,
+        sourceMode: action.sourceMode ?? null,
+        followerCount: action.followerCount ?? '',
+        engagementRate: action.engagementRate ?? '',
+        linkError: null,
+        contextVersion: action.contextVersion ?? row.contextVersion + 1,
+        status: action.profileLink?.trim() ? ROW_STATUS.VALIDATING : ROW_STATUS.IDLE,
+      }));
+    }
 
     /**
      * The platform this row is about.
@@ -454,10 +549,19 @@ export function creatorRowReducer(state, action) {
      * a creator with a connected account, where the admin still picks.
      */
     case ACTIONS.SET_PLATFORM:
-      return mapRow(state, action.rowId, (row) => ({ ...row, platform: action.platform ?? null }));
+      return mapRow(state, action.rowId, (row) => ({
+        ...row,
+        platform: action.platform ?? null,
+        selectedPlatform: action.platform ?? null,
+        saveError: null,
+      }));
 
     case ACTIONS.EDIT_FIELD:
-      return mapRow(state, action.rowId, (row) => ({ ...row, [action.field]: action.value }));
+      return mapRow(state, action.rowId, (row) => ({
+        ...row,
+        [action.field]: action.value,
+        saveError: null,
+      }));
 
     case ACTIONS.SET_COMMENTS:
       return mapRow(state, action.rowId, (row) => ({ ...row, adminComments: action.value }));
@@ -465,7 +569,7 @@ export function creatorRowReducer(state, action) {
     case ACTIONS.CONFIRM_FALLBACK:
       return mapRow(state, action.rowId, (row) =>
         isAllowedFallbackReason(row.fallbackReason)
-          ? { ...row, fallbackConfirmed: action.confirmed === true }
+          ? { ...row, fallbackConfirmed: action.confirmed === true, saveError: null }
           : row
       );
 
@@ -476,7 +580,7 @@ export function creatorRowReducer(state, action) {
     case ACTIONS.MERGE_ROWS: {
       const byId = new Map(state.rows.map((row) => [row.id, row]));
       (action.rows ?? []).forEach((row) => {
-        byId.set(row.id, createRow(row));
+        byId.set(row.id, createRow({ ...byId.get(row.id), ...row }));
       });
       return { ...state, rows: Array.from(byId.values()).slice(0, MAX_ROWS) };
     }
@@ -499,6 +603,21 @@ export function creatorRowReducer(state, action) {
         batchSaveState: BATCH_SAVE_STATUS.SAVE_FAILED,
         batchError: action.error ?? null,
       };
+
+    case ACTIONS.APPLY_SAVE_RESULT: {
+      const accepted = new Set(action.acceptedRowIds ?? []);
+      return {
+        ...state,
+        rows: state.rows
+          .filter((row) => !accepted.has(row.id))
+          .map((row) => ({
+            ...row,
+            saveError: action.rejectedByRowId?.[row.id] ?? row.saveError,
+          })),
+        batchSaveState: BATCH_SAVE_STATUS.SAVE_FAILED,
+        batchError: action.error ?? null,
+      };
+    }
 
     default:
       return state;

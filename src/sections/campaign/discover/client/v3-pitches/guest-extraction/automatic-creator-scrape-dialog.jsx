@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import { useState, useEffect, useCallback } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -15,11 +15,10 @@ import Typography from '@mui/material/Typography';
 import Iconify from 'src/components/iconify';
 
 import CreatorScrapeRow from './creator-scrape-row';
-import useGuestExtraction from './use-guest-extraction';
-import { clearMapping } from './extraction-session-store';
 import { CC, ROW_GAP } from './creator-field-tokens';
-import { newIdempotencyKey, saveGuestCreators } from './guest-extraction-api';
+import useGuestExtraction from './use-guest-extraction';
 import { ACTIONS, MAX_ROWS, BATCH_SAVE_STATUS } from './creator-row-machine';
+import { newIdempotencyKey, saveGuestCreators } from './guest-extraction-api';
 
 /**
  * Add Non-Platform Creators.
@@ -44,6 +43,38 @@ export function buildGuestPayload(rows) {
     fallbackConfirmed: row.fallbackConfirmed || undefined,
   }));
 }
+
+const normalizeLink = (value) => value?.trim().replace(/\/+$/, '');
+
+const normalizeErrorBody = (error) =>
+  error?.response?.data ?? (error && typeof error === 'object' ? error : null);
+
+const rowSaveResult = (rows, payload, body) => {
+  if (!body?.rejected?.length) return null;
+  const rejectedByLink = new Map(
+    body.rejected.map((rejected) => [normalizeLink(rejected.profileLink), rejected])
+  );
+  const acceptedRowIds = [];
+  const rejectedByRowId = {};
+
+  rows.forEach((row, index) => {
+    const rejected = rejectedByLink.get(normalizeLink(payload[index].profileLink));
+    if (!rejected) {
+      acceptedRowIds.push(row.id);
+      return;
+    }
+    rejectedByRowId[row.id] = {
+      code: rejected.code || 'SAVE_REJECTED',
+      message: rejected.message || 'This creator could not be verified.',
+    };
+  });
+
+  return {
+    acceptedRowIds,
+    rejectedByRowId,
+    error: body.rejected[0].message || body.message || 'Some creators could not be verified.',
+  };
+};
 
 /** The 38px minus and plus pair from the handoff. */
 const stepperSx = {
@@ -81,7 +112,8 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
     eligibleCount,
     setLink,
     removeRow,
-    clearPersistedDraft,
+    applySaveResult,
+    completeSuccessfulSave,
   } = useGuestExtraction({ campaignId, enabled: open, kind: 'guest' });
 
   const saving = state.batchSaveState === BATCH_SAVE_STATUS.SAVING;
@@ -91,15 +123,24 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
 
     dispatch({ type: ACTIONS.BATCH_SAVE_STARTED });
     try {
-      await saveGuestCreators({
+      const guestCreators = buildGuestPayload(eligibleRows);
+      const response = await saveGuestCreators({
         campaignId,
-        guestCreators: buildGuestPayload(eligibleRows),
+        guestCreators,
         idempotencyKey,
       });
 
+      const saveResult = rowSaveResult(eligibleRows, guestCreators, response);
+      if (saveResult) {
+        applySaveResult(saveResult);
+        setIdempotencyKey(newIdempotencyKey());
+        enqueueSnackbar(saveResult.error, { variant: 'error' });
+        if (saveResult.acceptedRowIds.length > 0) onUpdated?.();
+        return;
+      }
+
       dispatch({ type: ACTIONS.BATCH_SAVE_SUCCEEDED });
-      clearPersistedDraft();
-      clearMapping(campaignId);
+      completeSuccessfulSave();
       enqueueSnackbar(
         eligibleCount > 1
           ? 'Guest creators shortlisted successfully.'
@@ -109,8 +150,18 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
       onUpdated?.();
       onClose();
     } catch (error) {
-      dispatch({ type: ACTIONS.BATCH_SAVE_FAILED, error: error?.response?.data?.message ?? null });
-      enqueueSnackbar(error?.response?.data?.message || 'Failed to add non-platform creator.', {
+      const body = normalizeErrorBody(error);
+      const guestCreators = buildGuestPayload(eligibleRows);
+      const saveResult = rowSaveResult(eligibleRows, guestCreators, body);
+      if (saveResult) {
+        applySaveResult(saveResult);
+        setIdempotencyKey(newIdempotencyKey());
+        enqueueSnackbar(saveResult.error, { variant: 'error' });
+        if (saveResult.acceptedRowIds.length > 0) onUpdated?.();
+        return;
+      }
+      dispatch({ type: ACTIONS.BATCH_SAVE_FAILED, error: body?.message ?? null });
+      enqueueSnackbar(body?.message || 'Failed to add non-platform creator.', {
         variant: 'error',
       });
     }
@@ -123,8 +174,9 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
     idempotencyKey,
     onClose,
     onUpdated,
+    applySaveResult,
     saving,
-    clearPersistedDraft,
+    completeSuccessfulSave,
   ]);
 
   return (
@@ -202,7 +254,7 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
                 sx={{ overflow: 'hidden' }}
               >
                 <CreatorScrapeRow
-                  row={row}
+                  row={row.saveError ? { ...row, error: row.saveError } : row}
                   isDuplicate={duplicateIds.includes(row.id)}
                   disabled={saving}
                   dispatch={dispatch}
