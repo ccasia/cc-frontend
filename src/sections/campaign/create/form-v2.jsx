@@ -399,7 +399,7 @@ function CreateCampaignFormV2({
     photos: false,
     crossPosting: false,
     ads: false,
-    agreementFrom: null,
+    isNdaRequired: false,
     timeline: [],
 
     // Additional Details 1 fields
@@ -613,7 +613,7 @@ function CreateCampaignFormV2({
       photos: !!campaign.photos,
       crossPosting: !!campaign.crossPosting,
       ads: !!campaign.ads,
-      agreementFrom: campaign.agreementTemplate || null,
+      isNdaRequired: !!campaign.isNdaRequired,
 
       // Additional Details
       socialMediaPlatform: Array.isArray(brief.socialMediaPlatform)
@@ -978,6 +978,8 @@ function CreateCampaignFormV2({
       draftProductImage2Url: getDraftFileUrls(data.productImage2)[0] || null,
     };
     delete campaignData.reservationDraft;
+    // Older autosaved drafts may still hold a signed agreement template; agreements no longer use one.
+    delete campaignData.agreementFrom;
 
     formData.append('rawFootage', campaignData.rawFootage ? 'true' : 'false');
     formData.append('photos', campaignData.photos ? 'true' : 'false');

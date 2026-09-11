@@ -12,7 +12,6 @@ import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import Timeline from './timeline';
-import AgreementTemplates from './agreements/agreement-template';
 
 const CampaignSetting = () => {
   // eslint-disable-next-line no-unused-vars
@@ -85,28 +84,12 @@ const CampaignSetting = () => {
               },
             }}
           />
-          <Tab
-            value="templates"
-            label="Agreement Templates"
-            sx={{
-              width: 1,
-              '&.Mui-selected': {
-                borderRadius: 2,
-                fontWeight: 600,
-                zIndex: 100,
-              },
-              '&:not(:last-of-type)': {
-                mr: 0,
-              },
-            }}
-          />
         </Tabs>
 
         <Box sx={{ p: 1, py: 2, width: 1, overflow: 'hidden' }}>
           {tab === 'timeline' && (
             <Timeline timelineType={timelineType} isSmallScreen={isSmallScreen} />
           )}
-          {tab === 'templates' && <AgreementTemplates />}
         </Box>
       </Box>
     </Container>

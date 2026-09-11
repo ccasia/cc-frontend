@@ -32,10 +32,10 @@ import {
   RHFSelectV2,
   RHFMultiSelect,
   RHFAutocomplete,
-  RHFCheckbox,
 } from 'src/components/hook-form';
 
 import { useGetAdmins } from '../../create/hooks/get-am';
+import NdaAgreementField from '../../create/nda-agreement-field';
 
 // Campaign type options (matching activate-campaign-dialog.jsx)
 const campaignTypeOptions = [
@@ -137,7 +137,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
       // Reflects client attachment, not the (immutable) submissionVersion
       isV4Submission: campaignHasClient(campaign),
       isCreditTier: campaign?.isCreditTier || false,
-      isNdaRequired: campaign?.agreementTemplate?.isNdaRequired,
+      isNdaRequired: !!campaign?.isNdaRequired,
     }),
     [existingManagers, campaign, existingDeliverables]
   );
@@ -368,7 +368,6 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
                 ))}
               </RHFSelectV2>
             </FormField>
-            <RHFCheckbox name="isNdaRequired" label="NDA Agreement" />
           </Stack>
         </Stack>
 
@@ -383,6 +382,8 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
             />
           </FormField>
         </Stack>
+
+        <NdaAgreementField isForSurfShark={!!campaign?.isForSurfShark} />
       </Box>
 
       {/* V4 Submission Warning Dialog */}

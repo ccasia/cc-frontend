@@ -1,5 +1,4 @@
 /* eslint-disable react/prop-types */
-import dayjs from 'dayjs';
 import { Page, Text, View, Font, Link, Image, Document, StyleSheet } from '@react-pdf/renderer';
 
 Font.register({
@@ -13,6 +12,13 @@ Font.register({
     },
   ],
 });
+
+// Cult Creative signs every creator agreement through one fixed authorised officer.
+const COMPANY_SIGNATORY = {
+  name: 'Goh Chooi Leng',
+  designation: 'Director',
+  signatureSrc: '/signatures/company-signatory.png',
+};
 
 const styles = StyleSheet.create({
   page: {
@@ -69,16 +75,26 @@ const styles = StyleSheet.create({
   },
   signatureView: {
     display: 'flex',
-    marginTop: 10,
     flexDirection: 'row',
-    gap: 150,
-    fontSize: 14,
+    justifyContent: 'space-between',
+    marginTop: 30,
+    fontSize: 12,
   },
-
-  signatureChild: {
-    display: 'flex',
-    flexDirection: 'row',
-    gap: 5,
+  signatureCompanyColumn: {
+    width: '56%',
+  },
+  signatureCreatorColumn: {
+    width: '40%',
+  },
+  // Same height in both columns so the dotted signature lines align.
+  signatureTop: {
+    height: 165,
+  },
+  signatureImage: {
+    width: 90,
+    height: 71,
+    marginTop: 8,
+    marginLeft: 15,
   },
 
   version: {
@@ -102,9 +118,6 @@ export default function AgreementTemplate({
   AGREEMENT_ENDDATE,
   NOW_DATE,
   VERSION_NUMBER = 'V1',
-  ADMIN_IC_NUMBER,
-  ADMIN_NAME,
-  SIGNATURE,
   isForSurfShark = false,
   isSeedingCampaign = false,
   isNdaRequired = false,
@@ -138,8 +151,9 @@ export default function AgreementTemplate({
             <Text style={{ fontWeight: 800 }}>Cult Creative Sdn Bhd 202001018157 (1374477-W)</Text>{' '}
             located at 5-3A, Block A, Jaya One, 72A Jalan Profesor Diraja Ungku Aziz, PJS 13, 46200
             Petaling Jaya Selangor <Text style={{ fontWeight: 800 }}>(“Cult Creative”)</Text> and{' '}
-            <Text style={{ fontWeight: 800 }}>{FREELANCER_FULL_NAME} </Text>
-            (NRIC/Passport No. :<Text style={{ fontWeight: 800 }}>{IC_NUMBER} </Text>)
+            <Text style={{ fontWeight: 800 }}>{FREELANCER_FULL_NAME}</Text> (NRIC/Passport No.:{' '}
+            <Text style={{ fontWeight: 800 }}>{IC_NUMBER}</Text>)
+            <Text style={{ fontWeight: 800 }}>(“Freelancer”)</Text>.
           </Text>
 
           {isForSurfShark && (
@@ -240,8 +254,8 @@ export default function AgreementTemplate({
             <View style={styles.list}>
               <Text style={styles.item}>
                 a) The Freelancer agrees to provide Cult Creative the acceptable and approved
-                deliverables as listed in `Campaign Deliverables` of the attached Campaign Brief,
-                which must adhere to the stipulations and specifications provided therein; and
+                deliverables as listed in ‘Campaign Deliverables’ of the Campaign Brief, which must
+                adhere to the stipulations and specifications provided therein;
               </Text>
               <Text style={styles.item}>
                 b) As proof of completion of the Deliverables, the Freelancer shall, through the
@@ -271,7 +285,9 @@ export default function AgreementTemplate({
             </View>
           </View>
         </View>
-        <Text style={styles.version}>{VERSION_NUMBER}</Text>
+        <Text style={styles.version} fixed>
+          {VERSION_NUMBER}
+        </Text>
       </Page>
 
       <Page size="A4" style={{ ...styles.page }}>
@@ -279,7 +295,7 @@ export default function AgreementTemplate({
           <Image src="/logo.png" style={styles.image} />
           <View style={styles.section}>
             <View style={{ ...styles.section, marginTop: 0 }}>
-              <Text style={styles.titlee}>2A. Removal of Deliverables</Text>
+              <Text style={styles.titlee}>2.A Removal of Deliverables</Text>
               <Text>
                 In the event that any Deliverables is removed, deleted or made inaccessible on the
                 agreed social media channels due to the Freelancer’s actions or omissions (including
@@ -350,7 +366,9 @@ export default function AgreementTemplate({
             </View>
           </View>
         </View>
-        <Text style={styles.version}>{VERSION_NUMBER}</Text>
+        <Text style={styles.version} fixed>
+          {VERSION_NUMBER}
+        </Text>
       </Page>
 
       <Page size="A4" style={{ ...styles.page }}>
@@ -372,7 +390,7 @@ export default function AgreementTemplate({
             </Text>
             <Text style={{ ...styles.item, marginLeft: 20 }}>
               c. Seek compensation of up to fifty-percent (50%) of the total contract value,
-              provided such amount reasonable reflects the costs and damages incurred.
+              provided such amount reasonably reflects the costs and damages incurred.
             </Text>
           </View>
 
@@ -402,12 +420,15 @@ export default function AgreementTemplate({
             </Text>
           </View>
         </View>
-        <Text style={styles.version}>{VERSION_NUMBER}</Text>
+        <Text style={styles.version} fixed>
+          {VERSION_NUMBER}
+        </Text>
       </Page>
 
       <Page size="A4" style={styles.page}>
         <View style={{ marginHorizontal: 30 }}>
-          <Image src="/logo.png" style={styles.image} />
+          {/* fixed: repeat the logo when the NDA section pushes the signatures to another page */}
+          <Image src="/logo.png" style={styles.image} fixed />
 
           {isSeedingCampaign ? (
             <View style={styles.section}>
@@ -441,7 +462,7 @@ export default function AgreementTemplate({
                 </Text>
               </View>
               <View style={styles.paymentView}>
-                <Text>Name On Account: </Text>
+                <Text>Name on Account: </Text>
                 <Text
                   style={{
                     fontWeight: 600,
@@ -478,7 +499,7 @@ export default function AgreementTemplate({
             <Text>
               This Agreement will begin on the Effective Date and will continue until{' '}
               <Text style={styles.bold}>{AGREEMENT_ENDDATE}, </Text> the Expected End Date. This
-              agreement period is <Text style={styles.bold}>1 month </Text>If there are still
+              agreement period is <Text style={styles.bold}>1 month</Text>. If there are still
               pending project services or deliverables, the term will be extended by an extra week
               without any additional charges.
             </Text>
@@ -558,68 +579,38 @@ export default function AgreementTemplate({
           )}
 
           {/* Signature */}
-          <View style={styles.signatureView}>
-            <View
-              style={{
-                display: 'flex',
-                gap: SIGNATURE ? 15 : 100,
-                fontSize: 12,
-              }}
-            >
-              <View>
-                <Text>Signature of</Text>
-                {SIGNATURE && (
-                  <Image
-                    src={SIGNATURE}
-                    style={{
-                      width: 150,
-                      marginTop: 10,
-                    }}
-                  />
-                )}
+          <View style={styles.signatureView} wrap={false}>
+            <View style={styles.signatureCompanyColumn}>
+              <View style={styles.signatureTop}>
+                <Text style={styles.bold}>SIGNED by</Text>
+                <Text style={styles.bold}>for and on behalf of</Text>
+                <Text style={styles.bold}>CULT CREATIVE SDN BHD</Text>
+                <Text style={styles.bold}>(Registration No. 202001018157 (1374477-W)</Text>
+                <Text style={styles.bold}>by its duly authorised officer:-</Text>
+                <Image src={COMPANY_SIGNATORY.signatureSrc} style={styles.signatureImage} />
               </View>
-
-              <View>
-                <View style={styles.signatureChild}>
-                  <Text>Name: </Text>
-                  <Text>{ADMIN_NAME}</Text>
-                </View>
-                <View style={styles.signatureChild}>
-                  <Text>NRIC: </Text>
-                  <Text>{ADMIN_IC_NUMBER}</Text>
-                </View>
-                <View style={styles.signatureChild}>
-                  <Text>Date: </Text>
-                  <Text>{dayjs().format('LL')}</Text>
-                </View>
-              </View>
+              <Text>……………………………………..</Text>
+              <Text style={styles.bold}>Authorised Officer</Text>
+              <Text style={styles.bold}>Designation : {COMPANY_SIGNATORY.designation}</Text>
+              <Text style={styles.bold}>Name : {COMPANY_SIGNATORY.name}</Text>
+              <Text style={styles.bold}>Date : {DATE}</Text>
             </View>
-            <View
-              style={{
-                display: 'flex',
-                gap: 100,
-                fontSize: 12,
-              }}
-            >
-              <Text>Signature of</Text>
-              <View>
-                <View style={styles.signatureChild}>
-                  <Text>Name: </Text>
-                  <Text>{FREELANCER_FULL_NAME}</Text>
-                </View>
-                <View style={styles.signatureChild}>
-                  <Text>NRIC/ Passport No.:</Text>
-                  <Text>{IC_NUMBER}</Text>
-                </View>
-                <View style={styles.signatureChild}>
-                  <Text>Date: </Text>
-                  <Text>{NOW_DATE}</Text>
-                </View>
+
+            {/* Empty top area is where the creator stamps their signature */}
+            <View style={styles.signatureCreatorColumn}>
+              <View style={styles.signatureTop}>
+                <Text style={styles.bold}>Signature of</Text>
               </View>
+              <Text>……………………………………..</Text>
+              <Text style={styles.bold}>Name: {FREELANCER_FULL_NAME}</Text>
+              <Text style={styles.bold}>NRIC/Passport No : {IC_NUMBER}</Text>
+              <Text style={styles.bold}>Date : {NOW_DATE}</Text>
             </View>
           </View>
         </View>
-        <Text style={styles.version}>{VERSION_NUMBER}</Text>
+        <Text style={styles.version} fixed>
+          {VERSION_NUMBER}
+        </Text>
       </Page>
     </Document>
   );
