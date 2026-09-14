@@ -40,8 +40,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
-import { INDEX_SX } from '../master-list-row-kit';
-
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
@@ -58,6 +56,7 @@ import ScrollTabs from 'src/components/table/scroll-tabs';
 import SortableHeader from 'src/components/table/sortable-header';
 import FormProvider from 'src/components/hook-form/form-provider';
 
+import { INDEX_SX } from '../master-list-row-kit';
 import CampaignAgreementEdit from './campaign-agreement-edit';
 import SendBulkAgreementModal from './send-bulk-agreement-modal';
 import SendAdditionalAgreementModal from './send-additional-agreement-modal';
@@ -705,7 +704,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
     }
 
     return combinedData.filter(
-      (agreement) => approvedCreatorSet.has(agreement.userId) && !guestNeedsLinkBeforeSend(agreement)
+      (agreement) =>
+        approvedCreatorSet.has(agreement.userId) && !guestNeedsLinkBeforeSend(agreement)
     );
   }, [combinedData, campaign?.pitch, campaign?.shortlisted]);
 
@@ -1957,40 +1957,42 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                         })()}
                       </TableCell>
 
-                      <TableCell
-                        sx={{
-                          width: { xs: '20%', sm: 200 },
-                          minWidth: { xs: 85, sm: 95 },
-                        }}
-                      >
-                        {/* eslint-disable-next-line no-nested-ternary */}
-                        {item.isSeeding ? (
-                          product ? (
-                            <Stack>
-                              <Typography variant="subtitle2" sx={{ fontSize: 14 }}>
-                                {product?.name}
-                              </Typography>
-                              <Typography variant="subtitle2" sx={{ fontSize: 15 }}>
-                                {`${item.currency} ${parseFloat(product?.value).toFixed(2)}`}
-                              </Typography>
-                            </Stack>
+                      {filteredData?.some((a) => a.isSeeding) && (
+                        <TableCell
+                          sx={{
+                            width: { xs: '20%', sm: 200 },
+                            minWidth: { xs: 85, sm: 95 },
+                          }}
+                        >
+                          {/* eslint-disable-next-line no-nested-ternary */}
+                          {item.isSeeding ? (
+                            product ? (
+                              <Stack>
+                                <Typography variant="subtitle2" sx={{ fontSize: 14 }}>
+                                  {product?.name}
+                                </Typography>
+                                <Typography variant="subtitle2" sx={{ fontSize: 15 }}>
+                                  {`${item.currency} ${parseFloat(product?.value).toFixed(2)}`}
+                                </Typography>
+                              </Stack>
+                            ) : (
+                              <Typography>Not assigned</Typography>
+                            )
                           ) : (
-                            <Typography>Not assigned</Typography>
-                          )
-                        ) : (
-                          <Chip
-                            size="small"
-                            variant="outlined"
-                            color="info"
-                            sx={{
-                              bgcolor: (theme) => alpha(theme.palette.info.main, 0.1),
-                              borderRadius: 0.8,
-                              boxShadow: () => '0px 2px',
-                            }}
-                            label={<Typography variant="caption">Not seeded</Typography>}
-                          />
-                        )}
-                      </TableCell>
+                            <Chip
+                              size="small"
+                              variant="outlined"
+                              color="info"
+                              sx={{
+                                bgcolor: (theme) => alpha(theme.palette.info.main, 0.1),
+                                borderRadius: 0.8,
+                                boxShadow: () => '0px 2px',
+                              }}
+                              label={<Typography variant="caption">Not seeded</Typography>}
+                            />
+                          )}
+                        </TableCell>
+                      )}
 
                       <TableCell
                         sx={{
