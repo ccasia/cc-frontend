@@ -17,7 +17,7 @@ Font.register({
 const COMPANY_SIGNATORY = {
   name: 'Goh Chooi Leng',
   designation: 'Director',
-  signatureSrc: '/signatures/company-signatory.png',
+  signatureSrc: 'https://storage.googleapis.com/cult-prod/agreementTemplate/company-signatory.png',
 };
 
 const styles = StyleSheet.create({
