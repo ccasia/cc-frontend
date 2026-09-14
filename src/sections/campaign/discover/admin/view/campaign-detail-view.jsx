@@ -134,6 +134,7 @@ const CampaignDetailView = ({
     campaignLoading,
     mutate: campaignMutate,
   } = useGetCampaignByIdScoped(id, publicReadonly, isDemo);
+
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const loading = useBoolean();
   const [url, setUrl] = useState('');

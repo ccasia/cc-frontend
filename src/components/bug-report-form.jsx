@@ -1,5 +1,4 @@
 import * as yup from 'yup';
-import PropTypes from 'prop-types';
 import { UAParser } from 'ua-parser-js';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -18,6 +17,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import FieldLabel from 'src/components/field-label';
 import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import Iconify from './iconify';
@@ -42,28 +42,6 @@ const schema = yup.object().shape({
     .of(yup.mixed())
     .max(MAX_ATTACHMENTS, `Maximum ${MAX_ATTACHMENTS} attachments allowed`),
 });
-
-const FieldLabel = ({ children, hint }) => (
-  <Typography
-    component="label"
-    sx={{
-      fontFamily: '"Inter Tight", sans-serif',
-      fontSize: '12.5px',
-      fontWeight: 500,
-      color: '#3d3952',
-    }}
-  >
-    {children}{' '}
-    <Box component="span" sx={{ fontWeight: 400, color: '#8b8799' }}>
-      — {hint}
-    </Box>
-  </Typography>
-);
-
-FieldLabel.propTypes = {
-  children: PropTypes.node,
-  hint: PropTypes.string,
-};
 
 const inputSx = {
   '& .MuiInputBase-root': {

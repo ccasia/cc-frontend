@@ -106,7 +106,8 @@ export default function AgreementTemplate({
   ADMIN_NAME,
   SIGNATURE,
   isForSurfShark = false,
-  isSeedingCampaign = false,
+  isSeedingAgreement = false,
+  productValue,
 }) {
   return (
     <Document pageLayout="singlePage">
@@ -408,18 +409,18 @@ export default function AgreementTemplate({
         <View style={{ marginHorizontal: 30 }}>
           <Image src="/logo.png" style={styles.image} />
 
-          {isSeedingCampaign ? (
+          {isSeedingAgreement ? (
             <View style={styles.section}>
               <Text style={styles.titlee}>4. Remuneration</Text>
 
               <Text>
-                The Freelancer will receive a gifting amount of up to RM350. This gift may be used
-                exclusively for purchases from Cult Creative’s client&apos;s website or store, with
-                the purchased items belonging to the Freelancer. These items are not on loan and are
-                to be incorporated into the agreed-upon deliverables, including content creation and
-                showcasing the items as described above. This credit is provided in lieu of
-                additional financial compensation, and no other payments will be made beyond this
-                arrangement.
+                The Freelancer will receive a gifting amount of up to {productValue}. This gift may
+                be used exclusively for purchases from Cult Creative’s client&apos;s website or
+                store, with the purchased items belonging to the Freelancer. These items are not on
+                loan and are to be incorporated into the agreed-upon deliverables, including content
+                creation and showcasing the items as described above. This credit is provided in
+                lieu of additional financial compensation, and no other payments will be made beyond
+                this arrangement.
               </Text>
             </View>
           ) : (
