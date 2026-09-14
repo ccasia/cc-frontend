@@ -51,7 +51,12 @@ import usePitchSocket from './use-pitch-socket';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
 import useGuestExtraction from './guest-extraction/use-guest-extraction';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
-import { ACTIONS, ROW_STATUS, fieldProvenanceOf, isRowActive } from './guest-extraction/creator-row-machine';
+import {
+  ACTIONS,
+  ROW_STATUS,
+  fieldProvenanceOf,
+  isRowActive,
+} from './guest-extraction/creator-row-machine';
 import useGuestMetricsDecision from './guest-extraction/use-guest-metrics-decision';
 import AutomaticCreatorScrapeDialog from './guest-extraction/automatic-creator-scrape-dialog';
 import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
@@ -1741,10 +1746,7 @@ export function PlatformCreatorModal({
    * uses. It brings link debounce, the Apify fetch, polling, cancel, session
    * recovery and reset-on-open, so none of that is written twice.
    */
-  const skipDraftRow = useCallback(
-    (row) => hasMediaKitForPlatform(row.creator, row.platform),
-    []
-  );
+  const skipDraftRow = useCallback((row) => hasMediaKitForPlatform(row.creator, row.platform), []);
 
   const {
     state: rowState,
@@ -1914,10 +1916,7 @@ export function PlatformCreatorModal({
     if (!row.creator) return false;
     if (row.followerCount && Number(row.followerCount) > 0) return false;
     const scrapeInFlight =
-      scrapeEnabled &&
-      !row.hasMediaKit &&
-      isRowActive(row) &&
-      Boolean(row.extractionId);
+      scrapeEnabled && !row.hasMediaKit && isRowActive(row) && Boolean(row.extractionId);
     return !scrapeInFlight;
   });
 
@@ -1972,10 +1971,7 @@ export function PlatformCreatorModal({
     const missingFollowerRow = validRows.find((row) => {
       if (row.followerCount && Number(row.followerCount) > 0) return false;
       const scrapeInFlight =
-        scrapeEnabled &&
-        !row.hasMediaKit &&
-        isRowActive(row) &&
-        Boolean(row.extractionId);
+        scrapeEnabled && !row.hasMediaKit && isRowActive(row) && Boolean(row.extractionId);
       return !scrapeInFlight;
     });
     if (missingFollowerRow) {
@@ -2173,437 +2169,444 @@ export function PlatformCreatorModal({
                       loading={Boolean(scrapeEnabled && SCRAPE_FETCHING.includes(row.status))}
                     >
                       {(reveal) => (
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                      {/* Creator Autocomplete.
+                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                          {/* Creator Autocomplete.
                           Every other field in the row is hidden until a creator
                           is picked, so before that this is the only thing there
                           and it stretches. Once picked, it settles to the 210px
                           the handoff gives it and the rest of the row appears
                           beside it. */}
-                      <Box
-                        sx={{
-                          flexShrink: 0,
-                          flexGrow: row.creator ? 0 : 1,
-                          width: row.creator ? { xs: '100%', md: 210 } : '100%',
-                        }}
-                      >
-                        <FieldLabel text="Select Creators to add" />
-                        <Autocomplete
-                          ListboxComponent={ListboxComponent}
-                          disableListWrap
-                          value={row.creator}
-                          onChange={(e, val) => handleCreatorRowChange(row.id, val)}
-                          options={getFilteredOptions(row.id)}
-                          getOptionLabel={(option) => option?.name || ''}
-                          filterOptions={(options, state) => {
-                            if (!state.inputValue) return options;
-                            const query = state.inputValue.toLowerCase();
+                          <Box
+                            sx={{
+                              flexShrink: 0,
+                              flexGrow: row.creator ? 0 : 1,
+                              width: row.creator ? { xs: '100%', md: 210 } : '100%',
+                            }}
+                          >
+                            <FieldLabel text="Select Creators to add" />
+                            <Autocomplete
+                              ListboxComponent={ListboxComponent}
+                              disableListWrap
+                              value={row.creator}
+                              onChange={(e, val) => handleCreatorRowChange(row.id, val)}
+                              options={getFilteredOptions(row.id)}
+                              getOptionLabel={(option) => option?.name || ''}
+                              filterOptions={(options, state) => {
+                                if (!state.inputValue) return options;
+                                const query = state.inputValue.toLowerCase();
 
-                            return options
-                              .map((option) => {
-                                const name = (option?.name || '').toLowerCase();
-                                const email = (option?.email || '').toLowerCase();
+                                return options
+                                  .map((option) => {
+                                    const name = (option?.name || '').toLowerCase();
+                                    const email = (option?.email || '').toLowerCase();
 
-                                let score = -1;
-                                if (name.startsWith(query)) score = 3;
-                                else if (name.includes(query)) score = 2;
-                                else if (email.startsWith(query)) score = 1;
-                                else if (email.includes(query)) score = 0;
+                                    let score = -1;
+                                    if (name.startsWith(query)) score = 3;
+                                    else if (name.includes(query)) score = 2;
+                                    else if (email.startsWith(query)) score = 1;
+                                    else if (email.includes(query)) score = 0;
 
-                                return { option, score, name };
-                              })
-                              .filter((item) => item.score >= 0)
-                              .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
-                              .map((item) => item.option);
-                          }}
-                          isOptionEqualToValue={(option, value) => option?.id === value?.id}
-                          disableClearable={!!row.creator}
-                          popupIcon={
-                            <Iconify
-                              icon="eva:chevron-down-fill"
-                              width={20}
-                              sx={{ color: '#231F20' }}
-                            />
-                          }
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              placeholder={row.creator ? '' : 'Search creator...'}
-                              sx={{
-                                /**
-                                 * Match the 46px of every other field in the row.
-                                 *
-                                 * Autocomplete adds its own padding through
-                                 * `.MuiAutocomplete-inputRoot`, which out-weighs
-                                 * a plain `.MuiOutlinedInput-root` rule, so the
-                                 * selected-creator chip pushed this to 54 and
-                                 * left the field standing taller than the rest.
-                                 * Both selectors are set, and the padding is
-                                 * zeroed rather than only the height capped.
-                                 */
-                                // `&&&` on purpose. Autocomplete sets its own
-                                // vertical padding at
-                                // `.MuiAutocomplete-root .MuiOutlinedInput-root.MuiInputBase-sizeSmall`,
-                                // which is three classes. A normal `& .MuiOutlinedInput-root`
-                                // rule is two and silently loses, which is why
-                                // the height was set but never took.
-                                '&&& .MuiOutlinedInput-root': {
-                                  bgcolor: '#fff',
-                                  height: FIELD_HEIGHT,
-                                  minHeight: FIELD_HEIGHT,
-                                  paddingTop: 0,
-                                  paddingBottom: 0,
-                                  flexWrap: 'nowrap',
-                                  borderRadius: 1,
-                                },
-                                '&&& .MuiOutlinedInput-input': {
-                                  display: row.creator ? 'none' : 'block',
-                                  paddingTop: 0,
-                                  paddingBottom: 0,
-                                },
+                                    return { option, score, name };
+                                  })
+                                  .filter((item) => item.score >= 0)
+                                  .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+                                  .map((item) => item.option);
                               }}
-                              InputProps={{
-                                ...params.InputProps,
-                                startAdornment: row.creator ? (
-                                  <Box
-                                    sx={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      height: CHIP_HEIGHT,
-                                      flexShrink: 0,
+                              isOptionEqualToValue={(option, value) => option?.id === value?.id}
+                              disableClearable={!!row.creator}
+                              popupIcon={
+                                <Iconify
+                                  icon="eva:chevron-down-fill"
+                                  width={20}
+                                  sx={{ color: '#231F20' }}
+                                />
+                              }
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  placeholder={row.creator ? '' : 'Search creator...'}
+                                  sx={{
+                                    /**
+                                     * Match the 46px of every other field in the row.
+                                     *
+                                     * Autocomplete adds its own padding through
+                                     * `.MuiAutocomplete-inputRoot`, which out-weighs
+                                     * a plain `.MuiOutlinedInput-root` rule, so the
+                                     * selected-creator chip pushed this to 54 and
+                                     * left the field standing taller than the rest.
+                                     * Both selectors are set, and the padding is
+                                     * zeroed rather than only the height capped.
+                                     */
+                                    // `&&&` on purpose. Autocomplete sets its own
+                                    // vertical padding at
+                                    // `.MuiAutocomplete-root .MuiOutlinedInput-root.MuiInputBase-sizeSmall`,
+                                    // which is three classes. A normal `& .MuiOutlinedInput-root`
+                                    // rule is two and silently loses, which is why
+                                    // the height was set but never took.
+                                    '&&& .MuiOutlinedInput-root': {
                                       bgcolor: '#fff',
-                                      color: '#231F20',
-                                      border: '1px solid #EBEBEB',
-                                      // The handoff draws the bottom edge as an
-                                      // inset shadow, so it adds no height.
-                                      boxShadow: 'inset 0px -3px 0px #E7E7E7',
-                                      borderRadius: '6px',
-                                      pl: '8px',
-                                      pr: '6px',
-                                      fontWeight: 500,
-                                      fontSize: '13px',
-                                      lineHeight: '18px',
-                                      gap: '6px',
-                                      maxWidth: 170,
-                                    }}
+                                      height: FIELD_HEIGHT,
+                                      minHeight: FIELD_HEIGHT,
+                                      paddingTop: 0,
+                                      paddingBottom: 0,
+                                      flexWrap: 'nowrap',
+                                      borderRadius: 1,
+                                    },
+                                    '&&& .MuiOutlinedInput-input': {
+                                      display: row.creator ? 'none' : 'block',
+                                      paddingTop: 0,
+                                      paddingBottom: 0,
+                                    },
+                                  }}
+                                  InputProps={{
+                                    ...params.InputProps,
+                                    startAdornment: row.creator ? (
+                                      <Box
+                                        sx={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          height: CHIP_HEIGHT,
+                                          flexShrink: 0,
+                                          bgcolor: '#fff',
+                                          color: '#231F20',
+                                          border: '1px solid #EBEBEB',
+                                          // The handoff draws the bottom edge as an
+                                          // inset shadow, so it adds no height.
+                                          boxShadow: 'inset 0px -3px 0px #E7E7E7',
+                                          borderRadius: '6px',
+                                          pl: '8px',
+                                          pr: '6px',
+                                          fontWeight: 500,
+                                          fontSize: '13px',
+                                          lineHeight: '18px',
+                                          gap: '6px',
+                                          maxWidth: 170,
+                                        }}
+                                      >
+                                        <Avatar
+                                          src={row.creator?.photoURL}
+                                          sx={{
+                                            width: CHIP_HEIGHT - 12,
+                                            height: CHIP_HEIGHT - 12,
+                                            fontSize: '0.6875rem',
+                                            bgcolor: '#e0e0e0',
+                                            flexShrink: 0,
+                                          }}
+                                        >
+                                          {row.creator?.name?.charAt(0)}
+                                        </Avatar>
+                                        <Box
+                                          component="span"
+                                          sx={{
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                          }}
+                                        >
+                                          {row.creator.name}
+                                        </Box>
+                                        <IconButton
+                                          size="small"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCreatorRowChange(row.id, null);
+                                          }}
+                                          sx={{ p: 0, flexShrink: 0 }}
+                                        >
+                                          <Iconify
+                                            icon="mdi:close"
+                                            width={16}
+                                            sx={{ color: '#636366' }}
+                                          />
+                                        </IconButton>
+                                      </Box>
+                                    ) : null,
+                                  }}
+                                />
+                              )}
+                              renderOption={({ key, ...optionProps }, option) => (
+                                <Box
+                                  key={key}
+                                  component="li"
+                                  {...optionProps}
+                                  sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}
+                                >
+                                  <Avatar
+                                    src={option?.photoURL}
+                                    sx={{ width: 32, height: 32, bgcolor: '#e0e0e0' }}
                                   >
-                                    <Avatar
-                                      src={row.creator?.photoURL}
-                                      sx={{
-                                        width: CHIP_HEIGHT - 12,
-                                        height: CHIP_HEIGHT - 12,
-                                        fontSize: '0.6875rem',
-                                        bgcolor: '#e0e0e0',
-                                        flexShrink: 0,
-                                      }}
-                                    >
-                                      {row.creator?.name?.charAt(0)}
-                                    </Avatar>
-                                    <Box
-                                      component="span"
-                                      sx={{
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                      }}
-                                    >
-                                      {row.creator.name}
-                                    </Box>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleCreatorRowChange(row.id, null);
-                                      }}
-                                      sx={{ p: 0, flexShrink: 0 }}
-                                    >
-                                      <Iconify
-                                        icon="mdi:close"
-                                        width={16}
-                                        sx={{ color: '#636366' }}
-                                      />
-                                    </IconButton>
+                                    {option?.name?.charAt(0)}
+                                  </Avatar>
+                                  <Box>
+                                    <Typography variant="body2" fontWeight={500}>
+                                      {option?.name}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: '#636366' }}>
+                                      {option?.email}
+                                    </Typography>
                                   </Box>
-                                ) : null,
-                              }}
+                                </Box>
+                              )}
                             />
-                          )}
-                          renderOption={({ key, ...optionProps }, option) => (
-                            <Box
-                              key={key}
-                              component="li"
-                              {...optionProps}
-                              sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}
-                            >
-                              <Avatar
-                                src={option?.photoURL}
-                                sx={{ width: 32, height: 32, bgcolor: '#e0e0e0' }}
-                              >
-                                {option?.name?.charAt(0)}
-                              </Avatar>
-                              <Box>
-                                <Typography variant="body2" fontWeight={500}>
-                                  {option?.name}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: '#636366' }}>
-                                  {option?.email}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          )}
-                        />
-                      </Box>
+                          </Box>
 
-                      {/* Profile Link. Present only when scraping is on, and
+                          {/* Profile Link. Present only when scraping is on, and
                           inert for a creator who already has a connected
                           account: their numbers come from the media kit. */}
-                      {scrapeEnabled && row.creator && !row.hasMediaKit && (
-                        <Box sx={{ flexShrink: 0, width: { xs: '100%', md: 210 } }}>
-                          <FieldLabel text="Profile Link" />
-                          <TextField
-                            value={row.profileLink}
-                            onChange={(e) => setLink(row.id, e.target.value)}
-                            placeholder="Profile Link"
-                            error={Boolean(row.linkError)}
-                            helperText={
-                              row.linkError?.message || SCRAPE_HINTS[row.status] || undefined
-                            }
-                            fullWidth
-                            size="small"
-                            InputProps={{
-                              startAdornment: row.platform ? (
-                                <InputAdornment position="start">
-                                  <Iconify
-                                    icon={
-                                      row.platform === 'tiktok'
-                                        ? 'ic:baseline-tiktok'
-                                        : 'ri:instagram-line'
-                                    }
-                                    width={16}
-                                    sx={{
-                                      color: row.platform === 'tiktok' ? '#000000' : '#C13584',
-                                    }}
-                                  />
-                                </InputAdornment>
-                              ) : null,
-                            }}
-                            sx={{
-                              ...FIELD_SX,
-                              // Blue reads as a link, matching the non-platform
-                              // modal. A rejected link drops back to body
-                              // colour, so it does not look like something that
-                              // worked.
-                              '& .MuiOutlinedInput-input': {
-                                ...FIELD_SX['& .MuiOutlinedInput-input'],
-                                color: row.linkError ? '#231F20' : '#1340FF',
-                              },
-                              '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
-                            }}
-                          />
-                        </Box>
-                      )}
+                          {scrapeEnabled && row.creator && !row.hasMediaKit && (
+                            <Box sx={{ flexShrink: 0, width: { xs: '100%', md: 210 } }}>
+                              <FieldLabel text="Profile Link" />
+                              <TextField
+                                value={row.profileLink}
+                                onChange={(e) => setLink(row.id, e.target.value)}
+                                placeholder="Profile Link"
+                                error={Boolean(row.linkError)}
+                                helperText={
+                                  row.linkError?.message || SCRAPE_HINTS[row.status] || undefined
+                                }
+                                fullWidth
+                                size="small"
+                                InputProps={{
+                                  startAdornment: row.platform ? (
+                                    <InputAdornment position="start">
+                                      <Iconify
+                                        icon={
+                                          row.platform === 'tiktok'
+                                            ? 'ic:baseline-tiktok'
+                                            : 'ri:instagram-line'
+                                        }
+                                        width={16}
+                                        sx={{
+                                          color: row.platform === 'tiktok' ? '#000000' : '#C13584',
+                                        }}
+                                      />
+                                    </InputAdornment>
+                                  ) : null,
+                                }}
+                                sx={{
+                                  ...FIELD_SX,
+                                  // Blue reads as a link, matching the non-platform
+                                  // modal. A rejected link drops back to body
+                                  // colour, so it does not look like something that
+                                  // worked.
+                                  '& .MuiOutlinedInput-input': {
+                                    ...FIELD_SX['& .MuiOutlinedInput-input'],
+                                    color: row.linkError ? '#231F20' : '#1340FF',
+                                  },
+                                  '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
+                                }}
+                              />
+                            </Box>
+                          )}
 
-                      {/* The handoff's vertical rule. Identity sits to its
+                          {/* The handoff's vertical rule. Identity sits to its
                           left — the creator, and the profile link when there is
                           one — and everything measured about them to its right,
                           starting with Platform. */}
-                      {row.creator && (
-                        <Box
-                          sx={{
-                            display: { xs: 'none', md: 'block' },
-                            alignSelf: 'stretch',
-                            borderRight: '1px solid #D3D3D3',
-                          }}
-                        />
-                      )}
+                          {row.creator && (
+                            <Box
+                              sx={{
+                                display: { xs: 'none', md: 'block' },
+                                alignSelf: 'stretch',
+                                borderRight: '1px solid #D3D3D3',
+                              }}
+                            />
+                          )}
 
-                      {row.creator && row.needsPlatformChoice && (
-                        <Box
-                          sx={{
-                            flex: { xs: '1 1 100%', md: '1 1 192px' },
-                            minWidth: { xs: '100%', md: 138 },
-                          }}
-                        >
-                          <FieldLabel text="Platform" />
-                          <TextField
-                            select
-                            fullWidth
-                            value={row.selectedPlatform}
-                            onChange={(e) => handlePlatformChange(row.id, e.target.value)}
-                            disabled={!row.creator}
-                            placeholder="Select"
-                            // `FieldLabel` above is decorative, so the control
-                            // itself carries no name. Without this the creator
-                            // Autocomplete and this select are both an unnamed
-                            // `combobox`, to a screen reader and to a test.
-                            SelectProps={{ inputProps: { 'aria-label': 'Platform' } }}
-                            sx={FIELD_SX}
-                          >
-                            <MenuItem value="" disabled>
-                              Select
-                            </MenuItem>
-                            {getPlatformSelectOptions().map((platform) => (
-                              <MenuItem key={platform.value} value={platform.value}>
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                  <Iconify
-                                    icon={platform.icon}
-                                    width={16}
-                                    sx={{ color: platform.color }}
-                                  />
-                                  <span>{platform.label}</span>
-                                </Stack>
-                              </MenuItem>
-                            ))}
-                          </TextField>
-                        </Box>
-                      )}
+                          {row.creator && row.needsPlatformChoice && (
+                            <Box
+                              sx={{
+                                flex: { xs: '1 1 100%', md: '1 1 192px' },
+                                minWidth: { xs: '100%', md: 138 },
+                              }}
+                            >
+                              <FieldLabel text="Platform" />
+                              <TextField
+                                select
+                                fullWidth
+                                value={row.selectedPlatform}
+                                onChange={(e) => handlePlatformChange(row.id, e.target.value)}
+                                disabled={!row.creator}
+                                placeholder="Select"
+                                // `FieldLabel` above is decorative, so the control
+                                // itself carries no name. Without this the creator
+                                // Autocomplete and this select are both an unnamed
+                                // `combobox`, to a screen reader and to a test.
+                                SelectProps={{ inputProps: { 'aria-label': 'Platform' } }}
+                                sx={FIELD_SX}
+                              >
+                                <MenuItem value="" disabled>
+                                  Select
+                                </MenuItem>
+                                {getPlatformSelectOptions().map((platform) => (
+                                  <MenuItem key={platform.value} value={platform.value}>
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                      <Iconify
+                                        icon={platform.icon}
+                                        width={16}
+                                        sx={{ color: platform.color }}
+                                      />
+                                      <span>{platform.label}</span>
+                                    </Stack>
+                                  </MenuItem>
+                                ))}
+                              </TextField>
+                            </Box>
+                          )}
 
-                      {/* Engagement Rate. Filled by the scrape, editable after,
+                          {/* Engagement Rate. Filled by the scrape, editable after,
                           and hidden for a connected creator whose rate already
                           comes from their media kit. */}
-                      {scrapeEnabled && row.creator && (
-                        <Box
-                          sx={{
-                            flex: { xs: '1 1 100%', md: '1 1 192px' },
-                            minWidth: { xs: '100%', md: 140 },
-                          }}
-                        >
-                          <FieldLabel
-                            text="Engagement Rate"
-                            provenance={
-                              row.hasMediaKit
-                                ? 'media kit'
-                                : fieldProvenanceOf(row, 'engagementRate')
-                            }
-                            hint={
-                              !row.hasMediaKit && row.status === ROW_STATUS.READY ? (
-                                <Tooltip title="How this rate was worked out" arrow describeChild>
-                                  <IconButton
-                                    aria-label="How this engagement rate was worked out"
-                                    onClick={() => setBreakdownRowId(row.id)}
-                                    size="small"
-                                    sx={{
-                                      p: 0,
-                                      color: '#8E8E93',
-                                      '&:hover': { color: '#1340FF', bgcolor: 'transparent' },
+                          {scrapeEnabled && row.creator && (
+                            <Box
+                              sx={{
+                                flex: { xs: '1 1 100%', md: '1 1 192px' },
+                                minWidth: { xs: '100%', md: 140 },
+                              }}
+                            >
+                              <FieldLabel
+                                text="Engagement Rate"
+                                provenance={
+                                  row.hasMediaKit
+                                    ? 'media kit'
+                                    : fieldProvenanceOf(row, 'engagementRate')
+                                }
+                                hint={
+                                  !row.hasMediaKit && row.status === ROW_STATUS.READY ? (
+                                    <Tooltip
+                                      title="How this rate was worked out"
+                                      arrow
+                                      describeChild
+                                    >
+                                      <IconButton
+                                        aria-label="How this engagement rate was worked out"
+                                        onClick={() => setBreakdownRowId(row.id)}
+                                        size="small"
+                                        sx={{
+                                          p: 0,
+                                          color: '#8E8E93',
+                                          '&:hover': { color: '#1340FF', bgcolor: 'transparent' },
+                                        }}
+                                      >
+                                        <Iconify icon="eva:info-outline" width={14} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  ) : null
+                                }
+                              />
+                              {SCRAPE_FETCHING.includes(row.status) ? (
+                                <CreatorFieldLoading
+                                  label="Fetching engagement rate"
+                                  showSpinner
+                                  height={FIELD_HEIGHT}
+                                />
+                              ) : (
+                                <ScrapeTextFieldReveal
+                                  reveal={reveal}
+                                  text={
+                                    row.hasMediaKit
+                                      ? (getPlatformEngagementRate(row.creator, row.platform) ?? '')
+                                      : (row.engagementRate ?? '')
+                                  }
+                                  height={FIELD_HEIGHT}
+                                  overlayPaddingRight={36}
+                                >
+                                  <TextField
+                                    value={
+                                      row.hasMediaKit
+                                        ? (getPlatformEngagementRate(row.creator, row.platform) ??
+                                          '')
+                                        : (row.engagementRate ?? '')
+                                    }
+                                    onChange={(e) => {
+                                      // A connected account owns its own rate.
+                                      if (row.hasMediaKit) return;
+                                      dispatch({
+                                        type: ACTIONS.EDIT_FIELD,
+                                        rowId: row.id,
+                                        field: 'engagementRate',
+                                        // A percentage, so digits and one dot only.
+                                        value: e.target.value.replace(/[^0-9.]/g, ''),
+                                      });
                                     }}
-                                  >
-                                    <Iconify icon="eva:info-outline" width={14} />
-                                  </IconButton>
-                                </Tooltip>
-                              ) : null
-                            }
-                          />
-                          {SCRAPE_FETCHING.includes(row.status) ? (
-                            <CreatorFieldLoading
-                              label="Fetching engagement rate"
-                              showSpinner
-                              height={FIELD_HEIGHT}
-                            />
-                          ) : (
-                            <ScrapeTextFieldReveal
-                              reveal={reveal}
-                              text={
-                                row.hasMediaKit
-                                  ? (getPlatformEngagementRate(row.creator, row.platform) ?? '')
-                                  : (row.engagementRate ?? '')
-                              }
-                              height={FIELD_HEIGHT}
-                              overlayPaddingRight={36}
-                            >
-                            <TextField
-                              value={
-                                row.hasMediaKit
-                                  ? (getPlatformEngagementRate(row.creator, row.platform) ?? '')
-                                  : (row.engagementRate ?? '')
-                              }
-                              onChange={(e) => {
-                                // A connected account owns its own rate.
-                                if (row.hasMediaKit) return;
-                                dispatch({
-                                  type: ACTIONS.EDIT_FIELD,
-                                  rowId: row.id,
-                                  field: 'engagementRate',
-                                  // A percentage, so digits and one dot only.
-                                  value: e.target.value.replace(/[^0-9.]/g, ''),
-                                });
-                              }}
-                              placeholder={row.hasMediaKit ? '—' : 'Engagement Rate'}
-                              disabled={row.hasMediaKit}
-                              fullWidth
-                              size="small"
-                              InputProps={{
-                                readOnly: row.hasMediaKit,
-                                endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                              }}
-                              inputProps={{ inputMode: 'decimal' }}
-                              sx={FIELD_SX}
-                            />
-                            </ScrapeTextFieldReveal>
+                                    placeholder={row.hasMediaKit ? '—' : 'Engagement Rate'}
+                                    disabled={row.hasMediaKit}
+                                    fullWidth
+                                    size="small"
+                                    InputProps={{
+                                      readOnly: row.hasMediaKit,
+                                      endAdornment: (
+                                        <InputAdornment position="end">%</InputAdornment>
+                                      ),
+                                    }}
+                                    inputProps={{ inputMode: 'decimal' }}
+                                    sx={FIELD_SX}
+                                  />
+                                </ScrapeTextFieldReveal>
+                              )}
+                            </Box>
                           )}
-                        </Box>
-                      )}
 
-                      {/* Follower count: manual entry without media kit; read-only from media kit when connected */}
-                      {row.creator && (
-                        <Box
-                          sx={{
-                            flex: { xs: '1 1 100%', md: '1 1 192px' },
-                            minWidth: { xs: '100%', md: 140 },
-                          }}
-                        >
-                          <FieldLabel
-                            text="Follower Count"
-                            provenance={
-                              row.hasMediaKit
-                                ? 'media kit'
-                                : fieldProvenanceOf(row, 'followerCount')
-                            }
-                          />
-                          {SCRAPE_FETCHING.includes(row.status) ? (
-                            <CreatorFieldLoading
-                              label="Fetching follower count"
-                              showSpinner
-                              height={FIELD_HEIGHT}
-                            />
-                          ) : (
-                            <ScrapeTextFieldReveal
-                              reveal={reveal}
-                              text={formatFollowerCountDisplay(row.followerCount)}
-                              height={FIELD_HEIGHT}
+                          {/* Follower count: manual entry without media kit; read-only from media kit when connected */}
+                          {row.creator && (
+                            <Box
+                              sx={{
+                                flex: { xs: '1 1 100%', md: '1 1 192px' },
+                                minWidth: { xs: '100%', md: 140 },
+                              }}
                             >
-                            <TextField
-                              /* Grouped on both paths. 80,141,485 is readable at
+                              <FieldLabel
+                                text="Follower Count"
+                                provenance={
+                                  row.hasMediaKit
+                                    ? 'media kit'
+                                    : fieldProvenanceOf(row, 'followerCount')
+                                }
+                              />
+                              {SCRAPE_FETCHING.includes(row.status) ? (
+                                <CreatorFieldLoading
+                                  label="Fetching follower count"
+                                  showSpinner
+                                  height={FIELD_HEIGHT}
+                                />
+                              ) : (
+                                <ScrapeTextFieldReveal
+                                  reveal={reveal}
+                                  text={formatFollowerCountDisplay(row.followerCount)}
+                                  height={FIELD_HEIGHT}
+                                >
+                                  <TextField
+                                    /* Grouped on both paths. 80,141,485 is readable at
                                  a glance; 80141485 has to be counted. The state
                                  keeps plain digits — onChange strips the
                                  separators straight back out — so nothing
                                  downstream ever sees a comma. */
-                              value={formatFollowerCountDisplay(row.followerCount)}
-                              onChange={(e) => {
-                                if (row.hasMediaKit) return;
-                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                handleFollowerCountChange(row.id, val);
-                              }}
-                              placeholder={row.hasMediaKit ? '—' : 'Enter follower count'}
-                              fullWidth
-                              disabled={row.hasMediaKit}
-                              InputProps={{ readOnly: row.hasMediaKit }}
-                              FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
-                              inputProps={
-                                row.hasMediaKit
-                                  ? undefined
-                                  : {
-                                      inputMode: 'numeric',
-                                      pattern: '[0-9]*',
+                                    value={formatFollowerCountDisplay(row.followerCount)}
+                                    onChange={(e) => {
+                                      if (row.hasMediaKit) return;
+                                      const val = e.target.value.replace(/[^0-9]/g, '');
+                                      handleFollowerCountChange(row.id, val);
+                                    }}
+                                    placeholder={row.hasMediaKit ? '—' : 'Enter follower count'}
+                                    fullWidth
+                                    disabled={row.hasMediaKit}
+                                    InputProps={{ readOnly: row.hasMediaKit }}
+                                    FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
+                                    inputProps={
+                                      row.hasMediaKit
+                                        ? undefined
+                                        : {
+                                            inputMode: 'numeric',
+                                            pattern: '[0-9]*',
+                                          }
                                     }
-                              }
-                              sx={FIELD_SX}
-                            />
-                            </ScrapeTextFieldReveal>
+                                    sx={FIELD_SX}
+                                  />
+                                </ScrapeTextFieldReveal>
+                              )}
+                            </Box>
                           )}
-                        </Box>
-                      )}
-                    </Stack>
+                        </Stack>
                       )}
                     </ScrapeRevealGate>
 

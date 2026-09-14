@@ -60,6 +60,7 @@ export function RHFSelect({
               },
               sx: { textTransform: 'capitalize' },
             }}
+
             error={!!error}
             helperText={typeof error?.message === 'string' ? error.message : helperText}
             {...other}
@@ -252,7 +253,11 @@ export function RHFSelectV2({
             label={label}
             multiple={multiple}
             renderValue={(selected) => {
-              if (!selected || (Array.isArray(selected) && selected.length === 0) || selected === '') {
+              if (
+                !selected ||
+                (Array.isArray(selected) && selected.length === 0) ||
+                selected === ''
+              ) {
                 return <Box sx={{ color: 'text.disabled' }}>{placeholder}</Box>;
               }
               if (multiple && Array.isArray(selected)) {

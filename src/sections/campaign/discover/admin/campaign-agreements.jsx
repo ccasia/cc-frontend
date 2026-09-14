@@ -7,9 +7,11 @@ import { enqueueSnackbar } from 'notistack';
 import { useNavigate, useLocation } from 'react-router';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
+import { alpha } from '@mui/system';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
+  Chip,
   Table,
   Stack,
   Button,
@@ -498,8 +500,9 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       params.delete('creator');
       navigate({ search: params.toString() }, { replace: true });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
   const [sortColumn, setSortColumn] = useState('name'); // 'name', 'date', 'status'
@@ -1024,12 +1027,18 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
   }, [table.selected, eligibleForAdditionalIds]);
 
   const selectedCreatorRows = useMemo(
-    () => filteredData.filter((item) => table.selected.includes(item.userId) && eligibleForAdditionalIds.has(item.userId)),
+    () =>
+      filteredData.filter(
+        (item) => table.selected.includes(item.userId) && eligibleForAdditionalIds.has(item.userId)
+      ),
     [filteredData, table.selected, eligibleForAdditionalIds]
   );
 
   const selectedBulkCreatorRows = useMemo(
-    () => filteredData.filter((item) => table.selected.includes(item.userId) && eligibleForBulkIds.has(item.userId)),
+    () =>
+      filteredData.filter(
+        (item) => table.selected.includes(item.userId) && eligibleForBulkIds.has(item.userId)
+      ),
     [filteredData, table.selected, eligibleForBulkIds]
   );
 
@@ -1074,121 +1083,130 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
             spacing={2}
             mb={0.5}
           >
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
-            <TextField
-              placeholder="Search creators..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{
-                width: { xs: '100%', sm: 300 },
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: '#FFFFFF',
-                  border: '1.5px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1.15,
-                  height: 44,
-                  fontSize: '0.85rem',
-                  '& fieldset': {
-                    border: 'none',
-                  },
-                  '&.Mui-focused': {
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              alignItems={{ sm: 'center' }}
+            >
+              <TextField
+                placeholder="Search creators..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{
+                  width: { xs: '100%', sm: 300 },
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#FFFFFF',
                     border: '1.5px solid #e7e7e7',
                     borderBottom: '3px solid #e7e7e7',
+                    borderRadius: 1.15,
+                    height: 44,
+                    fontSize: '0.85rem',
+                    '& fieldset': {
+                      border: 'none',
+                    },
+                    '&.Mui-focused': {
+                      border: '1.5px solid #e7e7e7',
+                      borderBottom: '3px solid #e7e7e7',
+                    },
                   },
-                },
-                '& .MuiOutlinedInput-input': {
-                  py: 1.25,
-                  px: 0,
+                  '& .MuiOutlinedInput-input': {
+                    py: 1.25,
+                    px: 0,
+                    color: '#637381',
+                    fontWeight: 600,
+                    '&::placeholder': {
+                      color: '#637381',
+                      opacity: 1,
+                      fontWeight: 400,
+                    },
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              {/* Alphabetical Sort Button */}
+              <Button
+                onClick={handleToggleSort}
+                endIcon={
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    {sortDirection === 'asc' ? (
+                      <Stack direction="column" alignItems="center" spacing={0}>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                        >
+                          A
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                        >
+                          Z
+                        </Typography>
+                      </Stack>
+                    ) : (
+                      <Stack direction="column" alignItems="center" spacing={0}>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                        >
+                          Z
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                        >
+                          A
+                        </Typography>
+                      </Stack>
+                    )}
+                    <Iconify
+                      icon={
+                        sortDirection === 'asc'
+                          ? 'eva:arrow-downward-fill'
+                          : 'eva:arrow-upward-fill'
+                      }
+                      width={12}
+                    />
+                  </Stack>
+                }
+                sx={{
+                  px: 1.5,
+                  py: 0.75,
+                  height: '42px',
                   color: '#637381',
                   fontWeight: 600,
-                  '&::placeholder': {
-                    color: '#637381',
-                    opacity: 1,
-                    fontWeight: 400,
-                  },
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Alphabetical Sort Button */}
-            <Button
-              onClick={handleToggleSort}
-              endIcon={
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  {sortDirection === 'asc' ? (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography
-                        variant="caption"
-                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                      >
-                        A
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                      >
-                        Z
-                      </Typography>
-                    </Stack>
-                  ) : (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography
-                        variant="caption"
-                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                      >
-                        Z
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                      >
-                        A
-                      </Typography>
-                    </Stack>
-                  )}
-                  <Iconify
-                    icon={
-                      sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
-                    }
-                    width={12}
-                  />
-                </Stack>
-              }
-              sx={{
-                px: 1.5,
-                py: 0.75,
-                height: '42px',
-                color: '#637381',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderRadius: 1,
-                textTransform: 'none',
-                whiteSpace: 'nowrap',
-                boxShadow: 'none',
-                alignSelf: { xs: 'flex-start', sm: 'center' },
-                '&:hover': {
+                  fontSize: '0.875rem',
                   backgroundColor: 'transparent',
-                  color: '#221f20',
-                },
-              }}
-            >
-              Alphabetical
-            </Button>
+                  border: 'none',
+                  borderRadius: 1,
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  boxShadow: 'none',
+                  alignSelf: { xs: 'flex-start', sm: 'center' },
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    color: '#221f20',
+                  },
+                }}
+              >
+                Alphabetical
+              </Button>
             </Stack>
 
             <Stack direction="row" alignItems="center" spacing={2} sx={{ flexShrink: 0 }}>
               {table.selected.length > 0 && (
                 <Stack direction="row" alignItems="center" spacing={1.5}>
-                  <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#221f20', fontWeight: 600, whiteSpace: 'nowrap' }}
+                  >
                     {table.selected.length} Creator{table.selected.length !== 1 ? 's' : ''} Selected
                   </Typography>
                   <Typography
@@ -1242,7 +1260,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       justifyContent: 'flex-start',
-                      transition: 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
+                      transition:
+                        'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
                       '&:hover:not(.Mui-disabled)': {
                         bgcolor: '#F5F7FF',
                         boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
@@ -1271,7 +1290,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                         opacity: 0,
                         maxWidth: 0,
                         overflow: 'hidden',
-                        transition: 'opacity 0.25s ease 0.05s, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transition:
+                          'opacity 0.25s ease 0.05s, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
                       }}
                     >
                       Send Bulk Agreement
@@ -1308,7 +1328,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       justifyContent: 'flex-start',
-                      transition: 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
+                      transition:
+                        'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
                       '&:hover:not(.Mui-disabled)': {
                         bgcolor: '#000',
                         width: '210px',
@@ -1338,7 +1359,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                         opacity: 0,
                         maxWidth: 0,
                         overflow: 'hidden',
-                        transition: 'opacity 0.25s ease 0.05s, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transition:
+                          'opacity 0.25s ease 0.05s, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
                       }}
                     >
                       Send Additional Agreement
@@ -1600,7 +1622,11 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                       }
                       // "Select all" only ever bulk-checks additional-agreement-eligible
                       // creators — a bulk (first) agreement send must be ticked one by one.
-                      disabled={isDisabled || selectionCategory === 'bulk' || eligibleForAdditionalIds.size === 0}
+                      disabled={
+                        isDisabled ||
+                        selectionCategory === 'bulk' ||
+                        eligibleForAdditionalIds.size === 0
+                      }
                       onChange={(e) =>
                         table.onSelectAllRows(e.target.checked, [...eligibleForAdditionalIds])
                       }
@@ -1671,6 +1697,23 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                     sortDirection={sortDirection}
                     onSort={handleColumnSort}
                   />
+
+                  {filteredData?.some((item) => item.isSeeding) && (
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
+                        fontWeight: 600,
+                        width: { xs: '20%', sm: 95 },
+                        minWidth: { xs: 85, sm: 95 },
+                        bgcolor: '#f5f5f5',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Product
+                    </TableCell>
+                  )}
+
                   <TableCell
                     sx={{
                       py: 1,
@@ -1716,6 +1759,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                         selectionCategory === 'bulk' ? 'a bulk' : 'an additional'
                       } agreement`
                     : '';
+
+                  const product = item?.productSeeding?.length ? item.productSeeding[0] : null;
 
                   return (
                     <TableRow key={item.id}>
@@ -1844,6 +1889,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                           </Typography>
                         </Stack>
                       </TableCell>
+
                       <TableCell>
                         {(() => {
                           let statusText = 'Pending';
@@ -1895,6 +1941,42 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                           );
                         })()}
                       </TableCell>
+
+                      <TableCell
+                        sx={{
+                          width: { xs: '20%', sm: 200 },
+                          minWidth: { xs: 85, sm: 95 },
+                        }}
+                      >
+                        {/* eslint-disable-next-line no-nested-ternary */}
+                        {item.isSeeding ? (
+                          product ? (
+                            <Stack>
+                              <Typography variant="subtitle2" sx={{ fontSize: 14 }}>
+                                {product?.name}
+                              </Typography>
+                              <Typography variant="subtitle2" sx={{ fontSize: 15 }}>
+                                {`${item.currency} ${parseFloat(product?.value).toFixed(2)}`}
+                              </Typography>
+                            </Stack>
+                          ) : (
+                            <Typography>Not assigned</Typography>
+                          )
+                        ) : (
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            color="info"
+                            sx={{
+                              bgcolor: (theme) => alpha(theme.palette.info.main, 0.1),
+                              borderRadius: 0.8,
+                              boxShadow: () => '0px 2px',
+                            }}
+                            label={<Typography variant="caption">Not seeded</Typography>}
+                          />
+                        )}
+                      </TableCell>
+
                       <TableCell
                         sx={{
                           width: { xs: '20%', sm: 95 },
@@ -1923,6 +2005,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                           )}
                         </Typography>
                       </TableCell>
+
                       <TableCell>
                         {smUp ? (
                           <Stack direction="row" gap={1}>
