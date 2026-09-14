@@ -1,9 +1,10 @@
-import PropTypes from 'prop-types';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
@@ -15,17 +16,21 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Iconify from 'src/components/iconify';
 
 import useJustFinished from '../use-just-finished';
-import ScrapeTextFieldReveal from '../scrape-text-field-reveal';
-import EngagementBreakdownDialog from './engagement-breakdown-dialog';
 import CreatorFieldLoading from './creator-field-loading';
 import { platformLabel } from './profile-link-validation';
+import ScrapeTextFieldReveal from '../scrape-text-field-reveal';
+import EngagementBreakdownDialog from './engagement-breakdown-dialog';
 import { CC, labelSx, inputSx, FIELD_HEIGHT } from './creator-field-tokens';
 import {
   ACTIONS,
+  ENTRY_MODE,
   ROW_STATUS,
   isRowActive,
   metricSourceOf,
   fieldProvenanceOf,
+  FIELD_UPDATE_SOURCE,
+  hasSafeFollowerCount,
+  hasSafeEngagementRate,
 } from './creator-row-machine';
 
 /**
@@ -66,12 +71,91 @@ const formatFollowerCountDisplay = (value) => {
   return n.toLocaleString();
 };
 
-export default function CreatorScrapeRow({ row, isDuplicate, disabled, dispatch, onLinkChange }) {
+/**
+ * A compact warning strip under the fields: a soft amber tint with no border,
+ * so it stands apart from the form without shouting like a banner. Amber, not
+ * red, because the admin can recover by typing the values in. The copy uses
+ * the theme's darker warning shade so 12px text stays readable on the tint.
+ */
+const WARNING = {
+  icon: '#FFAB00',
+  text: '#7A4100',
+  tint: 'rgba(255, 171, 0, 0.1)',
+};
+
+function InlineWarning({ title, children, action }) {
+  return (
+    <Stack
+      role="alert"
+      direction="row"
+      alignItems="flex-start"
+      spacing={0.75}
+      sx={{ mt: 1, px: 1.25, py: 0.75, minWidth: 0, borderRadius: '8px', bgcolor: WARNING.tint }}
+    >
+      <Iconify
+        icon="eva:alert-triangle-fill"
+        width={14}
+        sx={{ mt: '2px', flexShrink: 0, color: WARNING.icon }}
+      />
+      <Typography
+        component="div"
+        sx={{ fontSize: '12px', lineHeight: '18px', color: WARNING.text }}
+      >
+        {title && (
+          <>
+            <Box component="span" sx={{ fontWeight: 600 }}>
+              {title}
+            </Box>{' '}
+          </>
+        )}
+        {children}
+        {action && <> {action}</>}
+      </Typography>
+    </Stack>
+  );
+}
+
+InlineWarning.propTypes = {
+  title: PropTypes.node,
+  children: PropTypes.node,
+  action: PropTypes.node,
+};
+
+const retryLinkSx = {
+  minWidth: 0,
+  p: 0,
+  verticalAlign: 'baseline',
+  // Blue, like every other clickable thing in this modal, so the action stands
+  // apart from the amber copy around it.
+  color: CC.blue500,
+  fontSize: '12px',
+  fontWeight: 600,
+  lineHeight: '18px',
+  textTransform: 'none',
+  textDecoration: 'underline',
+  textUnderlineOffset: '2px',
+  whiteSpace: 'nowrap',
+  '&:hover': { bgcolor: 'transparent', textDecoration: 'underline', opacity: 0.8 },
+};
+
+export default function CreatorScrapeRow({
+  row,
+  isDuplicate,
+  disabled,
+  dispatch,
+  onLinkChange,
+  onRetry,
+}) {
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   const active = isRowActive(row);
   const loading = [ROW_STATUS.QUEUED, ROW_STATUS.RUNNING, ROW_STATUS.POLLING].includes(row.status);
   const justFinished = useJustFinished(loading);
   const canFallback = Boolean(row.fallbackReason);
+  const isManualEntry = row.entryMode === ENTRY_MODE.MANUAL;
+  const isUsageLimit = /monthly usage hard limit|cost.limit/i.test(
+    `${row.error?.code ?? ''} ${row.error?.message ?? ''}`
+  );
+  const revealScrapedFields = justFinished && row.fieldUpdateSource === FIELD_UPDATE_SOURCE.SCRAPE;
   const platformIcon = PLATFORM_ICON[row.platform];
 
   const hasBreakdown = row.status === ROW_STATUS.READY;
@@ -94,6 +178,16 @@ export default function CreatorScrapeRow({ row, isDuplicate, disabled, dispatch,
   const metricField = (field, text, hint) => {
     const isFollowers = field === 'followerCount';
     const isRate = field === 'engagementRate';
+    const hasValue = String(row[field] ?? '').length > 0;
+    const invalidManualValue =
+      isManualEntry &&
+      hasValue &&
+      ((field === 'name' && !row.name.trim()) ||
+        (isFollowers && !hasSafeFollowerCount(row[field])) ||
+        (isRate && !hasSafeEngagementRate(row[field])));
+    let manualHelperText = 'Enter a creator name.';
+    if (isFollowers) manualHelperText = 'Enter a whole number from 1 to 10,000,000,000.';
+    if (isRate) manualHelperText = 'Enter a percentage from 0 to 1,000.';
 
     return (
       <>
@@ -102,7 +196,7 @@ export default function CreatorScrapeRow({ row, isDuplicate, disabled, dispatch,
           <CreatorFieldLoading label={`Fetching ${text.toLowerCase()}`} showSpinner />
         ) : (
           <ScrapeTextFieldReveal
-            reveal={justFinished}
+            reveal={revealScrapedFields}
             text={isFollowers ? formatFollowerCountDisplay(row[field]) : row[field]}
             height={FIELD_HEIGHT}
             overlayPaddingRight={isRate ? 36 : 12}
@@ -119,6 +213,9 @@ export default function CreatorScrapeRow({ row, isDuplicate, disabled, dispatch,
                 dispatch({ type: ACTIONS.EDIT_FIELD, rowId: row.id, field, value });
               }}
               disabled={disabled || active}
+              required={isManualEntry}
+              error={invalidManualValue}
+              helperText={invalidManualValue ? manualHelperText : undefined}
               sx={inputSx}
               InputProps={
                 isRate
@@ -150,6 +247,11 @@ export default function CreatorScrapeRow({ row, isDuplicate, disabled, dispatch,
       </IconButton>
     </Tooltip>
   ) : null;
+
+  // A short title says what went wrong; the line under it says what to do.
+  const lookupAlertTitle = isUsageLimit
+    ? 'Monthly scraping limit reached.'
+    : 'Automatic lookup failed.';
 
   return (
     <Box data-testid="creator-scrape-row" aria-busy={loading ? 'true' : undefined}>
@@ -239,10 +341,29 @@ export default function CreatorScrapeRow({ row, isDuplicate, disabled, dispatch,
       )}
 
       {row.error && !canFallback && (
-        <Alert severity="warning" sx={{ mt: 1.5, borderRadius: 1 }}>
-          {row.error.message} Paste the link again to retry, or add this creator through the manual
-          form.
-        </Alert>
+        <InlineWarning
+          title={lookupAlertTitle}
+          action={
+            // A retry clears the row, so typed manual values would be lost.
+            !isManualEntry && (
+              <Button
+                variant="text"
+                disableRipple
+                onClick={() => onRetry?.(row.id)}
+                disabled={disabled}
+                sx={retryLinkSx}
+              >
+                Retry lookup
+              </Button>
+            )
+          }
+        >
+          Enter a valid name, engagement rate, and follower count to continue.
+        </InlineWarning>
+      )}
+
+      {row.saveError && (
+        <InlineWarning>{row.saveError.message || 'This creator could not be added.'}</InlineWarning>
       )}
 
       {canFallback && (
@@ -310,4 +431,5 @@ CreatorScrapeRow.propTypes = {
   disabled: PropTypes.bool,
   dispatch: PropTypes.func.isRequired,
   onLinkChange: PropTypes.func.isRequired,
+  onRetry: PropTypes.func,
 };

@@ -51,11 +51,20 @@ import usePitchSocket from './use-pitch-socket';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
 import useGuestExtraction from './guest-extraction/use-guest-extraction';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
+import { validateProfileLink } from './guest-extraction/profile-link-validation';
 import useGuestMetricsDecision from './guest-extraction/use-guest-metrics-decision';
 import ScrapeTextFieldReveal, { ScrapeRevealGate } from './scrape-text-field-reveal';
 import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
 import AutomaticCreatorScrapeDialog from './guest-extraction/automatic-creator-scrape-dialog';
-import { ACTIONS, ROW_STATUS, isRowActive, fieldProvenanceOf } from './guest-extraction/creator-row-machine';
+import {
+  ACTIONS,
+  ROW_STATUS,
+  isRowActive,
+  fieldProvenanceOf,
+  FIELD_UPDATE_SOURCE,
+  hasSafeFollowerCount,
+  hasSafeEngagementRate,
+} from './guest-extraction/creator-row-machine';
 
 /**
  * Every input in the Add Platform Creators row, at the handoff's 46px.
@@ -267,8 +276,15 @@ const SCRAPE_HINTS = {
   FAILED: 'Could not fetch. Enter the numbers by hand.',
 };
 
-const getSourceFeedback = (row) =>
-  row.saveError?.message || row.error?.message || SCRAPE_HINTS[row.status] || '';
+const getSourceFeedback = (row) => {
+  if (
+    row.saveError?.code === 'FALLBACK_NOT_ALLOWED' ||
+    row.error?.code === 'FALLBACK_NOT_ALLOWED'
+  ) {
+    return SCRAPE_HINTS.FAILED;
+  }
+  return row.saveError?.message || row.error?.message || SCRAPE_HINTS[row.status] || '';
+};
 
 const normalizeSaveErrorBody = (error) =>
   error?.response?.data ?? (error && typeof error === 'object' ? error : null);
@@ -332,17 +348,20 @@ const getPlatformFollowerCount = (creator, selectedPlatform) => {
 };
 
 /**
- * The engagement rate a connected account reports, as a percentage string.
+ * The engagement rate for this platform, as a percentage string.
  *
- * Mirrors getPlatformFollowerCount. Null means nothing is connected for this
- * platform, which is not the same as a measured zero.
+ * Mirrors getPlatformFollowerCount: a connected account wins, else the rate
+ * saved from a manual entry. Null means never measured, not a measured zero.
  */
 const getPlatformEngagementRate = (creator, selectedPlatform) => {
   if (!creator) return null;
-  const rate =
-    selectedPlatform === 'tiktok'
-      ? creator?.creator?.tiktokUser?.engagement_rate
-      : creator?.creator?.instagramUser?.engagement_rate;
+  const isTiktok = selectedPlatform === 'tiktok';
+  const connected = isTiktok ? creator?.creator?.tiktokUser : creator?.creator?.instagramUser;
+  const rate = connected
+    ? connected.engagement_rate
+    : isTiktok
+      ? creator?.creator?.manualTiktokEngagementRate
+      : creator?.creator?.manualInstagramEngagementRate;
   if (rate == null) return null;
   // "5.40" reads as false precision next to the handoff's "5.4".
   return String(Number(Number(rate).toFixed(2)));
@@ -1903,8 +1922,10 @@ export function PlatformCreatorModal({
     }
 
     const selectedPlatform = scrapeEnabled
-      ? getDefaultPlatformFromMediaKit(selectedCreator)
+      ? getDefaultPlatformFromMediaKit(selectedCreator) || 'instagram'
       : resolveInitialPlatformForCreator(selectedCreator, row.selectedPlatform);
+    const hasSelectedMediaKit = hasMediaKitForPlatform(selectedCreator, selectedPlatform);
+    const hasStoredLink = Boolean(getStoredProfileLink(selectedCreator, selectedPlatform));
     const followerCount =
       selectedCreator && selectedPlatform
         ? getPlatformFollowerCount(selectedCreator, selectedPlatform) || ''
@@ -1912,7 +1933,10 @@ export function PlatformCreatorModal({
 
     setCreator(rowId, selectedCreator, {
       selectedPlatform: selectedPlatform || null,
-      sourceMode: scrapeEnabled && selectedPlatform ? 'connected' : null,
+      // A saved link leaves sourceMode empty, so the source effect below loads
+      // it into the Profile Link field.
+      sourceMode:
+        scrapeEnabled && !hasStoredLink ? (hasSelectedMediaKit ? 'connected' : 'manual') : null,
       platform: selectedPlatform || null,
       followerCount,
       engagementRate:
@@ -1934,11 +1958,44 @@ export function PlatformCreatorModal({
         sourceMode: connected ? 'connected' : storedLink ? 'stored' : 'manual',
         profileLink: connected ? '' : storedLink,
         platform: connected ? platform : null,
-        followerCount: connected ? getPlatformFollowerCount(row.creator, platform) || '' : '',
-        engagementRate: connected ? (getPlatformEngagementRate(row.creator, platform) ?? '') : '',
+        // Both helpers are per platform, so a saved manual value is never stale.
+        followerCount: getPlatformFollowerCount(row.creator, platform) || '',
+        engagementRate: getPlatformEngagementRate(row.creator, platform) ?? '',
       });
     },
     [creatorRows, setSource]
+  );
+
+  /**
+   * A typed link names its own platform. When it is not the selected one,
+   * switch the row to that platform so the icon and the link check follow it.
+   */
+  const handleManualLinkInput = useCallback(
+    (rowId, value) => {
+      const row = creatorRows.find((entry) => entry.id === rowId);
+      const detected = validateProfileLink(value);
+      if (!row?.creator || !detected.ok || detected.profile.platform === row.selectedPlatform) {
+        setLink(rowId, value);
+        return;
+      }
+
+      const { platform } = detected.profile;
+      // A connected account on that platform is the source. It has no link.
+      if (hasMediaKitForPlatform(row.creator, platform)) {
+        handleSourceChange(rowId, platform);
+        return;
+      }
+
+      setSource(rowId, {
+        selectedPlatform: platform,
+        sourceMode: 'manual',
+        profileLink: value,
+        platform: null,
+        followerCount: getPlatformFollowerCount(row.creator, platform) || '',
+        engagementRate: getPlatformEngagementRate(row.creator, platform) ?? '',
+      });
+    },
+    [creatorRows, handleSourceChange, setLink, setSource]
   );
 
   useEffect(() => {
@@ -2023,7 +2080,20 @@ export function PlatformCreatorModal({
       scrapeEnabled && !row.hasMediaKit && isRowActive(row) && Boolean(row.extractionId);
     return !scrapeInFlight;
   });
-  const hasSaveError = creatorRows.some((row) => row.creator && row.saveError);
+  const hasUsableScrapeEvidence = (row) =>
+    Boolean(row.completionReceipt) || (isRowActive(row) && Boolean(row.extractionId));
+  const isManualPlatformMetricsRow = (row) =>
+    !row.hasMediaKit &&
+    !hasUsableScrapeEvidence(row) &&
+    hasSafeFollowerCount(row.followerCount);
+  const hasBlockingSaveError = creatorRows.some(
+    (row) =>
+      row.creator &&
+      row.saveError &&
+      !(
+        row.saveError.code === 'FALLBACK_NOT_ALLOWED' && isManualPlatformMetricsRow(row)
+      )
+  );
 
   // Do not RESET the machine here. A reset while `open` is still true would
   // persist an empty draft and wipe the scrape the close is meant to keep.
@@ -2046,7 +2116,17 @@ export function PlatformCreatorModal({
     // Get valid rows (with creator selected)
     const validRows = creatorRows.filter((row) => row.creator !== null);
     if (!validRows.length || !campaign?.id) return;
-    if (validRows.some((row) => row.saveError)) return;
+    if (
+      validRows.some(
+        (row) =>
+          row.saveError &&
+          !(
+            row.saveError.code === 'FALLBACK_NOT_ALLOWED' && isManualPlatformMetricsRow(row)
+          )
+      )
+    ) {
+      return;
+    }
 
     // Validate follower counts - max 10 billion
     const MAX_FOLLOWER_COUNT = 10_000_000_000;
@@ -2056,6 +2136,17 @@ export function PlatformCreatorModal({
     });
     if (invalidRow) {
       enqueueSnackbar('Follower count is too large. Please enter a valid number.', {
+        variant: 'error',
+      });
+      return;
+    }
+
+    const invalidEngagementRow = validRows.find((row) => {
+      const rate = String(row.engagementRate ?? '').trim();
+      return rate.length > 0 && !hasSafeEngagementRate(rate);
+    });
+    if (invalidEngagementRow) {
+      enqueueSnackbar('Engagement rate must be between 0 and 1000.', {
         variant: 'error',
       });
       return;
@@ -2104,15 +2195,23 @@ export function PlatformCreatorModal({
           const parsedFollowerCount = row.followerCount
             ? parseInt(row.followerCount, 10)
             : undefined;
+          const isManualEntry = isManualPlatformMetricsRow(row);
+          const engagementRate = String(row.engagementRate ?? '').trim();
           return {
             id: row.creator.id,
             followerCount: !Number.isNaN(parsedFollowerCount) ? parsedFollowerCount : undefined,
             selectedPlatform: row.selectedPlatform,
             adminComments: row.adminComments?.trim() || undefined,
-            // Only a scraped row carries these. The server verifies the receipt
-            // before it trusts the rate, and ignores the row entirely without
-            // a link, which is what every pre-scrape row looks like.
-            ...(row.profileLink?.trim()
+            ...(isManualEntry && engagementRate ? { engagementRate } : {}),
+            // A manual link is saved to the creator's account. It is sent apart
+            // from `profileLink`, which the server treats as a scrape claim.
+            ...(isManualEntry && row.profileLink?.trim()
+              ? { manualProfileLink: row.profileLink.trim() }
+              : {}),
+            // Only an automatic scrape carries link evidence. A failed row
+            // becomes manual when an admin types a metric, so stale or partial
+            // extraction evidence cannot leak into its save request.
+            ...(!isManualEntry && row.profileLink?.trim()
               ? {
                   profileLink: row.profileLink.trim(),
                   engagementRate: row.engagementRate || undefined,
@@ -2503,7 +2602,7 @@ export function PlatformCreatorModal({
                                 if (option?.value) handleSourceChange(row.id, option.value);
                               }}
                               onInputChange={(_, value, reason) => {
-                                if (reason === 'input') setLink(row.id, value);
+                                if (reason === 'input') handleManualLinkInput(row.id, value);
                               }}
                               popupIcon={
                                 <Iconify icon="eva:arrow-ios-downward-fill" width={18} />
@@ -2771,7 +2870,9 @@ export function PlatformCreatorModal({
                             />
                           ) : (
                             <ScrapeTextFieldReveal
-                              reveal={reveal}
+                              reveal={
+                                reveal && row.fieldUpdateSource === FIELD_UPDATE_SOURCE.SCRAPE
+                              }
                               text={
                                 row.hasMediaKit
                                   ? (getPlatformEngagementRate(
@@ -2843,7 +2944,9 @@ export function PlatformCreatorModal({
                             />
                           ) : (
                             <ScrapeTextFieldReveal
-                              reveal={reveal}
+                              reveal={
+                                reveal && row.fieldUpdateSource === FIELD_UPDATE_SOURCE.SCRAPE
+                              }
                               text={formatFollowerCountDisplay(row.followerCount)}
                               height={FIELD_HEIGHT}
                             >
@@ -2995,7 +3098,7 @@ export function PlatformCreatorModal({
                 hasMissingPlatformSelection ||
                 hasPlatformMismatch ||
                 hasMissingFollowerCount ||
-                hasSaveError
+                hasBlockingSaveError
               }
               loading={submitting}
               loadingIndicator={<CircularProgress size={20} sx={{ color: '#1ABF66' }} />}
@@ -3029,7 +3132,7 @@ export function PlatformCreatorModal({
               hasMissingPlatformSelection ||
               hasPlatformMismatch ||
               hasMissingFollowerCount ||
-              hasSaveError
+              hasBlockingSaveError
             }
             loading={submitting}
             loadingIndicator={<CircularProgress size={20} sx={{ color: '#fff' }} />}

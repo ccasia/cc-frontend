@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { cloneElement, useState } from 'react';
+import { useState, cloneElement } from 'react';
 
 import Box from '@mui/material/Box';
 
@@ -45,11 +45,18 @@ export default function ScrapeTextFieldReveal({
 
   const displayText = text == null ? '' : String(text);
   const showOverlay = Boolean(reveal && playing && displayText);
+  const childOnChange = children.props.onChange;
 
   return (
     <Box sx={{ position: 'relative', width: '100%' }}>
       {cloneElement(children, {
         sx: [children.props.sx, showOverlay && overlayInputSx],
+        onChange: childOnChange
+          ? (event) => {
+              setPlaying(false);
+              childOnChange(event);
+            }
+          : undefined,
       })}
       {showOverlay && (
         <Box

@@ -34,6 +34,16 @@ export const METRIC_SOURCE = {
   UNAVAILABLE: 'unavailable',
 };
 
+export const ENTRY_MODE = {
+  AUTOMATIC: 'automatic',
+  MANUAL: 'manual',
+};
+
+export const FIELD_UPDATE_SOURCE = {
+  SCRAPE: 'scrape',
+  MANUAL: 'manual',
+};
+
 /** Work is running. The row cannot be re-fetched. Submit is allowed once an extractionId exists. */
 export const ACTIVE_STATUSES = [
   ROW_STATUS.VALIDATING,
@@ -111,6 +121,9 @@ export function createRow(overrides = {}) {
     name: '',
     followerCount: '',
     engagementRate: '',
+    entryMode: ENTRY_MODE.AUTOMATIC,
+    fieldUpdateSource: null,
+    prefetchMetrics: null,
     adminComments: '',
     extractionId: null,
     completionReceipt: null,
@@ -153,6 +166,14 @@ export function hasSafeFollowerCount(value) {
   return Number.isSafeInteger(parsed) && parsed > 0 && parsed <= MAX_FOLLOWER_COUNT;
 }
 
+/** Matches the backend's typed-rate guard. Zero is a valid measured percentage. */
+export function hasSafeEngagementRate(value) {
+  const raw = typeof value === 'number' ? String(value) : value?.trim();
+  if (typeof raw !== 'string' || !/^\d+(\.\d+)?$/.test(raw)) return false;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 1000;
+}
+
 export const isAllowedFallbackReason = (reason) => ALLOWED_FALLBACK_REASONS.includes(reason);
 
 export const hasValidReceipt = (row) =>
@@ -177,6 +198,9 @@ function clearResult(row) {
     selectedPosts: null,
     formulaVersion: null,
     fetched: null,
+    entryMode: ENTRY_MODE.AUTOMATIC,
+    fieldUpdateSource: null,
+    prefetchMetrics: null,
     fallbackConfirmed: false,
     fallbackReason: null,
     error: null,
@@ -192,6 +216,9 @@ function mapRow(state, rowId, update) {
 
 /** Metric provenance for one row. Never automatic without a receipt. */
 export function metricSourceOf(row) {
+  if (row.entryMode === ENTRY_MODE.MANUAL) {
+    return hasText(row.engagementRate) ? METRIC_SOURCE.MANUAL_OVERRIDE : METRIC_SOURCE.UNAVAILABLE;
+  }
   if (row.status === ROW_STATUS.READY && hasValidReceipt(row)) {
     const edited =
       !row.fetched ||
@@ -260,6 +287,15 @@ export function canSubmitRow(row, { duplicateIds = [] } = {}) {
   if (row.linkError) return false;
   if (row.saveError) return false;
   if (row.creator && (!row.selectedPlatform || row.platform !== row.selectedPlatform)) return false;
+
+  if (row.entryMode === ENTRY_MODE.MANUAL) {
+    return (
+      Boolean(row.canonicalProfileKey) &&
+      hasText(row.name) &&
+      hasSafeFollowerCount(row.followerCount) &&
+      hasSafeEngagementRate(row.engagementRate)
+    );
+  }
 
   if (row.status === ROW_STATUS.READY && hasValidReceipt(row)) return true;
 
@@ -361,7 +397,8 @@ export function creatorRowReducer(state, action) {
     // Debounced validation only. It never starts paid work.
     case ACTIONS.VALIDATION_RESULT:
       return mapRow(state, action.rowId, (row) => {
-        if (action.contextVersion != null && action.contextVersion !== row.contextVersion) return row;
+        if (action.contextVersion != null && action.contextVersion !== row.contextVersion)
+          return row;
         if (row.status !== ROW_STATUS.VALIDATING) return row;
         return action.ok
           ? {
@@ -375,8 +412,7 @@ export function creatorRowReducer(state, action) {
           : {
               ...row,
               status: ROW_STATUS.IDLE,
-              sourceMode:
-                row.creator && row.sourceMode === 'stored' ? 'manual' : row.sourceMode,
+              sourceMode: row.creator && row.sourceMode === 'stored' ? 'manual' : row.sourceMode,
               canonicalProfileUrl: null,
               canonicalProfileKey: null,
               platform: null,
@@ -395,6 +431,12 @@ export function creatorRowReducer(state, action) {
               ...clearResult(row),
               status: ROW_STATUS.QUEUED,
               extractionId: action.extractionId ?? null,
+              // Saved metrics shown before the fetch. A failed fetch puts them
+              // back, so the admin does not have to type them again.
+              prefetchMetrics: {
+                followerCount: row.followerCount,
+                engagementRate: row.engagementRate,
+              },
             }
       );
 
@@ -416,7 +458,8 @@ export function creatorRowReducer(state, action) {
 
     case ACTIONS.EXTRACTION_READY:
       return mapRow(state, action.rowId, (row) => {
-        if (action.contextVersion != null && action.contextVersion !== row.contextVersion) return row;
+        if (action.contextVersion != null && action.contextVersion !== row.contextVersion)
+          return row;
         if (!isRowActive(row)) return row;
         const fetched = {
           name: action.name ?? '',
@@ -428,6 +471,8 @@ export function creatorRowReducer(state, action) {
           status: ROW_STATUS.READY,
           ...fetched,
           fetched,
+          entryMode: ENTRY_MODE.AUTOMATIC,
+          fieldUpdateSource: FIELD_UPDATE_SOURCE.SCRAPE,
           completionReceipt: action.completionReceipt ?? null,
           sampleSize: action.sampleSize ?? null,
           fetchedAt: action.fetchedAt ?? null,
@@ -463,6 +508,8 @@ export function creatorRowReducer(state, action) {
           ? row
           : {
               ...clearResult(row),
+              followerCount: row.prefetchMetrics?.followerCount ?? '',
+              engagementRate: row.prefetchMetrics?.engagementRate ?? '',
               status: ROW_STATUS.FAILED,
               extractionId: row.extractionId,
               error: action.error ?? {
@@ -470,7 +517,9 @@ export function creatorRowReducer(state, action) {
                 message: 'The fetch failed.',
                 retryable: true,
               },
-              fallbackReason: isAllowedFallbackReason(action.error?.code) ? action.error.code : null,
+              fallbackReason: isAllowedFallbackReason(action.error?.code)
+                ? action.error.code
+                : null,
             }
       );
 
@@ -557,11 +606,25 @@ export function creatorRowReducer(state, action) {
       }));
 
     case ACTIONS.EDIT_FIELD:
-      return mapRow(state, action.rowId, (row) => ({
-        ...row,
-        [action.field]: action.value,
-        saveError: null,
-      }));
+      return mapRow(state, action.rowId, (row) => {
+        const manualAfterFailure = row.status === ROW_STATUS.FAILED;
+        return {
+          ...row,
+          [action.field]: action.value,
+          fieldUpdateSource: FIELD_UPDATE_SOURCE.MANUAL,
+          ...(manualAfterFailure
+            ? {
+                entryMode: ENTRY_MODE.MANUAL,
+                extractionId: null,
+                completionReceipt: null,
+                fetched: null,
+                fallbackReason: null,
+                fallbackConfirmed: false,
+              }
+            : {}),
+          saveError: null,
+        };
+      });
 
     case ACTIONS.SET_COMMENTS:
       return mapRow(state, action.rowId, (row) => ({ ...row, adminComments: action.value }));
