@@ -7,6 +7,7 @@
  */
 
 import {
+  ENTRY_MODE,
   ROW_STATUS,
   isRowActive,
   hasSafeFollowerCount,
@@ -104,6 +105,8 @@ export function toDraftRow(row) {
     name: row.name ?? '',
     followerCount: row.followerCount ?? '',
     engagementRate: row.engagementRate ?? '',
+    entryMode: row.entryMode ?? ENTRY_MODE.AUTOMATIC,
+    fieldUpdateSource: row.fieldUpdateSource ?? null,
     adminComments: row.adminComments ?? '',
     extractionId: row.extractionId ?? null,
     completionReceipt: row.completionReceipt ?? null,
@@ -127,6 +130,9 @@ export function toDraftRows(rows, skipDraftRow, kind = DRAFT_KIND.GUEST) {
       (row) =>
         (isScrapedDraftRow(row) ||
           (kind === DRAFT_KIND.PLATFORM && isRowActive(row) && hasText(row.extractionId)) ||
+          (kind === DRAFT_KIND.GUEST &&
+            row.entryMode === ENTRY_MODE.MANUAL &&
+            [row.name, row.followerCount, row.engagementRate, row.adminComments].some(hasText)) ||
           Boolean(row.saveError)) &&
         !skipDraftRow?.(row)
     )

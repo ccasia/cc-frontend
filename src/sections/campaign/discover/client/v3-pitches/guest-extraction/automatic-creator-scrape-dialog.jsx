@@ -17,8 +17,8 @@ import Iconify from 'src/components/iconify';
 import CreatorScrapeRow from './creator-scrape-row';
 import { CC, ROW_GAP } from './creator-field-tokens';
 import useGuestExtraction from './use-guest-extraction';
-import { ACTIONS, MAX_ROWS, BATCH_SAVE_STATUS } from './creator-row-machine';
 import { newIdempotencyKey, saveGuestCreators } from './guest-extraction-api';
+import { ACTIONS, MAX_ROWS, ENTRY_MODE, BATCH_SAVE_STATUS } from './creator-row-machine';
 
 /**
  * Add Non-Platform Creators.
@@ -31,17 +31,27 @@ import { newIdempotencyKey, saveGuestCreators } from './guest-extraction-api';
 
 /** Turn eligible rows into the request body. Ineligible rows never get here. */
 export function buildGuestPayload(rows) {
-  return rows.map((row) => ({
-    profileLink: row.canonicalProfileUrl ?? row.profileLink,
-    name: row.name.trim() || (row.canonicalProfileKey ? row.canonicalProfileKey.split(':')[1] : '') || '',
-    followerCount: row.followerCount || undefined,
-    engagementRate: row.engagementRate || undefined,
-    adminComments: row.adminComments?.trim() || undefined,
-    extractionId: row.extractionId ?? undefined,
-    completionReceipt: row.completionReceipt ?? undefined,
-    fallbackReason: row.fallbackReason ?? undefined,
-    fallbackConfirmed: row.fallbackConfirmed || undefined,
-  }));
+  return rows.map((row) => {
+    const manual = row.entryMode === ENTRY_MODE.MANUAL;
+    return {
+      profileLink: row.canonicalProfileUrl ?? row.profileLink,
+      name:
+        row.name.trim() ||
+        (row.canonicalProfileKey ? row.canonicalProfileKey.split(':')[1] : '') ||
+        '',
+      followerCount: row.followerCount || undefined,
+      engagementRate: row.engagementRate || undefined,
+      adminComments: row.adminComments?.trim() || undefined,
+      ...(!manual
+        ? {
+            extractionId: row.extractionId ?? undefined,
+            completionReceipt: row.completionReceipt ?? undefined,
+            fallbackReason: row.fallbackReason ?? undefined,
+            fallbackConfirmed: row.fallbackConfirmed || undefined,
+          }
+        : {}),
+    };
+  });
 }
 
 const normalizeLink = (value) => value?.trim().replace(/\/+$/, '');
@@ -111,6 +121,7 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
     eligibleRows,
     eligibleCount,
     setLink,
+    fetchRow,
     removeRow,
     applySaveResult,
     completeSuccessfulSave,
@@ -121,21 +132,44 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
   const handleSave = useCallback(async () => {
     if (eligibleCount === 0 || saving) return;
 
+    const acceptedRowIds = [];
+    const rejectedByRowId = {};
+    let firstError = null;
+    let currentRows = eligibleRows;
     dispatch({ type: ACTIONS.BATCH_SAVE_STARTED });
     try {
-      const guestCreators = buildGuestPayload(eligibleRows);
-      const response = await saveGuestCreators({
-        campaignId,
-        guestCreators,
-        idempotencyKey,
-      });
+      // Keep automatic and manual rows in separate requests. The backend uses
+      // scrape evidence to select its strict automatic path for the full batch.
+      const groups = [
+        eligibleRows.filter((row) => row.entryMode !== ENTRY_MODE.MANUAL),
+        eligibleRows.filter((row) => row.entryMode === ENTRY_MODE.MANUAL),
+      ].filter((rows) => rows.length > 0);
 
-      const saveResult = rowSaveResult(eligibleRows, guestCreators, response);
-      if (saveResult) {
-        applySaveResult(saveResult);
+      for (let index = 0; index < groups.length; index += 1) {
+        const rows = groups[index];
+        currentRows = rows;
+        const guestCreators = buildGuestPayload(rows);
+        // eslint-disable-next-line no-await-in-loop
+        const response = await saveGuestCreators({
+          campaignId,
+          guestCreators,
+          idempotencyKey: groups.length === 1 ? idempotencyKey : `${idempotencyKey}:${index}`,
+        });
+        const groupResult = rowSaveResult(rows, guestCreators, response);
+        if (groupResult) {
+          acceptedRowIds.push(...groupResult.acceptedRowIds);
+          Object.assign(rejectedByRowId, groupResult.rejectedByRowId);
+          firstError ||= groupResult.error;
+        } else {
+          acceptedRowIds.push(...rows.map((row) => row.id));
+        }
+      }
+
+      if (Object.keys(rejectedByRowId).length > 0) {
+        applySaveResult({ acceptedRowIds, rejectedByRowId, error: firstError });
         setIdempotencyKey(newIdempotencyKey());
-        enqueueSnackbar(saveResult.error, { variant: 'error' });
-        if (saveResult.acceptedRowIds.length > 0) onUpdated?.();
+        enqueueSnackbar(firstError, { variant: 'error' });
+        if (acceptedRowIds.length > 0) onUpdated?.();
         return;
       }
 
@@ -151,13 +185,30 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
       onClose();
     } catch (error) {
       const body = normalizeErrorBody(error);
-      const guestCreators = buildGuestPayload(eligibleRows);
-      const saveResult = rowSaveResult(eligibleRows, guestCreators, body);
+      const guestCreators = buildGuestPayload(currentRows);
+      const saveResult = rowSaveResult(currentRows, guestCreators, body);
       if (saveResult) {
-        applySaveResult(saveResult);
+        acceptedRowIds.push(...saveResult.acceptedRowIds);
+        Object.assign(rejectedByRowId, saveResult.rejectedByRowId);
+        firstError ||= saveResult.error;
+      }
+
+      const uniqueAcceptedRowIds = [...new Set(acceptedRowIds)];
+      const errorMessage =
+        firstError || body?.message ||
+        (uniqueAcceptedRowIds.length > 0 || Object.keys(rejectedByRowId).length > 0
+          ? 'Some creators could not be added.'
+          : 'Failed to add non-platform creator.');
+
+      if (uniqueAcceptedRowIds.length > 0 || Object.keys(rejectedByRowId).length > 0) {
+        applySaveResult({
+          acceptedRowIds: uniqueAcceptedRowIds,
+          rejectedByRowId,
+          error: errorMessage,
+        });
         setIdempotencyKey(newIdempotencyKey());
-        enqueueSnackbar(saveResult.error, { variant: 'error' });
-        if (saveResult.acceptedRowIds.length > 0) onUpdated?.();
+        enqueueSnackbar(errorMessage, { variant: 'error' });
+        if (uniqueAcceptedRowIds.length > 0) onUpdated?.();
         return;
       }
       dispatch({ type: ACTIONS.BATCH_SAVE_FAILED, error: body?.message ?? null });
@@ -254,11 +305,12 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
                 sx={{ overflow: 'hidden' }}
               >
                 <CreatorScrapeRow
-                  row={row.saveError ? { ...row, error: row.saveError } : row}
+                  row={row}
                   isDuplicate={duplicateIds.includes(row.id)}
                   disabled={saving}
                   dispatch={dispatch}
                   onLinkChange={setLink}
+                  onRetry={fetchRow}
                 />
               </Box>
             ))}
@@ -292,7 +344,12 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
           </Tooltip>
         </Stack>
 
-        <Stack direction="row" justifyContent="flex-end" alignItems="center" sx={{ mt: `${ROW_GAP}px` }}>
+        <Stack
+          direction="row"
+          justifyContent="flex-end"
+          alignItems="center"
+          sx={{ mt: `${ROW_GAP}px` }}
+        >
           <Button
             onClick={handleSave}
             disabled={eligibleCount === 0 || saving}
