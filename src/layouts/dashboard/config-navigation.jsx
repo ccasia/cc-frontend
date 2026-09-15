@@ -78,6 +78,8 @@ const ICONS = {
 export function useNavData() {
   const { user } = useAuthContext();
 
+  const needsPhoneNumber = user?.role === 'creator' && !user?.phoneNumber;
+
   const { socket } = useSocketContext();
   const unreadMessageCount = useUnreadMessageCount();
 
@@ -463,13 +465,31 @@ export function useNavData() {
             </span>
           ),
           path: paths.dashboard.user.profile,
-          icon: <Iconify icon="solar:settings-outline" width={25} />,
+          icon: needsPhoneNumber ? (
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              <Iconify icon="solar:settings-outline" width={25} />
+              <span
+                style={{
+                  top: -1,
+                  right: -1,
+                  width: 9,
+                  height: 9,
+                  position: 'absolute',
+                  borderRadius: '50%',
+                  backgroundColor: '#F5A623',
+                  border: '1.5px solid #FFFFFF',
+                }}
+              />
+            </span>
+          ) : (
+            <Iconify icon="solar:settings-outline" width={25} />
+          ),
         },
       ],
     });
 
     return baseData;
-  }, [navigations, unreadMessageCount, user?.admin?.role?.name, user?.role]);
+  }, [navigations, needsPhoneNumber, unreadMessageCount, user?.admin?.role?.name, user?.role]);
 
   return data;
 }

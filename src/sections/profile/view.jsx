@@ -63,6 +63,8 @@ const Profile = () => {
   const settings = useSettingsContext();
   const theme = useTheme();
   const { user, initialize } = useAuthContext();
+
+  const needsPhoneNumber = user?.role === 'creator' && !user?.phoneNumber;
   const location = useLocation();
   const scrollContainerRef = useRef(null);
   const mdDown = useResponsive('down', 'lg');
@@ -944,6 +946,20 @@ const Profile = () => {
           }}
         >
           Account
+          {needsPhoneNumber && (
+            <Box
+              component="span"
+              sx={{
+                width: 8,
+                height: 8,
+                ml: 0.75,
+                bgcolor: '#F5A623',
+                borderRadius: '50%',
+                display: 'inline-block',
+                flexShrink: 0,
+              }}
+            />
+          )}
         </Button>
 
         <Button

@@ -35,6 +35,7 @@ import BugReportForm from 'src/components/bug-report-form';
 import SocialLinksModal from 'src/components/social-links-modal';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 import PaymentDetailsBanner from 'src/components/payment-details-banner';
+import PhoneVerificationBanner from 'src/components/phone-verification-banner';
 
 import Main from './main';
 import Header from './header';
@@ -393,6 +394,7 @@ export default function DashboardLayout({ children }) {
         />
 
         <Main>
+          <PhoneVerificationBanner />
           <PaymentDetailsBanner />
           {children}
         </Main>

@@ -14,6 +14,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { toE164, isoFromCountryLabel } from 'src/utils/format-phone-number';
 
 import { countries } from 'src/assets/data';
 
@@ -55,7 +56,10 @@ export default function AdminCreateManager({ currentUser, open, onClose }) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const response = await axiosInstance.post(endpoints.users.createAdmin, data);
+      const response = await axiosInstance.post(endpoints.users.createAdmin, {
+        ...data,
+        phoneNumber: toE164(isoFromCountryLabel(data.country), data.phoneNumber),
+      });
 
       if (response.status === 200) {
         enqueueSnackbar('Admin created successfully', { variant: 'success' });

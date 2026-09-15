@@ -15,7 +15,6 @@ import {
   Button,
   Dialog,
   Avatar,
-  Select,
   MenuItem,
   DialogTitle,
   DialogActions,
@@ -26,6 +25,7 @@ import {
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { toE164, parseStoredPhone } from 'src/utils/format-phone-number';
 
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
@@ -51,7 +51,6 @@ export default function AccountGeneral() {
   const [openImageDialog, setOpenImageDialog] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const mdDown = useResponsive('down', 'lg');
-  const [countryCode, setCountryCode] = useState(user?.phoneNumber?.split(' ')[0] || null);
 
   const UpdateUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -73,7 +72,8 @@ export default function AccountGeneral() {
     photoURL: user?.photoURL || null,
     photoBackgroundURL: user?.photoBackgroundURL || null,
     employment: user?.creator?.employment || '',
-    phoneNumber: user?.phoneNumber?.split(' ')[1] || '',
+    countryCode: parseStoredPhone(user?.phoneNumber).iso,
+    phoneNumber: parseStoredPhone(user?.phoneNumber).nationalNumber,
     birthDate: dayjs(user?.creator?.birthDate) || '',
     country: user?.country || '',
     address: user?.creator?.address || '',
@@ -94,6 +94,7 @@ export default function AccountGeneral() {
   });
 
   const {
+    reset,
     setValue,
     handleSubmit,
     watch,
@@ -106,21 +107,20 @@ export default function AccountGeneral() {
   // });
 
   const countrySelected = watch('country');
-
-  const handleChangeCountryCode = (val) => {
-    setCountryCode(val);
-  };
+  const countryCode = watch('countryCode');
 
   const handlePhoneChange = (event, onChange) => {
-    const formattedNumber = formatIncompletePhoneNumber(
-      event.target.value,
-      countries.find((country) => country.phone === countryCode).code
-    ); // Replace 'MY' with your country code
-    onChange(formattedNumber);
+    onChange(
+      countryCode
+        ? formatIncompletePhoneNumber(event.target.value, countryCode)
+        : event.target.value
+    );
   };
 
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
+
+    const savedPhoneNumber = toE164(countryCode, data.phoneNumber);
 
     const newObj = {
       ...data,
@@ -129,7 +129,7 @@ export default function AccountGeneral() {
         ? data.interests.map((interest) => ({ name: interest }))
         : [],
       pronounce: data.pronounce || '',
-      phoneNumber: `${countryCode} ${data.phoneNumber}`,
+      phoneNumber: savedPhoneNumber,
     };
 
     formData.append('image', data?.photoURL);
@@ -143,6 +143,15 @@ export default function AccountGeneral() {
         },
       });
       enqueueSnackbar(res?.data.message);
+
+      const savedPhone = parseStoredPhone(savedPhoneNumber);
+
+      reset({
+        ...data,
+        countryCode: savedPhone.iso,
+        phoneNumber: savedPhone.nationalNumber,
+      });
+
       initialize();
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -452,14 +461,23 @@ export default function AccountGeneral() {
                     </Box>
                   </Typography>
                   <Stack direction="row" spacing={1}>
-                    <Select
+                    <RHFSelect
+                      name="countryCode"
                       sx={{
-                        bgcolor: 'white',
-                        borderRadius: 1,
-                        width: 80,
+                        width: 120,
+                        flexShrink: 0,
+                        '&.MuiTextField-root': {
+                          borderRadius: 1,
+                          '& .MuiInputLabel-root': {
+                            display: 'none',
+                          },
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 1,
+                            bgcolor: 'white',
+                            height: 56,
+                          },
+                        },
                       }}
-                      value={countryCode}
-                      onChange={(e) => handleChangeCountryCode(e.target.value)}
                     >
                       {countries
                         .filter((item) => item.phone)
@@ -468,48 +486,12 @@ export default function AccountGeneral() {
                           const phoneB = parseInt(b.phone.replace(/-/g, ''), 10);
                           return phoneA - phoneB;
                         })
-                        .map((item, index) => (
-                          <MenuItem key={index} value={item.phone}>
-                            + {item.phone}
+                        .map((item) => (
+                          <MenuItem key={item.code} value={item.code}>
+                             {item.code} +{item.phone}
                           </MenuItem>
                         ))}
-                    </Select>
-
-                    {/* <Controller
-                      name="phone"
-                      control={control}
-                      defaultValue=""
-                      rules={{ required: 'Phone number is required' }}
-                      render={({ field, fieldState }) => (
-                        <TextField
-                          {...field}
-                          sx={{
-                            width: '100%',
-                            '&.MuiTextField-root': {
-                              bgcolor: 'white',
-                              borderRadius: 1,
-                              '& .MuiInputLabel-root': {
-                                display: 'none',
-                              },
-                              '& .MuiInputBase-input::placeholder': {
-                                color: '#B0B0B0',
-                                fontSize: { xs: '14px', sm: '16px' },
-                                opacity: 1,
-                              },
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: 1,
-                              },
-                            },
-                          }}
-                          placeholder="Phone Number"
-                          variant="outlined"
-                          fullWidth
-                          error={!!fieldState.error}
-                          helperText={fieldState.error ? fieldState.error.message : ''}
-                          onChange={(event) => handlePhoneChange(event, field.onChange)}
-                        />
-                      )}
-                    /> */}
+                    </RHFSelect>
 
                     <RHFTextField
                       name="phoneNumber"
@@ -520,7 +502,6 @@ export default function AccountGeneral() {
                         width: '100%',
                         // maxWidth: { xs: '100%', sm: 500 },
                         '&.MuiTextField-root': {
-                          bgcolor: 'white',
                           borderRadius: 1,
                           '& .MuiInputLabel-root': {
                             display: 'none',
@@ -532,6 +513,8 @@ export default function AccountGeneral() {
                           },
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 1,
+                            bgcolor: 'white',
+                            height: 56,
                           },
                         },
                       }}
@@ -576,6 +559,7 @@ export default function AccountGeneral() {
                         },
                         '& .MuiOutlinedInput-root': {
                           borderRadius: 1,
+                          height: 56,
                         },
                       },
                     }}

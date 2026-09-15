@@ -168,6 +168,8 @@ export const endpoints = {
     updateCreator: '/api/auth/updateCreator',
     updateClient: '/api/auth/updateClient',
     updateProfileCreator: '/api/auth/updateProfileCreator',
+    claimPhone: '/api/auth/claim-phone',
+    verifyPhoneClaim: '/api/auth/claim-phone/verify',
     verifyCreator: '/api/auth/verifyCreator',
     verifyClient: '/api/auth/verifyClient',
     resendToken: '/api/auth/resendVerifyToken',
