@@ -82,7 +82,7 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          {`+${countries.find((item) => item.label === country)?.phone} ${phoneNumber}` || 'null'}
+          {`${phoneNumber}` || 'null'}
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{admin?.role?.name || 'null'}</TableCell>

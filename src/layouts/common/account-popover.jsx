@@ -56,6 +56,8 @@ export default function AccountPopover({ isOnline }) {
   const isClientDemo = user?.role === 'client_demo';
   const menuOptions = isClientDemo ? [] : OPTIONS;
 
+  const needsPhoneNumber = user?.role === 'creator' && !user?.phoneNumber;
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -192,10 +194,21 @@ export default function AccountPopover({ isOnline }) {
               {menuOptions.map((option) => (
                 <MenuItem
                   key={option.label}
-                  sx={{ minHeight: '40px' }}
+                  sx={{ minHeight: '40px', justifyContent: 'space-between' }}
                   onClick={() => handleClickItem(option.linkTo, option.label)}
                 >
                   {option.label}
+                  {option.label === 'Profile' && needsPhoneNumber && (
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        bgcolor: '#F5A623',
+                        borderRadius: '50%',
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
                 </MenuItem>
               ))}
             </Stack>

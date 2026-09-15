@@ -19,6 +19,8 @@ import { Tab, Tabs, Stack, Select, InputLabel, FormControl, InputAdornment } fro
 import useGetRoles from 'src/hooks/use-get-roles';
 import { editAdmin } from 'src/hooks/use-get-admins-for-superadmin';
 
+import { toE164, parseStoredPhone, isoFromCountryLabel } from 'src/utils/format-phone-number';
+
 import { countries } from 'src/assets/data';
 
 import Iconify from 'src/components/iconify';
@@ -65,7 +67,7 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
     () => ({
       name: currentUser?.name || '',
       email: currentUser?.email || '',
-      phoneNumber: currentUser?.phoneNumber || '',
+      phoneNumber: parseStoredPhone(currentUser?.phoneNumber).nationalNumber,
       country: currentUser?.country || '',
       status: currentUser?.status,
       role: currentUser?.admin?.role?.id,
@@ -96,7 +98,11 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await editAdmin({ ...data, userId: currentUser?.id });
+      await editAdmin({
+        ...data,
+        phoneNumber: toE164(isoFromCountryLabel(data.country), data.phoneNumber),
+        userId: currentUser?.id,
+      });
       // await new Promise((resolve) => setTimeout(resolve, 500));
       // mutate(endpoints.users.admins);
       reset();
