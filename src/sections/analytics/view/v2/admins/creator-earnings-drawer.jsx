@@ -5,9 +5,18 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { Page, pdfjs, Document } from 'react-pdf';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Stack, Avatar, Button, Drawer, IconButton, Typography, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Avatar,
+  Button,
+  Drawer,
+  IconButton,
+  Typography,
+  CircularProgress,
+} from '@mui/material';
 
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
 
@@ -43,8 +52,7 @@ function InvoicePreview({ invoiceId }) {
 
     const creatorAgreement = agreementData.find(
       (a) =>
-        a?.user?.id === invoiceData?.invoiceFrom?.id ||
-        a?.userId === invoiceData?.invoiceFrom?.id
+        a?.user?.id === invoiceData?.invoiceFrom?.id || a?.userId === invoiceData?.invoiceFrom?.id
     );
 
     const currencySymbol = invoiceData?.task?.currencySymbol || invoiceData?.currencySymbol;
@@ -109,7 +117,11 @@ function InvoicePreview({ invoiceId }) {
   if (error) {
     return (
       <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, py: 8 }}>
-        <Iconify icon="solar:danger-triangle-bold" width={32} sx={{ color: UI_COLORS.textMuted, mb: 1 }} />
+        <Iconify
+          icon="solar:danger-triangle-bold"
+          width={32}
+          sx={{ color: UI_COLORS.textMuted, mb: 1 }}
+        />
         <Typography variant="body2" sx={{ color: UI_COLORS.textMuted }}>
           Failed to load invoice
         </Typography>
@@ -146,13 +158,21 @@ function InvoicePreview({ invoiceId }) {
         </Stack>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography sx={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-            {formatCurrencyAmount(enrichedData.amount, enrichedData.creatorCurrency, enrichedData.currencySymbol)}
+            {formatCurrencyAmount(
+              enrichedData.amount,
+              enrichedData.creatorCurrency,
+              enrichedData.currencySymbol
+            )}
           </Typography>
         </Stack>
       </Stack>
 
       {/* Action buttons */}
-      <Stack direction="row" spacing={1} sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #E8ECEE', flexShrink: 0 }}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #E8ECEE', flexShrink: 0 }}
+      >
         <Button
           size="small"
           variant="outlined"
@@ -191,7 +211,11 @@ function InvoicePreview({ invoiceId }) {
             justifyContent: 'center',
             '& .react-pdf__Document': { width: '100%', display: 'flex', justifyContent: 'center' },
             '& .react-pdf__Page': { maxWidth: '100%', height: 'auto !important' },
-            '& .react-pdf__Page__canvas': { maxWidth: '100% !important', height: 'auto !important', width: '100% !important' },
+            '& .react-pdf__Page__canvas': {
+              maxWidth: '100% !important',
+              height: 'auto !important',
+              width: '100% !important',
+            },
           }}
         >
           <Document file={pdfBlob} onLoadSuccess={({ numPages: pages }) => setNumPages(pages)}>
@@ -231,8 +255,14 @@ export default function CreatorEarningsDrawer({ selectedCreator, creators, onClo
 
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex >= 0 && currentIndex < creators.length - 1;
-  const handlePrev = () => { setActiveInvoiceId(null); if (hasPrev) onNavigate(creators[currentIndex - 1]); };
-  const handleNext = () => { setActiveInvoiceId(null); if (hasNext) onNavigate(creators[currentIndex + 1]); };
+  const handlePrev = () => {
+    setActiveInvoiceId(null);
+    if (hasPrev) onNavigate(creators[currentIndex - 1]);
+  };
+  const handleNext = () => {
+    setActiveInvoiceId(null);
+    if (hasNext) onNavigate(creators[currentIndex + 1]);
+  };
 
   // Sort campaigns by earnings descending
   const campaigns = open
@@ -288,7 +318,12 @@ export default function CreatorEarningsDrawer({ selectedCreator, creators, onClo
               flexShrink: 0,
             }}
           >
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1.5, py: 1.5 }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ px: 1.5, py: 1.5 }}
+            >
               <Stack direction="row" alignItems="center" spacing={0.5}>
                 <IconButton onClick={() => setActiveInvoiceId(null)} size="small">
                   <Iconify icon="eva:arrow-back-fill" width={20} />
@@ -320,7 +355,12 @@ export default function CreatorEarningsDrawer({ selectedCreator, creators, onClo
               flexShrink: 0,
             }}
           >
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ pt: 2, px: 2.5, pb: 1.5 }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ pt: 2, px: 2.5, pb: 1.5 }}
+            >
               {/* Left: avatar + #rank, then name with tier below */}
               <Stack direction="row" alignItems="center" spacing={1.25} sx={{ minWidth: 0 }}>
                 <Stack direction="row" alignItems="center" spacing={0.75}>
@@ -544,7 +584,12 @@ export default function CreatorEarningsDrawer({ selectedCreator, creators, onClo
               >
                 <Typography
                   variant="caption"
-                  sx={{ fontWeight: 600, color: UI_COLORS.textMuted, fontSize: 12, letterSpacing: 0.5 }}
+                  sx={{
+                    fontWeight: 600,
+                    color: UI_COLORS.textMuted,
+                    fontSize: 12,
+                    letterSpacing: 0.5,
+                  }}
                 >
                   Campaign Breakdown
                 </Typography>
@@ -619,7 +664,9 @@ export default function CreatorEarningsDrawer({ selectedCreator, creators, onClo
                             </Typography>
                           )}
                           {camp.brandName && paidDate && (
-                            <Typography sx={{ fontSize: 11, color: UI_COLORS.textMuted }}>·</Typography>
+                            <Typography sx={{ fontSize: 11, color: UI_COLORS.textMuted }}>
+                              ·
+                            </Typography>
                           )}
                           {paidDate && (
                             <Typography sx={{ fontSize: 11, color: UI_COLORS.textMuted }}>
@@ -664,7 +711,8 @@ export default function CreatorEarningsDrawer({ selectedCreator, creators, onClo
                             fontVariantNumeric: 'tabular-nums',
                             whiteSpace: 'nowrap',
                             lineHeight: '20px',
-                            transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                            transition:
+                              'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                           }}
                         >
                           RM {camp.earnings.toLocaleString()}
@@ -684,7 +732,8 @@ export default function CreatorEarningsDrawer({ selectedCreator, creators, onClo
                               height: 20,
                               transform: 'translateY(100%)',
                               opacity: 0,
-                              transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                              transition:
+                                'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                             }}
                           >
                             <Iconify

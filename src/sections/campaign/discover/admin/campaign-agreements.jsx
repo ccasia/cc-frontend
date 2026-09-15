@@ -38,7 +38,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';

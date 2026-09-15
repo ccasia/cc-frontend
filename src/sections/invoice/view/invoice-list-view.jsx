@@ -26,7 +26,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 import useGetInvoiceStats from 'src/hooks/use-get-invoice-stats';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 

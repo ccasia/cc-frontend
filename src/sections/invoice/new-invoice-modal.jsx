@@ -19,7 +19,7 @@ import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
 
 // hooks
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 // axios
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -36,7 +36,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
   const [service, setService] = useState([]);
   const [otherService, setOtherService] = useState('');
   const [currency, setCurrency] = useState('MYR');
-  
+
   // Currency symbol mapping
   const currencySymbols = {
     MYR: 'RM',
@@ -48,21 +48,21 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
   };
   const [amount, setAmount] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Fetch agreements data
   const { data: agreementsData, isLoading } = useGetAgreements(campId);
-  
+
   console.log('Raw Agreement Data:', agreementsData);
-  
+
   // Filter creators with approved agreements
   const approvedCreators = useMemo(() => {
     if (!agreementsData || !Array.isArray(agreementsData)) return [];
-    
+
     // Log the structure of the first agreement to understand its format
     if (agreementsData.length > 0) {
       console.log('First Agreement Structure:', JSON.stringify(agreementsData[0], null, 2));
     }
-    
+
     const filtered = agreementsData
       // First, log all agreements to see their structure
       .map((agreement, index) => {
@@ -70,97 +70,102 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
         return agreement;
       })
       // Then filter for approved agreements
-      .filter(agreement => {
+      .filter((agreement) => {
         // More flexible check for approved status
         const status = agreement.status || '';
         const isStatusApproved = status.toUpperCase().includes('APPROVE');
-        
+
         // Check submissions array if it exists
-        const hasApprovedSubmission = agreement.submissions?.some(sub => {
-          const subStatus = sub.status || '';
-          return (sub.type === 'AGREEMENT_FORM' || sub.type === 'agreement_form') && 
-                 subStatus.toUpperCase().includes('APPROVE');
-        }) || false;
-        
+        const hasApprovedSubmission =
+          agreement.submissions?.some((sub) => {
+            const subStatus = sub.status || '';
+            return (
+              (sub.type === 'AGREEMENT_FORM' || sub.type === 'agreement_form') &&
+              subStatus.toUpperCase().includes('APPROVE')
+            );
+          }) || false;
+
         // Check if the agreement has any approved field
-        const hasApprovedField = Object.entries(agreement).some(([key, value]) => 
-          typeof value === 'string' && 
-          key.toLowerCase().includes('status') && 
-          value.toUpperCase().includes('APPROVE')
+        const hasApprovedField = Object.entries(agreement).some(
+          ([key, value]) =>
+            typeof value === 'string' &&
+            key.toLowerCase().includes('status') &&
+            value.toUpperCase().includes('APPROVE')
         );
-        
+
         const isApproved = isStatusApproved || hasApprovedSubmission || hasApprovedField;
         console.log('Agreement ID:', agreement.id, 'Status:', status, 'Is Approved:', isApproved);
         return isApproved;
       })
       // Map to creator objects
-      .map(agreement => {
+      .map((agreement) => {
         // Try to extract user information from various possible locations
         const user = agreement.user || {};
         const userId = user.id || agreement.userId || agreement.creatorId || '';
         const userName = user.name || user.fullName || agreement.creatorName || 'Unknown Creator';
         const userEmail = user.email || '';
         const userAvatar = user.avatarUrl || user.profilePicture || '';
-        
+
         console.log('Approved Agreement User:', user, 'User ID:', userId, 'Name:', userName);
-        
+
         return {
           id: userId,
           name: userName,
           email: userEmail,
           avatarUrl: userAvatar,
-          currency: user.shortlisted?.[0]?.currency || agreement.currency || 'MYR'
+          currency: user.shortlisted?.[0]?.currency || agreement.currency || 'MYR',
         };
       });
-    
+
     console.log('Filtered Approved Creators:', filtered);
-    
+
     // If no approved creators are found, extract all creators as a fallback
     if (filtered.length === 0) {
       console.log('No approved creators found, showing all creators as fallback');
-      return agreementsData.map(agreement => {
+      return agreementsData.map((agreement) => {
         const user = agreement.user || {};
         const userId = user.id || agreement.userId || agreement.creatorId || '';
         const userName = user.name || user.fullName || agreement.creatorName || 'Unknown Creator';
         const userEmail = user.email || '';
         const userAvatar = user.avatarUrl || user.profilePicture || '';
-        
+
         return {
           id: userId,
           name: userName,
           email: userEmail,
           avatarUrl: userAvatar,
-          currency: user.shortlisted?.[0]?.currency || agreement.currency || 'MYR'
+          currency: user.shortlisted?.[0]?.currency || agreement.currency || 'MYR',
         };
       });
     }
-    
+
     return filtered;
   }, [agreementsData]);
-  
+
   // Filter creators based on search term
   const filteredCreators = useMemo(() => {
     if (!searchTerm) return approvedCreators;
-    
-    return approvedCreators.filter(c => 
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchTerm.toLowerCase())
+
+    return approvedCreators.filter(
+      (c) =>
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [approvedCreators, searchTerm]);
-  
+
   // Custom dropdown component for creators
   const CreatorDropdown = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
     const [searchInput, setSearchInput] = useState('');
-    
+
     // Always show dropdown when typing
     useEffect(() => {
       if (searchInput) {
         setIsOpen(true);
       }
     }, [searchInput]);
-    
+
     // Close dropdown when clicking outside
     useEffect(() => {
       const handleClickOutside = (event) => {
@@ -168,27 +173,28 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
           setIsOpen(false);
         }
       };
-      
+
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }, []);
-    
+
     // Filter creators based on search input
     const searchFilteredCreators = useMemo(() => {
       if (!searchInput) return approvedCreators;
-      
+
       const lowerCaseSearch = searchInput.toLowerCase();
-      return approvedCreators.filter(c => 
-        c.name.toLowerCase().includes(lowerCaseSearch) ||
-        c.email.toLowerCase().includes(lowerCaseSearch)
+      return approvedCreators.filter(
+        (c) =>
+          c.name.toLowerCase().includes(lowerCaseSearch) ||
+          c.email.toLowerCase().includes(lowerCaseSearch)
       );
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchInput]);
-    
-    const selectedCreator = approvedCreators.find(c => c.id === creatorId);
-    
+
+    const selectedCreator = approvedCreators.find((c) => c.id === creatorId);
+
     return (
       <Box ref={dropdownRef} sx={{ position: 'relative', width: '100%' }}>
         {/* Search input */}
@@ -211,11 +217,11 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
           <InputAdornment position="start" sx={{ mr: 1 }}>
             <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
           </InputAdornment>
-          
+
           <input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder={selectedCreator ? selectedCreator.name : "Search creator"}
+            placeholder={selectedCreator ? selectedCreator.name : 'Search creator'}
             onClick={() => setIsOpen(true)}
             style={{
               border: 'none',
@@ -226,7 +232,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
             }}
             autoComplete="off"
           />
-          
+
           <Box
             onClick={() => setIsOpen(!isOpen)}
             sx={{
@@ -235,12 +241,24 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
               cursor: 'pointer',
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 6L8 10L12 6" stroke="#888888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 6L8 10L12 6"
+                stroke="#888888"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Box>
         </Box>
-        
+
         {/* Dropdown menu */}
         {isOpen && (
           <Box
@@ -305,11 +323,11 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
       </Box>
     );
   };
-  
+
   // Update currency when creator changes
   useEffect(() => {
     if (creatorId) {
-      const selectedCreator = approvedCreators.find(c => c.id === creatorId);
+      const selectedCreator = approvedCreators.find((c) => c.id === creatorId);
       if (selectedCreator) {
         setCurrency(selectedCreator.currency);
         setCreator(selectedCreator.name);
@@ -321,7 +339,9 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
   const fetchCreatorPaymentDetails = async (selectedCreatorId) => {
     try {
       // Use the getCreatorFullInfo endpoint to get complete creator details
-      const response = await axiosInstance.get(endpoints.creator.getCreatorFullInfo(selectedCreatorId));
+      const response = await axiosInstance.get(
+        endpoints.creator.getCreatorFullInfo(selectedCreatorId)
+      );
       console.log('Creator full info response:', response.data);
       return response.data;
     } catch (error) {
@@ -332,21 +352,22 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
 
   const handleSubmit = async () => {
     // Find the complete creator object
-    const selectedCreatorObj = approvedCreators.find(c => c.id === creatorId);
+    const selectedCreatorObj = approvedCreators.find((c) => c.id === creatorId);
     console.log('Selected creator object for submission:', selectedCreatorObj);
-    
+
     // Get the complete agreement data for this creator
-    const creatorAgreement = agreementsData?.find(agreement => 
-      agreement?.user?.id === creatorId || 
-      agreement?.userId === creatorId ||
-      agreement?.creatorId === creatorId
+    const creatorAgreement = agreementsData?.find(
+      (agreement) =>
+        agreement?.user?.id === creatorId ||
+        agreement?.userId === creatorId ||
+        agreement?.creatorId === creatorId
     );
     console.log('Creator agreement data:', creatorAgreement);
-    
+
     // Fetch detailed creator information including payment details
     const creatorDetails = await fetchCreatorPaymentDetails(creatorId);
     console.log('Creator details with payment info:', creatorDetails);
-    
+
     onSubmit({
       creator,
       creatorId,
@@ -385,30 +406,53 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
       borderColor: '#C4CDD5',
     },
   };
-  
+
   // Custom dropdown arrow icon
   const DoubleArrowIcon = () => (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 6L8 10L12 6" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M4 6L8 10L12 6"
+          stroke="#000000"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </Box>
   );
-  
+
   // Custom tick icon component
   const TickedIcon = () => (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M10.834 6.25016L7.08398 10.8335L5.41732 9.16683M15.834 8.3335C15.834 12.4756 12.4761 15.8335 8.33398 15.8335C4.19185 15.8335 0.833984 12.4756 0.833984 8.3335C0.833984 4.19136 4.19185 0.833496 8.33398 0.833496C12.4761 0.833496 15.834 4.19136 15.834 8.3335Z" stroke="#1340FF" strokeWidth="1.66667" strokeLinecap="square"/>
+      <svg
+        width="17"
+        height="17"
+        viewBox="0 0 17 17"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M10.834 6.25016L7.08398 10.8335L5.41732 9.16683M15.834 8.3335C15.834 12.4756 12.4761 15.8335 8.33398 15.8335C4.19185 15.8335 0.833984 12.4756 0.833984 8.3335C0.833984 4.19136 4.19185 0.833496 8.33398 0.833496C12.4761 0.833496 15.834 4.19136 15.834 8.3335Z"
+          stroke="#1340FF"
+          strokeWidth="1.66667"
+          strokeLinecap="square"
+        />
       </svg>
     </Box>
   );
-  
+
   // Custom dropdown component
   const CustomDropdown = ({ label, value, options, onChange, multiple = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
-    
+
     // Close dropdown when clicking outside
     useEffect(() => {
       const handleClickOutside = (event) => {
@@ -416,13 +460,13 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
           setIsOpen(false);
         }
       };
-      
+
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }, []);
-    
+
     // For multiple selection, value is an array
     let selectedValues = [];
     if (multiple) {
@@ -430,36 +474,38 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
     } else {
       selectedValues = value ? [value] : [];
     }
-    
+
     // Get display text for selected options
     const getSelectedText = () => {
       if (!multiple) {
-        const selectedOption = options.find(option => option.value === value);
+        const selectedOption = options.find((option) => option.value === value);
         return selectedOption ? selectedOption.label : 'Select an option';
       }
-      
+
       if (selectedValues.length === 0) return 'Select options';
-      
+
       // Get labels of selected options
-      const selectedLabels = selectedValues.map(val => {
-        const option = options.find(opt => opt.value === val);
-        return option ? option.label : '';
-      }).filter(lbl => lbl !== '');
-      
+      const selectedLabels = selectedValues
+        .map((val) => {
+          const option = options.find((opt) => opt.value === val);
+          return option ? option.label : '';
+        })
+        .filter((lbl) => lbl !== '');
+
       // Join with commas
       return selectedLabels.join(', ');
     };
-    
+
     // No filtering, use all options
     const filteredOptions = options;
-    
+
     // Handle selection change
     const handleSelect = (optionValue, event) => {
       // Prevent event bubbling to avoid triggering outside click
       if (event) {
         event.stopPropagation();
       }
-      
+
       if (!multiple) {
         // For single selection, close dropdown after selecting
         onChange(optionValue);
@@ -468,7 +514,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
         // For multiple selection, keep dropdown open
         const newValues = [...selectedValues];
         const index = newValues.indexOf(optionValue);
-        
+
         if (index === -1) {
           // Add the value if not already selected
           newValues.push(optionValue);
@@ -476,12 +522,12 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
           // Remove the value if already selected
           newValues.splice(index, 1);
         }
-        
+
         onChange(newValues);
         // Keep dropdown open - no need to close it
       }
     };
-    
+
     return (
       <Box ref={dropdownRef} sx={{ position: 'relative', width: '100%' }}>
         {/* Dropdown trigger */}
@@ -510,12 +556,24 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
               transition: 'transform 0.2s',
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 6L8 10L12 6" stroke="#888888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 6L8 10L12 6"
+                stroke="#888888"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Box>
         </Box>
-        
+
         {/* Dropdown menu */}
         {isOpen && (
           <Box
@@ -534,7 +592,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
             }}
           >
             {/* No search input */}
-            
+
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <Box
@@ -572,7 +630,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
       </Box>
     );
   };
-  
+
   CustomDropdown.propTypes = {
     label: PropTypes.string,
     value: PropTypes.oneOfType([PropTypes.string, PropTypes.array]),
@@ -606,9 +664,9 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
       }}
     >
       <DialogTitle sx={{ position: 'relative', pb: 0, pt: 3, px: 3 }}>
-        <Typography 
-          variant="h4" 
-          sx={{ 
+        <Typography
+          variant="h4"
+          sx={{
             fontFamily: 'Instrument Serif',
             fontWeight: 400,
             fontSize: '36px',
@@ -616,7 +674,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
             letterSpacing: '0%',
             verticalAlign: 'middle',
             color: '#212B36',
-            mb: 3
+            mb: 3,
           }}
         >
           New Invoice
@@ -637,15 +695,18 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
       <DialogContent sx={{ pt: 0, px: 3, overflow: 'visible' }}>
         <Stack spacing={2} sx={{ gap: '16px' }}>
           <Box>
-            <Typography variant="body2" sx={{ 
-              mb: 1, 
-              fontFamily: 'InterDisplay',
-              fontWeight: 500,
-              fontSize: '12px',
-              lineHeight: '16px',
-              letterSpacing: '0%',
-              color: '#636366'
-            }}>
+            <Typography
+              variant="body2"
+              sx={{
+                mb: 1,
+                fontFamily: 'InterDisplay',
+                fontWeight: 500,
+                fontSize: '12px',
+                lineHeight: '16px',
+                letterSpacing: '0%',
+                color: '#636366',
+              }}
+            >
               Select Creator
             </Typography>
             <CreatorDropdown />
@@ -653,15 +714,18 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <Box sx={{ width: '100%' }}>
-              <Typography variant="body2" sx={{ 
-                mb: 1, 
-                fontFamily: 'InterDisplay',
-                fontWeight: 500,
-                fontSize: '12px',
-                lineHeight: '16px',
-                letterSpacing: '0%',
-                color: '#636366'
-              }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 1,
+                  fontFamily: 'InterDisplay',
+                  fontWeight: 500,
+                  fontSize: '12px',
+                  lineHeight: '16px',
+                  letterSpacing: '0%',
+                  color: '#636366',
+                }}
+              >
                 Select Service
               </Typography>
               <Select
@@ -698,8 +762,8 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
                 }}
               >
                 {['Ads', 'Cross Posting', 'Reinbursement', 'Other'].map((option) => (
-                  <MenuItem 
-                    key={option} 
+                  <MenuItem
+                    key={option}
                     value={option}
                     sx={{
                       display: 'flex',
@@ -713,7 +777,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
                       },
                     }}
                   >
-                    <ListItemText 
+                    <ListItemText
                       primary={option === 'Other' ? 'Others' : option}
                       primaryTypographyProps={{
                         fontWeight: 400,
@@ -722,8 +786,19 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
                     />
                     {service.indexOf(option) > -1 && (
                       <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-                        <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M10.834 6.25016L7.08398 10.8335L5.41732 9.16683M15.834 8.3335C15.834 12.4756 12.4761 15.8335 8.33398 15.8335C4.19185 15.8335 0.833984 12.4756 0.833984 8.3335C0.833984 4.19136 4.19185 0.833496 8.33398 0.833496C12.4761 0.833496 15.834 4.19136 15.834 8.3335Z" stroke="#1340FF" strokeWidth="1.66667" strokeLinecap="square"/>
+                        <svg
+                          width="17"
+                          height="17"
+                          viewBox="0 0 17 17"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M10.834 6.25016L7.08398 10.8335L5.41732 9.16683M15.834 8.3335C15.834 12.4756 12.4761 15.8335 8.33398 15.8335C4.19185 15.8335 0.833984 12.4756 0.833984 8.3335C0.833984 4.19136 4.19185 0.833496 8.33398 0.833496C12.4761 0.833496 15.834 4.19136 15.834 8.3335Z"
+                            stroke="#1340FF"
+                            strokeWidth="1.66667"
+                            strokeLinecap="square"
+                          />
                         </svg>
                       </Box>
                     )}
@@ -733,15 +808,18 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
             </Box>
 
             <Box sx={{ width: '100%' }}>
-              <Typography variant="body2" sx={{ 
-                mb: 1, 
-                fontFamily: 'InterDisplay',
-                fontWeight: 500,
-                fontSize: '12px',
-                lineHeight: '16px',
-                letterSpacing: '0%',
-                color: '#636366'
-              }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 1,
+                  fontFamily: 'InterDisplay',
+                  fontWeight: 500,
+                  fontSize: '12px',
+                  lineHeight: '16px',
+                  letterSpacing: '0%',
+                  color: '#636366',
+                }}
+              >
                 Other
               </Typography>
               <TextField
@@ -762,15 +840,18 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <Box sx={{ width: '100%' }}>
-              <Typography variant="body2" sx={{ 
-                mb: 1, 
-                fontFamily: 'InterDisplay',
-                fontWeight: 500,
-                fontSize: '12px',
-                lineHeight: '16px',
-                letterSpacing: '0%',
-                color: '#636366'
-              }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 1,
+                  fontFamily: 'InterDisplay',
+                  fontWeight: 500,
+                  fontSize: '12px',
+                  lineHeight: '16px',
+                  letterSpacing: '0%',
+                  color: '#636366',
+                }}
+              >
                 Currency
               </Typography>
               <CustomDropdown
@@ -782,22 +863,25 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
                   { value: 'USD', label: 'USD' },
                   { value: 'AUD', label: 'AUD' },
                   { value: 'JPY', label: 'JPY' },
-                  { value: 'IDR', label: 'IDR' }
+                  { value: 'IDR', label: 'IDR' },
                 ]}
                 onChange={(value) => setCurrency(value)}
               />
             </Box>
 
             <Box sx={{ width: '100%' }}>
-              <Typography variant="body2" sx={{ 
-                mb: 1, 
-                fontFamily: 'InterDisplay',
-                fontWeight: 500,
-                fontSize: '12px',
-                lineHeight: '16px',
-                letterSpacing: '0%',
-                color: '#636366'
-              }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 1,
+                  fontFamily: 'InterDisplay',
+                  fontWeight: 500,
+                  fontSize: '12px',
+                  lineHeight: '16px',
+                  letterSpacing: '0%',
+                  color: '#636366',
+                }}
+              >
                 Payment Amount
               </Typography>
               <TextField
@@ -810,7 +894,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
                 value={amount}
                 onChange={(e) => {
                   // Only allow numbers, one decimal point, and max 2 decimal places
-                  const {value} = e.target;
+                  const { value } = e.target;
                   const regex = /^\d*(\.\d{0,2})?$/;
                   if (value === '' || regex.test(value)) {
                     setAmount(value);
@@ -819,7 +903,10 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Typography variant="body2" sx={{ color: amount ? 'text.primary' : 'text.disabled' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: amount ? 'text.primary' : 'text.disabled' }}
+                      >
                         {currencySymbols[currency] || ''}
                       </Typography>
                     </InputAdornment>
@@ -875,10 +962,10 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
                 boxShadow: '0px -3px 0px 0px #00000073 inset',
                 color: 'white',
                 '&:hover': {
-                  bgcolor: '#0035DF'
+                  bgcolor: '#0035DF',
                 },
                 textTransform: 'none',
-                fontWeight: 600
+                fontWeight: 600,
               }}
             >
               Generate and Send

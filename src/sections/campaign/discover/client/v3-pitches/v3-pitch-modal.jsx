@@ -26,7 +26,9 @@ import {
 
 import { paths } from 'src/routes/paths';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import { useGetAgreement } from 'src/hooks/agreement/use-get-agreement';
 
 import { formatNumber } from 'src/utils/media-kit-utils';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -38,6 +40,12 @@ import { useGetAllCreators } from 'src/api/creator';
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
 
+import CampaignAgreementEdit from '../../admin/campaign-agreement-edit';
+import {
+  seedPitchPlatform,
+  availablePitchPlatforms,
+  resolvePitchPlatformStats,
+} from './resolve-pitch-platform-stats';
 import {
   LINE,
   ONYX,
@@ -49,11 +57,6 @@ import {
   VDivider,
   FieldGroup,
 } from './v3-pitch-modal-parts';
-import {
-  availablePitchPlatforms,
-  resolvePitchPlatformStats,
-  seedPitchPlatform,
-} from './resolve-pitch-platform-stats';
 
 const DASH = '\u2014';
 const MAX_LANGUAGES = 3;
@@ -63,6 +66,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const navigate = useNavigate();
+
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(false);
@@ -72,6 +76,19 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
   const [selectedPlatform, setSelectedPlatform] = useState('instagram'); // 'instagram' or 'tiktok'
   const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
   const [agreementAmount, setAgreementAmount] = useState('');
+
+  const agreementDialog = useBoolean();
+
+  const {
+    data: agreements,
+    isLoading: loadingAgreements,
+    mutate: agreementsMutate,
+  } = useGetAgreement(campaign?.id, pitch?.userId);
+
+  const agreement = useMemo(
+    () => !loadingAgreements && agreements.find((item) => item?.round === 1),
+    [loadingAgreements, agreements]
+  );
 
   const resolvedAgreementTemplateId = useMemo(() => {
     if (campaign?.agreementTemplate?.id) return campaign.agreementTemplate.id;
@@ -175,7 +192,11 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
   // The three numbers follow the platform toggle in the header.
   const availablePlatforms = useMemo(() => availablePitchPlatforms(currentPitch), [currentPitch]);
 
-  const { followers: followerCount, engagementRate, averageLikes } = resolvePitchPlatformStats({
+  const {
+    followers: followerCount,
+    engagementRate,
+    averageLikes,
+  } = resolvePitchPlatformStats({
     pitch: currentPitch,
     creatorProfileFull,
     platform: selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram',
@@ -576,212 +597,212 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
             </Stack>
 
             <Stack spacing="15px">
-            {/* Languages and interests on the left, numbers on the right */}
-            <Stack
-              direction={{ xs: 'column', md: 'row' }}
-              justifyContent="space-between"
-              alignItems={{ xs: 'stretch', md: 'flex-start' }}
-              spacing={3}
-            >
-              <Stack spacing={1.5} sx={{ minWidth: 0 }}>
-                {visibleLanguages.length > 0 && (
-                  <FieldGroup label="Languages">
-                    {visibleLanguages.map((language) => (
-                      <TagChip key={language} label={language} />
-                    ))}
-                    {hiddenLanguages > 0 && <TagChip label={`+${hiddenLanguages}`} />}
-                  </FieldGroup>
-                )}
-
-                {visibleInterests.length > 0 && (
-                  <FieldGroup label="Interests">
-                    {visibleInterests.map((interest) => (
-                      <TagChip key={interest} label={interest} />
-                    ))}
-                    {hiddenInterests > 0 && <TagChip label={`+${hiddenInterests}`} />}
-                  </FieldGroup>
-                )}
-              </Stack>
-
+              {/* Languages and interests on the left, numbers on the right */}
               <Stack
-                alignItems={{ xs: 'stretch', md: 'flex-end' }}
-                spacing={2}
-                sx={{ flexShrink: 0, width: { xs: 1, md: 377 } }}
+                direction={{ xs: 'column', md: 'row' }}
+                justifyContent="space-between"
+                alignItems={{ xs: 'stretch', md: 'flex-start' }}
+                spacing={3}
               >
-                <Stack direction="row" alignItems="center" sx={{ height: 40 }}>
-                  <MetaItem compact={mdDown} label="Age" value={ageText} />
-                  <VDivider height={40} compact={mdDown} />
-                  <MetaItem compact={mdDown} label="Pronouns" value={pronounsText} />
-                  <VDivider height={40} compact={mdDown} />
-                  <MetaItem compact={mdDown} label="Tier" value={tierName} />
-                </Stack>
+                <Stack spacing={1.5} sx={{ minWidth: 0 }}>
+                  {visibleLanguages.length > 0 && (
+                    <FieldGroup label="Languages">
+                      {visibleLanguages.map((language) => (
+                        <TagChip key={language} label={language} />
+                      ))}
+                      {hiddenLanguages > 0 && <TagChip label={`+${hiddenLanguages}`} />}
+                    </FieldGroup>
+                  )}
 
-                <Stack direction="row" alignItems="center" sx={{ width: 1, height: 64 }}>
-                  <StatTile
-                    compact={mdDown}
-                    stat="followers"
-                    value={followersText}
-                    caption="Followers"
-                  />
-                  <VDivider height={64} compact={mdDown} />
-                  <StatTile
-                    compact={mdDown}
-                    stat="engagement"
-                    value={engagementText}
-                    caption="Engagement Rate"
-                  />
-                  <VDivider height={64} compact={mdDown} />
-                  <StatTile
-                    compact={mdDown}
-                    stat="likes"
-                    value={averageLikesText}
-                    caption="Average Likes"
-                  />
-                </Stack>
-              </Stack>
-            </Stack>
-
-            {/* Pitch type, match, submitted on, status */}
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              justifyContent="space-between"
-              alignItems={{ xs: 'flex-start', sm: 'center' }}
-              spacing={2}
-              sx={{
-                py: 2,
-                borderTop: '1px solid #E7E7E7',
-                borderBottom: '1px solid #E7E7E7',
-              }}
-            >
-              <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 0 }}>
-                <Box
-                  component="img"
-                  src={
-                    currentPitch?.type === 'video'
-                      ? '/assets/icons/components/ic_videopitch.svg'
-                      : '/assets/icons/components/ic_letterpitch.svg'
-                  }
-                  alt=""
-                  sx={{ width: 48, height: 48, flexShrink: 0 }}
-                />
-
-                <Stack spacing={0.75} alignItems="flex-start" sx={{ minWidth: 0 }}>
-                  <Typography
-                    sx={{ fontSize: 16, fontWeight: 600, lineHeight: '20px', color: '#000000' }}
-                  >
-                    {currentPitch?.type === 'video' ? 'Video Pitch' : 'Letter Pitch'}
-                  </Typography>
-
-                  <Box
-                    sx={{
-                      ...RAISED,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      px: 1,
-                      pt: 0.5,
-                      pb: 0.75,
-                    }}
-                  >
-                    <Box
-                      sx={{ position: 'relative', display: 'inline-flex', width: 14, height: 14 }}
-                    >
-                      <CircularProgress
-                        variant="determinate"
-                        value={100}
-                        size={14}
-                        thickness={7}
-                        sx={{ color: LINE }}
-                      />
-                      <CircularProgress
-                        variant="determinate"
-                        value={matchPercentage}
-                        size={14}
-                        thickness={7}
-                        sx={{
-                          color: '#1ABF66',
-                          position: 'absolute',
-                          left: 0,
-                          strokeLinecap: 'round',
-                        }}
-                      />
-                    </Box>
-                    <Typography
-                      sx={{
-                        fontSize: 13,
-                        fontWeight: 700,
-                        lineHeight: '16px',
-                        color: '#48484A',
-                        whiteSpace: { xs: 'normal', sm: 'nowrap' },
-                      }}
-                    >
-                      {`${matchPercentage}% MATCH WITH CAMPAIGN`}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Stack>
-
-              <Stack direction="row" spacing={2.5} alignItems="center" sx={{ flexShrink: 0 }}>
-                <Stack spacing={0.5} alignItems="flex-end">
-                  <Typography sx={{ fontSize: 12, lineHeight: '16px', color: MUTED }}>
-                    Submitted On
-                  </Typography>
-                  <Typography
-                    sx={{ fontSize: 14, fontWeight: 700, lineHeight: '18px', color: ONYX }}
-                  >
-                    {new Date(currentPitch?.createdAt).toLocaleDateString('en-US', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </Typography>
-                </Stack>
-
-                <Stack spacing={0.5} alignItems="flex-end" sx={{ maxWidth: 220 }}>
-                  <Typography sx={{ fontSize: 12, lineHeight: '16px', color: MUTED }}>
-                    Status
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      lineHeight: '18px',
-                      color: getStatusColor(displayStatus),
-                    }}
-                  >
-                    {getStatusLabel(displayStatus)}
-                  </Typography>
-
-                  {clientReason && (
-                    <Stack spacing={0.25} alignItems="flex-end" sx={{ pt: 1 }}>
-                      <Typography
-                        sx={{
-                          fontSize: 12,
-                          fontWeight: 700,
-                          lineHeight: '16px',
-                          letterSpacing: 0.5,
-                          color: '#FFC702',
-                        }}
-                      >
-                        CLIENT REASON
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: 12,
-                          fontWeight: 400,
-                          lineHeight: '16px',
-                          color: '#000000',
-                          textAlign: 'right',
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        {clientReason}
-                      </Typography>
-                    </Stack>
+                  {visibleInterests.length > 0 && (
+                    <FieldGroup label="Interests">
+                      {visibleInterests.map((interest) => (
+                        <TagChip key={interest} label={interest} />
+                      ))}
+                      {hiddenInterests > 0 && <TagChip label={`+${hiddenInterests}`} />}
+                    </FieldGroup>
                   )}
                 </Stack>
+
+                <Stack
+                  alignItems={{ xs: 'stretch', md: 'flex-end' }}
+                  spacing={2}
+                  sx={{ flexShrink: 0, width: { xs: 1, md: 377 } }}
+                >
+                  <Stack direction="row" alignItems="center" sx={{ height: 40 }}>
+                    <MetaItem compact={mdDown} label="Age" value={ageText} />
+                    <VDivider height={40} compact={mdDown} />
+                    <MetaItem compact={mdDown} label="Pronouns" value={pronounsText} />
+                    <VDivider height={40} compact={mdDown} />
+                    <MetaItem compact={mdDown} label="Tier" value={tierName} />
+                  </Stack>
+
+                  <Stack direction="row" alignItems="center" sx={{ width: 1, height: 64 }}>
+                    <StatTile
+                      compact={mdDown}
+                      stat="followers"
+                      value={followersText}
+                      caption="Followers"
+                    />
+                    <VDivider height={64} compact={mdDown} />
+                    <StatTile
+                      compact={mdDown}
+                      stat="engagement"
+                      value={engagementText}
+                      caption="Engagement Rate"
+                    />
+                    <VDivider height={64} compact={mdDown} />
+                    <StatTile
+                      compact={mdDown}
+                      stat="likes"
+                      value={averageLikesText}
+                      caption="Average Likes"
+                    />
+                  </Stack>
+                </Stack>
               </Stack>
-            </Stack>
+
+              {/* Pitch type, match, submitted on, status */}
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                justifyContent="space-between"
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                spacing={2}
+                sx={{
+                  py: 2,
+                  borderTop: '1px solid #E7E7E7',
+                  borderBottom: '1px solid #E7E7E7',
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 0 }}>
+                  <Box
+                    component="img"
+                    src={
+                      currentPitch?.type === 'video'
+                        ? '/assets/icons/components/ic_videopitch.svg'
+                        : '/assets/icons/components/ic_letterpitch.svg'
+                    }
+                    alt=""
+                    sx={{ width: 48, height: 48, flexShrink: 0 }}
+                  />
+
+                  <Stack spacing={0.75} alignItems="flex-start" sx={{ minWidth: 0 }}>
+                    <Typography
+                      sx={{ fontSize: 16, fontWeight: 600, lineHeight: '20px', color: '#000000' }}
+                    >
+                      {currentPitch?.type === 'video' ? 'Video Pitch' : 'Letter Pitch'}
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        ...RAISED,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        px: 1,
+                        pt: 0.5,
+                        pb: 0.75,
+                      }}
+                    >
+                      <Box
+                        sx={{ position: 'relative', display: 'inline-flex', width: 14, height: 14 }}
+                      >
+                        <CircularProgress
+                          variant="determinate"
+                          value={100}
+                          size={14}
+                          thickness={7}
+                          sx={{ color: LINE }}
+                        />
+                        <CircularProgress
+                          variant="determinate"
+                          value={matchPercentage}
+                          size={14}
+                          thickness={7}
+                          sx={{
+                            color: '#1ABF66',
+                            position: 'absolute',
+                            left: 0,
+                            strokeLinecap: 'round',
+                          }}
+                        />
+                      </Box>
+                      <Typography
+                        sx={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          lineHeight: '16px',
+                          color: '#48484A',
+                          whiteSpace: { xs: 'normal', sm: 'nowrap' },
+                        }}
+                      >
+                        {`${matchPercentage}% MATCH WITH CAMPAIGN`}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Stack>
+
+                <Stack direction="row" spacing={2.5} alignItems="center" sx={{ flexShrink: 0 }}>
+                  <Stack spacing={0.5} alignItems="flex-end">
+                    <Typography sx={{ fontSize: 12, lineHeight: '16px', color: MUTED }}>
+                      Submitted On
+                    </Typography>
+                    <Typography
+                      sx={{ fontSize: 14, fontWeight: 700, lineHeight: '18px', color: ONYX }}
+                    >
+                      {new Date(currentPitch?.createdAt).toLocaleDateString('en-US', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </Typography>
+                  </Stack>
+
+                  <Stack spacing={0.5} alignItems="flex-end" sx={{ maxWidth: 220 }}>
+                    <Typography sx={{ fontSize: 12, lineHeight: '16px', color: MUTED }}>
+                      Status
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        lineHeight: '18px',
+                        color: getStatusColor(displayStatus),
+                      }}
+                    >
+                      {getStatusLabel(displayStatus)}
+                    </Typography>
+
+                    {clientReason && (
+                      <Stack spacing={0.25} alignItems="flex-end" sx={{ pt: 1 }}>
+                        <Typography
+                          sx={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            lineHeight: '16px',
+                            letterSpacing: 0.5,
+                            color: '#FFC702',
+                          }}
+                        >
+                          CLIENT REASON
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: 12,
+                            fontWeight: 400,
+                            lineHeight: '16px',
+                            color: '#000000',
+                            textAlign: 'right',
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          {clientReason}
+                        </Typography>
+                      </Stack>
+                    )}
+                  </Stack>
+                </Stack>
+              </Stack>
             </Stack>
 
             {/* Pitch Content Section */}
@@ -858,149 +879,157 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
         </DialogContent>
 
         {availableActions.length > 0 && (
-        <DialogActions sx={{ px: { xs: 2, md: 3 }, pb: { xs: 2, md: 3 }, pt: 0, flexWrap: 'wrap', gap: 1 }}>
-              {availableActions.find((action) => action.action === 'reject') && (
-                <Button
-                  variant="contained"
-                  onClick={() => setRejectDialogOpen(true)}
-                  disabled={loading || isDisabled}
-                  sx={{
-                    textTransform: 'none',
-                    minHeight: 42,
-                    minWidth: 100,
-                    bgcolor: '#ffffff',
-                    color: '#D4321C',
+          <DialogActions
+            sx={{ px: { xs: 2, md: 3 }, pb: { xs: 2, md: 3 }, pt: 0, flexWrap: 'wrap', gap: 1 }}
+          >
+            {availableActions.find((action) => action.action === 'reject') && (
+              <Button
+                variant="contained"
+                onClick={() => setRejectDialogOpen(true)}
+                disabled={loading || isDisabled}
+                sx={{
+                  textTransform: 'none',
+                  minHeight: 42,
+                  minWidth: 100,
+                  bgcolor: '#ffffff',
+                  color: '#D4321C',
+                  border: '1.5px solid',
+                  borderColor: '#e7e7e7',
+                  borderBottom: '3px solid',
+                  borderBottomColor: '#e7e7e7',
+                  borderRadius: 1.15,
+                  fontWeight: 600,
+                  fontSize: '16px',
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
                     border: '1.5px solid',
-                    borderColor: '#e7e7e7',
+                    borderColor: '#D4321C',
                     borderBottom: '3px solid',
-                    borderBottomColor: '#e7e7e7',
-                    borderRadius: 1.15,
-                    fontWeight: 600,
-                    fontSize: '16px',
-                    '&:hover': {
-                      bgcolor: '#f5f5f5',
-                      border: '1.5px solid',
-                      borderColor: '#D4321C',
-                      borderBottom: '3px solid',
-                      borderBottomColor: '#D4321C',
-                    },
-                    '&.Mui-disabled': {
-                      cursor: 'not-allowed',
-                      pointerEvents: 'auto',
-                    },
-                  }}
-                >
-                  Reject
-                </Button>
-              )}
-              {availableActions.find((action) => action.action === 'approve') && (
-                <Button
-                  variant="contained"
-                  onClick={handleApprove}
-                  disabled={loading || isDisabled}
-                  sx={{
-                    textTransform: 'none',
-                    minHeight: 42,
-                    minWidth: 100,
-                    bgcolor: '#FFFFFF',
-                    color: '#1ABF66',
+                    borderBottomColor: '#D4321C',
+                  },
+                  '&.Mui-disabled': {
+                    cursor: 'not-allowed',
+                    pointerEvents: 'auto',
+                  },
+                }}
+              >
+                Reject
+              </Button>
+            )}
+            {availableActions.find((action) => action.action === 'approve') && (
+              <Button
+                variant="contained"
+                onClick={handleApprove}
+                disabled={loading || isDisabled}
+                sx={{
+                  textTransform: 'none',
+                  minHeight: 42,
+                  minWidth: 100,
+                  bgcolor: '#FFFFFF',
+                  color: '#1ABF66',
+                  border: '1.5px solid',
+                  borderColor: '#E7E7E7',
+                  borderBottom: '3px solid',
+                  borderBottomColor: '#E7E7E7',
+                  borderRadius: 1.15,
+                  fontWeight: 600,
+                  fontSize: '16px',
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
                     border: '1.5px solid',
-                    borderColor: '#E7E7E7',
+                    borderColor: '#1ABF66',
                     borderBottom: '3px solid',
-                    borderBottomColor: '#E7E7E7',
-                    borderRadius: 1.15,
-                    fontWeight: 600,
-                    fontSize: '16px',
-                    '&:hover': {
-                      bgcolor: '#f5f5f5',
-                      border: '1.5px solid',
-                      borderColor: '#1ABF66',
-                      borderBottom: '3px solid',
-                      borderBottomColor: '#1ABF66',
-                    },
-                    '&.Mui-disabled': {
-                      cursor: 'not-allowed',
-                      pointerEvents: 'auto',
-                    },
-                  }}
-                >
-                  {loading ? (
-                    <CircularProgress size={20} color="inherit" />
-                  ) : (
-                    availableActions.find((action) => action.action === 'approve')?.label ||
-                    'Approve'
-                  )}
-                </Button>
-              )}
-              {availableActions.find((action) => action.action === 'send_to_client') && (
-                <Button
-                  variant="contained"
-                  onClick={handleSendToClient}
-                  disabled={loading || isDisabled}
-                  sx={{
-                    textTransform: 'none',
-                    minHeight: 42,
-                    minWidth: 100,
-                    bgcolor: '#FFFFFF',
-                    color: '#1340FF',
+                    borderBottomColor: '#1ABF66',
+                  },
+                  '&.Mui-disabled': {
+                    cursor: 'not-allowed',
+                    pointerEvents: 'auto',
+                  },
+                }}
+              >
+                {loading ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  availableActions.find((action) => action.action === 'approve')?.label || 'Approve'
+                )}
+              </Button>
+            )}
+            {availableActions.find((action) => action.action === 'send_to_client') && (
+              <Button
+                variant="contained"
+                onClick={handleSendToClient}
+                disabled={loading || isDisabled}
+                sx={{
+                  textTransform: 'none',
+                  minHeight: 42,
+                  minWidth: 100,
+                  bgcolor: '#FFFFFF',
+                  color: '#1340FF',
+                  border: '1.5px solid',
+                  borderColor: '#E7E7E7',
+                  borderBottom: '3px solid',
+                  borderBottomColor: '#E7E7E7',
+                  borderRadius: 1.15,
+                  fontWeight: 600,
+                  fontSize: '16px',
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
                     border: '1.5px solid',
-                    borderColor: '#E7E7E7',
+                    borderColor: '#1340FF',
                     borderBottom: '3px solid',
-                    borderBottomColor: '#E7E7E7',
-                    borderRadius: 1.15,
-                    fontWeight: 600,
-                    fontSize: '16px',
-                    '&:hover': {
-                      bgcolor: '#f5f5f5',
-                      border: '1.5px solid',
-                      borderColor: '#1340FF',
-                      borderBottom: '3px solid',
-                      borderBottomColor: '#1340FF',
-                    },
-                    '&.Mui-disabled': {
-                      cursor: 'not-allowed',
-                      pointerEvents: 'auto',
-                    },
-                  }}
-                >
-                  {loading ? <CircularProgress size={20} color="inherit" /> : 'Send to Client'}
-                </Button>
-              )}
-              {availableActions.find((action) => action.action === 'agreement') && (
-                <Button
-                  variant="contained"
-                  onClick={handleSetAgreement}
-                  disabled={loading || isDisabled}
-                  sx={{
-                    textTransform: 'none',
-                    minHeight: 42,
-                    minWidth: 100,
-                    bgcolor: '#FFFFFF',
-                    color: '#203FF5',
-                    border: '1.5px solid',
-                    borderColor: '#E7E7E7',
-                    borderBottom: '3px solid',
-                    borderBottomColor: '#E7E7E7',
-                    borderRadius: 1.15,
-                    fontWeight: 600,
-                    fontSize: '16px',
-                    '&:hover': {
-                      bgcolor: '#f5f5f5',
-                      border: '1.5px solid',
-                      borderColor: '#203FF5',
-                      borderBottom: '3px solid',
-                      borderBottomColor: '#203FF5',
-                    },
-                    '&.Mui-disabled': {
-                      cursor: 'not-allowed',
-                      pointerEvents: 'auto',
-                    },
-                  }}
-                >
-                  Set Agreement
-                </Button>
-              )}
-        </DialogActions>
+                    borderBottomColor: '#1340FF',
+                  },
+                  '&.Mui-disabled': {
+                    cursor: 'not-allowed',
+                    pointerEvents: 'auto',
+                  },
+                }}
+              >
+                {loading ? <CircularProgress size={20} color="inherit" /> : 'Send to Client'}
+              </Button>
+            )}
+            {availableActions.find((action) => action.action === 'agreement') && (
+              <Button
+                onClick={agreementDialog.onTrue}
+                disabled={loading || isDisabled}
+                size="small"
+                variant="contained"
+                startIcon={
+                  <Iconify
+                    icon="bx:send"
+                    sx={{
+                      color: '#fff',
+                    }}
+                  />
+                }
+                sx={{
+                  px: 2,
+                  py: 2,
+                  bgcolor: '#1340FF',
+                  color: '#ffffff',
+                  border: '1.5px solid #1340FF',
+                  borderBottom: '3px solid',
+                  borderBottomColor: '#00000073',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    bgcolor: '#0a2dd9',
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: 'rgba(19, 64, 255, 0.5)',
+                    border: '1px solid rgba(19, 64, 255, 0.5)',
+                    color: '#ffffff',
+                    cursor: 'not-allowed',
+                    pointerEvents: 'auto',
+                  },
+                }}
+              >
+                {agreement?.isSent ? 'Edit' : 'Send'} Agreement
+              </Button>
+            )}
+          </DialogActions>
         )}
       </Dialog>
 
@@ -1146,6 +1175,14 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
           </Button>
         </DialogActions>
       </Dialog>
+
+      <CampaignAgreementEdit
+        campaign={campaign}
+        agreement={agreement}
+        campaignMutate={() => {}}
+        dialog={agreementDialog}
+        agreementsMutate={agreementsMutate}
+      />
     </>
   );
 };

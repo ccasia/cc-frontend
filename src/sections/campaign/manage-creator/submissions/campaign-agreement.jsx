@@ -27,7 +27,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 // V3 pitches hook removed
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -125,13 +125,14 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const { data: agreements } = useGetAgreements(campaign?.id);
   const myAgreement = agreements?.find((a) => a.userId === user?.id);
   const originalAgreementUrl = myAgreement?.agreementUrl || campaign?.agreement?.agreementUrl;
-  
+
   // Convert Google Storage URL to backend proxy URL to bypass CORS
-  const agreementUrl = originalAgreementUrl ? 
-    originalAgreementUrl.replace(
-      'https://storage.googleapis.com/cult-prod/',
-      `${window.location.origin}/api/agreement/agreement-template/`
-    ) : null;
+  const agreementUrl = originalAgreementUrl
+    ? originalAgreementUrl.replace(
+        'https://storage.googleapis.com/cult-prod/',
+        `${window.location.origin}/api/agreement/agreement-template/`
+      )
+    : null;
 
   const agreement = campaign?.campaignTimeline?.find((elem) => elem?.name === 'Agreement');
 
@@ -609,13 +610,13 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 }}
               />
 
-              <Box 
-                sx={{ 
-                  display: 'flex', 
+              <Box
+                sx={{
+                  display: 'flex',
                   flexDirection: { xs: 'column', sm: 'row' },
-                  justifyContent: 'flex-end', 
-                  mt: 2, 
-                  gap: { xs: 1.5, sm: 1 } 
+                  justifyContent: 'flex-end',
+                  mt: 2,
+                  gap: { xs: 1.5, sm: 1 },
                 }}
               >
                 <Button
@@ -816,12 +817,12 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 }}
               /> */}
 
-              <Box 
-                sx={{ 
-                  display: 'flex', 
+              <Box
+                sx={{
+                  display: 'flex',
                   flexDirection: { xs: 'column', sm: 'row' },
-                  justifyContent: 'flex-end', 
-                  gap: { xs: 1.5, sm: 1 } 
+                  justifyContent: 'flex-end',
+                  gap: { xs: 1.5, sm: 1 },
                 }}
               >
                 <Button
@@ -845,7 +846,9 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     width: { xs: '100%', sm: 'auto' },
                   }}
                 >
-                  <Typography variant='body2' fontWeight="bold">Upload Agreement</Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    Upload Agreement
+                  </Typography>
                 </Button>
 
                 <Button
@@ -888,7 +891,13 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     width: { xs: '100%', sm: 'auto' },
                   }}
                 >
-                  <Typography variant='body2' fontWeight="bold" sx={{ display: { xs: 'flex', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
+                  <Typography
+                    variant="body2"
+                    fontWeight="bold"
+                    sx={{ display: { xs: 'flex', md: 'flex' }, mr: 1 }}
+                  >
+                    Download Agreement
+                  </Typography>
                   <Iconify icon="material-symbols:download" width={25} />
                 </Button>
               </Box>
@@ -1091,12 +1100,12 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 </Box>
               </Box>
 
-              <Box 
-                sx={{ 
-                  display: 'flex', 
+              <Box
+                sx={{
+                  display: 'flex',
                   flexDirection: { xs: 'column', sm: 'row' },
-                  justifyContent: 'flex-end', 
-                  gap: { xs: 1.5, sm: 1 } 
+                  justifyContent: 'flex-end',
+                  gap: { xs: 1.5, sm: 1 },
                 }}
               >
                 <Button
@@ -1120,7 +1129,9 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     width: { xs: '100%', sm: 'auto' },
                   }}
                 >
-                  <Typography variant='body2' fontWeight="bold">Upload Agreement</Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    Upload Agreement
+                  </Typography>
                 </Button>
 
                 <Button
@@ -1163,7 +1174,13 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     width: { xs: '100%', sm: 'auto' },
                   }}
                 >
-                  <Typography variant='body2' fontWeight="bold" sx={{ display: { xs: 'flex', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
+                  <Typography
+                    variant="body2"
+                    fontWeight="bold"
+                    sx={{ display: { xs: 'flex', md: 'flex' }, mr: 1 }}
+                  >
+                    Download Agreement
+                  </Typography>
                   <Iconify icon="material-symbols:download" width={25} />
                 </Button>
               </Box>
@@ -1535,7 +1552,11 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         PaperProps={{ sx: { borderRadius: 3, bgcolor: '#f4f4f4' } }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 1.5, px: 1.5 }}>
-          <IconButton onClick={() => setPaymentGateOpen(false)} size="small" sx={{ color: '#8e8e93' }}>
+          <IconButton
+            onClick={() => setPaymentGateOpen(false)}
+            size="small"
+            sx={{ color: '#8e8e93' }}
+          >
             <Iconify icon="hugeicons:cancel-01" width={20} />
           </IconButton>
         </Box>
@@ -1813,10 +1834,10 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
       </Dialog>
 
       {/* New sign agreement dialog */}
-      <Dialog 
-        open={editor.value} 
-        onClose={editor.onFalse} 
-        fullWidth 
+      <Dialog
+        open={editor.value}
+        onClose={editor.onFalse}
+        fullWidth
         maxWidth="md"
         PaperProps={{
           sx: {
@@ -1826,22 +1847,24 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             borderRadius: { xs: 2, md: 1 },
             width: { xs: '95vw', md: 'auto' },
             maxWidth: { xs: '95vw', md: 'md' },
-          }
+          },
         }}
       >
-        <DialogTitle sx={{ 
-          p: { xs: 2, md: 2 }, 
-          borderBottom: 1, 
-          borderColor: 'divider',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          bgcolor: 'background.paper',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-        }}>
-          <Typography 
+        <DialogTitle
+          sx={{
+            p: { xs: 2, md: 2 },
+            borderBottom: 1,
+            borderColor: 'divider',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: 'background.paper',
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+          }}
+        >
+          <Typography
             variant="h6"
             sx={{
               fontWeight: 400,
@@ -1850,12 +1873,12 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
           >
             Sign Your Agreement
           </Typography>
-          <IconButton 
-            onClick={editor.onFalse} 
+          <IconButton
+            onClick={editor.onFalse}
             size="small"
-            sx={{ 
+            sx={{
               color: 'text.secondary',
-              '&:hover': { bgcolor: 'action.hover' }
+              '&:hover': { bgcolor: 'action.hover' },
             }}
           >
             <Iconify icon="eva:close-fill" width={20} />
@@ -1870,19 +1893,21 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             setSignURL={setSignURL}
           />
         </DialogContent>
-        <DialogActions sx={{ 
-          p: { xs: 2, md: 2 }, 
-          borderTop: 1, 
-          borderColor: 'divider', 
-          gap: { xs: 1.5, md: 2 },
-          flexDirection: 'row',
-          bgcolor: 'background.paper',
-          position: 'sticky',
-          bottom: 0,
-          zIndex: 10,
-        }}>
-          <Button 
-            onClick={editor.onFalse} 
+        <DialogActions
+          sx={{
+            p: { xs: 2, md: 2 },
+            borderTop: 1,
+            borderColor: 'divider',
+            gap: { xs: 1.5, md: 2 },
+            flexDirection: 'row',
+            bgcolor: 'background.paper',
+            position: 'sticky',
+            bottom: 0,
+            zIndex: 10,
+          }}
+        >
+          <Button
+            onClick={editor.onFalse}
             variant="outlined"
             sx={{
               borderColor: '#203ff5',

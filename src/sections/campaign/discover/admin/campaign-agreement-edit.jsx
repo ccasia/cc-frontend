@@ -28,7 +28,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCreditTiers from 'src/hooks/use-get-credit-tiers';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -408,7 +408,7 @@ const CampaignAgreementEdit = ({
     setValue('platformFollowerCount', String(getFollowerCountByPlatform(agreedPlatform) || ''));
 
     setValue('isSeedingAgreement', agreement?.isSeeding);
-    if (agreement?.productSeeding.length) {
+    if (agreement?.productSeeding?.length) {
       setValue('product', {
         name: agreement?.productSeeding?.[0]?.name,
         value: agreement?.productSeeding?.[0]?.value,

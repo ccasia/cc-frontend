@@ -376,6 +376,7 @@ export const endpoints = {
     exportActiveCompleted: '/api/campaign/export/active-completed',
     exportCampaignCreators: '/api/campaign/export/campaign-creators',
     removeCreator: `/api/campaign/removeCreatorFromCampaign`,
+    agreement: (campaignId, userId) => `/api/campaign/${campaignId}/agreement/${userId}`,
   },
   campaignCreationDrafts: {
     root: '/api/campaign-creation-drafts',

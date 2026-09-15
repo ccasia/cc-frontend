@@ -12,7 +12,7 @@ import { Box, Stack, Button, Typography, CircularProgress } from '@mui/material'
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
 
@@ -52,7 +52,7 @@ const InvoiceDetail = ({ invoiceId }) => {
     // Get currency from task field first, then fall back to other sources
     const currencySymbol = invoiceData?.task?.currencySymbol || invoiceData?.currencySymbol;
     const currencyCode = invoiceData?.task?.currency || invoiceData?.currency;
-    
+
     const creatorCurrency =
       currencyCode ||
       creatorAgreement?.user?.shortlisted?.[0]?.currency ||
@@ -196,11 +196,7 @@ const InvoiceDetail = ({ invoiceId }) => {
                 color: '#637381',
               }}
             >
-              {formatCurrencyAmount(
-                data?.amount, 
-                data?.creatorCurrency, 
-                data?.currencySymbol
-              )}
+              {formatCurrencyAmount(data?.amount, data?.creatorCurrency, data?.currencySymbol)}
             </Typography>
           </Stack>
 
