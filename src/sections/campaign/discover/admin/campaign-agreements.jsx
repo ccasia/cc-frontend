@@ -12,12 +12,12 @@ import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Chip,
+  Menu,
   Table,
   Stack,
   Button,
   Dialog,
   Avatar,
-  Select,
   Tooltip,
   Divider,
   Checkbox,
@@ -75,6 +75,102 @@ const ROUND_LABELS = {
 };
 
 const getRoundLabel = (round) => ROUND_LABELS[round] || `Agreement ${round}`;
+
+const FILTER_PILL_SX = {
+  height: 34,
+  minHeight: 34,
+  padding: '8px 16px',
+  gap: '4px',
+  border: 'none',
+  borderBottom: 'none',
+  borderRadius: '100px',
+  fontFamily: 'Inter Display, Inter, sans-serif',
+  fontWeight: 500,
+  fontSize: 14,
+  lineHeight: '18px',
+  textTransform: 'none',
+  whiteSpace: 'nowrap',
+  minWidth: 'unset',
+  flexShrink: 0,
+  boxShadow: 'none',
+  '& .MuiButton-endIcon': {
+    ml: 0,
+    mr: 0,
+  },
+};
+
+const getFilterPillSx = (isActive) => ({
+  ...FILTER_PILL_SX,
+  bgcolor: isActive ? 'rgba(19, 64, 255, 0.10)' : '#F5F5F5',
+  color: isActive ? '#1340FF' : '#231F20',
+  fontWeight: isActive ? 600 : 500,
+  '&:hover': {
+    bgcolor: isActive ? 'rgba(19, 64, 255, 0.16)' : '#EBEBEB',
+    border: 'none',
+    borderBottom: 'none',
+    boxShadow: 'none',
+  },
+});
+
+function FilterPillEndIcons({ isActive, isOpen, onClear, clearLabel }) {
+  const handleClear = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onClear();
+  };
+
+  return (
+    <Stack direction="row" alignItems="center" spacing={0.25} component="span">
+      {isActive && (
+        <Box
+          component="span"
+          role="button"
+          tabIndex={0}
+          aria-label={clearLabel}
+          onClick={handleClear}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              handleClear(event);
+            }
+          }}
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 18,
+            height: 18,
+            borderRadius: '50%',
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: 'rgba(19, 64, 255, 0.16)',
+            },
+          }}
+        >
+          <Iconify icon="eva:close-fill" width={14} />
+        </Box>
+      )}
+      <Iconify
+        icon="eva:chevron-down-fill"
+        width={20}
+        sx={{
+          transform: isOpen ? 'rotate(180deg)' : 'none',
+          transition: 'transform 0.2s',
+        }}
+      />
+    </Stack>
+  );
+}
+
+FilterPillEndIcons.propTypes = {
+  isActive: PropTypes.bool,
+  isOpen: PropTypes.bool,
+  onClear: PropTypes.func.isRequired,
+  clearLabel: PropTypes.string.isRequired,
+};
 
 // Custom checkbox look: white square with a blue border + blue check when checked, plain
 // grey-outlined square when empty — square corners (no radius) — used for both the header
@@ -487,6 +583,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [agreementFilterAnchorEl, setAgreementFilterAnchorEl] = useState(null);
   const [activeRound, setActiveRound] = useState(1);
   const table = useTable();
   const sendAdditionalDialog = useBoolean();
@@ -521,7 +618,6 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
   const { mainRef } = useMainContext();
 
   const smUp = useResponsive('up', 'sm');
-  const lgUp = useResponsive('up', 'lg');
 
   // Guest creators must link a platform account before send; submissions merge by userId.
   // Platform creators often have no AGREEMENT_FORM row until after the agreement is sent (v4 flow).
@@ -1011,6 +1107,51 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
     };
   }, [roundScopedAgreements]);
 
+  const agreementStatusOptions = useMemo(
+    () => [
+      { value: 'all', label: 'All' },
+      {
+        value: 'pendingAgreement',
+        label: `Pending Agreement (${filterCounts.pendingAgreement})`,
+      },
+      {
+        value: 'pendingApproval',
+        label: `Pending Approval (${filterCounts.pendingApproval})`,
+      },
+      {
+        value: 'sentToCreator',
+        label: `Sent To Creator (${filterCounts.sentToCreator})`,
+      },
+      { value: 'rejected', label: `Rejected (${filterCounts.rejected})` },
+      { value: 'approved', label: `Approved (${filterCounts.approved})` },
+    ],
+    [filterCounts]
+  );
+
+  const isAgreementFilterActive = selectedFilter !== 'all';
+  const agreementFilterLabel = isAgreementFilterActive
+    ? agreementStatusOptions.find((option) => option.value === selectedFilter)?.label ||
+      'Agreement Status'
+    : 'Agreement Status';
+
+  const handleAgreementFilterClick = (event) => {
+    setAgreementFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleAgreementFilterClose = () => {
+    setAgreementFilterAnchorEl(null);
+  };
+
+  const handleAgreementFilterSelect = (value) => {
+    setSelectedFilter(value);
+    setAgreementFilterAnchorEl(null);
+  };
+
+  const handleAgreementFilterClear = () => {
+    setSelectedFilter('all');
+    setAgreementFilterAnchorEl(null);
+  };
+
   // Eligible for an additional agreement: this round has already been sent to the creator.
   const eligibleForAdditionalIds = useMemo(
     () => new Set(filteredData.filter((item) => item.isSent).map((item) => item.userId)),
@@ -1202,9 +1343,69 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
               >
                 Alphabetical
               </Button>
+              <Button
+                variant="text"
+                disableElevation
+                onClick={handleAgreementFilterClick}
+                endIcon={
+                  <FilterPillEndIcons
+                    isActive={isAgreementFilterActive}
+                    isOpen={Boolean(agreementFilterAnchorEl)}
+                    onClear={handleAgreementFilterClear}
+                    clearLabel="Clear agreement status filters"
+                  />
+                }
+                sx={getFilterPillSx(isAgreementFilterActive)}
+              >
+                {agreementFilterLabel}
+              </Button>
+              <Menu
+                anchorEl={agreementFilterAnchorEl}
+                open={Boolean(agreementFilterAnchorEl)}
+                onClose={handleAgreementFilterClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      mt: 0.5,
+                      minWidth: 200,
+                      p: 0.5,
+                      bgcolor: 'white',
+                      boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
+                      borderRadius: 1.5,
+                    },
+                  },
+                }}
+              >
+                {agreementStatusOptions.map((option) => (
+                  <MenuItem
+                    key={option.value}
+                    selected={selectedFilter === option.value}
+                    onClick={() => handleAgreementFilterSelect(option.value)}
+                    sx={{
+                      fontFamily: 'Inter Display, Inter, sans-serif',
+                      fontSize: 14,
+                      fontWeight: selectedFilter === option.value ? 600 : 500,
+                      color: '#231F20',
+                      borderRadius: 1,
+                      py: 0.75,
+                    }}
+                  >
+                    {option.label}
+                    {selectedFilter === option.value && (
+                      <Iconify
+                        icon="eva:checkmark-fill"
+                        width={16}
+                        sx={{ ml: 'auto', flexShrink: 0 }}
+                      />
+                    )}
+                  </MenuItem>
+                ))}
+              </Menu>
             </Stack>
 
-            <Stack direction="row" alignItems="center" spacing={2} sx={{ flexShrink: 0 }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ flexShrink: 0 }}>
               {table.selected.length > 0 && (
                 <Stack direction="row" alignItems="center" spacing={1.5}>
                   <Typography
@@ -1374,224 +1575,6 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
               </Tooltip>
             </Stack>
           </Stack>
-
-          {lgUp ? (
-            <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap' }}>
-              <Button
-                onClick={() => setSelectedFilter('all')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  ...(selectedFilter === 'all'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor: selectedFilter === 'all' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                  },
-                }}
-              >
-                All
-              </Button>{' '}
-              <Button
-                onClick={() => setSelectedFilter('pendingAgreement')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                  ...(selectedFilter === 'pendingAgreement'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor:
-                      selectedFilter === 'pendingAgreement'
-                        ? 'rgba(32, 63, 245, 0.04)'
-                        : 'transparent',
-                  },
-                }}
-              >
-                {`Pending Agreement (${filterCounts.pendingAgreement})`}
-              </Button>
-              <Button
-                onClick={() => setSelectedFilter('pendingApproval')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                  ...(selectedFilter === 'pendingApproval'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor:
-                      selectedFilter === 'pendingApproval'
-                        ? 'rgba(32, 63, 245, 0.04)'
-                        : 'transparent',
-                  },
-                }}
-              >
-                {`Pending Approval (${filterCounts.pendingApproval})`}
-              </Button>
-              <Button
-                onClick={() => setSelectedFilter('sentToCreator')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                  ...(selectedFilter === 'sentToCreator'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor:
-                      selectedFilter === 'sentToCreator'
-                        ? 'rgba(32, 63, 245, 0.04)'
-                        : 'transparent',
-                  },
-                }}
-              >
-                {`Sent To Creator (${filterCounts.sentToCreator})`}
-              </Button>
-              <Button
-                onClick={() => setSelectedFilter('rejected')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                  ...(selectedFilter === 'rejected'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor:
-                      selectedFilter === 'rejected' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                  },
-                }}
-              >
-                {`Rejected (${filterCounts.rejected})`}
-              </Button>
-              <Button
-                onClick={() => setSelectedFilter('approved')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                  ...(selectedFilter === 'approved'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor:
-                      selectedFilter === 'approved' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                  },
-                }}
-              >
-                {`Approved (${filterCounts.approved})`}
-              </Button>
-            </Stack>
-          ) : (
-            <Select
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value)}
-              size="small"
-              sx={{
-                minWidth: { xs: '100%', sm: 200 },
-                height: 42,
-                bgcolor: '#FFFFFF',
-                border: '1.5px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1.15,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                '& .MuiOutlinedInput-notchedOutline': {
-                  border: 'none',
-                },
-                '& .MuiSelect-select': {
-                  py: 1.25,
-                },
-              }}
-            >
-              <MenuItem value="all">{`All (${filterCounts.all})`}</MenuItem>
-              <MenuItem value="pendingAgreement">{`Pending Agreement (${filterCounts.pendingAgreement})`}</MenuItem>
-              <MenuItem value="pendingApproval">{`Pending Approval (${filterCounts.pendingApproval})`}</MenuItem>
-              <MenuItem value="sentToCreator">{`Sent To Creator (${filterCounts.sentToCreator})`}</MenuItem>
-              <MenuItem value="rejected">{`Rejected (${filterCounts.rejected})`}</MenuItem>
-              <MenuItem value="approved">{`Approved (${filterCounts.approved})`}</MenuItem>
-            </Select>
-          )}
         </Stack>
 
         {!filteredData || filteredData.length < 1 ? (
