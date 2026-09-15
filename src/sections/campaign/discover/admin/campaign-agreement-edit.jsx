@@ -390,20 +390,15 @@ const CampaignAgreementEdit = ({
   );
 
   const handleSavedValue = useCallback(() => {
-    const currentCredits =
-      agreement?.shortlistedCreator?.ugcVideos !== undefined &&
-      agreement?.shortlistedCreator?.ugcVideos !== null
-        ? String(agreement.shortlistedCreator.ugcVideos)
-        : '';
-
     if (isDefault) {
       setValue('paymentAmount', '200');
       setValue('ugcCredits', '1');
       return;
     }
 
-    setValue('paymentAmount', agreement?.shortlistedCreator?.amount);
-    setValue('ugcCredits', currentCredits);
+    setValue('paymentAmount', agreement?.amount);
+    setValue('currency', CURRENCY_PREFIXES[agreement?.currency]?.label);
+    setValue('ugcCredits', agreement?.videoCount);
     setSelectedPlatform(agreedPlatform);
     setValue('platformFollowerCount', String(getFollowerCountByPlatform(agreedPlatform) || ''));
 
@@ -415,8 +410,9 @@ const CampaignAgreementEdit = ({
       });
     }
   }, [
-    agreement?.shortlistedCreator?.ugcVideos,
-    agreement?.shortlistedCreator?.amount,
+    agreement?.currency,
+    agreement?.videoCount,
+    agreement?.amount,
     agreement?.isSeeding,
     agreement?.productSeeding,
     isDefault,
@@ -564,7 +560,7 @@ const CampaignAgreementEdit = ({
           ccEmail="hello@cultcreative.com"
           ccPhoneNumber="+60162678757"
           effectiveDate={dayjs().add(4, 'day').format('LL')}
-          creatorPayment={`${CURRENCY_PREFIXES[data.currency]?.prefix}${data.paymentAmount}`}
+          creatorPayment={`${CURRENCY_PREFIXES[data.currency]?.prefix}${parseFloat(Number(data.paymentAmount)).toFixed(2)}`}
           CREATOR_NAME={
             agreement?.user?.paymentForm?.bankAccountName || agreement?.user?.name || 'N/A'
           }
@@ -657,7 +653,7 @@ const CampaignAgreementEdit = ({
       maxWidth="sm"
       PaperProps={{
         sx: {
-          borderRadius: 1,
+          bgcolor: 'rgba(244, 244, 244, 1)',
         },
       }}
     >
@@ -666,12 +662,12 @@ const CampaignAgreementEdit = ({
           <IconButton
             sx={{ position: 'absolute', top: 10, right: 10, zIndex: 10 }}
             onClick={() => {
-              // reset();
               dialog.onFalse();
             }}
           >
             <Iconify icon="ci:close-md" width={20} />
           </IconButton>
+
           <Box sx={{ padding: '10px 16px' }}>
             <Stack direction="row" alignItems="center" flexWrap="wrap">
               <Typography
@@ -684,44 +680,29 @@ const CampaignAgreementEdit = ({
                 Send Agreement
               </Typography>
             </Stack>
-            {/* <Chip
-              variant="outlined"
-              label={`${Math.max(0, realTimeCreditsLeft ?? 0)} Campaign Credits Remaining`}
-              sx={{
-                color: 'rgba(19, 64, 255, 1)',
-                fontFamily: 'Inter Display, sans-serif',
-                fontSize: '13px',
-                fontWeight: 500,
-
-                letterSpacing: -0.5,
-                bgcolor: alpha('rgba(19, 64, 255, 1)', 0.2),
-                borderColor: alpha('rgba(19, 64, 255, 1)', 0.3),
-
-                width: 1,
-                height: 30,
-                borderRadius: 999,
-              }}
-              size="small"
-              icon={
-                <Iconify icon="ep:coin" color="rgba(19, 64, 255, 1)" style={{ marginRight: 5 }} />
-              }
-            /> */}
           </Box>
+
           <Divider sx={{ mb: 0 }} />
+
           <Box sx={{ padding: '20px 40px' }}>
             <Grid container spacing={2}>
               {/* User Info & Platform Selection */}
               <Grid item xs={12} alignSelf="center">
                 <Box
-                  sx={{
-                    border: 1,
-                    borderColor: (theme) => theme.palette.divider,
-                    px: 2,
-                    py: 1,
-                    borderRadius: 2,
-                  }}
+                // sx={{
+                //   border: 1,
+                //   borderColor: (theme) => theme.palette.divider,
+                //   px: 2,
+                //   py: 1,
+                //   borderRadius: 2,
+                // }}
                 >
-                  <Stack direction="row" justifyContent="space-between">
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    flexDirection={{ xs: 'column', sm: 'row' }}
+                    spacing={1}
+                  >
                     <Stack direction="row" alignItems="center" gap={1.5} flex={1}>
                       <Avatar src={agreement?.user?.photoURL} />
                       <Stack>
@@ -746,7 +727,14 @@ const CampaignAgreementEdit = ({
                         </Typography>
                       </Stack>
                     </Stack>
-                    <Stack sx={{ flex: 1, justifyContent: 'flex-start' }}>
+                    <Stack
+                      sx={{
+                        flex: 1,
+                        justifyContent: 'flex-start',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: 'center',
+                      }}
+                    >
                       <Tabs
                         value={selectedPlatform}
                         onChange={(_, val) => {
@@ -788,7 +776,7 @@ const CampaignAgreementEdit = ({
                             flexShrink: 0,
                             bgcolor: 'rgba(231, 231, 231, 1)',
                             flex: 1,
-                            width: 200,
+                            width: { xs: 1, sm: 200 },
                           },
                           '& .MuiTabs-scroller': {
                             p: '0px',
@@ -817,8 +805,9 @@ const CampaignAgreementEdit = ({
                           />
                         ))}
                       </Tabs>
+
                       {campaign?.isCreditTier && displayTierData && (
-                        <Stack direction="row" spacing={1} ml={2}>
+                        <Stack direction="column" ml={2}>
                           <Box
                             sx={{
                               py: 0.5,
@@ -968,6 +957,7 @@ const CampaignAgreementEdit = ({
                         <NumericFormat
                           {...field}
                           customInput={RHFTextField}
+                          onChange={undefined}
                           InputProps={{
                             startAdornment: (
                               <InputAdornment position="start" sx={{ mr: 1 }}>
@@ -1199,7 +1189,9 @@ const CampaignAgreementEdit = ({
               </Grid>
             </Grid>
           </Box>
+
           <Divider sx={{ mb: 0 }} />
+
           <Box sx={{ p: 4, pb: 2 }} textAlign="end">
             <LoadingButton
               type="submit"
