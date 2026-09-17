@@ -6,9 +6,19 @@ import TableCell from '@mui/material/TableCell';
 
 import Iconify from 'src/components/iconify';
 
-const SortableHeader = ({ column, label, width, minWidth, sortColumn, sortDirection, onSort, sx = {}, align }) => {
+const SortableHeader = ({
+  column,
+  label,
+  width,
+  minWidth,
+  sortColumn,
+  sortDirection,
+  onSort,
+  sx = {},
+  align,
+}) => {
   const isActive = sortColumn === column;
-  
+
   // If width/minWidth are provided as props (non-object), use them; otherwise let sx handle it
   const baseStyles = {
     py: { xs: 0.5, sm: 1 },
@@ -24,7 +34,7 @@ const SortableHeader = ({ column, label, width, minWidth, sortColumn, sortDirect
       bgcolor: '#ebebeb',
     },
   };
-  
+
   // Add width/minWidth if they're simple values (not responsive objects)
   if (width && typeof width !== 'object') {
     baseStyles.width = width;
@@ -32,10 +42,11 @@ const SortableHeader = ({ column, label, width, minWidth, sortColumn, sortDirect
   if (minWidth && typeof minWidth !== 'object') {
     baseStyles.minWidth = minWidth;
   }
-  
+
   return (
     <TableCell
       onClick={() => onSort(column)}
+
       sx={{
         ...baseStyles,
         ...sx,
@@ -44,7 +55,9 @@ const SortableHeader = ({ column, label, width, minWidth, sortColumn, sortDirect
       <Stack direction="row" alignItems="center" spacing={0.5}>
         <span>{label}</span>
         <Iconify
-          icon={isActive && sortDirection === 'desc' ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+          icon={
+            isActive && sortDirection === 'desc' ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'
+          }
           width={16}
           sx={{
             color: isActive ? '#203ff5' : '#8E8E93',

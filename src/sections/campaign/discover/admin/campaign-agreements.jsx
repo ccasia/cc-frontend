@@ -1,5 +1,7 @@
+/* eslint-disable no-nested-ternary */
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
@@ -7,7 +9,7 @@ import { enqueueSnackbar } from 'notistack';
 import { useNavigate, useLocation } from 'react-router';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
-import { alpha } from '@mui/system';
+import { alpha, minWidth } from '@mui/system';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
@@ -206,6 +208,16 @@ const CURRENCY_PREFIXES = {
   IDR: { prefix: 'Rp', label: 'IDR' },
   USD: { prefix: '$', label: 'USD' },
 };
+
+const AMOUNT_TEXT_SX = { fontSize: { xs: '0.7rem', sm: '0.875rem' } };
+
+function renderAmountText(content) {
+  return (
+    <Typography variant="body2" sx={AMOUNT_TEXT_SX}>
+      {content}
+    </Typography>
+  );
+}
 
 // Convert AgreementDialog to a full component with approve/reject functionality
 const AgreementDialog = ({
@@ -1607,16 +1619,14 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                         eligibleForAdditionalIds.size > 0 &&
                         table.selected.length === eligibleForAdditionalIds.size
                       }
-                      // "Select all" only ever bulk-checks additional-agreement-eligible
-                      // creators — a bulk (first) agreement send must be ticked one by one.
                       disabled={
                         isDisabled ||
                         selectionCategory === 'bulk' ||
                         eligibleForAdditionalIds.size === 0
                       }
-                      onChange={(e) =>
-                        table.onSelectAllRows(e.target.checked, [...eligibleForAdditionalIds])
-                      }
+                      onChange={(e) => {
+                        table.onSelectAllRows(e.target.checked, [...eligibleForAdditionalIds]);
+                      }}
                       sx={{ p: 0.5 }}
                     />
                   </TableCell>
@@ -1674,6 +1684,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                       Tier
                     </TableCell>
                   )}
+
                   <SortableHeader
                     column="date"
                     label="Issue Date"
@@ -1683,31 +1694,15 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                     sortDirection={sortDirection}
                     onSort={handleColumnSort}
                   />
+
                   <SortableHeader
                     column="status"
                     label="Status"
-                    width={{ xs: '15%', sm: 75 }}
-                    minWidth={{ xs: 90, sm: 75 }}
                     sortColumn={sortColumn}
                     sortDirection={sortDirection}
                     onSort={handleColumnSort}
+                    sx={{ width: { xs: '15%', sm: 75 }, minWidth: { xs: 90, sm: 75 } }}
                   />
-
-                  {filteredData?.some((item) => item.isSeeding) && (
-                    <TableCell
-                      sx={{
-                        py: 1,
-                        color: '#221f20',
-                        fontWeight: 600,
-                        width: { xs: '20%', sm: 95 },
-                        minWidth: { xs: 85, sm: 95 },
-                        bgcolor: '#f5f5f5',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Product
-                    </TableCell>
-                  )}
 
                   <TableCell
                     sx={{
@@ -1736,6 +1731,14 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                   >
                     Agreement PDF
                   </TableCell>
+                  {/* <TableCell
+                    sx={{
+                      color: '#221f20',
+                      borderRadius: '0 10px 10px 0',
+                      bgcolor: '#f5f5f5',
+                      whiteSpace: 'nowrap',
+                    }}
+                  /> */}
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1757,9 +1760,54 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
 
                   const product = item?.productSeeding?.length ? item.productSeeding[0] : null;
 
+                  const displayValue = () => {
+                    if (item.isSeeding) {
+                      if (!product) return renderAmountText('Not assigned');
+
+                      return (
+                        <Typography variant="subtitle2" sx={{ fontSize: 15 }}>
+                          {`${item.currency} ${parseFloat(product?.value).toFixed(2)}`}
+                        </Typography>
+                      );
+                    }
+
+                    if (isAmountValid) {
+                      return (
+                        <Typography variant="subtitle2" sx={{ fontSize: 15 }}>
+                          {`${item?.user?.shortlisted[0]?.currency} ${
+                            parseFloat(item?.amount?.toString()).toFixed(2) ||
+                            parseFloat(item?.user?.shortlisted[0]?.amount?.toString()).toFixed(2)
+                          }`}
+                        </Typography>
+                      );
+                    }
+
+                    return renderAmountText('Not set');
+                  };
+
                   return (
-                    <TableRow key={item.id}>
-                      <TableCell padding="checkbox" sx={{ pl: 1.5 }}>
+                    <TableRow
+                      key={item.id}
+                      sx={{
+                        cursor: 'pointer',
+                        '&:hover': {
+                          bgcolor: alpha('#CCC', 0.1),
+                        },
+                      }}
+                      component="div"
+                      onClick={() => {
+                        if (!item.isSent) {
+                          handleEditAgreement(item);
+                        } else {
+                          handleViewAgreement(item?.agreementUrl, item);
+                        }
+                      }}
+                    >
+                      <TableCell
+                        padding="checkbox"
+                        sx={{ pl: 1.5 }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Tooltip title={checkboxTooltip}>
                           <span>
                             <Checkbox
@@ -1767,7 +1815,9 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                               checkedIcon={checkedCheckboxIcon}
                               checked={table.selected.includes(item.userId)}
                               disabled={isDisabled || isCategoryLocked}
-                              onChange={() => table.onSelectRow(item.userId)}
+                              onChange={() => {
+                                table.onSelectRow(item.userId);
+                              }}
                               sx={{ p: 0 }}
                             />
                           </span>
@@ -1778,20 +1828,29 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                       </TableCell>
                       <TableCell>
                         <Stack direction="row" alignItems="center" spacing={{ xs: 1 }}>
-                          <Avatar
-                            src={item?.user?.photoURL}
-                            alt={item?.user?.name}
+                          <Box
                             sx={{
+                              position: 'relative',
                               width: { xs: 32, sm: 40 },
                               height: { xs: 32, sm: 40 },
-                              border: '2px solid',
-                              borderColor: 'background.paper',
-                              boxShadow: (theme) => theme.customShadows.z8,
                             }}
                           >
-                            {item?.user?.name?.charAt(0).toUpperCase()}
-                          </Avatar>
-                          <Stack spacing={0.5}>
+                            <Avatar
+                              src={item?.user?.photoURL}
+                              alt={item?.user?.name}
+                              sx={{
+                                width: '100%',
+                                height: '100%',
+                                border: '2px solid',
+                                borderColor: 'background.paper',
+                                boxShadow: (theme) => theme.customShadows.z8,
+                              }}
+                            >
+                              {item?.user?.name?.charAt(0).toUpperCase()}
+                            </Avatar>
+                          </Box>
+
+                          <Stack spacing={0.5} flex={1}>
                             <Typography
                               variant="body2"
                               onClick={() => handleProfileClick(item)}
@@ -1806,6 +1865,40 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                 {item?.user?.email}
                               </Typography>
+                            )}
+                            {item?.isSeeding && (
+                              <Chip
+                                label="Seeded"
+                                size="small"
+                                variant="filled"
+
+                                icon={
+                                  <Box>
+                                    <svg width={8} height={8}>
+                                      <circle cx={4} cy={4} r={4} fill={alpha('#1304FF', 0.8)} />
+                                    </svg>
+                                  </Box>
+                                }
+                                sx={{
+                                  bgcolor: alpha('#1304FF', 0.1),
+                                  border: 0.5,
+                                  borderColor: alpha('#1304FF', 0.6),
+                                  borderRadius: 999,
+                                  color: alpha('#1304FF', 0.8),
+                                  maxWidth: 80,
+                                  '& .MuiChip-icon': {
+                                    mb: 0.5,
+                                    mr: 0.2,
+                                  },
+                                  '& .MuiChip-label': {
+                                    fontFamily: 'Inter Tight, sans-serif',
+                                    fontSize: 12,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: 0.5,
+                                    mt: 0.1,
+                                  },
+                                }}
+                              />
                             )}
                           </Stack>
                         </Stack>
@@ -1940,70 +2033,13 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                         })()}
                       </TableCell>
 
-                      {filteredData?.some((a) => a.isSeeding) && (
-                        <TableCell
-                          sx={{
-                            width: { xs: '20%', sm: 200 },
-                            minWidth: { xs: 85, sm: 95 },
-                          }}
-                        >
-                          {/* eslint-disable-next-line no-nested-ternary */}
-                          {item.isSeeding ? (
-                            product ? (
-                              <Stack>
-                                <Typography variant="subtitle2" sx={{ fontSize: 14 }}>
-                                  {product?.name}
-                                </Typography>
-                                <Typography variant="subtitle2" sx={{ fontSize: 15 }}>
-                                  {`${item.currency} ${parseFloat(product?.value).toFixed(2)}`}
-                                </Typography>
-                              </Stack>
-                            ) : (
-                              <Typography>Not assigned</Typography>
-                            )
-                          ) : (
-                            <Chip
-                              size="small"
-                              variant="outlined"
-                              color="info"
-                              sx={{
-                                bgcolor: (theme) => alpha(theme.palette.info.main, 0.1),
-                                borderRadius: 0.8,
-                                boxShadow: () => '0px 2px',
-                              }}
-                              label={<Typography variant="caption">Not seeded</Typography>}
-                            />
-                          )}
-                        </TableCell>
-                      )}
-
                       <TableCell
                         sx={{
                           width: { xs: '20%', sm: 95 },
                           minWidth: { xs: 85, sm: 95 },
                         }}
                       >
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                          }}
-                        >
-                          {isAmountValid ? (
-                            <>
-                              {item?.user?.shortlisted[0]?.currency ? (
-                                <>
-                                  {`${item?.user?.shortlisted[0]?.currency} 
-                                ${parseFloat(item?.amount?.toString()) || parseFloat(item?.user?.shortlisted[0]?.amount?.toString())}`}
-                                </>
-                              ) : (
-                                <>{`${item?.user?.shortlisted[0]?.currency} ${parseFloat(item?.amount?.toString())}`}</>
-                              )}
-                            </>
-                          ) : (
-                            'Not Set'
-                          )}
-                        </Typography>
+                        {displayValue()}
                       </TableCell>
 
                       <TableCell>
@@ -2052,7 +2088,10 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                               >
                                 <span>
                                   <Button
-                                    onClick={() => handleEditAgreement(item)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditAgreement(item);
+                                    }}
                                     disabled={isDisabled || guestNeedsLinkBeforeSend(item)}
                                     size="small"
                                     variant="contained"
@@ -2096,7 +2135,10 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                               // For sent agreements, show Edit Amount and action buttons
                               <>
                                 <Button
-                                  onClick={() => handleEditAgreement(item)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditAgreement(item);
+                                  }}
                                   disabled={isDisabled}
                                   size="small"
                                   variant="contained"
@@ -2135,7 +2177,10 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                                 {isPendingReview ? (
                                   <>
                                     <Button
-                                      onClick={() => handleOpenRejectDialog(item)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenRejectDialog(item);
+                                      }}
                                       size="small"
                                       variant="contained"
                                       disabled={isDisabled || rejectLoading}
@@ -2170,7 +2215,10 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                                       Reject
                                     </Button>
                                     <LoadingButton
-                                      onClick={() => handleApproveAgreement(item)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleApproveAgreement(item);
+                                      }}
                                       size="small"
                                       variant="contained"
                                       loading={approveLoading}

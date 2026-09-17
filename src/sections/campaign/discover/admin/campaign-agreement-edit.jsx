@@ -39,6 +39,7 @@ import Iconify from 'src/components/iconify';
 import FieldLabel from 'src/components/field-label';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFSwitch, RHFTextField } from 'src/components/hook-form';
+import { useResponsive } from 'src/hooks/use-responsive';
 
 const CURRENCY_PREFIXES = {
   SGD: {
@@ -184,6 +185,8 @@ const CampaignAgreementEdit = ({
   agreementsMutate,
 }) => {
   const loading = useBoolean();
+
+  const smUp = useResponsive('up', 'sm');
 
   const { user } = useAuthContext();
   const { data: agreements } = useGetAgreements(campaign?.id);
@@ -656,6 +659,7 @@ const CampaignAgreementEdit = ({
           bgcolor: 'rgba(244, 244, 244, 1)',
         },
       }}
+      fullScreen={!smUp}
     >
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <Box position="relative">
