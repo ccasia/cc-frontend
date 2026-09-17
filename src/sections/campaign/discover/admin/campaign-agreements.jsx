@@ -36,6 +36,7 @@ import {
   DialogActions,
   TableContainer,
   InputAdornment,
+  keyframes,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -1866,16 +1867,21 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                                 {item?.user?.email}
                               </Typography>
                             )}
+
                             {item?.isSeeding && (
                               <Chip
                                 label="Seeded"
                                 size="small"
                                 variant="filled"
-
                                 icon={
                                   <Box>
-                                    <svg width={8} height={8}>
-                                      <circle cx={4} cy={4} r={4} fill={alpha('#1304FF', 0.8)} />
+                                    <svg width={7} height={7}>
+                                      <circle
+                                        cx={3.5}
+                                        cy={3.5}
+                                        r={3}
+                                        fill={alpha('#1304FF', 0.8)}
+                                      />
                                     </svg>
                                   </Box>
                                 }
@@ -1885,6 +1891,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                                   borderColor: alpha('#1304FF', 0.6),
                                   borderRadius: 999,
                                   color: alpha('#1304FF', 0.8),
+                                  pointerEvents: 'none',
                                   maxWidth: 80,
                                   '& .MuiChip-icon': {
                                     mb: 0.5,
@@ -1892,7 +1899,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                                   },
                                   '& .MuiChip-label': {
                                     fontFamily: 'Inter Tight, sans-serif',
-                                    fontSize: 12,
+                                    fontSize: 10,
+                                    fontWeight: 600,
                                     textTransform: 'uppercase',
                                     letterSpacing: 0.5,
                                     mt: 0.1,
