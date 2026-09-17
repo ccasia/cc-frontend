@@ -65,7 +65,14 @@ jobs:
           script: |
             IMAGE_URI=asia-southeast1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/cc-frontend/cc-frontend
             gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
-            docker pull $IMAGE_URI:latest
-            docker stop cc-frontend || true
-            docker rm cc-frontend || true
-            docker run -d --name cc-frontend --restart unless-stopped -p 3030:3030 $IMAGE_URI:latest
+
+            # Go to wherever your docker-compose.yml for cc-frontend lives
+            cd cultcreative/cc-frontend
+
+            # Pull the new image (docker-compose.yml must reference this image,
+            # not a local "build:" step, for this to pick up the new version)
+            docker compose pull cc-frontend
+
+            # Recreate just the cc-frontend service with the new image.
+            # Other containers on the same network are untouched.
+            docker compose up -d cc-frontend
