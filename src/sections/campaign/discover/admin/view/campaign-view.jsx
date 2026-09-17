@@ -459,7 +459,7 @@ const CampaignView = () => {
           fontWeight: 'normal',
         }}
       >
-        Manage Campaigns ✨
+        Manage Campaignsssss ✨
       </Typography>
 
       {/* Campaign Tabs */}
