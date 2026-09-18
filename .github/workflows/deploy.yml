@@ -76,3 +76,13 @@ jobs:
             # Recreate just the cc-frontend service with the new image.
             # Other containers on the same network are untouched.
             docker compose up -d cc-frontend
+
+      - name: Send message to Lark
+        uses: Nghi-NV/lark-message-action@v1
+        if: success()
+        with:
+          title: "GitHub Actions Build"
+          content: "The workflow has run successfully on branch ${{ github.ref_name }}."
+          header-color: "green"
+          lark-bot-notify-webhook: ${{ secrets.LARK_WEBHOOK }}
+          lark-signature-verification: ${{ secrets.LARK_SECRET }} # Omit if signature verification is disabled
