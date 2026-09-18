@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { alpha } from '@mui/material/styles';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -49,16 +49,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
   const [selectedPlatform, setSelectedPlatform] = useState('instagram'); // 'instagram', 'tiktok', or 'both'
   const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
   const [agreementAmount, setAgreementAmount] = useState('');
-
-  const resolvedAgreementTemplateId = useMemo(() => {
-    if (campaign?.agreementTemplate?.id) return campaign.agreementTemplate.id;
-    return (
-      campaign?.campaignAdmin?.reduce(
-        (found, item) => found || item?.admin?.user?.agreementTemplate?.[0]?.id || null,
-        null
-      ) || null
-    );
-  }, [campaign]);
 
   const displayStatus = pitch?.displayStatus || pitch?.status;
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
@@ -248,25 +238,12 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
       });
       return;
     }
-    if (!resolvedAgreementTemplateId && !campaign?.agreementTemplateId) {
-      enqueueSnackbar(
-        'No agreement template on this campaign. Add one in campaign settings, then try again.',
-        { variant: 'error' }
-      );
-      return;
-    }
     setAgreementAmount('');
     setAgreementDialogOpen(true);
   };
 
   const handleConfirmSetAgreement = async () => {
     if (!pitch?.id || String(pitch.id).startsWith('shortlisted-')) return;
-
-    const templateId = resolvedAgreementTemplateId || campaign?.agreementTemplateId;
-    if (!templateId) {
-      enqueueSnackbar('Agreement template is required.', { variant: 'error' });
-      return;
-    }
 
     let amountNum = null;
     if (agreementAmount.trim()) {
@@ -281,17 +258,16 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
 
     setLoading(true);
     try {
-      const res = await axiosInstance.patch(endpoints.campaign.pitch.v3.setAgreement(pitch.id), {
-        agreementTemplateId: templateId,
-        ...(amountNum != null ? { amount: amountNum } : {}),
-      });
+      const res = await axiosInstance.patch(
+        endpoints.campaign.pitch.v3.setAgreement(pitch.id),
+        amountNum != null ? { amount: amountNum } : {}
+      );
       enqueueSnackbar(res?.data?.message || 'Agreement sent to creator', { variant: 'success' });
       setAgreementDialogOpen(false);
       onUpdate({
         ...pitch,
         status: 'AGREEMENT_PENDING',
         displayStatus: 'AGREEMENT_PENDING',
-        agreementTemplateId: templateId,
         ...(amountNum != null ? { amount: amountNum } : {}),
       });
       onClose();

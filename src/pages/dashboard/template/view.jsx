@@ -1,11 +1,16 @@
 import { Helmet } from 'react-helmet-async';
 import { PDFViewer } from '@react-pdf/renderer';
 
-import AgreementTemplate from 'src/template/agreement';
+import { useSearchParams } from 'src/routes/hooks';
+
+import AgreementPreview from 'src/template/agreement-preview';
 
 // ----------------------------------------------------------------------
 
+// Toggle clauses with ?nda=1&seeding=1&surfshark=1
 export default function Page() {
+  const searchParams = useSearchParams();
+
   return (
     <>
       <Helmet>
@@ -18,7 +23,11 @@ export default function Page() {
           width: '100vw',
         }}
       >
-        <AgreementTemplate />
+        <AgreementPreview
+          isNdaRequired={searchParams.get('nda') === '1'}
+          isSeedingCampaign={searchParams.get('seeding') === '1'}
+          isForSurfShark={searchParams.get('surfshark') === '1'}
+        />
       </PDFViewer>
     </>
   );
