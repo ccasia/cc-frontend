@@ -25,7 +25,10 @@ import Iconify from 'src/components/iconify';
 import BulkAgreementCreatorRow from './bulk-agreement-creator-row';
 import TransferPackageCreditsDialog from './transfer-package-credits-dialog';
 import AttachAdditionalPackageDialog from './attach-additional-package-dialog';
-import { getFollowerCountByPlatform, resolveTierForFollowerCount } from './agreement-creator-cost-row';
+import {
+  getFollowerCountByPlatform,
+  resolveTierForFollowerCount,
+} from './agreement-creator-cost-row';
 
 const CURRENCY_PREFIXES = {
   SGD: '$',
@@ -118,7 +121,8 @@ export default function SendBulkAgreementModal({
   const hasCreditLimit = campaign?.campaignCredits != null;
   const isInsufficient = hasCreditLimit && totalRequired > creditsRemaining;
   const hasMissingFields = rows.some(
-    (row) => row.amount === '' || row.amount == null || row.videoCount === '' || row.videoCount == null
+    (row) =>
+      row.amount === '' || row.amount == null || row.videoCount === '' || row.videoCount == null
   );
 
   const handleRowChange = (userId, nextRowState) => {
@@ -142,15 +146,21 @@ export default function SendBulkAgreementModal({
       <AgreementTemplate
         DATE={dayjs().format('LL')}
         IC_NUMBER={creatorRow?.user?.paymentForm?.icNumber}
-        FREELANCER_FULL_NAME={creatorRow?.user?.paymentForm?.bankAccountName || creatorRow?.user?.name || 'N/A'}
+        FREELANCER_FULL_NAME={
+          creatorRow?.user?.paymentForm?.bankAccountName || creatorRow?.user?.name || 'N/A'
+        }
         ADDRESS={creatorRow?.user?.creator?.address}
         ccEmail="hello@cultcreative.com"
         ccPhoneNumber="+60162678757"
         effectiveDate={dayjs().add(4, 'day').format('LL')}
         creatorPayment={`${CURRENCY_PREFIXES[row.currency] || ''}${row.amount}`}
-        CREATOR_NAME={creatorRow?.user?.paymentForm?.bankAccountName || creatorRow?.user?.name || 'N/A'}
+        CREATOR_NAME={
+          creatorRow?.user?.paymentForm?.bankAccountName || creatorRow?.user?.name || 'N/A'
+        }
         CREATOR_ACCOUNT_NUMBER={creatorRow?.user?.paymentForm?.bankAccountNumber}
-        CREATOR_BANK_ACCOUNT_NAME={creatorRow?.user?.paymentForm?.bankAccountName || creatorRow?.user?.name || 'N/A'}
+        CREATOR_BANK_ACCOUNT_NAME={
+          creatorRow?.user?.paymentForm?.bankAccountName || creatorRow?.user?.name || 'N/A'
+        }
         CREATOR_BANK_NAME={creatorRow?.user?.paymentForm?.bankName}
         AGREEMENT_ENDDATE={dayjs().add(1, 'month').format('LL')}
         NOW_DATE={dayjs().format('LL')}
@@ -179,9 +189,13 @@ export default function SendBulkAgreementModal({
     formData.append('agreementForm', blob);
     formData.append('data', JSON.stringify(requestData));
 
-    const updateRes = await axiosInstance.patch(endpoints.campaign.updateAmountAgreement, formData, {
-      headers: { Accept: 'multipart/form-data' },
-    });
+    const updateRes = await axiosInstance.patch(
+      endpoints.campaign.updateAmountAgreement,
+      formData,
+      {
+        headers: { Accept: 'multipart/form-data' },
+      }
+    );
 
     const agreementIdToSend = updateRes?.data?.agreement?.id || creatorRow?.id;
 
@@ -220,7 +234,9 @@ export default function SendBulkAgreementModal({
     setRowErrors(failed);
 
     if (succeeded.length) {
-      enqueueSnackbar(`Sent agreement to ${succeeded.length} creator${succeeded.length !== 1 ? 's' : ''}`);
+      enqueueSnackbar(
+        `Sent agreement to ${succeeded.length} creator${succeeded.length !== 1 ? 's' : ''}`
+      );
     }
     const failedCount = Object.keys(failed).length;
     if (failedCount) {
@@ -253,7 +269,12 @@ export default function SendBulkAgreementModal({
         fullWidth
         PaperProps={{ sx: { borderRadius: '20px', bgcolor: '#F5F5F5', position: 'relative' } }}
       >
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3.5, pt: 3.5 }}>
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ px: 3.5, pt: 3.5 }}
+        >
           <DialogTitle
             sx={{
               p: 0,
@@ -308,7 +329,14 @@ export default function SendBulkAgreementModal({
         <DialogActions sx={{ px: 4, pb: 4, pt: 2.5, alignItems: 'center', gap: 2.5 }}>
           {isInsufficient && (
             <Typography
-              sx={{ color: '#D4321C', textAlign: 'right', flex: 1, lineHeight: 1.5, fontSize: '0.8rem', fontWeight: 500 }}
+              sx={{
+                color: '#D4321C',
+                textAlign: 'right',
+                flex: 1,
+                lineHeight: 1.5,
+                fontSize: '0.8rem',
+                fontWeight: 500,
+              }}
             >
               You only have {creditsRemaining} Campaign Credits for this campaign.
               <br />

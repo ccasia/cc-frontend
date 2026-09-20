@@ -7,13 +7,12 @@ import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { useNavigate, useLocation } from 'react-router';
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 
-import { alpha, minWidth } from '@mui/system';
+import { alpha } from '@mui/system';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
-  Chip,
   Menu,
   Table,
   Stack,
@@ -36,7 +35,6 @@ import {
   DialogActions,
   TableContainer,
   InputAdornment,
-  keyframes,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -1200,6 +1198,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
     [filteredData, table.selected, eligibleForBulkIds]
   );
 
+  console.log(table.selected);
+
   if (isLoading || loadingSubmissions) {
     return <div>Loading...</div>; // A loading message while the data is being fetched
   }
@@ -1869,22 +1869,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                             )}
 
                             {item?.isSeeding && (
-                              <Chip
-                                label="Seeded"
-                                size="small"
-                                variant="filled"
-                                icon={
-                                  <Box>
-                                    <svg width={7} height={7}>
-                                      <circle
-                                        cx={3.5}
-                                        cy={3.5}
-                                        r={3}
-                                        fill={alpha('#1304FF', 0.8)}
-                                      />
-                                    </svg>
-                                  </Box>
-                                }
+                              <Stack
                                 sx={{
                                   bgcolor: alpha('#1304FF', 0.1),
                                   border: 0.5,
@@ -1892,25 +1877,46 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                                   borderRadius: 999,
                                   color: alpha('#1304FF', 0.8),
                                   pointerEvents: 'none',
-                                  maxWidth: 80,
-                                  '& .MuiChip-icon': {
-                                    mb: 0.5,
-                                    mr: 0.2,
-                                  },
-                                  '& .MuiChip-label': {
-                                    fontFamily: 'Inter Tight, sans-serif',
-                                    fontSize: 10,
-                                    fontWeight: 600,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: 0.5,
-                                    mt: 0.1,
-                                  },
+                                  px: 1,
+                                  position: 'relative',
+                                  height: 23,
                                 }}
-                              />
+                                flexDirection="row"
+                                alignItems="center"
+                                justifyContent="center"
+                                spacing={1}
+                                alignSelf="flex-start"
+                              >
+                                <m.svg
+                                  width={7}
+                                  height={7}
+                                  animate={{
+                                    transform: ['scale(1.3)', 'scale(1)', 'scale(1.3)'],
+                                    opacity: [1, 0.5, 1],
+                                  }}
+                                  transition={{
+                                    repeat: Infinity,
+                                    duration: 1.2,
+                                  }}
+                                >
+                                  <circle cx={3.5} cy={3.5} r={3} fill={alpha('#1304FF', 0.8)} />
+                                </m.svg>
+
+                                <Typography
+                                  variant="subtitle2"
+                                  fontWeight={500}
+                                  fontSize={12}
+                                  letterSpacing={0.3}
+                                  fontFamily="Inter Tight, sans-serif"
+                                >
+                                  Seeded
+                                </Typography>
+                              </Stack>
                             )}
                           </Stack>
                         </Stack>
                       </TableCell>
+
                       {smUp && (
                         <TableCell>
                           {item?.user?.email?.endsWith('@tempmail.com') ? '' : item?.user?.email}

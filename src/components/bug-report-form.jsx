@@ -372,7 +372,7 @@ const BugReportForm = () => {
                       letterSpacing: '-0.01em',
                     }}
                   >
-                    Report a bug
+                   🐞 Report a bug
                   </Typography>
 
                   <Typography

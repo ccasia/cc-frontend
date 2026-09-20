@@ -27,6 +27,7 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
 import useGetCreditTiers from 'src/hooks/use-get-credit-tiers';
 import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
@@ -39,7 +40,6 @@ import Iconify from 'src/components/iconify';
 import FieldLabel from 'src/components/field-label';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFSwitch, RHFTextField } from 'src/components/hook-form';
-import { useResponsive } from 'src/hooks/use-responsive';
 
 const CURRENCY_PREFIXES = {
   SGD: {
@@ -865,7 +865,7 @@ const CampaignAgreementEdit = ({
                     <RHFTextField
                       name="product.name"
                       placeholder="Eg. Philip OneBlade"
-                      sx={{ mt: 1 }}
+                      sx={{ mt: 1, bgcolor: '#FFF' }}
                     />
                   </Box>
                 </Grid>
@@ -943,6 +943,7 @@ const CampaignAgreementEdit = ({
                             '& .MuiOutlinedInput-root': {
                               borderRadius: 1,
                               pl: 0,
+                              bgcolor: '#FFF',
                             },
                           }}
                         />
@@ -972,6 +973,13 @@ const CampaignAgreementEdit = ({
                                   }
                                   variant="standard"
                                   InputProps={{ disableUnderline: true }}
+                                  PaperPropsSx={{
+                                    scrollbarWidth: 'none',
+                                    msOverflowStyle: 'none',
+                                    '&::-webkit-scrollbar': {
+                                      display: 'none',
+                                    },
+                                  }}
                                   sx={{
                                     '& .MuiSelect-select': {
                                       pr: '30px !important',
@@ -983,7 +991,14 @@ const CampaignAgreementEdit = ({
                                   }}
                                 >
                                   {Object.keys(CURRENCY_PREFIXES).map((curr) => (
-                                    <MenuItem key={curr} value={curr}>
+                                    <MenuItem
+                                      key={curr}
+                                      value={curr}
+                                      sx={{
+                                        width: 80,
+                                        justifyContent: 'center',
+                                      }}
+                                    >
                                       {curr}
                                     </MenuItem>
                                   ))}
@@ -1015,6 +1030,7 @@ const CampaignAgreementEdit = ({
                             mt: 1,
                             '& .MuiOutlinedInput-root': {
                               borderRadius: 1,
+                              bgcolor: '#FFF',
                             },
                           }}
                         />
@@ -1050,6 +1066,7 @@ const CampaignAgreementEdit = ({
                           mt: 1,
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 1,
+                            bgcolor: '#FFF',
                           },
                         }}
                       />
@@ -1143,6 +1160,7 @@ const CampaignAgreementEdit = ({
                             mt: 1,
                             '& .MuiOutlinedInput-root': {
                               borderRadius: 1,
+                              bgcolor: '#FFF',
                             },
                           }}
                         />
@@ -1170,6 +1188,7 @@ const CampaignAgreementEdit = ({
                     borderColor: (theme) => theme.palette.divider,
                     pl: 2,
                     height: 52,
+                    bgcolor: '#FFF',
                   }}
                   direction="row"
                   alignItems="center"
