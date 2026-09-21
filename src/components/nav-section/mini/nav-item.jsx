@@ -181,8 +181,6 @@ const StyledNavItem = styled(ListItemButton, {
 
   const opened = open && !active;
 
-  // const lightMode = theme.palette.mode === 'light';
-
   const noWrapStyles = {
     width: '100%',
     maxWidth: '100%',
@@ -198,8 +196,8 @@ const StyledNavItem = styled(ListItemButton, {
       color: theme.palette.text.secondary,
     },
     icon: {
-      width: 22,
-      height: 22,
+      width: 24,
+      height: 24,
       flexShrink: 0,
     },
     label: {

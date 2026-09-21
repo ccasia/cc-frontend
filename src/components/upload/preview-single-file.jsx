@@ -6,20 +6,11 @@ import Image from '../image';
 
 // ----------------------------------------------------------------------
 
-export default function SingleFilePreview({ imgUrl = '' }) {
+export default function SingleFilePreview({ imgUrl = '', alt = 'file preview', sx }) {
   return (
-    <Box
-    // sx={{
-    //   p: 1,
-    //   top: 0,
-    //   left: 0,
-    //   width: 1,
-    //   height: 1,
-    //   position: 'absolute',
-    // }}
-    >
+    <Box sx={sx}>
       <Image
-        alt="file preview"
+        alt={alt}
         src={imgUrl}
         sx={{
           width: 1,
@@ -32,5 +23,7 @@ export default function SingleFilePreview({ imgUrl = '' }) {
 }
 
 SingleFilePreview.propTypes = {
+  alt: PropTypes.string,
   imgUrl: PropTypes.string,
+  sx: PropTypes.object,
 };

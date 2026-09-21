@@ -54,6 +54,7 @@ import Preference from '../creator/profile/preferences';
 import AccountSocialLinks from '../creator/profile/social';
 import PaymentFormProfile from '../creator/profile/payment-form';
 import AccountNotifications from '../creator/profile/notification';
+import VideoTest from './VideoTest';
 
 // import x from '../creator/profile/notification';
 
@@ -62,6 +63,8 @@ const Profile = () => {
   const settings = useSettingsContext();
   const theme = useTheme();
   const { user, initialize } = useAuthContext();
+
+  const needsPhoneNumber = user?.role === 'creator' && !user?.phoneNumber;
   const location = useLocation();
   const scrollContainerRef = useRef(null);
   const mdDown = useResponsive('down', 'lg');
@@ -943,6 +946,20 @@ const Profile = () => {
           }}
         >
           Account
+          {needsPhoneNumber && (
+            <Box
+              component="span"
+              sx={{
+                width: 8,
+                height: 8,
+                ml: 0.75,
+                bgcolor: '#F5A623',
+                borderRadius: '50%',
+                display: 'inline-block',
+                flexShrink: 0,
+              }}
+            />
+          )}
         </Button>
 
         <Button
@@ -1457,7 +1474,6 @@ const Profile = () => {
         : user?.role === 'client'
           ? ClientTabs
           : CreatorTabs}
-
       {profileCompletion < 100 && user?.role === 'creator' ? (
         <Stack mb={2} direction="row" alignItems="center" spacing={2}>
           <Box sx={{ position: 'relative', display: 'inline-flex' }}>
@@ -1541,7 +1557,6 @@ const Profile = () => {
           </Stack>
         )
       )}
-
       {(() => {
         if (['admin', 'superadmin'].includes(user?.role)) {
           return adminContents;
@@ -1552,7 +1567,7 @@ const Profile = () => {
         return creatorContents;
       })()}
 
-      {/* <Toaster /> */}
+      {/* <VideoTest /> */}
 
       <AdminLogsModal
         open={openLogs}

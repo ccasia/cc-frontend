@@ -26,7 +26,11 @@ import CSMWorkloadTab from './csm-workload';
 import BusinessDevelopmentTab from './business-development';
 import FinanceDashboardView from '../../finance/dashboard/view';
 
-const SWR_OPTS = { revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 120000 };
+const SWR_OPTS = {
+  revalidateOnFocus: false,
+  revalidateOnReconnect: false,
+  dedupingInterval: 120000,
+};
 
 const TIME_RANGES = [
   { value: 'all', label: 'All time' },
@@ -54,11 +58,20 @@ function getRangeForValue(value) {
   const now = dayjs();
   switch (value) {
     case 'today':
-      return { startDate: now.startOf('day').toISOString(), endDate: now.endOf('day').toISOString() };
+      return {
+        startDate: now.startOf('day').toISOString(),
+        endDate: now.endOf('day').toISOString(),
+      };
     case 'week':
-      return { startDate: now.startOf('week').toISOString(), endDate: now.endOf('week').toISOString() };
+      return {
+        startDate: now.startOf('week').toISOString(),
+        endDate: now.endOf('week').toISOString(),
+      };
     case 'month':
-      return { startDate: now.startOf('month').toISOString(), endDate: now.endOf('month').toISOString() };
+      return {
+        startDate: now.startOf('month').toISOString(),
+        endDate: now.endOf('month').toISOString(),
+      };
     default:
       return null;
   }
@@ -160,25 +173,47 @@ const DashboardSuperadminView = () => {
             {activeRangeLabel || 'Custom'}
           </Button>
         </Stack>
-        <Menu anchorEl={customAnchor} open={Boolean(customAnchor)} onClose={() => setCustomAnchor(null)}>
+        <Menu
+          anchorEl={customAnchor}
+          open={Boolean(customAnchor)}
+          onClose={() => setCustomAnchor(null)}
+        >
           <Box sx={{ p: 2, width: 260 }}>
             <Stack spacing={1.5}>
               <Box>
-                <Typography variant="caption" sx={{ color: '#6b7280' }}>From</Typography>
+                <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                  From
+                </Typography>
                 <input
                   type="date"
                   value={customRange.startDate}
-                  onChange={(e) => setCustomRange((prev) => ({ ...prev, startDate: e.target.value }))}
-                  style={{ width: '100%', padding: '8px', borderRadius: 8, border: '1px solid #e5e7eb', marginTop: 4 }}
+                  onChange={(e) =>
+                    setCustomRange((prev) => ({ ...prev, startDate: e.target.value }))
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: 8,
+                    border: '1px solid #e5e7eb',
+                    marginTop: 4,
+                  }}
                 />
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ color: '#6b7280' }}>To</Typography>
+                <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                  To
+                </Typography>
                 <input
                   type="date"
                   value={customRange.endDate}
                   onChange={(e) => setCustomRange((prev) => ({ ...prev, endDate: e.target.value }))}
-                  style={{ width: '100%', padding: '8px', borderRadius: 8, border: '1px solid #e5e7eb', marginTop: 4 }}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: 8,
+                    border: '1px solid #e5e7eb',
+                    marginTop: 4,
+                  }}
                 />
               </Box>
               <Button
@@ -227,7 +262,9 @@ const DashboardSuperadminView = () => {
                 >
                   {item.label}
                 </Typography>
-                <Typography sx={{ fontSize: '1.9rem', fontWeight: 700, color: item.color, lineHeight: 1 }}>
+                <Typography
+                  sx={{ fontSize: '1.9rem', fontWeight: 700, color: item.color, lineHeight: 1 }}
+                >
                   {item.value.toLocaleString()}
                 </Typography>
               </Card>

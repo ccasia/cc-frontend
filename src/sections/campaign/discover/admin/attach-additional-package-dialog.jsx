@@ -1,0 +1,448 @@
+import dayjs from 'dayjs';
+import * as Yup from 'yup';
+import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
+import { useMemo, useState, useEffect } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
+
+import Stack from '@mui/material/Stack';
+import { LoadingButton } from '@mui/lab';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import Divider from '@mui/material/Divider';
+import Collapse from '@mui/material/Collapse';
+import MenuItem from '@mui/material/MenuItem';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+
+import useGetPackages from 'src/hooks/use-get-packges';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import Iconify from 'src/components/iconify';
+import FormProvider, { RHFSelect, RHFTextField, RHFDatePicker } from 'src/components/hook-form';
+
+import TransferPackageCreditsDialog, { getAvailablePackageCredits } from './transfer-package-credits-dialog';
+
+const CUSTOM = 'custom';
+
+const schema = Yup.object().shape({
+  packageId: Yup.string().required('Pick a client package.'),
+  currency: Yup.string().required(),
+  invoiceDate: Yup.mixed().required('Pick an invoice date.'),
+  pkgValue: Yup.mixed().when('packageId', {
+    is: CUSTOM,
+    then: (s) => s.test('pos', 'Enter a value.', (v) => Number(v) > 0),
+  }),
+  pkgCredits: Yup.mixed().when('packageId', {
+    is: CUSTOM,
+    then: (s) => s.test('pos', 'Enter credits.', (v) => Number(v) > 0),
+  }),
+  pkgValidity: Yup.mixed().when('packageId', {
+    is: CUSTOM,
+    then: (s) => s.test('pos', 'Enter a validity period.', (v) => Number(v) > 0),
+  }),
+});
+
+const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    bgcolor: '#fff',
+    borderRadius: 1,
+    '& fieldset': { borderColor: '#E3E3E3' },
+  },
+};
+
+// "Attach a New Package" for a campaign whose client company is already known — thinner than
+// briefs/dialogs/attach-client-package.jsx (which also handles creating a brand-new client),
+// same package field set/validation and same PATCH company/linkPackage endpoint.
+export default function AttachAdditionalPackageDialog({ open, onClose, campaign, onAttached }) {
+  const { data: packages, isLoading: packagesLoading } = useGetPackages();
+  const client = campaign?.company || campaign?.brand?.company;
+  const availableCredits = useMemo(() => getAvailablePackageCredits(client), [client]);
+
+  const [loading, setLoading] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const transferDialog = useState(false);
+  const [showTransfer, setShowTransfer] = transferDialog;
+
+  const methods = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      packageId: '',
+      currency: 'MYR',
+      invoiceDate: null,
+      pkgValue: '',
+      pkgCredits: '',
+      pkgValidity: '',
+    },
+  });
+  const { watch, setValue, handleSubmit, reset } = methods;
+  const packageId = watch('packageId');
+  const currency = watch('currency');
+  const isCustom = packageId === CUSTOM;
+
+  const selectedPackage = (packages || []).find((p) => p.id === packageId) || null;
+  const selectedPrice = selectedPackage?.prices?.find((pr) => pr.currency === currency)?.amount;
+
+  useEffect(() => {
+    if (!isCustom && selectedPackage) {
+      setValue('pkgValue', selectedPrice != null ? String(selectedPrice) : '');
+      setValue('pkgCredits', selectedPackage.credits != null ? String(selectedPackage.credits) : '');
+      setValue(
+        'pkgValidity',
+        selectedPackage.validityPeriod != null ? String(selectedPackage.validityPeriod) : ''
+      );
+    } else if (isCustom) {
+      setValue('pkgValue', '');
+      setValue('pkgCredits', '');
+      setValue('pkgValidity', '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packageId, selectedPrice]);
+
+  const pkgCredits = watch('pkgCredits');
+  const projectedTotalCredits = availableCredits + (Number(pkgCredits) || 0);
+
+  const packageFields = useMemo(
+    () => [
+      { name: 'pkgValue', label: 'Package Value', prefix: currency },
+      { name: 'pkgCredits', label: 'Total UGC Credits' },
+    ],
+    [currency]
+  );
+
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
+
+  const onSubmit = handleSubmit(async (data) => {
+    if (!client?.id) {
+      enqueueSnackbar('This campaign has no linked client to attach a package to.', { variant: 'error' });
+      return;
+    }
+    setLoading(true);
+    try {
+      await axiosInstance.patch(endpoints.company.linkPackage(client.id), {
+        packageType: data.packageId === CUSTOM ? 'Custom' : 'Fixed',
+        packageId: data.packageId === CUSTOM ? 'Autogenerated' : data.packageId,
+        packageValue: String(data.pkgValue),
+        totalUGCCredits: String(data.pkgCredits),
+        validityPeriod: String(data.pkgValidity),
+        currency: data.currency,
+        invoiceDate: data.invoiceDate ? dayjs(data.invoiceDate).toISOString() : dayjs().toISOString(),
+        // Lets the backend push a live update to this campaign's room so open modals refresh
+        // their "Package Credits Remaining" instantly instead of needing a manual refetch.
+        campaignId: campaign?.id,
+      });
+      reset();
+      onClose();
+      enqueueSnackbar('Package attached successfully!');
+      setSuccessOpen(true);
+    } catch (error) {
+      enqueueSnackbar(error?.message || 'Failed to attach package', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  return (
+    <>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '20px', bgcolor: '#F5F5F5', position: 'relative' } }}
+      >
+        <FormProvider methods={methods} onSubmit={onSubmit}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3.5, pt: 3.5 }}>
+            <DialogTitle
+              sx={{
+                p: 0,
+                fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                '&.MuiTypography-root': { fontSize: 24, fontWeight: 400 },
+              }}
+            >
+              Attach Package
+            </DialogTitle>
+
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Typography sx={{ fontSize: '0.8rem', color: '#1340FF', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                {availableCredits} Package Credit{availableCredits !== 1 ? 's' : ''} Remaining
+              </Typography>
+              <IconButton onClick={handleClose} disabled={loading} sx={{ color: '#221f20' }}>
+                <Iconify icon="eva:close-fill" width={24} />
+              </IconButton>
+            </Stack>
+          </Stack>
+
+          <Divider sx={{ borderColor: '#E3E3E3', mt: 2.5, mx: 3.5 }} />
+
+          <DialogContent sx={{ px: 4, pt: 3, pb: 1 }}>
+            <Stack spacing={2}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                <Stack spacing={0.75} sx={{ flex: 1 }}>
+                  <Typography sx={{ color: '#221f20', fontSize: '0.9rem' }}>Client Name</Typography>
+                  <TextFieldDisplay value={client?.name || 'Untitled Client'} />
+                </Stack>
+                <Stack spacing={0.75} sx={{ flex: 1 }}>
+                  <Typography sx={{ color: '#221f20', fontSize: '0.9rem' }}>Client Email</Typography>
+                  <TextFieldDisplay value={client?.email || '—'} />
+                </Stack>
+              </Stack>
+
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                <Stack spacing={0.75} sx={{ flex: 1 }}>
+                  <Typography sx={{ color: '#221f20', fontSize: '0.9rem' }}>Client Package</Typography>
+                  <RHFSelect name="packageId" size="small" fullWidth sx={fieldSx} displayEmpty>
+                    <MenuItem value="" disabled>
+                      Select Package
+                    </MenuItem>
+                    {packagesLoading ? (
+                      <MenuItem disabled>Loading…</MenuItem>
+                    ) : (
+                      [
+                        ...(packages || []).map((p) => (
+                          <MenuItem key={p.id} value={p.id}>
+                            {p.name}
+                          </MenuItem>
+                        )),
+                        <MenuItem key={CUSTOM} value={CUSTOM}>
+                          Custom
+                        </MenuItem>,
+                      ]
+                    )}
+                  </RHFSelect>
+                </Stack>
+                <Stack spacing={0.75} sx={{ flex: 1 }}>
+                  <Typography sx={{ color: '#221f20', fontSize: '0.9rem' }}>Currency</Typography>
+                  <RHFSelect name="currency" size="small" fullWidth sx={fieldSx}>
+                    <MenuItem value="MYR">MYR</MenuItem>
+                    <MenuItem value="SGD">SGD</MenuItem>
+                  </RHFSelect>
+                </Stack>
+              </Stack>
+
+              <Collapse in={!!packageId} timeout={250} unmountOnExit>
+                <Stack spacing={2}>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    {packageFields.map(({ name, label, prefix }) => (
+                      <Stack key={name} spacing={0.75} sx={{ flex: 1 }}>
+                        <Typography sx={{ color: '#221f20', fontSize: '0.9rem' }}>{label}</Typography>
+                        <RHFTextField
+                          name={name}
+                          size="small"
+                          type={isCustom ? 'number' : 'text'}
+                          disabled={!isCustom}
+                          sx={fieldSx}
+                          InputProps={{
+                            readOnly: !isCustom,
+                            inputProps: { min: 1 },
+                            startAdornment:
+                              prefix && !isCustom ? (
+                                <Typography variant="body2" sx={{ color: 'text.secondary', mr: 0.5 }}>
+                                  {prefix}
+                                </Typography>
+                              ) : undefined,
+                          }}
+                        />
+                      </Stack>
+                    ))}
+                  </Stack>
+
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    <Stack spacing={0.75} sx={{ flex: 1 }}>
+                      <Typography sx={{ color: '#221f20', fontSize: '0.9rem' }}>Validity Period (Month)</Typography>
+                      <RHFTextField
+                        name="pkgValidity"
+                        size="small"
+                        type={isCustom ? 'number' : 'text'}
+                        disabled={!isCustom}
+                        sx={fieldSx}
+                        InputProps={{ readOnly: !isCustom, inputProps: { min: 1 } }}
+                      />
+                    </Stack>
+                    <Stack spacing={0.75} sx={{ flex: 1 }}>
+                      <Typography sx={{ color: '#221f20', fontSize: '0.9rem' }}>Invoice Date</Typography>
+                      <RHFDatePicker name="invoiceDate" slotProps={{ textField: { size: 'small', sx: fieldSx } }} />
+                    </Stack>
+                  </Stack>
+                </Stack>
+              </Collapse>
+            </Stack>
+          </DialogContent>
+
+          <DialogActions sx={{ px: 4, pb: 4, pt: 2.5, gap: 2.5 }}>
+            <Collapse in={!!(packageId && pkgCredits)} timeout={200} sx={{ flex: 1 }}>
+              <Typography sx={{ color: '#1340FF', fontSize: '0.85rem', fontWeight: 600 }}>
+                Attaching this package will give you {projectedTotalCredits} total Package Credits
+              </Typography>
+            </Collapse>
+            <LoadingButton
+              type="submit"
+              loading={loading}
+              sx={{
+                width: '170px',
+                height: '44px',
+                gap: '6px',
+                pt: '10px',
+                pr: '18px',
+                pb: '13px',
+                pl: '18px',
+                borderRadius: '8px',
+                background:
+                  'linear-gradient(0deg, #1340FF, #1340FF), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                boxShadow: '0px -3px 0px 0px #0000001A inset',
+                color: '#ffffff',
+                fontSize: '0.95rem',
+                fontWeight: 700,
+                textTransform: 'none',
+                '&:hover': {
+                  background:
+                    'linear-gradient(0deg, #0F35D6, #0F35D6), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                  boxShadow: '0px -3px 0px 0px #0000001A inset',
+                },
+                '&.Mui-disabled': {
+                  background: '#A6ADF5',
+                  color: '#ffffff',
+                  boxShadow: 'none',
+                },
+              }}
+            >
+              Confirm
+            </LoadingButton>
+          </DialogActions>
+        </FormProvider>
+      </Dialog>
+
+      <Dialog
+        open={successOpen}
+        onClose={() => {
+          setSuccessOpen(false);
+          if (onAttached) onAttached();
+        }}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '20px', bgcolor: '#F5F5F5' } }}
+      >
+        <Stack spacing={3} alignItems="center" sx={{ px: 4, pt: 5, pb: 4, textAlign: 'center' }}>
+          <Stack
+            alignItems="center"
+            justifyContent="center"
+            sx={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              bgcolor: '#8047FF',
+            }}
+          >
+            <Iconify icon="eva:arrow-forward-fill" width={28} sx={{ color: '#ffffff' }} />
+          </Stack>
+
+          <Stack spacing={1.5}>
+            <Typography
+              sx={{
+                fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                fontSize: 28,
+                fontWeight: 400,
+                lineHeight: 1.2,
+                color: '#221f20',
+              }}
+            >
+              Transfer Package Credits to Campaign Credits?
+            </Typography>
+            <Typography sx={{ fontSize: '0.95rem', color: '#6B7280' }}>
+              Would you like to transfer the Package Credits to {client?.name || 'this campaign'}?
+            </Typography>
+          </Stack>
+
+          <Stack spacing={1.5} sx={{ width: '100%' }}>
+            <Button
+              fullWidth
+              onClick={() => {
+                setSuccessOpen(false);
+                setShowTransfer(true);
+              }}
+              sx={{
+                height: 48,
+                borderRadius: '8px',
+                bgcolor: '#3A3A3C',
+                color: '#ffffff',
+                fontSize: '0.95rem',
+                fontWeight: 700,
+                textTransform: 'none',
+                boxShadow: '0px -3px 0px 0px #0000001A inset',
+                '&:hover': { bgcolor: '#221f20' },
+              }}
+            >
+              Yes
+            </Button>
+            <Button
+              fullWidth
+              onClick={() => {
+                setSuccessOpen(false);
+                if (onAttached) onAttached();
+              }}
+              sx={{
+                height: 48,
+                borderRadius: '8px',
+                bgcolor: '#ffffff',
+                color: '#221f20',
+                fontSize: '0.95rem',
+                fontWeight: 700,
+                textTransform: 'none',
+                border: '1px solid #E3E3E3',
+                '&:hover': { bgcolor: '#F5F5F5' },
+              }}
+            >
+              No
+            </Button>
+          </Stack>
+        </Stack>
+      </Dialog>
+
+      <TransferPackageCreditsDialog
+        open={showTransfer}
+        onClose={() => setShowTransfer(false)}
+        campaign={campaign}
+        onTransferred={onAttached}
+      />
+    </>
+  );
+}
+
+// Read-only display for client identity — same visual field style as the rest of the form,
+// but never editable here (the client is fixed by the campaign, not chosen in this dialog).
+function TextFieldDisplay({ value }) {
+  return (
+    <Typography
+      sx={{
+        px: 1.75,
+        py: 1.1,
+        bgcolor: '#fff',
+        border: '1px solid #E3E3E3',
+        borderRadius: 1,
+        color: '#221f20',
+        fontSize: '0.9rem',
+      }}
+    >
+      {value}
+    </Typography>
+  );
+}
+
+TextFieldDisplay.propTypes = {
+  value: PropTypes.node,
+};
+
+AttachAdditionalPackageDialog.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  campaign: PropTypes.object,
+  onAttached: PropTypes.func,
+};

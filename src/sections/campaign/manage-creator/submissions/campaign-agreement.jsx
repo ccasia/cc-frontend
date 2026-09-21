@@ -27,7 +27,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 // V3 pitches hook removed
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -125,131 +125,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const { data: agreements } = useGetAgreements(campaign?.id);
   const myAgreement = agreements?.find((a) => a.userId === user?.id);
   const originalAgreementUrl = myAgreement?.agreementUrl || campaign?.agreement?.agreementUrl;
-  
+
   // Convert Google Storage URL to backend proxy URL to bypass CORS
-  const agreementUrl = originalAgreementUrl ? 
-    originalAgreementUrl.replace(
-      'https://storage.googleapis.com/cult-prod/',
-      `${window.location.origin}/api/agreement/agreement-template/`
-    ) : null;
+  const agreementUrl = originalAgreementUrl
+    ? originalAgreementUrl.replace(
+        'https://storage.googleapis.com/cult-prod/',
+        `${window.location.origin}/api/agreement/agreement-template/`
+      )
+    : null;
 
   const agreement = campaign?.campaignTimeline?.find((elem) => elem?.name === 'Agreement');
-
-  // const methods = useForm({
-  //   defaultValues: {
-  //     agreementForm: null,
-  //   },
-  // });
-
-  // const { watch, setValue, handleSubmit, reset } = methods;
-
-  // const agreementForm = watch('agreementForm');
-
-  // const onDrop = (files) => {
-  //   const file = files[0];
-
-  //   setValue('agreementForm', file);
-  //   setUploadProgress(0);
-  //   const interval = setInterval(() => {
-  //     setUploadProgress((prev) => {
-  //       if (prev >= 100) {
-  //         clearInterval(interval);
-  //         enqueueSnackbar('Uploaded successfully!', {
-  //           variant: 'success',
-  //           anchorOrigin: {
-  //             vertical: 'top',
-  //             horizontal: 'center',
-  //           },
-  //         });
-  //         return 100;
-  //       }
-  //       return prev + 10;
-  //     });
-  //   }, 200);
-  // };
-
-  // const handleRemove = () => {
-  //   setValue('agreementForm', null);
-  //   setUploadProgress(0);
-  // };
-
-  // const onSubmit = handleSubmit(async (data) => {
-  //   setOpenUploadModal(false);
-  //   setShowSubmitDialog(true);
-  //   setSubmitStatus('submitting');
-
-  //   // V3: Client-created campaign agreement submission
-  //   if (campaign.origin === 'CLIENT' && myV3Pitch?.id) {
-  //     try {
-  //       setLoading(true);
-  //       await axiosInstance.patch(endpoints.campaign.pitch.v3.submitAgreement(myV3Pitch.id));
-  //       await new Promise((resolve) => setTimeout(resolve, 1500));
-  //       enqueueSnackbar('Agreement submitted successfully!');
-  //       setSubmitStatus('success');
-  //     } catch (error) {
-  //       await new Promise((resolve) => setTimeout(resolve, 1500));
-  //       if (error?.message === 'Forbidden') {
-  //         dispatch({ type: 'LOGOUT' });
-  //         enqueueSnackbar('Your session is expired. Please re-login', { variant: 'error' });
-  //         return;
-  //       }
-  //       enqueueSnackbar('Submission of agreement failed', { variant: 'error' });
-  //       setSubmitStatus('error');
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //     return;
-  //   }
-
-  //   // V2: Admin-created campaign (existing logic)
-  //   const formData = new FormData();
-  //   formData.append('agreementForm', data.agreementForm);
-  //   formData.append(
-  //     'data',
-  //     JSON.stringify({
-  //       campaignId: campaign.id,
-  //       timelineId: timeline.id,
-  //       submissionTypeId: agreement.submissionTypeId,
-  //       submissionId: submission?.id,
-  //     })
-  //   );
-
-  //   try {
-  //     setLoading(true);
-  //     const res = await axiosInstance.post(endpoints.submission.creator.agreement, formData, {
-  //       headers: {
-  //         'Content-Type': 'multipart/form-data',
-  //       },
-  //     });
-
-  //     await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  //     enqueueSnackbar(res?.data?.message);
-  //     mutate(endpoints.kanban.root);
-  //     mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
-  //     mutate(endpoints.campaign.creator.getCampaign(campaign.id));
-  //     reset();
-  //     setPreview('');
-  //     setSubmitStatus('success');
-  //   } catch (error) {
-  //     await new Promise((resolve) => setTimeout(resolve, 1500));
-  //     if (error?.message === 'Forbidden') {
-  //       dispatch({
-  //         type: 'LOGOUT',
-  //       });
-  //       enqueueSnackbar('Your session is expired. Please re-login', {
-  //         variant: 'error',
-  //       });
-  //       return;
-  //     }
-  //     enqueueSnackbar('Submission of agreement failed', {
-  //       variant: 'error',
-  //     });
-  //     setSubmitStatus('error');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // });
 
   const handleAgreementSubmit = async (signedPdfFile) => {
     setShowSubmitDialog(true);
@@ -517,29 +402,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   proceed to the next step.
                 </Typography> */}
 
-                {/* <Button
-                  variant="contained"
-                  startIcon={<Iconify icon="material-symbols:download" width={20} />}
-                  onClick={() => handleDownload(agreementUrl)}
-                  sx={{
-                    bgcolor: 'white',
-                    border: 1,
-                    borderColor: '#e7e7e7',
-                    borderBottom: 3,
-                    borderBottomColor: '#e7e7e7',
-                    color: '#203ff5',
-                    '&:hover': {
-                      bgcolor: 'white',
-                      borderColor: '#e7e7e7',
-                    },
-                    '& .MuiButton-startIcon': {
-                      color: '#203ff5',
-                    },
-                  }}
-                >
-                  Download Agreement
-                </Button> */}
-
                 {/* Full-width Scrollable PDF Preview */}
                 <Box
                   sx={{
@@ -609,13 +471,13 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 }}
               />
 
-              <Box 
-                sx={{ 
-                  display: 'flex', 
+              <Box
+                sx={{
+                  display: 'flex',
                   flexDirection: { xs: 'column', sm: 'row' },
-                  justifyContent: 'flex-end', 
-                  mt: 2, 
-                  gap: { xs: 1.5, sm: 1 } 
+                  justifyContent: 'flex-end',
+                  mt: 2,
+                  gap: { xs: 1.5, sm: 1 },
                 }}
               >
                 <Button
@@ -816,12 +678,12 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 }}
               /> */}
 
-              <Box 
-                sx={{ 
-                  display: 'flex', 
+              <Box
+                sx={{
+                  display: 'flex',
                   flexDirection: { xs: 'column', sm: 'row' },
-                  justifyContent: 'flex-end', 
-                  gap: { xs: 1.5, sm: 1 } 
+                  justifyContent: 'flex-end',
+                  gap: { xs: 1.5, sm: 1 },
                 }}
               >
                 <Button
@@ -845,7 +707,9 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     width: { xs: '100%', sm: 'auto' },
                   }}
                 >
-                  <Typography variant='body2' fontWeight="bold">Upload Agreement</Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    Upload Agreement
+                  </Typography>
                 </Button>
 
                 <Button
@@ -888,7 +752,13 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     width: { xs: '100%', sm: 'auto' },
                   }}
                 >
-                  <Typography variant='body2' fontWeight="bold" sx={{ display: { xs: 'flex', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
+                  <Typography
+                    variant="body2"
+                    fontWeight="bold"
+                    sx={{ display: { xs: 'flex', md: 'flex' }, mr: 1 }}
+                  >
+                    Download Agreement
+                  </Typography>
                   <Iconify icon="material-symbols:download" width={25} />
                 </Button>
               </Box>
@@ -1091,12 +961,12 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 </Box>
               </Box>
 
-              <Box 
-                sx={{ 
-                  display: 'flex', 
+              <Box
+                sx={{
+                  display: 'flex',
                   flexDirection: { xs: 'column', sm: 'row' },
-                  justifyContent: 'flex-end', 
-                  gap: { xs: 1.5, sm: 1 } 
+                  justifyContent: 'flex-end',
+                  gap: { xs: 1.5, sm: 1 },
                 }}
               >
                 <Button
@@ -1120,7 +990,9 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     width: { xs: '100%', sm: 'auto' },
                   }}
                 >
-                  <Typography variant='body2' fontWeight="bold">Upload Agreement</Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    Upload Agreement
+                  </Typography>
                 </Button>
 
                 <Button
@@ -1163,366 +1035,18 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     width: { xs: '100%', sm: 'auto' },
                   }}
                 >
-                  <Typography variant='body2' fontWeight="bold" sx={{ display: { xs: 'flex', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
+                  <Typography
+                    variant="body2"
+                    fontWeight="bold"
+                    sx={{ display: { xs: 'flex', md: 'flex' }, mr: 1 }}
+                  >
+                    Download Agreement
+                  </Typography>
                   <Iconify icon="material-symbols:download" width={25} />
                 </Button>
               </Box>
             </Stack>
           )}
-
-          {/* New Upload Modal */}
-          {/* <Dialog
-            open={openUploadModal}
-            fullWidth
-            maxWidth="md"
-            sx={{
-              '& .MuiDialog-paper': {
-                width: { xs: 'calc(100% - 32px)', sm: '100%' },
-                m: { xs: 2, sm: 32 },
-              },
-            }}
-          >
-            <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
-              <Stack direction="row" alignItems="center" gap={2}>
-                <Box>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontFamily: 'Instrument Serif, serif',
-                      fontSize: { xs: '1.8rem', sm: '2.4rem' },
-                      fontWeight: 550,
-                    }}
-                  >
-                    Upload Document
-                  </Typography>
-                </Box>
-
-                <IconButton
-                  onClick={() => setOpenUploadModal(false)}
-                  sx={{
-                    ml: 'auto',
-                    '& svg': {
-                      width: { xs: 20, sm: 24 },
-                      height: { xs: 20, sm: 24 },
-                      color: '#636366',
-                    },
-                  }}
-                >
-                  <Iconify icon="hugeicons:cancel-01" />
-                </IconButton>
-              </Stack>
-            </DialogTitle>
-
-            <DialogContent sx={{ bgcolor: '#f4f4f4' }}>
-              <FormProvider methods={methods} onSubmit={onSubmit}>
-                {agreementForm ? (
-                  <Box sx={{ mt: 0.5 }}>
-                    <Stack
-                      direction="row"
-                      alignItems="center"
-                      spacing={2}
-                      sx={{
-                        p: 2,
-                        border: '1px solid',
-                        borderColor: '#e7e7e7',
-                        borderRadius: 1.2,
-                        bgcolor: '#ffffff',
-                        flexWrap: { xs: 'wrap', sm: 'nowrap' },
-                      }}
-                    >
-                      <AvatarIcon
-                        icon="ph:file-light"
-                        sx={{
-                          width: 48,
-                          height: 48,
-                          bgcolor: '#f5f5f5',
-                          color: '#8e8e93',
-                          borderRadius: 1.2,
-                          '& svg': { width: 24, height: 24 },
-                        }}
-                      />
-
-                      <Box
-                        sx={{
-                          flexGrow: 1,
-                          minWidth: { xs: '100%', sm: 'auto' },
-                          mt: { xs: 1, sm: 0 },
-                        }}
-                      >
-                        <Typography
-                          variant="subtitle2"
-                          noWrap
-                          sx={{
-                            color: 'text.primary',
-                            fontWeight: 600,
-                            fontSize: '1rem',
-                            maxWidth: { xs: '100%', sm: '300px' },
-                          }}
-                        >
-                          {agreementForm.name}
-                        </Typography>
-
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: 'text.secondary',
-                            display: 'block',
-                            mt: 0.5,
-                            fontSize: '0.875rem',
-                          }}
-                        >
-                          {uploadProgress < 100
-                            ? `Uploading ${uploadProgress}%`
-                            : formatFileSize(agreementForm.size)}
-                        </Typography>
-                      </Box>
-
-                      <Stack
-                        direction="row"
-                        spacing={2}
-                        alignItems="center"
-                        sx={{
-                          width: { xs: '100%', sm: 'auto' },
-                          justifyContent: { xs: 'flex-end', sm: 'flex-start' },
-                          mt: { xs: 2, sm: 0 },
-                        }}
-                      >
-                        {uploadProgress < 100 ? (
-                          <Stack direction="row" spacing={2} alignItems="center">
-                            <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                              <CircularProgress
-                                variant="determinate"
-                                value={100}
-                                size={30}
-                                thickness={6}
-                                sx={{ color: 'grey.300' }}
-                              />
-                              <CircularProgress
-                                variant="determinate"
-                                value={uploadProgress}
-                                size={30}
-                                thickness={6}
-                                sx={{
-                                  color: '#5abc6f',
-                                  position: 'absolute',
-                                  left: 0,
-                                  strokeLinecap: 'round',
-                                }}
-                              />
-                            </Box>
-                            <Button
-                              onClick={handleRemove}
-                              variant="contained"
-                              sx={{
-                                bgcolor: 'white',
-                                border: 1,
-                                borderColor: '#e7e7e7',
-                                borderBottom: 3,
-                                borderBottomColor: '#e7e7e7',
-                                color: '#221f20',
-                                '&:hover': {
-                                  bgcolor: 'white',
-                                  borderColor: '#e7e7e7',
-                                },
-                                textTransform: 'none',
-                                px: 2,
-                                py: 1.5,
-                                fontSize: '0.875rem',
-                                minWidth: '80px',
-                                height: '45px',
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                          </Stack>
-                        ) : (
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Button
-                              onClick={() => setPreview(URL.createObjectURL(agreementForm))}
-                              variant="contained"
-                              sx={{
-                                bgcolor: 'white',
-                                border: 1,
-                                borderColor: '#e7e7e7',
-                                borderBottom: 3,
-                                borderBottomColor: '#e7e7e7',
-                                color: '#221f20',
-                                '&:hover': {
-                                  bgcolor: 'white',
-                                  borderColor: '#e7e7e7',
-                                },
-                                textTransform: 'none',
-                                px: 2,
-                                py: 1.5,
-                                fontSize: '0.875rem',
-                                minWidth: '80px',
-                                height: '45px',
-                              }}
-                            >
-                              Preview
-                            </Button>
-                            <Button
-                              onClick={handleRemove}
-                              variant="contained"
-                              sx={{
-                                bgcolor: 'white',
-                                border: 1,
-                                borderColor: '#e7e7e7',
-                                borderBottom: 3,
-                                borderBottomColor: '#e7e7e7',
-                                color: '#221f20',
-                                '&:hover': {
-                                  bgcolor: 'white',
-                                  borderColor: '#e7e7e7',
-                                },
-                                textTransform: 'none',
-                                px: 2,
-                                py: 1.5,
-                                fontSize: '0.875rem',
-                                minWidth: '80px',
-                                height: '45px',
-                              }}
-                            >
-                              Remove
-                            </Button>
-                          </Stack>
-                        )}
-                      </Stack>
-                    </Stack>
-                  </Box>
-                ) : (
-                  <RHFUpload type="pdf" name="agreementForm" onDrop={onDrop} />
-                )}
-              </FormProvider>
-            </DialogContent>
-
-            <DialogActions sx={{ px: 3, pb: 3, bgcolor: '#f4f4f4' }}>
-              <LoadingButton
-                loading={loading}
-                variant="contained"
-                disabled={!agreementForm || uploadProgress < 100}
-                onClick={onSubmit}
-                sx={{
-                  fontSize: '0.95rem',
-                  fontWeight: 600,
-                  bgcolor:
-                    agreementForm && uploadProgress === 100 ? '#203ff5' : '#b0b0b1 !important',
-                  color: '#ffffff !important',
-                  borderBottom: 3.5,
-                  borderBottomColor:
-                    agreementForm && uploadProgress === 100 ? '#112286' : '#9e9e9f',
-                  borderRadius: 1.5,
-                  px: 2.5,
-                  py: 1.2,
-                  '&:hover': {
-                    bgcolor: agreementForm && uploadProgress === 100 ? '#203ff5' : '#b0b0b1',
-                    opacity: 0.9,
-                  },
-                }}
-              >
-                Submit
-              </LoadingButton>
-            </DialogActions>
-          </Dialog> */}
-
-          {/* <Dialog
-            open={!!preview}
-            onClose={() => setPreview('')}
-            fullWidth
-            maxWidth="md"
-            sx={{
-              '& .MuiDialog-paper': {
-                width: { xs: 'calc(100% - 32px)', sm: '100%' },
-                m: { xs: 2, sm: 32 },
-              },
-            }}
-          >
-            <DialogTitle>
-              <Stack direction="row" alignItems="center" gap={2}>
-                <Box>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontFamily: 'Instrument Serif, serif',
-                      fontSize: { xs: '1.8rem', sm: '2.4rem' },
-                      fontWeight: 550,
-                    }}
-                  >
-                    Preview Document
-                  </Typography>
-
-                  <Typography
-                    variant="body2"
-                    noWrap
-                    sx={{
-                      fontWeight: 'bold',
-                      color: 'text.secondary',
-                      maxWidth: { xs: '250px', sm: '400px' },
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      mt: 0.5,
-                    }}
-                  >
-                    {agreementForm?.name || 'Document.pdf'}
-                  </Typography>
-                </Box>
-
-                <IconButton
-                  onClick={() => setPreview('')}
-                  sx={{
-                    ml: 'auto',
-                    '& svg': {
-                      width: { xs: 20, sm: 24 },
-                      height: { xs: 20, sm: 24 },
-                      color: '#636366',
-                    },
-                  }}
-                >
-                  <Iconify icon="hugeicons:cancel-01" width={24} />
-                </IconButton>
-              </Stack>
-            </DialogTitle>
-
-            <Divider sx={{ width: '95%', mx: 'auto' }} />
-
-            <DialogContent sx={{ p: 3 }}>
-              <Box
-                sx={{
-                  height: { xs: 400, sm: 600 },
-                  overflow: 'auto',
-                  '&::-webkit-scrollbar': {
-                    width: '8px',
-                  },
-                  '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: 'rgba(0,0,0,0.1)',
-                    borderRadius: '4px',
-                  },
-                }}
-              >
-                <Document
-                  file={preview}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                  loading={
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-                      <CircularProgress />
-                    </Box>
-                  }
-                >
-                  {Array.from(new Array(numPages), (el, index) => (
-                    <Page
-                      key={index}
-                      pageNumber={index + 1}
-                      renderAnnotationLayer={false}
-                      renderTextLayer={false}
-                      width={isSmallScreen ? window.innerWidth - 64 : 800}
-                      scale={isSmallScreen ? 0.8 : 1}
-                    />
-                  ))}
-                </Document>
-              </Box>
-            </DialogContent>
-          </Dialog> */}
         </>
       )}
 
@@ -1535,7 +1059,11 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         PaperProps={{ sx: { borderRadius: 3, bgcolor: '#f4f4f4' } }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 1.5, px: 1.5 }}>
-          <IconButton onClick={() => setPaymentGateOpen(false)} size="small" sx={{ color: '#8e8e93' }}>
+          <IconButton
+            onClick={() => setPaymentGateOpen(false)}
+            size="small"
+            sx={{ color: '#8e8e93' }}
+          >
             <Iconify icon="hugeicons:cancel-01" width={20} />
           </IconButton>
         </Box>
@@ -1813,10 +1341,10 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
       </Dialog>
 
       {/* New sign agreement dialog */}
-      <Dialog 
-        open={editor.value} 
-        onClose={editor.onFalse} 
-        fullWidth 
+      <Dialog
+        open={editor.value}
+        onClose={editor.onFalse}
+        fullWidth
         maxWidth="md"
         PaperProps={{
           sx: {
@@ -1826,22 +1354,24 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             borderRadius: { xs: 2, md: 1 },
             width: { xs: '95vw', md: 'auto' },
             maxWidth: { xs: '95vw', md: 'md' },
-          }
+          },
         }}
       >
-        <DialogTitle sx={{ 
-          p: { xs: 2, md: 2 }, 
-          borderBottom: 1, 
-          borderColor: 'divider',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          bgcolor: 'background.paper',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-        }}>
-          <Typography 
+        <DialogTitle
+          sx={{
+            p: { xs: 2, md: 2 },
+            borderBottom: 1,
+            borderColor: 'divider',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: 'background.paper',
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+          }}
+        >
+          <Typography
             variant="h6"
             sx={{
               fontWeight: 400,
@@ -1850,12 +1380,12 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
           >
             Sign Your Agreement
           </Typography>
-          <IconButton 
-            onClick={editor.onFalse} 
+          <IconButton
+            onClick={editor.onFalse}
             size="small"
-            sx={{ 
+            sx={{
               color: 'text.secondary',
-              '&:hover': { bgcolor: 'action.hover' }
+              '&:hover': { bgcolor: 'action.hover' },
             }}
           >
             <Iconify icon="eva:close-fill" width={20} />
@@ -1870,19 +1400,21 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             setSignURL={setSignURL}
           />
         </DialogContent>
-        <DialogActions sx={{ 
-          p: { xs: 2, md: 2 }, 
-          borderTop: 1, 
-          borderColor: 'divider', 
-          gap: { xs: 1.5, md: 2 },
-          flexDirection: 'row',
-          bgcolor: 'background.paper',
-          position: 'sticky',
-          bottom: 0,
-          zIndex: 10,
-        }}>
-          <Button 
-            onClick={editor.onFalse} 
+        <DialogActions
+          sx={{
+            p: { xs: 2, md: 2 },
+            borderTop: 1,
+            borderColor: 'divider',
+            gap: { xs: 1.5, md: 2 },
+            flexDirection: 'row',
+            bgcolor: 'background.paper',
+            position: 'sticky',
+            bottom: 0,
+            zIndex: 10,
+          }}
+        >
+          <Button
+            onClick={editor.onFalse}
             variant="outlined"
             sx={{
               borderColor: '#203ff5',

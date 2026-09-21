@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "REPLACE_APPLE_TEAM_ID.com.cultcreative.app",
+        "paths": ["/hunt/*"]
+      },
+      {
+        "appID": "REPLACE_APPLE_TEAM_ID.com.cultcreative.app.preview",
+        "paths": ["/hunt/*"]
+      },
+      {
+        "appID": "REPLACE_APPLE_TEAM_ID.com.cultcreative.app.dev",
+        "paths": ["/hunt/*"]
+      }
+    ]
+  }
+}

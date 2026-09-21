@@ -21,7 +21,7 @@ import {
   DialogContent,
 } from '@mui/material';
 
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -38,7 +38,16 @@ const schema = yup.object().shape({
   ),
 });
 
-const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose, creditsLeft, campaign, campaignMutate }) => {
+const AssignUGCVideoModal = ({
+  dialog,
+  onClose,
+  credits,
+  campaignId,
+  modalClose,
+  creditsLeft,
+  campaign,
+  campaignMutate,
+}) => {
   const shortlistedCreators = useShortlistedCreators((state) => state.shortlistedCreators);
   const resetState = useShortlistedCreators((state) => state.reset);
   const { data: agreements } = useGetAgreements(campaignId);
@@ -65,18 +74,14 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
   const v4UsedCredits = useMemo(() => {
     if (campaign?.campaignCredits == null) return null;
     if (!agreements || !campaign?.shortlisted) return 0;
-    
+
     // Get userIds of Platform Creators whose agreements have been sent
     const sentAgreementUserIds = new Set(
       agreements
-        .filter(
-          (agreement) =>
-            agreement.isSent &&
-            agreement.user?.creator?.isGuest !== true
-        )
+        .filter((agreement) => agreement.isSent && agreement.user?.creator?.isGuest !== true)
         .map((agreement) => agreement.userId)
     );
-    
+
     return campaign.shortlisted.reduce((acc, creator) => {
       if (
         sentAgreementUserIds.has(creator.userId) &&
@@ -93,13 +98,11 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
   const watchedCreators = watch('shortlistedCreators');
   const realTimeCreditsLeft = useMemo(() => {
     if (campaign?.campaignCredits == null) return null;
-    
+
     // Unified calculation: only count credits from sent agreements
     const alreadyUtilized = v4UsedCredits ?? 0;
-    const newlyAssigned = watchedCreators?.reduce(
-      (acc, creator) => acc + (creator?.credits || 0),
-      0
-    ) || 0;
+    const newlyAssigned =
+      watchedCreators?.reduce((acc, creator) => acc + (creator?.credits || 0), 0) || 0;
     return campaign.campaignCredits - alreadyUtilized - newlyAssigned;
   }, [watchedCreators, campaign?.campaignCredits, v4UsedCredits]);
 
@@ -123,24 +126,24 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
       // Debug logging
       console.log('Campaign data:', campaign);
       console.log('Campaign origin:', campaign?.origin);
-      
+
       if (campaign?.origin === 'CLIENT') {
         // For V3 campaigns, first shortlist creators, then assign UGC credits
         console.log('V3 Campaign: Shortlisting creators first...');
-        
+
         // Step 1: Shortlist creators (without UGC credits)
         await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
-          creators: data.map(creator => ({ id: creator.id })), // Only send IDs for shortlisting
+          creators: data.map((creator) => ({ id: creator.id })), // Only send IDs for shortlisting
           campaignId,
         });
-        
+
         // Step 2: Assign UGC credits
         console.log('V3 Campaign: Assigning UGC credits...');
         await axiosInstance.post('/api/campaign/v3/assignUGCCredits', {
           creators: data,
           campaignId,
         });
-        
+
         enqueueSnackbar('Successfully shortlisted creators and assigned UGC credits', {
           variant: 'success',
         });
@@ -151,12 +154,12 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
           creators: data,
           campaignId,
         });
-        
+
         enqueueSnackbar('Successfully shortlisted creators', {
           variant: 'success',
         });
       }
-      
+
       // Refresh data
       if (campaignMutate) {
         campaignMutate(); // Refresh campaign data to update ugcLeft calculation
@@ -209,10 +212,17 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
             <Label
               sx={{
                 fontFamily: (theme) => theme.typography.fontFamily,
-                color: realTimeCreditsLeft !== null && realTimeCreditsLeft < 0 ? 'error.main' : 'inherit',
+                color:
+                  realTimeCreditsLeft !== null && realTimeCreditsLeft < 0
+                    ? 'error.main'
+                    : 'inherit',
               }}
             >
-              UGC Credits: {(realTimeCreditsLeft ?? creditsLeft ?? 0) < 0 ? 0 : (realTimeCreditsLeft ?? creditsLeft ?? 0)} left
+              UGC Credits:{' '}
+              {(realTimeCreditsLeft ?? creditsLeft ?? 0) < 0
+                ? 0
+                : (realTimeCreditsLeft ?? creditsLeft ?? 0)}{' '}
+              left
             </Label>
           </Stack>
         </DialogTitle>
@@ -244,21 +254,22 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
             ))}
           </List>
         </DialogContent>
-        
+
         {/* Warning message when credits exceed available amount */}
         {realTimeCreditsLeft !== null && realTimeCreditsLeft < 0 && (
           <Box sx={{ px: 3, pb: 2 }}>
-            <Typography 
-              variant="body2" 
-              color="error.main" 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+            <Typography
+              variant="body2"
+              color="error.main"
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
                 gap: 1,
-                fontSize: '0.875rem'
+                fontSize: '0.875rem',
               }}
             >
-              ⚠️ Credits exceeded by {Math.abs(realTimeCreditsLeft)}. Please reduce the assigned credits.
+              ⚠️ Credits exceeded by {Math.abs(realTimeCreditsLeft)}. Please reduce the assigned
+              credits.
             </Typography>
           </Box>
         )}
@@ -290,7 +301,9 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
           <LoadingButton
             type="submit"
             loading={isSubmitting}
-            disabled={isSubmitting || !isValid || (realTimeCreditsLeft !== null && realTimeCreditsLeft < 0)}
+            disabled={
+              isSubmitting || !isValid || (realTimeCreditsLeft !== null && realTimeCreditsLeft < 0)
+            }
             sx={{
               bgcolor: '#203ff5',
               border: '1px solid #203ff5',

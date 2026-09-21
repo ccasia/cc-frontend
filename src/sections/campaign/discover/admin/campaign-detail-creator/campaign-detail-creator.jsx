@@ -29,7 +29,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import { getUserDisplay } from 'src/utils/user-display';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -88,7 +88,12 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
 
   const { user } = useAuthContext();
 
-  const { data: agreements, isLoading: loadingAgreements, mutate: agreementsMutate } = useGetAgreements(campaign?.id);
+  const {
+    data: agreements,
+    isLoading: loadingAgreements,
+    mutate: agreementsMutate,
+  } = useGetAgreements(campaign?.id);
+
   const smUp = useResponsive('up', 'sm');
 
   const shortlistedCreators = campaign?.shortlisted;
@@ -114,22 +119,15 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const usedCredits = useMemo(() => {
     if (campaign?.campaignCredits == null) return 0;
     if (!agreements || !campaign?.shortlisted) return 0;
-    
+
     const sentAgreementUserIds = new Set(
       agreements
-        .filter(
-          (agreement) =>
-            agreement.isSent &&
-            agreement.user?.creator?.isGuest !== true
-        )
+        .filter((agreement) => agreement.isSent && agreement.user?.creator?.isGuest !== true)
         .map((agreement) => agreement.userId)
     );
-    
+
     return campaign.shortlisted.reduce((acc, creator) => {
-      if (
-        sentAgreementUserIds.has(creator.userId) &&
-        creator.user?.creator?.isGuest !== true
-      ) {
+      if (sentAgreementUserIds.has(creator.userId) && creator.user?.creator?.isGuest !== true) {
         return acc + (creator.ugcVideos || 0);
       }
       return acc;
@@ -205,42 +203,42 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   // final even with a client attached; 'send_to_client' = route through client review
   const makeSubmitShortlist = (action) =>
     handleSubmit(async (value) => {
-    try {
-      loading.onTrue();
+      try {
+        loading.onTrue();
 
-      const newVal = value?.creator?.map((val) => ({
-        ...val,
-        creator: { ...val.creator, socialMediaData: '' },
-      }));
+        const newVal = value?.creator?.map((val) => ({
+          ...val,
+          creator: { ...val.creator, socialMediaData: '' },
+        }));
 
-      if (campaign?.submissionVersion === 'v4') {
-        const res = await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
-          creators: newVal.map((val) => ({ id: val.id })),
-          campaignId: campaign.id,
-          ...(action ? { action } : {}),
+        if (campaign?.submissionVersion === 'v4') {
+          const res = await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
+            creators: newVal.map((val) => ({ id: val.id })),
+            campaignId: campaign.id,
+            ...(action ? { action } : {}),
+          });
+          modal.onFalse();
+          reset();
+          enqueueSnackbar(res?.data?.message);
+          campaignMutate();
+          mutate(endpoints.campaign.creatorAgreement(campaign.id));
+        } else {
+          const res = await shortlistCreator({ newVal, campaignId: campaign.id });
+          modal.onFalse();
+          reset();
+          enqueueSnackbar(res?.data?.message);
+          campaignMutate();
+          mutate(endpoints.campaign.creatorAgreement(campaign.id));
+        }
+      } catch (error) {
+        console.log(error);
+        loading.onFalse();
+        enqueueSnackbar('Error Shortlist Creator', {
+          variant: 'error',
         });
-        modal.onFalse();
-        reset();
-        enqueueSnackbar(res?.data?.message);
-        campaignMutate();
-        mutate(endpoints.campaign.creatorAgreement(campaign.id));
-      } else {
-        const res = await shortlistCreator({ newVal, campaignId: campaign.id });
-        modal.onFalse();
-        reset();
-        enqueueSnackbar(res?.data?.message);
-        campaignMutate();
-        mutate(endpoints.campaign.creatorAgreement(campaign.id));
+      } finally {
+        loading.onFalse();
       }
-    } catch (error) {
-      console.log(error);
-      loading.onFalse();
-      enqueueSnackbar('Error Shortlist Creator', {
-        variant: 'error',
-      });
-    } finally {
-      loading.onFalse();
-    }
     });
 
   const onSubmit = makeSubmitShortlist();
@@ -419,7 +417,10 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                           borderRadius: 2,
                         }}
                       />
-                      <ListItemText primary={getUserDisplay(option).name} secondary={getUserDisplay(option).email} />
+                      <ListItemText
+                        primary={getUserDisplay(option).name}
+                        secondary={getUserDisplay(option).email}
+                      />
                     </Box>
                   );
                 }}
@@ -661,7 +662,10 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                             borderRadius: 2,
                           }}
                         />
-                        <ListItemText primary={getUserDisplay(option).name} secondary={getUserDisplay(option).email} />
+                        <ListItemText
+                          primary={getUserDisplay(option).name}
+                          secondary={getUserDisplay(option).email}
+                        />
                       </Box>
                     );
                   }}

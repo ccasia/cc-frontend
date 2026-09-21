@@ -80,7 +80,7 @@ function RejectionRateCard() {
   const router = useRouter();
   const { startDate, endDate } = useDateFilter();
   const { breakdown, trend, isLoading } = useGetClientRejectionRate({ startDate, endDate });
-  const { data: packages } = useGetPackages();
+  const { data: packages } = useGetPackages(true);
 
   const filteredTrend = useFilteredData(trend);
 

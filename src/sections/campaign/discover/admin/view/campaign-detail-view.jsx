@@ -31,7 +31,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 import { useGetCampaignByIdScoped } from 'src/hooks/use-get-campaign-by-id';
 import { useCampaignPermissions } from 'src/hooks/use-campaign-permissions';
@@ -40,6 +40,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -133,6 +134,7 @@ const CampaignDetailView = ({
     campaignLoading,
     mutate: campaignMutate,
   } = useGetCampaignByIdScoped(id, publicReadonly, isDemo);
+
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const loading = useBoolean();
   const [url, setUrl] = useState('');
@@ -239,7 +241,10 @@ const CampaignDetailView = ({
   };
 
   const [currentTab, setCurrentTab] = useState(
-    forcedTab || searchParams.get('tab') || localStorage.getItem('campaigndetail') || 'campaign-content'
+    forcedTab ||
+      searchParams.get('tab') ||
+      localStorage.getItem('campaigndetail') ||
+      'campaign-content'
   );
 
   // Check if user is client (demo sessions render the read-only client view)
@@ -325,7 +330,34 @@ const CampaignDetailView = ({
     return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
   }, [isClient, getClientAllowedTabs]);
 
-  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(isDemo ? null : id);
+  const { campaigns: campaignInvoices, mutate: mutateCampaignInvoices } = useGetInvoicesByCampId(
+    isDemo ? null : id
+  );
+
+  const { socket: invoiceSocket } = useSocketContext();
+  useEffect(() => {
+    if (!invoiceSocket || !id || isDemo) return undefined;
+
+    const handleInvoiceGenerated = (payload) => {
+      if (payload.campaignId !== id) return;
+      mutateCampaignInvoices();
+    };
+
+    const handleCreditsUpdated = (payload) => {
+      if (payload.campaignId !== id) return;
+      campaignMutate();
+    };
+
+    invoiceSocket.emit('join-campaign', id);
+    invoiceSocket.on('v4:invoice:generated', handleInvoiceGenerated);
+    invoiceSocket.on('campaign:credits:updated', handleCreditsUpdated);
+
+    return () => {
+      invoiceSocket.off('v4:invoice:generated', handleInvoiceGenerated);
+      invoiceSocket.off('campaign:credits:updated', handleCreditsUpdated);
+      invoiceSocket.emit('leave-campaign', id);
+    };
+  }, [invoiceSocket, id, isDemo, mutateCampaignInvoices, campaignMutate]);
 
   const tabsContainerRef = useRef(null);
 
@@ -380,10 +412,13 @@ const CampaignDetailView = ({
     // Combine both sets for total agreements
     const totalAgreementsUserIds = new Set([...approvedPitchUserIds, ...shortlistedUserIds]);
 
-    // Count total agreements for approved creators
-    const totalAgreements = (agreements || []).filter((a) =>
-      totalAgreementsUserIds.has(a.userId)
-    ).length;
+    const totalAgreements = (agreements || []).filter((a) => {
+      if (!totalAgreementsUserIds.has(a.userId)) return false;
+      const isUnlinkedGuest = a?.user?.creator?.isGuest === true;
+      if (!isUnlinkedGuest) return true;
+      const hasSubmission = (submissions || []).some((s) => s.userId === a.userId);
+      return hasSubmission;
+    }).length;
 
     return `Agreements (${totalAgreements})`;
   };

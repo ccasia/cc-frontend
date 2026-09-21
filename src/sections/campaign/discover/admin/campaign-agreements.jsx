@@ -1,22 +1,26 @@
+/* eslint-disable no-nested-ternary */
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { useNavigate, useLocation } from 'react-router';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
+import { alpha } from '@mui/system';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
+  Menu,
   Table,
   Stack,
   Button,
   Dialog,
   Avatar,
-  Select,
   Tooltip,
   Divider,
+  Checkbox,
   TableRow,
   MenuItem,
   TableCell,
@@ -34,24 +38,166 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 
-import { useNavigate, useLocation } from 'react-router';
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
+import { useTable } from 'src/components/table';
 import EmptyContent from 'src/components/empty-content';
 import { RHFTextField } from 'src/components/hook-form';
+import ScrollTabs from 'src/components/table/scroll-tabs';
 import SortableHeader from 'src/components/table/sortable-header';
 import FormProvider from 'src/components/hook-form/form-provider';
 
+import { INDEX_SX } from '../master-list-row-kit';
 import CampaignAgreementEdit from './campaign-agreement-edit';
+import SendBulkAgreementModal from './send-bulk-agreement-modal';
+import SendAdditionalAgreementModal from './send-additional-agreement-modal';
+
+const ROUND_LABELS = {
+  1: 'First Agreement',
+  2: 'Second Agreement',
+  3: 'Third Agreement',
+  4: 'Fourth Agreement',
+  5: 'Fifth Agreement',
+  6: 'Sixth Agreement',
+  7: 'Seventh Agreement',
+  8: 'Eighth Agreement',
+  9: 'Ninth Agreement',
+  10: 'Tenth Agreement',
+};
+
+const getRoundLabel = (round) => ROUND_LABELS[round] || `Agreement ${round}`;
+
+const FILTER_PILL_SX = {
+  height: 34,
+  minHeight: 34,
+  padding: '8px 16px',
+  gap: '4px',
+  border: 'none',
+  borderBottom: 'none',
+  borderRadius: '100px',
+  fontFamily: 'Inter Display, Inter, sans-serif',
+  fontWeight: 500,
+  fontSize: 14,
+  lineHeight: '18px',
+  textTransform: 'none',
+  whiteSpace: 'nowrap',
+  minWidth: 'unset',
+  flexShrink: 0,
+  boxShadow: 'none',
+  '& .MuiButton-endIcon': {
+    ml: 0,
+    mr: 0,
+  },
+};
+
+const getFilterPillSx = (isActive) => ({
+  ...FILTER_PILL_SX,
+  bgcolor: isActive ? 'rgba(19, 64, 255, 0.10)' : '#F5F5F5',
+  color: isActive ? '#1340FF' : '#231F20',
+  fontWeight: isActive ? 600 : 500,
+  '&:hover': {
+    bgcolor: isActive ? 'rgba(19, 64, 255, 0.16)' : '#EBEBEB',
+    border: 'none',
+    borderBottom: 'none',
+    boxShadow: 'none',
+  },
+});
+
+function FilterPillEndIcons({ isActive, isOpen, onClear, clearLabel }) {
+  const handleClear = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onClear();
+  };
+
+  return (
+    <Stack direction="row" alignItems="center" spacing={0.25} component="span">
+      {isActive && (
+        <Box
+          component="span"
+          role="button"
+          tabIndex={0}
+          aria-label={clearLabel}
+          onClick={handleClear}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              handleClear(event);
+            }
+          }}
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 18,
+            height: 18,
+            borderRadius: '50%',
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: 'rgba(19, 64, 255, 0.16)',
+            },
+          }}
+        >
+          <Iconify icon="eva:close-fill" width={14} />
+        </Box>
+      )}
+      <Iconify
+        icon="eva:chevron-down-fill"
+        width={20}
+        sx={{
+          transform: isOpen ? 'rotate(180deg)' : 'none',
+          transition: 'transform 0.2s',
+        }}
+      />
+    </Stack>
+  );
+}
+
+FilterPillEndIcons.propTypes = {
+  isActive: PropTypes.bool,
+  isOpen: PropTypes.bool,
+  onClear: PropTypes.func.isRequired,
+  clearLabel: PropTypes.string.isRequired,
+};
+
+// Custom checkbox look: white square with a blue border + blue check when checked, plain
+// grey-outlined square when empty — square corners (no radius) — used for both the header
+// "select all" and the per-row "select for additional agreement" checkboxes.
+const checkboxIconSx = {
+  width: 16,
+  height: 16,
+  borderRadius: 0.4,
+  border: '1.5px solid #D9D9D9',
+  bgcolor: '#fff',
+};
+const uncheckedCheckboxIcon = <Box component="span" sx={checkboxIconSx} />;
+
+const checkedCheckboxIcon = (
+  <Box
+    component="span"
+    sx={{
+      ...checkboxIconSx,
+      border: '1.5px solid #1340FF',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <Iconify icon="eva:checkmark-fill" width={11} sx={{ color: '#1340FF' }} />
+  </Box>
+);
 
 const CURRENCY_PREFIXES = {
   SGD: { prefix: '$', label: 'SGD' },
@@ -61,6 +207,16 @@ const CURRENCY_PREFIXES = {
   IDR: { prefix: 'Rp', label: 'IDR' },
   USD: { prefix: '$', label: 'USD' },
 };
+
+const AMOUNT_TEXT_SX = { fontSize: { xs: '0.7rem', sm: '0.875rem' } };
+
+function renderAmountText(content) {
+  return (
+    <Typography variant="body2" sx={AMOUNT_TEXT_SX}>
+      {content}
+    </Typography>
+  );
+}
 
 // Convert AgreementDialog to a full component with approve/reject functionality
 const AgreementDialog = ({
@@ -432,12 +588,21 @@ AgreementDialog.propTypes = {
   isDisabled: PropTypes.bool,
 };
 
-const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) => {
+const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabled = false }) => {
   const { data, isLoading, mutate: mutateAgreements } = useGetAgreements(campaign?.id);
+
   const { socket } = useSocketContext();
   const navigate = useNavigate();
   const location = useLocation();
+
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [agreementFilterAnchorEl, setAgreementFilterAnchorEl] = useState(null);
+  const [activeRound, setActiveRound] = useState(1);
+
+  const table = useTable();
+  const sendAdditionalDialog = useBoolean();
+  const sendBulkDialog = useBoolean();
+
   const [searchQuery, setSearchQuery] = useState(
     () => new URLSearchParams(location.search).get('creator') || ''
   );
@@ -448,8 +613,9 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
       params.delete('creator');
       navigate({ search: params.toString() }, { replace: true });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
   const [sortColumn, setSortColumn] = useState('name'); // 'name', 'date', 'status'
@@ -458,6 +624,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
   const dialog = useBoolean();
   const editDialog = useBoolean();
   const feedbackDialog = useBoolean();
+
   const [selectedUrl, setSelectedUrl] = useState('');
   const [selectedAgreement, setSelectedAgreement] = useState(null);
   const [approveLoading, setApproveLoading] = useState(false);
@@ -467,7 +634,6 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
   const { mainRef } = useMainContext();
 
   const smUp = useResponsive('up', 'sm');
-  const lgUp = useResponsive('up', 'lg');
 
   // Guest creators must link a platform account before send; submissions merge by userId.
   // Platform creators often have no AGREEMENT_FORM row until after the agreement is sent (v4 flow).
@@ -489,6 +655,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     }
 
     const campaignShortlisted = campaign?.shortlisted?.find((s) => s.userId === item?.user?.id);
+
     if (campaignShortlisted?.creditTier) {
       return {
         name: campaignShortlisted.creditTier?.name || 'Unknown Tier',
@@ -554,7 +721,9 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     fetchSubmissions();
   }, [fetchSubmissions]);
 
-  // Real-time updates when creator submits agreement
+  // Real-time updates when creator submits agreement, or another admin sends a new round —
+  // without this, a freshly-sent round 2 briefly shows round 1's cached submission status
+  // (e.g. APPROVED) until a manual refresh, since it has no submission of its own yet.
   useEffect(() => {
     if (!socket) return undefined;
 
@@ -563,21 +732,36 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
       fetchSubmissions(); // Refresh submissions data (status for approve/reject buttons)
     };
 
+    const handleAgreementUpdated = (payload) => {
+      if (payload?.campaignId !== campaign?.id) return;
+      mutateAgreements();
+      fetchSubmissions();
+    };
+
     socket.on('agreementReady', handleAgreementReady);
+    socket.on('campaign:agreement:updated', handleAgreementUpdated);
 
     return () => {
       socket.off('agreementReady', handleAgreementReady);
+      socket.off('campaign:agreement:updated', handleAgreementUpdated);
     };
-  }, [socket, mutateAgreements, fetchSubmissions]);
+  }, [socket, campaign?.id, mutateAgreements, fetchSubmissions]);
 
   // Combine the agreements data with submission status
   const combinedData = useMemo(() => {
     if (!data || !submissions || loadingSubmissions) return data;
 
     return data.map((agreement) => {
-      const agreementSubmission = submissions.find(
+      const round = agreement.round || 1;
+      // AGREEMENT_FORM submissions are one per round (contentOrder = round) — match on both
+      // so a creator's later round doesn't inherit an earlier round's status.
+      const roundMatches = submissions.filter(
         (sub) => sub.userId === agreement.userId && sub.submissionType?.type === 'AGREEMENT_FORM'
       );
+
+      const agreementSubmission =
+        roundMatches.find((sub) => (sub.contentOrder || 1) === round) ||
+        (roundMatches.length === 1 ? roundMatches[0] : undefined);
 
       return {
         ...agreement,
@@ -591,6 +775,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
 
     // Collect approved user IDs from pitches
     const approvedPitchUserIds = new Set();
+
     if (Array.isArray(campaign?.pitch)) {
       campaign.pitch
         .filter(
@@ -617,7 +802,9 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
         .map((pitchItem) => pitchItem?.userId)
         .filter(Boolean)
     );
+
     const shortlistedUserIds = new Set();
+
     if (Array.isArray(campaign?.shortlisted)) {
       campaign.shortlisted.forEach((shortlistedItem) => {
         if (shortlistedItem?.userId && !allPitchUserIds.has(shortlistedItem.userId)) {
@@ -633,7 +820,10 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
       return [];
     }
 
-    return combinedData.filter((agreement) => approvedCreatorSet.has(agreement.userId));
+    return combinedData.filter(
+      (agreement) =>
+        approvedCreatorSet.has(agreement.userId) && !guestNeedsLinkBeforeSend(agreement)
+    );
   }, [combinedData, campaign?.pitch, campaign?.shortlisted]);
 
   const pendingCount = useMemo(
@@ -641,35 +831,68 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     [pitchApprovedAgreements]
   );
 
+  // Rounds are independent per creator (not a campaign-wide batch) — a round tab only shows
+  // up if at least one creator actually has a row for it.
+  const roundsAvailable = useMemo(() => {
+    const rounds = new Set();
+    (pitchApprovedAgreements || []).forEach((item) => rounds.add(item.round || 1));
+    return [...rounds].sort((a, b) => a - b);
+  }, [pitchApprovedAgreements]);
+
+  const roundCounts = useMemo(() => {
+    const counts = {};
+    (pitchApprovedAgreements || []).forEach((item) => {
+      const round = item.round || 1;
+      counts[round] = (counts[round] || 0) + 1;
+    });
+    return counts;
+  }, [pitchApprovedAgreements]);
+
+  useEffect(() => {
+    if (roundsAvailable.length && !roundsAvailable.includes(activeRound)) {
+      setActiveRound(roundsAvailable[0]);
+    }
+  }, [roundsAvailable, activeRound]);
+
+  useEffect(() => {
+    table.setSelected([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRound]);
+
+  const roundScopedAgreements = useMemo(
+    () => (pitchApprovedAgreements || []).filter((item) => (item.round || 1) === activeRound),
+    [pitchApprovedAgreements, activeRound]
+  );
+
   const filteredData = useMemo(() => {
-    if (!pitchApprovedAgreements) return [];
+    if (!roundScopedAgreements) return [];
 
     let result = [];
 
     if (selectedFilter === 'pendingAgreement') {
       // Not sent yet
-      result = pitchApprovedAgreements.filter((item) => !item.isSent);
+      result = roundScopedAgreements.filter((item) => !item.isSent);
     } else if (selectedFilter === 'pendingApproval') {
       // Sent and waiting for creator to submit (PENDING_REVIEW)
-      result = pitchApprovedAgreements.filter(
+      result = roundScopedAgreements.filter(
         (item) => item?.submission?.status === 'PENDING_REVIEW'
       );
     } else if (selectedFilter === 'sentToCreator') {
       // Sent to creator but not yet submitted
-      result = pitchApprovedAgreements.filter(
+      result = roundScopedAgreements.filter(
         (item) =>
           item.isSent &&
           !['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(item?.submission?.status)
       );
     } else if (selectedFilter === 'rejected') {
       // Rejected agreements
-      result = pitchApprovedAgreements.filter((item) => item?.submission?.status === 'REJECTED');
+      result = roundScopedAgreements.filter((item) => item?.submission?.status === 'REJECTED');
     } else if (selectedFilter === 'approved') {
       // Approved agreements
-      result = pitchApprovedAgreements.filter((item) => item?.submission?.status === 'APPROVED');
+      result = roundScopedAgreements.filter((item) => item?.submission?.status === 'APPROVED');
     } else {
       // All
-      result = pitchApprovedAgreements;
+      result = roundScopedAgreements;
     }
 
     // Search functionality
@@ -718,7 +941,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [selectedFilter, sortColumn, sortDirection, pitchApprovedAgreements, searchQuery]);
+  }, [selectedFilter, sortColumn, sortDirection, roundScopedAgreements, searchQuery]);
 
   const footerTotals = useMemo(() => {
     const totalCreators = filteredData.length;
@@ -876,7 +1099,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
 
   // Calculate filter counts
   const filterCounts = useMemo(() => {
-    if (!pitchApprovedAgreements) {
+    if (!roundScopedAgreements) {
       return {
         all: 0,
         pendingAgreement: 0,
@@ -888,22 +1111,102 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
     }
 
     return {
-      all: pitchApprovedAgreements.length,
-      pendingAgreement: pitchApprovedAgreements.filter((item) => !item.isSent).length,
-      pendingApproval: pitchApprovedAgreements.filter(
+      all: roundScopedAgreements.length,
+      pendingAgreement: roundScopedAgreements.filter((item) => !item.isSent).length,
+      pendingApproval: roundScopedAgreements.filter(
         (item) => item?.submission?.status === 'PENDING_REVIEW'
       ).length,
-      sentToCreator: pitchApprovedAgreements.filter(
+      sentToCreator: roundScopedAgreements.filter(
         (item) =>
           item.isSent &&
           !['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(item?.submission?.status)
       ).length,
-      rejected: pitchApprovedAgreements.filter((item) => item?.submission?.status === 'REJECTED')
+      rejected: roundScopedAgreements.filter((item) => item?.submission?.status === 'REJECTED')
         .length,
-      approved: pitchApprovedAgreements.filter((item) => item?.submission?.status === 'APPROVED')
+      approved: roundScopedAgreements.filter((item) => item?.submission?.status === 'APPROVED')
         .length,
     };
-  }, [pitchApprovedAgreements]);
+  }, [roundScopedAgreements]);
+
+  const agreementStatusOptions = useMemo(
+    () => [
+      { value: 'all', label: 'All' },
+      {
+        value: 'pendingAgreement',
+        label: `Pending Agreement (${filterCounts.pendingAgreement})`,
+      },
+      {
+        value: 'pendingApproval',
+        label: `Pending Approval (${filterCounts.pendingApproval})`,
+      },
+      {
+        value: 'sentToCreator',
+        label: `Sent To Creator (${filterCounts.sentToCreator})`,
+      },
+      { value: 'rejected', label: `Rejected (${filterCounts.rejected})` },
+      { value: 'approved', label: `Approved (${filterCounts.approved})` },
+    ],
+    [filterCounts]
+  );
+
+  const isAgreementFilterActive = selectedFilter !== 'all';
+  const agreementFilterLabel = isAgreementFilterActive
+    ? agreementStatusOptions.find((option) => option.value === selectedFilter)?.label ||
+      'Agreement Status'
+    : 'Agreement Status';
+
+  const handleAgreementFilterClick = (event) => {
+    setAgreementFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleAgreementFilterClose = () => {
+    setAgreementFilterAnchorEl(null);
+  };
+
+  const handleAgreementFilterSelect = (value) => {
+    setSelectedFilter(value);
+    setAgreementFilterAnchorEl(null);
+  };
+
+  const handleAgreementFilterClear = () => {
+    setSelectedFilter('all');
+    setAgreementFilterAnchorEl(null);
+  };
+
+  // Eligible for an additional agreement: this round has already been sent to the creator.
+  const eligibleForAdditionalIds = useMemo(
+    () => new Set(filteredData.filter((item) => item.isSent).map((item) => item.userId)),
+    [filteredData]
+  );
+
+  // Eligible for a bulk (first) agreement: this round hasn't been sent yet.
+  const eligibleForBulkIds = useMemo(
+    () => new Set(filteredData.filter((item) => !item.isSent).map((item) => item.userId)),
+    [filteredData]
+  );
+
+  // The two send actions are mutually exclusive per selection — once a creator from one group
+  // is checked, rows from the other group are disabled until the selection is cleared.
+  const selectionCategory = useMemo(() => {
+    if (table.selected.length === 0) return null;
+    return eligibleForAdditionalIds.has(table.selected[0]) ? 'additional' : 'bulk';
+  }, [table.selected, eligibleForAdditionalIds]);
+
+  const selectedCreatorRows = useMemo(
+    () =>
+      filteredData.filter(
+        (item) => table.selected.includes(item.userId) && eligibleForAdditionalIds.has(item.userId)
+      ),
+    [filteredData, table.selected, eligibleForAdditionalIds]
+  );
+
+  const selectedBulkCreatorRows = useMemo(
+    () =>
+      filteredData.filter(
+        (item) => table.selected.includes(item.userId) && eligibleForBulkIds.has(item.userId)
+      ),
+    [filteredData, table.selected, eligibleForBulkIds]
+  );
 
   if (isLoading || loadingSubmissions) {
     return <div>Loading...</div>; // A loading message while the data is being fetched
@@ -912,6 +1215,25 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
   return (
     <Box>
       <Stack direction="column" spacing={2}>
+        {roundsAvailable.length > 1 && (
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
+            spacing={1.5}
+          >
+            <ScrollTabs
+              tabs={roundsAvailable.map((round) => ({
+                value: round,
+                label: getRoundLabel(round),
+                count: roundCounts[round] || 0,
+              }))}
+              value={activeRound}
+              onChange={setActiveRound}
+            />
+          </Stack>
+        )}
+
         <Stack
           direction="column"
           spacing={{ xs: 1, sm: 1.5 }}
@@ -921,337 +1243,359 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             sx={{ width: '100%' }}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
             alignSelf="start"
             spacing={2}
             mb={0.5}
           >
-            <TextField
-              placeholder="Search creators..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{
-                width: { xs: '100%', sm: 300 },
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: '#FFFFFF',
-                  border: '1.5px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1.15,
-                  height: 44,
-                  fontSize: '0.85rem',
-                  '& fieldset': {
-                    border: 'none',
-                  },
-                  '&.Mui-focused': {
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              alignItems={{ sm: 'center' }}
+            >
+              <TextField
+                placeholder="Search creators..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{
+                  width: { xs: '100%', sm: 300 },
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#FFFFFF',
                     border: '1.5px solid #e7e7e7',
                     borderBottom: '3px solid #e7e7e7',
+                    borderRadius: 1.15,
+                    height: 44,
+                    fontSize: '0.85rem',
+                    '& fieldset': {
+                      border: 'none',
+                    },
+                    '&.Mui-focused': {
+                      border: '1.5px solid #e7e7e7',
+                      borderBottom: '3px solid #e7e7e7',
+                    },
                   },
-                },
-                '& .MuiOutlinedInput-input': {
-                  py: 1.25,
-                  px: 0,
+                  '& .MuiOutlinedInput-input': {
+                    py: 1.25,
+                    px: 0,
+                    color: '#637381',
+                    fontWeight: 600,
+                    '&::placeholder': {
+                      color: '#637381',
+                      opacity: 1,
+                      fontWeight: 400,
+                    },
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              {/* Alphabetical Sort Button */}
+              <Button
+                onClick={handleToggleSort}
+                endIcon={
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    {sortDirection === 'asc' ? (
+                      <Stack direction="column" alignItems="center" spacing={0}>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                        >
+                          A
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                        >
+                          Z
+                        </Typography>
+                      </Stack>
+                    ) : (
+                      <Stack direction="column" alignItems="center" spacing={0}>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                        >
+                          Z
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                        >
+                          A
+                        </Typography>
+                      </Stack>
+                    )}
+                    <Iconify
+                      icon={
+                        sortDirection === 'asc'
+                          ? 'eva:arrow-downward-fill'
+                          : 'eva:arrow-upward-fill'
+                      }
+                      width={12}
+                    />
+                  </Stack>
+                }
+                sx={{
+                  px: 1.5,
+                  py: 0.75,
+                  height: '42px',
                   color: '#637381',
                   fontWeight: 600,
-                  '&::placeholder': {
-                    color: '#637381',
-                    opacity: 1,
-                    fontWeight: 400,
-                  },
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Alphabetical Sort Button */}
-            <Button
-              onClick={handleToggleSort}
-              endIcon={
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  {sortDirection === 'asc' ? (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography
-                        variant="caption"
-                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                      >
-                        A
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                      >
-                        Z
-                      </Typography>
-                    </Stack>
-                  ) : (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography
-                        variant="caption"
-                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                      >
-                        Z
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                      >
-                        A
-                      </Typography>
-                    </Stack>
-                  )}
-                  <Iconify
-                    icon={
-                      sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
-                    }
-                    width={12}
-                  />
-                </Stack>
-              }
-              sx={{
-                px: 1.5,
-                py: 0.75,
-                height: '42px',
-                color: '#637381',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderRadius: 1,
-                textTransform: 'none',
-                whiteSpace: 'nowrap',
-                boxShadow: 'none',
-                alignSelf: { xs: 'flex-start', sm: 'center' },
-                '&:hover': {
+                  fontSize: '0.875rem',
                   backgroundColor: 'transparent',
-                  color: '#221f20',
-                },
-              }}
-            >
-              Alphabetical
-            </Button>
-          </Stack>
-
-          {lgUp ? (
-            <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap' }}>
-              <Button
-                onClick={() => setSelectedFilter('all')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  ...(selectedFilter === 'all'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor: selectedFilter === 'all' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                  },
-                }}
-              >
-                All
-              </Button>{' '}
-              <Button
-                onClick={() => setSelectedFilter('pendingAgreement')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                  ...(selectedFilter === 'pendingAgreement'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor:
-                      selectedFilter === 'pendingAgreement'
-                        ? 'rgba(32, 63, 245, 0.04)'
-                        : 'transparent',
-                  },
-                }}
-              >
-                {`Pending Agreement (${filterCounts.pendingAgreement})`}
-              </Button>
-              <Button
-                onClick={() => setSelectedFilter('pendingApproval')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                  ...(selectedFilter === 'pendingApproval'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor:
-                      selectedFilter === 'pendingApproval'
-                        ? 'rgba(32, 63, 245, 0.04)'
-                        : 'transparent',
-                  },
-                }}
-              >
-                {`Pending Approval (${filterCounts.pendingApproval})`}
-              </Button>
-              <Button
-                onClick={() => setSelectedFilter('sentToCreator')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                  ...(selectedFilter === 'sentToCreator'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor:
-                      selectedFilter === 'sentToCreator'
-                        ? 'rgba(32, 63, 245, 0.04)'
-                        : 'transparent',
-                  },
-                }}
-              >
-                {`Sent To Creator (${filterCounts.sentToCreator})`}
-              </Button>
-              <Button
-                onClick={() => setSelectedFilter('rejected')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                  ...(selectedFilter === 'rejected'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor:
-                      selectedFilter === 'rejected' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                  },
-                }}
-              >
-                {`Rejected (${filterCounts.rejected})`}
-              </Button>
-              <Button
-                onClick={() => setSelectedFilter('approved')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                  ...(selectedFilter === 'approved'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor:
-                      selectedFilter === 'approved' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                  },
-                }}
-              >
-                {`Approved (${filterCounts.approved})`}
-              </Button>
-            </Stack>
-          ) : (
-            <Select
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value)}
-              size="small"
-              sx={{
-                minWidth: { xs: '100%', sm: 200 },
-                height: 42,
-                bgcolor: '#FFFFFF',
-                border: '1.5px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1.15,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                '& .MuiOutlinedInput-notchedOutline': {
                   border: 'none',
-                },
-                '& .MuiSelect-select': {
-                  py: 1.25,
-                },
-              }}
-            >
-              <MenuItem value="all">{`All (${filterCounts.all})`}</MenuItem>
-              <MenuItem value="pendingAgreement">{`Pending Agreement (${filterCounts.pendingAgreement})`}</MenuItem>
-              <MenuItem value="pendingApproval">{`Pending Approval (${filterCounts.pendingApproval})`}</MenuItem>
-              <MenuItem value="sentToCreator">{`Sent To Creator (${filterCounts.sentToCreator})`}</MenuItem>
-              <MenuItem value="rejected">{`Rejected (${filterCounts.rejected})`}</MenuItem>
-              <MenuItem value="approved">{`Approved (${filterCounts.approved})`}</MenuItem>
-            </Select>
-          )}
+                  borderRadius: 1,
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  boxShadow: 'none',
+                  alignSelf: { xs: 'flex-start', sm: 'center' },
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    color: '#221f20',
+                  },
+                }}
+              >
+                Alphabetical
+              </Button>
+              <Button
+                variant="text"
+                disableElevation
+                onClick={handleAgreementFilterClick}
+                endIcon={
+                  <FilterPillEndIcons
+                    isActive={isAgreementFilterActive}
+                    isOpen={Boolean(agreementFilterAnchorEl)}
+                    onClear={handleAgreementFilterClear}
+                    clearLabel="Clear agreement status filters"
+                  />
+                }
+                sx={getFilterPillSx(isAgreementFilterActive)}
+              >
+                {agreementFilterLabel}
+              </Button>
+              <Menu
+                anchorEl={agreementFilterAnchorEl}
+                open={Boolean(agreementFilterAnchorEl)}
+                onClose={handleAgreementFilterClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      mt: 0.5,
+                      minWidth: 200,
+                      p: 0.5,
+                      bgcolor: 'white',
+                      boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
+                      borderRadius: 1.5,
+                    },
+                  },
+                }}
+              >
+                {agreementStatusOptions.map((option) => (
+                  <MenuItem
+                    key={option.value}
+                    selected={selectedFilter === option.value}
+                    onClick={() => handleAgreementFilterSelect(option.value)}
+                    sx={{
+                      fontFamily: 'Inter Display, Inter, sans-serif',
+                      fontSize: 14,
+                      fontWeight: selectedFilter === option.value ? 600 : 500,
+                      color: '#231F20',
+                      borderRadius: 1,
+                      py: 0.75,
+                    }}
+                  >
+                    {option.label}
+                    {selectedFilter === option.value && (
+                      <Iconify
+                        icon="eva:checkmark-fill"
+                        width={16}
+                        sx={{ ml: 'auto', flexShrink: 0 }}
+                      />
+                    )}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </Stack>
+
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ flexShrink: 0 }}>
+              {table.selected.length > 0 && (
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#221f20', fontWeight: 600, whiteSpace: 'nowrap' }}
+                  >
+                    {table.selected.length} Creator{table.selected.length !== 1 ? 's' : ''} Selected
+                  </Typography>
+                  <Typography
+                    component="button"
+                    type="button"
+                    onClick={() => table.setSelected([])}
+                    sx={{
+                      border: 'none',
+                      bgcolor: 'transparent',
+                      cursor: 'pointer',
+                      p: 0,
+                      color: '#1340FF',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    Clear
+                  </Typography>
+                </Stack>
+              )}
+              <Tooltip
+                title={
+                  !isDisabled && selectedBulkCreatorRows.length === 0
+                    ? 'Tick one or more pending creators to send a bulk agreement'
+                    : ''
+                }
+              >
+                <span>
+                  <Button
+                    variant="contained"
+                    disabled={isDisabled || selectedBulkCreatorRows.length === 0}
+                    onClick={sendBulkDialog.onTrue}
+                    sx={{
+                      minWidth: '38px',
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '8px',
+                      pt: '8px',
+                      pr: '12px',
+                      pb: '11px',
+                      pl: '12px',
+                      gap: '4px',
+                      bgcolor: '#FFFFFF',
+                      color: '#1340FF',
+                      border: '1px solid #E7E7E7',
+                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      justifyContent: 'flex-start',
+                      transition:
+                        'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
+                      '&:hover:not(.Mui-disabled)': {
+                        bgcolor: '#F5F7FF',
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        width: '175px',
+                        '& .send-bulk-label': { opacity: 1, maxWidth: '160px' },
+                      },
+                      '&.Mui-disabled': {
+                        opacity: 1,
+                        color: '#B0B0B1',
+                        border: '1px solid #EDEDED',
+                        boxShadow: 'none',
+                      },
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src="/assets/icons/overview/group2People.svg"
+                      alt=""
+                      sx={{ width: 16, height: 16, flexShrink: 0 }}
+                    />
+                    <Box
+                      component="span"
+                      className="send-bulk-label"
+                      sx={{
+                        display: 'inline-block',
+                        opacity: 0,
+                        maxWidth: 0,
+                        overflow: 'hidden',
+                        transition:
+                          'opacity 0.25s ease 0.05s, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                      }}
+                    >
+                      Send Bulk Agreement
+                    </Box>
+                  </Button>
+                </span>
+              </Tooltip>
+              <Tooltip
+                title={
+                  !isDisabled && selectedCreatorRows.length === 0
+                    ? 'Tick one or more creators who already have an agreement to send an additional round'
+                    : ''
+                }
+              >
+                <span>
+                  <Button
+                    variant="contained"
+                    disabled={isDisabled || selectedCreatorRows.length === 0}
+                    onClick={sendAdditionalDialog.onTrue}
+                    sx={{
+                      minWidth: '38px',
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '8px',
+                      px: '11px',
+                      gap: '8px',
+                      bgcolor: '#221f20',
+                      color: '#fff',
+                      border: '1.5px solid #221f20',
+                      borderBottom: '3px solid #000',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      justifyContent: 'flex-start',
+                      transition:
+                        'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
+                      '&:hover:not(.Mui-disabled)': {
+                        bgcolor: '#000',
+                        width: '210px',
+                        '& .send-additional-label': { opacity: 1, maxWidth: '200px' },
+                      },
+                      '&.Mui-disabled': {
+                        opacity: 1,
+                        border: 'none',
+                        color: '#fff',
+                        background:
+                          'linear-gradient(0deg, #B0B0B1, #B0B0B1), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                        boxShadow: '0px -3px 0px 0px #0000001A inset',
+                      },
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src="/assets/additional-ag.svg"
+                      alt=""
+                      sx={{ width: 14, height: 18, flexShrink: 0 }}
+                    />
+                    <Box
+                      component="span"
+                      className="send-additional-label"
+                      sx={{
+                        display: 'inline-block',
+                        opacity: 0,
+                        maxWidth: 0,
+                        overflow: 'hidden',
+                        transition:
+                          'opacity 0.25s ease 0.05s, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                      }}
+                    >
+                      Send Additional Agreement
+                    </Box>
+                  </Button>
+                </span>
+              </Tooltip>
+            </Stack>
+          </Stack>
         </Stack>
 
         {!filteredData || filteredData.length < 1 ? (
@@ -1269,6 +1613,42 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
               <TableHead>
                 <TableRow>
                   <TableCell
+                    padding="checkbox"
+                    sx={{ borderRadius: '10px 0 0 10px', bgcolor: '#f5f5f5', pl: 1.5 }}
+                  >
+                    <Checkbox
+                      icon={uncheckedCheckboxIcon}
+                      checkedIcon={checkedCheckboxIcon}
+                      indeterminateIcon={checkedCheckboxIcon}
+                      indeterminate={
+                        table.selected.length > 0 &&
+                        table.selected.length < eligibleForAdditionalIds.size
+                      }
+                      checked={
+                        eligibleForAdditionalIds.size > 0 &&
+                        table.selected.length === eligibleForAdditionalIds.size
+                      }
+                      disabled={
+                        isDisabled ||
+                        selectionCategory === 'bulk' ||
+                        eligibleForAdditionalIds.size === 0
+                      }
+                      onChange={(e) => {
+                        table.onSelectAllRows(e.target.checked, [...eligibleForAdditionalIds]);
+                      }}
+
+                      sx={{ p: 0.5 }}
+                    />
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      width: 40,
+                      minWidth: 40,
+                      px: 1,
+                      bgcolor: '#f5f5f5',
+                    }}
+                  />
+                  <TableCell
                     sx={{
                       py: { xs: 0.5, sm: 1 },
                       px: { xs: 1, sm: 2 },
@@ -1276,7 +1656,6 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                       fontWeight: 600,
                       width: { xs: '25%', sm: 220 },
                       minWidth: { xs: 120, sm: 220 },
-                      borderRadius: '10px 0 0 10px',
                       bgcolor: '#f5f5f5',
                       whiteSpace: 'nowrap',
                     }}
@@ -1315,6 +1694,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                       Tier
                     </TableCell>
                   )}
+
                   <SortableHeader
                     column="date"
                     label="Issue Date"
@@ -1324,15 +1704,16 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                     sortDirection={sortDirection}
                     onSort={handleColumnSort}
                   />
+
                   <SortableHeader
                     column="status"
                     label="Status"
-                    width={{ xs: '15%', sm: 75 }}
-                    minWidth={{ xs: 90, sm: 75 }}
                     sortColumn={sortColumn}
                     sortDirection={sortDirection}
                     onSort={handleColumnSort}
+                    sx={{ width: { xs: '15%', sm: 75 }, minWidth: { xs: 90, sm: 75 } }}
                   />
+
                   <TableCell
                     sx={{
                       py: 1,
@@ -1360,35 +1741,139 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                   >
                     Agreement PDF
                   </TableCell>
+                  {/* <TableCell
+                    sx={{
+                      color: '#221f20',
+                      borderRadius: '0 10px 10px 0',
+                      bgcolor: '#f5f5f5',
+                      whiteSpace: 'nowrap',
+                    }}
+                  /> */}
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredData.map((item) => {
+                {filteredData.map((item, index) => {
                   const isAmountValid = !Number.isNaN(
                     parseFloat(item?.user?.shortlisted[0]?.amount?.toString()) ||
                       parseFloat(item?.amount?.toString())
                   );
 
                   const isPendingReview = item?.submission?.status === 'PENDING_REVIEW';
+                  const isEligibleForAdditional = eligibleForAdditionalIds.has(item.userId);
+                  const rowCategory = isEligibleForAdditional ? 'additional' : 'bulk';
+                  const isCategoryLocked = selectionCategory && selectionCategory !== rowCategory;
+                  const checkboxTooltip = isCategoryLocked
+                    ? `Clear your current selection to pick a creator for ${
+                        selectionCategory === 'bulk' ? 'a bulk' : 'an additional'
+                      } agreement`
+                    : '';
+
+                  const product = item?.productSeeding?.length ? item.productSeeding[0] : null;
+
+                  const displayValue = () => {
+                    if (item.isSeeding) {
+                      if (!product) return renderAmountText('Not assigned');
+
+                      return (
+                        <Typography variant="subtitle2" sx={{ fontSize: 15 }}>
+                          {`${item.currency} ${parseFloat(product?.value).toFixed(2)}`}
+                        </Typography>
+                      );
+                    }
+
+                    if (isAmountValid) {
+                      return (
+                        <Typography variant="subtitle2" sx={{ fontSize: 15 }}>
+                          {`${item?.user?.shortlisted[0]?.currency} ${
+                            parseFloat(item?.amount?.toString()).toFixed(2) ||
+                            parseFloat(item?.user?.shortlisted[0]?.amount?.toString()).toFixed(2)
+                          }`}
+                        </Typography>
+                      );
+                    }
+
+                    return renderAmountText('Not set');
+                  };
 
                   return (
-                    <TableRow key={item.id}>
+                    <TableRow
+                      key={item.id}
+                      sx={{
+                        cursor: 'pointer',
+                        '&:hover': {
+                          bgcolor: alpha('#CCC', 0.1),
+                        },
+                      }}
+                      component="div"
+                      onClick={() => {
+                        if (!item.isSent) {
+                          handleEditAgreement(item);
+                        } else {
+                          handleViewAgreement(item?.agreementUrl, item);
+                        }
+                      }}
+                    >
+                      <TableCell
+                        padding="checkbox"
+                        sx={{ pl: 1.5 }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Tooltip title={checkboxTooltip}>
+                          <span>
+                            <Checkbox
+                              icon={uncheckedCheckboxIcon}
+                              checkedIcon={checkedCheckboxIcon}
+                              checked={table.selected.includes(item.userId)}
+                              disabled={isDisabled || isCategoryLocked}
+                              onChange={() => {
+                                table.onSelectRow(item.userId);
+                              }}
+                              sx={{ p: 0 }}
+                            />
+                          </span>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell sx={{ width: 10, px: 1, textAlign: 'center' }}>
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                          <Typography sx={INDEX_SX}>{index + 1}</Typography>
+                          {item?.isSeeding && (
+                            <Iconify
+                              icon={
+                                table.selected.includes(item.userId)
+                                  ? 'mdi:seed'
+                                  : 'mdi:seed-outline'
+                              }
+                              color="#1304FF"
+                              width={18}
+                            />
+                          )}
+                        </Stack>
+                      </TableCell>
                       <TableCell>
                         <Stack direction="row" alignItems="center" spacing={{ xs: 1 }}>
-                          <Avatar
-                            src={item?.user?.photoURL}
-                            alt={item?.user?.name}
+                          <Box
                             sx={{
+                              position: 'relative',
                               width: { xs: 32, sm: 40 },
                               height: { xs: 32, sm: 40 },
-                              border: '2px solid',
-                              borderColor: 'background.paper',
-                              boxShadow: (theme) => theme.customShadows.z8,
                             }}
                           >
-                            {item?.user?.name?.charAt(0).toUpperCase()}
-                          </Avatar>
-                          <Stack spacing={0.5}>
+                            <Avatar
+                              src={item?.user?.photoURL}
+                              alt={item?.user?.name}
+                              sx={{
+                                width: '100%',
+                                height: '100%',
+                                border: '2px solid',
+                                borderColor: 'background.paper',
+                                boxShadow: (theme) => theme.customShadows.z8,
+                              }}
+                            >
+                              {item?.user?.name?.charAt(0).toUpperCase()}
+                            </Avatar>
+                          </Box>
+
+                          <Stack spacing={0.5} flex={1}>
                             <Typography
                               variant="body2"
                               onClick={() => handleProfileClick(item)}
@@ -1404,9 +1889,56 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                                 {item?.user?.email}
                               </Typography>
                             )}
+
+                            {/* {item?.isSeeding && (
+                              <Stack
+                                sx={{
+                                  bgcolor: alpha('#1304FF', 0.1),
+                                  border: 0.5,
+                                  borderColor: alpha('#1304FF', 0.6),
+                                  borderRadius: 999,
+                                  color: alpha('#1304FF', 0.8),
+                                  pointerEvents: 'none',
+                                  px: 1,
+                                  position: 'relative',
+                                  height: 23,
+                                }}
+                                flexDirection="row"
+                                alignItems="center"
+                                justifyContent="center"
+                                spacing={1}
+                                alignSelf="flex-start"
+                              >
+                                <m.svg
+                                  width={7}
+                                  height={7}
+                                  animate={{
+                                    transform: ['scale(1.3)', 'scale(1)', 'scale(1.3)'],
+                                    opacity: [1, 0.5, 1],
+                                  }}
+                                  transition={{
+                                    repeat: Infinity,
+                                    duration: 1.2,
+                                  }}
+                                >
+                                  <circle cx={3.5} cy={3.5} r={3} fill={alpha('#1304FF', 0.8)} />
+                                </m.svg>
+
+                                <Typography
+                                  variant="subtitle2"
+                                  fontWeight={500}
+                                  fontSize={12}
+                                  letterSpacing={0.3}
+                                  fontFamily="Inter Tight, sans-serif"
+                                >
+                                  Seeded
+                                </Typography>
+                              </Stack>
+                            )} */}
                           </Stack>
                         </Stack>
                       </TableCell>
+
                       {smUp && (
                         <TableCell>
                           {item?.user?.email?.endsWith('@tempmail.com') ? '' : item?.user?.email}
@@ -1484,6 +2016,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                           </Typography>
                         </Stack>
                       </TableCell>
+
                       <TableCell>
                         {(() => {
                           let statusText = 'Pending';
@@ -1535,34 +2068,16 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                           );
                         })()}
                       </TableCell>
+
                       <TableCell
                         sx={{
                           width: { xs: '20%', sm: 95 },
                           minWidth: { xs: 85, sm: 95 },
                         }}
                       >
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                          }}
-                        >
-                          {isAmountValid ? (
-                            <>
-                              {item?.user?.shortlisted[0]?.currency ? (
-                                <>
-                                  {`${item?.user?.shortlisted[0]?.currency} 
-                                ${parseFloat(item?.amount?.toString()) || parseFloat(item?.user?.shortlisted[0]?.amount?.toString())}`}
-                                </>
-                              ) : (
-                                <>{`${item?.user?.shortlisted[0]?.currency} ${parseFloat(item?.amount?.toString())}`}</>
-                              )}
-                            </>
-                          ) : (
-                            'Not Set'
-                          )}
-                        </Typography>
+                        {displayValue()}
                       </TableCell>
+
                       <TableCell>
                         {smUp ? (
                           <Stack direction="row" gap={1}>
@@ -1609,7 +2124,10 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                               >
                                 <span>
                                   <Button
-                                    onClick={() => handleEditAgreement(item)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditAgreement(item);
+                                    }}
                                     disabled={isDisabled || guestNeedsLinkBeforeSend(item)}
                                     size="small"
                                     variant="contained"
@@ -1653,7 +2171,10 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                               // For sent agreements, show Edit Amount and action buttons
                               <>
                                 <Button
-                                  onClick={() => handleEditAgreement(item)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditAgreement(item);
+                                  }}
                                   disabled={isDisabled}
                                   size="small"
                                   variant="contained"
@@ -1692,7 +2213,10 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                                 {isPendingReview ? (
                                   <>
                                     <Button
-                                      onClick={() => handleOpenRejectDialog(item)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenRejectDialog(item);
+                                      }}
                                       size="small"
                                       variant="contained"
                                       disabled={isDisabled || rejectLoading}
@@ -1727,7 +2251,10 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
                                       Reject
                                     </Button>
                                     <LoadingButton
-                                      onClick={() => handleApproveAgreement(item)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleApproveAgreement(item);
+                                      }}
                                       size="small"
                                       variant="contained"
                                       loading={approveLoading}
@@ -1991,6 +2518,40 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
         dialog={editDialog}
         agreement={selectedAgreement}
         campaign={campaign}
+        campaignMutate={campaignMutate}
+        agreementsMutate={mutateAgreements}
+      />
+
+      <SendAdditionalAgreementModal
+        open={sendAdditionalDialog.value}
+        onClose={sendAdditionalDialog.onFalse}
+        campaign={campaign}
+        creators={selectedCreatorRows}
+        campaignMutate={async () => {
+          await mutateAgreements();
+          // campaignMutate();
+        }}
+
+        onSent={async () => {
+          table.setSelected([]);
+          await Promise.all([mutateAgreements(), fetchSubmissions()]);
+          if (campaignMutate) await campaignMutate();
+        }}
+      />
+
+      <SendBulkAgreementModal
+        open={sendBulkDialog.value}
+        onClose={sendBulkDialog.onFalse}
+        campaign={campaign}
+        creators={selectedBulkCreatorRows}
+        campaignMutate={campaignMutate}
+        table={table}
+
+        onSent={async (succeededUserIds) => {
+          table.setSelected((prev) => prev.filter((id) => !succeededUserIds.includes(id)));
+          await Promise.all([mutateAgreements(), fetchSubmissions()]);
+          if (campaignMutate) await campaignMutate();
+        }}
       />
 
       {/* Summary bar: portalled to layout wrapper, absolute-positioned at bottom */}
@@ -2067,6 +2628,7 @@ const CampaignAgreements = ({ campaign, isDisabled: propIsDisabled = false }) =>
 
 CampaignAgreements.propTypes = {
   campaign: PropTypes.any,
+  campaignMutate: PropTypes.func,
   isDisabled: PropTypes.bool,
 };
 

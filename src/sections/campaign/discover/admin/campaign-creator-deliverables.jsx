@@ -18,9 +18,9 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import socket from 'src/hooks/socket';
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
-import socket from 'src/hooks/socket';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
@@ -56,7 +56,7 @@ const deriveCreatorOverallStatus = ({ firstDraft, finalDraft, posting }) => {
 
 const CampaignCreatorDeliverables = ({ campaign, isDisabled = false }) => {
   const theme = useTheme();
-  
+
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [expandedAccordion, setExpandedAccordion] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
@@ -182,12 +182,7 @@ const CampaignCreatorDeliverables = ({ campaign, isDisabled = false }) => {
       socket.off('v4:posting:updated', handlePostingUpdated);
       socket.off('v2:campaign:updated', handleCampaignUpdated);
     };
-  }, [
-    campaign?.id,
-    deliverableMutate,
-    selectedCreator?.userId,
-    submissionMutate,
-  ]);
+  }, [campaign?.id, deliverableMutate, selectedCreator?.userId, submissionMutate]);
 
   // Find submissions by type
   const firstDraftSubmission = useMemo(() => {

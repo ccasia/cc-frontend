@@ -35,7 +35,16 @@ import PackageTableRow from '../package-table-row';
 
 // ----------------------------------------------------------------------
 
-const SortableHeader = ({ column, label, align, isFirst, isLast, sortColumn, sortDirection, onSort }) => {
+const SortableHeader = ({
+  column,
+  label,
+  align,
+  isFirst,
+  isLast,
+  sortColumn,
+  sortDirection,
+  onSort,
+}) => {
   const getBorderRadius = () => {
     if (isFirst) return '10px 0 0 10px';
     if (isLast) return '0 10px 10px 0';
@@ -100,7 +109,7 @@ SortableHeader.defaultProps = {
 // ----------------------------------------------------------------------
 
 const Packages = () => {
-  const { data, isLoading, mutate } = useGetPackages();
+  const { data, isLoading, mutate } = useGetPackages(true);
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -118,11 +127,39 @@ const Packages = () => {
   const handleDeleteRow = useCallback(
     async (id) => {
       try {
-        await axiosInstance.delete(endpoints.package.delete(id));
-        enqueueSnackbar('Package deleted successfully', { variant: 'success' });
+        const res = await axiosInstance.delete(endpoints.package.delete(id));
+        enqueueSnackbar(res?.data?.message || 'Package deleted successfully', {
+          variant: 'success',
+        });
         mutate();
       } catch (error) {
         enqueueSnackbar(error?.message || 'Failed to delete package', { variant: 'error' });
+      }
+    },
+    [mutate]
+  );
+
+  const handleArchiveRow = useCallback(
+    async (id) => {
+      try {
+        const res = await axiosInstance.patch(endpoints.package.archive(id));
+        enqueueSnackbar(res?.data?.message || 'Package archived', { variant: 'success' });
+        mutate();
+      } catch (error) {
+        enqueueSnackbar(error?.message || 'Failed to archive package', { variant: 'error' });
+      }
+    },
+    [mutate]
+  );
+
+  const handleUnarchiveRow = useCallback(
+    async (id) => {
+      try {
+        const res = await axiosInstance.patch(endpoints.package.unarchive(id));
+        enqueueSnackbar(res?.data?.message || 'Package restored', { variant: 'success' });
+        mutate();
+      } catch (error) {
+        enqueueSnackbar(error?.message || 'Failed to restore package', { variant: 'error' });
       }
     },
     [mutate]
@@ -178,7 +215,8 @@ const Packages = () => {
           comparison = (a?.validityPeriod || 0) - (b?.validityPeriod || 0);
           break;
         case 'createdAt':
-          comparison = new Date(a?.createdAt || 0).getTime() - new Date(b?.createdAt || 0).getTime();
+          comparison =
+            new Date(a?.createdAt || 0).getTime() - new Date(b?.createdAt || 0).getTime();
           break;
         default:
           comparison = 0;
@@ -326,12 +364,51 @@ const Packages = () => {
           <Table size="medium" sx={{ minWidth: 960, width: '100%' }}>
             <TableHead>
               <TableRow>
-                <SortableHeader column="name" label="Name" isFirst sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="priceMYR" label="Price in MYR" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="priceSGD" label="Price in SGD" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="credits" label="UGC Credits" align="center" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="validityPeriod" label="Validity Period" align="center" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
-                <SortableHeader column="createdAt" label="Created At" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleColumnSort} />
+                <SortableHeader
+                  column="name"
+                  label="Name"
+                  isFirst
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="priceMYR"
+                  label="Price in MYR"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="priceSGD"
+                  label="Price in SGD"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="credits"
+                  label="UGC Credits"
+                  align="center"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="validityPeriod"
+                  label="Validity Period"
+                  align="center"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="createdAt"
+                  label="Created At"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
                 <TableCell
                   sx={{
                     py: 1,
@@ -354,6 +431,8 @@ const Packages = () => {
                   row={row}
                   onEditRow={() => handleEditRow(row)}
                   onDeleteRow={() => handleDeleteRow(row.id)}
+                  onArchiveRow={() => handleArchiveRow(row.id)}
+                  onUnarchiveRow={() => handleUnarchiveRow(row.id)}
                 />
               ))}
             </TableBody>
@@ -364,7 +443,11 @@ const Packages = () => {
       {(!filteredData || filteredData.length === 0) && (
         <EmptyContent
           title="No packages found"
-          description={searchQuery ? 'Try adjusting your search query.' : 'Create your first package to get started.'}
+          description={
+            searchQuery
+              ? 'Try adjusting your search query.'
+              : 'Create your first package to get started.'
+          }
           sx={{ py: 10 }}
         />
       )}

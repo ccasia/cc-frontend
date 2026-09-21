@@ -15,6 +15,7 @@ const PublicManageCreatorView = lazy(
 );
 
 const ApprovalPage = lazy(() => import('src/pages/public/approval'));
+const HuntLinkPage = lazy(() => import('src/pages/public/hunt-link'));
 
 // ----------------------------------------------------------------------
 
@@ -60,5 +61,16 @@ export const publicRoutes = [
   {
     path: 'client-demo/:token',
     element: <ClientDemoPage />,
+  },
+  {
+    // Public web fallback for treasure-hunt QR codes when the app isn't
+    // installed / the Universal Link didn't open. Matches the canonical
+    // /hunt/{token} path that Bitly redirects to.
+    path: 'hunt/:token',
+    element: (
+      <Suspense fallback={<LoadingScreen />}>
+        <HuntLinkPage />
+      </Suspense>
+    ),
   },
 ];

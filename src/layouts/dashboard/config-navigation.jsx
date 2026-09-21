@@ -25,8 +25,8 @@ const icon = (name) => (
     sx={{
       width: name === 'ic_overview' ? 20 : 24,
       height: name === 'ic_overview' ? 20 : 24,
-      position: name === 'ic_overview' ? 'relative' : 'static',
-      top: name === 'ic_overview' ? '2px' : 0,
+      // position: name === 'ic_overview' ? 'relative' : 'static',
+      // top: name === 'ic_overview' ? '2px' : 0,
     }}
   />
   // OR
@@ -77,23 +77,20 @@ const ICONS = {
 
 export function useNavData() {
   const { user } = useAuthContext();
-  // const [play] = useSound(sound, {
-  //   interrupt: true,
-  // });
+
+  const needsPhoneNumber = user?.role === 'creator' && !user?.phoneNumber;
 
   const { socket } = useSocketContext();
   const unreadMessageCount = useUnreadMessageCount();
 
   useEffect(() => {
     socket?.on('messageCount', (data) => {
-      //  play();
       enqueueSnackbar(`${data.count + 1} new messages from ${data.name}.`, {
         anchorOrigin: {
           vertical: 'top',
           horizontal: 'left',
         },
       });
-      // setUnreadMessageCount(data.count);
     });
 
     return () => {
@@ -144,7 +141,7 @@ export function useNavData() {
             icon: ICONS.admin,
           },
           {
-            roles: ['superadmin', 'CSM', 'CSL', 'sales_and_marketing'],
+            roles: ['superadmin', 'CSM', 'sales_and_marketing', 'CSL'],
             title: 'Creator',
             path: paths.dashboard.creator.list,
             icon: ICONS.creator,
@@ -208,6 +205,12 @@ export function useNavData() {
             icon: <Iconify icon="mdi:star-outline" width={25} />,
           },
           {
+            roles: ['superadmin'],
+            title: 'Find Cipta',
+            path: paths.dashboard.treasureHunts.root,
+            icon: <Iconify icon="mdi:map-marker-radius-outline" width={25} />,
+          },
+          {
             roles: ['superadmin', 'god'],
             title: 'Feedback',
             path: paths.dashboard.feedback.root,
@@ -259,7 +262,7 @@ export function useNavData() {
               </span>
             ),
             path: paths.dashboard.overview.root,
-            icon: ICONS.overview,
+            icon: <Iconify icon="hugeicons:dashboard-square-01" width={25} />,
           },
         ],
       },
@@ -462,13 +465,31 @@ export function useNavData() {
             </span>
           ),
           path: paths.dashboard.user.profile,
-          icon: ICONS.settings,
+          icon: needsPhoneNumber ? (
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              <Iconify icon="solar:settings-outline" width={25} />
+              <span
+                style={{
+                  top: -1,
+                  right: -1,
+                  width: 9,
+                  height: 9,
+                  position: 'absolute',
+                  borderRadius: '50%',
+                  backgroundColor: '#F5A623',
+                  border: '1.5px solid #FFFFFF',
+                }}
+              />
+            </span>
+          ) : (
+            <Iconify icon="solar:settings-outline" width={25} />
+          ),
         },
       ],
     });
 
     return baseData;
-  }, [navigations, unreadMessageCount, user?.admin?.role?.name, user?.role]);
+  }, [navigations, needsPhoneNumber, unreadMessageCount, user?.admin?.role?.name, user?.role]);
 
   return data;
 }

@@ -45,7 +45,7 @@ const SubmissionActionButton = ({
     if (isReuploadButton) return '#1340FF';
     return '#3A3A3C';
   })();
-  
+
   const buttonBorderColor = (() => {
     if (isDisabled) return '#0000001A';
     if (isReuploadButton) return '#00000073';
@@ -119,7 +119,8 @@ const SubmissionActionButton = ({
           gap: 2,
           flex: hasLeadingFeedback || uploading ? '1 1 auto' : undefined,
           minWidth: 0,
-          justifyContent: hasLeadingFeedback || uploading ? 'flex-end' : { xs: 'center', md: 'flex-end' },
+          justifyContent:
+            hasLeadingFeedback || uploading ? 'flex-end' : { xs: 'center', md: 'flex-end' },
           width: hasLeadingFeedback || uploading ? undefined : '100%',
         }}
       >
@@ -171,25 +172,25 @@ SubmissionActionButton.propTypes = {
   isDisabled: PropTypes.bool.isRequired,
   isReuploadButton: PropTypes.bool.isRequired,
   isSubmitButton: PropTypes.bool.isRequired,
-  
+
   // Loading states
   uploading: PropTypes.bool,
   postingLoading: PropTypes.bool,
   uploadProgress: PropTypes.number,
-  
+
   // Actions
   onReupload: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   onPostingLinkSubmit: PropTypes.func,
-  
+
   // Conditional logic
   isPostingLinkEditable: PropTypes.bool,
-  
+
   // View Feedback Button (NEW)
   showViewFeedbackButton: PropTypes.bool,
   onViewFeedback: PropTypes.func,
   hasNewFeedback: PropTypes.bool,
-  
+
   // Button text overrides
   reuploadText: PropTypes.string,
   submitText: PropTypes.string,

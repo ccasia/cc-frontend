@@ -9,6 +9,14 @@
     ],
     "method": ["GET", "POST", "HEAD", "PUT"],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type"]
+    "responseHeader": [
+      "Content-Type",
+      "x-goog-resumable",
+      "Location",
+      "Content-Range",
+      "Content-Length",
+      "Range",
+      "range"
+    ]
   }
 ]

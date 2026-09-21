@@ -40,6 +40,33 @@ export const endpoints = {
     update: (id) => `/api/video-of-the-month/${id}`,
     delete: (id) => `/api/video-of-the-month/${id}`,
   },
+  treasureHunt: {
+    root: '/api/admin/treasure-hunts',
+    // Find Cipta is a one-time event — /current resolves the single hunt.
+    current: '/api/admin/treasure-hunts/current',
+    byId: (id) => `/api/admin/treasure-hunts/${id}`,
+    update: (id) => `/api/admin/treasure-hunts/${id}`,
+    dashboard: (id) => `/api/admin/treasure-hunts/${id}/dashboard`,
+    participants: (id) => `/api/admin/treasure-hunts/${id}/participants`,
+    exportCsv: (id) => `/api/admin/treasure-hunts/${id}/export.csv`,
+    locations: (id) => `/api/admin/treasure-hunts/${id}/locations`,
+    location: (id, locationId) => `/api/admin/treasure-hunts/${id}/locations/${locationId}`,
+    reorderLocations: (id) => `/api/admin/treasure-hunts/${id}/locations/reorder`,
+    publishQr: (id, locationId) =>
+      `/api/admin/treasure-hunts/${id}/locations/${locationId}/publish-qr`,
+    syncAnalytics: (id, locationId) =>
+      `/api/admin/treasure-hunts/${id}/locations/${locationId}/sync-analytics`,
+    publish: (id) => `/api/admin/treasure-hunts/${id}/publish`,
+    pause: (id) => `/api/admin/treasure-hunts/${id}/pause`,
+    resume: (id) => `/api/admin/treasure-hunts/${id}/resume`,
+    reactivate: (id) => `/api/admin/treasure-hunts/${id}/reactivate`,
+    archive: (id) => `/api/admin/treasure-hunts/${id}/archive`,
+    // Audited signed-URL lookup for a creator's scan photo. Lives on the hunts
+    // router because that is where the owner/superadmin access check runs.
+    captureUrl: (claimId) => `/api/hunts/claims/${claimId}/capture-url`,
+    // Public web-fallback preview (no auth).
+    preview: '/api/hunts/preview',
+  },
   dashboard: {
     stats: '/api/dashboard/stats',
     campaigns: '/api/dashboard/campaigns',
@@ -141,6 +168,8 @@ export const endpoints = {
     updateCreator: '/api/auth/updateCreator',
     updateClient: '/api/auth/updateClient',
     updateProfileCreator: '/api/auth/updateProfileCreator',
+    claimPhone: '/api/auth/claim-phone',
+    verifyPhoneClaim: '/api/auth/claim-phone/verify',
     verifyCreator: '/api/auth/verifyCreator',
     verifyClient: '/api/auth/verifyClient',
     resendToken: '/api/auth/resendVerifyToken',
@@ -192,7 +221,7 @@ export const endpoints = {
     updateProfileNewAdmin: '/api/user/admins',
     createAdmin: '/api/user/createAdmin',
     getAdmins: '/api/user/getAdmins',
-    allusers: '/api/users',
+    allusers: '/api/user/',
     changePassword: '/api/user/changePassword',
     getAdminlogs: (id) => `/api/user/admin-logs/${id}`,
   },
@@ -341,12 +370,22 @@ export const endpoints = {
     allcreatorAgreement: '/api/campaign/getCreatorAgreements',
     updateAmountAgreement: `/api/campaign/updateAmountAgreement`,
     sendAgreement: `/api/campaign/sendAgreement`,
+    sendAdditionalAgreement: `/api/campaign/sendAdditionalAgreement`,
     resendAgreement: `/api/campaign/resendAgreement`,
+    changeCredits: `/api/campaign/changeCredits`,
     agreementTemplate: (id) => `/api/campaign/template/${id}`,
     linkNewAgreement: `/api/campaign/linkNewAgreement`,
     exportActiveCompleted: '/api/campaign/export/active-completed',
     exportCampaignCreators: '/api/campaign/export/campaign-creators',
     removeCreator: `/api/campaign/removeCreatorFromCampaign`,
+    agreement: (campaignId, userId) => `/api/campaign/${campaignId}/agreement/${userId}`,
+  },
+  campaignCreationDrafts: {
+    root: '/api/campaign-creation-drafts',
+    detail: (id) => `/api/campaign-creation-drafts/${id}`,
+    update: (id) => `/api/campaign-creation-drafts/${id}`,
+    delete: (id) => `/api/campaign-creation-drafts/${id}`,
+    files: (id) => `/api/campaign-creation-drafts/${id}/files`,
   },
   campaignCreationDrafts: {
     root: '/api/campaign-creation-drafts',
@@ -391,6 +430,7 @@ export const endpoints = {
         submitContent: '/api/creator/submissions/v4/submit-content',
         updatePostingLink: '/api/creator/submissions/v4/posting-link',
         deleteComment: (commentId) => `/api/creator/submissions/v4/comments/${commentId}`,
+        markViewed: (submissionId) => `/api/creator/submissions/v4/${submissionId}/mark-viewed`,
       },
     },
     admin: {
@@ -423,6 +463,8 @@ export const endpoints = {
     get: (id) => `/api/package/${id}`,
     update: (id) => `/api/package/${id}`,
     delete: (id) => `/api/package/${id}`,
+    archive: (id) => `/api/package/${id}/archive`,
+    unarchive: (id) => `/api/package/${id}/unarchive`,
     history: `/api/packages/history/`,
   },
   creditTier: {

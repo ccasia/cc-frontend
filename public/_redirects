@@ -1,1 +1,3 @@
+# Serve app-link association files directly, before the SPA catch-all.
+/.well-known/*   /.well-known/:splat   200
 /*    /index.html   200

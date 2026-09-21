@@ -21,6 +21,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import { fData } from 'src/utils/format-number';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { toE164, isoFromCountryLabel } from 'src/utils/format-phone-number';
 
 import { countries } from 'src/assets/data';
 import { useAdminContext } from 'src/auth/hooks/use-admin-context';
@@ -85,7 +86,13 @@ const AdminForm = () => {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await axiosInstance.put(endpoints.users.updateProfileNewAdmin, { data, userId: user.id });
+      await axiosInstance.put(endpoints.users.updateProfileNewAdmin, {
+        data: {
+          ...data,
+          phoneNumber: toE164(isoFromCountryLabel(data.country), data.phoneNumber),
+        },
+        userId: user.id,
+      });
       navigate('/auth/jwt/admin/login');
       enqueueSnackbar('You are now verified to use the system!', {
         variant: 'success',

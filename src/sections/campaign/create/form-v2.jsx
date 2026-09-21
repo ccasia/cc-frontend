@@ -45,6 +45,14 @@ import DraftSaveIndicator from './draft-save-indicator';
 import { diffUserContent } from './utils/has-user-content';
 import useCampaignDraftAutosave from './hooks/use-campaign-draft-autosave';
 import {
+  isInBackSection,
+  isInFrontSection,
+  backSectionLabels,
+  frontSectionLabels,
+  getBackSectionIndicatorIndex,
+  getFrontSectionIndicatorIndex,
+} from './utils/campaign-steps';
+import {
   NextSteps,
   LogisticRemarks,
   FinaliseCampaign,
@@ -81,10 +89,6 @@ const additionalSteps = [
 const getSteps = (showAdditionalDetails) =>
   showAdditionalDetails ? [...baseSteps, ...additionalSteps] : baseSteps;
 
-const backSectionLabels = ['General', 'Objective', 'Audience', 'Logistics', 'Finalise'];
-
-const frontSectionLabels = ['Additional 1', 'Additional 2'];
-
 const backSectionIndicatorToStepMap = {
   0: 0, // General
   1: 1, // Objective
@@ -99,23 +103,10 @@ const frontSectionIndicatorToStepMap = {
   1: 9, // Additional Details 2
 };
 
-// Determine if we're in back section (steps 0-7) or front section (steps 8-9)
-const isInFrontSection = (activeStep) => activeStep >= 8;
-const isInBackSection = (activeStep) => activeStep <= 7;
-
-// Get which indicator is active in back section
-const getBackSectionIndicatorIndex = (internalStep) => {
-  if (internalStep >= 7) return 5; // Next Steps
-  if (internalStep >= 6) return 4; // Finalise
-  if (internalStep >= 3) return 3; // Logistics (includes sub-steps 3, 4, 5)
-  return internalStep; // 0, 1, 2 map directly
-};
-
-// Get which indicator is active in front section (0 for Details 1, 1 for Details 2)
-const getFrontSectionIndicatorIndex = (internalStep) => {
-  if (internalStep >= 9) return 1; // Additional Details 2
-  return 0; // Additional Details 1
-};
+const getDraftFileUrls = (value) =>
+  (Array.isArray(value) ? value : [value])
+    .filter((item) => item?.draftFile === true && typeof item.url === 'string')
+    .map((item) => item.url);
 
 const getDraftFileUrls = (value) =>
   (Array.isArray(value) ? value : [value])
@@ -128,6 +119,7 @@ function CreateCampaignFormV2({
   mode = 'create',
   campaignId,
   onSuccess,
+  initialDraftId,
 }) {
   const isActivateMode = mode === 'activate';
   const confirmLabel = isActivateMode ? 'Confirm Activation' : 'Confirm Campaign';
@@ -449,7 +441,11 @@ function CreateCampaignFormV2({
     status: draftSaveStatus,
     lastSavedAt,
     flush: flushDraft,
-    clearDraft,
+    freezeAndFlush,
+    resumeAutosave,
+    discardDraft,
+    clearLocalDraft,
+    loadDraft,
   } = useCampaignDraftAutosave({
     enabled: !isActivateMode,
     userId: user?.id,
@@ -472,20 +468,46 @@ function CreateCampaignFormV2({
       setCloseDraftOpen(true);
       return;
     }
-    await flushDraft();
-    onClose();
+    try {
+      await flushDraft();
+      onClose();
+    } catch (error) {
+      enqueueSnackbar('Draft could not be saved. Please try again.', { variant: 'error' });
+    }
   };
 
   const handleKeepEditing = () => setCloseDraftOpen(false);
 
   // The dialog drives its own saving / saved phases and calls back when it is
   // finished, so these only do the work -- not the closing.
-  const handleSaveAsDraft = () => flushDraft();
+  const handleSaveAsDraft = async () => {
+    try {
+      await flushDraft();
+    } catch (error) {
+      enqueueSnackbar('Draft could not be saved. Please try again.', { variant: 'error' });
+      throw error;
+    }
+  };
+  const handleSaveButton = () => handleSaveAsDraft().catch(() => {});
 
   const handleDiscardDraft = async () => {
-    await clearDraft();
+    await discardDraft();
     reset();
+    setActiveStep(0);
+    setShowAdditionalDetails(false);
   };
+
+  // The draft picker lives on the discover page now, so the chosen draft arrives
+  // as a prop. The dialog is keyed on it, so this only ever runs once per mount.
+  const initialDraftLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (isActivateMode || !initialDraftId || !user?.id || initialDraftLoadedRef.current) return;
+    initialDraftLoadedRef.current = true;
+    loadDraft(initialDraftId).catch(() =>
+      enqueueSnackbar('Draft could not be opened. Please try again.', { variant: 'error' })
+    );
+  }, [initialDraftId, isActivateMode, loadDraft, user?.id]);
 
   const handleDraftDialogDone = () => {
     setCloseDraftOpen(false);
@@ -799,6 +821,18 @@ function CreateCampaignFormV2({
   }, []);
 
   const onSubmit = handleSubmit(async (data, stage) => {
+    let draftSource = null;
+    if (!isActivateMode) {
+      try {
+        draftSource = await freezeAndFlush();
+      } catch (error) {
+        resumeAutosave();
+        enqueueSnackbar('Draft could not be saved. Campaign was not created.', {
+          variant: 'error',
+        });
+        return;
+      }
+    }
     const formData = new FormData();
 
     const startDateVal = data.campaignStartDate ? dayjs(data.campaignStartDate) : dayjs();
@@ -912,6 +946,8 @@ function CreateCampaignFormV2({
     // Build campaign data object
     const campaignData = {
       ...data,
+      creationDraftId: isActivateMode ? undefined : draftSource?.id,
+      creationDraftRevision: isActivateMode ? undefined : draftSource?.revision,
       rawFootage: data.deliverables.includes('RAW_FOOTAGES'),
       photos: data.deliverables.includes('PHOTOS'),
       ads: data.deliverables.includes('ADS'),
@@ -978,8 +1014,6 @@ function CreateCampaignFormV2({
       draftProductImage2Url: getDraftFileUrls(data.productImage2)[0] || null,
     };
     delete campaignData.reservationDraft;
-    // Older autosaved drafts may still hold a signed agreement template; agreements no longer use one.
-    delete campaignData.agreementFrom;
 
     formData.append('rawFootage', campaignData.rawFootage ? 'true' : 'false');
     formData.append('photos', campaignData.photos ? 'true' : 'false');
@@ -1044,9 +1078,8 @@ function CreateCampaignFormV2({
       enqueueSnackbar(res?.data?.message, {
         variant: 'success',
       });
-      if (!isActivateMode) {
-        await clearDraft();
-      }
+      if (!isActivateMode && draftSource?.id) await clearLocalDraft(draftSource.id);
+      if (!isActivateMode) resumeAutosave();
       reset();
       if (mutateCampaignList) {
         mutateCampaignList();
@@ -1060,6 +1093,7 @@ function CreateCampaignFormV2({
       localStorage.setItem('adminActiveStep', 0);
       onClose();
     } catch (error) {
+      if (!isActivateMode) resumeAutosave();
       console.error('API Error:', error);
       let errorMessage = 'Error creating campaign. Contact our admin';
 
@@ -1278,27 +1312,46 @@ function CreateCampaignFormV2({
             display: 'grid',
             gridTemplateColumns: '1fr auto 1fr',
             columnGap: { xs: 1, md: 2 },
-            alignItems: 'start',
+            rowGap: 1,
+            alignItems: 'center',
           }}
         >
-          <IconButton
-            sx={{
-              border: 1,
-              borderRadius: 1,
-              boxShadow: '0px -1.5px 0px 0px #E7E7E7 inset',
-              borderColor: '#E7E7E7',
-              height: 45,
-              width: 45,
-              padding: 1,
-              flexShrink: 0,
-              justifySelf: 'start',
-            }}
-            size="large"
-            disabled={isLoading}
-            onClick={handleClose}
+          {/* Left cluster -- closing the dialog and the autosave status. Opening a
+              saved draft now happens from the discover header, before this opens. */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ justifySelf: 'start', minWidth: 0, flexWrap: 'wrap', rowGap: 1 }}
           >
-            <Iconify icon="material-symbols:close" width={20} color="#231F20" />
-          </IconButton>
+            <IconButton
+              sx={{
+                border: 1,
+                borderRadius: 1,
+                boxShadow: '0px -1.5px 0px 0px #E7E7E7 inset',
+                borderColor: '#E7E7E7',
+                height: 45,
+                width: 45,
+                padding: 1,
+                flexShrink: 0,
+              }}
+              size="large"
+              disabled={isLoading}
+              onClick={handleClose}
+            >
+              <Iconify icon="material-symbols:close" width={20} color="#231F20" />
+            </IconButton>
+
+            {!isActivateMode && (
+              <Box sx={{ display: 'flex', alignItems: 'center', pl: 0.5, minWidth: 0 }}>
+                <DraftSaveIndicator
+                  status={draftSaveStatus}
+                  lastSavedAt={lastSavedAt}
+                  onRetry={handleSaveButton}
+                />
+              </Box>
+            )}
+          </Stack>
 
           {/* Step Indicator - Clickable navigation.
               In flow (not absolute) so the header never overlaps the nav buttons. */}
@@ -1472,15 +1525,41 @@ function CreateCampaignFormV2({
             </Stack>
           </Box>
 
-          {/* Navigation buttons, with the autosave status tucked underneath */}
-          <Stack alignItems="flex-end" spacing={1.5} sx={{ justifySelf: 'end', pr: 0.25 }}>
-            <Stack
-              direction="row"
-              justifyContent="space-between"
+          {/* Step navigation -- right column of the same header row, so the
+              header never grows a second row of controls. */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="flex-end"
+            sx={{
+              justifySelf: 'end',
+              minWidth: 0,
+              flexWrap: 'wrap',
+              gap: 1,
+            }}
+          >
+            <Button
+              color="inherit"
+              disabled={activeStep === 0}
+              onClick={handleBack}
               sx={{
-                display: { xs: 'none', md: 'flex' },
+                height: 45,
+                bgcolor: 'white',
+                border: '1px solid #E7E7E7',
+                color: '#3A3A3C',
+                '&:hover': {
+                  bgcolor: '#F8F8F8',
+                  border: '1px solid #E7E7E7',
+                },
+                fontWeight: 600,
+                boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
               }}
             >
+              Back
+            </Button>
+
+            {/* Steps 0-6: Show Next button */}
+            {activeStep >= 0 && activeStep <= 6 && (
               <Button
                 color="inherit"
                 disabled={activeStep === 0}
@@ -1595,7 +1674,6 @@ function CreateCampaignFormV2({
           {/* Close-with-unsaved-draft confirmation */}
           <CloseDraftDialog
             open={closeDraftOpen}
-            campaignName={watch('campaignName')}
             onKeepEditing={handleKeepEditing}
             onSaveDraft={handleSaveAsDraft}
             onDiscard={handleDiscardDraft}
@@ -1985,4 +2063,5 @@ CreateCampaignFormV2.propTypes = {
   mode: PropTypes.oneOf(['create', 'activate']),
   campaignId: PropTypes.string,
   onSuccess: PropTypes.func,
+  initialDraftId: PropTypes.string,
 };

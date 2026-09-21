@@ -3,8 +3,10 @@ import { useMemo } from 'react';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
-const useGetPackages = () => {
-  const { data, isLoading, mutate } = useSWR(endpoints.package.root, fetcher, {
+const useGetPackages = (includeArchived = false) => {
+  const url = includeArchived ? `${endpoints.package.root}?includeArchived=true` : endpoints.package.root;
+
+  const { data, isLoading, mutate } = useSWR(url, fetcher, {
     revalidateOnFocus: true,
     revalidateOnMount: true,
     revalidateOnReconnect: true,

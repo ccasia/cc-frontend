@@ -13,6 +13,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
  * @param {boolean} options.allowsMultipleUploads - Whether multiple files can be uploaded
  * @param {string} options.mediaType - Type of media ('video', 'photo', 'rawFootage')
  */
+
 export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
   const {
     hasCaption = false,
@@ -29,7 +30,7 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   // Caption state (only if hasCaption is true)
-  const [caption, setCaption] = useState(hasCaption ? (submission.caption || '') : '');
+  const [caption, setCaption] = useState(hasCaption ? submission.caption || '' : '');
 
   // Posting link state (only if hasPostingLink is true) — up to 2 links
   const initialPostingLinks = submission.videos?.length ? submission.videos : [''];
@@ -142,66 +143,69 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
    * @param {Function} onSuccess - Optional success callback
    * @param {boolean} skipValidation - Whether to skip validation (for custom validation in components)
    */
-  const handleSubmit = useCallback(async (prepareFormData, onSuccess, skipValidation = false) => {
-    // Only validate if not skipped and if validation is needed
-    if (!skipValidation) {
-      if (!allowsMultipleUploads && !isReuploadMode && selectedFiles.length === 0) {
-        enqueueSnackbar(`Please select at least one ${mediaType} file`, { variant: 'error' });
-        return;
+  const handleSubmit = useCallback(
+    async (prepareFormData, onSuccess, skipValidation = false) => {
+      // Only validate if not skipped and if validation is needed
+      if (!skipValidation) {
+        if (!allowsMultipleUploads && !isReuploadMode && selectedFiles.length === 0) {
+          enqueueSnackbar(`Please select at least one ${mediaType} file`, { variant: 'error' });
+          return;
+        }
+
+        if (hasCaption && !caption.trim()) {
+          enqueueSnackbar('Please enter a caption', { variant: 'error' });
+          return;
+        }
       }
 
-      if (hasCaption && !caption.trim()) {
-        enqueueSnackbar('Please enter a caption', { variant: 'error' });
-        return;
-      }
-    }
-
-    setHasSubmitted(true);
-    setUploading(true);
-    setUploadProgress(0);
-
-    try {
-      const formData = prepareFormData({
-        selectedFiles,
-        caption,
-        submissionId: submission.id,
-        photosToRemove,
-      });
-
-      await uploadWithProgress(formData, endpoints.submission.creator.v4.submitContent);
-
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        enqueueSnackbar(`${mediaType}s uploaded successfully!`, { variant: 'success' });
-      }
-
-      // Clear selected files immediately to prevent re-submission
-      setSelectedFiles([]);
-      setIsReuploadMode(false);
-      setPhotosToRemove([]);
-
-      onUpdate();
-    } catch (error) {
-      console.error('Submit error:', error);
-      setHasSubmitted(false);
-      enqueueSnackbar(error.message || `Failed to upload ${mediaType}s`, { variant: 'error' });
-    } finally {
-      setUploading(false);
+      setHasSubmitted(true);
+      setUploading(true);
       setUploadProgress(0);
-    }
-  }, [
-    allowsMultipleUploads,
-    isReuploadMode,
-    selectedFiles,
-    hasCaption,
-    caption,
-    mediaType,
-    submission.id,
-    photosToRemove,
-    uploadWithProgress,
-    onUpdate,
-  ]);
+
+      try {
+        const formData = prepareFormData({
+          selectedFiles,
+          caption,
+          submissionId: submission.id,
+          photosToRemove,
+        });
+
+        await uploadWithProgress(formData, endpoints.submission.creator.v4.submitContent);
+
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          enqueueSnackbar(`${mediaType}s uploaded successfully!`, { variant: 'success' });
+        }
+
+        // Clear selected files immediately to prevent re-submission
+        setSelectedFiles([]);
+        setIsReuploadMode(false);
+        setPhotosToRemove([]);
+
+        onUpdate();
+      } catch (error) {
+        console.error('Submit error:', error);
+        setHasSubmitted(false);
+        enqueueSnackbar(error.message || `Failed to upload ${mediaType}s`, { variant: 'error' });
+      } finally {
+        setUploading(false);
+        setUploadProgress(0);
+      }
+    },
+    [
+      allowsMultipleUploads,
+      isReuploadMode,
+      selectedFiles,
+      hasCaption,
+      caption,
+      mediaType,
+      submission.id,
+      photosToRemove,
+      uploadWithProgress,
+      onUpdate,
+    ]
+  );
 
   return {
     // Upload state

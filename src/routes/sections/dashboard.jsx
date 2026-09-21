@@ -37,6 +37,7 @@ const CreateCampaign = lazy(() => import('src/pages/dashboard/campaign/createCam
 const CampaignSetting = lazy(() => import('src/pages/dashboard/campaign/setting'));
 const CampaignDetails = lazy(() => import('src/pages/dashboard/campaign/details'));
 const ViewCampaign = lazy(() => import('src/pages/dashboard/campaign/campaign-view'));
+const CampaignDrafts = lazy(() => import('src/pages/dashboard/campaign/campaign-drafts'));
 const AdminCampaignDetail = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-details')
 );
@@ -126,6 +127,8 @@ const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tie
 const VideoOfTheMonth = lazy(
   () => import('src/pages/dashboard/video-of-the-month/video-of-the-month')
 );
+// Find Cipta — one-time treasure hunt event (superadmin only)
+const FindCipta = lazy(() => import('src/pages/dashboard/treasure-hunts/find-cipta'));
 
 // Feedback
 const Feedback = lazy(() => import('src/pages/dashboard/feedback/feedback'));
@@ -500,6 +503,14 @@ export const dashboardRoutes = [
               </RoleBasedGuard>
             ),
           },
+          {
+            path: 'drafts',
+            element: (
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
+                <CampaignDrafts />
+              </RoleBasedGuard>
+            ),
+          },
           // {
           //   path: 'drafts',
           //   children: [
@@ -750,6 +761,14 @@ export const dashboardRoutes = [
         element: (
           <RoleBasedGuard roles={['superadmin', 'god', 'sales_and_marketing']} hasContent>
             <VideoOfTheMonth />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'treasure-hunts',
+        element: (
+          <RoleBasedGuard roles={['superadmin']} hasContent>
+            <FindCipta />
           </RoleBasedGuard>
         ),
       },

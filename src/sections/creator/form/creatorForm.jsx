@@ -149,7 +149,6 @@ const ErrorIcon = () => (
 );
 
 export default function CreatorForm({ open, onClose, onSubmit: registerUser, phoneNumber = '' }) {
-  console.log('PHONENUMBER', phoneNumber);
   const [activeStep, setActiveStep] = useState(0);
   const [newCreator, setNewCreator] = useState({});
   const [ratingInterst, setRatingInterst] = useState([]);

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
@@ -18,26 +20,30 @@ import { NavSectionMini, NavSectionVertical } from 'src/components/nav-section';
 import { NAV } from '../config-layout';
 import { useNavData } from './config-navigation';
 
+const MotionBox = m(Box);
+
 export default function NavUnified({ openNav, onCloseNav }) {
   const { user } = useAuthContext();
   const settings = useSettingsContext();
   const lgUp = useResponsive('up', 'lg');
   const navData = useNavData();
   const isNavOpen = localStorage.getItem('isNavOpen');
+  const [open, setOpen] = useState(false);
 
-  const isMini = isNavOpen === 'false';
-
-  // settings.themeLayout === 'mini' ||
+  // const isMini = isNavOpen === 'false';
+  const isMini = !open;
 
   const logo = (
     <Box
       component="div"
       sx={{
         position: 'relative',
-        width: isMini ? 50 : 40,
-        height: isMini ? 50 : 40,
         borderRadius: 1,
-        ...(isMini && { my: 2 }),
+        width: 40,
+        height: 40,
+        // width: isMini ? 50 : 40,
+        // height: isMini ? 50 : 40,
+        // ...(isMini && { my: 2 }),
       }}
     >
       <Image
@@ -71,47 +77,18 @@ export default function NavUnified({ openNav, onCloseNav }) {
         }),
       }}
     >
-      {isMini ? (
-        <Stack alignItems="center" mb={2}>
-          {logo}
-          <IconButton
-            sx={{
-              borderRadius: 1.4,
-              border: '1.8px solid',
-              borderBottom: '4px solid',
-              borderColor: '#e7e7e7',
-              bgcolor: 'white',
-              width: '50px',
-              height: '42px',
-              marginBottom: '-4px',
-            }}
-            onClick={() => {
-              localStorage.setItem('isNavOpen', true);
-              settings.onUpdate(
-                'themeLayout',
-                settings.themeLayout === 'vertical' ? 'mini' : 'vertical'
-              );
-            }}
-          >
-            <img
-              src="/assets/icons/navbar/ic_nav_expand.svg"
-              alt="Collapse"
-              style={{ width: '22px', color: 'black' }}
-            />
-          </IconButton>
-        </Stack>
-      ) : (
-        <Stack
-          sx={{
-            p: 3,
-            width: NAV.W_VERTICAL,
-          }}
-          direction="row"
-          alignItems="center"
-          spacing={1.5}
-          mb={2}
-        >
-          {logo}
+      <Stack
+        sx={{
+          p: 3,
+          width: NAV.W_VERTICAL,
+        }}
+        direction="row"
+        alignItems="center"
+        spacing={1.5}
+        mb={2}
+      >
+        {logo}
+        {!isMini && (
           <Stack flexGrow={1}>
             <Typography fontSize="14px" fontWeight={800}>
               CULT CREATIVE
@@ -123,33 +100,8 @@ export default function NavUnified({ openNav, onCloseNav }) {
                 .join(' ')}
             </Typography>
           </Stack>
-          <IconButton
-            sx={{
-              borderRadius: 1.2,
-              border: '1.8px solid',
-              borderBottom: '4px solid',
-              borderColor: '#e7e7e7',
-              bgcolor: 'white',
-              width: '40px',
-              height: '32px',
-              transition: 'all 0.3s ease',
-            }}
-            onClick={() => {
-              localStorage.setItem('isNavOpen', false);
-              settings.onUpdate(
-                'themeLayout',
-                settings.themeLayout === 'vertical' ? 'mini' : 'vertical'
-              );
-            }}
-          >
-            <img
-              src="/assets/icons/navbar/ic_nav_collapse.svg"
-              alt="CollapseButton"
-              style={{ width: '16px', color: 'black' }}
-            />
-          </IconButton>
-        </Stack>
-      )}
+        )}
+      </Stack>
 
       {isMini ? (
         <NavSectionMini
@@ -255,12 +207,21 @@ export default function NavUnified({ openNav, onCloseNav }) {
   }
 
   return (
-    <Box
+    <MotionBox
+      initial={false}
+      animate={{
+        width: isMini ? NAV.W_MINI : NAV.W_VERTICAL,
+      }}
+      onHoverStart={() => setOpen(true)}
+      onHoverEnd={() => setOpen(false)}
+      transition={{
+        duration: 0.2,
+        ease: 'easeInOut',
+      }}
       sx={{
         flexShrink: { lg: 0 },
-        width: { lg: isMini ? NAV.W_MINI : NAV.W_VERTICAL },
         position: 'relative',
-        transition: 'width 0.3s ease',
+        zIndex: 100,
       }}
     >
       <Stack
@@ -272,7 +233,7 @@ export default function NavUnified({ openNav, onCloseNav }) {
       >
         {renderContent}
       </Stack>
-    </Box>
+    </MotionBox>
   );
 }
 

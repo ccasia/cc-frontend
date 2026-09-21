@@ -11,7 +11,7 @@ import LinkItem from './link-item';
 // ----------------------------------------------------------------------
 
 export default function CustomBreadcrumbs({
-  links,
+  links = [],
   action,
   heading,
   moreLink,
@@ -19,7 +19,7 @@ export default function CustomBreadcrumbs({
   sx,
   ...other
 }) {
-  const lastLink = links[links.length - 1].name;
+  const lastLink = links[links.length - 1]?.name;
 
   return (
     <Box sx={{ ...sx }}>

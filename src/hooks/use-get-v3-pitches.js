@@ -29,6 +29,8 @@ export default function useGetV3Pitches(campaignId = null, status = null) {
   const { data, error, isLoading, mutate } = useSWR(isDemoCampaign ? null : url, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
+    refreshInterval: (latest) =>
+      Array.isArray(latest) && latest.some((pitch) => pitch?.pendingExtractionId) ? 2000 : 0,
   });
 
   if (isDemoCampaign) {

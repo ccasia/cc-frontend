@@ -119,7 +119,8 @@ export default function AgreementTemplate({
   NOW_DATE,
   VERSION_NUMBER = 'V1',
   isForSurfShark = false,
-  isSeedingCampaign = false,
+  isSeedingAgreement = false,
+  productValue,
   isNdaRequired = false,
 }) {
   return (
@@ -430,18 +431,18 @@ export default function AgreementTemplate({
           {/* fixed: repeat the logo when the NDA section pushes the signatures to another page */}
           <Image src="/logo.png" style={styles.image} fixed />
 
-          {isSeedingCampaign ? (
+          {isSeedingAgreement ? (
             <View style={styles.section}>
               <Text style={styles.titlee}>4. Remuneration</Text>
 
               <Text>
-                The Freelancer will receive a gifting amount of up to RM350. This gift may be used
-                exclusively for purchases from Cult Creative’s client&apos;s website or store, with
-                the purchased items belonging to the Freelancer. These items are not on loan and are
-                to be incorporated into the agreed-upon deliverables, including content creation and
-                showcasing the items as described above. This credit is provided in lieu of
-                additional financial compensation, and no other payments will be made beyond this
-                arrangement.
+                The Freelancer will receive a gifting amount of up to {productValue}. This gift may
+                be used exclusively for purchases from Cult Creative’s client&apos;s website or
+                store, with the purchased items belonging to the Freelancer. These items are not on
+                loan and are to be incorporated into the agreed-upon deliverables, including content
+                creation and showcasing the items as described above. This credit is provided in
+                lieu of additional financial compensation, and no other payments will be made beyond
+                this arrangement.
               </Text>
             </View>
           ) : (

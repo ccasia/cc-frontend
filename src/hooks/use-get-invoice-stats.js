@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { fetcher, endpoints } from 'src/utils/axios';
 
 const useGetInvoiceStats = (campaignId) => {
-  const { data, isLoading, error } = useSWR(
+  const { data, isLoading, error, mutate } = useSWR(
     campaignId ? endpoints.invoice.getStatsByCampaign(campaignId) : null,
     fetcher,
     {
@@ -18,8 +18,9 @@ const useGetInvoiceStats = (campaignId) => {
       stats: data?.data,
       isLoading,
       error,
+      mutate,
     }),
-    [data, isLoading, error]
+    [data, isLoading, error, mutate]
   );
 
   return memoizedValue;

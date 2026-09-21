@@ -4,14 +4,11 @@ import { useSnackbar } from 'notistack';
 import { FixedSizeList } from 'react-window';
 import { m, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
-import React, { useMemo, useState, useEffect } from 'react';
-
-import { produce } from 'immer';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
-  Chip,
   Menu,
   Stack,
   Table,
@@ -21,11 +18,8 @@ import {
   Divider,
   Tooltip,
   MenuItem,
-  TableRow,
   TableBody,
   TextField,
-  TableCell,
-  TableHead,
   Typography,
   IconButton,
   DialogTitle,
@@ -49,17 +43,286 @@ import { OUTREACH_STATUS_OPTIONS } from 'src/contants/outreach';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
-import SortableHeader from 'src/components/table/sortable-header';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import usePitchSocket from './use-pitch-socket';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
+import useGuestExtraction from './guest-extraction/use-guest-extraction';
+import CreatorFieldLoading from './guest-extraction/creator-field-loading';
+import { validateProfileLink } from './guest-extraction/profile-link-validation';
+import useGuestMetricsDecision from './guest-extraction/use-guest-metrics-decision';
+import ScrapeTextFieldReveal, { ScrapeRevealGate } from './scrape-text-field-reveal';
+import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
+import AutomaticCreatorScrapeDialog from './guest-extraction/automatic-creator-scrape-dialog';
+import {
+  ACTIONS,
+  ROW_STATUS,
+  isRowActive,
+  fieldProvenanceOf,
+  FIELD_UPDATE_SOURCE,
+  hasSafeFollowerCount,
+  hasSafeEngagementRate,
+} from './guest-extraction/creator-row-machine';
+
+/**
+ * Every input in the Add Platform Creators row, at the handoff's 46px.
+ *
+ * These TextFields are MUI *medium* size, whose input carries 16.5px of
+ * vertical padding and measures 53px on its own. `minHeight` is only a floor,
+ * so it never brought them down — the height has to be fixed on the root and
+ * the padding removed from the input itself.
+ */
+/**
+ * Field label with an italic provenance suffix, e.g. "Follower Count (media kit)".
+ *
+ * Same shape the non-platform modal uses for "(extracted)", so a value the
+ * admin did not type says where it came from, in the same visual language.
+ */
+function FieldLabel({ text, provenance, hint }) {
+  const label = (
+    <Typography
+      sx={{
+        mb: hint ? 0 : '4px',
+        display: 'block',
+        color: '#636366',
+        fontSize: '12px !important',
+        lineHeight: '16px',
+        fontWeight: 500,
+      }}
+    >
+      {text}
+      {provenance ? (
+        <Box component="span" sx={{ fontStyle: 'italic', fontWeight: 400 }}>
+          {` (${provenance})`}
+        </Box>
+      ) : null}
+    </Typography>
+  );
+
+  if (!hint) return label;
+
+  return (
+    <Stack direction="row" alignItems="center" spacing={0.25} sx={{ mb: '4px', height: '16px' }}>
+      {label}
+      {hint}
+    </Stack>
+  );
+}
+
+FieldLabel.propTypes = {
+  text: PropTypes.string.isRequired,
+  /** Where the value came from. Omitted when the admin typed it. */
+  provenance: PropTypes.string,
+  /** Optional control beside the label, e.g. the engagement-rate breakdown. */
+  hint: PropTypes.node,
+};
+
+const FIELD_HEIGHT = 52;
+
+/**
+ * Shared box metrics for the three modal action buttons.
+ *
+ * They used to set height, radius and border width separately, and drifted:
+ * 1.5px borders on two of them against 1px on the third, and no radius at all
+ * on "Send to Client". Only colour belongs to the individual button now, so
+ * they cannot end up different sizes again.
+ */
+const ACTION_BUTTON_SX = {
+  height: 44,
+  minHeight: 44,
+  // Full width once they stack, so a narrow dialog gets three readable
+  // buttons instead of one row running off the edge.
+  width: { xs: '100%', sm: 'auto' },
+  boxSizing: 'border-box',
+  borderRadius: 1.15,
+  borderStyle: 'solid',
+  borderWidth: '1.5px',
+  borderBottomWidth: '3px',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
+  fontSize: '0.875rem',
+  fontWeight: 600,
+  px: 3,
+  textTransform: 'none',
+};
+
+const FILTER_PILL_SX = {
+  height: 34,
+  minHeight: 34,
+  padding: '8px 16px',
+  gap: '4px',
+  border: 'none',
+  borderBottom: 'none',
+  borderRadius: '100px',
+  fontFamily: 'Inter Display, Inter, sans-serif',
+  fontWeight: 500,
+  fontSize: 14,
+  lineHeight: '18px',
+  textTransform: 'none',
+  whiteSpace: 'nowrap',
+  minWidth: 'unset',
+  flexShrink: 0,
+  boxShadow: 'none',
+  '& .MuiButton-endIcon': {
+    ml: 0,
+    mr: 0,
+  },
+};
+
+const getFilterPillSx = (isActive) => ({
+  ...FILTER_PILL_SX,
+  bgcolor: isActive ? 'rgba(19, 64, 255, 0.10)' : '#F5F5F5',
+  color: isActive ? '#1340FF' : '#231F20',
+  fontWeight: isActive ? 600 : 500,
+  '&:hover': {
+    bgcolor: isActive ? 'rgba(19, 64, 255, 0.16)' : '#EBEBEB',
+    border: 'none',
+    borderBottom: 'none',
+    boxShadow: 'none',
+  },
+});
+
+function FilterPillEndIcons({ isActive, isOpen, onClear, clearLabel }) {
+  const handleClear = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onClear();
+  };
+
+  return (
+    <Stack direction="row" alignItems="center" spacing={0.25} component="span">
+      {isActive && (
+        <Box
+          component="span"
+          role="button"
+          tabIndex={0}
+          aria-label={clearLabel}
+          onClick={handleClear}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              handleClear(event);
+            }
+          }}
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 18,
+            height: 18,
+            borderRadius: '50%',
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: 'rgba(19, 64, 255, 0.16)',
+            },
+          }}
+        >
+          <Iconify icon="eva:close-fill" width={14} />
+        </Box>
+      )}
+      <Iconify
+        icon="eva:chevron-down-fill"
+        width={20}
+        sx={{
+          transform: isOpen ? 'rotate(180deg)' : 'none',
+          transition: 'transform 0.2s',
+        }}
+      />
+    </Stack>
+  );
+}
+
+FilterPillEndIcons.propTypes = {
+  isActive: PropTypes.bool,
+  isOpen: PropTypes.bool,
+  onClear: PropTypes.func.isRequired,
+  clearLabel: PropTypes.string.isRequired,
+};
+
+/**
+ * The selected-creator chip, sized off the field it sits in.
+ *
+ * The handoff draws a 28px chip inside a 46px field. Keeping the same 18px of
+ * breathing room means the chip grows whenever the field does, instead of
+ * rattling around inside it.
+ */
+const CHIP_HEIGHT = FIELD_HEIGHT - 18;
+
+const FIELD_SX = {
+  '& .MuiOutlinedInput-root': {
+    bgcolor: '#fff',
+    height: FIELD_HEIGHT,
+    minHeight: FIELD_HEIGHT,
+    borderRadius: 1,
+  },
+  '& .MuiOutlinedInput-input': {
+    height: '100%',
+    boxSizing: 'border-box',
+    paddingTop: 0,
+    paddingBottom: 0,
+  },
+};
+
+const SCRAPE_FETCHING = ['VALIDATING', 'QUEUED', 'RUNNING', 'POLLING'];
+
+const SCRAPE_HINTS = {
+  VALIDATING: 'Checking the link…',
+  INSUFFICIENT_DATA: 'Not enough public posts. Enter the numbers by hand.',
+  FAILED: 'Could not fetch. Enter the numbers by hand.',
+};
+
+const getSourceFeedback = (row) => {
+  if (
+    row.saveError?.code === 'FALLBACK_NOT_ALLOWED' ||
+    row.error?.code === 'FALLBACK_NOT_ALLOWED'
+  ) {
+    return SCRAPE_HINTS.FAILED;
+  }
+  return row.saveError?.message || row.error?.message || SCRAPE_HINTS[row.status] || '';
+};
+
+const normalizeSaveErrorBody = (error) =>
+  error?.response?.data ?? (error && typeof error === 'object' ? error : null);
+
+const getPlatformSaveResult = (rows, body) => {
+  if (!body?.rejected?.length) return null;
+  const normalizeLink = (value) => value?.trim().replace(/\/+$/, '');
+  const acceptedRowIds = [];
+  const rejectedByRowId = {};
+
+  rows.forEach((row) => {
+    const rejected = body.rejected.find(
+      (entry) =>
+        (normalizeLink(entry.profileLink) &&
+          normalizeLink(entry.profileLink) === normalizeLink(row.profileLink)) ||
+        (entry.creatorId ?? entry.id) === row.creator.id
+    );
+    if (!rejected) {
+      acceptedRowIds.push(row.id);
+      return;
+    }
+    rejectedByRowId[row.id] = {
+      code: rejected.code || 'SAVE_REJECTED',
+      message: rejected.message || 'This creator could not be verified.',
+    };
+  });
+
+  return {
+    acceptedRowIds,
+    rejectedByRowId,
+    error: body.rejected[0].message || body.message || 'Some creators could not be verified.',
+  };
+};
 
 const PLATFORM_OPTIONS = [
-  { value: 'instagram', label: 'Instagram', icon: 'ri:instagram-fill' },
-  { value: 'tiktok', label: 'TikTok', icon: 'ic:baseline-tiktok' },
+  // Outline, not fill, and Instagram's own brand magenta from the handoff.
+  { value: 'instagram', label: 'Instagram', icon: 'ri:instagram-line', color: '#C13584' },
+  { value: 'tiktok', label: 'TikTok', icon: 'ic:baseline-tiktok', color: '#000000' },
 ];
 
 const getPlatformFollowerCount = (creator, selectedPlatform) => {
@@ -84,10 +347,76 @@ const getPlatformFollowerCount = (creator, selectedPlatform) => {
   return 0;
 };
 
+/**
+ * The engagement rate for this platform, as a percentage string.
+ *
+ * Mirrors getPlatformFollowerCount: a connected account wins, else the rate
+ * saved from a manual entry. Null means never measured, not a measured zero.
+ */
+const getPlatformEngagementRate = (creator, selectedPlatform) => {
+  if (!creator) return null;
+  const isTiktok = selectedPlatform === 'tiktok';
+  const connected = isTiktok ? creator?.creator?.tiktokUser : creator?.creator?.instagramUser;
+  const rate = connected
+    ? connected.engagement_rate
+    : isTiktok
+      ? creator?.creator?.manualTiktokEngagementRate
+      : creator?.creator?.manualInstagramEngagementRate;
+  if (rate == null) return null;
+  // "5.40" reads as false precision next to the handoff's "5.4".
+  return String(Number(Number(rate).toFixed(2)));
+};
+
 const hasMediaKitForPlatform = (creator, selectedPlatform) => {
   if (!creator) return false;
   if (selectedPlatform === 'tiktok') return !!creator?.creator?.tiktokUser;
   return !!creator?.creator?.instagramUser;
+};
+
+const getStoredProfileLink = (creator, platform) => {
+  if (!creator) return '';
+  return (
+    (platform === 'tiktok'
+      ? creator?.creator?.tiktokProfileLink
+      : creator?.creator?.instagramProfileLink) || ''
+  ).trim();
+};
+
+const renderProfileSourceOption = (creator, option) => {
+  const storedLink = getStoredProfileLink(creator, option.value);
+  const connected = hasMediaKitForPlatform(creator, option.value);
+
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
+      <Iconify
+        icon={option.icon}
+        width={18}
+        sx={{ color: option.color, flexShrink: 0 }}
+      />
+      <Box minWidth={0}>
+        <Typography
+          component="span"
+          title={storedLink || undefined}
+          sx={{
+            display: 'inline-block',
+            maxWidth: 'min(360px, calc(100vw - 180px))',
+            fontSize: 14,
+            color: storedLink ? '#1340FF' : 'text.disabled',
+            verticalAlign: 'bottom',
+            whiteSpace: 'normal',
+            overflowWrap: 'anywhere',
+          }}
+        >
+          {storedLink || 'Enter profile link'}
+        </Typography>
+        {connected && (
+          <Typography component="span" sx={{ ml: 0.75, fontSize: 11, color: '#636366' }}>
+            (media kit)
+          </Typography>
+        )}
+      </Box>
+    </Stack>
+  );
 };
 
 const getDefaultPlatformFromMediaKit = (creator) => {
@@ -135,8 +464,6 @@ const countPitchesByStatus = (pitches, statusList) =>
     return statusList.includes(status);
   }).length || 0;
 
-// Using SortableHeader component from components/table to avoid defining components during render
-
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisabled = false }) => {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
@@ -162,9 +489,11 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
 
   const [addCreatorOpen, setAddCreatorOpen] = useState(false);
   const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
+  const { enabled: guestMetricsEnabled } = useGuestMetricsDecision();
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
   const [outreachStatusFilter, setOutreachStatusFilter] = useState([]);
   const [outreachFilterAnchorEl, setOutreachFilterAnchorEl] = useState(null);
+  const [creatorFilterAnchorEl, setCreatorFilterAnchorEl] = useState(null);
   // Merge prop-based isDisabled with existing Finance role check
 
   const financeDisabled = useMemo(
@@ -284,17 +613,50 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
 
   const withdrawnCount = countPitchesByStatus(mergedPitchesAndShortlisted, ['WITHDRAWN']);
 
-  // Handle column sort click
-  const handleColumnSort = (column) => {
-    if (sortColumn === column) {
-      // Same column - toggle direction
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      // New column - set to asc
-      setSortColumn(column);
-      setSortDirection('asc');
+  const creatorStatusOptions = useMemo(() => {
+    const isV4 = campaign?.submissionVersion === 'v4';
+
+    return [
+      { value: 'all', label: 'All' },
+      { value: 'PENDING_REVIEW', label: `Pending (${pendingReviewCount})` },
+      ...(isV4
+        ? [
+            { value: 'SENT_TO_CLIENT', label: `Sent To Client (${sentToClientCount})` },
+            { value: 'MAYBE', label: `Maybe (${maybeCount})` },
+          ]
+        : []),
+      { value: 'REJECTED', label: `Rejected (${rejectedCount})` },
+      { value: 'APPROVED', label: `Approved (${approvedCount})` },
+      { value: 'WITHDRAWN', label: `Withdrawn (${withdrawnCount})` },
+    ];
+  }, [
+    campaign?.submissionVersion,
+    pendingReviewCount,
+    sentToClientCount,
+    maybeCount,
+    rejectedCount,
+    approvedCount,
+    withdrawnCount,
+  ]);
+
+  const isCreatorFilterActive = selectedFilter !== 'all';
+  const creatorFilterLabel = isCreatorFilterActive
+    ? creatorStatusOptions.find((option) => option.value === selectedFilter)?.label ||
+      'Creator Status'
+    : 'Creator Status';
+
+  const isOutreachFilterActive = outreachStatusFilter.length > 0;
+  const outreachFilterLabel = useMemo(() => {
+    if (outreachStatusFilter.length === 0) return 'Outreach Status';
+    if (outreachStatusFilter.length === 1) {
+      const [value] = outreachStatusFilter;
+      if (value === 'NOT_SET') return 'Not Set';
+      return (
+        OUTREACH_STATUS_OPTIONS.find((option) => option.value === value)?.label || 'Outreach Status'
+      );
     }
-  };
+    return `Outreach Status (${outreachStatusFilter.length})`;
+  }, [outreachStatusFilter]);
 
   // Toggle sort direction (for alphabetical button - legacy)
   const handleToggleSort = () => {
@@ -319,6 +681,25 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
 
   const handleOutreachFilterClear = () => {
     setOutreachStatusFilter([]);
+    setOutreachFilterAnchorEl(null);
+  };
+
+  const handleCreatorFilterClick = (event) => {
+    setCreatorFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleCreatorFilterClose = () => {
+    setCreatorFilterAnchorEl(null);
+  };
+
+  const handleCreatorFilterSelect = (value) => {
+    setSelectedFilter(value);
+    setCreatorFilterAnchorEl(null);
+  };
+
+  const handleCreatorFilterClear = () => {
+    setSelectedFilter('all');
+    setCreatorFilterAnchorEl(null);
   };
 
   // Handler for outreach status update from row
@@ -699,9 +1080,11 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
     <Box sx={{ width: '100%', overflowX: 'auto' }}>
       <Stack direction="column" spacing={2}>
         <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          alignItems={{ xs: 'stretch', sm: 'center' }}
+          direction="row"
+          spacing={1.5}
+          alignItems="center"
+          flexWrap="wrap"
+          useFlexGap
           sx={{ width: '100%' }}
         >
           <TextField
@@ -746,47 +1129,88 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
               ),
             }}
           />
-          {/* Outreach Status Filter */}
+          {/* Alphabetical Sort Button */}
           <Button
-            onClick={handleOutreachFilterClick}
-            endIcon={<Iconify icon="eva:chevron-down-fill" width={18} />}
+            onClick={handleToggleSort}
+            endIcon={
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                {sortDirection === 'asc' ? (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                  </Stack>
+                )}
+                <Iconify
+                  icon={
+                    sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
+                  }
+                  width={12}
+                />
+              </Stack>
+            }
             sx={{
-              height: 44,
-              px: 2,
-              bgcolor: outreachStatusFilter.length > 0 ? 'rgba(32, 63, 245, 0.08)' : '#FFFFFF',
-              border: '1.5px solid',
-              borderColor: outreachStatusFilter.length > 0 ? '#1340FF' : '#e7e7e7',
-              borderBottom:
-                outreachStatusFilter.length > 0 ? '3px solid #1340FF' : '3px solid #e7e7e7',
-              borderRadius: 1.15,
-              color: outreachStatusFilter.length > 0 ? '#1340FF' : '#637381',
+              px: 1.5,
+              py: 0.75,
+              height: '42px',
+              color: '#637381',
               fontWeight: 600,
-              fontSize: '0.85rem',
+              fontSize: '0.875rem',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderRadius: 1,
               textTransform: 'none',
               whiteSpace: 'nowrap',
+              boxShadow: 'none',
+              alignSelf: { xs: 'flex-start', sm: 'center' },
               '&:hover': {
-                bgcolor: outreachStatusFilter.length > 0 ? 'rgba(32, 63, 245, 0.08)' : '#F5F5F5',
-                borderColor: outreachStatusFilter.length > 0 ? '#1340FF' : '#e7e7e7',
+                backgroundColor: 'transparent',
+                color: '#221f20',
               },
             }}
           >
-            Outreach
-            {outreachStatusFilter.length > 0 && (
-              <Chip
-                label={outreachStatusFilter.length}
-                size="small"
-                sx={{
-                  ml: 1,
-                  height: 20,
-                  minWidth: 20,
-                  bgcolor: '#1340FF',
-                  color: '#fff',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  '& .MuiChip-label': { px: 0.75 },
-                }}
+            Alphabetical
+          </Button>
+          {/* Outreach Status Filter */}
+          <Button
+            variant="text"
+            disableElevation
+            onClick={handleOutreachFilterClick}
+            endIcon={
+              <FilterPillEndIcons
+                isActive={isOutreachFilterActive}
+                isOpen={Boolean(outreachFilterAnchorEl)}
+                onClear={handleOutreachFilterClear}
+                clearLabel="Clear outreach status filters"
               />
-            )}
+            }
+            sx={getFilterPillSx(isOutreachFilterActive)}
+          >
+            {outreachFilterLabel}
           </Button>
           <Menu
             anchorEl={outreachFilterAnchorEl}
@@ -910,316 +1334,74 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
               </Typography>
             )}
           </Menu>
-          {/* Alphabetical Sort Button */}
+          {/* Creator Status Filter */}
           <Button
-            onClick={handleToggleSort}
+            variant="text"
+            disableElevation
+            onClick={handleCreatorFilterClick}
             endIcon={
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                {sortDirection === 'asc' ? (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                    >
-                      A
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                    >
-                      Z
-                    </Typography>
-                  </Stack>
-                ) : (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                    >
-                      Z
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                    >
-                      A
-                    </Typography>
-                  </Stack>
-                )}
-                <Iconify
-                  icon={
-                    sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
-                  }
-                  width={12}
-                />
-              </Stack>
+              <FilterPillEndIcons
+                isActive={isCreatorFilterActive}
+                isOpen={Boolean(creatorFilterAnchorEl)}
+                onClear={handleCreatorFilterClear}
+                clearLabel="Clear creator status filters"
+              />
             }
-            sx={{
-              px: 1.5,
-              py: 0.75,
-              height: '42px',
-              color: '#637381',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderRadius: 1,
-              textTransform: 'none',
-              whiteSpace: 'nowrap',
-              boxShadow: 'none',
-              alignSelf: { xs: 'flex-start', sm: 'center' },
-              '&:hover': {
-                backgroundColor: 'transparent',
-                color: '#221f20',
+            sx={getFilterPillSx(isCreatorFilterActive)}
+          >
+            {creatorFilterLabel}
+          </Button>
+          <Menu
+            anchorEl={creatorFilterAnchorEl}
+            open={Boolean(creatorFilterAnchorEl)}
+            onClose={handleCreatorFilterClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            slotProps={{
+              paper: {
+                sx: {
+                  mt: 0.5,
+                  minWidth: 200,
+                  p: 0.5,
+                  bgcolor: 'white',
+                  boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
+                  borderRadius: 1.5,
+                },
               },
             }}
           >
-            Alphabetical
-          </Button>
-        </Stack>
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={2}
-          justifyContent="flex-start"
-          alignItems={{ xs: 'flex-start', md: 'center' }}
-          sx={{ mb: 1 }}
-        >
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1}
-            sx={{ width: { xs: '100%', md: 'auto' } }}
-          >
-            <Button
-              fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('all')}
-              sx={{
-                px: 1.5,
-                py: 2.5,
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                ...(selectedFilter === 'all'
-                  ? {
-                      color: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    }
-                  : {
-                      color: '#637381',
-                      bgcolor: 'transparent',
-                    }),
-                '&:hover': {
-                  bgcolor: selectedFilter === 'all' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                },
-              }}
-            >
-              All
-            </Button>
-
-            <Button
-              fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('PENDING_REVIEW')}
-              sx={{
-                px: 1.5,
-                py: 2.5,
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                ...(selectedFilter === 'PENDING_REVIEW'
-                  ? {
-                      color: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    }
-                  : {
-                      color: '#637381',
-                      bgcolor: 'transparent',
-                    }),
-                '&:hover': {
-                  bgcolor:
-                    selectedFilter === 'PENDING_REVIEW' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                },
-              }}
-            >
-              {`Pending (${pendingReviewCount})`}
-            </Button>
-
-            {/* Sent to Client filter - only show for v4 campaigns where client approval is required */}
-            {campaign?.submissionVersion === 'v4' && (
-              <Button
-                fullWidth={!mdUp}
-                onClick={() => setSelectedFilter('SENT_TO_CLIENT')}
+            {creatorStatusOptions.map((option) => (
+              <MenuItem
+                key={option.value}
+                selected={selectedFilter === option.value}
+                onClick={() => handleCreatorFilterSelect(option.value)}
                 sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
+                  fontFamily: 'Inter Display, Inter, sans-serif',
+                  fontSize: 14,
+                  fontWeight: selectedFilter === option.value ? 600 : 500,
+                  color: '#231F20',
                   borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  ...(selectedFilter === 'SENT_TO_CLIENT'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor:
-                      selectedFilter === 'SENT_TO_CLIENT'
-                        ? 'rgba(32, 63, 245, 0.04)'
-                        : 'transparent',
-                  },
+                  py: 0.75,
                 }}
               >
-                {`Sent To Client (${sentToClientCount})`}
-              </Button>
-            )}
-
-            {/* Maybe filter - only show for v4 campaigns where client can mark as maybe */}
-            {campaign?.submissionVersion === 'v4' && (
-              <Button
-                fullWidth={!mdUp}
-                onClick={() => setSelectedFilter('MAYBE')}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  ...(selectedFilter === 'MAYBE'
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor: selectedFilter === 'MAYBE' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                  },
-                }}
-              >
-                {`Maybe (${maybeCount})`}
-              </Button>
-            )}
-
-            <Button
-              fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('REJECTED')}
-              sx={{
-                px: 1.5,
-                py: 2.5,
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                ...(selectedFilter === 'REJECTED'
-                  ? {
-                      color: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    }
-                  : {
-                      color: '#637381',
-                      bgcolor: 'transparent',
-                    }),
-                '&:hover': {
-                  bgcolor:
-                    selectedFilter === 'REJECTED' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                },
-              }}
-            >
-              {`Rejected (${rejectedCount})`}
-            </Button>
-
-            <Button
-              fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('APPROVED')}
-              sx={{
-                px: 1.5,
-                py: 2.5,
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                ...(selectedFilter === 'APPROVED'
-                  ? {
-                      color: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    }
-                  : {
-                      color: '#637381',
-                      bgcolor: 'transparent',
-                    }),
-                '&:hover': {
-                  bgcolor:
-                    selectedFilter === 'APPROVED' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                },
-              }}
-            >
-              {`Approved (${approvedCount})`}
-            </Button>
-
-            <Button
-              fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('WITHDRAWN')}
-              sx={{
-                px: 1.5,
-                py: 2.5,
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                ...(selectedFilter === 'WITHDRAWN'
-                  ? {
-                      color: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    }
-                  : {
-                      color: '#637381',
-                      bgcolor: 'transparent',
-                    }),
-                '&:hover': {
-                  bgcolor:
-                    selectedFilter === 'WITHDRAWN' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                },
-              }}
-            >
-              {`Withdrawn (${withdrawnCount})`}
-            </Button>
-          </Stack>
+                {option.label}
+                {selectedFilter === option.value && (
+                  <Iconify
+                    icon="eva:checkmark-fill"
+                    width={16}
+                    sx={{ ml: 'auto', flexShrink: 0 }}
+                  />
+                )}
+              </MenuItem>
+            ))}
+          </Menu>
 
           <Box
             sx={{
               display: 'flex',
               justifyContent: { xs: 'flex-start', md: 'flex-end' },
-              flex: 1,
-              width: { xs: '100%', md: 'auto' },
-              mt: { xs: 1, md: 0 },
+              ml: { xs: 0, sm: 'auto' },
+              flexShrink: 0,
             }}
           >
             {!smUp ? (
@@ -1301,115 +1483,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
           <Table
             size={smUp ? 'medium' : 'small'}
             sx={{
-              minWidth: { xs: 800, sm: 'auto' },
+              minWidth: { xs: 900, sm: 'auto' },
               width: '100%',
             }}
           >
-            <TableHead>
-              <TableRow>
-                <TableCell
-                  sx={{
-                    py: { xs: 0.5, sm: 1 },
-                    px: { xs: 1, sm: 2 },
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: '25%',
-                    borderRadius: '10px 0 0 10px',
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  }}
-                >
-                  Creator
-                </TableCell>
-                <TableCell
-                  sx={{
-                    py: { xs: 0.5, sm: 1 },
-                    px: { xs: 1, sm: 2 },
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: { xs: 120, sm: '12%' },
-                    minWidth: { xs: 120, sm: 'auto' },
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  }}
-                >
-                  Outreach Status
-                </TableCell>
-                <SortableHeader
-                  column="followers"
-                  label="Followers"
-                  sortColumn={sortColumn}
-                  sortDirection={sortDirection}
-                  onSort={handleColumnSort}
-                  sx={{
-                    width: { xs: 100, sm: '15%' },
-                    minWidth: { xs: 100, sm: 'auto' },
-                  }}
-                />
-                {campaign?.isCreditTier && (
-                  <SortableHeader
-                    column="tier"
-                    label="Tier"
-                    sortColumn={sortColumn}
-                    sortDirection={sortDirection}
-                    onSort={handleColumnSort}
-                    sx={{
-                      width: { xs: 90, sm: '12%' },
-                      minWidth: { xs: 90, sm: 'auto' },
-                    }}
-                  />
-                )}
-                <SortableHeader
-                  column="date"
-                  label="Date Submitted"
-                  sortColumn={sortColumn}
-                  sortDirection={sortDirection}
-                  onSort={handleColumnSort}
-                  sx={{
-                    width: { xs: 130, sm: '15%' },
-                    minWidth: { xs: 130, sm: 'auto' },
-                  }}
-                />
-                <SortableHeader
-                  column="type"
-                  label="Type"
-                  sortColumn={sortColumn}
-                  sortDirection={sortDirection}
-                  onSort={handleColumnSort}
-                  sx={{
-                    width: { xs: 100, sm: '10%' },
-                    minWidth: { xs: 100, sm: 'auto' },
-                  }}
-                />
-                <SortableHeader
-                  column="status"
-                  label="Status"
-                  sortColumn={sortColumn}
-                  sortDirection={sortDirection}
-                  onSort={handleColumnSort}
-                  sx={{
-                    width: { xs: 120, sm: '10%' },
-                    minWidth: { xs: 120, sm: 'auto' },
-                  }}
-                />
-                <TableCell
-                  sx={{
-                    py: { xs: 0.5, sm: 1 },
-                    px: { xs: 1, sm: 2 },
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: 100,
-                    borderRadius: '0 10px 10px 0',
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                  }}
-                />
-              </TableRow>
-            </TableHead>
             <TableBody>
-              {filteredPitches?.map((pitch) => {
+              {filteredPitches?.map((pitch, index) => {
                 const displayStatus = pitch.displayStatus || pitch.status;
                 const statusInfo = getStatusInfo(displayStatus, pitch);
                 const isGuestCreator = pitch.user?.creator?.isGuest;
@@ -1418,13 +1497,13 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                 return (
                   <PitchRow
                     key={pitch.id}
+                    number={index + 1}
                     pitch={pitch}
                     displayStatus={displayStatus}
                     statusInfo={statusInfo}
                     isInvitedCreator={isInvitedCreator}
                     isGuestCreator={isGuestCreator}
                     campaign={campaign}
-                    isCreditTier={campaign?.isCreditTier}
                     onViewPitch={handleViewPitch}
                     onRemoved={handleRemoveCreator}
                     onOutreachUpdate={handleOutreachUpdate}
@@ -1450,19 +1529,35 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         onClose={() => setPlatformCreatorOpen(false)}
         campaign={campaign}
         pitches={pitches}
+        // Same flag as the guest flow, and not optional: the extraction
+        // endpoints answer 404 when it is off.
+        scrapeEnabled={guestMetricsEnabled}
         onUpdated={() => {
           onUpdate?.();
         }}
       />
 
-      <NonPlatformCreatorFormDialog
-        open={nonPlatformOpen}
-        onClose={() => setNonPlatformOpen(false)}
-        campaignId={campaign?.id}
-        onUpdated={() => {
-          onUpdate?.();
-        }}
-      />
+      {/* One server-side decision picks the flow. When it is off, or while it
+          is still loading, the existing manual form is what admins get. */}
+      {guestMetricsEnabled ? (
+        <AutomaticCreatorScrapeDialog
+          open={nonPlatformOpen}
+          onClose={() => setNonPlatformOpen(false)}
+          campaignId={campaign?.id}
+          onUpdated={() => {
+            onUpdate?.();
+          }}
+        />
+      ) : (
+        <NonPlatformCreatorFormDialog
+          open={nonPlatformOpen}
+          onClose={() => setNonPlatformOpen(false)}
+          campaignId={campaign?.id}
+          onUpdated={() => {
+            onUpdate?.();
+          }}
+        />
+      )}
 
       {/* Empty state */}
       {(!filteredPitches || filteredPitches.length === 0) && (
@@ -1719,7 +1814,14 @@ const ListboxComponent = React.forwardRef((props, ref) => {
   );
 });
 
-export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdated }) {
+export function PlatformCreatorModal({
+  open,
+  onClose,
+  campaign,
+  pitches,
+  onUpdated,
+  scrapeEnabled,
+}) {
   const { data, isLoading } = useGetAllCreators();
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
@@ -1728,17 +1830,57 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   // clients (and no-client campaigns) get the single default action
   const showShortlistActionChoice =
     user?.role !== 'client' && campaign?.submissionVersion === 'v4' && campaignHasClient(campaign);
-  const [creatorRows, setCreatorRows] = useState([
-    {
-      id: 1,
-      creator: null,
-      followerCount: '',
-      adminComments: '',
-      hasMediaKit: false,
-      selectedPlatform: '',
-    },
-  ]);
+  /**
+   * Rows live in the shared creator-row machine, the same one the guest modal
+   * uses. It brings link debounce, the Apify fetch, polling, cancel, session
+   * recovery and reset-on-open, so none of that is written twice.
+   */
+  const skipDraftRow = useCallback(
+    (row) => hasMediaKitForPlatform(row.creator, row.selectedPlatform),
+    []
+  );
+  const resolveCreator = useCallback(
+    (creatorId) => (data || []).find((creator) => creator.id === creatorId) ?? null,
+    [data]
+  );
+
+  const {
+    state: rowState,
+    dispatch,
+    removeRow,
+    setLink,
+    setCreator,
+    setSource,
+    applySaveResult,
+    completeSuccessfulSave,
+  } = useGuestExtraction({
+    campaignId: campaign?.id,
+    enabled: open,
+    kind: 'platform',
+    skipDraftRow,
+    resolveCreator,
+    recoveryReady: !isLoading,
+  });
+
+  /**
+   * The row shape this modal renders.
+   *
+   * `platform` stays URL-derived. `selectedPlatform` records the admin's source
+   * choice. `hasMediaKit` is derived from that explicit choice.
+   */
+  const creatorRows = useMemo(
+    () =>
+      rowState.rows.map((row) => ({
+        ...row,
+        selectedPlatform: row.selectedPlatform ?? '',
+        hasMediaKit: hasMediaKitForPlatform(row.creator, row.selectedPlatform),
+      })),
+    [rowState.rows]
+  );
+
   const [submitting, setSubmitting] = useState(false);
+  const [breakdownRowId, setBreakdownRowId] = useState(null);
+  const breakdownRow = creatorRows.find((row) => row.id === breakdownRowId);
 
   const shortlistedCreators = campaign?.shortlisted || [];
   const shortlistedIds = new Set(shortlistedCreators.map((c) => c.userId));
@@ -1759,158 +1901,163 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
       .filter((item) => !selectedInOtherRows.includes(item.id));
   };
 
-  // Add a new creator row (max 3)
-  const handleAddCreatorRow = () => {
-    if (creatorRows.length < 3) {
-      setCreatorRows([
-        ...creatorRows,
-        {
-          id: Date.now(),
-          creator: null,
-          followerCount: '',
-          adminComments: '',
-          hasMediaKit: false,
-          selectedPlatform: '',
-        },
-      ]);
-    }
-  };
+  // Add a new creator row. The machine caps this at MAX_ROWS, which is 3.
+  const handleAddCreatorRow = () => dispatch({ type: ACTIONS.ADD_ROW });
 
-  // Remove the last creator row (min 1)
+  // Remove the last creator row (min 1). `removeRow` also cancels any fetch
+  // that row had running and forgets its session-storage entry.
   const handleRemoveCreatorRow = () => {
     if (creatorRows.length > 1) {
-      setCreatorRows(creatorRows.slice(0, -1));
+      removeRow(creatorRows[creatorRows.length - 1].id);
     }
   };
 
-  // Update creator selection for a specific row
-  // const handleCreatorRowChange = (rowId, selectedCreator) => {
-  //   setCreatorRows((rows) =>
-  //     rows.map((row) => {
-  //       if (row.id === rowId) {
-  //         if (selectedCreator === null) {
-  //           return {
-  //             ...row,
-  //             creator: null,
-  //             followerCount: '',
-  //             hasMediaKit: false,
-  //             selectedPlatform: '',
-  //             adminComments: '',
-  //           };
-  //         }
-  //         const selectedPlatform = resolveInitialPlatformForCreator(
-  //           selectedCreator,
-  //           row.selectedPlatform
-  //         );
-  //         const hasMediaKit =
-  //           selectedCreator && selectedPlatform
-  //             ? hasMediaKitForPlatform(selectedCreator, selectedPlatform)
-  //             : false;
-  //         const followerCount =
-  //           selectedCreator && selectedPlatform
-  //             ? getPlatformFollowerCount(selectedCreator, selectedPlatform) || ''
-  //             : '';
-
-  //         return {
-  //           ...row,
-  //           creator: selectedCreator,
-  //           followerCount,
-  //           hasMediaKit,
-  //           selectedPlatform,
-  //           adminComments: row.adminComments,
-  //         };
-  //       }
-  //       return row;
-  //     })
-  //   );
-  // };
-
   const handleCreatorRowChange = (rowId, selectedCreator) => {
-    setCreatorRows(
-      produce((draft) => {
-        const existing = draft.find((item) => item.id === rowId);
+    const row = creatorRows.find((r) => r.id === rowId);
+    if (!row) return;
 
-        if (existing) {
-          const selectedPlatform = resolveInitialPlatformForCreator(
-            selectedCreator,
-            existing.selectedPlatform
-          );
+    if (selectedCreator === null) {
+      setCreator(rowId, null);
+      return;
+    }
 
-          const hasMediaKit =
-            selectedCreator && selectedPlatform
-              ? hasMediaKitForPlatform(selectedCreator, selectedPlatform)
-              : false;
+    const selectedPlatform = scrapeEnabled
+      ? getDefaultPlatformFromMediaKit(selectedCreator) || 'instagram'
+      : resolveInitialPlatformForCreator(selectedCreator, row.selectedPlatform);
+    const hasSelectedMediaKit = hasMediaKitForPlatform(selectedCreator, selectedPlatform);
+    const hasStoredLink = Boolean(getStoredProfileLink(selectedCreator, selectedPlatform));
+    const followerCount =
+      selectedCreator && selectedPlatform
+        ? getPlatformFollowerCount(selectedCreator, selectedPlatform) || ''
+        : '';
 
-          const followerCount =
-            selectedCreator && selectedPlatform
-              ? getPlatformFollowerCount(selectedCreator, selectedPlatform) || ''
-              : '';
-
-          existing.creator = selectedCreator;
-          existing.followerCount = followerCount;
-          existing.hasMediaKit = hasMediaKit;
-          existing.selectedPlatform = selectedPlatform;
-          existing.hasFollowers = followerCount > 0;
-        }
-      })
-    );
+    setCreator(rowId, selectedCreator, {
+      selectedPlatform: selectedPlatform || null,
+      // A saved link leaves sourceMode empty, so the source effect below loads
+      // it into the Profile Link field.
+      sourceMode:
+        scrapeEnabled && !hasStoredLink ? (hasSelectedMediaKit ? 'connected' : 'manual') : null,
+      platform: selectedPlatform || null,
+      followerCount,
+      engagementRate:
+        scrapeEnabled && selectedPlatform
+          ? (getPlatformEngagementRate(selectedCreator, selectedPlatform) ?? '')
+          : '',
+    });
   };
 
+  const handleSourceChange = useCallback(
+    (rowId, platform) => {
+      const row = creatorRows.find((entry) => entry.id === rowId);
+      if (!row?.creator || !platform) return;
+
+      const connected = hasMediaKitForPlatform(row.creator, platform);
+      const storedLink = getStoredProfileLink(row.creator, platform);
+      setSource(rowId, {
+        selectedPlatform: platform,
+        sourceMode: connected ? 'connected' : storedLink ? 'stored' : 'manual',
+        profileLink: connected ? '' : storedLink,
+        platform: connected ? platform : null,
+        // Both helpers are per platform, so a saved manual value is never stale.
+        followerCount: getPlatformFollowerCount(row.creator, platform) || '',
+        engagementRate: getPlatformEngagementRate(row.creator, platform) ?? '',
+      });
+    },
+    [creatorRows, setSource]
+  );
+
+  /**
+   * A typed link names its own platform. When it is not the selected one,
+   * switch the row to that platform so the icon and the link check follow it.
+   */
+  const handleManualLinkInput = useCallback(
+    (rowId, value) => {
+      const row = creatorRows.find((entry) => entry.id === rowId);
+      const detected = validateProfileLink(value);
+      if (!row?.creator || !detected.ok || detected.profile.platform === row.selectedPlatform) {
+        setLink(rowId, value);
+        return;
+      }
+
+      const { platform } = detected.profile;
+      // A connected account on that platform is the source. It has no link.
+      if (hasMediaKitForPlatform(row.creator, platform)) {
+        handleSourceChange(rowId, platform);
+        return;
+      }
+
+      setSource(rowId, {
+        selectedPlatform: platform,
+        sourceMode: 'manual',
+        profileLink: value,
+        platform: null,
+        followerCount: getPlatformFollowerCount(row.creator, platform) || '',
+        engagementRate: getPlatformEngagementRate(row.creator, platform) ?? '',
+      });
+    },
+    [creatorRows, handleSourceChange, setLink, setSource]
+  );
+
+  useEffect(() => {
+    if (!open || !scrapeEnabled) return;
+    creatorRows.forEach((row) => {
+      if (row.creator && row.selectedPlatform && !row.sourceMode) {
+        handleSourceChange(row.id, row.selectedPlatform);
+      }
+    });
+  }, [creatorRows, handleSourceChange, open, scrapeEnabled]);
+
+  /**
+   * Change the platform on a row.
+   *
+   * The subtle rule, unchanged: a follower count that came from the previous
+   * platform's media kit is stale on the new one and is cleared. A number the
+   * admin typed is not stale and is kept.
+   */
   const handlePlatformChange = (rowId, platform) => {
-    setCreatorRows((rows) =>
-      rows.map((row) => {
-        if (row.id !== rowId) return row;
-        const hasMediaKit = hasMediaKitForPlatform(row.creator, platform);
-        const resolvedFollowerCount = getPlatformFollowerCount(row.creator, platform);
-        const previousPlatform = row.selectedPlatform;
-        const previousResolvedFollowerCount =
-          row.creator && previousPlatform
-            ? getPlatformFollowerCount(row.creator, previousPlatform)
-            : 0;
-        const isUsingPreviousPlatformStoredValue =
-          previousResolvedFollowerCount > 0 &&
-          Number(row.followerCount || 0) === Number(previousResolvedFollowerCount);
-        const nextFollowerCount = row.creator
-          ? hasMediaKit
-            ? resolvedFollowerCount || ''
-            : resolvedFollowerCount > 0
-              ? resolvedFollowerCount
-              : isUsingPreviousPlatformStoredValue
-                ? ''
-                : row.followerCount
-          : '';
-        return {
-          ...row,
-          selectedPlatform: platform,
-          hasMediaKit,
-          followerCount: nextFollowerCount,
-        };
-      })
-    );
+    const row = creatorRows.find((r) => r.id === rowId);
+    if (!row) return;
+
+    const hasMediaKit = hasMediaKitForPlatform(row.creator, platform);
+    const resolvedFollowerCount = getPlatformFollowerCount(row.creator, platform);
+    const previousPlatform = row.selectedPlatform;
+    const previousResolvedFollowerCount =
+      row.creator && previousPlatform ? getPlatformFollowerCount(row.creator, previousPlatform) : 0;
+    const isUsingPreviousPlatformStoredValue =
+      previousResolvedFollowerCount > 0 &&
+      Number(row.followerCount || 0) === Number(previousResolvedFollowerCount);
+    const nextFollowerCount = row.creator
+      ? hasMediaKit
+        ? resolvedFollowerCount || ''
+        : resolvedFollowerCount > 0
+          ? resolvedFollowerCount
+          : isUsingPreviousPlatformStoredValue
+            ? ''
+            : row.followerCount
+      : '';
+
+    if (!scrapeEnabled) {
+      setSource(rowId, {
+        selectedPlatform: platform || null,
+        sourceMode: null,
+        profileLink: '',
+        platform: platform || null,
+        followerCount: nextFollowerCount,
+        engagementRate: '',
+      });
+    }
   };
 
   // Update follower count for a specific row (only for manual entry)
   const handleFollowerCountChange = (rowId, value) => {
-    setCreatorRows((rows) =>
-      rows.map((row) => {
-        if (row.id === rowId) {
-          return { ...row, followerCount: value };
-        }
-        return row;
-      })
-    );
+    const row = creatorRows.find((r) => r.id === rowId);
+    if (!row || row.hasMediaKit) return;
+    dispatch({ type: ACTIONS.EDIT_FIELD, rowId, field: 'followerCount', value });
   };
 
   // Update admin comments for a specific row
   const handleAdminCommentsChange = (rowId, value) => {
-    setCreatorRows((rows) =>
-      rows.map((row) => {
-        if (row.id === rowId) {
-          return { ...row, adminComments: value };
-        }
-        return row;
-      })
-    );
+    dispatch({ type: ACTIONS.SET_COMMENTS, rowId, value });
   };
 
   // Get valid creators from rows
@@ -1919,26 +2066,45 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
   const hasMissingPlatformSelection = creatorRows.some(
     (row) => row.creator && !row.selectedPlatform
   );
-  const hasMissingFollowerCount = creatorRows.some(
-    (row) => row.creator && (!row.followerCount || Number(row.followerCount) <= 0)
+  const hasPlatformMismatch = creatorRows.some(
+    (row) =>
+      scrapeEnabled &&
+      row.creator &&
+      row.sourceMode !== 'connected' &&
+      row.platform !== row.selectedPlatform
+  );
+  const hasMissingFollowerCount = creatorRows.some((row) => {
+    if (!row.creator) return false;
+    if (row.followerCount && Number(row.followerCount) > 0) return false;
+    const scrapeInFlight =
+      scrapeEnabled && !row.hasMediaKit && isRowActive(row) && Boolean(row.extractionId);
+    return !scrapeInFlight;
+  });
+  const hasUsableScrapeEvidence = (row) =>
+    Boolean(row.completionReceipt) || (isRowActive(row) && Boolean(row.extractionId));
+  const isManualPlatformMetricsRow = (row) =>
+    !row.hasMediaKit &&
+    !hasUsableScrapeEvidence(row) &&
+    hasSafeFollowerCount(row.followerCount);
+  const hasBlockingSaveError = creatorRows.some(
+    (row) =>
+      row.creator &&
+      row.saveError &&
+      !(
+        row.saveError.code === 'FALLBACK_NOT_ALLOWED' && isManualPlatformMetricsRow(row)
+      )
   );
 
-  const resetState = () => {
-    setCreatorRows([
-      {
-        id: 1,
-        creator: null,
-        followerCount: '',
-        adminComments: '',
-        hasMediaKit: false,
-        selectedPlatform: '',
-      },
-    ]);
+  // Do not RESET the machine here. A reset while `open` is still true would
+  // persist an empty draft and wipe the scrape the close is meant to keep.
+  // The hook hydrates or resets on the next open.
+  const resetLocalState = () => {
     setSubmitting(false);
+    setBreakdownRowId(null);
   };
 
   const handleCloseAll = () => {
-    resetState();
+    resetLocalState();
     onClose?.();
   };
 
@@ -1950,6 +2116,17 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
     // Get valid rows (with creator selected)
     const validRows = creatorRows.filter((row) => row.creator !== null);
     if (!validRows.length || !campaign?.id) return;
+    if (
+      validRows.some(
+        (row) =>
+          row.saveError &&
+          !(
+            row.saveError.code === 'FALLBACK_NOT_ALLOWED' && isManualPlatformMetricsRow(row)
+          )
+      )
+    ) {
+      return;
+    }
 
     // Validate follower counts - max 10 billion
     const MAX_FOLLOWER_COUNT = 10_000_000_000;
@@ -1964,17 +2141,43 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
       return;
     }
 
-    const missingPlatformRow = validRows.find((row) => !row.selectedPlatform);
-    if (missingPlatformRow) {
-      enqueueSnackbar('Please select Instagram or TikTok for each creator.', {
+    const invalidEngagementRow = validRows.find((row) => {
+      const rate = String(row.engagementRate ?? '').trim();
+      return rate.length > 0 && !hasSafeEngagementRate(rate);
+    });
+    if (invalidEngagementRow) {
+      enqueueSnackbar('Engagement rate must be between 0 and 1000.', {
         variant: 'error',
       });
       return;
     }
 
-    const missingFollowerRow = validRows.find(
-      (row) => !row.followerCount || Number(row.followerCount) <= 0
+    const missingPlatformRow = validRows.find((row) => !row.selectedPlatform);
+    if (missingPlatformRow) {
+      enqueueSnackbar(
+        'Please select Instagram or TikTok for each creator.',
+        { variant: 'error' }
+      );
+      return;
+    }
+
+    const mismatchedPlatformRow = validRows.find(
+      (row) =>
+        scrapeEnabled &&
+        row.sourceMode !== 'connected' &&
+        row.platform !== row.selectedPlatform
     );
+    if (mismatchedPlatformRow) {
+      enqueueSnackbar('Each profile link must match its selected platform.', { variant: 'error' });
+      return;
+    }
+
+    const missingFollowerRow = validRows.find((row) => {
+      if (row.followerCount && Number(row.followerCount) > 0) return false;
+      const scrapeInFlight =
+        scrapeEnabled && !row.hasMediaKit && isRowActive(row) && Boolean(row.extractionId);
+      return !scrapeInFlight;
+    });
     if (missingFollowerRow) {
       enqueueSnackbar('Please fill in follower count for each creator.', {
         variant: 'error',
@@ -1985,21 +2188,50 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
     try {
       setSubmitting(true);
 
-      await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
+      const response = await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
         campaignId: campaign.id,
         ...(explicitAction ? { action: explicitAction } : {}),
         creators: validRows.map((row) => {
           const parsedFollowerCount = row.followerCount
             ? parseInt(row.followerCount, 10)
             : undefined;
+          const isManualEntry = isManualPlatformMetricsRow(row);
+          const engagementRate = String(row.engagementRate ?? '').trim();
           return {
             id: row.creator.id,
             followerCount: !Number.isNaN(parsedFollowerCount) ? parsedFollowerCount : undefined,
             selectedPlatform: row.selectedPlatform,
             adminComments: row.adminComments?.trim() || undefined,
+            ...(isManualEntry && engagementRate ? { engagementRate } : {}),
+            // A manual link is saved to the creator's account. It is sent apart
+            // from `profileLink`, which the server treats as a scrape claim.
+            ...(isManualEntry && row.profileLink?.trim()
+              ? { manualProfileLink: row.profileLink.trim() }
+              : {}),
+            // Only an automatic scrape carries link evidence. A failed row
+            // becomes manual when an admin types a metric, so stale or partial
+            // extraction evidence cannot leak into its save request.
+            ...(!isManualEntry && row.profileLink?.trim()
+              ? {
+                  profileLink: row.profileLink.trim(),
+                  engagementRate: row.engagementRate || undefined,
+                  completionReceipt: row.completionReceipt || undefined,
+                  extractionId: row.extractionId || undefined,
+                  fallbackReason: row.fallbackReason || undefined,
+                  fallbackConfirmed: row.fallbackConfirmed || undefined,
+                }
+              : {}),
           };
         }),
       });
+
+      const saveResult = getPlatformSaveResult(validRows, response.data);
+      if (saveResult) {
+        applySaveResult(saveResult);
+        enqueueSnackbar(saveResult.error, { variant: 'error' });
+        if (saveResult.acceptedRowIds.length > 0) onUpdated?.();
+        return;
+      }
 
       enqueueSnackbar(
         validRows.length > 1
@@ -2008,17 +2240,29 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
         { variant: 'success' }
       );
 
+      completeSuccessfulSave();
       onUpdated?.();
       handleCloseAll();
     } catch (error) {
       console.error('Error shortlisting creators:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Failed to shortlist creators.', {
+      const body = normalizeSaveErrorBody(error);
+      const saveResult = getPlatformSaveResult(validRows, body);
+      if (saveResult) {
+        applySaveResult(saveResult);
+        enqueueSnackbar(saveResult.error, { variant: 'error' });
+        if (saveResult.acceptedRowIds.length > 0) onUpdated?.();
+        return;
+      }
+      enqueueSnackbar(body?.message || 'Failed to shortlist creators.', {
         variant: 'error',
       });
     } finally {
       setSubmitting(false);
     }
   };
+
+  const showProfileLinkHint =
+    scrapeEnabled && creatorRows.some((row) => row.creator && !row.hasMediaKit);
 
   return (
     <>
@@ -2030,27 +2274,81 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: 2,
+            borderRadius: '20px',
             bgcolor: '#F4F4F4',
-            width: { xs: '95%', sm: '90%', md: '900px', lg: '1000px' },
-            maxWidth: { xs: '95%', sm: '90%', md: '900px', lg: '1000px' },
+            boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.15)',
+            width: { xs: '95%', sm: '90%', md: '917px' },
+            maxWidth: { xs: '95%', sm: '90%', md: '917px' },
           },
         }}
       >
         <DialogTitle
           sx={{
-            fontFamily: 'Instrument Serif',
-            fontSize: '40px !important',
-            fontWeight: 400,
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             pb: 2,
-            lineHeight: 1.2,
           }}
         >
-          Add Platform Creators
-          <IconButton onClick={handleCloseAll} size="small">
+          <Box>
+            <Typography
+              component="span"
+              sx={{
+                display: 'block',
+                fontFamily: 'Instrument Serif',
+                fontSize: '36px !important',
+                fontWeight: 400,
+                lineHeight: '40px',
+                color: '#231F20',
+              }}
+            >
+              Add Platform Creators
+            </Typography>
+            {/* The Profile Link field only appears for a selected creator with
+                no connected media kit, so this hint follows the same rule. */}
+            <AnimatePresence initial={false}>
+              {showProfileLinkHint && (
+                <Box
+                  component={m.div}
+                  key="profile-link-hint"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{
+                    opacity: 1,
+                    height: 'auto',
+                    transition: {
+                      height: { duration: 0.25, ease: 'easeOut' },
+                      opacity: { duration: 0.2, delay: 0.05 },
+                    },
+                  }}
+                  exit={{
+                    opacity: 0,
+                    height: 0,
+                    transition: {
+                      height: { duration: 0.2, ease: 'easeIn' },
+                      opacity: { duration: 0.12 },
+                    },
+                  }}
+                  sx={{ overflow: 'hidden' }}
+                >
+                  <Typography
+                    component="span"
+                    sx={{
+                      display: 'block',
+                      mt: '4px',
+                      fontSize: '14px !important',
+                      fontWeight: 400,
+                      lineHeight: '18px',
+                      color: '#231F20',
+                    }}
+                  >
+                    Placing the Profile Link will auto-extract the remaining information. This can
+                    be edited.
+                  </Typography>
+                </Box>
+              )}
+            </AnimatePresence>
+          </Box>
+          <IconButton onClick={handleCloseAll} size="small" sx={{ color: '#636366' }}>
             <Iconify icon="mdi:close" width={24} />
           </IconButton>
         </DialogTitle>
@@ -2095,177 +2393,409 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                     }}
                   >
                     {/* Single Row: Creator Autocomplete + Conditional Follower Count + CS Comments */}
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                      {/* Creator Autocomplete */}
-                      <Box flex={1} sx={{ minWidth: { xs: '100%', md: 'auto' } }}>
-                        <Typography
-                          sx={{
-                            mb: 0.5,
-                            display: 'block',
-                            color: '#636366',
-                            fontSize: '14px !important',
-                            fontWeight: 600,
-                          }}
-                        >
-                          Select Creators to add
-                        </Typography>
-                        <Autocomplete
-                          ListboxComponent={ListboxComponent}
-                          disableListWrap
-                          value={row.creator}
-                          onChange={(e, val) => handleCreatorRowChange(row.id, val)}
-                          options={getFilteredOptions(row.id)}
-                          getOptionLabel={(option) => option?.name || ''}
-                          filterOptions={(options, state) => {
-                            if (!state.inputValue) return options;
-                            const query = state.inputValue.toLowerCase();
+                    <ScrapeRevealGate
+                      loading={Boolean(scrapeEnabled && SCRAPE_FETCHING.includes(row.status))}
+                    >
+                      {(reveal) => (
+                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                          {/* Creator Autocomplete.
+                          Every other field in the row is hidden until a creator
+                          is picked, so before that this is the only thing there
+                          and it stretches. Once picked, it settles to the 210px
+                          the handoff gives it and the rest of the row appears
+                          beside it. */}
+                          <Box
+                            sx={{
+                              flexShrink: 0,
+                              flexGrow: row.creator ? 0 : 1,
+                              width: row.creator ? { xs: '100%', md: 210 } : '100%',
+                            }}
+                          >
+                            <FieldLabel text="Select Creators to add" />
+                            <Autocomplete
+                              ListboxComponent={ListboxComponent}
+                              disableListWrap
+                              value={row.creator}
+                              onChange={(e, val) => handleCreatorRowChange(row.id, val)}
+                              options={getFilteredOptions(row.id)}
+                              getOptionLabel={(option) => option?.name || ''}
+                              filterOptions={(options, state) => {
+                                if (!state.inputValue) return options;
+                                const query = state.inputValue.toLowerCase();
 
-                            return options
-                              .map((option) => {
-                                const name = (option?.name || '').toLowerCase();
-                                const email = (option?.email || '').toLowerCase();
+                                return options
+                                  .map((option) => {
+                                    const name = (option?.name || '').toLowerCase();
+                                    const email = (option?.email || '').toLowerCase();
 
-                                let score = -1;
-                                if (name.startsWith(query)) score = 3;
-                                else if (name.includes(query)) score = 2;
-                                else if (email.startsWith(query)) score = 1;
-                                else if (email.includes(query)) score = 0;
+                                    let score = -1;
+                                    if (name.startsWith(query)) score = 3;
+                                    else if (name.includes(query)) score = 2;
+                                    else if (email.startsWith(query)) score = 1;
+                                    else if (email.includes(query)) score = 0;
 
-                                return { option, score, name };
-                              })
-                              .filter((item) => item.score >= 0)
-                              .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
-                              .map((item) => item.option);
-                          }}
-                          isOptionEqualToValue={(option, value) => option?.id === value?.id}
-                          disableClearable={!!row.creator}
-                          popupIcon={
-                            <Iconify
-                              icon="eva:chevron-down-fill"
-                              width={20}
-                              sx={{ color: '#231F20' }}
+                                    return { option, score, name };
+                                  })
+                                  .filter((item) => item.score >= 0)
+                                  .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+                                  .map((item) => item.option);
+                              }}
+                              isOptionEqualToValue={(option, value) => option?.id === value?.id}
+                              disableClearable={!!row.creator}
+                              popupIcon={
+                                <Iconify
+                                  icon="eva:chevron-down-fill"
+                                  width={20}
+                                  sx={{ color: '#231F20' }}
+                                />
+                              }
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  placeholder={row.creator ? '' : 'Search creator...'}
+                                  sx={{
+                                    /**
+                                     * Match the 46px of every other field in the row.
+                                     *
+                                     * Autocomplete adds its own padding through
+                                     * `.MuiAutocomplete-inputRoot`, which out-weighs
+                                     * a plain `.MuiOutlinedInput-root` rule, so the
+                                     * selected-creator chip pushed this to 54 and
+                                     * left the field standing taller than the rest.
+                                     * Both selectors are set, and the padding is
+                                     * zeroed rather than only the height capped.
+                                     */
+                                    // `&&&` on purpose. Autocomplete sets its own
+                                    // vertical padding at
+                                    // `.MuiAutocomplete-root .MuiOutlinedInput-root.MuiInputBase-sizeSmall`,
+                                    // which is three classes. A normal `& .MuiOutlinedInput-root`
+                                    // rule is two and silently loses, which is why
+                                    // the height was set but never took.
+                                    '&&& .MuiOutlinedInput-root': {
+                                      bgcolor: '#fff',
+                                      height: FIELD_HEIGHT,
+                                      minHeight: FIELD_HEIGHT,
+                                      paddingTop: 0,
+                                      paddingBottom: 0,
+                                      flexWrap: 'nowrap',
+                                      borderRadius: 1,
+                                    },
+                                    '&&& .MuiOutlinedInput-input': {
+                                      display: row.creator ? 'none' : 'block',
+                                      paddingTop: 0,
+                                      paddingBottom: 0,
+                                    },
+                                  }}
+                                  InputProps={{
+                                    ...params.InputProps,
+                                    startAdornment: row.creator ? (
+                                      <Box
+                                        sx={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          height: CHIP_HEIGHT,
+                                          flexShrink: 0,
+                                          bgcolor: '#fff',
+                                          color: '#231F20',
+                                          border: '1px solid #EBEBEB',
+                                          // The handoff draws the bottom edge as an
+                                          // inset shadow, so it adds no height.
+                                          boxShadow: 'inset 0px -3px 0px #E7E7E7',
+                                          borderRadius: '6px',
+                                          pl: '8px',
+                                          pr: '6px',
+                                          fontWeight: 500,
+                                          fontSize: '13px',
+                                          lineHeight: '18px',
+                                          gap: '6px',
+                                          maxWidth: 170,
+                                        }}
+                                      >
+                                        <Avatar
+                                          src={row.creator?.photoURL}
+                                          sx={{
+                                            width: CHIP_HEIGHT - 12,
+                                            height: CHIP_HEIGHT - 12,
+                                            fontSize: '0.6875rem',
+                                            bgcolor: '#e0e0e0',
+                                            flexShrink: 0,
+                                          }}
+                                        >
+                                          {row.creator?.name?.charAt(0)}
+                                        </Avatar>
+                                        <Box
+                                          component="span"
+                                          sx={{
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                          }}
+                                        >
+                                          {row.creator.name}
+                                        </Box>
+                                        <IconButton
+                                          size="small"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCreatorRowChange(row.id, null);
+                                          }}
+                                          sx={{ p: 0, flexShrink: 0 }}
+                                        >
+                                          <Iconify
+                                            icon="mdi:close"
+                                            width={16}
+                                            sx={{ color: '#636366' }}
+                                          />
+                                        </IconButton>
+                                      </Box>
+                                    ) : null,
+                                  }}
+                                />
+                              )}
+                              renderOption={({ key, ...optionProps }, option) => (
+                                <Box
+                                  key={key}
+                                  component="li"
+                                  {...optionProps}
+                                  sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}
+                                >
+                                  <Avatar
+                                    src={option?.photoURL}
+                                    sx={{ width: 32, height: 32, bgcolor: '#e0e0e0' }}
+                                  >
+                                    {option?.name?.charAt(0)}
+                                  </Avatar>
+                                  <Box>
+                                    <Typography variant="body2" fontWeight={500}>
+                                      {option?.name}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: '#636366' }}>
+                                      {option?.email}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              )}
                             />
-                          }
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              placeholder={row.creator ? '' : 'Search creator...'}
+                          </Box>
+
+                      {scrapeEnabled && row.creator && (
+                        <Box sx={{ flexShrink: 0, width: { xs: '100%', md: 240 } }}>
+                          <FieldLabel text="Profile Link" />
+                          {row.sourceMode === 'manual' ? (
+                            <Autocomplete
+                              freeSolo
+                              disableClearable
+                              forcePopupIcon
+                              options={PLATFORM_OPTIONS}
+                              value={
+                                PLATFORM_OPTIONS.find(
+                                  (option) => option.value === row.selectedPlatform
+                                ) || null
+                              }
+                              inputValue={row.profileLink}
+                              filterOptions={(options) => options}
+                              isOptionEqualToValue={(option, value) => option.value === value.value}
+                              getOptionLabel={(option) =>
+                                typeof option === 'string' ? option : option.label
+                              }
+                              onChange={(_, option) => {
+                                if (option?.value) handleSourceChange(row.id, option.value);
+                              }}
+                              onInputChange={(_, value, reason) => {
+                                if (reason === 'input') handleManualLinkInput(row.id, value);
+                              }}
+                              popupIcon={
+                                <Iconify icon="eva:arrow-ios-downward-fill" width={18} />
+                              }
+                              renderOption={({ key, ...optionProps }, option) => {
+                                const storedLink = getStoredProfileLink(
+                                  row.creator,
+                                  option.value
+                                );
+                                return (
+                                  <Box
+                                    key={key}
+                                    component="li"
+                                    {...optionProps}
+                                    aria-label={`${option.label} ${
+                                      storedLink || 'Enter profile link'
+                                    }`}
+                                  >
+                                    {renderProfileSourceOption(row.creator, option)}
+                                  </Box>
+                                );
+                              }}
+                              renderInput={(params) => {
+                                const selected = PLATFORM_OPTIONS.find(
+                                  (option) => option.value === row.selectedPlatform
+                                );
+                                return (
+                                  <TextField
+                                    {...params}
+                                    placeholder="Enter profile link"
+                                    error={Boolean(row.linkError || row.error || row.saveError)}
+                                    helperText={
+                                      row.linkError?.message || getSourceFeedback(row) || undefined
+                                    }
+                                    inputProps={{
+                                      ...params.inputProps,
+                                      'aria-label': `${row.creator.name} ${selected?.label} Profile Link`,
+                                      'aria-invalid': Boolean(
+                                        row.linkError || row.error || row.saveError
+                                      ),
+                                    }}
+                                    InputProps={{
+                                      ...params.InputProps,
+                                      startAdornment: selected ? (
+                                        <InputAdornment position="start">
+                                          <Iconify
+                                            icon={selected.icon}
+                                            width={16}
+                                            sx={{ color: selected.color }}
+                                          />
+                                        </InputAdornment>
+                                      ) : null,
+                                    }}
+                                  />
+                                );
+                              }}
+                              ListboxProps={{ sx: { maxWidth: 'calc(100vw - 32px)' } }}
+                              componentsProps={{
+                                popper: {
+                                  placement: 'bottom-start',
+                                  sx: {
+                                    width: 'min(420px, calc(100vw - 32px)) !important',
+                                  },
+                                },
+                                paper: { sx: { width: '100%' } },
+                              }}
                               sx={{
-                                '& .MuiOutlinedInput-root': {
+                                '&&& .MuiOutlinedInput-root': {
                                   bgcolor: '#fff',
-                                  minHeight: 48,
+                                  height: FIELD_HEIGHT,
+                                  minHeight: FIELD_HEIGHT,
+                                  py: '0 !important',
+                                  pr: '36px !important',
                                   borderRadius: 1,
                                 },
-                                '& .MuiOutlinedInput-input': {
-                                  display: row.creator ? 'none' : 'block',
+                                '&&& .MuiOutlinedInput-input': {
+                                  py: '0 !important',
+                                  color: row.linkError ? '#231F20' : '#1340FF',
                                 },
-                              }}
-                              InputProps={{
-                                ...params.InputProps,
-                                startAdornment: row.creator ? (
-                                  <Box
-                                    sx={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      bgcolor: '#fff',
-                                      color: '#231F20',
-                                      border: '1px solid #E7E7E7',
-                                      borderBottom: '3px solid #E7E7E7',
-                                      borderRadius: 1,
-                                      pl: 0.75,
-                                      pr: 0.75,
-                                      py: 0.5,
-                                      fontWeight: 500,
-                                      fontSize: '0.875rem',
-                                      gap: 0.75,
-                                      maxWidth: 210,
-                                    }}
-                                  >
-                                    <Avatar
-                                      src={row.creator?.photoURL}
-                                      sx={{
-                                        width: 24,
-                                        height: 24,
-                                        fontSize: '0.75rem',
-                                        bgcolor: '#e0e0e0',
-                                        flexShrink: 0,
-                                      }}
-                                    >
-                                      {row.creator?.name?.charAt(0)}
-                                    </Avatar>
-                                    <Box
-                                      component="span"
-                                      sx={{
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                      }}
-                                    >
-                                      {row.creator.name}
-                                    </Box>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleCreatorRowChange(row.id, null);
-                                      }}
-                                      sx={{ p: 0, flexShrink: 0 }}
-                                    >
-                                      <Iconify
-                                        icon="mdi:close"
-                                        width={16}
-                                        sx={{ color: '#636366' }}
-                                      />
-                                    </IconButton>
-                                  </Box>
-                                ) : null,
+                                '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
                               }}
                             />
-                          )}
-                          renderOption={({ key, ...optionProps }, option) => (
-                            <Box
-                              key={key}
-                              component="li"
-                              {...optionProps}
-                              sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}
+                          ) : (
+                            <TextField
+                              select
+                              fullWidth
+                              value={row.selectedPlatform}
+                              onChange={(event) => handleSourceChange(row.id, event.target.value)}
+                              error={Boolean(row.error || row.saveError)}
+                              helperText={getSourceFeedback(row) || undefined}
+                              SelectProps={{
+                                displayEmpty: true,
+                                'aria-invalid': Boolean(row.error || row.saveError),
+                                inputProps: {
+                                  'aria-label': `${row.creator.name} Profile Link source`,
+                                },
+                                SelectDisplayProps: {
+                                  'aria-invalid': Boolean(row.error),
+                                },
+                                renderValue: (value) => {
+                                  const selected = PLATFORM_OPTIONS.find(
+                                    (option) => option.value === value
+                                  );
+                                  if (!selected) return 'Select Profile Link';
+                                  const currentLink =
+                                    row.profileLink ||
+                                    getStoredProfileLink(row.creator, selected.value);
+                                  return (
+                                    <Stack
+                                      direction="row"
+                                      spacing={0.75}
+                                      alignItems="center"
+                                      minWidth={0}
+                                    >
+                                      <Iconify
+                                        icon={selected.icon}
+                                        width={16}
+                                        sx={{ color: selected.color, flexShrink: 0 }}
+                                      />
+                                      <Tooltip title={currentLink || ''} arrow>
+                                        <Typography
+                                          component="span"
+                                          noWrap
+                                          sx={{
+                                            minWidth: 0,
+                                            fontSize: 14,
+                                            color: currentLink ? '#1340FF' : 'text.disabled',
+                                          }}
+                                        >
+                                          {currentLink || 'Enter profile link'}
+                                        </Typography>
+                                      </Tooltip>
+                                    </Stack>
+                                  );
+                                },
+                                MenuProps: {
+                                  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+                                  transformOrigin: { vertical: 'top', horizontal: 'left' },
+                                  PaperProps: {
+                                    sx: {
+                                      width: 'max-content',
+                                      minWidth: 240,
+                                      maxWidth: 'calc(100vw - 32px)',
+                                    },
+                                  },
+                                  MenuListProps: { sx: { maxWidth: 'calc(100vw - 32px)' } },
+                                },
+                              }}
+                              sx={{
+                                ...FIELD_SX,
+                                '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
+                              }}
                             >
-                              <Avatar
-                                src={option?.photoURL}
-                                sx={{ width: 32, height: 32, bgcolor: '#e0e0e0' }}
-                              >
-                                {option?.name?.charAt(0)}
-                              </Avatar>
-                              <Box>
-                                <Typography variant="body2" fontWeight={500}>
-                                  {option?.name}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: '#636366' }}>
-                                  {option?.email}
-                                </Typography>
-                              </Box>
-                            </Box>
+                              {PLATFORM_OPTIONS.map((option) => {
+                                const storedLink = getStoredProfileLink(
+                                  row.creator,
+                                  option.value
+                                );
+                                return (
+                                  <MenuItem
+                                    key={option.value}
+                                    value={option.value}
+                                    aria-label={`${option.label} ${
+                                      storedLink || 'Enter profile link'
+                                    }`}
+                                  >
+                                    {renderProfileSourceOption(row.creator, option)}
+                                  </MenuItem>
+                                );
+                              })}
+                            </TextField>
                           )}
-                        />
-                      </Box>
+                        </Box>
+                      )}
 
                       {row.creator && (
                         <Box
                           sx={{
+                            display: { xs: 'none', md: 'block' },
+                            alignSelf: 'stretch',
+                            borderRight: '1px solid #D3D3D3',
+                          }}
+                        />
+                      )}
+
+                      {row.creator && !scrapeEnabled && (
+                        <Box
+                          sx={{
+                            flex: { xs: '1 1 100%', md: '1 1 192px' },
                             minWidth: { xs: '100%', md: 138 },
-                            maxWidth: { xs: '100%', md: 180 },
                           }}
                         >
-                          <Typography
-                            sx={{
-                              mb: 0.5,
-                              display: 'block',
-                              color: '#636366',
-                              fontSize: '14px !important',
-                              fontWeight: 600,
-                            }}
-                          >
-                            Platform
-                          </Typography>
+                          <FieldLabel text="Platform" />
                           <TextField
                             select
                             fullWidth
@@ -2273,13 +2803,12 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                             onChange={(e) => handlePlatformChange(row.id, e.target.value)}
                             disabled={!row.creator}
                             placeholder="Select"
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                bgcolor: '#fff',
-                                minHeight: 48,
-                                borderRadius: 1,
-                              },
-                            }}
+                            // `FieldLabel` above is decorative, so the control
+                            // itself carries no name. Without this the creator
+                            // Autocomplete and this select are both an unnamed
+                            // `combobox`, to a screen reader and to a test.
+                            SelectProps={{ inputProps: { 'aria-label': 'Platform' } }}
+                            sx={FIELD_SX}
                           >
                             <MenuItem value="" disabled>
                               Select
@@ -2287,7 +2816,11 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                             {getPlatformSelectOptions().map((platform) => (
                               <MenuItem key={platform.value} value={platform.value}>
                                 <Stack direction="row" spacing={1} alignItems="center">
-                                  <Iconify icon={platform.icon} width={16} />
+                                  <Iconify
+                                    icon={platform.icon}
+                                    width={16}
+                                    sx={{ color: platform.color }}
+                                  />
                                   <span>{platform.label}</span>
                                 </Stack>
                               </MenuItem>
@@ -2296,100 +2829,176 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                         </Box>
                       )}
 
-                      {/* Follower count: manual entry without media kit; read-only from media kit when connected */}
-                      {row.creator && (
+                      {scrapeEnabled && row.creator && row.selectedPlatform && (
                         <Box
                           sx={{
-                            minWidth: { xs: '100%', md: 160 },
-                            maxWidth: { xs: '100%', md: 220 },
-                            flexShrink: 0,
+                            flex: { xs: '1 1 100%', md: '1 1 192px' },
+                            minWidth: { xs: '100%', md: 140 },
                           }}
                         >
-                          <Typography
-                            sx={{
-                              mb: 0.5,
-                              display: 'block',
-                              color: '#636366',
-                              fontSize: '14px !important',
-                              fontWeight: 600,
-                            }}
-                          >
-                            Follower Count
-                          </Typography>
-                          <TextField
-                            value={
-                              row.hasMediaKit && row.hasFollowers
-                                ? formatFollowerCountDisplay(row.followerCount)
-                                : row.followerCount === '' || row.followerCount === undefined
-                                  ? ''
-                                  : String(row.followerCount)
+                          <FieldLabel
+                            text="Engagement Rate"
+                            provenance={
+                              row.hasMediaKit
+                                ? 'media kit'
+                                : fieldProvenanceOf(row, 'engagementRate')
                             }
-                            onChange={(e) => {
-                              if (row.hasMediaKit && row.hasFollowers) return;
-
-                              const val = e.target.value.replace(/[^0-9]/g, '');
-                              handleFollowerCountChange(row.id, val);
-                            }}
-                            placeholder={
-                              row.hasMediaKit && row.hasFollowers ? '—' : 'Enter follower count'
+                            hint={
+                              !row.hasMediaKit && row.status === ROW_STATUS.READY ? (
+                                <Tooltip title="How this rate was worked out" arrow describeChild>
+                                  <IconButton
+                                    aria-label="How this engagement rate was worked out"
+                                    onClick={() => setBreakdownRowId(row.id)}
+                                    size="small"
+                                    sx={{
+                                      p: 0,
+                                      color: '#8E8E93',
+                                      '&:hover': { color: '#1340FF', bgcolor: 'transparent' },
+                                    }}
+                                  >
+                                    <Iconify icon="eva:info-outline" width={14} />
+                                  </IconButton>
+                                </Tooltip>
+                              ) : null
                             }
-                            fullWidth
-                            disabled={row.hasMediaKit && row.hasFollowers}
-                            InputProps={{
-                              readOnly: row.hasMediaKit && row.hasFollowers,
-                            }}
-                            helperText={
-                              row.hasMediaKit && row.hasFollowers ? 'From media kit' : undefined
-                            }
-                            FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
-                            inputProps={
-                              row.hasMediaKit && row.hasFollowers
-                                ? undefined
-                                : {
-                                    inputMode: 'numeric',
-                                    pattern: '[0-9]*',
-                                  }
-                            }
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                bgcolor: '#fff',
-                                minHeight: 48,
-                                borderRadius: 1,
-                              },
-                            }}
                           />
+                          {SCRAPE_FETCHING.includes(row.status) ? (
+                            <CreatorFieldLoading
+                              label="Fetching engagement rate"
+                              showSpinner
+                              height={FIELD_HEIGHT}
+                            />
+                          ) : (
+                            <ScrapeTextFieldReveal
+                              reveal={
+                                reveal && row.fieldUpdateSource === FIELD_UPDATE_SOURCE.SCRAPE
+                              }
+                              text={
+                                row.hasMediaKit
+                                  ? (getPlatformEngagementRate(
+                                      row.creator,
+                                      row.selectedPlatform
+                                    ) ?? '')
+                                  : (row.engagementRate ?? '')
+                              }
+                              height={FIELD_HEIGHT}
+                              overlayPaddingRight={36}
+                            >
+                            <TextField
+                              value={
+                                row.hasMediaKit
+                                  ? (getPlatformEngagementRate(
+                                      row.creator,
+                                      row.selectedPlatform
+                                    ) ?? '')
+                                  : (row.engagementRate ?? '')
+                              }
+                              onChange={(e) => {
+                                // A connected account owns its own rate.
+                                if (row.hasMediaKit) return;
+                                dispatch({
+                                  type: ACTIONS.EDIT_FIELD,
+                                  rowId: row.id,
+                                  field: 'engagementRate',
+                                  // A percentage, so digits and one dot only.
+                                  value: e.target.value.replace(/[^0-9.]/g, ''),
+                                });
+                              }}
+                              placeholder={row.hasMediaKit ? '—' : 'Engagement Rate'}
+                              disabled={row.hasMediaKit}
+                              fullWidth
+                              size="small"
+                              InputProps={{
+                                readOnly: row.hasMediaKit,
+                                endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                              }}
+                              inputProps={{ inputMode: 'decimal' }}
+                              sx={FIELD_SX}
+                            />
+                            </ScrapeTextFieldReveal>
+                          )}
                         </Box>
                       )}
 
-                      {/* CS Comments (Optional) */}
-                      <Box sx={{ flex: { xs: 1, md: 1.2 }, minWidth: { xs: '100%', md: 'auto' } }}>
-                        <Typography
+                      {/* Follower count: manual entry without media kit; read-only from media kit when connected */}
+                      {row.creator && (!scrapeEnabled || row.selectedPlatform) && (
+                        <Box
                           sx={{
-                            mb: 0.5,
-                            display: 'block',
-                            color: '#636366',
-                            fontSize: '14px !important',
-                            fontWeight: 600,
+                            flex: { xs: '1 1 100%', md: '1 1 192px' },
+                            minWidth: { xs: '100%', md: 140 },
                           }}
                         >
-                          CS Comments (Optional)
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          placeholder="Input comments about the creator that your clients might find helpful"
-                          value={row.adminComments}
-                          onChange={(e) => handleAdminCommentsChange(row.id, e.target.value)}
-                          disabled={!row.creator}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              bgcolor: '#fff',
-                              minHeight: 48,
-                              borderRadius: 1,
-                            },
-                          }}
-                        />
-                      </Box>
-                    </Stack>
+                          <FieldLabel
+                            text="Follower Count"
+                            provenance={
+                              row.hasMediaKit
+                                ? 'media kit'
+                                : fieldProvenanceOf(row, 'followerCount')
+                            }
+                          />
+                          {SCRAPE_FETCHING.includes(row.status) ? (
+                            <CreatorFieldLoading
+                              label="Fetching follower count"
+                              showSpinner
+                              height={FIELD_HEIGHT}
+                            />
+                          ) : (
+                            <ScrapeTextFieldReveal
+                              reveal={
+                                reveal && row.fieldUpdateSource === FIELD_UPDATE_SOURCE.SCRAPE
+                              }
+                              text={formatFollowerCountDisplay(row.followerCount)}
+                              height={FIELD_HEIGHT}
+                            >
+                            <TextField
+                              /* Grouped on both paths. 80,141,485 is readable at
+                                 a glance; 80141485 has to be counted. The state
+                                 keeps plain digits — onChange strips the
+                                 separators straight back out — so nothing
+                                 downstream ever sees a comma. */
+                                    value={formatFollowerCountDisplay(row.followerCount)}
+                                    onChange={(e) => {
+                                      if (row.hasMediaKit) return;
+                                      const val = e.target.value.replace(/[^0-9]/g, '');
+                                      handleFollowerCountChange(row.id, val);
+                                    }}
+                                    placeholder={row.hasMediaKit ? '—' : 'Enter follower count'}
+                                    fullWidth
+                                    disabled={row.hasMediaKit}
+                                    InputProps={{ readOnly: row.hasMediaKit }}
+                                    FormHelperTextProps={{ sx: { mx: 0, mt: 0.5 } }}
+                                    inputProps={
+                                      row.hasMediaKit
+                                        ? undefined
+                                        : {
+                                            inputMode: 'numeric',
+                                            pattern: '[0-9]*',
+                                          }
+                                    }
+                                    sx={FIELD_SX}
+                                  />
+                                </ScrapeTextFieldReveal>
+                              )}
+                            </Box>
+                          )}
+                        </Stack>
+                      )}
+                    </ScrapeRevealGate>
+
+                    {/* CS Comments sits on its own full-width row, per the
+                        handoff. Inline it was the sixth field and got squeezed
+                        off the edge. */}
+                    <Box sx={{ mt: 2 }}>
+                      <FieldLabel text="CS Comments (Optional)" />
+                      <TextField
+                        fullWidth
+                        placeholder="Input comments about the creator that your clients might find helpful"
+                        value={row.adminComments}
+                        onChange={(e) => handleAdminCommentsChange(row.id, e.target.value)}
+                        disabled={!row.creator}
+                        sx={FIELD_SX}
+                      />
+                    </Box>
                   </Box>
                 ))}
               </AnimatePresence>
@@ -2399,6 +3008,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                 <Tooltip title="Remove row" arrow>
                   <span>
                     <IconButton
+                      aria-label="Remove row"
                       onClick={handleRemoveCreatorRow}
                       disabled={creatorRows.length <= 1}
                       sx={{
@@ -2419,6 +3029,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
                 <Tooltip title="Add row" arrow>
                   <span>
                     <IconButton
+                      aria-label="Add row"
                       onClick={handleAddCreatorRow}
                       disabled={creatorRows.length >= 3}
                       sx={{
@@ -2441,24 +3052,37 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
           )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3 }}>
+        {/* A plain Stack, not DialogActions.
+            DialogActions carries its own margin-left spacing whose selector
+            out-weighs an sx override, which indented every stacked button but
+            the first. Rather than keep fighting it, this owns the layout
+            outright: `gap` spaces on both axes, and `flex: 1` when stacked
+            makes the three buttons exactly equal. */}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          justifyContent="flex-end"
+          spacing={1}
+          sx={{
+            px: 3,
+            pt: 3,
+            pb: 3,
+            flexWrap: 'nowrap',
+            '& > *': { flex: { xs: 1, sm: 'none' } },
+          }}
+        >
           <Button
             onClick={handleCloseAll}
             sx={{
+              ...ACTION_BUTTON_SX,
               bgcolor: '#FFFFFF',
-              border: '1.5px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
-              borderRadius: 1.15,
+              borderColor: '#e7e7e7',
+              borderBottomColor: '#e7e7e7',
               color: '#1340FF',
-              height: 44,
-              px: 2.5,
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              textTransform: 'none',
               '&:hover': {
                 bgcolor: 'rgba(19, 64, 255, 0.08)',
-                border: '1.5px solid #1340FF',
-                borderBottom: '3px solid #1340FF',
+                borderColor: '#1340FF',
+                borderBottomColor: '#1340FF',
                 color: '#1340FF',
               },
             }}
@@ -2472,31 +3096,28 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
               disabled={
                 getValidCreatorsFromRows().length === 0 ||
                 hasMissingPlatformSelection ||
-                hasMissingFollowerCount
+                hasPlatformMismatch ||
+                hasMissingFollowerCount ||
+                hasBlockingSaveError
               }
               loading={submitting}
               loadingIndicator={<CircularProgress size={20} sx={{ color: '#1ABF66' }} />}
               sx={{
+                ...ACTION_BUTTON_SX,
                 bgcolor: '#FFFFFF',
-                border: '1.5px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1.15,
-                height: 44,
+                borderColor: '#e7e7e7',
+                borderBottomColor: '#e7e7e7',
                 color: '#1ABF66',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                px: 3,
-                textTransform: 'none',
                 '&:hover': {
                   bgcolor: 'rgba(26, 191, 102, 0.08)',
-                  border: '1.5px solid #1ABF66',
-                  borderBottom: '3px solid #1ABF66',
+                  borderColor: '#1ABF66',
+                  borderBottomColor: '#1ABF66',
                 },
                 '&:disabled:not(.MuiLoadingButton-loading)': {
                   bgcolor: '#e7e7e7',
                   color: '#999999',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #d1d1d1',
+                  borderColor: '#e7e7e7',
+                  borderBottomColor: '#d1d1d1',
                 },
               }}
             >
@@ -2509,44 +3130,53 @@ export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdat
             disabled={
               getValidCreatorsFromRows().length === 0 ||
               hasMissingPlatformSelection ||
-              hasMissingFollowerCount
+              hasPlatformMismatch ||
+              hasMissingFollowerCount ||
+              hasBlockingSaveError
             }
             loading={submitting}
             loadingIndicator={<CircularProgress size={20} sx={{ color: '#fff' }} />}
             sx={{
+              ...ACTION_BUTTON_SX,
               bgcolor: '#203ff5',
-              border: '1px solid #203ff5',
-              borderBottom: '3px solid #1933cc',
-              height: 44,
+              borderColor: '#203ff5',
+              borderBottomColor: '#1933cc',
               minWidth: 120,
               color: '#ffffff',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              px: 3,
-              textTransform: 'none',
               '&:hover': { bgcolor: '#1933cc', opacity: 0.9 },
               '&.MuiLoadingButton-loading': {
                 bgcolor: '#203ff5',
-                border: '1px solid #203ff5',
-                borderBottom: '3px solid #1933cc',
+                borderColor: '#203ff5',
+                borderBottomColor: '#1933cc',
               },
               '&:disabled:not(.MuiLoadingButton-loading)': {
                 bgcolor: '#e7e7e7',
                 color: '#999999',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #d1d1d1',
+                borderColor: '#e7e7e7',
+                borderBottomColor: '#d1d1d1',
               },
             }}
           >
             {showShortlistActionChoice ? 'Send to Client' : 'Add Creators'}
           </LoadingButton>
-        </DialogActions>
+        </Stack>
       </Dialog>
+
+      <EngagementBreakdownDialog
+        open={Boolean(breakdownRow)}
+        onClose={() => setBreakdownRowId(null)}
+        posts={breakdownRow?.selectedPosts}
+        formulaVersion={breakdownRow?.formulaVersion}
+        engagementRate={breakdownRow?.engagementRate}
+        followerCount={Number(breakdownRow?.followerCount) || null}
+        creatorName={breakdownRow?.creator?.name || breakdownRow?.name || undefined}
+      />
     </>
   );
 }
 
 PlatformCreatorModal.propTypes = {
+  scrapeEnabled: PropTypes.bool,
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   campaign: PropTypes.object,
@@ -2809,7 +3439,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
                     {getPlatformSelectOptions().map((platform) => (
                       <MenuItem key={platform.value} value={platform.value}>
                         <Stack direction="row" spacing={1} alignItems="center">
-                          <Iconify icon={platform.icon} width={16} />
+                          <Iconify icon={platform.icon} width={16} sx={{ color: platform.color }} />
                           <span>{platform.label}</span>
                         </Stack>
                       </MenuItem>
