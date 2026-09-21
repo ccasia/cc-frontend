@@ -16,6 +16,7 @@ import {
   Button,
   Divider,
   TextField,
+  Tooltip,
   IconButton,
   Typography,
   DialogTitle,
@@ -39,6 +40,8 @@ import { useGetAllCreators } from 'src/api/creator';
 
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
+
+import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
 
 import CampaignAgreementEdit from '../../admin/campaign-agreement-edit';
 import {
@@ -86,7 +89,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
   } = useGetAgreement(campaign?.id, pitch?.userId);
 
   const agreement = useMemo(
-    () => !loadingAgreements && agreements.find((item) => item?.round === 1),
+    () => !loadingAgreements && agreements?.find((item) => item?.round === 1),
     [loadingAgreements, agreements]
   );
 
@@ -1203,6 +1206,8 @@ export function ViewGuestCreatorModal({
   const [selectedPlatformCreator, setSelectedPlatformCreator] = React.useState(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [showCreatorSelection, setShowCreatorSelection] = React.useState(false);
+  const [breakdownOpen, setBreakdownOpen] = React.useState(false);
+  const hasBreakdown = Array.isArray(pitch?.selectedPosts) && pitch.selectedPosts.length > 0;
 
   // Form state for editable fields
   const [formValues, setFormValues] = React.useState({
@@ -1224,7 +1229,8 @@ export function ViewGuestCreatorModal({
         adminComments: pitch?.adminComments || '',
       });
     }
-  }, [pitch]);
+    if (!open) setBreakdownOpen(false);
+  }, [pitch, open]);
 
   const handleFieldChange = (field) => (event) => {
     setFormValues((prev) => ({
@@ -1329,20 +1335,21 @@ export function ViewGuestCreatorModal({
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      fullWidth
-      maxWidth="md"
-      PaperProps={{
-        sx: {
-          borderRadius: 2,
-          bgcolor: '#F4F4F4',
-          width: { xs: '95%', sm: '90%', md: '900px' },
-          maxWidth: { xs: '95%', sm: '90%', md: '900px' },
-        },
-      }}
-    >
+    <>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            bgcolor: '#F4F4F4',
+            width: { xs: '95%', sm: '90%', md: '900px' },
+            maxWidth: { xs: '95%', sm: '90%', md: '900px' },
+          },
+        }}
+      >
       <DialogTitle
         sx={{
           fontFamily: 'Instrument Serif',
@@ -1484,17 +1491,34 @@ export function ViewGuestCreatorModal({
 
             {/* Engagement Rate */}
             <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
-              <Typography
-                sx={{
-                  mb: 0.5,
-                  display: 'block',
-                  color: '#636366',
-                  fontSize: '14px !important',
-                  fontWeight: 600,
-                }}
-              >
-                Engagement Rate (%)
-              </Typography>
+              <Stack direction="row" alignItems="center" spacing={0.25} sx={{ mb: 0.5 }}>
+                <Typography
+                  sx={{
+                    display: 'block',
+                    color: '#636366',
+                    fontSize: '14px !important',
+                    fontWeight: 600,
+                  }}
+                >
+                  Engagement Rate (%)
+                </Typography>
+                {hasBreakdown ? (
+                  <Tooltip title="How this rate was worked out" arrow describeChild>
+                    <IconButton
+                      aria-label="How this engagement rate was worked out"
+                      onClick={() => setBreakdownOpen(true)}
+                      size="small"
+                      sx={{
+                        p: 0,
+                        color: '#8E8E93',
+                        '&:hover': { color: '#1340FF', bgcolor: 'transparent' },
+                      }}
+                    >
+                      <Iconify icon="eva:info-outline" width={14} />
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
+              </Stack>
               {isAdmin ? (
                 <TextField
                   fullWidth
@@ -1849,7 +1873,18 @@ export function ViewGuestCreatorModal({
           </Button>
         )}
       </DialogActions>
-    </Dialog>
+      </Dialog>
+
+      <EngagementBreakdownDialog
+        open={breakdownOpen}
+        onClose={() => setBreakdownOpen(false)}
+        posts={pitch?.selectedPosts}
+        formulaVersion={pitch?.formulaVersion}
+        engagementRate={formValues.engagementRate}
+        followerCount={Number(formValues.followerCount) || null}
+        creatorName={formValues.name || undefined}
+      />
+    </>
   );
 }
 
