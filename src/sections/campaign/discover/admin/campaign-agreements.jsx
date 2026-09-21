@@ -178,11 +178,12 @@ FilterPillEndIcons.propTypes = {
 const checkboxIconSx = {
   width: 16,
   height: 16,
-  borderRadius: 0,
+  borderRadius: 0.4,
   border: '1.5px solid #D9D9D9',
   bgcolor: '#fff',
 };
 const uncheckedCheckboxIcon = <Box component="span" sx={checkboxIconSx} />;
+
 const checkedCheckboxIcon = (
   <Box
     component="span"
@@ -589,15 +590,19 @@ AgreementDialog.propTypes = {
 
 const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabled = false }) => {
   const { data, isLoading, mutate: mutateAgreements } = useGetAgreements(campaign?.id);
+
   const { socket } = useSocketContext();
   const navigate = useNavigate();
   const location = useLocation();
+
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [agreementFilterAnchorEl, setAgreementFilterAnchorEl] = useState(null);
   const [activeRound, setActiveRound] = useState(1);
+
   const table = useTable();
   const sendAdditionalDialog = useBoolean();
   const sendBulkDialog = useBoolean();
+
   const [searchQuery, setSearchQuery] = useState(
     () => new URLSearchParams(location.search).get('creator') || ''
   );
@@ -619,6 +624,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
   const dialog = useBoolean();
   const editDialog = useBoolean();
   const feedbackDialog = useBoolean();
+
   const [selectedUrl, setSelectedUrl] = useState('');
   const [selectedAgreement, setSelectedAgreement] = useState(null);
   const [approveLoading, setApproveLoading] = useState(false);
@@ -649,6 +655,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
     }
 
     const campaignShortlisted = campaign?.shortlisted?.find((s) => s.userId === item?.user?.id);
+
     if (campaignShortlisted?.creditTier) {
       return {
         name: campaignShortlisted.creditTier?.name || 'Unknown Tier',
@@ -751,6 +758,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       const roundMatches = submissions.filter(
         (sub) => sub.userId === agreement.userId && sub.submissionType?.type === 'AGREEMENT_FORM'
       );
+
       const agreementSubmission =
         roundMatches.find((sub) => (sub.contentOrder || 1) === round) ||
         (roundMatches.length === 1 ? roundMatches[0] : undefined);
@@ -767,6 +775,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
 
     // Collect approved user IDs from pitches
     const approvedPitchUserIds = new Set();
+
     if (Array.isArray(campaign?.pitch)) {
       campaign.pitch
         .filter(
@@ -793,7 +802,9 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
         .map((pitchItem) => pitchItem?.userId)
         .filter(Boolean)
     );
+
     const shortlistedUserIds = new Set();
+
     if (Array.isArray(campaign?.shortlisted)) {
       campaign.shortlisted.forEach((shortlistedItem) => {
         if (shortlistedItem?.userId && !allPitchUserIds.has(shortlistedItem.userId)) {
@@ -1625,6 +1636,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                       onChange={(e) => {
                         table.onSelectAllRows(e.target.checked, [...eligibleForAdditionalIds]);
                       }}
+
                       sx={{ p: 0.5 }}
                     />
                   </TableCell>
@@ -2506,6 +2518,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
         dialog={editDialog}
         agreement={selectedAgreement}
         campaign={campaign}
+        campaignMutate={campaignMutate}
+        agreementsMutate={mutateAgreements}
       />
 
       <SendAdditionalAgreementModal
@@ -2513,7 +2527,11 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
         onClose={sendAdditionalDialog.onFalse}
         campaign={campaign}
         creators={selectedCreatorRows}
-        campaignMutate={campaignMutate}
+        campaignMutate={async () => {
+          await mutateAgreements();
+          // campaignMutate();
+        }}
+
         onSent={async () => {
           table.setSelected([]);
           await Promise.all([mutateAgreements(), fetchSubmissions()]);
@@ -2527,6 +2545,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
         campaign={campaign}
         creators={selectedBulkCreatorRows}
         campaignMutate={campaignMutate}
+        table={table}
+
         onSent={async (succeededUserIds) => {
           table.setSelected((prev) => prev.filter((id) => !succeededUserIds.includes(id)));
           await Promise.all([mutateAgreements(), fetchSubmissions()]);

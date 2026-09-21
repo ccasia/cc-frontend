@@ -95,7 +95,8 @@ export default function V4VideoSubmission({
 
   const postingLinkStatuses = ['APPROVED', 'CLIENT_APPROVED', 'APPROVE_LINK', 'POSTED', 'REJECTED'];
   const showPostingLinkSection =
-    postingLinkStatuses.includes(submission.status) && campaign?.campaignType === 'normal';
+    postingLinkStatuses.includes(submission.status) &&
+    (campaign?.campaignType === 'normal' || campaign?.campaignType === 'seedingCampaign');
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');

@@ -69,7 +69,7 @@ const CURRENCY_PREFIXES = {
 };
 
 const PLATFORM_OPTIONS = [
-  { value: 'instagram', label: 'Insta', icon: 'ri:instagram-fill' },
+  { value: 'instagram', label: 'Insta', icon: 'mdi:instagram' },
   { value: 'tiktok', label: 'TikTok', icon: 'ic:baseline-tiktok' },
 ];
 
@@ -329,7 +329,7 @@ const CampaignAgreementEdit = ({
     setValue,
     reset,
     control,
-    formState: { isValid },
+    formState: { isValid, isDirty },
   } = methods;
 
   const [
@@ -664,19 +664,20 @@ const CampaignAgreementEdit = ({
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <Box position="relative">
           <IconButton
-            sx={{ position: 'absolute', top: 10, right: 10, zIndex: 10 }}
+            sx={{ position: 'absolute', top: 20, right: 10, zIndex: 10 }}
             onClick={() => {
+              handleSavedValue();
               dialog.onFalse();
             }}
           >
             <Iconify icon="ci:close-md" width={20} />
           </IconButton>
 
-          <Box sx={{ padding: '10px 16px' }}>
+          <Box sx={{ padding: '15px 30px' }}>
             <Stack direction="row" alignItems="center" flexWrap="wrap">
               <Typography
                 fontFamily="Instrument Serif"
-                fontSize="36px"
+                fontSize="30px"
                 fontWeight={500}
                 letterSpacing={-0.5}
                 flex={1}
@@ -863,7 +864,12 @@ const CampaignAgreementEdit = ({
                     <RHFTextField
                       name="product.name"
                       placeholder="Eg. Philip OneBlade"
-                      sx={{ mt: 1, bgcolor: '#FFF' }}
+                      sx={{ mt: 1 }}
+                      InputProps={{
+                        sx: {
+                          bgcolor: '#FFF',
+                        },
+                      }}
                     />
                   </Box>
                 </Grid>
@@ -1217,7 +1223,9 @@ const CampaignAgreementEdit = ({
             <LoadingButton
               type="submit"
               loading={loading.value}
-              disabled={loading.value || (!isSeedingAgreement && isFormInvalid) || !isValid}
+              disabled={
+                loading.value || (!isSeedingAgreement && isFormInvalid) || !isValid || !isDirty
+              }
               loadingIndicator={<SyncLoader color="white" size={5} />}
               sx={{
                 bgcolor: '#1340FF',
