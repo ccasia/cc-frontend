@@ -1,13 +1,12 @@
 /* eslint-disable no-nested-ternary */
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
-import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { useNavigate, useLocation } from 'react-router';
-import { useMemo, useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { alpha } from '@mui/system';
 import { LoadingButton } from '@mui/lab';
@@ -1198,8 +1197,6 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
     [filteredData, table.selected, eligibleForBulkIds]
   );
 
-  console.log(table.selected);
-
   if (isLoading || loadingSubmissions) {
     return <div>Loading...</div>; // A loading message while the data is being fetched
   }
@@ -1824,8 +1821,21 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                           </span>
                         </Tooltip>
                       </TableCell>
-                      <TableCell sx={{ width: 40, minWidth: 40, px: 1, textAlign: 'center' }}>
-                        <Typography sx={INDEX_SX}>{index + 1}</Typography>
+                      <TableCell sx={{ width: 10, px: 1, textAlign: 'center' }}>
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                          <Typography sx={INDEX_SX}>{index + 1}</Typography>
+                          {item?.isSeeding && (
+                            <Iconify
+                              icon={
+                                table.selected.includes(item.userId)
+                                  ? 'mdi:seed'
+                                  : 'mdi:seed-outline'
+                              }
+                              color="#1304FF"
+                              width={18}
+                            />
+                          )}
+                        </Stack>
                       </TableCell>
                       <TableCell>
                         <Stack direction="row" alignItems="center" spacing={{ xs: 1 }}>
@@ -1868,7 +1878,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                               </Typography>
                             )}
 
-                            {item?.isSeeding && (
+                            {/* {item?.isSeeding && (
                               <Stack
                                 sx={{
                                   bgcolor: alpha('#1304FF', 0.1),
@@ -1912,7 +1922,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                                   Seeded
                                 </Typography>
                               </Stack>
-                            )}
+                            )} */}
                           </Stack>
                         </Stack>
                       </TableCell>

@@ -692,15 +692,7 @@ const CampaignAgreementEdit = ({
             <Grid container spacing={2}>
               {/* User Info & Platform Selection */}
               <Grid item xs={12} alignSelf="center">
-                <Box
-                // sx={{
-                //   border: 1,
-                //   borderColor: (theme) => theme.palette.divider,
-                //   px: 2,
-                //   py: 1,
-                //   borderRadius: 2,
-                // }}
-                >
+                <Box>
                   <Stack
                     direction="row"
                     justifyContent="space-between"
@@ -709,13 +701,16 @@ const CampaignAgreementEdit = ({
                   >
                     <Stack direction="row" alignItems="center" gap={1.5} flex={1}>
                       <Avatar src={agreement?.user?.photoURL} />
-                      <Stack>
+                      <Stack width={150}>
                         <Typography
                           sx={{
                             fontSize: '14px',
-                            fontFamily: 'Inter Display, sans-serif',
+                            fontFamily: 'Inter Tight, sans-serif',
                             textTransform: 'capitalize',
                             fontWeight: 400,
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap',
+                            textOverflow: 'ellipsis',
                           }}
                         >
                           {agreement?.user?.name}
@@ -723,8 +718,11 @@ const CampaignAgreementEdit = ({
                         <Typography
                           sx={{
                             fontSize: '14px',
-                            fontFamily: 'Inter Display, sans-serif',
+                            fontFamily: 'Inter Tight, sans-serif',
                             fontWeight: 400,
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap',
+                            textOverflow: 'ellipsis',
                           }}
                         >
                           {agreement?.user?.email}
