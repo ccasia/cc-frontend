@@ -59,9 +59,15 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
     const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
     const clientVisible =
       !isClient ||
-      ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK', 'CLIENT_APPROVED', 'APPROVED', 'REJECTED', 'APPROVE_LINK','POSTED'].includes(
-        submission.status
-      );
+      [
+        'SENT_TO_CLIENT',
+        'CLIENT_FEEDBACK',
+        'CLIENT_APPROVED',
+        'APPROVED',
+        'REJECTED',
+        'APPROVE_LINK',
+        'POSTED',
+      ].includes(submission.status);
 
     return {
       video,
@@ -78,7 +84,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate, isDi
 
   const postingLinkStatuses = ['APPROVED', 'CLIENT_APPROVED', 'APPROVE_LINK', 'POSTED', 'REJECTED'];
   const showPostingLinkSection =
-    postingLinkStatuses.includes(submission.status) && campaign?.campaignType === 'normal';
+    postingLinkStatuses.includes(submission.status) &&
+    (campaign?.campaignType === 'normal' || campaign?.campaignType === 'seedingCampaign');
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
