@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useSWRConfig } from 'swr';
 import { enqueueSnackbar } from 'notistack';
 import { AnimatePresence } from 'framer-motion';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import {
@@ -42,6 +42,11 @@ import CoreMetricsSection from './components/CoreMetricsSection';
 import AnalyticsPageSkeleton from './components/AnalyticsPageSkeleton';
 import PlatformOverviewLayout from './components/PlatformOverviewLayout';
 import {
+  DEFAULT_SECTION_ORDER,
+  DEFAULT_EDITABLE_CONTENT,
+  DEFAULT_SECTION_VISIBILITY,
+} from '../pcr-report/constants';
+import {
   setReportState,
   setEntryToDelete,
   setShowReportPage,
@@ -55,6 +60,14 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
   const { mutate: mutateSWR } = useSWRConfig();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshFailures, setRefreshFailures] = useState([]);
+  const [isPCRLoading, setIsPCRLoading] = useState(true);
+  const [pcrLoadError, setPcrLoadError] = useState(null);
+  const [pcrCheckAttempt, setPcrCheckAttempt] = useState(0);
+  const mountedRef = useRef(true);
+  const campaignGenerationRef = useRef(0);
+  const generateRequestRef = useRef(0);
+  const currentCampaignIdRef = useRef(campaign?.id);
+  currentCampaignIdRef.current = campaign?.id;
 
   const { entries: manualEntries, mutate: mutateManualEntries } = useGetManualCreatorEntries(
     campaign?.id
@@ -63,8 +76,78 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
   const selectedPlatform = useAnalyticsStore((state) => state.selectedPlatform);
   const reportState = useAnalyticsStore((state) => state.reportState);
   const showReportPage = useAnalyticsStore((state) => state.showReportPage);
-
   const isClient = useMemo(() => user?.role?.includes('client'), [user]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    campaignGenerationRef.current += 1;
+  }, [campaign?.id]);
+
+  const loadPCRReport = useCallback(async () => {
+    if (!campaign?.id) return null;
+
+    const response = await axiosInstance.get(`/api/campaign/${campaign.id}/pcr`);
+    return response.data?.data?.content;
+  }, [campaign?.id]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const checkPCRReport = async () => {
+      if (!campaign?.id) {
+        setIsPCRLoading(false);
+        setReportState('generate');
+        setPcrLoadError(null);
+        return;
+      }
+
+      if (isClient && !campaign.isPCRReady) {
+        setIsPCRLoading(false);
+        setPcrLoadError(null);
+        setReportState('none');
+        setShowReportPage(false);
+        return;
+      }
+
+      setIsPCRLoading(true);
+      setReportState('generate');
+      setPcrLoadError(null);
+
+      try {
+        const content = await loadPCRReport();
+        if (isActive) setReportState(content != null ? 'view' : 'generate');
+      } catch (error) {
+        if (isActive) {
+          if (isClient && !campaign.isPCRReady && error?.response?.status === 404) {
+            setPcrLoadError(null);
+            setReportState('none');
+            setShowReportPage(false);
+            return;
+          }
+          setReportState('error');
+          setPcrLoadError(error);
+          enqueueSnackbar(
+            error?.response?.data?.message || 'Failed to check for an existing PCR report.',
+            { variant: 'error' }
+          );
+        }
+      } finally {
+        if (isActive) setIsPCRLoading(false);
+      }
+    };
+
+    checkPCRReport();
+
+    return () => {
+      isActive = false;
+    };
+  }, [campaign?.id, campaign?.isPCRReady, isClient, loadPCRReport, pcrCheckAttempt]);
 
   const submissions = useMemo(
     () =>
@@ -297,6 +380,72 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
     }
   };
 
+  const handleGenerateReport = async () => {
+    const requestCampaignId = campaign?.id;
+    const requestCampaignGeneration = campaignGenerationRef.current;
+    const requestId = generateRequestRef.current + 1;
+    generateRequestRef.current = requestId;
+    const isCurrentRequest = () => (
+      mountedRef.current &&
+      currentCampaignIdRef.current === requestCampaignId &&
+      campaignGenerationRef.current === requestCampaignGeneration &&
+      generateRequestRef.current === requestId
+    );
+
+    if (!requestCampaignId || pcrLoadError || reportState !== 'generate' || !isCurrentRequest()) return;
+    setReportState('loading');
+    let generationSucceeded = false;
+
+    try {
+      await axiosInstance.post(`/api/campaign/${requestCampaignId}/pcr/generate`, {
+        content: {
+          ...DEFAULT_EDITABLE_CONTENT,
+          sectionOrder: DEFAULT_SECTION_ORDER,
+          sectionVisibility: DEFAULT_SECTION_VISIBILITY,
+          showEducatorCard: false,
+          showThirdCard: false,
+          showFourthCard: false,
+          showFifthCard: false,
+        },
+      });
+      generationSucceeded = true;
+
+      if (!isCurrentRequest()) return;
+      const content = await loadPCRReport();
+      if (!isCurrentRequest()) return;
+      setPcrLoadError(null);
+      setReportState(content != null ? 'view' : 'generate');
+    } catch (error) {
+      if (!isCurrentRequest()) return;
+      if (error?.response?.status === 409) {
+        try {
+          const content = await loadPCRReport();
+          if (!isCurrentRequest()) return;
+          if (content != null) {
+            setPcrLoadError(null);
+            setReportState('view');
+            enqueueSnackbar('PCR already exists. View the saved report.', { variant: 'info' });
+            return;
+          }
+        } catch (reloadError) {
+          if (!isCurrentRequest()) return;
+          setPcrLoadError(reloadError);
+          setReportState('error');
+          return;
+        }
+      }
+      if (generationSucceeded) {
+        setPcrLoadError(error);
+        setReportState('error');
+        return;
+      }
+      setReportState('generate');
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to generate PCR report.', {
+        variant: 'error',
+      });
+    }
+  };
+
   // Socket event listener for media kit connections
   useEffect(() => {
     if (!socket || !campaign?.id) return undefined;
@@ -348,6 +497,7 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
     <Box>
       {showReportPage ? (
         <PCRReportPage
+          key={campaign?.id}
           campaign={campaign}
           onBack={() => setShowReportPage(false)}
           isClientView={isClient}
@@ -408,7 +558,7 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
               {/* eslint-disable-next-line no-nested-ternary */}
               {!isClient ? (
               <Button
-                disabled={reportState === 'loading'}
+                disabled={isPCRLoading || reportState === 'loading' || Boolean(pcrLoadError)}
                 sx={{
                   width: '186.07px',
                   height: '44px',
@@ -416,7 +566,7 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
                   gap: '6px',
                   padding: '10px 16px 13px 16px',
                   background:
-                    reportState === 'loading'
+                    isPCRLoading || reportState === 'loading'
                       ? 'linear-gradient(90deg, #B8B8B8 0%, #9E9E9E 100%)'
                       : 'linear-gradient(90deg, #8A5AFE 0%, #1340FF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
                   boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
@@ -426,37 +576,33 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
                   textTransform: 'none',
                   '&:hover': {
                     background:
-                      reportState === 'loading'
+                      isPCRLoading || reportState === 'loading'
                         ? 'linear-gradient(90deg, #B8B8B8 0%, #9E9E9E 100%)'
                         : 'linear-gradient(90deg, #7A4AEE 0%, #0330EF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
                     boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
                   },
                   '&:active': {
                     boxShadow:
-                      reportState === 'loading'
+                      isPCRLoading || reportState === 'loading'
                         ? '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset'
                         : '0px -1px 0px 0px rgba(0, 0, 0, 0.1) inset',
-                    transform: reportState === 'loading' ? 'none' : 'translateY(1px)',
+                    transform:
+                      isPCRLoading || reportState === 'loading' ? 'none' : 'translateY(1px)',
                   },
                   '&:disabled': {
                     color: '#FFFFFF',
                   },
                 }}
-                onClick={() => {
+                onClick={async () => {
                   if (reportState === 'generate') {
-                    // Start loading
-                    setReportState('loading');
-
-                    setTimeout(() => {
-                      setReportState('view');
-                    }, 3000); // 3 second loading simulation
+                    await handleGenerateReport();
                   } else if (reportState === 'view') {
                     // Show PCR report page
                     setShowReportPage(true);
                   }
                 }}
               >
-                {reportState === 'loading' && (
+                {(isPCRLoading || reportState === 'loading') && (
                   <CircularProgress
                     size={16}
                     sx={{
@@ -465,9 +611,11 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
                     }}
                   />
                 )}
-                {reportState === 'generate' && 'Generate Report'}
-                {reportState === 'loading' && 'Generating...'}
-                {reportState === 'view' && 'View Report'}
+                {isPCRLoading && 'Checking Report...'}
+                {!isPCRLoading && pcrLoadError && 'PCR unavailable'}
+                {!isPCRLoading && reportState === 'generate' && 'Generate Report'}
+                {!isPCRLoading && reportState === 'loading' && 'Generating...'}
+                {!isPCRLoading && reportState === 'view' && 'View Report'}
               </Button>
               ) : campaign?.isPCRReady ? (
               <Button
@@ -502,6 +650,15 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
               ) : null}
             </Stack>
           </Box>
+
+          {pcrLoadError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              PCR status could not be checked. Generate is disabled until the report status loads.
+              <Button size="small" onClick={() => setPcrCheckAttempt((value) => value + 1)} sx={{ ml: 1 }}>
+                Retry
+              </Button>
+            </Alert>
+          )}
 
           {refreshFailures.length > 0 && (
             <Alert severity="warning" onClose={() => setRefreshFailures([])} sx={{ mb: 2 }}>

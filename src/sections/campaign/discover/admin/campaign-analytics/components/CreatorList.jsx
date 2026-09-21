@@ -5,6 +5,8 @@ import { AnimatePresence } from 'framer-motion';
 
 import { Box, Grid, Stack, Alert, Button, Typography, CircularProgress } from '@mui/material';
 
+import { canonicalizePostUrl } from 'src/utils/extractPostingLinks';
+
 import Iconify from 'src/components/iconify';
 import {
   ManualCreatorCard,
@@ -35,8 +37,9 @@ const CreatorList = ({
 
   const existingKeys = useMemo(
     () =>
-      creatorListRowsSorted?.map((item) => item?.insightData?.postUrl || item?.entry?.postUrl) ||
-      [],
+      creatorListRowsSorted?.map((item) =>
+        canonicalizePostUrl(item?.insightData?.postUrl || item?.entry?.postUrl)
+      ) || [],
     [creatorListRowsSorted]
   );
 
@@ -44,8 +47,11 @@ const CreatorList = ({
     () =>
       filteredSubmissions?.filter(
         (sub) =>
-          !insightsData.find((d) => d.submissionId === sub.id) &&
-          !existingKeys?.includes(sub?.postUrl)
+          !insightsData.find(
+            (d) =>
+              d.submissionId === sub.id &&
+              canonicalizePostUrl(d.postUrl) === canonicalizePostUrl(sub.postUrl)
+          ) && !existingKeys?.includes(canonicalizePostUrl(sub?.postUrl))
       ),
     [existingKeys, filteredSubmissions, insightsData]
   );

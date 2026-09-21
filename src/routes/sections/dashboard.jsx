@@ -194,7 +194,7 @@ export const dashboardRoutes = [
         children: [
           {
             element: (
-              <RoleBasedGuard roles={['superadmin', 'admin', 'sales_and_marketing']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'admin', 'CSL', 'sales_and_marketing']} hasContent>
                 <CreatorList />
               </RoleBasedGuard>
             ),
@@ -203,7 +203,7 @@ export const dashboardRoutes = [
           {
             path: 'lists',
             element: (
-              <RoleBasedGuard roles={['superadmin', 'admin', 'sales_and_marketing']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'admin', 'CSL', 'sales_and_marketing']} hasContent>
                 <CreatorList />
               </RoleBasedGuard>
             ),

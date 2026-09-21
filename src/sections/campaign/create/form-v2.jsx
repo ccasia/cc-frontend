@@ -108,6 +108,11 @@ const getDraftFileUrls = (value) =>
     .filter((item) => item?.draftFile === true && typeof item.url === 'string')
     .map((item) => item.url);
 
+const getDraftFileUrls = (value) =>
+  (Array.isArray(value) ? value : [value])
+    .filter((item) => item?.draftFile === true && typeof item.url === 'string')
+    .map((item) => item.url);
+
 function CreateCampaignFormV2({
   onClose,
   mutate: mutateCampaignList,
@@ -386,7 +391,7 @@ function CreateCampaignFormV2({
     photos: false,
     crossPosting: false,
     ads: false,
-    agreementFrom: null,
+    isNdaRequired: false,
     timeline: [],
 
     // Additional Details 1 fields
@@ -630,7 +635,7 @@ function CreateCampaignFormV2({
       photos: !!campaign.photos,
       crossPosting: !!campaign.crossPosting,
       ads: !!campaign.ads,
-      agreementFrom: campaign.agreementTemplate || null,
+      isNdaRequired: !!campaign.isNdaRequired,
 
       // Additional Details
       socialMediaPlatform: Array.isArray(brief.socialMediaPlatform)
@@ -1556,28 +1561,30 @@ function CreateCampaignFormV2({
             {/* Steps 0-6: Show Next button */}
             {activeStep >= 0 && activeStep <= 6 && (
               <Button
-                variant="contained"
-                onClick={handleNext}
-                disabled={!isStepValid() || isLoading}
+                color="inherit"
+                disabled={activeStep === 0}
+                onClick={handleBack}
                 sx={{
+                  mr: 1,
                   height: 45,
-                  bgcolor: '#3A3A3C',
+                  bgcolor: 'white',
+                  border: '1px solid #E7E7E7',
+                  color: '#3A3A3C',
                   '&:hover': {
-                    bgcolor: '#47474a',
+                    bgcolor: '#F8F8F8',
+                    border: '1px solid #E7E7E7',
                   },
-                  boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
                   fontWeight: 600,
+                  boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
                 }}
               >
-                Next
+                Back
               </Button>
-            )}
 
-            {/* Step 7 (Next Steps): No navigation buttons - handled by component */}
+              <Box sx={{ flexGrow: 1 }} />
 
-            {/* Step 8: Show Next and Confirm Campaign buttons */}
-            {activeStep === 8 && (
-              <Stack direction="row" spacing={1}>
+              {/* Steps 0-6: Show Next button */}
+              {activeStep >= 0 && activeStep <= 6 && (
                 <Button
                   variant="contained"
                   onClick={handleNext}
@@ -1594,6 +1601,49 @@ function CreateCampaignFormV2({
                 >
                   Next
                 </Button>
+              )}
+
+              {/* Step 7 (Next Steps): No navigation buttons - handled by component */}
+
+              {/* Step 8: Show Next and Confirm Campaign buttons */}
+              {activeStep === 8 && (
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    variant="contained"
+                    onClick={handleNext}
+                    disabled={!isStepValid() || isLoading}
+                    sx={{
+                      height: 45,
+                      bgcolor: '#3A3A3C',
+                      '&:hover': {
+                        bgcolor: '#47474a',
+                      },
+                      boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Next
+                  </Button>
+                  <LoadingButton
+                    variant="contained"
+                    onClick={handleOpenConfirm}
+                    disabled={isLoading || !isStepValid()}
+                    sx={{
+                      bgcolor: '#1340FF',
+                      '&:hover': {
+                        bgcolor: '#0030e0',
+                      },
+                      boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {isLoading ? confirmLoadingLabel : confirmLabel}
+                  </LoadingButton>
+                </Stack>
+              )}
+
+              {/* Step 9: Show only Confirm Campaign button (last step) */}
+              {activeStep === 9 && (
                 <LoadingButton
                   variant="contained"
                   onClick={handleOpenConfirm}
@@ -1607,28 +1657,17 @@ function CreateCampaignFormV2({
                     fontWeight: 600,
                   }}
                 >
-                  {isLoading ? confirmLoadingLabel : confirmLabel}
+                  {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
                 </LoadingButton>
-              </Stack>
-            )}
+              )}
+            </Stack>
 
-            {/* Step 9: Show only Confirm Campaign button (last step) */}
-            {activeStep === 9 && (
-              <LoadingButton
-                variant="contained"
-                onClick={handleOpenConfirm}
-                disabled={isLoading || !isStepValid()}
-                sx={{
-                  bgcolor: '#1340FF',
-                  '&:hover': {
-                    bgcolor: '#0030e0',
-                  },
-                  boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                  fontWeight: 600,
-                }}
-              >
-                {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
-              </LoadingButton>
+            {!isActivateMode && (
+              <DraftSaveIndicator
+                status={draftSaveStatus}
+                lastSavedAt={lastSavedAt}
+                onRetry={flushDraft}
+              />
             )}
           </Stack>
 

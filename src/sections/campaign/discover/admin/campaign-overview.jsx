@@ -696,7 +696,10 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                               <Typography
                                 sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}
                               >
-                                {formatCurrencyAmount(campaignBudget, 'MYR')}
+                                {formatCurrencyAmount(
+                                  campaignBudget,
+                                  campaign?.subscription?.currency ?? 'MYR'
+                                )}
                               </Typography>
                             </Stack>
                           </>

@@ -350,25 +350,12 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
       });
       return;
     }
-    if (!resolvedAgreementTemplateId && !campaign?.agreementTemplateId) {
-      enqueueSnackbar(
-        'No agreement template on this campaign. Add one in campaign settings, then try again.',
-        { variant: 'error' }
-      );
-      return;
-    }
     setAgreementAmount('');
     setAgreementDialogOpen(true);
   };
 
   const handleConfirmSetAgreement = async () => {
     if (!pitch?.id || String(pitch.id).startsWith('shortlisted-')) return;
-
-    const templateId = resolvedAgreementTemplateId || campaign?.agreementTemplateId;
-    if (!templateId) {
-      enqueueSnackbar('Agreement template is required.', { variant: 'error' });
-      return;
-    }
 
     let amountNum = null;
     if (agreementAmount.trim()) {
@@ -383,17 +370,16 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
 
     setLoading(true);
     try {
-      const res = await axiosInstance.patch(endpoints.campaign.pitch.v3.setAgreement(pitch.id), {
-        agreementTemplateId: templateId,
-        ...(amountNum != null ? { amount: amountNum } : {}),
-      });
+      const res = await axiosInstance.patch(
+        endpoints.campaign.pitch.v3.setAgreement(pitch.id),
+        amountNum != null ? { amount: amountNum } : {}
+      );
       enqueueSnackbar(res?.data?.message || 'Agreement sent to creator', { variant: 'success' });
       setAgreementDialogOpen(false);
       onUpdate({
         ...pitch,
         status: 'AGREEMENT_PENDING',
         displayStatus: 'AGREEMENT_PENDING',
-        agreementTemplateId: templateId,
         ...(amountNum != null ? { amount: amountNum } : {}),
       });
       onClose();

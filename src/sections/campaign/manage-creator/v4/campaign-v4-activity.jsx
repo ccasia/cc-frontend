@@ -1581,7 +1581,8 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
       case 'APPROVED':
       case 'CLIENT_APPROVED':
         // Check if campaign requires posting links and if this submission type needs one
-        const campaignRequiresPosting = campaign?.campaignType === 'normal'; // 'normal' = UGC (With Posting)
+        const campaignRequiresPosting =
+          campaign?.campaignType === 'normal' || campaign?.campaignType === 'seedingCampaign'; // 'normal' = UGC (With Posting)
         const hasVideoOrPhotos = submission.video?.length > 0 || submission.photos?.length > 0;
         const needsPostingLink = campaignRequiresPosting && hasVideoOrPhotos;
 

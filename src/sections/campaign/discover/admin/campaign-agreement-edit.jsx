@@ -198,6 +198,8 @@ const CampaignAgreementEdit = ({
   const requiresUGCCredits = !isGuestCreator;
 
   const shortlistedRecord = agreement?.shortlistedCreator;
+  
+  const isNdaRequired = !!campaign?.isNdaRequired;
 
   const pitchRecord = campaign?.pitch?.find((p) => p.userId === agreement?.user?.id);
 
@@ -581,6 +583,7 @@ const CampaignAgreementEdit = ({
           isForSurfShark={campaign?.isForSurfShark}
           isSeedingAgreement={data.isSeedingAgreement}
           productValue={`${CURRENCY_PREFIXES[data.currency]?.prefix}${parseFloat(data.product?.value).toFixed(2)}`}
+          isNdaRequired={isNdaRequired}
         />
       ).toBlob();
 
