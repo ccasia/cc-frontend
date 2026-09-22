@@ -113,7 +113,7 @@ function DiscoverBrand() {
               />
             </Box>
           ) : (
-            <BrandLists dataFiltered={filteredData} />
+            <BrandLists dataFiltered={filteredData} onArchived={refreshCompanies} />
           )}
         </>
       )}
