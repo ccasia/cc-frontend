@@ -12,16 +12,12 @@ import { SplashScreen } from 'src/components/loading-screen';
 
 // JWT
 const JwtLoginPage = lazy(() => import('src/pages/auth/jwt/login'));
-// const JwtRegisterPage = lazy(() => import('src/pages/auth/jwt/register'));
 const AdminForm = lazy(() => import('src/pages/auth/jwt/adminForm'));
 const ClientSetupPassword = lazy(() => import('src/pages/auth/client-setup-password'));
 // ----------------------------------------------------------------------
 
-// CLASSIC
-// const CreatorLogin = lazy(() => import('src/pages/auth-demo/modern/login'));
-// const CreatorRegister = lazy(() => import('src/pages/auth-demo/modern/register'));
-// const ForgotPasswordClassicPage = lazy(() => import('src/pages/auth-demo/classic/forgot-password'));
 const VerifyClassicPage = lazy(() => import('src/pages/auth-demo/classic/verify'));
+
 const NewPasswordClassicPage = lazy(() => import('src/pages/auth-demo/classic/new-password'));
 
 const NewLoginPage = lazy(() => import('src/pages/auth-demo/new-login'));
