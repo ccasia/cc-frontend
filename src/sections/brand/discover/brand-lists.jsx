@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { isEqual } from 'lodash';
+import { useSnackbar } from 'notistack';
 import PropTypes from 'prop-types';
 import React, { useState, useCallback } from 'react';
 
@@ -9,6 +10,7 @@ import {
   Tabs,
   Table,
   alpha,
+  Button,
   Tooltip,
   TableBody,
   IconButton,
@@ -17,9 +19,12 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
+import { ConfirmDialog } from 'src/components/custom-dialog';
 import {
   useTable,
   emptyRows,
@@ -91,10 +96,12 @@ const isDemoCompany = (company) =>
     (client) => client?.clientType === 'demoClient' || client?.user?.role === 'client_demo'
   );
 
-const BrandLists = ({ dataFiltered }) => {
+const BrandLists = ({ dataFiltered, onArchived }) => {
   const table = useTable();
   const [filters, setFilters] = useState(defaultFilters);
   const confirm = useBoolean();
+  const [archiving, setArchiving] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   const denseHeight = table.dense ? 56 : 56 + 20;
 
@@ -140,13 +147,26 @@ const BrandLists = ({ dataFiltered }) => {
     [table]
   );
 
-  const handleDeleteRow = useCallback((id) => {
-    console.log(id);
-  }, []);
-
   const handleEditRow = useCallback((id) => {
     console.log(id);
   }, []);
+
+  const handleArchive = useCallback(async () => {
+    setArchiving(true);
+    try {
+      await axiosInstance.post(endpoints.company.archive, { ids: table.selected });
+      enqueueSnackbar('Client(s) archived successfully', { variant: 'success' });
+      table.onSelectAllRows(false, []);
+      confirm.onFalse();
+      onArchived?.();
+    } catch (error) {
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to delete client(s)', {
+        variant: 'error',
+      });
+    } finally {
+      setArchiving(false);
+    }
+  }, [table, confirm, enqueueSnackbar, onArchived]);
 
   const notFound = (!filteredData?.length && canReset) || !filteredData?.length;
 
@@ -236,7 +256,7 @@ const BrandLists = ({ dataFiltered }) => {
                     row={row}
                     selected={table.selected.includes(row.id)}
                     onSelectRow={() => table.onSelectRow(row.id)}
-                    onDeleteRow={() => handleDeleteRow(row.id)}
+                    onDeleteRow={() => {}}
                     onEditRow={() => handleEditRow(row.id)}
                   />
                 ))}
@@ -261,6 +281,18 @@ const BrandLists = ({ dataFiltered }) => {
         dense={table.dense}
         onChangeDense={table.onChangeDense}
       />
+
+      <ConfirmDialog
+        open={confirm.value}
+        onClose={confirm.onFalse}
+        title="Delete client(s)"
+        content={`Delete ${table.selected.length} selected client(s)? Their portal login will be disabled. Campaigns and brands are not affected.`}
+        action={
+          <Button variant="contained" color="error" disabled={archiving} onClick={handleArchive}>
+            Delete
+          </Button>
+        }
+      />
     </Card>
   );
 };
@@ -269,6 +301,7 @@ export default BrandLists;
 
 BrandLists.propTypes = {
   dataFiltered: PropTypes.array,
+  onArchived: PropTypes.func,
 };
 
 function applyFilter({ inputData, comparator, filters }) {
