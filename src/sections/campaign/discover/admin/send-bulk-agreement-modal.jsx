@@ -114,12 +114,10 @@ export default function SendBulkAgreementModal({
 
   const { fields, replace, remove } = useFieldArray({
     control,
-
     name: 'agreements',
   });
 
   const { data: creditTierList } = useGetCreditTiers();
-  // const [rows, setRows] = useState([]);
 
   const smUp = useResponsive('up', 'sm');
 
@@ -164,16 +162,7 @@ export default function SendBulkAgreementModal({
   const hasCreditLimit = campaign?.campaignCredits != null;
   const isInsufficient = hasCreditLimit && totalRequired > creditsRemaining;
 
-  const hasMissingFields = rows.some(
-    (row) =>
-      row.paymentAmount === '' ||
-      row.paymentAmount == null ||
-      row.ugcCredits === '' ||
-      row.ugcCredits == null
-  );
-
   const handleClose = () => {
-    // if (sending) return;
     table.setSelected([]);
     onClose();
   };
@@ -332,20 +321,6 @@ export default function SendBulkAgreementModal({
               </DialogTitle>
 
               <Stack direction="row" alignItems="center" spacing={1.5}>
-                {/* {hasCreditLimit && (
-                  <Typography
-                    sx={{
-                      fontSize: '0.8rem',
-                      color: isInsufficient ? '#D4321C' : '#1340FF',
-                      fontWeight: 500,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {isInsufficient
-                      ? 'Insufficient Campaign Credits!'
-                      : `${creditsRemaining} Campaign Credits Remaining`}
-                  </Typography>
-                )} */}
                 <IconButton onClick={handleClose} disabled={isPending} sx={{ color: '#221f20' }}>
                   <Iconify icon="eva:close-fill" width={24} />
                 </IconButton>
