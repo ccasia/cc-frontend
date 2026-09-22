@@ -1633,14 +1633,6 @@ function CreateCampaignFormV2({
               </LoadingButton>
             )}
           </Stack>
-
-          {!isActivateMode && (
-            <DraftSaveIndicator
-              status={draftSaveStatus}
-              lastSavedAt={lastSavedAt}
-              onRetry={flushDraft}
-            />
-          )}
         </Box>
 
         {/* Close-with-unsaved-draft confirmation */}
