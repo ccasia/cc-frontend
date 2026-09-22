@@ -1186,6 +1186,7 @@ export default function V4VideoSubmission({
                           {Array.from({ length: 30 }).map((_, i) => {
                             const filled =
                               i < Math.round((30 * Number(compressing?.progress ?? 0)) / 100);
+
                             return (
                               <Box
                                 key={i}
@@ -1212,21 +1213,6 @@ export default function V4VideoSubmission({
                         </Typography>
                       </Box>
                     )}
-                    {/* {compressing && (
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          display: 'flex',
-                          inset: 1,
-                          bgcolor: (theme) => alpha(theme.palette.grey[900], 0.5),
-                          background: `linear-gradient(to right, #CCCCCC50 ${100 - Number(compressing?.progress)}%, transparent 0%)`,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Typography variant="h2">{100 - Number(compressing?.progress)}</Typography>
-                      </Box>
-                    )} */}
                   </Box>
                 ) : (
                   <Box
