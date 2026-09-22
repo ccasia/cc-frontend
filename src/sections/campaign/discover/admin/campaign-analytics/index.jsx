@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useSWRConfig } from 'swr';
 import { enqueueSnackbar } from 'notistack';
 import { AnimatePresence } from 'framer-motion';
-import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import {

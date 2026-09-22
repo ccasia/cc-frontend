@@ -155,7 +155,8 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
         availableCredits:
           (packageItem.totalCredits ||
             packageItem.package?.credits ||
-            packageItem.customPackage?.customCredits) - packageItem.creditsUsed,
+            packageItem.customPackage?.customCredits ||
+            0) - packageItem.creditsUsed,
       };
       return packageItem;
     }

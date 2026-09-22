@@ -29,6 +29,9 @@ import AgreementTemplate from 'src/template/agreement';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
+// import CAgreement from './c-agreement';
+// import TransferPackageCreditsDialog from './transfer-package-credits-dialog';
+
 import CAgreement from './c-agreement';
 import TransferPackageCreditsDialog from './transfer-package-credits-dialog';
 import AttachAdditionalPackageDialog from './attach-additional-package-dialog';

@@ -1,4 +1,4 @@
-import { Box, Stack, useTheme, Button, Typography, useMediaQuery } from '@mui/material';
+import { Box, Stack, Button, useTheme, Typography, useMediaQuery } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 

@@ -1,7 +1,8 @@
 import useSWR from 'swr';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
 import {
   Box,
@@ -36,7 +37,7 @@ export default function PitchesPendingModal({ open, onClose }) {
     { revalidateOnFocus: false }
   );
 
-  const pitches = Array.isArray(data) ? data : [];
+  const pitches = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
   const grouped = useMemo(() => {
     const map = {};
@@ -275,3 +276,8 @@ export default function PitchesPendingModal({ open, onClose }) {
     </Dialog>
   );
 }
+
+PitchesPendingModal.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+};

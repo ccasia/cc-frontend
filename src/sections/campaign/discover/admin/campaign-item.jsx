@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
@@ -21,7 +21,6 @@ import {
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';

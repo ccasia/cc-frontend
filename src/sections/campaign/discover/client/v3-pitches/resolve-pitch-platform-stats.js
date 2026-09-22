@@ -10,19 +10,13 @@ function toNumber(value) {
 }
 
 function firstPositive(...values) {
-  for (const value of values) {
-    const n = toNumber(value);
-    if (n != null && n > 0) return n;
-  }
-  return null;
+  const found = values.map(toNumber).find((n) => n != null && n > 0);
+  return found ?? null;
 }
 
 function firstRate(...values) {
-  for (const value of values) {
-    const n = toNumber(value);
-    if (n != null) return n;
-  }
-  return null;
+  const found = values.map(toNumber).find((n) => n != null);
+  return found ?? null;
 }
 
 function linkLooksLike(link, platform) {

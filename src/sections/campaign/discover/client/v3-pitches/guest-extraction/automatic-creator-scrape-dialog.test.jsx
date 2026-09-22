@@ -8,7 +8,11 @@ vi.mock('notistack', () => ({ useSnackbar: () => ({ enqueueSnackbar: vi.fn() }) 
 let keySeq = 1;
 
 vi.mock('./guest-extraction-api', () => ({
-  newIdempotencyKey: vi.fn(() => `key-${keySeq++}`),
+  newIdempotencyKey: vi.fn(() => {
+    const key = `key-${keySeq}`;
+    keySeq += 1;
+    return key;
+  }),
   fetchFeatureDecision: vi.fn(),
   startExtraction: vi.fn(),
   getExtraction: vi.fn(),

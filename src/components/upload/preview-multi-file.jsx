@@ -32,7 +32,7 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
     if (file.type === 'application/pdf') return true;
     const src = typeof file === 'string' ? file : file.preview || '';
     try {
-      const pathname = new URL(src, window.location.origin).pathname;
+      const {pathname} = new URL(src, window.location.origin);
       return pathname.toLowerCase().endsWith('.pdf');
     } catch {
       return src.toLowerCase().includes('.pdf');

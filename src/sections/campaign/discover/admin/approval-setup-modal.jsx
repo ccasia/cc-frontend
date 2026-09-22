@@ -1,31 +1,32 @@
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
+import { enqueueSnackbar } from 'notistack';
 
 import {
   Box,
   Stack,
+  Table,
   Avatar,
   Button,
   Dialog,
   Divider,
-  IconButton,
-  TextField,
-  Typography,
-  Table,
   TableRow,
+  TextField,
   TableBody,
   TableCell,
   TableHead,
-  TableContainer,
+  IconButton,
+  Typography,
   DialogTitle,
   DialogContent,
   DialogActions,
+  TableContainer,
   CircularProgress,
 } from '@mui/material';
-import { enqueueSnackbar } from 'notistack';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { formatNumber, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+
 import Iconify from 'src/components/iconify';
 
 const ApprovalSetupModal = ({

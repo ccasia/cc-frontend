@@ -1,7 +1,8 @@
 import useSWR from 'swr';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
 import {
   Box,
@@ -41,7 +42,7 @@ export default function OverdueInvoicesModal({ open, onClose }) {
     { revalidateOnFocus: false }
   );
 
-  const invoices = Array.isArray(data) ? data : [];
+  const invoices = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
   const grouped = useMemo(() => {
     const map = {};
@@ -318,3 +319,8 @@ export default function OverdueInvoicesModal({ open, onClose }) {
     </Dialog>
   );
 }
+
+OverdueInvoicesModal.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+};

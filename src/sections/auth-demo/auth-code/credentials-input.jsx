@@ -11,7 +11,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
-import useAuthCodeContext from './hooks/use-auth-code';
+// import useAuthCodeContext from './hooks/use-auth-code';
 
 const StackMotion = m(Stack);
 
@@ -52,7 +52,7 @@ const defaultValues = { name: '', email: '', password: '' };
 const CredentialsInput = () => {
   const password = useBoolean();
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
-  const { joinNow, setFormData } = useAuthCodeContext();
+  // const { joinNow, setFormData } = useAuthCodeContext();
 
   const methods = useForm({
     mode: 'onChange',
@@ -69,10 +69,10 @@ const CredentialsInput = () => {
 
   const curPassword = watch('password');
 
-  const onSubmit = handleSubmit(async (data) => {
-    setFormData(data);
-    joinNow();
-  });
+  // const onSubmit = handleSubmit(async (data) => {
+  //   setFormData(data);
+  //   joinNow();
+  // });
 
   const criteria = [
     {
@@ -129,7 +129,7 @@ const CredentialsInput = () => {
   );
 
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
+    <FormProvider methods={methods}>
       <StackMotion
         key="normal"
         initial={{ opacity: 0, x: -50 }}

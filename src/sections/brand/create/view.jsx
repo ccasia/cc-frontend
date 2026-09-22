@@ -14,7 +14,6 @@ import withPermission from 'src/auth/guard/withPermissions';
 import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
-import CompanyBrandForm from './brandForms/companyBrandForm';
 import CreateCompany from './brandForms/FirstForms/create-company';
 
 const TABS = [

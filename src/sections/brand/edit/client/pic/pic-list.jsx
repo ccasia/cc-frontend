@@ -32,7 +32,6 @@ import axiosInstance from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import { useTable } from 'src/components/table';
 import Scrollbar from 'src/components/scrollbar';
 
 const TABLE_HEAD = [
@@ -618,4 +617,5 @@ PICList.propTypes = {
   personIncharge: PropTypes.array,
   companyId: PropTypes.string,
   onUpdate: PropTypes.func,
+  handleActivate: PropTypes.func,
 };

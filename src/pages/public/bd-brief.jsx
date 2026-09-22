@@ -1,5 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
+
 import { SnackbarProvider } from 'src/components/snackbar';
 
 import PublicBriefSubmit from 'src/sections/public-access/public-brief-submit';

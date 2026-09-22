@@ -1,14 +1,14 @@
 import axios from 'axios';
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { enqueueSnackbar } from 'notistack';
 import { useQueryClient } from '@tanstack/react-query';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 import { getStorage } from 'src/hooks/use-local-storage';
 
 import axiosInstance from 'src/utils/axios';
 
 import { pcrDraftStorageKey } from './usePcrAutosave';
-import { DEFAULT_EDITABLE_CONTENT, DEFAULT_SECTION_ORDER, DEFAULT_SECTION_VISIBILITY } from '../constants';
+import { DEFAULT_SECTION_ORDER, DEFAULT_EDITABLE_CONTENT, DEFAULT_SECTION_VISIBILITY } from '../constants';
 
 const EMPTY_SECTION_EDIT_STATES = {
   campaignDescription: false,

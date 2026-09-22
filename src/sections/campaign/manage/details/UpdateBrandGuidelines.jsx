@@ -10,8 +10,8 @@ import { Box, Stack, FormLabel } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload } from 'src/components/hook-form/rhf-upload';
+import FormProvider from 'src/components/hook-form/form-provider';
 
 const FormField = ({ label, children }) => (
   <Stack spacing={0.5} mb={2}>

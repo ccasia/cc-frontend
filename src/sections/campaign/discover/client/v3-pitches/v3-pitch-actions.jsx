@@ -7,7 +7,7 @@ import { Box, Stack, Button, Dialog, Typography, DialogContent } from '@mui/mate
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import { ACTION_BUTTON_SX, VIEW_BUTTON_SX } from '../../master-list-row-kit';
+import { VIEW_BUTTON_SX, ACTION_BUTTON_SX } from '../../master-list-row-kit';
 
 // Statuses that indicate the creator has been approved (for showing Withdraw vs Remove)
 const APPROVED_STATUSES = ['APPROVED', 'approved', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'];

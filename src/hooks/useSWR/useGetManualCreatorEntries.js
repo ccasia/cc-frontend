@@ -33,7 +33,7 @@ export const useGetManualCreatorEntries = (campaignId) => {
   const memoizedValue = useMemo(
     () =>
       isDemoCampaign
-        ? { entries: [], isLoading: false, error: undefined, mutate: noop }
+        ? { entries: [], isLoading: false, error: undefined, mutate: () => {} }
         : { entries: data?.data || [], isLoading, error, mutate },
     [isDemoCampaign, data, isLoading, error, mutate]
   );

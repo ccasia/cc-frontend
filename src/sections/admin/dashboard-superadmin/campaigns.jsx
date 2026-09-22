@@ -236,22 +236,30 @@ const CampaignsTab = ({ dateRange }) => {
                         <ProgressCell used={c.creditsUtilized} total={c.credits} pct={creditsPct} formatValue={nf} />
                       </TableCell>
                       <TableCell sx={{ borderBottom: '1px solid #f3f4f6' }}>
-                        {c.creatorBudget != null ? (
-                          <ProgressCell
-                            used={c.creatorBudgetSpent || 0}
-                            total={c.creatorBudget}
-                            pct={budgetPct}
-                            formatValue={fmtMYR}
-                          />
-                        ) : c.creatorBudgetSpent > 0 ? (
-                          <Typography variant="caption" sx={{ color: '#374151' }}>
-                            {fmtMYR(c.creatorBudgetSpent)} spent (no cap set)
-                          </Typography>
-                        ) : (
-                          <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-                            N/A
-                          </Typography>
-                        )}
+                        {(() => {
+                          if (c.creatorBudget != null) {
+                            return (
+                              <ProgressCell
+                                used={c.creatorBudgetSpent || 0}
+                                total={c.creatorBudget}
+                                pct={budgetPct}
+                                formatValue={fmtMYR}
+                              />
+                            );
+                          }
+                          if (c.creatorBudgetSpent > 0) {
+                            return (
+                              <Typography variant="caption" sx={{ color: '#374151' }}>
+                                {fmtMYR(c.creatorBudgetSpent)} spent (no cap set)
+                              </Typography>
+                            );
+                          }
+                          return (
+                            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                              N/A
+                            </Typography>
+                          );
+                        })()}
                         {c.creatorBudgetSpentOther?.length > 0 && (
                           <Typography variant="caption" sx={{ display: 'block', mt: 0.3, color: '#9ca3af' }}>
                             +{' '}

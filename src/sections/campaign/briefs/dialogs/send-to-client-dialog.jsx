@@ -1,8 +1,8 @@
 import * as yup from 'yup';
 import PropTypes from 'prop-types';
+import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
 import { useState, useEffect } from 'react';
-import { useSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
@@ -18,8 +18,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
-import StatusBadge from '../components/status-badge';
 import BriefSentDialog from './brief-sent-dialog';
+import StatusBadge from '../components/status-badge';
 
 const schema = yup.object({
   clientName: yup.string().trim().required('Client name is required'),

@@ -1188,6 +1188,7 @@ const ManualCreatorCard = ({
 };
 
 ManualCreatorCard.propTypes = {
+  index: PropTypes.number,
   entry: PropTypes.shape({
     id: PropTypes.string,
     creatorName: PropTypes.string,

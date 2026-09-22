@@ -1,42 +1,52 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import useSWR from 'swr';
+import { enqueueSnackbar } from 'notistack';
+import { useParams } from 'react-router-dom';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
+  Link,
   Stack,
+  Table,
+  Paper,
   Dialog,
   Button,
   Avatar,
+  Popover,
+  TableRow,
+  Collapse,
   Container,
-  Typography,
-  CircularProgress,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
-  TableRow,
-  Paper,
-  DialogContent,
-  Popover,
-  Link,
-  Collapse,
   TextField,
+  Typography,
   IconButton,
+  DialogContent,
+  TableContainer,
+  CircularProgress,
 } from '@mui/material';
-import { enqueueSnackbar } from 'notistack';
 
-import axiosInstance, { endpoints, fetcher } from 'src/utils/axios';
+import { useResponsive } from 'src/hooks/use-responsive';
+
+import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 import {
   formatNumber,
-  extractUsernameFromProfileLink,
   createSocialProfileUrl,
+  extractUsernameFromProfileLink,
 } from 'src/utils/media-kit-utils';
-import { useResponsive } from 'src/hooks/use-responsive';
+
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+
 import Iconify from 'src/components/iconify';
+
 import CampaignDetailView from 'src/sections/campaign/discover/admin/view/campaign-detail-view';
+
+const STATUS_TO_ACTION = { APPROVED: 'approve', MAYBE: 'maybe' };
+const statusToAction = (status) => STATUS_TO_ACTION[status] || 'reject';
+
+const ACTION_TO_STATUS = { approve: 'APPROVED', maybe: 'MAYBE' };
+const actionToStatus = (action) => ACTION_TO_STATUS[action] || 'REJECTED';
 
 /** Shared look: compact modal-like note blocks */
 const approvalCommentSurfaceSx = {
@@ -317,7 +327,7 @@ const ApprovalPageView = () => {
         return false;
       }
       const localStatus = creatorStatuses[pitchId];
-      const action = localStatus === 'APPROVED' ? 'approve' : localStatus === 'MAYBE' ? 'maybe' : 'reject';
+      const action = statusToAction(localStatus);
       setCommentSaving((prev) => ({ ...prev, [pitchId]: true }));
       try {
         await axiosInstance.patch(endpoints.approvalRequests.action(token, pitchId), {
@@ -355,7 +365,7 @@ const ApprovalPageView = () => {
   };
 
   const saveDesktopNote = async () => {
-    const pitchId = desktopNotePopover.pitchId;
+    const {pitchId} = desktopNotePopover;
     if (!pitchId) return;
     const saved = await saveCommentAfterAction(pitchId);
     if (saved) closeDesktopNotePopover();
@@ -365,7 +375,7 @@ const ApprovalPageView = () => {
     async (pitchId) => {
       const localStatus = creatorStatuses[pitchId];
       if (localStatus !== 'APPROVED' && localStatus !== 'REJECTED' && localStatus !== 'MAYBE') return;
-      const action = localStatus === 'APPROVED' ? 'approve' : localStatus === 'MAYBE' ? 'maybe' : 'reject';
+      const action = statusToAction(localStatus);
       setCommentDeleting((prev) => ({ ...prev, [pitchId]: true }));
       try {
         await axiosInstance.patch(endpoints.approvalRequests.action(token, pitchId), {
@@ -399,7 +409,7 @@ const ApprovalPageView = () => {
   );
 
   const handleAction = (pitchId, action) => {
-    const newStatus = action === 'approve' ? 'APPROVED' : action === 'maybe' ? 'MAYBE' : 'REJECTED';
+    const newStatus = actionToStatus(action);
     const undoMs = 5000;
     const startedAt = Date.now();
 
@@ -620,7 +630,6 @@ const ApprovalPageView = () => {
         disableEscapeKeyDown
         onClose={(event, reason) => {
           // Modal is intentionally not closable from backdrop/escape.
-          if (reason === 'backdropClick' || reason === 'escapeKeyDown') return;
         }}
         PaperProps={{
           sx: {
@@ -1119,7 +1128,8 @@ const ApprovalPageView = () => {
                         {/* Note UI only after undo window ends — same time "Add note" is available */}
                         {isActioned && !showUndo && (
                           <Stack spacing={0.75} sx={{ pt: 0.125 }}>
-                            {serverComment ? (
+                            {(() => {
+                              if (serverComment) return (
                               <Box
                                 sx={{
                                   ...approvalCommentSurfaceSx,
@@ -1180,7 +1190,8 @@ const ApprovalPageView = () => {
                                   {serverComment}
                                 </Typography>
                               </Box>
-                            ) : addingCommentPitchId === pitchId ? (
+                              );
+                              if (addingCommentPitchId === pitchId) return (
                               <Box sx={approvalCommentSurfaceSx}>
                                 <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.65 }}>
                                   <Iconify icon="solar:pen-bold" width={14} sx={{ color: '#1340FF' }} />
@@ -1232,7 +1243,8 @@ const ApprovalPageView = () => {
                                   </Button>
                                 </Stack>
                               </Box>
-                            ) : (
+                              );
+                              return (
                               <Button
                                 size="small"
                                 variant="outlined"
@@ -1242,7 +1254,8 @@ const ApprovalPageView = () => {
                               >
                                 Add note for the brand
                               </Button>
-                            )}
+                              );
+                            })()}
                           </Stack>
                         )}
                         </Stack>
@@ -1431,7 +1444,8 @@ const ApprovalPageView = () => {
                             </TableCell>
                             <TableCell sx={{ px: 2 }}>{getStatusChip(localStatus)}</TableCell>
                             <TableCell sx={{ px: 2 }}>
-                              {isActioned && !showUndo ? (
+                              {(() => {
+                              if (isActioned && !showUndo) return (
                                 <Button
                                   size="small"
                                   variant="outlined"
@@ -1441,7 +1455,8 @@ const ApprovalPageView = () => {
                                 >
                                   {serverCommentDesktop ? 'View note' : 'Add note'}
                                 </Button>
-                              ) : !showUndo ? (
+                              );
+                              if (!showUndo) return (
                                 <Stack direction="row" spacing={1}>
                                   <Button
                                     size="small"
@@ -1540,7 +1555,8 @@ const ApprovalPageView = () => {
                                     {isLoadingAction ? <CircularProgress size={16} /> : 'Maybe'}
                                   </Button>
                                 </Stack>
-                              ) : (
+                              );
+                              return (
                                 <Button
                                   size="small"
                                   variant="outlined"
@@ -1572,7 +1588,8 @@ const ApprovalPageView = () => {
                                 >
                                   UNDO
                                 </Button>
-                              )}
+                              );
+                              })()}
                             </TableCell>
                           </TableRow>
                           {csCommentDesktop && (
@@ -1692,7 +1709,7 @@ const ApprovalPageView = () => {
                       }
                       onChange={(e) => {
                         const v = e.target.value;
-                        const pitchId = desktopNotePopover.pitchId;
+                        const {pitchId} = desktopNotePopover;
                         if (!pitchId) return;
                         setCommentDrafts((prev) => {
                           const next = { ...prev, [pitchId]: v };

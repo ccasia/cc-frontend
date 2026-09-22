@@ -29,10 +29,10 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
+// import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
+import FormProvider from 'src/components/hook-form';
 // import Iconify from 'src/components/iconify';
 import UploadPitch from 'src/components/pitch/upload-pitch';
-// import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
-import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 const CampaignPitchVideoModal = ({ open, handleClose, campaign, mutate }) => {
   const sources = useRef(null);

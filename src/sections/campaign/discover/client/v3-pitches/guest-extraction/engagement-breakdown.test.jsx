@@ -1,8 +1,8 @@
 import { it, expect, describe } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-import EngagementBreakdown, { medianOf, describeFormula, shortDate } from './engagement-breakdown';
 import { embedFromPostUrl } from './post-thumb-url';
+import EngagementBreakdown, { medianOf, shortDate, describeFormula } from './engagement-breakdown';
 
 /** v1 TikTok evidence: each post carried its own rate. */
 const TIKTOK_V1_POSTS = [
