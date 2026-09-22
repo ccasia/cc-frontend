@@ -5,8 +5,9 @@ import { Box, Typography } from '@mui/material';
 
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 
-import { AnimatedNumber } from 'src/components/campaign-analytics';
 import { formatNumber } from 'src/utils/socialMetricsCalculator';
+
+import { AnimatedNumber } from 'src/components/campaign-analytics';
 
 const RenderEngagementCard = ({
   title,

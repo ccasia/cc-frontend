@@ -2,7 +2,7 @@ import axios from 'axios';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { m, useScroll, AnimatePresence, useMotionValueEvent } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -11,7 +11,6 @@ import { Box, Stack, Button, IconButton, Typography } from '@mui/material';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 // ----------------------------------------------------------------------
 

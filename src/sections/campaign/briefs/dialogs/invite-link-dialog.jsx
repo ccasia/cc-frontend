@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
+import { useSnackbar } from 'notistack';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useRef, useState, useEffect } from 'react';
-import { useSnackbar } from 'notistack';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';

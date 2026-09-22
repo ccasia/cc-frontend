@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import { useEffect, useRef } from 'react';
-import { m, animate, useMotionValue, useReducedMotion, useTransform } from 'framer-motion';
+import { useRef, useEffect } from 'react';
+import { m, animate, useTransform, useMotionValue, useReducedMotion } from 'framer-motion';
 
 /** Magic UI Dia text reveal — https://magicui.design/docs/components/dia-text-reveal.md */
 const DEFAULT_COLORS = ['#c679c4', '#fa3d1d', '#ffb005', '#e1e1fe', '#0358f7'];

@@ -22,7 +22,6 @@ import { Box, Grid, Link, Alert, Button, Avatar, Dialog, Popover, TextField, Typ
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import { usePostEngagementSnapshots } from 'src/hooks/use-post-engagement-snapshots';
-import { useAuthContext } from 'src/auth/hooks';
 
 import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
 import {
@@ -32,6 +31,7 @@ import {
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
 
+import { useAuthContext } from 'src/auth/hooks';
 import { HEADER } from 'src/layouts/config-layout';
 
 import Iconify from 'src/components/iconify';
@@ -39,7 +39,6 @@ import Iconify from 'src/components/iconify';
 import usePcrData from './hooks/usePcrData';
 import usePcrExport from './hooks/usePcrExport';
 import usePcrHistory from './hooks/usePcrHistory';
-import usePcrAutosave, { getPcrEditorSessionId } from './hooks/usePcrAutosave';
 import PersonaCardEdit from './charts/StrategiesCardEdit';
 import TopEngagementCard from './charts/TopEngagementCard';
 import PersonaCardDisplay from './charts/StrategiesDisplay';
@@ -48,6 +47,7 @@ import EngagementRateHeatmap from './charts/EngagementRateHeatmap';
 import TopCreatorViews48HChart from './charts/TopCreatorViews48HChart';
 import CreatorStrategyChartEdit from './charts/CreatorStrategyChartEdit';
 import PlatformInteractionsChart from './charts/PlatformInteractionsChart';
+import usePcrAutosave, { getPcrEditorSessionId } from './hooks/usePcrAutosave';
 import CreatorStrategyChartDisplay from './charts/CreatorStrategyChartDisplay';
 import {
   DEFAULT_SECTION_ORDER,

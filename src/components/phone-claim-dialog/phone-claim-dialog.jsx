@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
-import { toE164, parseStoredPhone, dialCodeFromIso } from 'src/utils/format-phone-number';
+import { toE164, dialCodeFromIso, parseStoredPhone } from 'src/utils/format-phone-number';
 
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';

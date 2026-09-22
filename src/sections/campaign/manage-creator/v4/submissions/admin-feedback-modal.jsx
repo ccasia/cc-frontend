@@ -1122,6 +1122,7 @@ CommentCard.propTypes = {
   pendingDeleteStartTime: PropTypes.number,
   currentUserId: PropTypes.string,
   parentResolved: PropTypes.bool,
+  feedbackSent: PropTypes.bool,
 };
 
 const getNewItemLabel = ({ replies, messages }) => {
@@ -2400,6 +2401,8 @@ AdminFeedbackPanel.propTypes = {
   currentTime: PropTypes.number,
   duration: PropTypes.number,
   onSeek: PropTypes.func,
+  onPause: PropTypes.func,
+  onPlay: PropTypes.func,
   submission: PropTypes.object,
   campaign: PropTypes.object,
   videoId: PropTypes.string,

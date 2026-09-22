@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { it, expect, describe } from 'vitest';
 
 import {
-  availablePitchPlatforms,
-  resolvePitchPlatformStats,
   scrapePlatformOf,
   seedPitchPlatform,
+  availablePitchPlatforms,
+  resolvePitchPlatformStats,
 } from './resolve-pitch-platform-stats';
 
 const scrapedPitch = {

@@ -1,7 +1,8 @@
 import useSWR from 'swr';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
 import {
   Box,
@@ -37,6 +38,7 @@ export default function AgreementsPendingModal({ open, onClose }) {
     { revalidateOnFocus: false }
   );
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const submissions = Array.isArray(data) ? data : [];
 
   // Group by campaign
@@ -89,7 +91,13 @@ export default function AgreementsPendingModal({ open, onClose }) {
       maxWidth="sm"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: '20px', p: 3, maxHeight: '85vh', display: 'flex', flexDirection: 'column' },
+        sx: {
+          borderRadius: '20px',
+          p: 3,
+          maxHeight: '85vh',
+          display: 'flex',
+          flexDirection: 'column',
+        },
       }}
     >
       {/* Header */}
@@ -144,185 +152,187 @@ export default function AgreementsPendingModal({ open, onClose }) {
         <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0, pr: 0.5 }}>
           <Stack spacing={3}>
             {pagedGroups.map(({ campaign, items }) => (
-                <Box key={campaign.id}>
-                  {/* Campaign header row */}
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    sx={{ mb: 1.5 }}
-                  >
-                    <Stack direction="row" alignItems="center" spacing={1.5}>
-                      <Box
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: '10px',
-                          bgcolor: '#f3f4f6',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Iconify icon="hugeicons:megaphone-01" width={18} sx={{ color: '#6b7280' }} />
-                      </Box>
-                      <Typography
-                        sx={{
-                          fontWeight: 700,
-                          fontSize: '0.95rem',
-                          color: '#111827',
-                          fontFamily: "'Inter Display', Inter, sans-serif",
-                        }}
-                      >
-                        {campaign.name}
-                      </Typography>
-                      <Box
-                        sx={{
-                          bgcolor: '#f59e0b',
-                          borderRadius: '50%',
-                          width: 22,
-                          height: 22,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#fff' }}>
-                          {items.length}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    <Button
-                      size="small"
-                      endIcon={<Iconify icon="mingcute:external-link-line" width={14} />}
-                      onClick={() => handleGoToCampaign(campaign.id)}
+              <Box key={campaign.id}>
+                {/* Campaign header row */}
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ mb: 1.5 }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={1.5}>
+                    <Box
                       sx={{
-                        height: 34,
-                        borderRadius: '8px',
-                        border: '1px solid #3A3A3C',
-                        bgcolor: '#3A3A3C',
-                        boxShadow: '0px -3px 0px 0px #00000073 inset',
-                        px: '16px',
-                        py: '6px',
-                        gap: '6px',
-                        fontSize: '0.72rem',
-                        fontWeight: 600,
-                        color: '#FFFFFF',
-                        textTransform: 'uppercase',
-                        '&:hover': { bgcolor: '#2a2a2c' },
+                        width: 36,
+                        height: 36,
+                        borderRadius: '10px',
+                        bgcolor: '#f3f4f6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
                       }}
                     >
-                      Go to campaign
-                    </Button>
+                      <Iconify icon="hugeicons:megaphone-01" width={18} sx={{ color: '#6b7280' }} />
+                    </Box>
+                    <Typography
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: '0.95rem',
+                        color: '#111827',
+                        fontFamily: "'Inter Display', Inter, sans-serif",
+                      }}
+                    >
+                      {campaign.name}
+                    </Typography>
+                    <Box
+                      sx={{
+                        bgcolor: '#f59e0b',
+                        borderRadius: '50%',
+                        width: 22,
+                        height: 22,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#fff' }}>
+                        {items.length}
+                      </Typography>
+                    </Box>
                   </Stack>
+                  <Button
+                    size="small"
+                    endIcon={<Iconify icon="mingcute:external-link-line" width={14} />}
+                    onClick={() => handleGoToCampaign(campaign.id)}
+                    sx={{
+                      height: 34,
+                      borderRadius: '8px',
+                      border: '1px solid #3A3A3C',
+                      bgcolor: '#3A3A3C',
+                      boxShadow: '0px -3px 0px 0px #00000073 inset',
+                      px: '16px',
+                      py: '6px',
+                      gap: '6px',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      color: '#FFFFFF',
+                      textTransform: 'uppercase',
+                      '&:hover': { bgcolor: '#2a2a2c' },
+                    }}
+                  >
+                    Go to campaign
+                  </Button>
+                </Stack>
 
-                  {/* Creator rows */}
-                  <Stack spacing={1}>
-                    {items.map((submission) => (
-                      <Box
-                        key={submission.id}
-                        sx={{
-                          border: '1px solid #f3f4f6',
-                          borderRadius: '12px',
-                          p: 1.5,
-                          bgcolor: '#fafafa',
-                        }}
-                      >
-                        <Stack direction="row" alignItems="center" spacing={1.5}>
-                          <Avatar
-                            src={submission.user?.photoURL}
-                            sx={{ width: 40, height: 40, bgcolor: '#e5e7eb', fontSize: '0.9rem' }}
+                {/* Creator rows */}
+                <Stack spacing={1}>
+                  {items.map((submission) => (
+                    <Box
+                      key={submission.id}
+                      sx={{
+                        border: '1px solid #f3f4f6',
+                        borderRadius: '12px',
+                        p: 1.5,
+                        bgcolor: '#fafafa',
+                      }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={1.5}>
+                        <Avatar
+                          src={submission.user?.photoURL}
+                          sx={{ width: 40, height: 40, bgcolor: '#e5e7eb', fontSize: '0.9rem' }}
+                        >
+                          {submission.user?.name?.charAt(0)?.toUpperCase()}
+                        </Avatar>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography
+                            sx={{ fontWeight: 600, fontSize: '0.88rem', color: '#111827' }}
                           >
-                            {submission.user?.name?.charAt(0)?.toUpperCase()}
-                          </Avatar>
-                          <Box sx={{ flex: 1 }}>
-                            <Typography sx={{ fontWeight: 600, fontSize: '0.88rem', color: '#111827' }}>
-                              {submission.user?.name || 'Unknown'}
-                            </Typography>
-                            <Typography sx={{ fontSize: '0.75rem', color: '#9ca3af' }}>
-                              Submitted {dayjs(submission.updatedAt).fromNow()}
-                            </Typography>
-                          </Box>
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            {submission.content && (
-                              <Button
-                                size="small"
-                                startIcon={<Iconify icon="hugeicons:file-01" width={14} />}
-                                onClick={() => handleView(submission.content)}
-                                sx={{
-                                  width: 87,
-                                  height: 34,
-                                  borderRadius: '8px',
-                                  border: '1px solid #E7E7E7',
-                                  bgcolor: '#FFFFFF',
-                                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                                  px: '16px',
-                                  py: '6px',
-                                  gap: '6px',
-                                  fontSize: '0.72rem',
-                                  fontWeight: 600,
-                                  color: '#374151',
-                                  textTransform: 'uppercase',
-                                  '&:hover': { bgcolor: '#f9fafb' },
-                                }}
-                              >
-                                View
-                              </Button>
-                            )}
+                            {submission.user?.name || 'Unknown'}
+                          </Typography>
+                          <Typography sx={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                            Submitted {dayjs(submission.updatedAt).fromNow()}
+                          </Typography>
+                        </Box>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          {submission.content && (
                             <Button
                               size="small"
-                              disabled={!!loadingId}
-                              onClick={() => handleAction(submission, 'reject')}
+                              startIcon={<Iconify icon="hugeicons:file-01" width={14} />}
+                              onClick={() => handleView(submission.content)}
                               sx={{
                                 width: 87,
                                 height: 34,
                                 borderRadius: '8px',
-                                border: '1px solid #D4321C',
+                                border: '1px solid #E7E7E7',
                                 bgcolor: '#FFFFFF',
-                                boxShadow: '0px -3px 0px 0px #D4321C inset',
+                                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
                                 px: '16px',
                                 py: '6px',
                                 gap: '6px',
                                 fontSize: '0.72rem',
                                 fontWeight: 600,
-                                color: '#D4321C',
+                                color: '#374151',
                                 textTransform: 'uppercase',
-                                '&:hover': { bgcolor: '#fff5f5' },
+                                '&:hover': { bgcolor: '#f9fafb' },
                               }}
                             >
-                              {loadingId === `${submission.id}-reject` ? '...' : 'Reject'}
+                              View
                             </Button>
-                            <Button
-                              size="small"
-                              disabled={!!loadingId}
-                              onClick={() => handleAction(submission, 'approve')}
-                              sx={{
-                                width: 87,
-                                height: 34,
-                                borderRadius: '8px',
-                                border: '1px solid #1ABF66',
-                                bgcolor: '#FFFFFF',
-                                boxShadow: '0px -3px 0px 0px #1ABF66 inset',
-                                px: '16px',
-                                py: '6px',
-                                gap: '6px',
-                                fontSize: '0.72rem',
-                                fontWeight: 700,
-                                color: '#1ABF66',
-                                textTransform: 'uppercase',
-                                '&:hover': { bgcolor: '#f0fdf4' },
-                              }}
-                            >
-                              {loadingId === `${submission.id}-approve` ? '...' : 'Approve'}
-                            </Button>
-                          </Stack>
+                          )}
+                          <Button
+                            size="small"
+                            disabled={!!loadingId}
+                            onClick={() => handleAction(submission, 'reject')}
+                            sx={{
+                              width: 87,
+                              height: 34,
+                              borderRadius: '8px',
+                              border: '1px solid #D4321C',
+                              bgcolor: '#FFFFFF',
+                              boxShadow: '0px -3px 0px 0px #D4321C inset',
+                              px: '16px',
+                              py: '6px',
+                              gap: '6px',
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              color: '#D4321C',
+                              textTransform: 'uppercase',
+                              '&:hover': { bgcolor: '#fff5f5' },
+                            }}
+                          >
+                            {loadingId === `${submission.id}-reject` ? '...' : 'Reject'}
+                          </Button>
+                          <Button
+                            size="small"
+                            disabled={!!loadingId}
+                            onClick={() => handleAction(submission, 'approve')}
+                            sx={{
+                              width: 87,
+                              height: 34,
+                              borderRadius: '8px',
+                              border: '1px solid #1ABF66',
+                              bgcolor: '#FFFFFF',
+                              boxShadow: '0px -3px 0px 0px #1ABF66 inset',
+                              px: '16px',
+                              py: '6px',
+                              gap: '6px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              color: '#1ABF66',
+                              textTransform: 'uppercase',
+                              '&:hover': { bgcolor: '#f0fdf4' },
+                            }}
+                          >
+                            {loadingId === `${submission.id}-approve` ? '...' : 'Approve'}
+                          </Button>
                         </Stack>
-                      </Box>
-                    ))}
-                  </Stack>
-                  <Divider sx={{ mt: 2 }} />
-                </Box>
+                      </Stack>
+                    </Box>
+                  ))}
+                </Stack>
+                <Divider sx={{ mt: 2 }} />
+              </Box>
             ))}
           </Stack>
         </Box>
@@ -339,7 +349,13 @@ export default function AgreementsPendingModal({ open, onClose }) {
               size="small"
               disabled={page === 1}
               onClick={() => setPage((p) => p - 1)}
-              sx={{ border: '1px solid #e5e7eb', borderRadius: '8px', width: 32, height: 32, '&:disabled': { opacity: 0.4 } }}
+              sx={{
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                width: 32,
+                height: 32,
+                '&:disabled': { opacity: 0.4 },
+              }}
             >
               <Iconify icon="mingcute:left-line" width={16} />
             </IconButton>
@@ -347,7 +363,13 @@ export default function AgreementsPendingModal({ open, onClose }) {
               size="small"
               disabled={page >= (totalPages || 1)}
               onClick={() => setPage((p) => p + 1)}
-              sx={{ border: '1px solid #e5e7eb', borderRadius: '8px', width: 32, height: 32, '&:disabled': { opacity: 0.4 } }}
+              sx={{
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                width: 32,
+                height: 32,
+                '&:disabled': { opacity: 0.4 },
+              }}
             >
               <Iconify icon="mingcute:right-line" width={16} />
             </IconButton>
@@ -357,3 +379,8 @@ export default function AgreementsPendingModal({ open, onClose }) {
     </Dialog>
   );
 }
+
+AgreementsPendingModal.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+};

@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
 import { enqueueSnackbar } from 'notistack';
+import { useState, useCallback } from 'react';
 
 import {
   Box,
@@ -22,9 +22,9 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { useDebounce } from 'src/hooks/use-debounce';
-
 import { paths } from 'src/routes/paths';
+
+import { useDebounce } from 'src/hooks/use-debounce';
 
 import {
   featureVideo,
@@ -129,13 +129,16 @@ export default function VideoOfTheMonthView() {
             subheader="Shown on the mobile home feed. Toggle off to hide without removing."
           />
           <Box sx={{ p: 3 }}>
-            {isLoading ? (
+            {(() => {
+              if (isLoading) return (
               <Stack alignItems="center" sx={{ py: 5 }}>
                 <CircularProgress />
               </Stack>
-            ) : videos.length === 0 ? (
+              );
+              if (videos.length === 0) return (
               <EmptyContent title="No videos featured yet" />
-            ) : (
+              );
+              return (
               <TableContainer>
                 <Table>
                   <TableHead>
@@ -193,7 +196,8 @@ export default function VideoOfTheMonthView() {
                   </TableBody>
                 </Table>
               </TableContainer>
-            )}
+              );
+            })()}
           </Box>
         </Card>
 
@@ -219,15 +223,18 @@ export default function VideoOfTheMonthView() {
               sx={{ mb: 2 }}
             />
 
-            {isSearching ? (
+            {(() => {
+              if (isSearching) return (
               <Stack alignItems="center" sx={{ py: 4 }}>
                 <CircularProgress size={24} />
               </Stack>
-            ) : submissions.length === 0 ? (
+              );
+              if (submissions.length === 0) return (
               <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
                 No submissions with a video match that search.
               </Typography>
-            ) : (
+              );
+              return (
               <TableContainer>
                 <Table>
                   <TableHead>
@@ -287,7 +294,8 @@ export default function VideoOfTheMonthView() {
                   </TableBody>
                 </Table>
               </TableContainer>
-            )}
+              );
+            })()}
           </Box>
         </Card>
       </Stack>

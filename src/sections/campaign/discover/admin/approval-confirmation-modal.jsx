@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { enqueueSnackbar } from 'notistack';
 
 import {
   Box,
@@ -8,7 +9,6 @@ import {
   Typography,
   DialogContent,
 } from '@mui/material';
-import { enqueueSnackbar } from 'notistack';
 
 const ApprovalConfirmationModal = ({ open, onClose, approvalLink }) => {
   const handleCopyLink = async () => {

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import React, { useRef, useState, useEffect } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
+import React, { useRef, useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {

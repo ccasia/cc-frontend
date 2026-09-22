@@ -25,12 +25,12 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 
-import AgreementsPendingModal from './AgreementsPendingModal';
 import DraftsPendingModal from './DraftsPendingModal';
 import PitchesPendingModal from './PitchesPendingModal';
 import LinksToApproveModal from './LinksToApproveModal';
 import ClientFeedbacksModal from './ClientFeedbacksModal';
 import OverdueInvoicesModal from './OverdueInvoicesModal';
+import AgreementsPendingModal from './AgreementsPendingModal';
 
 dayjs.extend(relativeTime);
 

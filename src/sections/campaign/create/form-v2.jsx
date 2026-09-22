@@ -1553,6 +1553,8 @@ function CreateCampaignFormV2({
               Back
             </Button>
 
+            <Box sx={{ flexGrow: 1 }} />
+
             {/* Steps 0-6: Show Next button */}
             {activeStep >= 0 && activeStep <= 6 && (
               <Button
@@ -1632,105 +1634,113 @@ function CreateCampaignFormV2({
             )}
           </Stack>
 
-          {/* Close-with-unsaved-draft confirmation */}
-          <CloseDraftDialog
-            open={closeDraftOpen}
-            onKeepEditing={handleKeepEditing}
-            onSaveDraft={handleSaveAsDraft}
-            onDiscard={handleDiscardDraft}
-            onDone={handleDraftDialogDone}
-          />
-
-          {/* Confirmation Dialog */}
-          <Dialog
-            open={confirmOpen}
-            onClose={handleCloseConfirm}
-            maxWidth="xs"
-            fullWidth
-            PaperProps={{
-              sx: {
-                borderRadius: 3,
-              },
-            }}
-          >
-            <DialogTitle sx={{ textAlign: 'center', pb: 0 }}>
-              <Iconify icon="mdi:rocket-launch" width={32} sx={{ color: '#1340FF' }} />
-              <Typography variant="h6" mt={1}>
-                {isActivateMode ? 'Confirm Activation' : 'Confirm Campaign'}
-              </Typography>
-            </DialogTitle>
-            <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                {isActivateMode
-                  ? 'Are you sure you want to activate this campaign?'
-                  : 'Are you sure you want to publish this campaign?'}
-              </Typography>
-            </DialogContent>
-            <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
-              <Button variant="contained" onClick={handleCloseConfirm} sx={{ px: 2, py: 1.2 }}>
-                Cancel
-              </Button>
-              {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
-                <Button
-                  variant="contained"
-                  onClick={() => {
-                    const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
-                      ? 'ACTIVE'
-                      : 'SCHEDULED';
-                    setStatus(campaignStatus);
-                    // Directly trigger form submission with the campaign status
-                    onSubmit(campaignStatus);
-                  }}
-                  startIcon={<Iconify icon="material-symbols:publish" />}
-                  disabled={isLoading}
-                  sx={{
-                    bgcolor: '#1340FF',
-                    px: 4,
-                    py: 1.2,
-                    fontWeight: 600,
-                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                    '&:hover': {
-                      bgcolor: '#0030e0',
-                    },
-                  }}
-                >
-                  {(() => {
-                    if (isActivateMode) return isLoading ? 'Activating...' : 'Activate Now';
-                    return isLoading ? 'Publishing...' : 'Publish Now';
-                  })()}
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  onClick={() => {
-                    const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
-                      ? 'ACTIVE'
-                      : 'SCHEDULED';
-                    setStatus(campaignStatus);
-                    // Directly trigger form submission with the campaign status
-                    onSubmit(campaignStatus);
-                  }}
-                  disabled={isLoading}
-                  startIcon={<Iconify icon="mdi:calendar-clock" />}
-                  sx={{
-                    bgcolor: '#1340FF',
-                    px: 4,
-                    py: 1.2,
-                    fontWeight: 600,
-                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                    '&:hover': {
-                      bgcolor: '#0030e0',
-                    },
-                  }}
-                >
-                  {isLoading
-                    ? 'Scheduling...'
-                    : `Schedule on ${dayjs(campaignStartDate).format('ddd LL')}`}
-                </Button>
-              )}
-            </DialogActions>
-          </Dialog>
+          {!isActivateMode && (
+            <DraftSaveIndicator
+              status={draftSaveStatus}
+              lastSavedAt={lastSavedAt}
+              onRetry={flushDraft}
+            />
+          )}
         </Box>
+
+        {/* Close-with-unsaved-draft confirmation */}
+        <CloseDraftDialog
+          open={closeDraftOpen}
+          onKeepEditing={handleKeepEditing}
+          onSaveDraft={handleSaveAsDraft}
+          onDiscard={handleDiscardDraft}
+          onDone={handleDraftDialogDone}
+        />
+
+        {/* Confirmation Dialog */}
+        <Dialog
+          open={confirmOpen}
+          onClose={handleCloseConfirm}
+          maxWidth="xs"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 3,
+            },
+          }}
+        >
+          <DialogTitle sx={{ textAlign: 'center', pb: 0 }}>
+            <Iconify icon="mdi:rocket-launch" width={32} sx={{ color: '#1340FF' }} />
+            <Typography variant="h6" mt={1}>
+              {isActivateMode ? 'Confirm Activation' : 'Confirm Campaign'}
+            </Typography>
+          </DialogTitle>
+          <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              {isActivateMode
+                ? 'Are you sure you want to activate this campaign?'
+                : 'Are you sure you want to publish this campaign?'}
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
+            <Button variant="contained" onClick={handleCloseConfirm} sx={{ px: 2, py: 1.2 }}>
+              Cancel
+            </Button>
+            {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
+              <Button
+                variant="contained"
+                onClick={() => {
+                  const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
+                    ? 'ACTIVE'
+                    : 'SCHEDULED';
+                  setStatus(campaignStatus);
+                  // Directly trigger form submission with the campaign status
+                  onSubmit(campaignStatus);
+                }}
+                startIcon={<Iconify icon="material-symbols:publish" />}
+                disabled={isLoading}
+                sx={{
+                  bgcolor: '#1340FF',
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 600,
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                  '&:hover': {
+                    bgcolor: '#0030e0',
+                  },
+                }}
+              >
+                {(() => {
+                  if (isActivateMode) return isLoading ? 'Activating...' : 'Activate Now';
+                  return isLoading ? 'Publishing...' : 'Publish Now';
+                })()}
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                onClick={() => {
+                  const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
+                    ? 'ACTIVE'
+                    : 'SCHEDULED';
+                  setStatus(campaignStatus);
+                  // Directly trigger form submission with the campaign status
+                  onSubmit(campaignStatus);
+                }}
+                disabled={isLoading}
+                startIcon={<Iconify icon="mdi:calendar-clock" />}
+                sx={{
+                  bgcolor: '#1340FF',
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 600,
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                  '&:hover': {
+                    bgcolor: '#0030e0',
+                  },
+                }}
+              >
+                {isLoading
+                  ? 'Scheduling...'
+                  : `Schedule on ${dayjs(campaignStartDate).format('ddd LL')}`}
+              </Button>
+            )}
+          </DialogActions>
+        </Dialog>
 
         <Box
           sx={{

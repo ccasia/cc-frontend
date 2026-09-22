@@ -1,5 +1,5 @@
-import { it, vi, expect, describe, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { it, vi, expect, describe, beforeEach } from 'vitest';
 
 vi.mock('notistack', () => ({ useSnackbar: () => ({ enqueueSnackbar: vi.fn() }) }));
 vi.mock('react-router-dom', () => ({

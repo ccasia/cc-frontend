@@ -5,7 +5,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import PostThumb from './post-thumb';
-import { CC, FIELD_RADIUS, labelSx } from './creator-field-tokens';
+import { CC, labelSx, FIELD_RADIUS } from './creator-field-tokens';
 
 /**
  * How the engagement rate was reached.
@@ -78,7 +78,7 @@ const totalEngagement = (post) =>
 /** Even counts take the mean of the two middle values, as the backend does. */
 export function medianOf(values) {
   const sorted = [...values].sort((a, b) => a - b);
-  const middle = sorted.length >> 1;
+  const middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 

@@ -489,7 +489,6 @@ function DealValue({ people, valueTotals }) {
 DealValue.propTypes = {
   people: PropTypes.array,
   valueTotals: PropTypes.object,
-  currency: PropTypes.string,
 };
 
 const BusinessDevelopmentTab = ({ dateRange }) => {

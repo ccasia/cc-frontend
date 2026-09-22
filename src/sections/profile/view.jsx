@@ -54,7 +54,6 @@ import Preference from '../creator/profile/preferences';
 import AccountSocialLinks from '../creator/profile/social';
 import PaymentFormProfile from '../creator/profile/payment-form';
 import AccountNotifications from '../creator/profile/notification';
-import VideoTest from './VideoTest';
 
 // import x from '../creator/profile/notification';
 

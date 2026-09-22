@@ -22,8 +22,6 @@ import { paths } from 'src/routes/paths';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import { useAuthContext } from 'src/auth/hooks';
-
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
@@ -33,25 +31,30 @@ import {
   extractUsernameFromProfileLink,
 } from 'src/utils/media-kit-utils';
 
+import { useAuthContext } from 'src/auth/hooks';
 import { OUTREACH_STATUS_OPTIONS, getOutreachStatusConfig } from 'src/contants/outreach';
 
 import Iconify from 'src/components/iconify';
 
+import DiaTextReveal from './dia-text-reveal';
+import V3PitchActions from './v3-pitch-actions';
+import useJustFinished from './use-just-finished';
+import CreatorFieldLoading from './guest-extraction/creator-field-loading';
 import {
   chipSx,
   CELL_SX,
-  SMALL_SIZE,
-  emptyChipSx,
-  INDEX_SX,
   NAME_SX,
+  INDEX_SX,
   VALUE_SX,
   HANDLE_SX,
   ICON_SIZE,
   NAME_SIZE,
+  SMALL_SIZE,
   EmptyValue,
   FieldBlock,
   PRODUCT_SX,
   VALUE_SIZE,
+  emptyChipSx,
   AVATAR_SIZE,
   NAME_HEIGHT,
   PlatformIcon,
@@ -64,11 +67,6 @@ import {
   CONTROL_ICON_SIZE,
   formatEngagementRate,
 } from '../../master-list-row-kit';
-
-import V3PitchActions from './v3-pitch-actions';
-import DiaTextReveal from './dia-text-reveal';
-import useJustFinished from './use-just-finished';
-import CreatorFieldLoading from './guest-extraction/creator-field-loading';
 
 const TYPE_LABELS = {
   video: 'Pitch (Video)',
@@ -404,7 +402,8 @@ const PitchRow = ({
             {pitch.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
           <Stack spacing={0.5}>
-            {canOpenCreatorProfile ? (
+            {(() => {
+              if (canOpenCreatorProfile) return (
               <Link
                 component={RouterLink}
                 to={paths.dashboard.creator.profile(creatorProfileId)}
@@ -425,7 +424,8 @@ const PitchRow = ({
                   pitch.user?.name
                 )}
               </Link>
-            ) : revealScrapeMetrics && pitch.user?.name ? (
+              );
+              if (revealScrapeMetrics && pitch.user?.name) return (
               <DiaTextReveal
                 text={pitch.user.name}
                 textColor="#231F20"
@@ -433,9 +433,11 @@ const PitchRow = ({
                 delay={0.05}
                 style={NAME_REVEAL_STYLE}
               />
-            ) : (
+              );
+              return (
               <Typography sx={NAME_SX}>{pitch.user?.name}</Typography>
-            )}
+              );
+            })()}
 
             {hasSocialUsernames ? (
               /* One handle per line: Instagram first, TikTok under it. */
@@ -657,7 +659,8 @@ const PitchRow = ({
       <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.engagement }}>
         <Stack spacing={0.5}>
           <FieldBlock label="Engagement rate" minHeight={CHIP_ROW_HEIGHT}>
-            {metricsPending ? (
+            {(() => {
+              if (metricsPending) return (
               <Box sx={{ width: 120 }}>
                 <CreatorFieldLoading
                   label="Fetching engagement rate"
@@ -665,14 +668,17 @@ const PitchRow = ({
                   height={CHIP_ROW_HEIGHT}
                 />
               </Box>
-            ) : engagementRateText ? (
+              );
+              if (engagementRateText) return (
               <Stack direction="row" alignItems="center" spacing={1}>
                 <PlatformIcon platform={displayData.engagementPlatform} />
                 <ScrapeMetricValue text={engagementRateText} reveal={revealScrapeMetrics} />
               </Stack>
-            ) : (
+              );
+              return (
               <EmptyValue />
-            )}
+              );
+            })()}
           </FieldBlock>
 
           {/* Tier name and its credit amount both show on every campaign. */}
@@ -707,7 +713,8 @@ const PitchRow = ({
       <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.followers }}>
         <Stack spacing={0.5}>
           <FieldBlock label="Followers" minHeight={CHIP_ROW_HEIGHT}>
-            {metricsPending ? (
+            {(() => {
+              if (metricsPending) return (
               <Box sx={{ width: 120 }}>
                 <CreatorFieldLoading
                   label="Fetching follower count"
@@ -715,7 +722,8 @@ const PitchRow = ({
                   height={CHIP_ROW_HEIGHT}
                 />
               </Box>
-            ) : displayData.followerCount ? (
+              );
+              if (displayData.followerCount) return (
               <Tooltip
                 title={Number(displayData.followerCount).toLocaleString()}
                 arrow
@@ -745,9 +753,11 @@ const PitchRow = ({
                   />
                 </Stack>
               </Tooltip>
-            ) : (
+              );
+              return (
               <EmptyValue />
-            )}
+              );
+            })()}
           </FieldBlock>
 
           <FieldBlock label="Type">

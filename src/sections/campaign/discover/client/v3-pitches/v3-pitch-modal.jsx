@@ -15,8 +15,8 @@ import {
   Avatar,
   Button,
   Divider,
-  TextField,
   Tooltip,
+  TextField,
   IconButton,
   Typography,
   DialogTitle,
@@ -41,9 +41,8 @@ import { useGetAllCreators } from 'src/api/creator';
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
 
-import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
-
 import CampaignAgreementEdit from '../../admin/campaign-agreement-edit';
+import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
 import {
   seedPitchPlatform,
   availablePitchPlatforms,

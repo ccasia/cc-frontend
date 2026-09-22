@@ -1,7 +1,8 @@
 import useSWR from 'swr';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
 import {
   Box,
@@ -43,7 +44,7 @@ export default function DraftsPendingModal({ open, onClose }) {
     { revalidateOnFocus: false }
   );
 
-  const submissions = Array.isArray(data) ? data : [];
+  const submissions = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
   const grouped = useMemo(() => {
     const map = {};
@@ -303,3 +304,8 @@ export default function DraftsPendingModal({ open, onClose }) {
     </Dialog>
   );
 }
+
+DraftsPendingModal.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+};

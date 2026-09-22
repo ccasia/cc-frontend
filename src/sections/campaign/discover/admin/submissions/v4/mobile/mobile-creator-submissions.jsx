@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useCallback, useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 
 import { Box, Stack, Avatar, Collapse, Typography } from '@mui/material';
 

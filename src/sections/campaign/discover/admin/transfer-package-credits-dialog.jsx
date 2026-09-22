@@ -45,7 +45,10 @@ export default function TransferPackageCreditsDialog({ open, onClose, campaign, 
   const client = campaign?.company || campaign?.brand?.company;
   const availableCredits = useMemo(() => getAvailablePackageCredits(client), [client]);
   const currentCampaignCredits = Number(campaign?.campaignCredits) || 0;
-  const creditsRemaining = Math.max(0, currentCampaignCredits - (Number(campaign?.creditsUtilized) || 0));
+  const creditsRemaining = Math.max(
+    0,
+    currentCampaignCredits - (Number(campaign?.creditsUtilized) || 0)
+  );
   const parsedAmount = Number(amount) || 0;
 
   const isInvalid = !parsedAmount || parsedAmount <= 0 || parsedAmount > availableCredits;
@@ -81,7 +84,12 @@ export default function TransferPackageCreditsDialog({ open, onClose, campaign, 
       fullWidth
       PaperProps={{ sx: { borderRadius: '20px', bgcolor: '#F5F5F5', position: 'relative' } }}
     >
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ px: 3.5, pt: 3.5 }}>
+      <Stack
+        direction="row"
+        alignItems="flex-start"
+        justifyContent="space-between"
+        sx={{ px: 3.5, pt: 3.5 }}
+      >
         <Stack spacing={0.25}>
           <DialogTitle
             sx={{
@@ -92,11 +100,15 @@ export default function TransferPackageCreditsDialog({ open, onClose, campaign, 
           >
             Transfer Campaign Credits
           </DialogTitle>
-          <Typography sx={{ color: '#6B7280', fontSize: '0.85rem' }}>for {campaign?.name}</Typography>
+          <Typography sx={{ color: '#6B7280', fontSize: '0.85rem' }}>
+            for {campaign?.name}
+          </Typography>
         </Stack>
 
         <Stack direction="row" alignItems="center" spacing={1.5} sx={{ pt: 0.5 }}>
-          <Typography sx={{ fontSize: '0.8rem', color: '#1340FF', fontWeight: 500, whiteSpace: 'nowrap' }}>
+          <Typography
+            sx={{ fontSize: '0.8rem', color: '#1340FF', fontWeight: 500, whiteSpace: 'nowrap' }}
+          >
             {creditsRemaining} Campaign Credits Remaining
           </Typography>
           <IconButton onClick={handleClose} disabled={loading} sx={{ color: '#221f20' }}>

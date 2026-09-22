@@ -1,4 +1,5 @@
 import useSWR from 'swr';
+import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
 
 import {
@@ -193,6 +194,13 @@ const CSMWorkloadTab = ({ dateRange }) => {
       <CSMWorkloadDrawer csm={selectedCSM} dateRange={dateRange} onClose={() => setSelectedCSM(null)} />
     </Box>
   );
+};
+
+CSMWorkloadTab.propTypes = {
+  dateRange: PropTypes.shape({
+    startDate: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
+    endDate: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
+  }),
 };
 
 export default CSMWorkloadTab;

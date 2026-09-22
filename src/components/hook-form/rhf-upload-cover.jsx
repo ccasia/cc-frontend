@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import Cropper from 'react-easy-crop';
+import { useState, useCallback } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
@@ -14,8 +14,8 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
 import Iconify from '../iconify';
-import UploadSingle from '../upload/upload-single';
 import getCroppedImg from '../../utils/cropImage';
+import UploadSingle from '../upload/upload-single';
 
 // ----------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 import userEvent from '@testing-library/user-event';
 import { it, vi, expect, describe, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 
 /**
  * Characterisation tests for the Add Platform Creators modal.

@@ -23,9 +23,9 @@ import {
   DialogActions,
 } from '@mui/material';
 
-import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
-
 import { paths } from 'src/routes/paths';
+
+import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { campaignHasClient } from 'src/utils/campaign-flow';
@@ -35,6 +35,11 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
 
+import {
+  seedPitchPlatform,
+  availablePitchPlatforms,
+  resolvePitchPlatformStats,
+} from '../client/v3-pitches/resolve-pitch-platform-stats';
 import {
   LINE,
   ONYX,
@@ -46,11 +51,6 @@ import {
   VDivider,
   FieldGroup,
 } from '../client/v3-pitches/v3-pitch-modal-parts';
-import {
-  availablePitchPlatforms,
-  resolvePitchPlatformStats,
-  seedPitchPlatform,
-} from '../client/v3-pitches/resolve-pitch-platform-stats';
 
 const PitchModalMobile = ({
   pitch,
