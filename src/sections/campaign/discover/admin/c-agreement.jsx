@@ -132,6 +132,20 @@ export const getFollowerCountByPlatform = (campaign, agreement, platform) => {
   );
 };
 
+// Same minFollowers/maxFollowers tier resolution as the backend creditTierService.ts
+export const resolveTierForFollowerCount = (creditTierList, followerCount) => {
+  if (!Array.isArray(creditTierList) || !followerCount || followerCount <= 0) return null;
+
+  const matched = creditTierList.filter(
+    (tier) =>
+      tier?.isActive &&
+      tier?.minFollowers <= followerCount &&
+      (tier?.maxFollowers === null || tier?.maxFollowers >= followerCount)
+  );
+  if (!matched.length) return null;
+  return matched.sort((a, b) => (b?.minFollowers || 0) - (a?.minFollowers || 0))[0];
+};
+
 const getMediaKitFollowerCount = (agreement, platform) => {
   const creatorData = agreement?.user?.creator;
 
@@ -389,7 +403,12 @@ CreditsStatusBanner.propTypes = {
 // Row component
 // -----------------------------------------------------------------------------
 
-const CAgreement = ({ agreement, campaign, index, exclude }) => {
+/**
+ * availableCredits: pass it when the parent already knows the credits left for this whole form
+ * (e.g. additional rounds, where these creators already used credits in earlier rounds).
+ * Leave it undefined to work it out from the saved agreements (first agreements).
+ */
+const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, errorMessage }) => {
   const { user } = useAuthContext();
   const { data: savedAgreements } = useGetAgreements(campaign?.id); // saved agreements from the server
   const { data: creditTierList } = useGetCreditTiers();
@@ -465,17 +484,8 @@ const CAgreement = ({ agreement, campaign, index, exclude }) => {
     : Number(selectedPlatformFollower || 0);
 
   const liveTierData = useMemo(() => {
-    if (!campaign?.isCreditTier || !Array.isArray(creditTierList)) return null;
-    if (!effectiveFollowerCountForTier || effectiveFollowerCountForTier <= 0) return null;
-
-    const matched = creditTierList.filter(
-      (tier) =>
-        tier?.isActive &&
-        tier?.minFollowers <= effectiveFollowerCountForTier &&
-        (tier?.maxFollowers === null || tier?.maxFollowers >= effectiveFollowerCountForTier)
-    );
-    if (!matched.length) return null;
-    return matched.sort((a, b) => (b?.minFollowers || 0) - (a?.minFollowers || 0))[0];
+    if (!campaign?.isCreditTier) return null;
+    return resolveTierForFollowerCount(creditTierList, effectiveFollowerCountForTier);
   }, [campaign?.isCreditTier, creditTierList, effectiveFollowerCountForTier]);
 
   let previewTierSource = tierData || null;
@@ -538,10 +548,16 @@ const CAgreement = ({ agreement, campaign, index, exclude }) => {
   // Max credits this row can use = total - used by others - wanted by other rows
   const maxCreditsAllowed = useMemo(() => {
     if (campaign?.campaignCredits == null) return null;
+
+    if (availableCredits !== undefined) {
+      if (availableCredits === null) return null;
+      return Math.max(0, Number(availableCredits) - otherRowsCost);
+    }
+
     if (usedCreditsByOthers === null) return null;
 
     return Math.max(0, Number(campaign.campaignCredits) - usedCreditsByOthers - otherRowsCost);
-  }, [campaign, usedCreditsByOthers, otherRowsCost]);
+  }, [campaign, usedCreditsByOthers, otherRowsCost, availableCredits]);
 
   const creatorCost = useMemo(() => {
     if (!requiresUGCCredits) return 0;
@@ -1128,6 +1144,14 @@ const CAgreement = ({ agreement, campaign, index, exclude }) => {
               />
             </Stack>
           </Grid>
+
+          {errorMessage && (
+            <Grid item xs={12}>
+              <Typography variant="caption" sx={{ color: 'error.main' }}>
+                {errorMessage}
+              </Typography>
+            </Grid>
+          )}
         </Grid>
       </Box>
     </Box>
@@ -1141,4 +1165,6 @@ CAgreement.propTypes = {
   campaign: PropTypes.object,
   index: PropTypes.number.isRequired,
   exclude: PropTypes.func,
+  availableCredits: PropTypes.number,
+  errorMessage: PropTypes.string,
 };
