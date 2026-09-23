@@ -18,6 +18,7 @@ import {
   Tooltip,
   TextField,
   IconButton,
+  ButtonBase,
   Typography,
   DialogTitle,
   Autocomplete,
@@ -41,7 +42,11 @@ import { useGetAllCreators } from 'src/api/creator';
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
 
+import WarningMessage from './guest-extraction/warning-message';
 import CampaignAgreementEdit from '../../admin/campaign-agreement-edit';
+import { canEditFailedMetrics } from './guest-extraction/manual-metrics';
+import ManualMetricsDialog from './guest-extraction/manual-metrics-dialog';
+import { failureReasonShort } from './guest-extraction/extraction-error-copy';
 import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
 import {
   seedPitchPlatform,
@@ -64,6 +69,38 @@ const DASH = '\u2014';
 const MAX_LANGUAGES = 3;
 const MAX_INTERESTS = 5;
 
+/** Small tinted action: "+ Add numbers" in the warning, "Edit" beside a saved value. */
+function MetricActionButton({ label, onClick }) {
+  return (
+    <ButtonBase
+      onClick={onClick}
+      aria-label={label === 'Add' ? 'Add numbers by hand' : 'Edit follower count and engagement rate'}
+      sx={{
+        gap: 0.25,
+        height: 24,
+        px: 1,
+        borderRadius: '6px',
+        fontSize: 12,
+        fontWeight: 600,
+        lineHeight: '16px',
+        color: '#1340FF',
+        bgcolor: 'rgba(19, 64, 255, 0.08)',
+        transition: 'background-color 120ms ease',
+        '&:hover': { bgcolor: 'rgba(19, 64, 255, 0.16)' },
+        '&.Mui-focusVisible': { outline: '2px solid #1340FF', outlineOffset: 1 },
+      }}
+    >
+      <Iconify icon={label === 'Add' ? 'eva:plus-fill' : 'solar:pen-bold'} width={12} />
+      {label === 'Add' ? 'Add numbers' : 'Edit'}
+    </ButtonBase>
+  );
+}
+
+MetricActionButton.propTypes = {
+  label: PropTypes.oneOf(['Add', 'Edit']).isRequired,
+  onClick: PropTypes.func.isRequired,
+};
+
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = false }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
@@ -73,6 +110,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
+  const [manualMetricsOpen, setManualMetricsOpen] = useState(false);
   const [comments, setComments] = useState('');
   const [creatorProfileFull, setCreatorProfileFull] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState('instagram'); // 'instagram' or 'tiktok'
@@ -203,6 +241,20 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
     creatorProfileFull,
     platform: selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram',
   });
+
+  // A platform creator whose fetch failed after being added. The admin types the numbers.
+  const canEnterMetrics = isAdmin && !isDisabled && canEditFailedMetrics(currentPitch);
+
+  // The failed fetch belongs to the pitch platform, not to the header toggle.
+  // Read that platform's numbers, so the warning does not come and go when the
+  // admin switches to the other platform.
+  const pitchPlatform = currentPitch?.selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram';
+  const pitchPlatformStats = resolvePitchPlatformStats({
+    pitch: currentPitch,
+    creatorProfileFull,
+    platform: pitchPlatform,
+  });
+  const showingPitchPlatform = (selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram') === pitchPlatform;
 
   const followersText = followerCount == null ? DASH : formatNumber(followerCount);
   const engagementText = engagementRate == null ? DASH : `${Number(engagementRate).toFixed(2)}%`;
@@ -636,7 +688,22 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
                     <StatTile
                       compact={mdDown}
                       stat="engagement"
-                      value={engagementText}
+                      value={
+                        canEnterMetrics && showingPitchPlatform && engagementRate != null ? (
+                          <Box
+                            component="span"
+                            sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}
+                          >
+                            {engagementText}
+                            <MetricActionButton
+                              label="Edit"
+                              onClick={() => setManualMetricsOpen(true)}
+                            />
+                          </Box>
+                        ) : (
+                          engagementText
+                        )
+                      }
                       caption="Engagement Rate"
                     />
                     <VDivider height={64} compact={mdDown} />
@@ -647,6 +714,20 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
                       caption="Average Likes"
                     />
                   </Stack>
+
+                  {canEnterMetrics && pitchPlatformStats.engagementRate == null && (
+                    <WarningMessage
+                      title="Engagement rate unavailable"
+                      description={failureReasonShort(
+                        currentPitch.metricsFailureCode,
+                        currentPitch.selectedPlatform
+                      )}
+                      action={{
+                        label: 'Enter numbers manually',
+                        onClick: () => setManualMetricsOpen(true),
+                      }}
+                    />
+                  )}
                 </Stack>
               </Stack>
 
@@ -1170,6 +1251,18 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
         campaignMutate={() => {}}
         dialog={agreementDialog}
         agreementsMutate={agreementsMutate}
+      />
+
+      <ManualMetricsDialog
+        open={manualMetricsOpen}
+        initialValues={{
+          followerCount: pitchPlatformStats.followers,
+          engagementRate: pitchPlatformStats.engagementRate,
+        }}
+        onClose={() => setManualMetricsOpen(false)}
+        pitch={currentPitch}
+        // Same as the other actions here: the list refreshes and the modal closes.
+        onSaved={(saved) => onUpdate?.({ ...currentPitch, ...saved })}
       />
     </>
   );
