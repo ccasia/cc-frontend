@@ -18,6 +18,7 @@ import Iconify from 'src/components/iconify';
 import useJustFinished from '../use-just-finished';
 import CreatorFieldLoading from './creator-field-loading';
 import { platformLabel } from './profile-link-validation';
+import { extractionErrorCopy } from './extraction-error-copy';
 import ScrapeTextFieldReveal from '../scrape-text-field-reveal';
 import EngagementBreakdownDialog from './engagement-breakdown-dialog';
 import { CC, labelSx, inputSx, FIELD_HEIGHT } from './creator-field-tokens';
@@ -42,13 +43,6 @@ import {
  * the platform comes from the link, and the icon inside the link field
  * reports what was recognised.
  */
-
-const FALLBACK_COPY = {
-  INSUFFICIENT_DATA:
-    'This creator has fewer than 10 usable public posts. Instagram needs 10 Reels or videos, because the rate is based on views.',
-  PRIVATE_PROFILE: 'This account is private.',
-  PROFILE_NOT_FOUND: 'This account could not be found.',
-};
 
 /**
  * Outline, not fill, and each platform in its own brand colour. This is the
@@ -186,7 +180,7 @@ export default function CreatorScrapeRow({
         (isFollowers && !hasSafeFollowerCount(row[field])) ||
         (isRate && !hasSafeEngagementRate(row[field])));
     let manualHelperText = 'Enter a creator name.';
-    if (isFollowers) manualHelperText = 'Enter a whole number from 1 to 10,000,000,000.';
+    if (isFollowers) manualHelperText = 'Enter a whole number from 1 to 2,000,000,000.';
     if (isRate) manualHelperText = 'Enter a percentage from 0 to 1,000.';
 
     return (
@@ -369,7 +363,7 @@ export default function CreatorScrapeRow({
       {canFallback && (
         <Alert severity="info" sx={{ mt: 1.5, borderRadius: 1 }}>
           <Typography sx={{ fontSize: '13px', mb: 0.5 }}>
-            {FALLBACK_COPY[row.fallbackReason]}
+            {extractionErrorCopy(row)}
           </Typography>
           <FormControlLabel
             control={

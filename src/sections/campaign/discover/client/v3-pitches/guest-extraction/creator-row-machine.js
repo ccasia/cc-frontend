@@ -62,7 +62,8 @@ export const ALLOWED_FALLBACK_REASONS = [
 export const MAX_ROWS = 3;
 
 /** Matches the backend guard in campaignController.shortlistGuestCreators. */
-export const MAX_FOLLOWER_COUNT = 10_000_000_000;
+// Matches the backend. The database stores follower counts as INT.
+export const MAX_FOLLOWER_COUNT = 2_000_000_000;
 
 export const ACTIONS = {
   RESET: 'RESET',
@@ -492,6 +493,19 @@ export function creatorRowReducer(state, action) {
           ? row
           : {
               ...clearResult(row),
+              // Too few posts for a rate, but the profile itself was read. Keep
+              // the name and follower count so the admin only types the rate.
+              name: action.name ?? '',
+              followerCount: action.followerCount ?? '',
+              fetched:
+                action.name || action.followerCount
+                  ? {
+                      name: action.name ?? '',
+                      followerCount: action.followerCount ?? '',
+                      engagementRate: '',
+                    }
+                  : null,
+              fieldUpdateSource: action.followerCount ? FIELD_UPDATE_SOURCE.SCRAPE : null,
               status: ROW_STATUS.INSUFFICIENT_DATA,
               extractionId: row.extractionId,
               sampleSize: action.validCount ?? null,

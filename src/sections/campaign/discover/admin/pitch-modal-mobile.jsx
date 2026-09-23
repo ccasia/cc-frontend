@@ -35,6 +35,10 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
 
+import WarningMessage from '../client/v3-pitches/guest-extraction/warning-message';
+import { canEditFailedMetrics } from '../client/v3-pitches/guest-extraction/manual-metrics';
+import ManualMetricsDialog from '../client/v3-pitches/guest-extraction/manual-metrics-dialog';
+import { failureReasonShort } from '../client/v3-pitches/guest-extraction/extraction-error-copy';
 import {
   seedPitchPlatform,
   availablePitchPlatforms,
@@ -240,6 +244,17 @@ const PitchModalMobile = ({
 
   const formatEngagement = (value) => (value == null ? 'N/A' : `${Math.round(value)}%`);
 
+  // Same rule as the desktop modal: an admin may type Followers and ER when
+  // the fetch for this platform creator failed. Read the pitch platform, not
+  // the header toggle, so the warning does not follow the toggle.
+  const isAdminUser = user?.role === 'admin' || user?.role === 'superadmin';
+  const [manualMetricsOpen, setManualMetricsOpen] = useState(false);
+  const pitchPlatformStats = resolvePitchPlatformStats({
+    pitch: currentPitch,
+    creatorProfileFull,
+    platform: currentPitch?.selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram',
+  });
+
   const formatLikes = (value) => formatCount(value, 'N/A');
 
   const matchingPercentage = useMemo(() => {
@@ -257,6 +272,15 @@ const PitchModalMobile = ({
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+
+  const canEnterMetrics =
+    isAdminUser && !readOnly && !isDisabled && canEditFailedMetrics(currentPitch);
+
+  const handleManualMetricsSaved = (saved) => {
+    const updatedPitch = { ...currentPitch, ...saved };
+    setCurrentPitch(updatedPitch);
+    onUpdate?.(updatedPitch);
+  };
 
   const handleApprove = async () => {
     // Hybrid pitch UX: 'approve' is final; 'send_to_client' forwards to client review
@@ -641,6 +665,37 @@ const PitchModalMobile = ({
                   caption="Average Likes"
                 />
               </Stack>
+
+              {canEnterMetrics &&
+                (pitchPlatformStats.engagementRate == null ? (
+                  <WarningMessage
+                    title="Engagement rate unavailable"
+                    description={failureReasonShort(
+                      currentPitch.metricsFailureCode,
+                      currentPitch.selectedPlatform
+                    )}
+                    action={{
+                      label: 'Enter numbers manually',
+                      onClick: () => setManualMetricsOpen(true),
+                    }}
+                  />
+                ) : (
+                  <Button
+                    size="small"
+                    onClick={() => setManualMetricsOpen(true)}
+                    startIcon={<Iconify icon="solar:pen-bold" width={14} />}
+                    sx={{
+                      alignSelf: 'flex-start',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#1340FF',
+                      textTransform: 'none',
+                      '&:hover': { bgcolor: 'rgba(19, 64, 255, 0.08)' },
+                    }}
+                  >
+                    Edit follower count and engagement rate
+                  </Button>
+                ))}
             </Stack>
 
             {/* Pitch Section */}
@@ -1253,6 +1308,19 @@ const PitchModalMobile = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {canEnterMetrics && (
+        <ManualMetricsDialog
+          open={manualMetricsOpen}
+          onClose={() => setManualMetricsOpen(false)}
+          pitch={currentPitch}
+          initialValues={{
+            followerCount: pitchPlatformStats.followers,
+            engagementRate: pitchPlatformStats.engagementRate,
+          }}
+          onSaved={handleManualMetricsSaved}
+        />
+      )}
     </>
   );
 };

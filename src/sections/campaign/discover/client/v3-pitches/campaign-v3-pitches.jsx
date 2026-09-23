@@ -51,6 +51,7 @@ import usePitchSocket from './use-pitch-socket';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
 import useGuestExtraction from './guest-extraction/use-guest-extraction';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
+import { extractionErrorCopy } from './guest-extraction/extraction-error-copy';
 import { validateProfileLink } from './guest-extraction/profile-link-validation';
 import useGuestMetricsDecision from './guest-extraction/use-guest-metrics-decision';
 import ScrapeTextFieldReveal, { ScrapeRevealGate } from './scrape-text-field-reveal';
@@ -272,10 +273,11 @@ const SCRAPE_FETCHING = ['VALIDATING', 'QUEUED', 'RUNNING', 'POLLING'];
 
 const SCRAPE_HINTS = {
   VALIDATING: 'Checking the link…',
-  INSUFFICIENT_DATA: 'Not enough public posts. Enter the numbers by hand.',
   FAILED: 'Could not fetch. Enter the numbers by hand.',
 };
 
+// The fetch failure itself is shown by code, never as the raw backend
+// message, which can carry provider text such as `no_items: ...`.
 const getSourceFeedback = (row) => {
   if (
     row.saveError?.code === 'FALLBACK_NOT_ALLOWED' ||
@@ -283,7 +285,7 @@ const getSourceFeedback = (row) => {
   ) {
     return SCRAPE_HINTS.FAILED;
   }
-  return row.saveError?.message || row.error?.message || SCRAPE_HINTS[row.status] || '';
+  return row.saveError?.message || extractionErrorCopy(row) || SCRAPE_HINTS[row.status] || '';
 };
 
 const normalizeSaveErrorBody = (error) =>
@@ -1507,6 +1509,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                     onViewPitch={handleViewPitch}
                     onRemoved={handleRemoveCreator}
                     onOutreachUpdate={handleOutreachUpdate}
+                    onMetricsUpdate={handleOutreachUpdate}
                     isDisabled={isDisabled}
                     logistics={logistics}
                   />
@@ -2128,8 +2131,8 @@ export function PlatformCreatorModal({
       return;
     }
 
-    // Validate follower counts - max 10 billion
-    const MAX_FOLLOWER_COUNT = 10_000_000_000;
+    // Validate follower counts - max 2 billion (the database stores them as INT)
+    const MAX_FOLLOWER_COUNT = 2_000_000_000;
     const invalidRow = validRows.find((row) => {
       const count = row.followerCount ? parseInt(row.followerCount, 10) : 0;
       return count > MAX_FOLLOWER_COUNT;
@@ -3250,8 +3253,8 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
       return;
     }
 
-    // Validate follower counts - max 10 billion
-    const MAX_FOLLOWER_COUNT = 10_000_000_000;
+    // Validate follower counts - max 2 billion (the database stores them as INT)
+    const MAX_FOLLOWER_COUNT = 2_000_000_000;
     const invalidFollower = formValues.creators.find((c) => {
       const count = c.followerCount ? parseInt(c.followerCount, 10) : 0;
       return count > MAX_FOLLOWER_COUNT;
