@@ -14,7 +14,7 @@ import {
   Tabs,
   Stack,
   Avatar,
-  Button,
+  Tooltip,
   Divider,
   MenuItem,
   TextField,
@@ -595,7 +595,49 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
                 spacing={1}
               >
                 <Stack direction="row" alignItems="center" gap={1.5} flex={1}>
-                  <Avatar src={agreement?.user?.photoURL} />
+                  {rows.length > 1 && (
+                    <Typography
+                      sx={{ fontSize: 12, color: '#8E8E93', minWidth: 14, textAlign: 'right' }}
+                    >
+                      {index + 1}
+                    </Typography>
+                  )}
+
+                  {/* Hovering the avatar reveals an X to exclude this creator */}
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      flexShrink: 0,
+                      '&:hover .exclude-overlay': { opacity: 1 },
+                    }}
+                  >
+                    <Avatar src={agreement?.user?.photoURL} />
+                    {rows.length > 1 && exclude && (
+                      <Tooltip title="Exclude creator">
+                        <Box
+                          className="exclude-overlay"
+                          role="button"
+                          aria-label="Exclude creator"
+                          onClick={exclude}
+                          sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            borderRadius: '50%',
+                            bgcolor: 'rgba(0, 0, 0, 0.55)',
+                            color: '#FFF',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            opacity: 0,
+                            transition: 'opacity .2s ease-in-out',
+                          }}
+                        >
+                          <Iconify icon="ci:close-md" width={20} />
+                        </Box>
+                      </Tooltip>
+                    )}
+                  </Box>
                   <Stack width={150}>
                     <Typography
                       sx={{
@@ -744,17 +786,6 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
                     </Stack>
                   )}
                 </Stack>
-                {rows.length > 1 && (
-                  <Button
-                    size="small"
-                    sx={{ alignSelf: 'center' }}
-                    startIcon={<Iconify icon="ci:close-md" />}
-                    color="error"
-                    onClick={exclude}
-                  >
-                    Exclude
-                  </Button>
-                )}
               </Stack>
             </Box>
           </Grid>
