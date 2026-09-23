@@ -323,6 +323,7 @@ export const endpoints = {
         submitAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/submit-agreement`,
         withdraw: (pitchId) => `/api/pitch/v3/${pitchId}/withdraw`,
         outreachStatus: (pitchId) => `/api/pitch/v3/${pitchId}/outreach-status`,
+        metrics: (pitchId) => `/api/pitch/v3/${pitchId}/metrics`,
         acceptInvite: (pitchId) => `/api/pitch/v3/${pitchId}/accept-invite`,
       },
     },

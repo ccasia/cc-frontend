@@ -15,6 +15,7 @@ import {
   TableCell,
   Typography,
   IconButton,
+  ButtonBase,
   CircularProgress,
 } from '@mui/material';
 
@@ -39,7 +40,10 @@ import Iconify from 'src/components/iconify';
 import DiaTextReveal from './dia-text-reveal';
 import V3PitchActions from './v3-pitch-actions';
 import useJustFinished from './use-just-finished';
+import { canEditFailedMetrics } from './guest-extraction/manual-metrics';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
+import ManualMetricsDialog from './guest-extraction/manual-metrics-dialog';
+import { failureDetails, failureLabelShort } from './guest-extraction/extraction-error-copy';
 import {
   chipSx,
   CELL_SX,
@@ -57,6 +61,7 @@ import {
   emptyChipSx,
   AVATAR_SIZE,
   NAME_HEIGHT,
+  SMALL_HEIGHT,
   PlatformIcon,
   SPINNER_SIZE,
   NAME_LINK_SX,
@@ -132,6 +137,144 @@ ScrapeMetricValue.propTypes = {
   textColor: PropTypes.string,
   style: PropTypes.object,
   sx: PropTypes.object,
+};
+
+/**
+ * Pencil beside a hand-entered value. Faint so a list of numbers stays calm,
+ * but always present, so keyboard and touch users can find it.
+ */
+const MANUAL_EDIT_CLASS = 'manual-metrics-edit';
+
+function ManualEditButton({ onClick }) {
+  return (
+    <Tooltip title="Edit" arrow placement="top">
+      <ButtonBase
+        className={MANUAL_EDIT_CLASS}
+        onClick={onClick}
+        aria-label="Edit follower count and engagement rate"
+        sx={{
+          width: 20,
+          height: 20,
+          borderRadius: '6px',
+          // Always visible: a hover-only action is invisible to keyboard and
+          // touch users. Faint at rest, clearer on row hover, blue on its own.
+          color: '#C7C7CC',
+          transition: 'color 120ms ease, background-color 120ms ease',
+          // `&&&` outranks the row's own hover rule, which dims this to grey.
+          '&&&:hover': { color: '#1340FF', bgcolor: 'rgba(19, 64, 255, 0.08)' },
+          '&&&.Mui-focusVisible': { color: '#1340FF', outline: '2px solid #1340FF', outlineOffset: 1 },
+        }}
+      >
+        <Iconify icon="solar:pen-bold" width={12} />
+      </ButtonBase>
+    </Tooltip>
+  );
+}
+
+ManualEditButton.propTypes = {
+  onClick: PropTypes.func.isRequired,
+};
+
+/**
+ * The fetch finished after the creator was added, with no usable numbers.
+ *
+ * One split chip, the same height and radius as the Outreach chip in this row:
+ * the status on the left (amber, two words, full causes in the tooltip) and
+ * the action on the right. One object, so a dense table stays calm.
+ */
+function FetchFailedValue({ label, details, onEnter }) {
+  return (
+    <Stack
+      direction="row"
+      alignItems="stretch"
+      sx={{
+        height: CHIP_ROW_HEIGHT,
+        boxSizing: 'border-box',
+        borderRadius: '6px',
+        border: '1px solid #FFD98A',
+        bgcolor: '#FFFFFF',
+        overflow: 'hidden',
+        maxWidth: '100%',
+      }}
+    >
+      <Tooltip
+        arrow
+        placement="top"
+        title={
+          <Box sx={{ maxWidth: 280, py: 0.25 }}>
+            <Typography sx={{ fontSize: 12, fontWeight: 600, lineHeight: '16px' }}>
+              {details.title}
+            </Typography>
+            <Typography sx={{ mt: 0.25, fontSize: 12, lineHeight: '16px' }}>{details.intro}</Typography>
+            {details.reasons.length > 0 && (
+              <Box component="ul" sx={{ m: 0, mt: 0.25, pl: 2 }}>
+                {details.reasons.map((reason) => (
+                  <Typography key={reason} component="li" sx={{ fontSize: 12, lineHeight: '16px' }}>
+                    {reason}
+                  </Typography>
+                ))}
+              </Box>
+            )}
+          </Box>
+        }
+      >
+        <Stack
+          tabIndex={0}
+          direction="row"
+          alignItems="center"
+          spacing={0.5}
+          aria-label={`${details.title}. ${details.intro} ${details.reasons.join('. ')}`}
+          onClick={(event) => event.stopPropagation()}
+          sx={{
+            minWidth: 0,
+            px: 0.75,
+            bgcolor: '#FFF8E6',
+            cursor: 'help',
+            outline: 'none',
+            '&:focus-visible': { boxShadow: 'inset 0 0 0 2px #FFAB00' },
+          }}
+        >
+          <Iconify icon="eva:alert-triangle-fill" width={12} sx={{ color: '#FFAB00', flexShrink: 0 }} />
+          <Typography
+            noWrap
+            sx={{ fontSize: SMALL_SIZE, fontWeight: 600, lineHeight: `${SMALL_HEIGHT}px`, color: '#7A4100' }}
+          >
+            {label}
+          </Typography>
+        </Stack>
+      </Tooltip>
+      <ButtonBase
+        onClick={onEnter}
+        aria-label="Enter numbers manually"
+        sx={{
+          flexShrink: 0,
+          gap: 0.25,
+          px: 0.75,
+          borderLeft: '1px solid #FFD98A',
+          fontSize: SMALL_SIZE,
+          fontWeight: 600,
+          lineHeight: `${SMALL_HEIGHT}px`,
+          color: '#1340FF',
+          transition: 'background-color 120ms ease',
+          '&:hover': { bgcolor: 'rgba(19, 64, 255, 0.06)' },
+          '&.Mui-focusVisible': { boxShadow: 'inset 0 0 0 2px #1340FF' },
+        }}
+      >
+        <Iconify icon="eva:plus-fill" width={12} />
+        Add
+      </ButtonBase>
+    </Stack>
+  );
+}
+
+FetchFailedValue.propTypes = {
+  label: PropTypes.string.isRequired,
+  details: PropTypes.shape({
+    title: PropTypes.string,
+    intro: PropTypes.string,
+    reasons: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+  onEnter: PropTypes.func.isRequired,
 };
 
 const PitchTypeCell = React.memo(
@@ -219,6 +362,7 @@ const PitchRow = ({
   onViewPitch,
   onRemoved,
   onOutreachUpdate,
+  onMetricsUpdate,
   isDisabled = false,
   logistics,
 }) => {
@@ -237,6 +381,14 @@ const PitchRow = ({
   const acceptedInviteByCreator = pitch?.acceptedInviteByCreatorId !== null;
   const metricsPending = Boolean(pitch.pendingExtractionId);
   const revealScrapeMetrics = useJustFinished(metricsPending);
+  // The fetch failed after the creator was added. The admin types the numbers.
+  const isAdminUser = user?.role === 'admin' || user?.role === 'superadmin';
+  const metricsEditable = isAdminUser && !isDisabled && canEditFailedMetrics(pitch);
+  const [manualMetricsOpen, setManualMetricsOpen] = useState(false);
+  const openManualMetrics = (event) => {
+    event.stopPropagation();
+    setManualMetricsOpen(true);
+  };
 
   // Outreach status dropdown state
   const [outreachAnchorEl, setOutreachAnchorEl] = useState(null);
@@ -378,6 +530,7 @@ const PitchRow = ({
       sx={{
         cursor: 'pointer',
         '&:first-of-type td': { borderTop: '1px solid #EBEBEB' },
+        [`&:hover .${MANUAL_EDIT_CLASS}`]: { color: '#8E8E93' },
       }}
     >
       {/* Row number */}
@@ -673,7 +826,15 @@ const PitchRow = ({
               <Stack direction="row" alignItems="center" spacing={1}>
                 <PlatformIcon platform={displayData.engagementPlatform} />
                 <ScrapeMetricValue text={engagementRateText} reveal={revealScrapeMetrics} />
+                {metricsEditable && <ManualEditButton onClick={openManualMetrics} />}
               </Stack>
+              );
+              if (metricsEditable) return (
+              <FetchFailedValue
+                label={failureLabelShort(pitch.metricsFailureCode, pitch.selectedPlatform)}
+                details={failureDetails(pitch.metricsFailureCode, pitch.selectedPlatform)}
+                onEnter={openManualMetrics}
+              />
               );
               return (
               <EmptyValue />
@@ -724,6 +885,9 @@ const PitchRow = ({
               </Box>
               );
               if (displayData.followerCount) return (
+              // The pencil sits outside the count tooltip, so hovering it
+              // shows only its own tooltip.
+              <Stack direction="row" alignItems="center" spacing={1}>
               <Tooltip
                 title={Number(displayData.followerCount).toLocaleString()}
                 arrow
@@ -753,6 +917,10 @@ const PitchRow = ({
                   />
                 </Stack>
               </Tooltip>
+              {metricsEditable && engagementRateText && (
+                <ManualEditButton onClick={openManualMetrics} />
+              )}
+              </Stack>
               );
               return (
               <EmptyValue />
@@ -831,6 +999,21 @@ const PitchRow = ({
           </IconButton>
         )}
       </TableCell>
+
+      {metricsEditable && (
+        <ManualMetricsDialog
+          open={manualMetricsOpen}
+          onClose={() => setManualMetricsOpen(false)}
+          pitch={pitch}
+          // What the row shows, which can come from the creator rather than
+          // the pitch. The dialog opens with the same numbers.
+          initialValues={{
+            followerCount: displayData.followerCount,
+            engagementRate: displayData.engagementRate,
+          }}
+          onSaved={() => onMetricsUpdate?.()}
+        />
+      )}
     </TableRow>
   );
 };
@@ -846,6 +1029,7 @@ PitchRow.propTypes = {
   onViewPitch: PropTypes.func.isRequired,
   onRemoved: PropTypes.func,
   onOutreachUpdate: PropTypes.func,
+  onMetricsUpdate: PropTypes.func,
   isDisabled: PropTypes.bool,
   logistics: PropTypes.array,
 };
