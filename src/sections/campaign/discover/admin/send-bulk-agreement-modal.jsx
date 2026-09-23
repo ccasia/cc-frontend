@@ -32,13 +32,9 @@ import FormProvider from 'src/components/hook-form';
 // import CAgreement from './c-agreement';
 // import TransferPackageCreditsDialog from './transfer-package-credits-dialog';
 
-import CAgreement from './c-agreement';
 import TransferPackageCreditsDialog from './transfer-package-credits-dialog';
 import AttachAdditionalPackageDialog from './attach-additional-package-dialog';
-import {
-  getFollowerCountByPlatform,
-  resolveTierForFollowerCount,
-} from './agreement-creator-cost-row';
+import CAgreement, { getFollowerCountByPlatform, resolveTierForFollowerCount } from './c-agreement';
 
 const rowSchema = yup.object().shape({
   isGuest: yup.boolean(),
@@ -276,7 +272,9 @@ export default function SendBulkAgreementModal({
         paymentAmount: parseInt(agreement?.shortlistedCreator?.amount, 10) || '',
         currency: agreement?.shortlistedCreator?.currency || 'MYR',
         ugcCredits: agreement?.videoCount ?? '',
-        platformFollowerCount: String(getFollowerCountByPlatform(agreement, agreedPlatform) || ''),
+        platformFollowerCount: String(
+          getFollowerCountByPlatform(campaign, agreement, agreedPlatform) || ''
+        ),
         isSeedingAgreement: Boolean(agreement?.isSeeding),
         product: product ? { name: product.name, value: product.value } : undefined,
       };
@@ -284,7 +282,7 @@ export default function SendBulkAgreementModal({
 
     replace(mapped);
     // trigger(); // validate once, not on every field
-  }, [agreements, replace, trigger]);
+  }, [agreements, campaign, replace, trigger]);
 
   return (
     <>
