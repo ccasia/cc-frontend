@@ -1,3 +1,6 @@
+import { formatNumber } from 'src/utils/socialMetricsCalculator';
+import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
+
 // ─── Shared creator helpers ────────────────────────────────────────────────────
 // Pure helpers shared by CreatorCard, CreatorProfilePanel and the discovery components.
 
@@ -5,7 +8,7 @@ export const ONYX = '#231F20';
 export const BLUE = '#1340FF';
 
 export const formatEngagementRate = (rate) => {
-  if (!rate && rate !== 0) return '0%';
+  if (rate == null || rate === '' || !Number.isFinite(Number(rate))) return '—';
   return `${Number(rate).toFixed(2)}%`;
 };
 
@@ -37,24 +40,24 @@ export const hasCreatorRating = (creator) => {
 };
 
 export const resolvePlatformData = (creator) => {
-  if (creator.platform === 'instagram' && creator.instagram?.connected) {
+  if (creator.platform === 'instagram') {
     return { platform: 'instagram', ...creator.instagram };
   }
 
-  if (creator.platform === 'tiktok' && creator.tiktok?.connected) {
+  if (creator.platform === 'tiktok') {
     return { platform: 'tiktok', ...creator.tiktok };
   }
 
   const ig = creator.instagram;
   const tt = creator.tiktok;
 
-  if (ig?.connected && tt?.connected) {
+  if ((ig?.available || ig?.connected) && (tt?.available || tt?.connected)) {
     return ig.followers >= tt.followers
       ? { platform: 'instagram', ...ig }
       : { platform: 'tiktok', ...tt };
   }
-  if (ig?.connected) return { platform: 'instagram', ...ig };
-  if (tt?.connected) return { platform: 'tiktok', ...tt };
+  if ((ig?.available || ig?.connected)) return { platform: 'instagram', ...ig };
+  if ((tt?.available || tt?.connected)) return { platform: 'tiktok', ...tt };
   return { platform: null };
 };
 
@@ -70,3 +73,13 @@ export const getPlatformIcon = (platform) => {
   if (platform === 'tiktok') return 'ic:baseline-tiktok';
   return null;
 };
+
+export const canInviteCreator = (creator) => Boolean(creator?.userId && !creator.isGuest && creator.type !== 'non-platform');
+
+export const formatDiscoveryNumber = (value) => value == null || value === '' ? '—' : formatNumber(value);
+
+export const resolveProfileUrl = (creator, platform) => creator?.[platform]?.profileUrl
+  || (getPlatformHandle(creator, platform) ? createSocialProfileUrl(getPlatformHandle(creator, platform), platform) : null);
+
+export const metricSourceLabel = (source) => ({ connected: 'Connected account', automatic: 'Saved scrape',
+  manual_override: 'Manual entry', master_list: 'Master List', mixed: 'Connected / Master List' }[source] || '—');

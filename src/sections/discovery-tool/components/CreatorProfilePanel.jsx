@@ -4,21 +4,22 @@ import { useNavigate } from 'react-router';
 
 import { Box, Chip, Stack, Button, Avatar, Typography } from '@mui/material';
 
-import { formatNumber } from 'src/utils/socialMetricsCalculator';
-import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
-
 import Iconify from 'src/components/iconify';
 import StarRating from 'src/components/star-rating';
 
 import BookmarkButton from './BookmarkButton';
+import SavedPostPreview from './SavedPostPreview';
 import {
   ONYX,
   BLUE,
   getPlatformIcon,
+  canInviteCreator,
   getPlatformHandle,
+  resolveProfileUrl,
   resolvePlatformData,
   formatEngagementRate,
   resolveCreatorRating,
+  formatDiscoveryNumber,
 } from './creator-helpers';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -173,7 +174,9 @@ const PopularVideo = ({ video, platform, tiktokHandle, height }) => {
           : undefined,
       }}
     >
-      {thumbnailUrl && !hasImageError ? (
+      {video.savedPost ? (
+        <SavedPostPreview thumbnailUrl={thumbnailUrl} postUrl={video.permalink || video.video_url} />
+      ) : thumbnailUrl && !hasImageError ? (
         <Box
           component="img"
           src={thumbnailUrl}
@@ -269,7 +272,7 @@ const PastCampaignRow = ({ campaign }) => {
             <Typography
               sx={{ color: BLUE, fontFamily: 'Instrument Serif', fontSize: 24, lineHeight: '28px' }}
             >
-              {formatNumber(views)}
+              {formatDiscoveryNumber(views)}
             </Typography>
           </Box>
         )}
@@ -315,10 +318,10 @@ const CreatorProfilePanel = ({
       ? creator.instagram?.profilePictureUrl || null
       : creator.tiktok?.profilePictureUrl || null;
 
-  const followers = platformData.followers || 0;
-  const engagementRate = platformData.engagementRate || 0;
-  const averageSaves = platformData.averageSaves || 0;
-  const averageShares = platformData.averageShares || 0;
+  const {followers} = platformData;
+  const {engagementRate} = platformData;
+  const {averageSaves} = platformData;
+  const {averageShares} = platformData;
 
   const topVideos = [...(platformData.topVideos || [])]
     .sort((a, b) => Number(b?.like_count || 0) - Number(a?.like_count || 0))
@@ -335,10 +338,12 @@ const CreatorProfilePanel = ({
   const pastCampaigns = Array.isArray(creator.pastCampaigns) ? creator.pastCampaigns : [];
 
   const statItems = [
-    { label: 'Followers', value: formatNumber(followers) },
+    { label: 'Followers', value: formatDiscoveryNumber(followers) },
     { label: 'Engagement Rate', value: formatEngagementRate(engagementRate) },
-    ...(platform !== 'tiktok' ? [{ label: 'Avg Saves', value: formatNumber(averageSaves) }] : []),
-    { label: 'Avg Shares', value: formatNumber(averageShares) },
+    ...(platform !== 'tiktok' ? [{ label: 'Avg Saves', value: formatDiscoveryNumber(averageSaves) }] : []),
+    { label: 'Avg Likes', value: formatDiscoveryNumber(platformData.averageLikes) },
+    { label: 'Avg Views', value: formatDiscoveryNumber(platformData.averageViews) },
+    { label: 'Avg Shares', value: formatDiscoveryNumber(averageShares) },
   ];
 
   const detailItems = isCompare
@@ -427,7 +432,7 @@ const CreatorProfilePanel = ({
                   {platformIcon && <Iconify icon={platformIcon} width={12} color={ONYX} />}
                   <Box
                     component="a"
-                    href={createSocialProfileUrl(handle, platform)}
+                    href={resolveProfileUrl(creator, platform)}
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{
@@ -654,7 +659,7 @@ const CreatorProfilePanel = ({
         >
           Media Kit
         </Button>
-        {onInvite && (
+        {onInvite && canInviteCreator(creator) && (
           <Button
             onClick={() => onInvite(rowKey)}
             sx={{
