@@ -15,7 +15,7 @@ import { fetcher, endpoints } from 'src/utils/axios';
  * @param {string[]} [filters.interests]
  * @param {string} [filters.keyword]
  * @param {string} [filters.hashtag]
- * @param {'name'|'followers'} [filters.sortBy]
+ * @param {'name'|'followers'|'createdAt'} [filters.sortBy]
  * @param {'asc'|'desc'} [filters.sortDirection]
  */
 const buildDiscoveryCreatorsUrl = (filters = {}, page = 1, limit = 20) => {
