@@ -231,6 +231,8 @@ export default function useGuestExtraction({
             rowId,
             contextVersion,
             validCount: record.sampleSize ?? 0,
+            name: record.name ?? '',
+            followerCount: record.followerCount == null ? '' : String(record.followerCount),
           });
           break;
         case 'FAILED':
@@ -467,6 +469,9 @@ export default function useGuestExtraction({
           error: {
             code: error?.response?.data?.code ?? 'START_FAILED',
             message: error?.response?.data?.message ?? 'The fetch could not be started.',
+            // Written for the admin (e.g. "Use a TikTok profile link."), so the
+            // UI shows it as is. Run failures carry provider text and do not.
+            source: 'request',
             retryable: true,
           },
         });
