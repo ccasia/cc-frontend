@@ -10,9 +10,6 @@ import { Box, Stack, Button, Divider, Skeleton, Typography, CircularProgress } f
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import { formatNumber } from 'src/utils/socialMetricsCalculator';
-import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
-
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
@@ -22,9 +19,12 @@ import BookmarkListDropdown from './BookmarkListDropdown';
 import CreatorCompareDialog from './CreatorCompareDialog';
 import {
   getPlatformHandle,
+  resolveProfileUrl,
+  metricSourceLabel,
   resolvePlatformData,
   formatEngagementRate,
   resolveCreatorRating,
+  formatDiscoveryNumber,
 } from './creator-helpers';
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
@@ -122,6 +122,11 @@ const EXPORT_COLUMNS = [
   { header: 'Cult Rating', key: 'creatorRating', width: 16 },
   { header: 'Followers', key: 'followers', width: 14 },
   { header: 'Engagement Rate', key: 'engagementRate', width: 18 },
+  { header: 'Tier', key: 'tier', width: 14 },
+  { header: 'Metric Source', key: 'source', width: 26 },
+  { header: 'Saved Date', key: 'savedAt', width: 24 },
+  { header: 'Scrape Rate', key: 'scrapeRate', width: 18 },
+  { header: 'Scrape Formula', key: 'scrapeFormula', width: 42 },
   { header: 'Bio', key: 'bio', width: 48 },
   { header: 'Interests', key: 'interests', width: 36 },
   { header: 'Languages', key: 'languages', width: 28 },
@@ -131,7 +136,7 @@ const getCreatorExportRow = (creator) => {
   const platformData = resolvePlatformData(creator);
   const platform = platformData.platform || '';
   const handle = getPlatformHandle(creator, platform) || '';
-  const profileUrl = handle && platform ? createSocialProfileUrl(handle, platform) : '';
+  const profileUrl = resolveProfileUrl(creator, platform) || '';
   const bio =
     platform === 'tiktok'
       ? creator.tiktok?.biography || creator.about || ''
@@ -143,8 +148,13 @@ const getCreatorExportRow = (creator) => {
     handle,
     profileUrl,
     creatorRating: resolveCreatorRating(creator).toFixed(1),
-    followers: formatNumber(platformData.followers || 0),
-    engagementRate: formatEngagementRate(platformData.engagementRate || 0),
+    followers: formatDiscoveryNumber(platformData.followers),
+    engagementRate: formatEngagementRate(platformData.engagementRate),
+    tier: creator.creditTier || '—',
+    source: metricSourceLabel(platformData.metricSource),
+    savedAt: platformData.savedAt || '—',
+    scrapeRate: formatEngagementRate(platformData.scrapeDetails?.engagementRate),
+    scrapeFormula: platformData.scrapeDetails?.formulaVersion || '—',
     bio: bio || '',
     interests: (creator.interests || []).join(', '),
     languages: (Array.isArray(creator.languages) ? creator.languages : []).filter(Boolean).join(', '),
@@ -200,6 +210,7 @@ const CreatorList = ({
   onToggleFollowersSort,
   onLoadMore,
   onInviteOne,
+  onLinkCreator,
   onOpenDetails,
 }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -568,6 +579,7 @@ const CreatorList = ({
                       onToggleList={onToggleCreatorInList}
                       onOpenListManager={onOpenListManager}
                       onInviteOne={onInviteOne}
+                      onLinkCreator={onLinkCreator}
                       onOpenDetails={onOpenDetails}
                       rowKey={rowKey}
                       compareMode={compareMode}
@@ -629,6 +641,7 @@ CreatorList.propTypes = {
   onToggleFollowersSort: PropTypes.func,
   onLoadMore: PropTypes.func,
   onInviteOne: PropTypes.func,
+  onLinkCreator: PropTypes.func,
   onOpenDetails: PropTypes.func,
 };
 
@@ -654,6 +667,7 @@ CreatorList.defaultProps = {
   onToggleFollowersSort: undefined,
   onLoadMore: undefined,
   onInviteOne: undefined,
+  onLinkCreator: undefined,
   onOpenDetails: undefined,
 };
 

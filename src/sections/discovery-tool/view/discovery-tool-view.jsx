@@ -11,7 +11,9 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import LinkCreatorDialog from './link-creator-dialog';
 import InviteCreatorsDialog from './invite-creators-dialog';
+import { canInviteCreator } from '../components/creator-helpers';
 import { CreatorList, DiscoveryFilterBar, CreatorDetailsDrawer } from '../components';
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -70,6 +72,7 @@ const DiscoveryToolView = () => {
     size,
     setSize,
     isError,
+    mutate: mutateCreators,
   } = useGetDiscoveryCreators(discoveryQuery);
 
   // Stable callback for the filter bar
@@ -211,7 +214,7 @@ const DiscoveryToolView = () => {
   );
 
   const inviteCreators = useMemo(
-    () => inviteCreatorIds.map(findCreatorByRowKey).filter(Boolean),
+    () => inviteCreatorIds.map(findCreatorByRowKey).filter(canInviteCreator),
     [inviteCreatorIds, findCreatorByRowKey]
   );
 
@@ -283,9 +286,16 @@ const DiscoveryToolView = () => {
     [enqueueSnackbar]
   );
 
+  const [linkCreatorRowKey, setLinkCreatorRowKey] = useState(null);
+  const linkCreator = linkCreatorRowKey ? findCreatorByRowKey(linkCreatorRowKey) : null;
+  const handleLinked = useCallback(() => {
+    mutateCreators();
+    mutateListCreators();
+  }, [mutateCreators, mutateListCreators]);
+
   const handleInviteOne = useCallback(
     async (rowId) => {
-      if (!rowId) return;
+      if (!rowId || !canInviteCreator(findCreatorByRowKey(rowId))) return;
 
       setInviteCreatorIds([rowId]);
       setInviteCampaignId('');
@@ -295,7 +305,7 @@ const DiscoveryToolView = () => {
         await loadInviteCampaigns();
       }
     },
-    [loadInviteCampaigns]
+    [loadInviteCampaigns, findCreatorByRowKey]
   );
 
   const handleInviteClose = useCallback(() => {
@@ -400,6 +410,7 @@ const DiscoveryToolView = () => {
         onOpenListManager={handleOpenListManager}
         listDropdownRef={listDropdownRef}
         onInviteOne={isClientDemo ? undefined : handleInviteOne}
+        onLinkCreator={isClientDemo ? undefined : setLinkCreatorRowKey}
         onOpenDetails={handleOpenDetails}
       />
 
@@ -414,6 +425,13 @@ const DiscoveryToolView = () => {
         onToggleList={handleToggleCreatorInList}
         onOpenListManager={handleOpenListManager}
         onInvite={isClientDemo ? undefined : handleInviteOne}
+      />
+
+      <LinkCreatorDialog
+        open={!!linkCreator}
+        creator={linkCreator}
+        onClose={() => setLinkCreatorRowKey(null)}
+        onLinked={handleLinked}
       />
 
       <InviteCreatorsDialog
