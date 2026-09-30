@@ -155,6 +155,9 @@ export const paths = {
     feedback: {
       root: `${ROOTS.DASHBOARD}/feedback`,
     },
+    releaseNotes: {
+      root: `${ROOTS.DASHBOARD}/release-notes`,
+    },
     report: {
       root: `${ROOTS.DASHBOARD}/report`,
     },
