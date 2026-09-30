@@ -1,9 +1,9 @@
 /**
- * Public preview URLs derived from a post link. Nothing is stored.
+ * Public preview URLs derived from a post link. The fallback preview.
  *
- * Instagram and TikTok both block hotlinked thumbnails from the browser.
- * Their official embed URLs still load in an iframe, so the modal can show
- * the post itself without writing media into the database.
+ * New scrapes store a thumbnail copy in our bucket, and that is shown first.
+ * Older scrapes kept the provider thumbnail, which expires and cannot be
+ * hotlinked. Their official embed URLs still load in an iframe.
  */
 
 export function embedFromPostUrl(url) {
