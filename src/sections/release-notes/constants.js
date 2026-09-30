@@ -6,6 +6,12 @@ export const RELEASE_TYPE_META = {
   FIXED: { label: 'Fixed', color: '#8E8E93' },
 };
 
+export const RELEASE_STATUS_META = {
+  DRAFT: { label: 'Draft', color: 'text.secondary' },
+  SCHEDULED: { label: 'Scheduled', color: 'warning.main' },
+  PUBLISHED: { label: 'Published', color: 'success.main' },
+};
+
 // Platform 3D "lip" buttons — inset bottom ledge, matching the campaign brief flow
 // (sections/campaign/briefs/dialogs/brief-modal.jsx). Hover darkens; click presses
 // the button down by the lip height and collapses the ledge.
