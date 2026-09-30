@@ -7,6 +7,13 @@ import { Box, Chip, Stack, Button, Avatar, Typography } from '@mui/material';
 import Iconify from 'src/components/iconify';
 import StarRating from 'src/components/star-rating';
 
+import {
+  medianOf,
+  PostCard,
+  ViewsChart,
+  metaMetricsFor,
+} from 'src/sections/campaign/discover/client/v3-pitches/guest-extraction/engagement-breakdown';
+
 import BookmarkButton from './BookmarkButton';
 import SavedPostPreview from './SavedPostPreview';
 import {
@@ -175,7 +182,10 @@ const PopularVideo = ({ video, platform, tiktokHandle, height }) => {
       }}
     >
       {video.savedPost ? (
-        <SavedPostPreview thumbnailUrl={thumbnailUrl} postUrl={video.permalink || video.video_url} />
+        <SavedPostPreview
+          thumbnailUrl={thumbnailUrl}
+          postUrl={video.permalink || video.video_url}
+        />
       ) : thumbnailUrl && !hasImageError ? (
         <Box
           component="img"
@@ -318,10 +328,10 @@ const CreatorProfilePanel = ({
       ? creator.instagram?.profilePictureUrl || null
       : creator.tiktok?.profilePictureUrl || null;
 
-  const {followers} = platformData;
-  const {engagementRate} = platformData;
-  const {averageSaves} = platformData;
-  const {averageShares} = platformData;
+  const { followers } = platformData;
+  const { engagementRate } = platformData;
+  const { averageSaves } = platformData;
+  const { averageShares } = platformData;
 
   const topVideos = [...(platformData.topVideos || [])]
     .sort((a, b) => Number(b?.like_count || 0) - Number(a?.like_count || 0))
@@ -340,7 +350,9 @@ const CreatorProfilePanel = ({
   const statItems = [
     { label: 'Followers', value: formatDiscoveryNumber(followers) },
     { label: 'Engagement Rate', value: formatEngagementRate(engagementRate) },
-    ...(platform !== 'tiktok' ? [{ label: 'Avg Saves', value: formatDiscoveryNumber(averageSaves) }] : []),
+    ...(platform !== 'tiktok'
+      ? [{ label: 'Avg Saves', value: formatDiscoveryNumber(averageSaves) }]
+      : []),
     { label: 'Avg Likes', value: formatDiscoveryNumber(platformData.averageLikes) },
     { label: 'Avg Views', value: formatDiscoveryNumber(platformData.averageViews) },
     { label: 'Avg Shares', value: formatDiscoveryNumber(averageShares) },
@@ -365,6 +377,21 @@ const CreatorProfilePanel = ({
       ];
 
   const videoHeight = isCompare ? 240 : 127;
+
+  // Views per post from the saved scrape. Connected accounts store no views.
+  const scrapedPosts = Array.isArray(platformData.scrapeDetails?.selectedPosts)
+    ? platformData.scrapeDetails.selectedPosts
+    : [];
+  const scrapedViews = scrapedPosts
+    .map((post) => post?.views)
+    .filter((value) => typeof value === 'number' && Number.isFinite(value) && value > 0);
+  const medianViews = scrapedViews.length ? medianOf(scrapedViews) : null;
+  const showViewsChart = !isCompare && medianViews > 0;
+
+  // Every scraped post, most views first. A post with no views goes last.
+  const popularPosts = [...scrapedPosts].sort((a, b) => (b?.views ?? -1) - (a?.views ?? -1));
+  const showPostGrid = !isCompare && popularPosts.length > 0;
+  const postMetrics = metaMetricsFor(popularPosts);
 
   const handleMediaKit = () => {
     navigate(`/dashboard/mediakit/client/${creator.creatorId}`, {
@@ -556,6 +583,23 @@ const CreatorProfilePanel = ({
           </Box>
         </Box>
 
+        {/* Views per post */}
+        {showViewsChart && (
+          <Box
+            // Grey like the stats block above it.
+            sx={{
+              height: 232,
+              display: 'flex',
+              flexDirection: 'column',
+              p: 2,
+              bgcolor: '#F5F5F5',
+              borderRadius: '20px',
+            }}
+          >
+            <ViewsChart posts={scrapedPosts} medianViews={medianViews} />
+          </Box>
+        )}
+
         {/* Details block */}
         <Box sx={isCompare ? { px: 0 } : { p: 2, bgcolor: '#F5F5F5', borderRadius: '20px' }}>
           <Typography sx={{ ...SECTION_HEADING_SX, mb: 1.5 }}>DETAILS</Typography>
@@ -591,35 +635,55 @@ const CreatorProfilePanel = ({
         {/* Popular videos */}
         <Box>
           <Typography sx={{ ...SECTION_HEADING_SX, mb: 1.5 }}>POPULAR VIDEOS</Typography>
-          <Stack direction="row" spacing={1}>
-            {mediaSlots.map((video, index) =>
-              video ? (
-                <PopularVideo
-                  key={video.id || video.video_id || index}
-                  video={video}
-                  platform={platform}
-                  tiktokHandle={creator.handles?.tiktok}
-                  height={videoHeight}
+          {showPostGrid ? (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                columnGap: 1.5,
+                rowGap: 2.5,
+              }}
+            >
+              {popularPosts.map((post, index) => (
+                <PostCard
+                  key={post.postId ?? index}
+                  post={post}
+                  metaMetrics={postMetrics}
+                  showViews
                 />
-              ) : (
-                <Box
-                  key={`placeholder-${index}`}
-                  sx={{
-                    flex: '1 1 0',
-                    minWidth: 0,
-                    height: videoHeight,
-                    borderRadius: 1,
-                    bgcolor: '#EBEBEB',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Iconify icon="mdi:image-outline" width={24} color="#8E8E93" />
-                </Box>
-              )
-            )}
-          </Stack>
+              ))}
+            </Box>
+          ) : (
+            <Stack direction="row" spacing={1}>
+              {mediaSlots.map((video, index) =>
+                video ? (
+                  <PopularVideo
+                    key={video.id || video.video_id || index}
+                    video={video}
+                    platform={platform}
+                    tiktokHandle={creator.handles?.tiktok}
+                    height={videoHeight}
+                  />
+                ) : (
+                  <Box
+                    key={`placeholder-${index}`}
+                    sx={{
+                      flex: '1 1 0',
+                      minWidth: 0,
+                      height: videoHeight,
+                      borderRadius: 1,
+                      bgcolor: '#EBEBEB',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Iconify icon="mdi:image-outline" width={24} color="#8E8E93" />
+                  </Box>
+                )
+              )}
+            </Stack>
+          )}
         </Box>
       </Stack>
 

@@ -30,7 +30,7 @@ const CreatorDetailsDrawer = ({
       anchor="right"
       PaperProps={{
         sx: {
-          width: { xs: 1, sm: 380 },
+          width: { xs: 1, sm: 460 },
           borderTopLeftRadius: 12,
           borderBottomLeftRadius: 12,
           display: 'flex',
