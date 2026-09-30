@@ -2,9 +2,9 @@
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { FixedSizeList } from 'react-window';
-import { m, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { m, MotionConfig, AnimatePresence } from 'framer-motion';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -48,7 +48,6 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import usePitchSocket from './use-pitch-socket';
-import PitchModalMobile from '../../admin/pitch-modal-mobile';
 import useGuestExtraction from './guest-extraction/use-guest-extraction';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
 import { extractionErrorCopy } from './guest-extraction/extraction-error-copy';
@@ -390,11 +389,7 @@ const renderProfileSourceOption = (creator, option) => {
 
   return (
     <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
-      <Iconify
-        icon={option.icon}
-        width={18}
-        sx={{ color: option.color, flexShrink: 0 }}
-      />
+      <Iconify icon={option.icon} width={18} sx={{ color: option.color, flexShrink: 0 }} />
       <Box minWidth={0}>
         <Typography
           component="span"
@@ -524,7 +519,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const isDisabled = propIsDisabled || financeDisabled || salesAndMarketingDisabled;
 
   const smUp = useResponsive('up', 'sm');
-  const smDown = useResponsive('down', 'sm');
   const mdUp = useResponsive('up', 'md');
 
   // Listen for real-time pitch updates (outreach + status changes)
@@ -708,6 +702,22 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const handleOutreachUpdate = () => {
     onUpdate?.();
   };
+
+  // Ids seen once the list first had rows. Anything after that is a new add,
+  // so its row enters at once and flashes instead of joining the load stagger.
+  const seenPitchIdsRef = useRef(null);
+  const newPitchIds = useMemo(() => {
+    const seen = seenPitchIdsRef.current;
+    if (!seen) return new Set();
+    return new Set((pitches ?? []).filter((p) => !seen.has(p.id)).map((p) => p.id));
+  }, [pitches]);
+  useEffect(() => {
+    if (!pitches?.length) return;
+    seenPitchIdsRef.current = new Set([
+      ...(seenPitchIdsRef.current ?? []),
+      ...pitches.map((p) => p.id),
+    ]);
+  }, [pitches]);
 
   const filteredPitches = useMemo(() => {
     const isV4 = campaign?.submissionVersion === 'v4';
@@ -925,6 +935,15 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
     location?.pathname,
     location?.search,
   ]);
+
+  // The row as the list has it now. The list polls while a scrape runs, so the
+  // open modal sees the scraped numbers land instead of a stale snapshot.
+  const liveSelectedPitch = useMemo(
+    () =>
+      (selectedPitch && mergedPitchesAndShortlisted?.find((p) => p.id === selectedPitch.id)) ||
+      selectedPitch,
+    [selectedPitch, mergedPitchesAndShortlisted]
+  );
 
   const handleViewPitch = (pitch) => {
     setSelectedPitch(pitch);
@@ -1490,31 +1509,37 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
             }}
           >
             <TableBody>
-              {filteredPitches?.map((pitch, index) => {
-                const displayStatus = pitch.displayStatus || pitch.status;
-                const statusInfo = getStatusInfo(displayStatus, pitch);
-                const isGuestCreator = pitch.user?.creator?.isGuest;
-                const isInvitedCreator = pitch.status === 'INVITED' || pitch.isInvited;
+              <MotionConfig reducedMotion="user">
+                <AnimatePresence>
+                  {filteredPitches?.map((pitch, index) => {
+                    const displayStatus = pitch.displayStatus || pitch.status;
+                    const statusInfo = getStatusInfo(displayStatus, pitch);
+                    const isGuestCreator = pitch.user?.creator?.isGuest;
+                    const isInvitedCreator = pitch.status === 'INVITED' || pitch.isInvited;
 
-                return (
-                  <PitchRow
-                    key={pitch.id}
-                    number={index + 1}
-                    pitch={pitch}
-                    displayStatus={displayStatus}
-                    statusInfo={statusInfo}
-                    isInvitedCreator={isInvitedCreator}
-                    isGuestCreator={isGuestCreator}
-                    campaign={campaign}
-                    onViewPitch={handleViewPitch}
-                    onRemoved={handleRemoveCreator}
-                    onOutreachUpdate={handleOutreachUpdate}
-                    onMetricsUpdate={handleOutreachUpdate}
-                    isDisabled={isDisabled}
-                    logistics={logistics}
-                  />
-                );
-              })}
+                    return (
+                      <PitchRow
+                        key={pitch.id}
+                        number={index + 1}
+                        pitch={pitch}
+                        displayStatus={displayStatus}
+                        statusInfo={statusInfo}
+                        isInvitedCreator={isInvitedCreator}
+                        isGuestCreator={isGuestCreator}
+                        campaign={campaign}
+                        onViewPitch={handleViewPitch}
+                        onRemoved={handleRemoveCreator}
+                        onOutreachUpdate={handleOutreachUpdate}
+                        onMetricsUpdate={handleOutreachUpdate}
+                        isDisabled={isDisabled}
+                        logistics={logistics}
+                        enterIndex={index}
+                        isNew={newPitchIds.has(pitch.id)}
+                      />
+                    );
+                  })}
+                </AnimatePresence>
+              </MotionConfig>
             </TableBody>
           </Table>
         </TableContainer>
@@ -1572,25 +1597,16 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
       )}
 
       {/* Pitch Modal */}
-      {smDown ? (
-        <PitchModalMobile
-          pitch={selectedPitch}
-          open={openPitchModal}
-          onClose={handleClosePitchModal}
-          onUpdate={handlePitchUpdate}
-          campaign={campaign}
-          isDisabled={isDisabled}
-        />
-      ) : (
-        <V3PitchModal
-          open={openPitchModal}
-          onClose={handleClosePitchModal}
-          pitch={selectedPitch}
-          campaign={campaign}
-          onUpdate={handlePitchUpdate}
-          isDisabled={isDisabled}
-        />
-      )}
+      {/* One responsive modal for every screen size, so phones get the same
+          features, including the non-platform creator view and the breakdown. */}
+      <V3PitchModal
+        open={openPitchModal}
+        onClose={handleClosePitchModal}
+        pitch={liveSelectedPitch}
+        campaign={campaign}
+        onUpdate={handlePitchUpdate}
+        isDisabled={isDisabled}
+      />
     </Box>
   );
 };
@@ -2086,16 +2102,12 @@ export function PlatformCreatorModal({
   const hasUsableScrapeEvidence = (row) =>
     Boolean(row.completionReceipt) || (isRowActive(row) && Boolean(row.extractionId));
   const isManualPlatformMetricsRow = (row) =>
-    !row.hasMediaKit &&
-    !hasUsableScrapeEvidence(row) &&
-    hasSafeFollowerCount(row.followerCount);
+    !row.hasMediaKit && !hasUsableScrapeEvidence(row) && hasSafeFollowerCount(row.followerCount);
   const hasBlockingSaveError = creatorRows.some(
     (row) =>
       row.creator &&
       row.saveError &&
-      !(
-        row.saveError.code === 'FALLBACK_NOT_ALLOWED' && isManualPlatformMetricsRow(row)
-      )
+      !(row.saveError.code === 'FALLBACK_NOT_ALLOWED' && isManualPlatformMetricsRow(row))
   );
 
   // Do not RESET the machine here. A reset while `open` is still true would
@@ -2123,9 +2135,7 @@ export function PlatformCreatorModal({
       validRows.some(
         (row) =>
           row.saveError &&
-          !(
-            row.saveError.code === 'FALLBACK_NOT_ALLOWED' && isManualPlatformMetricsRow(row)
-          )
+          !(row.saveError.code === 'FALLBACK_NOT_ALLOWED' && isManualPlatformMetricsRow(row))
       )
     ) {
       return;
@@ -2157,18 +2167,13 @@ export function PlatformCreatorModal({
 
     const missingPlatformRow = validRows.find((row) => !row.selectedPlatform);
     if (missingPlatformRow) {
-      enqueueSnackbar(
-        'Please select Instagram or TikTok for each creator.',
-        { variant: 'error' }
-      );
+      enqueueSnackbar('Please select Instagram or TikTok for each creator.', { variant: 'error' });
       return;
     }
 
     const mismatchedPlatformRow = validRows.find(
       (row) =>
-        scrapeEnabled &&
-        row.sourceMode !== 'connected' &&
-        row.platform !== row.selectedPlatform
+        scrapeEnabled && row.sourceMode !== 'connected' && row.platform !== row.selectedPlatform
     );
     if (mismatchedPlatformRow) {
       enqueueSnackbar('Each profile link must match its selected platform.', { variant: 'error' });
@@ -2581,380 +2586,402 @@ export function PlatformCreatorModal({
                             />
                           </Box>
 
-                      {scrapeEnabled && row.creator && (
-                        <Box sx={{ flexShrink: 0, width: { xs: '100%', md: 240 } }}>
-                          <FieldLabel text="Profile Link" />
-                          {row.sourceMode === 'manual' ? (
-                            <Autocomplete
-                              freeSolo
-                              disableClearable
-                              forcePopupIcon
-                              options={PLATFORM_OPTIONS}
-                              value={
-                                PLATFORM_OPTIONS.find(
-                                  (option) => option.value === row.selectedPlatform
-                                ) || null
-                              }
-                              inputValue={row.profileLink}
-                              filterOptions={(options) => options}
-                              isOptionEqualToValue={(option, value) => option.value === value.value}
-                              getOptionLabel={(option) =>
-                                typeof option === 'string' ? option : option.label
-                              }
-                              onChange={(_, option) => {
-                                if (option?.value) handleSourceChange(row.id, option.value);
-                              }}
-                              onInputChange={(_, value, reason) => {
-                                if (reason === 'input') handleManualLinkInput(row.id, value);
-                              }}
-                              popupIcon={
-                                <Iconify icon="eva:arrow-ios-downward-fill" width={18} />
-                              }
-                              renderOption={({ key, ...optionProps }, option) => {
-                                const storedLink = getStoredProfileLink(
-                                  row.creator,
-                                  option.value
-                                );
-                                return (
-                                  <Box
-                                    key={key}
-                                    component="li"
-                                    {...optionProps}
-                                    aria-label={`${option.label} ${
-                                      storedLink || 'Enter profile link'
-                                    }`}
-                                  >
-                                    {renderProfileSourceOption(row.creator, option)}
-                                  </Box>
-                                );
-                              }}
-                              renderInput={(params) => {
-                                const selected = PLATFORM_OPTIONS.find(
-                                  (option) => option.value === row.selectedPlatform
-                                );
-                                return (
-                                  <TextField
-                                    {...params}
-                                    placeholder="Enter profile link"
-                                    error={Boolean(row.linkError || row.error || row.saveError)}
-                                    helperText={
-                                      row.linkError?.message || getSourceFeedback(row) || undefined
-                                    }
-                                    inputProps={{
-                                      ...params.inputProps,
-                                      'aria-label': `${row.creator.name} ${selected?.label} Profile Link`,
-                                      'aria-invalid': Boolean(
-                                        row.linkError || row.error || row.saveError
-                                      ),
-                                    }}
-                                    InputProps={{
-                                      ...params.InputProps,
-                                      startAdornment: selected ? (
-                                        <InputAdornment position="start">
+                          {scrapeEnabled && row.creator && (
+                            <Box sx={{ flexShrink: 0, width: { xs: '100%', md: 240 } }}>
+                              <FieldLabel text="Profile Link" />
+                              {row.sourceMode === 'manual' ? (
+                                <Autocomplete
+                                  freeSolo
+                                  disableClearable
+                                  forcePopupIcon
+                                  options={PLATFORM_OPTIONS}
+                                  value={
+                                    PLATFORM_OPTIONS.find(
+                                      (option) => option.value === row.selectedPlatform
+                                    ) || null
+                                  }
+                                  inputValue={row.profileLink}
+                                  filterOptions={(options) => options}
+                                  isOptionEqualToValue={(option, value) =>
+                                    option.value === value.value
+                                  }
+                                  getOptionLabel={(option) =>
+                                    typeof option === 'string' ? option : option.label
+                                  }
+                                  onChange={(_, option) => {
+                                    if (option?.value) handleSourceChange(row.id, option.value);
+                                  }}
+                                  onInputChange={(_, value, reason) => {
+                                    if (reason === 'input') handleManualLinkInput(row.id, value);
+                                  }}
+                                  popupIcon={
+                                    <Iconify icon="eva:arrow-ios-downward-fill" width={18} />
+                                  }
+                                  renderOption={({ key, ...optionProps }, option) => {
+                                    const storedLink = getStoredProfileLink(
+                                      row.creator,
+                                      option.value
+                                    );
+                                    return (
+                                      <Box
+                                        key={key}
+                                        component="li"
+                                        {...optionProps}
+                                        aria-label={`${option.label} ${
+                                          storedLink || 'Enter profile link'
+                                        }`}
+                                      >
+                                        {renderProfileSourceOption(row.creator, option)}
+                                      </Box>
+                                    );
+                                  }}
+                                  renderInput={(params) => {
+                                    const selected = PLATFORM_OPTIONS.find(
+                                      (option) => option.value === row.selectedPlatform
+                                    );
+                                    return (
+                                      <TextField
+                                        {...params}
+                                        placeholder="Enter profile link"
+                                        error={Boolean(row.linkError || row.error || row.saveError)}
+                                        helperText={
+                                          row.linkError?.message ||
+                                          getSourceFeedback(row) ||
+                                          undefined
+                                        }
+                                        inputProps={{
+                                          ...params.inputProps,
+                                          'aria-label': `${row.creator.name} ${selected?.label} Profile Link`,
+                                          'aria-invalid': Boolean(
+                                            row.linkError || row.error || row.saveError
+                                          ),
+                                        }}
+                                        InputProps={{
+                                          ...params.InputProps,
+                                          startAdornment: selected ? (
+                                            <InputAdornment position="start">
+                                              <Iconify
+                                                icon={selected.icon}
+                                                width={16}
+                                                sx={{ color: selected.color }}
+                                              />
+                                            </InputAdornment>
+                                          ) : null,
+                                        }}
+                                      />
+                                    );
+                                  }}
+                                  ListboxProps={{ sx: { maxWidth: 'calc(100vw - 32px)' } }}
+                                  componentsProps={{
+                                    popper: {
+                                      placement: 'bottom-start',
+                                      sx: {
+                                        width: 'min(420px, calc(100vw - 32px)) !important',
+                                      },
+                                    },
+                                    paper: { sx: { width: '100%' } },
+                                  }}
+                                  sx={{
+                                    '&&& .MuiOutlinedInput-root': {
+                                      bgcolor: '#fff',
+                                      height: FIELD_HEIGHT,
+                                      minHeight: FIELD_HEIGHT,
+                                      py: '0 !important',
+                                      pr: '36px !important',
+                                      borderRadius: 1,
+                                    },
+                                    '&&& .MuiOutlinedInput-input': {
+                                      py: '0 !important',
+                                      color: row.linkError ? '#231F20' : '#1340FF',
+                                    },
+                                    '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
+                                  }}
+                                />
+                              ) : (
+                                <TextField
+                                  select
+                                  fullWidth
+                                  value={row.selectedPlatform}
+                                  onChange={(event) =>
+                                    handleSourceChange(row.id, event.target.value)
+                                  }
+                                  error={Boolean(row.error || row.saveError)}
+                                  helperText={getSourceFeedback(row) || undefined}
+                                  SelectProps={{
+                                    displayEmpty: true,
+                                    'aria-invalid': Boolean(row.error || row.saveError),
+                                    inputProps: {
+                                      'aria-label': `${row.creator.name} Profile Link source`,
+                                    },
+                                    SelectDisplayProps: {
+                                      'aria-invalid': Boolean(row.error),
+                                    },
+                                    renderValue: (value) => {
+                                      const selected = PLATFORM_OPTIONS.find(
+                                        (option) => option.value === value
+                                      );
+                                      if (!selected) return 'Select Profile Link';
+                                      const currentLink =
+                                        row.profileLink ||
+                                        getStoredProfileLink(row.creator, selected.value);
+                                      return (
+                                        <Stack
+                                          direction="row"
+                                          spacing={0.75}
+                                          alignItems="center"
+                                          minWidth={0}
+                                        >
                                           <Iconify
                                             icon={selected.icon}
                                             width={16}
-                                            sx={{ color: selected.color }}
+                                            sx={{ color: selected.color, flexShrink: 0 }}
                                           />
-                                        </InputAdornment>
-                                      ) : null,
-                                    }}
-                                  />
-                                );
-                              }}
-                              ListboxProps={{ sx: { maxWidth: 'calc(100vw - 32px)' } }}
-                              componentsProps={{
-                                popper: {
-                                  placement: 'bottom-start',
-                                  sx: {
-                                    width: 'min(420px, calc(100vw - 32px)) !important',
-                                  },
-                                },
-                                paper: { sx: { width: '100%' } },
-                              }}
-                              sx={{
-                                '&&& .MuiOutlinedInput-root': {
-                                  bgcolor: '#fff',
-                                  height: FIELD_HEIGHT,
-                                  minHeight: FIELD_HEIGHT,
-                                  py: '0 !important',
-                                  pr: '36px !important',
-                                  borderRadius: 1,
-                                },
-                                '&&& .MuiOutlinedInput-input': {
-                                  py: '0 !important',
-                                  color: row.linkError ? '#231F20' : '#1340FF',
-                                },
-                                '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
-                              }}
-                            />
-                          ) : (
-                            <TextField
-                              select
-                              fullWidth
-                              value={row.selectedPlatform}
-                              onChange={(event) => handleSourceChange(row.id, event.target.value)}
-                              error={Boolean(row.error || row.saveError)}
-                              helperText={getSourceFeedback(row) || undefined}
-                              SelectProps={{
-                                displayEmpty: true,
-                                'aria-invalid': Boolean(row.error || row.saveError),
-                                inputProps: {
-                                  'aria-label': `${row.creator.name} Profile Link source`,
-                                },
-                                SelectDisplayProps: {
-                                  'aria-invalid': Boolean(row.error),
-                                },
-                                renderValue: (value) => {
-                                  const selected = PLATFORM_OPTIONS.find(
-                                    (option) => option.value === value
-                                  );
-                                  if (!selected) return 'Select Profile Link';
-                                  const currentLink =
-                                    row.profileLink ||
-                                    getStoredProfileLink(row.creator, selected.value);
-                                  return (
-                                    <Stack
-                                      direction="row"
-                                      spacing={0.75}
-                                      alignItems="center"
-                                      minWidth={0}
-                                    >
-                                      <Iconify
-                                        icon={selected.icon}
-                                        width={16}
-                                        sx={{ color: selected.color, flexShrink: 0 }}
-                                      />
-                                      <Tooltip title={currentLink || ''} arrow>
-                                        <Typography
-                                          component="span"
-                                          noWrap
-                                          sx={{
-                                            minWidth: 0,
-                                            fontSize: 14,
-                                            color: currentLink ? '#1340FF' : 'text.disabled',
-                                          }}
-                                        >
-                                          {currentLink || 'Enter profile link'}
-                                        </Typography>
-                                      </Tooltip>
-                                    </Stack>
-                                  );
-                                },
-                                MenuProps: {
-                                  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
-                                  transformOrigin: { vertical: 'top', horizontal: 'left' },
-                                  PaperProps: {
-                                    sx: {
-                                      width: 'max-content',
-                                      minWidth: 240,
-                                      maxWidth: 'calc(100vw - 32px)',
+                                          <Tooltip title={currentLink || ''} arrow>
+                                            <Typography
+                                              component="span"
+                                              noWrap
+                                              sx={{
+                                                minWidth: 0,
+                                                fontSize: 14,
+                                                color: currentLink ? '#1340FF' : 'text.disabled',
+                                              }}
+                                            >
+                                              {currentLink || 'Enter profile link'}
+                                            </Typography>
+                                          </Tooltip>
+                                        </Stack>
+                                      );
                                     },
-                                  },
-                                  MenuListProps: { sx: { maxWidth: 'calc(100vw - 32px)' } },
-                                },
-                              }}
+                                    MenuProps: {
+                                      anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+                                      transformOrigin: { vertical: 'top', horizontal: 'left' },
+                                      PaperProps: {
+                                        sx: {
+                                          width: 'max-content',
+                                          minWidth: 240,
+                                          maxWidth: 'calc(100vw - 32px)',
+                                        },
+                                      },
+                                      MenuListProps: { sx: { maxWidth: 'calc(100vw - 32px)' } },
+                                    },
+                                  }}
+                                  sx={{
+                                    ...FIELD_SX,
+                                    '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
+                                  }}
+                                >
+                                  {PLATFORM_OPTIONS.map((option) => {
+                                    const storedLink = getStoredProfileLink(
+                                      row.creator,
+                                      option.value
+                                    );
+                                    return (
+                                      <MenuItem
+                                        key={option.value}
+                                        value={option.value}
+                                        aria-label={`${option.label} ${
+                                          storedLink || 'Enter profile link'
+                                        }`}
+                                      >
+                                        {renderProfileSourceOption(row.creator, option)}
+                                      </MenuItem>
+                                    );
+                                  })}
+                                </TextField>
+                              )}
+                            </Box>
+                          )}
+
+                          {row.creator && (
+                            <Box
                               sx={{
-                                ...FIELD_SX,
-                                '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
+                                display: { xs: 'none', md: 'block' },
+                                alignSelf: 'stretch',
+                                borderRight: '1px solid #D3D3D3',
+                              }}
+                            />
+                          )}
+
+                          {row.creator && !scrapeEnabled && (
+                            <Box
+                              sx={{
+                                flex: { xs: '1 1 100%', md: '1 1 192px' },
+                                minWidth: { xs: '100%', md: 138 },
                               }}
                             >
-                              {PLATFORM_OPTIONS.map((option) => {
-                                const storedLink = getStoredProfileLink(
-                                  row.creator,
-                                  option.value
-                                );
-                                return (
-                                  <MenuItem
-                                    key={option.value}
-                                    value={option.value}
-                                    aria-label={`${option.label} ${
-                                      storedLink || 'Enter profile link'
-                                    }`}
-                                  >
-                                    {renderProfileSourceOption(row.creator, option)}
+                              <FieldLabel text="Platform" />
+                              <TextField
+                                select
+                                fullWidth
+                                value={row.selectedPlatform}
+                                onChange={(e) => handlePlatformChange(row.id, e.target.value)}
+                                disabled={!row.creator}
+                                placeholder="Select"
+                                // `FieldLabel` above is decorative, so the control
+                                // itself carries no name. Without this the creator
+                                // Autocomplete and this select are both an unnamed
+                                // `combobox`, to a screen reader and to a test.
+                                SelectProps={{ inputProps: { 'aria-label': 'Platform' } }}
+                                sx={FIELD_SX}
+                              >
+                                <MenuItem value="" disabled>
+                                  Select
+                                </MenuItem>
+                                {getPlatformSelectOptions().map((platform) => (
+                                  <MenuItem key={platform.value} value={platform.value}>
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                      <Iconify
+                                        icon={platform.icon}
+                                        width={16}
+                                        sx={{ color: platform.color }}
+                                      />
+                                      <span>{platform.label}</span>
+                                    </Stack>
                                   </MenuItem>
-                                );
-                              })}
-                            </TextField>
+                                ))}
+                              </TextField>
+                            </Box>
                           )}
-                        </Box>
-                      )}
 
-                      {row.creator && (
-                        <Box
-                          sx={{
-                            display: { xs: 'none', md: 'block' },
-                            alignSelf: 'stretch',
-                            borderRight: '1px solid #D3D3D3',
-                          }}
-                        />
-                      )}
-
-                      {row.creator && !scrapeEnabled && (
-                        <Box
-                          sx={{
-                            flex: { xs: '1 1 100%', md: '1 1 192px' },
-                            minWidth: { xs: '100%', md: 138 },
-                          }}
-                        >
-                          <FieldLabel text="Platform" />
-                          <TextField
-                            select
-                            fullWidth
-                            value={row.selectedPlatform}
-                            onChange={(e) => handlePlatformChange(row.id, e.target.value)}
-                            disabled={!row.creator}
-                            placeholder="Select"
-                            // `FieldLabel` above is decorative, so the control
-                            // itself carries no name. Without this the creator
-                            // Autocomplete and this select are both an unnamed
-                            // `combobox`, to a screen reader and to a test.
-                            SelectProps={{ inputProps: { 'aria-label': 'Platform' } }}
-                            sx={FIELD_SX}
-                          >
-                            <MenuItem value="" disabled>
-                              Select
-                            </MenuItem>
-                            {getPlatformSelectOptions().map((platform) => (
-                              <MenuItem key={platform.value} value={platform.value}>
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                  <Iconify
-                                    icon={platform.icon}
-                                    width={16}
-                                    sx={{ color: platform.color }}
-                                  />
-                                  <span>{platform.label}</span>
-                                </Stack>
-                              </MenuItem>
-                            ))}
-                          </TextField>
-                        </Box>
-                      )}
-
-                      {scrapeEnabled && row.creator && row.selectedPlatform && (
-                        <Box
-                          sx={{
-                            flex: { xs: '1 1 100%', md: '1 1 192px' },
-                            minWidth: { xs: '100%', md: 140 },
-                          }}
-                        >
-                          <FieldLabel
-                            text="Engagement Rate"
-                            provenance={
-                              row.hasMediaKit
-                                ? 'media kit'
-                                : fieldProvenanceOf(row, 'engagementRate')
-                            }
-                            hint={
-                              !row.hasMediaKit && row.status === ROW_STATUS.READY ? (
-                                <Tooltip title="How this rate was worked out" arrow describeChild>
-                                  <IconButton
-                                    aria-label="How this engagement rate was worked out"
-                                    onClick={() => setBreakdownRowId(row.id)}
-                                    size="small"
-                                    sx={{
-                                      p: 0,
-                                      color: '#8E8E93',
-                                      '&:hover': { color: '#1340FF', bgcolor: 'transparent' },
+                          {scrapeEnabled && row.creator && row.selectedPlatform && (
+                            <Box
+                              sx={{
+                                flex: { xs: '1 1 100%', md: '1 1 192px' },
+                                minWidth: { xs: '100%', md: 140 },
+                              }}
+                            >
+                              <FieldLabel
+                                text="Engagement Rate"
+                                provenance={
+                                  row.hasMediaKit
+                                    ? 'media kit'
+                                    : fieldProvenanceOf(row, 'engagementRate')
+                                }
+                                hint={
+                                  !row.hasMediaKit && row.status === ROW_STATUS.READY ? (
+                                    <Tooltip
+                                      title="How this rate was worked out"
+                                      arrow
+                                      describeChild
+                                    >
+                                      <IconButton
+                                        aria-label="How this engagement rate was worked out"
+                                        onClick={() => setBreakdownRowId(row.id)}
+                                        size="small"
+                                        sx={{
+                                          p: 0,
+                                          color: '#8E8E93',
+                                          '&:hover': { color: '#1340FF', bgcolor: 'transparent' },
+                                        }}
+                                      >
+                                        <Iconify icon="eva:info-outline" width={14} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  ) : null
+                                }
+                              />
+                              {SCRAPE_FETCHING.includes(row.status) ? (
+                                <CreatorFieldLoading
+                                  label="Fetching engagement rate"
+                                  showSpinner
+                                  height={FIELD_HEIGHT}
+                                  progress={{
+                                    status: row.status,
+                                    startedAt: row.extractionStartedAt,
+                                    checkingMore: row.checkingMore,
+                                  }}
+                                />
+                              ) : (
+                                <ScrapeTextFieldReveal
+                                  reveal={
+                                    reveal && row.fieldUpdateSource === FIELD_UPDATE_SOURCE.SCRAPE
+                                  }
+                                  text={
+                                    row.hasMediaKit
+                                      ? (getPlatformEngagementRate(
+                                          row.creator,
+                                          row.selectedPlatform
+                                        ) ?? '')
+                                      : (row.engagementRate ?? '')
+                                  }
+                                  height={FIELD_HEIGHT}
+                                  overlayPaddingRight={36}
+                                >
+                                  <TextField
+                                    value={
+                                      row.hasMediaKit
+                                        ? (getPlatformEngagementRate(
+                                            row.creator,
+                                            row.selectedPlatform
+                                          ) ?? '')
+                                        : (row.engagementRate ?? '')
+                                    }
+                                    onChange={(e) => {
+                                      // A connected account owns its own rate.
+                                      if (row.hasMediaKit) return;
+                                      dispatch({
+                                        type: ACTIONS.EDIT_FIELD,
+                                        rowId: row.id,
+                                        field: 'engagementRate',
+                                        // A percentage, so digits and one dot only.
+                                        value: e.target.value.replace(/[^0-9.]/g, ''),
+                                      });
                                     }}
-                                  >
-                                    <Iconify icon="eva:info-outline" width={14} />
-                                  </IconButton>
-                                </Tooltip>
-                              ) : null
-                            }
-                          />
-                          {SCRAPE_FETCHING.includes(row.status) ? (
-                            <CreatorFieldLoading
-                              label="Fetching engagement rate"
-                              showSpinner
-                              height={FIELD_HEIGHT}
-                            />
-                          ) : (
-                            <ScrapeTextFieldReveal
-                              reveal={
-                                reveal && row.fieldUpdateSource === FIELD_UPDATE_SOURCE.SCRAPE
-                              }
-                              text={
-                                row.hasMediaKit
-                                  ? (getPlatformEngagementRate(
-                                      row.creator,
-                                      row.selectedPlatform
-                                    ) ?? '')
-                                  : (row.engagementRate ?? '')
-                              }
-                              height={FIELD_HEIGHT}
-                              overlayPaddingRight={36}
-                            >
-                            <TextField
-                              value={
-                                row.hasMediaKit
-                                  ? (getPlatformEngagementRate(
-                                      row.creator,
-                                      row.selectedPlatform
-                                    ) ?? '')
-                                  : (row.engagementRate ?? '')
-                              }
-                              onChange={(e) => {
-                                // A connected account owns its own rate.
-                                if (row.hasMediaKit) return;
-                                dispatch({
-                                  type: ACTIONS.EDIT_FIELD,
-                                  rowId: row.id,
-                                  field: 'engagementRate',
-                                  // A percentage, so digits and one dot only.
-                                  value: e.target.value.replace(/[^0-9.]/g, ''),
-                                });
-                              }}
-                              placeholder={row.hasMediaKit ? '—' : 'Engagement Rate'}
-                              disabled={row.hasMediaKit}
-                              fullWidth
-                              size="small"
-                              InputProps={{
-                                readOnly: row.hasMediaKit,
-                                endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                              }}
-                              inputProps={{ inputMode: 'decimal' }}
-                              sx={FIELD_SX}
-                            />
-                            </ScrapeTextFieldReveal>
+                                    placeholder={row.hasMediaKit ? '—' : 'Engagement Rate'}
+                                    disabled={row.hasMediaKit}
+                                    fullWidth
+                                    size="small"
+                                    InputProps={{
+                                      readOnly: row.hasMediaKit,
+                                      endAdornment: (
+                                        <InputAdornment position="end">%</InputAdornment>
+                                      ),
+                                    }}
+                                    inputProps={{ inputMode: 'decimal' }}
+                                    sx={FIELD_SX}
+                                  />
+                                </ScrapeTextFieldReveal>
+                              )}
+                            </Box>
                           )}
-                        </Box>
-                      )}
 
-                      {/* Follower count: manual entry without media kit; read-only from media kit when connected */}
-                      {row.creator && (!scrapeEnabled || row.selectedPlatform) && (
-                        <Box
-                          sx={{
-                            flex: { xs: '1 1 100%', md: '1 1 192px' },
-                            minWidth: { xs: '100%', md: 140 },
-                          }}
-                        >
-                          <FieldLabel
-                            text="Follower Count"
-                            provenance={
-                              row.hasMediaKit
-                                ? 'media kit'
-                                : fieldProvenanceOf(row, 'followerCount')
-                            }
-                          />
-                          {SCRAPE_FETCHING.includes(row.status) ? (
-                            <CreatorFieldLoading
-                              label="Fetching follower count"
-                              showSpinner
-                              height={FIELD_HEIGHT}
-                            />
-                          ) : (
-                            <ScrapeTextFieldReveal
-                              reveal={
-                                reveal && row.fieldUpdateSource === FIELD_UPDATE_SOURCE.SCRAPE
-                              }
-                              text={formatFollowerCountDisplay(row.followerCount)}
-                              height={FIELD_HEIGHT}
+                          {/* Follower count: manual entry without media kit; read-only from media kit when connected */}
+                          {row.creator && (!scrapeEnabled || row.selectedPlatform) && (
+                            <Box
+                              sx={{
+                                flex: { xs: '1 1 100%', md: '1 1 192px' },
+                                minWidth: { xs: '100%', md: 140 },
+                              }}
                             >
-                            <TextField
-                              /* Grouped on both paths. 80,141,485 is readable at
+                              <FieldLabel
+                                text="Follower Count"
+                                provenance={
+                                  row.hasMediaKit
+                                    ? 'media kit'
+                                    : fieldProvenanceOf(row, 'followerCount')
+                                }
+                              />
+                              {SCRAPE_FETCHING.includes(row.status) ? (
+                                <CreatorFieldLoading
+                                  label="Fetching follower count"
+                                  showSpinner
+                                  height={FIELD_HEIGHT}
+                                  progress={{
+                                    status: row.status,
+                                    startedAt: row.extractionStartedAt,
+                                    checkingMore: row.checkingMore,
+                                  }}
+                                />
+                              ) : (
+                                <ScrapeTextFieldReveal
+                                  reveal={
+                                    reveal && row.fieldUpdateSource === FIELD_UPDATE_SOURCE.SCRAPE
+                                  }
+                                  text={formatFollowerCountDisplay(row.followerCount)}
+                                  height={FIELD_HEIGHT}
+                                >
+                                  <TextField
+                                    /* Grouped on both paths. 80,141,485 is readable at
                                  a glance; 80141485 has to be counted. The state
                                  keeps plain digits — onChange strips the
                                  separators straight back out — so nothing
@@ -3173,6 +3200,12 @@ export function PlatformCreatorModal({
         engagementRate={breakdownRow?.engagementRate}
         followerCount={Number(breakdownRow?.followerCount) || null}
         creatorName={breakdownRow?.creator?.name || breakdownRow?.name || undefined}
+        profileLinks={[
+          breakdownRow?.canonicalProfileUrl,
+          breakdownRow?.profileLink,
+          getStoredProfileLink(breakdownRow?.creator, 'instagram'),
+          getStoredProfileLink(breakdownRow?.creator, 'tiktok'),
+        ]}
       />
     </>
   );

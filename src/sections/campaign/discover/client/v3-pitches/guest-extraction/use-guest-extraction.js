@@ -59,10 +59,7 @@ const TERMINAL_STATUSES = new Set([
   ROW_STATUS.STALE,
 ]);
 
-const PLATFORM_RECOVERY_STATUSES = new Set([
-  ROW_STATUS.READY,
-  ROW_STATUS.INSUFFICIENT_DATA,
-]);
+const PLATFORM_RECOVERY_STATUSES = new Set([ROW_STATUS.READY, ROW_STATUS.INSUFFICIENT_DATA]);
 
 const hasSameRecoveryIdentity = (left, right) =>
   left?.extractionId === right?.extractionId &&
@@ -254,10 +251,23 @@ export default function useGuestExtraction({
           dispatch({ type: ACTIONS.MARK_STALE, rowId, contextVersion });
           break;
         case 'RUNNING':
-          dispatch({ type: ACTIONS.EXTRACTION_RUNNING, rowId, contextVersion });
+        case 'QUEUED':
+        case 'REQUIRES_RECONCILIATION':
+          dispatch({
+            type: ACTIONS.EXTRACTION_RUNNING,
+            rowId,
+            contextVersion,
+            startedAt: record.startedAt ?? null,
+          });
           break;
         default:
-          dispatch({ type: ACTIONS.EXTRACTION_POLLING, rowId, contextVersion });
+          dispatch({
+            type: ACTIONS.EXTRACTION_POLLING,
+            rowId,
+            contextVersion,
+            startedAt: record.startedAt ?? null,
+            checkingMore: Boolean(record.checkingMore),
+          });
       }
     },
     [isCurrentContext, stopPolling]
@@ -279,11 +289,13 @@ export default function useGuestExtraction({
       polls.current.set(rowId, session);
 
       const tick = async () => {
-        if (polls.current.get(rowId) !== session || !isCurrentContext(rowId, contextVersion)) return;
+        if (polls.current.get(rowId) !== session || !isCurrentContext(rowId, contextVersion))
+          return;
 
         try {
           const record = await getExtraction(extractionId);
-          if (polls.current.get(rowId) !== session || !isCurrentContext(rowId, contextVersion)) return;
+          if (polls.current.get(rowId) !== session || !isCurrentContext(rowId, contextVersion))
+            return;
           applyResult(rowId, record, contextVersion);
           if (
             polls.current.get(rowId) === session &&
@@ -388,7 +400,12 @@ export default function useGuestExtraction({
       const row = state.rows.find((entry) => entry.id === rowId);
       const contextVersion = invalidateWork(rowId);
       dispatch({ type: ACTIONS.SET_LINK, rowId, value, contextVersion });
-      scheduleValidation(rowId, value, row?.creator ? row.selectedPlatform : undefined, contextVersion);
+      scheduleValidation(
+        rowId,
+        value,
+        row?.creator ? row.selectedPlatform : undefined,
+        contextVersion
+      );
     },
     [invalidateWork, scheduleValidation, state.rows]
   );
@@ -411,12 +428,7 @@ export default function useGuestExtraction({
     (rowId, source) => {
       const contextVersion = invalidateWork(rowId);
       dispatch({ type: ACTIONS.SET_SOURCE, rowId, ...source, contextVersion });
-      scheduleValidation(
-        rowId,
-        source.profileLink ?? '',
-        source.selectedPlatform,
-        contextVersion
-      );
+      scheduleValidation(rowId, source.profileLink ?? '', source.selectedPlatform, contextVersion);
       return contextVersion;
     },
     [invalidateWork, scheduleValidation]
@@ -668,7 +680,7 @@ export default function useGuestExtraction({
           );
           const creator =
             kind === DRAFT_KIND.PLATFORM
-              ? resolveCreatorRef.current?.(entry.creatorId) ?? null
+              ? (resolveCreatorRef.current?.(entry.creatorId) ?? null)
               : null;
           const serverLink = entry.serverProfileUrl
             ? validateProfileLink(entry.serverProfileUrl, entry.selectedPlatform)
@@ -676,18 +688,12 @@ export default function useGuestExtraction({
           const serverLinkMatches =
             !serverLink ||
             (serverLink.ok && serverLink.profile.canonicalKey === link.profile?.canonicalKey);
-          if (
-            !link.ok ||
-            !serverLinkMatches ||
-            (kind === DRAFT_KIND.PLATFORM && !creator)
-          ) {
+          if (!link.ok || !serverLinkMatches || (kind === DRAFT_KIND.PLATFORM && !creator)) {
             delete kept[rowId];
             return;
           }
-          const contextVersion = Math.max(
-            contextVersions.current.get(rowId) ?? 0,
-            draftedRow?.contextVersion ?? 0
-          ) + 1;
+          const contextVersion =
+            Math.max(contextVersions.current.get(rowId) ?? 0, draftedRow?.contextVersion ?? 0) + 1;
           contextVersions.current.set(rowId, contextVersion);
 
           if (kind === DRAFT_KIND.PLATFORM && entry.sourceMode === 'stored') {
@@ -761,12 +767,14 @@ export default function useGuestExtraction({
         staleRowIds.forEach((rowId) => dispatch({ type: ACTIONS.MARK_STALE, rowId }));
         if (rows.length === 0) return;
 
-        rows.filter((row) => row.extractionId && isRowActive(row)).forEach((row) => {
-          pendingRecoveryPolls.current.set(row.id, {
-            extractionId: row.extractionId,
-            contextVersion: row.contextVersion,
+        rows
+          .filter((row) => row.extractionId && isRowActive(row))
+          .forEach((row) => {
+            pendingRecoveryPolls.current.set(row.id, {
+              extractionId: row.extractionId,
+              contextVersion: row.contextVersion,
+            });
           });
-        });
         dispatch({
           type: draft?.rows?.length ? ACTIONS.MERGE_ROWS : ACTIONS.RESTORE_ROWS,
           rows,

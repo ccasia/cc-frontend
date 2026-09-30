@@ -1,9 +1,11 @@
 import dayjs from 'dayjs';
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import React, { useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { keyframes } from '@mui/system';
 import {
   Box,
   Link,
@@ -119,13 +121,7 @@ function ScrapeMetricValue({
 }) {
   if (reveal) {
     return (
-      <DiaTextReveal
-        text={text}
-        textColor={textColor}
-        duration={1.5}
-        delay={0.05}
-        style={style}
-      />
+      <DiaTextReveal text={text} textColor={textColor} duration={1.5} delay={0.05} style={style} />
     );
   }
   return <Typography sx={sx}>{text}</Typography>;
@@ -162,7 +158,11 @@ function ManualEditButton({ onClick }) {
           transition: 'color 120ms ease, background-color 120ms ease',
           // `&&&` outranks the row's own hover rule, which dims this to grey.
           '&&&:hover': { color: '#1340FF', bgcolor: 'rgba(19, 64, 255, 0.08)' },
-          '&&&.Mui-focusVisible': { color: '#1340FF', outline: '2px solid #1340FF', outlineOffset: 1 },
+          '&&&.Mui-focusVisible': {
+            color: '#1340FF',
+            outline: '2px solid #1340FF',
+            outlineOffset: 1,
+          },
         }}
       >
         <Iconify icon="solar:pen-bold" width={12} />
@@ -205,7 +205,9 @@ function FetchFailedValue({ label, details, onEnter }) {
             <Typography sx={{ fontSize: 12, fontWeight: 600, lineHeight: '16px' }}>
               {details.title}
             </Typography>
-            <Typography sx={{ mt: 0.25, fontSize: 12, lineHeight: '16px' }}>{details.intro}</Typography>
+            <Typography sx={{ mt: 0.25, fontSize: 12, lineHeight: '16px' }}>
+              {details.intro}
+            </Typography>
             {details.reasons.length > 0 && (
               <Box component="ul" sx={{ m: 0, mt: 0.25, pl: 2 }}>
                 {details.reasons.map((reason) => (
@@ -234,35 +236,46 @@ function FetchFailedValue({ label, details, onEnter }) {
             '&:focus-visible': { boxShadow: 'inset 0 0 0 2px #FFAB00' },
           }}
         >
-          <Iconify icon="eva:alert-triangle-fill" width={12} sx={{ color: '#FFAB00', flexShrink: 0 }} />
+          <Iconify
+            icon="eva:alert-triangle-fill"
+            width={12}
+            sx={{ color: '#FFAB00', flexShrink: 0 }}
+          />
           <Typography
             noWrap
-            sx={{ fontSize: SMALL_SIZE, fontWeight: 600, lineHeight: `${SMALL_HEIGHT}px`, color: '#7A4100' }}
+            sx={{
+              fontSize: SMALL_SIZE,
+              fontWeight: 600,
+              lineHeight: `${SMALL_HEIGHT}px`,
+              color: '#7A4100',
+            }}
           >
             {label}
           </Typography>
         </Stack>
       </Tooltip>
-      <ButtonBase
-        onClick={onEnter}
-        aria-label="Enter numbers manually"
-        sx={{
-          flexShrink: 0,
-          gap: 0.25,
-          px: 0.75,
-          borderLeft: '1px solid #FFD98A',
-          fontSize: SMALL_SIZE,
-          fontWeight: 600,
-          lineHeight: `${SMALL_HEIGHT}px`,
-          color: '#1340FF',
-          transition: 'background-color 120ms ease',
-          '&:hover': { bgcolor: 'rgba(19, 64, 255, 0.06)' },
-          '&.Mui-focusVisible': { boxShadow: 'inset 0 0 0 2px #1340FF' },
-        }}
-      >
-        <Iconify icon="eva:plus-fill" width={12} />
-        Add
-      </ButtonBase>
+      {onEnter && (
+        <ButtonBase
+          onClick={onEnter}
+          aria-label="Enter numbers manually"
+          sx={{
+            flexShrink: 0,
+            gap: 0.25,
+            px: 0.75,
+            borderLeft: '1px solid #FFD98A',
+            fontSize: SMALL_SIZE,
+            fontWeight: 600,
+            lineHeight: `${SMALL_HEIGHT}px`,
+            color: '#1340FF',
+            transition: 'background-color 120ms ease',
+            '&:hover': { bgcolor: 'rgba(19, 64, 255, 0.06)' },
+            '&.Mui-focusVisible': { boxShadow: 'inset 0 0 0 2px #1340FF' },
+          }}
+        >
+          <Iconify icon="eva:plus-fill" width={12} />
+          Add
+        </ButtonBase>
+      )}
     </Stack>
   );
 }
@@ -274,7 +287,8 @@ FetchFailedValue.propTypes = {
     intro: PropTypes.string,
     reasons: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
-  onEnter: PropTypes.func.isRequired,
+  /** Absent for a viewer who cannot save: the reason shows, the Add does not. */
+  onEnter: PropTypes.func,
 };
 
 const PitchTypeCell = React.memo(
@@ -351,6 +365,14 @@ const getStatusText = (status, pitch, campaign) => {
   return statusTextMap[status] || statusTextMap[canonical] || status;
 };
 
+/** A row just added by an admin flashes a soft brand tint, then settles. */
+const NEW_ROW_FLASH = keyframes`
+  from { background-color: rgba(19, 64, 255, 0.10); }
+  to { background-color: transparent; }
+`;
+
+const ROW_EASE = [0.22, 1, 0.36, 1];
+
 const PitchRow = ({
   pitch,
   number,
@@ -365,6 +387,8 @@ const PitchRow = ({
   onMetricsUpdate,
   isDisabled = false,
   logistics,
+  enterIndex = 0,
+  isNew = false,
 }) => {
   const smUp = useResponsive('up', 'sm');
   const { user } = useAuthContext();
@@ -388,6 +412,21 @@ const PitchRow = ({
   const openManualMetrics = (event) => {
     event.stopPropagation();
     setManualMetricsOpen(true);
+  };
+  // A failed fetch is shown to admins for every creator, guests included, so
+  // the row explains itself instead of showing a dash. A platform creator gets
+  // the manual dialog; a guest's numbers are edited in its own modal.
+  const metricsFailed = !metricsPending && Boolean(pitch.metricsFailureCode);
+  const showFetchFailed = metricsEditable || (isAdminUser && isGuestCreator && metricsFailed);
+  // View-only admins see the reason, but no Add: they could not save it.
+  const canEnterFailedMetrics = metricsEditable || !isDisabled;
+  const enterFailedMetrics = (event) => {
+    if (metricsEditable) {
+      openManualMetrics(event);
+      return;
+    }
+    event.stopPropagation();
+    onViewPitch(pitch);
   };
 
   // Outreach status dropdown state
@@ -526,11 +565,27 @@ const PitchRow = ({
   return (
     <TableRow
       hover
+      component={m.tr}
+      // Enter: fade and rise. First load staggers (capped); a new row comes at once.
+      layout="position"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -16, transition: { duration: 0.2 } }}
+      transition={{
+        duration: 0.32,
+        ease: ROW_EASE,
+        delay: isNew ? 0 : Math.min(enterIndex * 0.04, 0.4),
+        layout: { duration: 0.3, ease: ROW_EASE },
+      }}
       onClick={() => onViewPitch(pitch)}
       sx={{
         cursor: 'pointer',
         '&:first-of-type td': { borderTop: '1px solid #EBEBEB' },
         [`&:hover .${MANUAL_EDIT_CLASS}`]: { color: '#8E8E93' },
+        ...(isNew && {
+          '& td': { animation: `${NEW_ROW_FLASH} 1.8s ease-out 0.2s both` },
+          '@media (prefers-reduced-motion: reduce)': { '& td': { animation: 'none' } },
+        }),
       }}
     >
       {/* Row number */}
@@ -556,16 +611,31 @@ const PitchRow = ({
           </Avatar>
           <Stack spacing={0.5}>
             {(() => {
-              if (canOpenCreatorProfile) return (
-              <Link
-                component={RouterLink}
-                to={paths.dashboard.creator.profile(creatorProfileId)}
-                underline="hover"
-                color="inherit"
-                sx={NAME_LINK_SX}
-                onClick={(event) => event.stopPropagation()}
-              >
-                {revealScrapeMetrics && pitch.user?.name ? (
+              if (canOpenCreatorProfile)
+                return (
+                  <Link
+                    component={RouterLink}
+                    to={paths.dashboard.creator.profile(creatorProfileId)}
+                    underline="hover"
+                    color="inherit"
+                    sx={NAME_LINK_SX}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {revealScrapeMetrics && pitch.user?.name ? (
+                      <DiaTextReveal
+                        text={pitch.user.name}
+                        textColor="#231F20"
+                        duration={1.5}
+                        delay={0.05}
+                        style={NAME_REVEAL_STYLE}
+                      />
+                    ) : (
+                      pitch.user?.name
+                    )}
+                  </Link>
+                );
+              if (revealScrapeMetrics && pitch.user?.name)
+                return (
                   <DiaTextReveal
                     text={pitch.user.name}
                     textColor="#231F20"
@@ -573,23 +643,8 @@ const PitchRow = ({
                     delay={0.05}
                     style={NAME_REVEAL_STYLE}
                   />
-                ) : (
-                  pitch.user?.name
-                )}
-              </Link>
-              );
-              if (revealScrapeMetrics && pitch.user?.name) return (
-              <DiaTextReveal
-                text={pitch.user.name}
-                textColor="#231F20"
-                duration={1.5}
-                delay={0.05}
-                style={NAME_REVEAL_STYLE}
-              />
-              );
-              return (
-              <Typography sx={NAME_SX}>{pitch.user?.name}</Typography>
-              );
+                );
+              return <Typography sx={NAME_SX}>{pitch.user?.name}</Typography>;
             })()}
 
             {hasSocialUsernames ? (
@@ -813,32 +868,34 @@ const PitchRow = ({
         <Stack spacing={0.5}>
           <FieldBlock label="Engagement rate" minHeight={CHIP_ROW_HEIGHT}>
             {(() => {
-              if (metricsPending) return (
-              <Box sx={{ width: 120 }}>
-                <CreatorFieldLoading
-                  label="Fetching engagement rate"
-                  showSpinner
-                  height={CHIP_ROW_HEIGHT}
-                />
-              </Box>
-              );
-              if (engagementRateText) return (
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <PlatformIcon platform={displayData.engagementPlatform} />
-                <ScrapeMetricValue text={engagementRateText} reveal={revealScrapeMetrics} />
-                {metricsEditable && <ManualEditButton onClick={openManualMetrics} />}
-              </Stack>
-              );
-              if (metricsEditable) return (
-              <FetchFailedValue
-                label={failureLabelShort(pitch.metricsFailureCode, pitch.selectedPlatform)}
-                details={failureDetails(pitch.metricsFailureCode, pitch.selectedPlatform)}
-                onEnter={openManualMetrics}
-              />
-              );
-              return (
-              <EmptyValue />
-              );
+              if (metricsPending)
+                return (
+                  <Box sx={{ width: 120 }}>
+                    <CreatorFieldLoading
+                      label="Fetching engagement rate"
+                      showSpinner
+                      height={CHIP_ROW_HEIGHT}
+                      progress={pitch.extractionProgress}
+                    />
+                  </Box>
+                );
+              if (engagementRateText)
+                return (
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <PlatformIcon platform={displayData.engagementPlatform} />
+                    <ScrapeMetricValue text={engagementRateText} reveal={revealScrapeMetrics} />
+                    {metricsEditable && <ManualEditButton onClick={openManualMetrics} />}
+                  </Stack>
+                );
+              if (showFetchFailed)
+                return (
+                  <FetchFailedValue
+                    label={failureLabelShort(pitch.metricsFailureCode, pitch.selectedPlatform)}
+                    details={failureDetails(pitch.metricsFailureCode, pitch.selectedPlatform)}
+                    onEnter={canEnterFailedMetrics ? enterFailedMetrics : undefined}
+                  />
+                );
+              return <EmptyValue />;
             })()}
           </FieldBlock>
 
@@ -875,56 +932,57 @@ const PitchRow = ({
         <Stack spacing={0.5}>
           <FieldBlock label="Followers" minHeight={CHIP_ROW_HEIGHT}>
             {(() => {
-              if (metricsPending) return (
-              <Box sx={{ width: 120 }}>
-                <CreatorFieldLoading
-                  label="Fetching follower count"
-                  showSpinner
-                  height={CHIP_ROW_HEIGHT}
-                />
-              </Box>
-              );
-              if (displayData.followerCount) return (
-              // The pencil sits outside the count tooltip, so hovering it
-              // shows only its own tooltip.
-              <Stack direction="row" alignItems="center" spacing={1}>
-              <Tooltip
-                title={Number(displayData.followerCount).toLocaleString()}
-                arrow
-                placement="top"
-                componentsProps={{
-                  tooltip: {
-                    sx: {
-                      bgcolor: '#221f20',
-                      fontSize: '0.75rem',
-                      '& .MuiTooltip-arrow': {
-                        color: '#221f20',
-                      },
-                    },
-                  },
-                }}
-              >
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  spacing={1}
-                  sx={{ cursor: 'help' }}
-                >
-                  <PlatformIcon platform={displayData.followerPlatform} />
-                  <ScrapeMetricValue
-                    text={formatNumber(displayData.followerCount)}
-                    reveal={revealScrapeMetrics}
-                  />
-                </Stack>
-              </Tooltip>
-              {metricsEditable && engagementRateText && (
-                <ManualEditButton onClick={openManualMetrics} />
-              )}
-              </Stack>
-              );
-              return (
-              <EmptyValue />
-              );
+              if (metricsPending)
+                return (
+                  <Box sx={{ width: 120 }}>
+                    <CreatorFieldLoading
+                      label="Fetching follower count"
+                      showSpinner
+                      height={CHIP_ROW_HEIGHT}
+                      progress={pitch.extractionProgress}
+                    />
+                  </Box>
+                );
+              if (displayData.followerCount)
+                return (
+                  // The pencil sits outside the count tooltip, so hovering it
+                  // shows only its own tooltip.
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Tooltip
+                      title={Number(displayData.followerCount).toLocaleString()}
+                      arrow
+                      placement="top"
+                      componentsProps={{
+                        tooltip: {
+                          sx: {
+                            bgcolor: '#221f20',
+                            fontSize: '0.75rem',
+                            '& .MuiTooltip-arrow': {
+                              color: '#221f20',
+                            },
+                          },
+                        },
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={1}
+                        sx={{ cursor: 'help' }}
+                      >
+                        <PlatformIcon platform={displayData.followerPlatform} />
+                        <ScrapeMetricValue
+                          text={formatNumber(displayData.followerCount)}
+                          reveal={revealScrapeMetrics}
+                        />
+                      </Stack>
+                    </Tooltip>
+                    {metricsEditable && engagementRateText && (
+                      <ManualEditButton onClick={openManualMetrics} />
+                    )}
+                  </Stack>
+                );
+              return <EmptyValue />;
             })()}
           </FieldBlock>
 
@@ -1032,6 +1090,10 @@ PitchRow.propTypes = {
   onMetricsUpdate: PropTypes.func,
   isDisabled: PropTypes.bool,
   logistics: PropTypes.array,
+  /** Position on first load, for the stagger. */
+  enterIndex: PropTypes.number,
+  /** Added after the list first loaded: enters at once and flashes. */
+  isNew: PropTypes.bool,
 };
 
 export default PitchRow;

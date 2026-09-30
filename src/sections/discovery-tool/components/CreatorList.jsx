@@ -167,7 +167,9 @@ const getCreatorExportRow = (creator) => {
     scrapeFormula: platformData.scrapeDetails?.formulaVersion || '—',
     bio: bio || '',
     interests: (creator.interests || []).join(', '),
-    languages: (Array.isArray(creator.languages) ? creator.languages : []).filter(Boolean).join(', '),
+    languages: (Array.isArray(creator.languages) ? creator.languages : [])
+      .filter(Boolean)
+      .join(', '),
   };
 };
 
@@ -198,24 +200,115 @@ const downloadCreatorsWorkbook = async (creatorRows, filePrefix = 'Bookmarked_Cr
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-const ADDED_SORT_OPTIONS = [
-  { value: 'recent', label: 'Recently Added' },
-  { value: 'oldest', label: 'Oldest Added' },
-  { value: 'name', label: 'Alphabetical (A–Z)' },
+/** Values match what `onSortChange` takes. */
+const FOLLOWER_SORT_OPTIONS = [
+  { value: 'followers_desc', label: 'Most Followers', icon: 'lucide:arrow-down-wide-narrow' },
+  { value: 'followers_asc', label: 'Fewest Followers', icon: 'lucide:arrow-up-narrow-wide' },
 ];
 
-// Arrow down = highest / newest first. Arrow up = lowest / oldest first.
-const sortIcon = (ascending) =>
-  ascending ? 'fluent:arrow-sort-up-lines-24-regular' : 'fluent:arrow-sort-down-lines-24-regular';
+const ADDED_SORT_OPTIONS = [
+  { value: 'recent', label: 'Recently Added', icon: 'lucide:clock-arrow-down' },
+  { value: 'oldest', label: 'Oldest Added', icon: 'lucide:clock-arrow-up' },
+  { value: 'name', label: 'Alphabetical (A–Z)', icon: 'lucide:arrow-down-a-z' },
+];
 
-const SORT_BUTTON_SX = {
-  fontWeight: 400,
-  fontSize: 14,
-  p: 0,
-  cursor: 'pointer',
-  '&:hover': {
-    bgcolor: 'transparent',
-  },
+/** Every sort in one menu. Only one applies at a time. */
+const SORT_OPTIONS = [...FOLLOWER_SORT_OPTIONS, ...ADDED_SORT_OPTIONS];
+
+const ONYX_TEXT = '#231F20';
+const ACTIVE_BLUE = '#1340FF';
+
+/** The sort pill and its menu, styled like Select List. */
+function SortDropdown({ name, options, value, onChange }) {
+  const [anchor, setAnchor] = useState(null);
+  const current = options.find((option) => option.value === value);
+  const label = current?.label ?? name;
+
+  return (
+    <>
+      <Button
+        onClick={(event) => setAnchor(event.currentTarget)}
+        aria-haspopup="menu"
+        aria-expanded={anchor ? 'true' : 'false'}
+        aria-label={`Sort: ${label}`}
+        startIcon={<Iconify icon={current?.icon ?? options[0].icon} width={16} />}
+        endIcon={<Iconify icon="eva:chevron-down-fill" width={18} />}
+        sx={{
+          height: 34,
+          minWidth: 'auto',
+          whiteSpace: 'nowrap',
+          px: 2,
+          py: 1,
+          gap: 0.5,
+          color: ONYX_TEXT,
+          bgcolor: '#F5F5F5',
+          textTransform: 'none',
+          fontWeight: 600,
+          fontSize: 14,
+          lineHeight: '18px',
+          borderRadius: '100px',
+          boxShadow: 'none',
+          '& .MuiButton-startIcon, & .MuiButton-endIcon': { m: 0 },
+          '&:hover': { bgcolor: '#F5F5F5', boxShadow: 'none' },
+        }}
+      >
+        {label}
+      </Button>
+      <Menu
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={() => setAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          paper: {
+            sx: {
+              mt: 1,
+              p: 0.75,
+              width: 220,
+              border: '1px solid #E7E7E7',
+              borderBottom: '3px solid #E7E7E7',
+              boxShadow: 'none',
+            },
+          },
+        }}
+      >
+        {options.map((option) => {
+          const selected = option.value === value;
+          return (
+            <MenuItem
+              key={option.value}
+              selected={selected}
+              onClick={() => {
+                onChange(option.value);
+                setAnchor(null);
+              }}
+              sx={{ gap: 1, px: 1, borderRadius: 1, fontSize: 14, color: ONYX_TEXT }}
+            >
+              <Iconify icon={option.icon} width={16} sx={{ color: '#636366' }} />
+              <Box component="span" sx={{ flex: 1 }}>
+                {option.label}
+              </Box>
+              {selected && (
+                <Iconify icon="eva:checkmark-fill" width={16} sx={{ color: ACTIVE_BLUE }} />
+              )}
+            </MenuItem>
+          );
+        })}
+      </Menu>
+    </>
+  );
+}
+
+SortDropdown.propTypes = {
+  name: PropTypes.string.isRequired,
+  options: PropTypes.arrayOf(PropTypes.object).isRequired,
+  value: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+};
+
+SortDropdown.defaultProps = {
+  value: null,
 };
 
 const CreatorList = ({
@@ -237,9 +330,8 @@ const CreatorList = ({
   onToggleCreatorInList,
   onOpenListManager,
   listDropdownRef,
-  onToggleFollowersSort,
   addedSort,
-  onAddedSortChange,
+  onSortChange,
   onLoadMore,
   onInviteOne,
   onLinkCreator,
@@ -254,7 +346,6 @@ const CreatorList = ({
   const [compareSelectedIds, setCompareSelectedIds] = useState([]);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [addedSortAnchor, setAddedSortAnchor] = useState(null);
   const sortByFollowers = Boolean(followersSortDirection);
 
   const handleCompareSelect = useCallback((rowKey) => {
@@ -425,54 +516,6 @@ const CreatorList = ({
 
   return (
     <Box sx={{ mt: 4 }}>
-      <Stack direction="row" spacing={3} alignItems="center">
-        <Button
-          onClick={onToggleFollowersSort}
-          variant="text"
-          disableRipple
-          aria-label={`Sort by total followers, ${followersSortDirection === 'asc' ? 'lowest' : 'highest'} first`}
-          sx={{ ...SORT_BUTTON_SX, color: sortByFollowers ? '#1340FF' : '#231F20' }}
-          endIcon={<Iconify icon={sortIcon(followersSortDirection === 'asc')} width={18} ml={-0.5} />}
-        >
-          Total Followers
-        </Button>
-        {onAddedSortChange && (
-          <>
-            <Button
-              onClick={(event) => setAddedSortAnchor(event.currentTarget)}
-              variant="text"
-              disableRipple
-              aria-haspopup="menu"
-              sx={{
-                ...SORT_BUTTON_SX,
-                color: !sortByFollowers && addedSort !== 'name' ? '#1340FF' : '#231F20',
-              }}
-              endIcon={<Iconify icon={sortIcon(addedSort === 'oldest')} width={18} ml={-0.5} />}
-            >
-              {ADDED_SORT_OPTIONS.find((option) => option.value === addedSort)?.label ?? 'Sort'}
-            </Button>
-            <Menu
-              anchorEl={addedSortAnchor}
-              open={Boolean(addedSortAnchor)}
-              onClose={() => setAddedSortAnchor(null)}
-            >
-              {ADDED_SORT_OPTIONS.map((option) => (
-                <MenuItem
-                  key={option.value}
-                  selected={!sortByFollowers && option.value === addedSort}
-                  onClick={() => {
-                    onAddedSortChange(option.value);
-                    setAddedSortAnchor(null);
-                  }}
-                  sx={{ fontSize: 14 }}
-                >
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Menu>
-          </>
-        )}
-      </Stack>
       <Box
         sx={{
           display: 'flex',
@@ -488,6 +531,14 @@ const CreatorList = ({
         </Typography>
         <Box>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ flexWrap: 'nowrap' }}>
+            {onSortChange && (
+              <SortDropdown
+                name="sort"
+                options={SORT_OPTIONS}
+                value={sortByFollowers ? `followers_${followersSortDirection}` : addedSort}
+                onChange={onSortChange}
+              />
+            )}
             <BookmarkListDropdown
               ref={listDropdownRef}
               lists={lists}
@@ -582,9 +633,7 @@ const CreatorList = ({
           position: 'relative',
           width: '100%',
           height:
-            visibleCreatorRows.length === 0 && isFiltering
-              ? 'auto'
-              : rowVirtualizer.getTotalSize(),
+            visibleCreatorRows.length === 0 && isFiltering ? 'auto' : rowVirtualizer.getTotalSize(),
         }}
       >
         {visibleCreatorRows.length === 0 && isFiltering ? (
@@ -659,7 +708,9 @@ const CreatorList = ({
       </Box>
 
       {!isFiltering && isReachingEnd && visibleCreatorRows.length > 0 ? (
-        <Typography sx={{ mt: 1, mb: 2, textAlign: 'center', fontSize: 13, color: 'text.secondary' }}>
+        <Typography
+          sx={{ mt: 1, mb: 2, textAlign: 'center', fontSize: 13, color: 'text.secondary' }}
+        >
           All creators loaded
         </Typography>
       ) : null}
@@ -702,9 +753,9 @@ CreatorList.propTypes = {
   onToggleCreatorInList: PropTypes.func,
   onOpenListManager: PropTypes.func,
   listDropdownRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
-  onToggleFollowersSort: PropTypes.func,
   addedSort: PropTypes.oneOf(['recent', 'oldest', 'name']),
-  onAddedSortChange: PropTypes.func,
+  /** Called with a SORT_OPTIONS value. */
+  onSortChange: PropTypes.func,
   onLoadMore: PropTypes.func,
   onInviteOne: PropTypes.func,
   onLinkCreator: PropTypes.func,
@@ -730,9 +781,8 @@ CreatorList.defaultProps = {
   onToggleCreatorInList: undefined,
   onOpenListManager: undefined,
   listDropdownRef: undefined,
-  onToggleFollowersSort: undefined,
-  addedSort: 'name',
-  onAddedSortChange: undefined,
+  addedSort: 'recent',
+  onSortChange: undefined,
   onLoadMore: undefined,
   onInviteOne: undefined,
   onLinkCreator: undefined,
