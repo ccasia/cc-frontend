@@ -48,7 +48,8 @@ const DiscoveryToolView = () => {
 
   // null = off, 'desc' = highest first, 'asc' = lowest first.
   const [followersSortDirection, setFollowersSortDirection] = useState(null);
-  const [addedSort, setAddedSort] = useState('name');
+  // Newest creators first by default.
+  const [addedSort, setAddedSort] = useState('recent');
 
   // All filters are now server-side — pass them all to the SWR hook
   const discoveryQuery = useMemo(
@@ -92,12 +93,12 @@ const DiscoveryToolView = () => {
   }, []);
 
   // First click sorts highest first; later clicks flip between highest and lowest.
-  const handleToggleFollowersSort = useCallback(() => {
-    setFollowersSortDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'));
-  }, []);
-
-  // Picking a date or name sort turns the followers sort off.
-  const handleAddedSortChange = useCallback((value) => {
+  // One sort at a time: a followers sort, or a date or name sort.
+  const handleSortChange = useCallback((value) => {
+    if (value === 'followers_desc' || value === 'followers_asc') {
+      setFollowersSortDirection(value === 'followers_asc' ? 'asc' : 'desc');
+      return;
+    }
     setAddedSort(value);
     setFollowersSortDirection(null);
   }, []);
@@ -414,9 +415,8 @@ const DiscoveryToolView = () => {
         isReachingEnd={isReachingEnd}
         pagination={pagination}
         followersSortDirection={followersSortDirection}
-        onToggleFollowersSort={handleToggleFollowersSort}
         addedSort={addedSort}
-        onAddedSortChange={handleAddedSortChange}
+        onSortChange={handleSortChange}
         onLoadMore={handleLoadMore}
         lists={lists}
         membershipsByRowKey={membershipsByRowKey}
