@@ -127,6 +127,9 @@ export function createRow(overrides = {}) {
     prefetchMetrics: null,
     adminComments: '',
     extractionId: null,
+    /** When the running scrape started, and whether its second batch runs. For the loader text. */
+    extractionStartedAt: null,
+    checkingMore: false,
     completionReceipt: null,
     sampleSize: null,
     fetchedAt: null,
@@ -193,6 +196,9 @@ function clearResult(row) {
     followerCount: '',
     engagementRate: '',
     extractionId: null,
+    /** When the running scrape started, and whether its second batch runs. For the loader text. */
+    extractionStartedAt: null,
+    checkingMore: false,
     completionReceipt: null,
     sampleSize: null,
     fetchedAt: null,
@@ -432,6 +438,8 @@ export function creatorRowReducer(state, action) {
               ...clearResult(row),
               status: ROW_STATUS.QUEUED,
               extractionId: action.extractionId ?? null,
+              extractionStartedAt: null,
+              checkingMore: false,
               // Saved metrics shown before the fetch. A failed fetch puts them
               // back, so the admin does not have to type them again.
               prefetchMetrics: {
@@ -445,7 +453,11 @@ export function creatorRowReducer(state, action) {
       return mapRow(state, action.rowId, (row) =>
         isRowActive(row) &&
         (action.contextVersion == null || action.contextVersion === row.contextVersion)
-          ? { ...row, status: ROW_STATUS.RUNNING }
+          ? {
+              ...row,
+              status: ROW_STATUS.RUNNING,
+              extractionStartedAt: action.startedAt ?? row.extractionStartedAt,
+            }
           : row
       );
 
@@ -453,7 +465,12 @@ export function creatorRowReducer(state, action) {
       return mapRow(state, action.rowId, (row) =>
         isRowActive(row) &&
         (action.contextVersion == null || action.contextVersion === row.contextVersion)
-          ? { ...row, status: ROW_STATUS.POLLING }
+          ? {
+              ...row,
+              status: ROW_STATUS.POLLING,
+              extractionStartedAt: action.startedAt ?? row.extractionStartedAt,
+              checkingMore: Boolean(action.checkingMore),
+            }
           : row
       );
 

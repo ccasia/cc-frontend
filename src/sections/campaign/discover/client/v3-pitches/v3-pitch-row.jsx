@@ -875,6 +875,7 @@ const PitchRow = ({
                       label="Fetching engagement rate"
                       showSpinner
                       height={CHIP_ROW_HEIGHT}
+                      progress={pitch.extractionProgress}
                     />
                   </Box>
                 );
@@ -938,6 +939,7 @@ const PitchRow = ({
                       label="Fetching follower count"
                       showSpinner
                       height={CHIP_ROW_HEIGHT}
+                      progress={pitch.extractionProgress}
                     />
                   </Box>
                 );

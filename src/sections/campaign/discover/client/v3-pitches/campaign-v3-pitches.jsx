@@ -2885,6 +2885,11 @@ export function PlatformCreatorModal({
                                   label="Fetching engagement rate"
                                   showSpinner
                                   height={FIELD_HEIGHT}
+                                  progress={{
+                                    status: row.status,
+                                    startedAt: row.extractionStartedAt,
+                                    checkingMore: row.checkingMore,
+                                  }}
                                 />
                               ) : (
                                 <ScrapeTextFieldReveal
@@ -2961,6 +2966,11 @@ export function PlatformCreatorModal({
                                   label="Fetching follower count"
                                   showSpinner
                                   height={FIELD_HEIGHT}
+                                  progress={{
+                                    status: row.status,
+                                    startedAt: row.extractionStartedAt,
+                                    checkingMore: row.checkingMore,
+                                  }}
                                 />
                               ) : (
                                 <ScrapeTextFieldReveal

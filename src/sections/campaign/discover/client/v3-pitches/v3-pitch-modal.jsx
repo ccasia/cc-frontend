@@ -1631,6 +1631,7 @@ export function ViewGuestCreatorModal({
                     label="Fetching follower count"
                     showSpinner
                     height={56}
+                    progress={pitch?.extractionProgress}
                   />
                 ) : isAdmin ? (
                   <TextField
@@ -1704,6 +1705,7 @@ export function ViewGuestCreatorModal({
                     label="Fetching engagement rate"
                     showSpinner
                     height={56}
+                    progress={pitch?.extractionProgress}
                   />
                 ) : isAdmin ? (
                   <TextField
