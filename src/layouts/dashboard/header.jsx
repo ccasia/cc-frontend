@@ -28,6 +28,7 @@ import { HEADER } from '../config-layout';
 import ChatPopover from '../common/chat-popover';
 import AccountPopover from '../common/account-popover';
 import NotificationsPopover from '../common/notifications-popover';
+import ReleaseNotesButton from '../common/release-notes-button';
 // import LanguagePopover from '../common/language-popover';
 
 // ----------------------------------------------------------------------
@@ -84,6 +85,7 @@ export default function Header({ onOpenNav, isOnline }) {
           />
         </Box>
       )}
+      {['admin', 'superadmin'].includes(user?.role) && <ReleaseNotesButton />}
       <NotificationsPopover />
       <ChatPopover />
       {/* </Card> */}

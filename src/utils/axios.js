@@ -581,4 +581,11 @@ export const endpoints = {
     publicApprove: (magicToken) => `/api/briefs/public/${magicToken}/approve`,
     publicAttachments: (magicToken) => `/api/briefs/public/${magicToken}/attachments`,
   },
+  releaseNotes: {
+    root: '/api/release-notes',
+    seen: '/api/release-notes/seen',
+    unseen: '/api/release-notes/unseen',
+    manage: '/api/release-notes/manage',
+    detail: (id) => `/api/release-notes/${id}`,
+  },
 };

@@ -217,6 +217,12 @@ export function useNavData() {
             icon: <Iconify icon="material-symbols:rate-review-outline" width={25} />,
           },
           {
+            roles: ['superadmin'],
+            title: 'Release Notes',
+            path: paths.dashboard.releaseNotes.root,
+            icon: <Iconify icon="material-symbols:build-outline-rounded" width={25} />,
+          },
+          {
             roles: ['superadmin', 'god'],
             title: 'AI Report Configurations',
             path: paths.dashboard.reportAi.root,
