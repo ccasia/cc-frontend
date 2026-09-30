@@ -7,7 +7,15 @@ import { enqueueSnackbar } from 'notistack';
 
 // Preview generation and PDF export for the PCR report. Both capture the rendered
 // report DOM via html2canvas; preview is cached until content changes.
-export default function usePcrExport({ editableContent, sectionVisibility, sectionOrder, isEditMode, setIsEditMode, reportRef, campaign }) {
+export default function usePcrExport({
+  editableContent,
+  sectionVisibility,
+  sectionOrder,
+  isEditMode,
+  setIsEditMode,
+  reportRef,
+  campaign,
+}) {
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
@@ -21,11 +29,15 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
       const currentContentHash = JSON.stringify({
         content: editableContent,
         visibility: sectionVisibility,
-        order: sectionOrder
+        order: sectionOrder,
       });
 
       // If preview is cached and content hasn't changed, just open the modal
-      if (isPreviewCached && lastPreviewContent === currentContentHash && previewImages.length > 0) {
+      if (
+        isPreviewCached &&
+        lastPreviewContent === currentContentHash &&
+        previewImages.length > 0
+      ) {
         setIsPreviewOpen(true);
         return;
       }
@@ -33,29 +45,32 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
       setIsExportingPDF(true);
       enqueueSnackbar('Generating preview...', {
         variant: 'info',
-        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+        anchorOrigin: { vertical: 'top', horizontal: 'center' },
       });
 
       // First, temporarily exit edit mode and hide all edit controls
-      const wasInEditMode = isEditMode;
+      const wasInEditMode = isEditMode.state;
+
       if (wasInEditMode) {
-        setIsEditMode(false);
+        setIsEditMode(() => ({ type: '', state: false }));
       }
 
       // Wait for React to re-render
-      await new Promise(resolve => { setTimeout(resolve, 50); });
+      await new Promise((resolve) => {
+        setTimeout(resolve, 50);
+      });
 
       const reportContainer = document.getElementById('pcr-report-main');
       if (!reportContainer) {
         console.error('Report container not found');
-        if (wasInEditMode) setIsEditMode(true);
+        if (wasInEditMode) setIsEditMode((prev) => ({ ...prev, state: true }));
         setIsExportingPDF(false);
         return;
       }
 
       // Hide buttons before capturing
       const buttonsToHide = reportContainer.querySelectorAll('.hide-in-pdf');
-      buttonsToHide.forEach(el => {
+      buttonsToHide.forEach((el) => {
         el.style.display = 'none';
       });
 
@@ -79,8 +94,8 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
         const pageHeight = 297;
         const pageWidth = 210;
         const margin = 5;
-        const contentWidth = pageWidth - (2 * margin);
-        const maxPageHeight = pageHeight - (2 * margin);
+        const contentWidth = pageWidth - 2 * margin;
+        const maxPageHeight = pageHeight - 2 * margin;
 
         const pages = [];
         let currentPage = [];
@@ -96,7 +111,9 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
             // Yield to UI thread every 2 sections
             if (i % 2 === 0 && i > 0) {
               // eslint-disable-next-line no-await-in-loop
-              await new Promise(resolve => { setTimeout(resolve, 0); });
+              await new Promise((resolve) => {
+                setTimeout(resolve, 0);
+              });
             }
 
             // Capture this section with high quality for preview
@@ -134,7 +151,7 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
           currentPage.push({
             canvas,
             height: imgHeight,
-            width: imgWidth
+            width: imgWidth,
           });
           currentPageHeight += imgHeight + 4;
         });
@@ -158,7 +175,9 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
 
             // Yield to UI thread
             // eslint-disable-next-line no-await-in-loop
-            await new Promise(resolve => { setTimeout(resolve, 0); });
+            await new Promise((resolve) => {
+              setTimeout(resolve, 0);
+            });
 
             const pageCanvas = document.createElement('canvas');
             pageCanvas.width = pageCanvasWidth;
@@ -174,13 +193,13 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
 
             // Draw sections on this page
             let yOffset = (margin * dpi) / 25.4;
-            page.forEach(section => {
+            page.forEach((section) => {
               const xOffset = (margin * dpi) / 25.4;
               const sectionWidth = (section.width * dpi) / 25.4;
               const sectionHeight = (section.height * dpi) / 25.4;
 
               ctx.drawImage(section.canvas, xOffset, yOffset, sectionWidth, sectionHeight);
-              yOffset += sectionHeight + ((4 * dpi) / 25.4);
+              yOffset += sectionHeight + (4 * dpi) / 25.4;
             });
 
             pageImages.push(pageCanvas.toDataURL('image/png', 1.0));
@@ -193,11 +212,11 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
         setPreviewImages(pageImages);
       }
 
-      buttonsToHide.forEach(el => {
+      buttonsToHide.forEach((el) => {
         el.style.display = '';
       });
       if (wasInEditMode) {
-        setIsEditMode(true);
+        setIsEditMode((prev) => ({ ...prev, state: true }));
       }
 
       setLastPreviewContent(currentContentHash);
@@ -206,17 +225,17 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
       setIsPreviewOpen(true);
       enqueueSnackbar('Preview generated!', {
         variant: 'success',
-        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+        anchorOrigin: { vertical: 'top', horizontal: 'center' },
       });
     } catch (error) {
       console.error('Error generating preview:', error);
       enqueueSnackbar('Failed to generate preview', {
         variant: 'error',
-        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+        anchorOrigin: { vertical: 'top', horizontal: 'center' },
       });
 
-      if (isEditMode === false) {
-        setIsEditMode(true);
+      if (isEditMode.state === false) {
+        setIsEditMode((prev) => ({ ...prev, state: true }));
       }
     } finally {
       setIsExportingPDF(false);
@@ -231,7 +250,7 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
       setIsExportingPDF(true);
       enqueueSnackbar('Generating PDF...', {
         variant: 'info',
-        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+        anchorOrigin: { vertical: 'top', horizontal: 'center' },
       });
 
       // Get the parent element that includes the gradient border
@@ -239,19 +258,21 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
 
       // Hide buttons before capturing
       const buttonsToHide = pdfContainer.querySelectorAll('.hide-in-pdf');
-      buttonsToHide.forEach(el => {
+      buttonsToHide.forEach((el) => {
         el.style.display = 'none';
       });
 
       // Remove margins from sections (keep border-radius for curved edges)
       const allSections = pdfContainer.querySelectorAll('.pcr-section');
-      allSections.forEach(el => {
+      allSections.forEach((el) => {
         el.style.marginBottom = '0';
         // Keep borderRadius for curved edges in PDF
       });
 
       // Wait for charts to fully render (especially SVG-based charts like PieChart)
-      await new Promise(resolve => { setTimeout(resolve, 500); });
+      await new Promise((resolve) => {
+        setTimeout(resolve, 500);
+      });
 
       // eslint-disable-next-line new-cap
       const pdf = new jsPDF({
@@ -264,7 +285,7 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
       const pageWidth = 210;
       const pageHeight = 297;
       const margin = 5;
-      const contentWidth = pageWidth - (2 * margin);
+      const contentWidth = pageWidth - 2 * margin;
 
       const addGradientBackground = async () => {
         const gradientCanvas = document.createElement('canvas');
@@ -304,7 +325,10 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
             const allElements = clonedDoc.querySelectorAll('*');
             allElements.forEach((el) => {
               try {
-                const original = pdfContainer.querySelector(`[data-cursor-element-id="${el.dataset.cursorElementId}"]`) || el;
+                const original =
+                  pdfContainer.querySelector(
+                    `[data-cursor-element-id="${el.dataset.cursorElementId}"]`
+                  ) || el;
                 const computedStyle = window.getComputedStyle(original);
 
                 // Preserve all visual styles
@@ -372,7 +396,9 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
             // Yield to UI thread every 2 sections
             if (i % 2 === 0 && i > 0) {
               // eslint-disable-next-line no-await-in-loop
-              await new Promise(resolve => { setTimeout(resolve, 0); });
+              await new Promise((resolve) => {
+                setTimeout(resolve, 0);
+              });
             }
 
             // Sequential processing is required for PDF generation
@@ -393,7 +419,10 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
                 const allElements = clonedDoc.querySelectorAll('*');
                 allElements.forEach((el) => {
                   try {
-                    const original = section.querySelector(`[data-cursor-element-id="${el.dataset.cursorElementId}"]`) || el;
+                    const original =
+                      section.querySelector(
+                        `[data-cursor-element-id="${el.dataset.cursorElementId}"]`
+                      ) || el;
                     const computedStyle = window.getComputedStyle(original);
 
                     // Preserve all visual styles
@@ -463,10 +492,10 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
       }
 
       // Restore buttons and margins
-      buttonsToHide.forEach(el => {
+      buttonsToHide.forEach((el) => {
         el.style.display = '';
       });
-      allSections.forEach(el => {
+      allSections.forEach((el) => {
         el.style.marginBottom = '';
       });
 
@@ -475,13 +504,13 @@ export default function usePcrExport({ editableContent, sectionVisibility, secti
 
       enqueueSnackbar('PDF downloaded successfully!', {
         variant: 'success',
-        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+        anchorOrigin: { vertical: 'top', horizontal: 'center' },
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
       enqueueSnackbar('Failed to generate PDF', {
         variant: 'error',
-        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+        anchorOrigin: { vertical: 'top', horizontal: 'center' },
       });
     } finally {
       setIsExportingPDF(false);

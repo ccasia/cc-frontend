@@ -23,17 +23,29 @@ export default function usePcrHistory({
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
-  const saveToHistory = (content, visibility, order, showEducator, showThird, showFourth, showFifth) => {
+  const saveToHistory = (
+    content,
+    visibility,
+    order,
+    showEducator,
+    showThird,
+    showFourth,
+    showFifth
+  ) => {
     const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(JSON.parse(JSON.stringify({
-      content,
-      sectionVisibility: visibility,
-      sectionOrder: order,
-      showEducatorCard: showEducator,
-      showThirdCard: showThird,
-      showFourthCard: showFourth,
-      showFifthCard: showFifth,
-    })));
+    newHistory.push(
+      JSON.parse(
+        JSON.stringify({
+          content,
+          sectionVisibility: visibility,
+          sectionOrder: order,
+          showEducatorCard: showEducator,
+          showThirdCard: showThird,
+          showFourthCard: showFourth,
+          showFifthCard: showFifth,
+        })
+      )
+    );
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
 
@@ -76,14 +88,22 @@ export default function usePcrHistory({
 
   // Track changes for undo/redo
   useEffect(() => {
-    if (isEditMode && history.length === 0) {
-      saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, showFourthCard, showFifthCard);
+    if (isEditMode.state && history.length === 0) {
+      saveToHistory(
+        editableContent,
+        sectionVisibility,
+        sectionOrder,
+        showEducatorCard,
+        showThirdCard,
+        showFourthCard,
+        showFifthCard
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode]);
 
   useEffect(() => {
-    if (!isEditMode || history.length === 0) {
+    if (!isEditMode.state || history.length === 0) {
       return undefined;
     }
 
@@ -100,13 +120,30 @@ export default function usePcrHistory({
       };
 
       if (JSON.stringify(lastState) !== JSON.stringify(currentState)) {
-        saveToHistory(editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, showFourthCard, showFifthCard);
+        saveToHistory(
+          editableContent,
+          sectionVisibility,
+          sectionOrder,
+          showEducatorCard,
+          showThirdCard,
+          showFourthCard,
+          showFifthCard
+        );
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editableContent, sectionVisibility, sectionOrder, showEducatorCard, showThirdCard, showFourthCard, showFifthCard, isEditMode]);
+  }, [
+    editableContent,
+    sectionVisibility,
+    sectionOrder,
+    showEducatorCard,
+    showThirdCard,
+    showFourthCard,
+    showFifthCard,
+    isEditMode,
+  ]);
 
   const resetHistory = () => {
     setHistory([]);

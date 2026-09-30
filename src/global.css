@@ -8,3 +8,44 @@
   font-family: 'InterDisplay';
   src: url('/fonts/inter/InterDisplay-Regular.woff2') format('woff2');
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Prevent sections from breaking across pages */
+  .pcr-section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Allow break before sections if needed */
+  .pcr-section {
+    page-break-before: auto;
+  }
+
+  /* Prevent breaks inside cards and grids */
+  .MuiGrid-item,
+  .MuiBox-root[class*='card'] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Hide elements that shouldn't print */
+  .hide-in-pdf {
+    display: none !important;
+  }
+
+  /* Ensure proper sizing */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
