@@ -331,7 +331,9 @@ const toInsightData = (submission, snapshot) => ({
 
 export const useSocialInsights = (postingSubmissions, campaignId) => {
   const queryClient = useQueryClient();
+
   const submissions = useMemo(() => postingSubmissions ?? [], [postingSubmissions]);
+
   const submissionSignature = useMemo(
     () =>
       submissions
@@ -347,6 +349,7 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
       const { data: response } = await axiosInstance.get(
         `/api/campaign/${campaignId}/post-engagement-snapshots/latest`
       );
+
       return response.data || [];
     },
     enabled: Boolean(campaignId && submissions.length),
@@ -369,10 +372,12 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
       if (!current || snapshotTime > currentTime) latestByPost.set(key, snapshot);
       return latestByPost;
     }, new Map());
+
     const ok = submissions.flatMap((submission) => {
       const snapshot = snapshotsByPost.get(getSnapshotKey(submission));
       return snapshot ? [toInsightData(submission, snapshot)] : [];
     });
+
     const failed = submissions
       .filter((submission) => !snapshotsByPost.has(getSnapshotKey(submission)))
       .map((submission) => ({
